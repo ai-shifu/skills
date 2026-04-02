@@ -2,8 +2,7 @@
 
 ## Skill Content Rule
 
-- In the body of any skill document, do not use the abbreviation `MDF`.
-- Always write `MarkdownFlow` in full instead of `MDF`.
+- Do not use the abbreviation `MDF` anywhere in a skill document (including frontmatter); always write `MarkdownFlow` in full.
 
 ## Compatibility
 
