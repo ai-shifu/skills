@@ -5,6 +5,7 @@
 Queries are written from the perspective of a user with the following knowledge profile.
 
 **Knows:**
+
 - I'm building courses on the AI-Shifu (AI师傅) platform
 - The platform supports course creation, modification, and publishing
 - Courses are authored in MarkdownFlow (MDF) scripting language
@@ -14,6 +15,7 @@ Queries are written from the perspective of a user with the following knowledge 
 - I can create a course from raw materials end-to-end, or CRUD existing course content
 
 **Does NOT know:**
+
 - The skill internally has multiple phases (Phase 1–5)
 - Internal skill constraints beyond MarkdownFlow syntax (e.g., issue classes, gates, segment schema, transfer signals)
 

@@ -75,7 +75,7 @@ After every interaction, the script must:
 
 ### 4) Visuals: describe, do not inline source markup
 
-- Do not embed raw SVG/HTML source code inside lesson MDF files.
+- Do not embed raw SVG/HTML source code inside lesson MarkdownFlow files.
 - When a visual is needed, write a natural-language instruction: “Show an image that …” and pair it with a brief explanation of what the visual is meant to convey.
 
 ## Pipeline Overview
@@ -295,7 +295,7 @@ Optional modules:
 
 - If a visual is needed, describe it in natural language (e.g., "Show an image that …").
 - Pair every visual instruction with a brief explanation of what the visual is meant to convey.
-- Do not inline raw SVG/HTML markup in MDF lesson files.
+- Do not inline raw SVG/HTML markup in MarkdownFlow lesson files.
 
 ### Interaction Design
 
