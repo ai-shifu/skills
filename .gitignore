@@ -7,3 +7,6 @@ __pycache__/
 
 # Environment variables (may contain secrets)
 .env
+
+# Design / process docs (local notes, not for version control)
+design/
