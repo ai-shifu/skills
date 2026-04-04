@@ -76,7 +76,9 @@ After every interaction, the script must:
 ### 4) Visuals: describe, do not inline source markup
 
 - Do not embed raw SVG/HTML source code inside lesson MarkdownFlow files.
-- When a visual is needed, write a natural-language instruction: “Show an image that …” and pair it with a brief explanation of what the visual is meant to convey.
+- Unless the user explicitly asks for SVG, HTML, Mermaid, PlantUML, Graphviz, or other diagram source/markup, do not proactively generate visual source code or diagram markup.
+- Default behavior: when a visual is needed, write a natural-language instruction such as “Show an image that …” and pair it with a brief explanation of what the visual is meant to convey.
+- If the user asks for a visual but does not specify the format, prefer natural-language image/diagram placeholders over executable or embeddable diagram code.
 
 ## Pipeline Overview
 
