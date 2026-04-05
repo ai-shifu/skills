@@ -2,19 +2,21 @@
 
 [English README](./README.md)
 
-本仓库包含一个统一的 AI 师傅 skill，覆盖 MarkdownFlow 课程制作与部署全流程。
+本仓库包含可复用的 AI 师傅 skills，覆盖从课程选题到部署的全流程。
 
 ## 包含的 Skills
 
 - `ai-shifu-course-creator`：通过五阶段流水线（分段、编排、生成、优化、部署）将原始课程素材转换为优化后的可运行 MarkdownFlow 授课脚本，并部署为 AI 师傅平台上的在线课程。
+- `course-direction-advisor`：将素材转化为基于证据的、市场适配的课程选题决策，包含竞品分析、定价建议和 GO/HOLD/REWORK/NO-GO 推荐。
 
-skill 有可运行示例，位于 `skills/ai-shifu-course-creator/examples/`。
+course-creator skill 有可运行示例，位于 `skills/ai-shifu-course-creator/examples/`。
 
 ## 仓库结构
 
 ```text
 skills/
   ai-shifu-course-creator/
+  course-direction-advisor/
 ```
 
 ## 使用说明

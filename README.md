@@ -2,19 +2,21 @@
 
 [中文 README](./README.zh-CN.md)
 
-A unified AI-Shifu skill for MarkdownFlow course production and deployment.
+Reusable AI-Shifu skills for course production, from topic selection to deployment.
 
 ## Included Skills
 
 - `ai-shifu-course-creator`: convert raw course material into optimized MarkdownFlow teaching scripts and deploy them as live AI-Shifu courses through a five-phase pipeline (segmentation, orchestration, generation, optimization, deployment).
+- `course-direction-advisor`: turn source materials into evidence-bound, market-fit course-topic decisions with competitor analysis, pricing guidance, and GO/HOLD/REWORK/NO-GO recommendations.
 
-The skill includes runnable examples under `skills/ai-shifu-course-creator/examples/`.
+The course-creator skill includes runnable examples under `skills/ai-shifu-course-creator/examples/`.
 
 ## Repository Layout
 
 ```text
 skills/
   ai-shifu-course-creator/
+  course-direction-advisor/
 ```
 
 ## Usage
