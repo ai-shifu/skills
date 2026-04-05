@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The point of market analysis is not to prove that “this will sell.”  
+The point of market analysis is not to prove that “this will sell.”
 The point is to constrain topic selection with real public evidence:
 - what the market is currently discussing
 - how far user understanding has already developed
@@ -168,7 +168,7 @@ For each serious competitor or substitute, answer:
 - what it does not solve
 - what room remains for this topic
 
-Do not limit competitors to “courses like mine.”  
+Do not limit competitors to “courses like mine.”
 Include tools, free content, training camps, platform features, and service substitutes.
 
 ## When a Market Is “Too Crowded”
@@ -247,7 +247,7 @@ The purpose is to help select the market entry angle, not to copy anyone's conte
 
 ## Content Validation
 
-Content validation does not mean “guaranteed to sell.”  
+Content validation does not mean “guaranteed to sell.”
 It means there is enough public signal to justify going deeper.
 
 Useful labels:
