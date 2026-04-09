@@ -13,11 +13,6 @@
 - Input: `?[%{{var}} ... enter your answer]`
 - Button + input: `?[%{{var}} Option A | Option B | ...Other, please specify]`
 
-## Structure
-
-- Use `---` between instructional segments.
-- Keep one objective per segment.
-
 ## Deterministic Output
 
 - Single-line fixed text: `===fixed text===`
