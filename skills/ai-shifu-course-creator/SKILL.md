@@ -362,7 +362,6 @@ See `references/optimization-methodology.md`.
 - Spread global variable collection across lessons.
 - Do not recollect the same variable unless marked as staged comparison.
 - Treat semantic duplicates as duplicates even if variable names differ.
-- Use stable input syntax: `?[%{{var}}...prompt]`.
 - Keep ending structure lesson-appropriate; interactive endings are optional.
 - Every core concept needs visual-plus-text explanation.
 - Avoid internal authoring terms in learner-facing copy.
@@ -509,39 +508,23 @@ After any deployment or management operation, verify the result:
 
 See `references/markdownflow-spec.md` for the quick reference.
 
-1. Variables:
-   - Use `{{var_name}}` for references.
-   - Variable names cannot contain spaces.
-   - Undefined variables default to `"UNKNOWN"`.
-
-2. Interactions:
-   - Single-select: `?[%{{var}} Option A | Option B | Option C]`
-   - Multi-select: `?[%{{var}} Option A || Option B || Option C]`
-   - Input: `?[%{{var}} ... enter your answer]`
-   - Button + input: `?[%{{var}} Option A | Option B | ...Other, please specify]`
-
-3. Segments:
-   - Segment separators are not required.
-   - Each segment should serve one clear instructional objective.
-
-4. Deterministic output:
-   - Single-line fixed text: `===fixed text===`
-   - Multi-line fixed text:
-   ```md
-   !===
-   Line 1
-   Line 2
-   !===
-   ```
-
-5. Authoring principle:
+Authoring principle:
    - Script text should guide generation behavior.
    - Do not output full polished learner prose as fixed text.
    - Never lock full lesson bodies inside deterministic blocks.
    - For fixed images, use one deterministic line per image.
    - After each interaction, restate learner selection and reflect it in downstream content.
    - For input prompts, include example phrasing to reduce blank responses.
-   - Use stable input syntax: `?[%{{var}}...prompt]`.
+   - Treat `...` as a structural input marker, not as decorative punctuation.
+   - For pure input, place `...` directly before the prompt text: `?[%{{var}} ...Prompt text]`.
+   - For select + input, place `...` at the start of the option that opens free text: `...Other, please specify`.
+   - Never place `...` at the end of prompt text or option labels.
+
+Common syntax mistakes to avoid:
+   - Incorrect: `?[%{{var}} Prompt text...]`
+   - Incorrect: `?[%{{var}} Option A | Option B | Other, please specify...]`
+   - Correct: `?[%{{var}} ...Prompt text]`
+   - Correct: `?[%{{var}} Option A | Option B | ...Other, please specify]`
 
 ## Shared Constraints
 
