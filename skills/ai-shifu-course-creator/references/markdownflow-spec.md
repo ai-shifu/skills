@@ -31,6 +31,11 @@
 - Incorrect: `?[%{{learner_goal}} Describe your goal in one sentence...]`
 - Incorrect: `?[%{{difficulty_type}} Concept unclear | Need practice | Other, please specify...]`
 
+## Structure
+
+- Use `---` between instructional segments when segmentation is needed.
+- Keep one clear instructional objective per segment.
+
 ## Deterministic Output
 
 - Single-line fixed text: `===fixed text===`
