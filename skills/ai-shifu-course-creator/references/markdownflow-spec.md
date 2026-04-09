@@ -33,8 +33,8 @@
 
 ## Structure
 
-- Use `---` between instructional segments when segmentation is needed.
-- Keep one clear instructional objective per segment.
+- Use `---` between instructional segments.
+- Keep one objective per segment.
 
 ## Deterministic Output
 
