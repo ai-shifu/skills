@@ -540,8 +540,9 @@ Common syntax mistakes to avoid:
    - Correct: `Ask the learner the full question.`
    - Correct: `?[%{{var}} ...Short placeholder]`
    - Correct: `?[%{{var}} Option A | Option B | ...Other, please specify]`
-   - Correct: `Ask the learner the question prompt.`
-   - Correct: `?[%{{var}} Option A | Option B | Option C]`
+   - Correct: Prompt text followed by the interaction line, e.g.:
+     Ask the learner the question prompt.
+     ?[%{{var}} Option A | Option B | Option C]
 
 ## Shared Constraints
 
