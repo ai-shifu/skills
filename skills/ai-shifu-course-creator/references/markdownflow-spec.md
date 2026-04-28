@@ -51,8 +51,6 @@ Incorrect:
 ### Input Marker Examples
 
 - Correct:
-
-  ```markdown
   Ask the learner: What is one goal you want this lesson to help you achieve in your current work?
   ?[%{{learner_goal}} ...One-sentence goal]
 - Correct: `?[%{{difficulty_type}} Concept unclear | Need practice | ...Other, please specify]`
