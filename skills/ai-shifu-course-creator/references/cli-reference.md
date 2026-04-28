@@ -15,7 +15,7 @@ Run login once — the token persists in `{skillDir}/.env` for subsequent comman
 login --phone 13800138000 --region cn
 
 # Step 2: Complete login with the code
-login --phone 13800138000 --region cn --sms-code 123456
+login --phone 13800138000 --region cn --sms-code 1234
 ```
 
 Region options: `cn` (maps to `https://app.ai-shifu.cn`) or `global` (maps to `https://app.ai-shifu.com`). You can also use `--base-url` to override the URL directly.
@@ -37,9 +37,9 @@ When no valid token is available, guide the user through login:
 4. Ask for their registered phone number.
 5. Send SMS code:
    `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --region cn`
-6. Ask the user for the verification code they received.
+6. Ask the user for the 4-digit verification code they received.
 7. Complete login:
-   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --region cn --sms-code <code>`
+   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --region cn --sms-code <4-digit-code>`
 8. Token is automatically saved — proceed with the requested operation.
 
 Always use CLI commands. Never make raw HTTP/API calls directly.

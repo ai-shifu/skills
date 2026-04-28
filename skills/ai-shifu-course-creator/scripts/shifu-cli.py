@@ -186,7 +186,7 @@ def cmd_login(args):
         _login_post(base_url, "/api/user/send_sms_code",
                     {"mobile": phone}, "Failed to send SMS")
         print(f"SMS code sent to {masked}. "
-              f"Run again with --sms-code <code> to complete login.")
+              f"Run again with --sms-code <4-digit-code> to complete login.")
 
 
 # ── List ───────────────────────────────────────────────────────────────────────
@@ -952,7 +952,7 @@ def build_parser():
                        help="SMS login and save token")
     p.add_argument("--phone", required=True, help="Phone number for SMS login")
     p.add_argument("--sms-code", default=None,
-                   help="SMS verification code (skip interactive input)")
+                   help="4-digit SMS verification code (skip interactive input)")
     p.add_argument("--region", choices=["cn", "global"], default=None,
                    help="Region: cn (中国大陆) or global (非中国大陆)")
 
