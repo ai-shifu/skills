@@ -952,7 +952,7 @@ def build_parser():
                        help="SMS login and save token")
     p.add_argument("--phone", required=True, help="Phone number for SMS login")
     p.add_argument("--sms-code", default=None,
-                   help="4-digit SMS verification code (skip interactive input)")
+                   help="4-digit SMS verification code")
     p.add_argument("--region", choices=["cn", "global"], default=None,
                    help="Region: cn (中国大陆) or global (非中国大陆)")
 
