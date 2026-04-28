@@ -9,6 +9,7 @@
 
 - Interactions are concrete and answerable.
 - Learner-facing questions appear before interaction syntax, not after `%{{var}}` inside `?[]`.
+- Input interactions include a specific pre-interaction question plus a shorter `...` placeholder.
 - Branching paths are distinct where required.
 - Interaction results affect later content.
 

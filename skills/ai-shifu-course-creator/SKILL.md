@@ -58,19 +58,26 @@ Disallowed patterns:
 ### 2) Interaction syntax: prompt outside, options inside
 
 For MarkdownFlow interactions, keep the question/prompt **outside** the syntax line.
-The interaction line must contain **only option labels** (and the `...` input marker when needed).
+The interaction line must contain **only option labels** or a short `...` input placeholder.
 
 Do not place a learner-facing question after `%{{var}}` inside `?[]`. Anything after `%{{var}}` is parsed as selectable content, so a question there becomes part of the interaction instead of the prompt.
+
+For input interactions, write both:
+- A specific, learner-facing question before the interaction line.
+- A shorter input placeholder after `...` inside the interaction line.
 
 Bad:
 `?[%{{topic}} Please pick a topic: A | B | C]`
 `?[%{{choice}} Which option best matches your situation? Option A | Option B | Option C | ...Other]`
+`?[%{{example}} What is one situation where you want to apply this idea this week? ...Describe your situation]`
 
 Good:
 `Ask the learner to pick a topic.`
 `?[%{{topic}} A | B | C]`
 `Ask the learner: Which option best matches your situation?`
 `?[%{{choice}} Option A | Option B | Option C | ...Other]`
+`Ask the learner: What is one specific situation where you want to apply this idea this week?`
+`?[%{{example}} ...Brief situation]`
 
 ### 3) Mandatory anchoring + downstream effect
 
@@ -519,9 +526,9 @@ Authoring principle:
    - Never lock full lesson bodies inside deterministic blocks.
    - For fixed images, use one deterministic line per image.
    - After each interaction, restate learner selection and reflect it in downstream content.
-   - For input prompts, include example phrasing to reduce blank responses.
+   - For input interactions, put the full learner-facing question before the interaction line and use only a short placeholder after `...`.
    - Treat `...` as a structural input marker, not as decorative punctuation.
-   - For pure input, place `...` directly before the prompt text: `?[%{{var}} ...Prompt text]`.
+   - For pure input, place `...` directly before a short input placeholder: `?[%{{var}} ...Short placeholder]`.
    - For select + input, place `...` at the start of the option that opens free text: `...Other, please specify`.
    - Never place `...` at the end of prompt text or option labels.
 
@@ -529,7 +536,9 @@ Common syntax mistakes to avoid:
    - Incorrect: `?[%{{var}} Prompt text...]`
    - Incorrect: `?[%{{var}} Option A | Option B | Other, please specify...]`
    - Incorrect: `?[%{{var}} Question prompt? Option A | Option B | Option C]`
-   - Correct: `?[%{{var}} ...Prompt text]`
+   - Incorrect: `?[%{{var}} Full learner-facing question? ...Short placeholder]`
+   - Correct: `Ask the learner the full question.`
+   - Correct: `?[%{{var}} ...Short placeholder]`
    - Correct: `?[%{{var}} Option A | Option B | ...Other, please specify]`
    - Correct: `Ask the learner the question prompt.`
    - Correct: `?[%{{var}} Option A | Option B | Option C]`
@@ -566,6 +575,7 @@ Can normalize:
 - Each lesson includes at least one deepening interaction (calibration, boundary check, or misconception correction).
 - Interaction prompts must be concrete and directly answerable.
 - Learner-facing questions must appear before the interaction line, not inside `?[%{{var}} ...]`.
+- For input interactions, the pre-interaction question must be more specific than the short `...` placeholder.
 - `*_viewpoint_check` interactions must branch by option and drive different next steps.
 - Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.
 - Every interaction variable must create visible downstream impact.

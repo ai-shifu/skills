@@ -19,25 +19,30 @@
 - Put the learner-facing question or prompt in the script text immediately before the interaction line.
 - Put only option labels inside select interactions.
 - Do not place the question after `%{{var}}`; it will become part of the selectable interaction content.
+- For input interactions, include both the full question before the interaction line and a shorter placeholder after `...`.
 
 Correct:
 
 ```markdown
 Ask the learner: Which option best matches your situation?
 ?[%{{choice}} Option A | Option B | Option C | ...Other]
+
+Ask the learner: What is one specific situation where you want to apply this idea this week?
+?[%{{example}} ...Brief situation]
 ```
 
 Incorrect:
 
 ```markdown
 ?[%{{choice}} Which option best matches your situation? Option A | Option B | Option C | ...Other]
+?[%{{example}} What is one situation where you want to apply this idea this week? ...Describe your situation]
 ```
 
 ### Input Marker Rules
 
 - `...` is an input marker, not punctuation.
-- `...` must appear immediately before the free-text prompt or free-text option label.
-- For pure input, use `?[%{{var}} ...Prompt text]`.
+- `...` must appear immediately before the short free-text placeholder or free-text option label.
+- For pure input, use `?[%{{var}} ...Short placeholder]` after a fuller learner-facing question.
 - For select + input, put `...` at the start of the option that opens text entry, such as `...Other, please specify`.
 - Do not move `...` to the end of the prompt text.
 - Do not write `?[%{{var}} Prompt text...]`.
@@ -45,7 +50,8 @@ Incorrect:
 
 ### Input Marker Examples
 
-- Correct: `?[%{{learner_goal}} ...Describe your goal in one sentence]`
+- Correct: `Ask the learner: What is one goal you want this lesson to help you achieve in your current work?`
+- Correct: `?[%{{learner_goal}} ...One-sentence goal]`
 - Correct: `?[%{{difficulty_type}} Concept unclear | Need practice | ...Other, please specify]`
 - Incorrect: `?[%{{learner_goal}} Describe your goal in one sentence...]`
 - Incorrect: `?[%{{difficulty_type}} Concept unclear | Need practice | Other, please specify...]`
