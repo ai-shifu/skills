@@ -17,6 +17,7 @@
 ### Prompt Placement Rules
 
 - Put the learner-facing question or prompt in the script text immediately before the interaction line.
+- Put each `?[]` interaction on its own line.
 - Inside the interaction line, include only interaction content: option labels for select interactions, and input markers/placeholders such as `...Other` or `...Brief situation` where applicable.
 - Do not place learner-facing question text after `%{{var}}`; it will become part of the interaction content.
 - For input interactions, include both the full question before the interaction line and a shorter placeholder after `...`.
@@ -36,6 +37,7 @@ Incorrect:
 ```markdown
 ?[%{{choice}} Which option best matches your situation? Option A | Option B | Option C | ...Other]
 ?[%{{example}} What is one situation where you want to apply this idea this week? ...Describe your situation]
+Ask the learner: Which option best matches your situation? ?[%{{choice}} Option A | Option B | Option C]
 ```
 
 ### Input Marker Rules

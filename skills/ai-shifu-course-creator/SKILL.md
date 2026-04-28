@@ -59,6 +59,7 @@ Disallowed patterns:
 
 For MarkdownFlow interactions, keep the question/prompt **outside** the syntax line.
 The interaction line must contain **only option labels** or a short `...` input placeholder.
+The `?[]` interaction syntax must be on its own line. Never put prompt text and `?[]` on the same line.
 
 Do not place a learner-facing question after `%{{var}}` inside `?[%{{var}} ...]`. Anything after `%{{var}}` is parsed as selectable content, so a question there becomes part of the interaction instead of the prompt.
 
@@ -70,6 +71,7 @@ Bad:
 `?[%{{topic}} Please pick a topic: A | B | C]`
 `?[%{{choice}} Which option best matches your situation? Option A | Option B | Option C | ...Other]`
 `?[%{{example}} What is one situation where you want to apply this idea this week? ...Describe your situation]`
+`Ask the learner: Which option best matches your situation? ?[%{{choice}} Option A | Option B | Option C]`
 
 Good:
 `Ask the learner to pick a topic.`
@@ -537,6 +539,7 @@ Common syntax mistakes to avoid:
    - Incorrect: `?[%{{var}} Option A | Option B | Other, please specify...]`
    - Incorrect: `?[%{{var}} Question prompt? Option A | Option B | Option C]`
    - Incorrect: `?[%{{var}} Full learner-facing question? ...Short placeholder]`
+   - Incorrect: `Ask the learner the question prompt. ?[%{{var}} Option A | Option B | Option C]`
    - Correct: `Ask the learner the full question.`
    - Correct: `?[%{{var}} ...Short placeholder]`
    - Correct: `?[%{{var}} Option A | Option B | ...Other, please specify]`
@@ -576,6 +579,7 @@ Can normalize:
 - Each lesson includes at least one deepening interaction (calibration, boundary check, or misconception correction).
 - Interaction prompts must be concrete and directly answerable.
 - Learner-facing questions must appear before the interaction line, not inside `?[%{{var}} ...]`.
+- `?[]` interaction syntax must be on a standalone line.
 - For input interactions, the pre-interaction question must be more specific than the short `...` placeholder.
 - `*_viewpoint_check` interactions must branch by option and drive different next steps.
 - Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.
