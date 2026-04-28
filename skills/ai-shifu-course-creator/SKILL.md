@@ -60,7 +60,7 @@ Disallowed patterns:
 For MarkdownFlow interactions, keep the question/prompt **outside** the syntax line.
 The interaction line must contain **only option labels** or a short `...` input placeholder.
 
-Do not place a learner-facing question after `%{{var}}` inside `?[]`. Anything after `%{{var}}` is parsed as selectable content, so a question there becomes part of the interaction instead of the prompt.
+Do not place a learner-facing question after `%{{var}}` inside `?[%{{var}} ...]`. Anything after `%{{var}}` is parsed as selectable content, so a question there becomes part of the interaction instead of the prompt.
 
 For input interactions, write both:
 - A specific, learner-facing question before the interaction line.
