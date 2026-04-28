@@ -1,6 +1,6 @@
 ---
 name: ai-shifu-course-creator
-description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing MarkdownFlow (MDF) lesson scripts. Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Trigger on any mention of AI-Shifu, AI师傅, or MarkdownFlow course scripting.
+description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing MarkdownFlow lesson scripts. Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Trigger on any mention of AI-Shifu, AI师傅, or MarkdownFlow course scripting.
 ---
 
 # Course Creator
@@ -58,14 +58,19 @@ Disallowed patterns:
 ### 2) Interaction syntax: prompt outside, options inside
 
 For MarkdownFlow interactions, keep the question/prompt **outside** the syntax line.
-The interaction line must contain **only options** (and minimal inline hints when strictly necessary).
+The interaction line must contain **only option labels** (and the `...` input marker when needed).
+
+Do not place a learner-facing question after `%{{var}}` inside `?[]`. Anything after `%{{var}}` is parsed as selectable content, so a question there becomes part of the interaction instead of the prompt.
 
 Bad:
 `?[%{{topic}} Please pick a topic: A | B | C]`
+`?[%{{choice}} Which option best matches your situation? Option A | Option B | Option C | ...Other]`
 
 Good:
 `Ask the learner to pick a topic.`
 `?[%{{topic}} A | B | C]`
+`Ask the learner: Which option best matches your situation?`
+`?[%{{choice}} Option A | Option B | Option C | ...Other]`
 
 ### 3) Mandatory anchoring + downstream effect
 
@@ -523,8 +528,11 @@ Authoring principle:
 Common syntax mistakes to avoid:
    - Incorrect: `?[%{{var}} Prompt text...]`
    - Incorrect: `?[%{{var}} Option A | Option B | Other, please specify...]`
+   - Incorrect: `?[%{{var}} Question prompt? Option A | Option B | Option C]`
    - Correct: `?[%{{var}} ...Prompt text]`
    - Correct: `?[%{{var}} Option A | Option B | ...Other, please specify]`
+   - Correct: `Ask the learner the question prompt.`
+   - Correct: `?[%{{var}} Option A | Option B | Option C]`
 
 ## Shared Constraints
 
@@ -557,6 +565,7 @@ Can normalize:
 
 - Each lesson includes at least one deepening interaction (calibration, boundary check, or misconception correction).
 - Interaction prompts must be concrete and directly answerable.
+- Learner-facing questions must appear before the interaction line, not inside `?[%{{var}} ...]`.
 - `*_viewpoint_check` interactions must branch by option and drive different next steps.
 - Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.
 - Every interaction variable must create visible downstream impact.

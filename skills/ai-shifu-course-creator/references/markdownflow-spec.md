@@ -14,6 +14,25 @@
 - Single-select + input: `?[%{{var}} Option A | Option B | ...Other, please specify]`
 - Multi-select + input: `?[%{{var}} Option A || Option B || ...Other, please specify]`
 
+### Prompt Placement Rules
+
+- Put the learner-facing question or prompt in the script text immediately before the interaction line.
+- Put only option labels inside select interactions.
+- Do not place the question after `%{{var}}`; it will become part of the selectable interaction content.
+
+Correct:
+
+```markdown
+Ask the learner: Which option best matches your situation?
+?[%{{choice}} Option A | Option B | Option C | ...Other]
+```
+
+Incorrect:
+
+```markdown
+?[%{{choice}} Which option best matches your situation? Option A | Option B | Option C | ...Other]
+```
+
 ### Input Marker Rules
 
 - `...` is an input marker, not punctuation.
