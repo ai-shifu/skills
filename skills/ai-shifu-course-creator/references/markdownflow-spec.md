@@ -17,8 +17,8 @@
 ### Prompt Placement Rules
 
 - Put the learner-facing question or prompt in the script text immediately before the interaction line.
-- Put only option labels inside select interactions.
-- Do not place the question after `%{{var}}`; it will become part of the selectable interaction content.
+- Inside the interaction line, include only interaction content: option labels for select interactions, and input markers/placeholders such as `...Other` or `...Brief situation` where applicable.
+- Do not place learner-facing question text after `%{{var}}`; it will become part of the interaction content.
 - For input interactions, include both the full question before the interaction line and a shorter placeholder after `...`.
 
 Correct:
