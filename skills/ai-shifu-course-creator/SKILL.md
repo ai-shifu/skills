@@ -445,10 +445,7 @@ Deploy optimized MarkdownFlow lesson scripts to the AI-Shifu platform as live co
 
 See `references/cli-reference.md` for the full login flow.
 
-When no valid token is available, guide the user through the login process:
-1. Ask the user to choose their region (China mainland / non-China-mainland).
-2. For China mainland: use the SMS login flow via `shifu-cli.py login`.
-3. For non-China-mainland: instruct the user to log in manually and set `SHIFU_TOKEN` in `{skillDir}/.env`.
+When no valid token is available, guide the user through the SMS login flow via `shifu-cli.py login` (phone number + 4-digit verification code). The CLI defaults to `https://app.ai-shifu.cn`.
 
 Always use CLI commands. Never make raw HTTP/API calls directly.
 
@@ -504,9 +501,9 @@ archive <shifu_bid>
 ### Verification
 
 After any deployment or management operation, verify the result:
-1. Admin console: `https://app.ai-shifu.cn/shifu/<shifu_bid>` (cn) or `https://app.ai-shifu.com/shifu/<shifu_bid>` (global)
-2. Course preview: `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true` (cn) or `https://app.ai-shifu.com/c/<shifu_bid>?preview=true` (global)
-3. Lesson preview: `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>` (cn) or `https://app.ai-shifu.com/c/<shifu_bid>?preview=true&lessonid=<outline_bid>` (global)
+1. Admin console: `https://app.ai-shifu.cn/shifu/<shifu_bid>`
+2. Course preview: `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true`
+3. Lesson preview: `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>`
 4. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's MarkdownFlow content, variable collection, and interaction logic.
 
 ### Phase 5 Validation

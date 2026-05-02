@@ -17,10 +17,7 @@ from dotenv import load_dotenv, set_key
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
-REGION_URLS = {
-    "cn": "https://app.ai-shifu.cn",
-    "global": "https://app.ai-shifu.com",
-}
+DEFAULT_BASE_URL = "https://app.ai-shifu.cn"
 
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
@@ -30,32 +27,25 @@ def load_env():
         load_dotenv(dotenv_path=ENV_FILE, override=False)
 
 
-def save_env(token, base_url=None):
-    """Persist token (and optionally base_url) to the skill's .env file."""
+def save_env(token):
+    """Persist token to the skill's .env file."""
     env_path = str(ENV_FILE)
     if not ENV_FILE.exists():
         ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
         ENV_FILE.touch(mode=0o600)
     set_key(env_path, "SHIFU_TOKEN", token)
-    if base_url:
-        set_key(env_path, "SHIFU_BASE_URL", base_url)
     os.chmod(env_path, 0o600)
 
 
 def resolve_auth(args):
-    """Resolve base_url and token from CLI args or .env, exit on failure."""
-    base_url = getattr(args, "base_url", None) or os.environ.get("SHIFU_BASE_URL")
-    if not base_url:
-        print("Error: --base-url is required (or set SHIFU_BASE_URL in .env)")
-        sys.exit(1)
-
+    """Resolve token from CLI args or .env. Base URL is fixed to DEFAULT_BASE_URL."""
     token = getattr(args, "token", None) or os.environ.get("SHIFU_TOKEN")
     if not token:
         print("Error: no token available. Run 'shifu-cli.py login' first, "
               "or use --token / set SHIFU_TOKEN in .env")
         sys.exit(1)
 
-    return base_url.rstrip("/"), token
+    return DEFAULT_BASE_URL, token
 
 
 def api(base_url, token, method, path, **kwargs):
@@ -135,23 +125,7 @@ def _login_post(base_url, path, payload, error_prefix):
 
 def cmd_login(args):
     """SMS login and save token (non-interactive two-step flow)."""
-    # Global region does not support SMS login via CLI
-    if args.region == "global":
-        print("Error: CLI login is not supported for the global region.")
-        print("Please log in manually at https://app.ai-shifu.com,")
-        print("then set SHIFU_TOKEN and SHIFU_BASE_URL in .env or use --token.")
-        sys.exit(1)
-
-    # Resolve base_url: --base-url > --region mapping > env
-    base_url = args.base_url
-    if not base_url and args.region:
-        base_url = REGION_URLS.get(args.region)
-    if not base_url:
-        base_url = os.environ.get("SHIFU_BASE_URL", "")
-    base_url = base_url.rstrip("/")
-    if not base_url:
-        print("Error: --region or --base-url is required for login")
-        sys.exit(1)
+    base_url = DEFAULT_BASE_URL
 
     phone = args.phone
     if not phone:
@@ -178,7 +152,7 @@ def cmd_login(args):
             print(f"No token string found in response data: {data}")
             sys.exit(1)
 
-        save_env(token, base_url)
+        save_env(token)
         print(f"Login successful! Token saved to {ENV_FILE}")
     else:
         # Step 1: Send SMS code only, then exit
@@ -933,10 +907,8 @@ def cmd_unarchive(args):
 # ── CLI Entry Point ────────────────────────────────────────────────────────────
 def build_parser():
     """Build and return the argument parser with all subcommands."""
-    # Shared parent parser for --base-url and --token on every subcommand
+    # Shared parent parser for --token on every subcommand
     parent_parser = argparse.ArgumentParser(add_help=False)
-    parent_parser.add_argument("--base-url", default=None,
-                               help="AI-Shifu base URL (or SHIFU_BASE_URL in .env)")
     parent_parser.add_argument("--token", default=None,
                                help="JWT token (or SHIFU_TOKEN in .env)")
 
@@ -953,8 +925,6 @@ def build_parser():
     p.add_argument("--phone", required=True, help="Phone number for SMS login")
     p.add_argument("--sms-code", default=None,
                    help="4-digit SMS verification code")
-    p.add_argument("--region", choices=["cn", "global"], default=None,
-                   help="Region: cn (中国大陆) or global (非中国大陆)")
 
     # ── list ──
     sub.add_parser("list", parents=[parent_parser], help="List all courses")

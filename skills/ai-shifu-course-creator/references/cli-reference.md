@@ -12,35 +12,25 @@ Run login once — the token persists in `{skillDir}/.env` for subsequent comman
 
 ```bash
 # Step 1: Send SMS verification code
-login --phone 13800138000 --region cn
+login --phone 13800138000
 
 # Step 2: Complete login with the code
-login --phone 13800138000 --region cn --sms-code 1234
+login --phone 13800138000 --sms-code 1234
 ```
 
-Region options: `cn` (maps to `https://app.ai-shifu.cn`) or `global` (maps to `https://app.ai-shifu.com`). You can also use `--base-url` to override the URL directly.
-
-Alternatively, set environment variables or CLI flags:
-
-- `--base-url` or `SHIFU_BASE_URL` in `.env`
-- `--token` or `SHIFU_TOKEN` in `.env`
+The CLI always talks to `https://app.ai-shifu.cn`. To skip the SMS login, set `--token` / `SHIFU_TOKEN` directly.
 
 ### Agent Login Flow
 
 When no valid token is available, guide the user through login:
 
-1. Ask the user to choose their region:
-   - 1: China mainland
-   - 2: Non-China-mainland
-2. **If the user chooses non-China-mainland**: CLI login is not supported for this region. Tell the user to log in manually at `https://app.ai-shifu.com`, copy their token from the browser, and set it via `--token` or by adding `SHIFU_TOKEN=<token>` and `SHIFU_BASE_URL=https://app.ai-shifu.com` to `{skillDir}/.env`. Then stop — do not proceed with the SMS flow.
-3. **If the user chooses China mainland**: continue with the SMS login flow below.
-4. Ask for their registered phone number.
-5. Send SMS code:
-   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --region cn`
-6. Ask the user for the 4-digit verification code they received.
-7. Complete login:
-   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --region cn --sms-code <4-digit-code>`
-8. Token is automatically saved — proceed with the requested operation.
+1. Ask for their registered phone number.
+2. Send SMS code:
+   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone>`
+3. Ask the user for the 4-digit verification code they received.
+4. Complete login:
+   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --sms-code <4-digit-code>`
+5. Token is automatically saved — proceed with the requested operation.
 
 Always use CLI commands. Never make raw HTTP/API calls directly.
 
@@ -54,7 +44,7 @@ history <shifu_bid> <outline_bid>             # MarkdownFlow revision history
 export <shifu_bid> [-o file.json]             # Export course as JSON
 ```
 
-Use `show <shifu_bid>` to get lesson `outline_bid` values for lesson-specific preview URLs, such as `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>` (cn) or `https://app.ai-shifu.com/c/<shifu_bid>?preview=true&lessonid=<outline_bid>` (global).
+Use `show <shifu_bid>` to get lesson `outline_bid` values for lesson-specific preview URLs, such as `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>`.
 
 ## Create Commands
 

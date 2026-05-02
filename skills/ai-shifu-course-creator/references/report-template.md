@@ -96,7 +96,6 @@ Validation:
 ## Phase 5: Deployment Report
 
 - Course directory:
-- Platform region: `cn|global`
 - Build result: `success|fail`
 - Import result: `success|fail`
 - Shifu BID:
