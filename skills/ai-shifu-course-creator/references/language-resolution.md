@@ -4,12 +4,12 @@
 
 Resolve target language with this strict priority:
 
-1. `explicit_output_language_request`
-2. `target_language_parameter`
-3. `session_language_preference`
-4. `prompt_language_detection`
-5. `source_material_dominant_language`
-6. `default_fallback_language` (`en-US`)
+1. `explicit_output_language_request` — language explicitly stated in the current user prompt.
+2. `target_language_parameter` — `target_language` field supplied in the input payload (BCP-47 recommended).
+3. `prior_context_language_directive` — language requirement declared **outside** the current prompt but visible to the skill: project/system instructions (e.g. `CLAUDE.md`), earlier turns of the same conversation, or directives injected by the calling agent. The skill cannot read external platform/account locale settings, so only in-context directives count here.
+4. `prompt_language_detection` — language detected from the wording of the current user prompt itself.
+5. `source_material_dominant_language` — the dominant language of the supplied course material.
+6. `default_fallback_language` — `en-US`.
 
 ## Control Fields
 

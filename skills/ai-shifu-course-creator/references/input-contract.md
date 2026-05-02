@@ -69,13 +69,7 @@ Provide one of:
 
 ## Language Resolution Priority
 
-If language signals conflict, resolve with this strict order:
-1. explicit output language request
-2. `target_language` parameter
-3. session language preference
-4. prompt language detection
-5. source-material dominant language
-6. default fallback language (`en-US`)
+See `language-resolution.md` for the resolution priority and policy. That document is the single source of truth — do not restate the priority list here.
 
 ## Validation Rules
 

@@ -14,15 +14,7 @@ Convert raw course material into runnable, optimized MarkdownFlow lesson scripts
 
 ## Language Resolution Policy
 
-See `references/language-resolution.md` for the full policy.
-
-Resolve target language with this strict priority:
-1. `explicit_output_language_request`
-2. `target_language_parameter`
-3. `session_language_preference`
-4. `prompt_language_detection`
-5. `source_material_dominant_language`
-6. `default_fallback_language` (`en-US`)
+See `references/language-resolution.md` for the resolution priority and policy. That document is the single source of truth — do not restate the priority list here.
 
 ## Authoring Control Inputs
 
