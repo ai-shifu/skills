@@ -69,7 +69,7 @@ Provide one of:
 
 ## Language Resolution Priority
 
-See `language-resolution.md` for the resolution priority and policy. That document is the single source of truth — do not restate the priority list here.
+See `language-resolution.md` for the resolution priority and policy.
 
 ## Validation Rules
 

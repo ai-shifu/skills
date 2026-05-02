@@ -9,7 +9,7 @@ Resolve target language with this strict priority:
 3. `prior_context_language_directive` — language requirement declared **outside** the current prompt but visible to the skill: project/system instructions (e.g. `CLAUDE.md`), earlier turns of the same conversation, or directives injected by the calling agent. The skill cannot read external platform/account locale settings, so only in-context directives count here.
 4. `prompt_language_detection` — language detected from the wording of the current user prompt itself.
 5. `source_material_dominant_language` — the dominant language of the supplied course material.
-6. `default_fallback_language` — `en-US`.
+6. `default_fallback_language` — `zh-CN`.
 
 ## Control Fields
 

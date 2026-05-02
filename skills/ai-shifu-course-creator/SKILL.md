@@ -14,7 +14,7 @@ Convert raw course material into runnable, optimized MarkdownFlow lesson scripts
 
 ## Language Resolution Policy
 
-See `references/language-resolution.md` for the resolution priority and policy. That document is the single source of truth — do not restate the priority list here.
+See `references/language-resolution.md` for the resolution priority and policy.
 
 ## Authoring Control Inputs
 
