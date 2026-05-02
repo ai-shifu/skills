@@ -22,7 +22,7 @@
 
 ## Phase 1–4 (Author)
 
-Produces optimized MDF lesson scripts (see `pipeline-full.md` for detailed output).
+Produces optimized MarkdownFlow lesson scripts (see `pipeline-full.md` for detailed output).
 
 ## Phase 5 Output (Deployment)
 
@@ -63,11 +63,13 @@ python3 {skillDir}/scripts/shifu-cli.py show abc123-def456
 ```
 
 Platform URLs:
+
 - Admin: `https://app.ai-shifu.cn/shifu/abc123-def456`
-- Preview: `https://app.ai-shifu.cn/c/abc123-def456?preview=true`
+- Course preview: `https://app.ai-shifu.cn/c/abc123-def456?preview=true`
+- Lesson preview: `https://app.ai-shifu.cn/c/abc123-def456?preview=true&lessonid=<outline_bid>`
 
 ## Acceptance Notes
 
 - All five phases executed end-to-end.
-- MDF files written to course directory, built, imported, and published.
+- MarkdownFlow files written to course directory, built, imported, and published.
 - Course is live and accessible via platform URL.

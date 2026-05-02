@@ -1,0 +1,404 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-shifu.local/schemas/course-direction-advisor.v1.json",
+  "title": "Course Direction Advisor Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "material_core",
+    "target_segments",
+    "market_judgment",
+    "directions",
+    "decision",
+    "evidence_appendix"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id",
+        "created_at",
+        "analysis_mode",
+        "report_language",
+        "priority_markets"
+      ],
+      "properties": {
+        "task_id": { "type": "string", "minLength": 1 },
+        "created_at": { "type": "string", "format": "date-time" },
+        "analysis_mode": {
+          "type": "string",
+          "enum": ["A-material-only", "B-market-scan"]
+        },
+        "report_language": { "type": "string", "minLength": 2 },
+        "priority_markets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 2 }
+        }
+      }
+    },
+    "material_core": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theme_cues",
+        "problem_cues",
+        "outcome_cues",
+        "proof_cues",
+        "boundary_cues"
+      ],
+      "properties": {
+        "theme_cues": { "type": "array", "items": { "$ref": "#/$defs/evidence_item" } },
+        "problem_cues": { "type": "array", "items": { "$ref": "#/$defs/evidence_item" } },
+        "outcome_cues": { "type": "array", "items": { "$ref": "#/$defs/evidence_item" } },
+        "proof_cues": { "type": "array", "items": { "$ref": "#/$defs/evidence_item" } },
+        "boundary_cues": { "type": "array", "items": { "$ref": "#/$defs/evidence_item" } }
+      }
+    },
+    "target_segments": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "segment_name",
+          "who_they_are",
+          "current_state",
+          "job_to_be_done",
+          "purchase_motivation",
+          "willingness_to_pay",
+          "current_alternatives",
+          "buying_driver",
+          "source_ref"
+        ],
+        "properties": {
+          "segment_name": { "type": "string", "minLength": 1 },
+          "who_they_are": { "type": "string", "minLength": 1 },
+          "current_state": { "type": "string", "minLength": 1 },
+          "job_to_be_done": { "type": "string", "minLength": 1 },
+          "purchase_motivation": { "type": "string", "minLength": 1 },
+          "willingness_to_pay": {
+            "type": "string",
+            "enum": ["high", "medium", "low", "unknown"]
+          },
+          "budget_band": { "type": "string" },
+          "current_alternatives": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "buying_driver": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "enum": ["trust", "relevance", "executability", "value"]
+            }
+          },
+          "source_ref": { "$ref": "#/$defs/ref_array" }
+        }
+      }
+    },
+    "market_judgment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lifecycle_stage",
+        "competition_type",
+        "market_summary",
+        "competition_matrix",
+        "opportunity_gap"
+      ],
+      "properties": {
+        "lifecycle_stage": {
+          "type": "string",
+          "enum": [
+            "information-explosion",
+            "segmented-understanding",
+            "methodology-phase",
+            "toolification-phase",
+            "red-ocean"
+          ]
+        },
+        "competition_type": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": ["content", "tool", "service"]
+          }
+        },
+        "market_summary": { "type": "string", "minLength": 1 },
+        "competition_matrix": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "solution_type",
+              "problem_solved",
+              "target_user",
+              "why_buyers_choose_it",
+              "strengths",
+              "what_it_does_not_solve",
+              "opportunity_for_us",
+              "source_link"
+            ],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "solution_type": {
+                "type": "string",
+                "enum": ["content", "tool", "service", "platform-feature", "free-content", "training-camp"]
+              },
+              "problem_solved": { "type": "string", "minLength": 1 },
+              "target_user": { "type": "string", "minLength": 1 },
+              "why_buyers_choose_it": { "type": "string", "minLength": 1 },
+              "strengths": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "what_it_does_not_solve": { "type": "string", "minLength": 1 },
+              "opportunity_for_us": { "type": "string", "minLength": 1 },
+              "source_link": { "type": "string", "format": "uri" },
+              "evidence_tier": {
+                "type": "string",
+                "enum": ["A", "B", "C"]
+              }
+            }
+          }
+        },
+        "opportunity_gap": { "type": "string", "minLength": 1 }
+      }
+    },
+    "directions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary", "backups", "not_recommended"],
+      "properties": {
+        "primary": { "$ref": "#/$defs/direction_item" },
+        "backups": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/direction_item" }
+        },
+        "not_recommended": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "reason", "risk"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1 },
+              "reason": { "type": "string", "minLength": 1 },
+              "risk": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_status",
+        "decision_reason",
+        "course_readiness_summary",
+        "top_risks",
+        "scorecard",
+        "price_hint",
+        "mvp_scope",
+        "validation_plan_7d"
+      ],
+      "properties": {
+        "decision_status": {
+          "type": "string",
+          "enum": ["GO", "HOLD", "REWORK", "NO-GO"]
+        },
+        "decision_reason": { "type": "string", "minLength": 1 },
+        "course_readiness_summary": { "type": "string", "minLength": 1 },
+        "top_risks": {
+          "type": "array",
+          "minItems": 3,
+          "items": { "$ref": "#/$defs/risk_item" }
+        },
+        "scorecard": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_strength",
+            "user_problem_fit",
+            "market_opportunity",
+            "differentiation_strength",
+            "commercialization_feasibility",
+            "total"
+          ],
+          "properties": {
+            "source_strength": { "type": "number", "minimum": 0, "maximum": 25 },
+            "user_problem_fit": { "type": "number", "minimum": 0, "maximum": 20 },
+            "market_opportunity": { "type": "number", "minimum": 0, "maximum": 20 },
+            "differentiation_strength": { "type": "number", "minimum": 0, "maximum": 20 },
+            "commercialization_feasibility": { "type": "number", "minimum": 0, "maximum": 15 },
+            "total": { "type": "number", "minimum": 0, "maximum": 100 }
+          }
+        },
+        "price_hint": { "type": "string", "minLength": 1 },
+        "mvp_scope": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "validation_plan_7d": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "evidence_appendix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim_evidence_map", "market_links", "missing_info"],
+      "properties": {
+        "claim_evidence_map": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["claim", "refs"],
+            "properties": {
+              "claim": { "type": "string", "minLength": 1 },
+              "refs": { "$ref": "#/$defs/ref_array" }
+            }
+          }
+        },
+        "market_links": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri" }
+        },
+        "missing_info": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ref_array": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^(SRC-[A-Z0-9-]+|MKT-[A-Z0-9-]+|https?://.+)$"
+      }
+    },
+    "evidence_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "refs", "confidence"],
+      "properties": {
+        "statement": { "type": "string", "minLength": 1 },
+        "refs": { "$ref": "#/$defs/ref_array" },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low"]
+        }
+      }
+    },
+    "direction_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "topic_type",
+        "target_user",
+        "problem_solved",
+        "teaching_goal",
+        "one_line_pitch",
+        "why_this_direction",
+        "fit_reason",
+        "go_to_market_hint",
+        "growth_shape",
+        "expected_curve",
+        "upside_case",
+        "downside_case",
+        "course_readiness",
+        "course_readiness_reason",
+        "lesson_spine",
+        "teachable_kernel",
+        "source_ref"
+      ],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "topic_type": {
+          "type": "string",
+          "enum": ["cognitive", "method", "case", "execution", "outcome-led", "hybrid"]
+        },
+        "target_user": { "type": "string", "minLength": 1 },
+        "problem_solved": { "type": "string", "minLength": 1 },
+        "teaching_goal": { "type": "string", "minLength": 1 },
+        "one_line_pitch": { "type": "string", "minLength": 1 },
+        "why_this_direction": { "type": "string", "minLength": 1 },
+        "fit_reason": { "type": "string", "minLength": 1 },
+        "go_to_market_hint": { "type": "string", "minLength": 1 },
+        "growth_shape": {
+          "type": "string",
+          "enum": ["trend-led", "durable-demand", "hybrid"]
+        },
+        "expected_curve": {
+          "type": "string",
+          "enum": ["spike", "steady-compound", "hybrid", "uncertain"]
+        },
+        "upside_case": { "type": "string", "minLength": 1 },
+        "downside_case": { "type": "string", "minLength": 1 },
+        "course_readiness": {
+          "type": "string",
+          "enum": ["course-ready", "partially-course-ready", "topic-ready-only", "insufficient"]
+        },
+        "course_readiness_reason": { "type": "string", "minLength": 1 },
+        "lesson_spine": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["insufficient"]
+            },
+            {
+              "type": "array",
+              "minItems": 3,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          ]
+        },
+        "teachable_kernel": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "source_ref": { "$ref": "#/$defs/ref_array" }
+      }
+    },
+    "risk_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "severity", "trigger", "evidence", "decision_impact"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "trigger": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 },
+        "decision_impact": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

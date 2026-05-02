@@ -1,8 +1,6 @@
 ---
 name: ai-shifu-course-creator
-description: Convert raw course material into optimized, runnable MarkdownFlow
-  teaching scripts and deploy them as live courses through a five-phase pipeline
-  covering segmentation, orchestration, generation, optimization, and deployment.
+description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing MarkdownFlow (MDF) lesson scripts. Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Trigger on any mention of AI-Shifu, AI师傅, or MarkdownFlow course scripting.
 ---
 
 # Course Creator
@@ -37,9 +35,64 @@ See `references/input-contract.md` for recommended object shapes.
 
 ## Output Boundary
 
-- Final outputs are learner-facing teaching content only.
+- Final outputs are **MarkdownFlow teaching scripts**.
+- The script must be **directive/instructional** (i.e., it tells the model how to teach), not a polished, directly learner-addressed “final lecture/manuscript”.
+- Avoid author-side meta labels such as “Knowledge Block 1/2/3”, “Lesson Objective”, or “Deliverable”. Keep those as implicit structure, not visible narration.
 - Authoring rules, pipeline notes, and process instructions stay in skill docs and references, not in lesson outputs.
 - Internal design notes may appear only in HTML comments when needed.
+
+## MarkdownFlow Authoring Hard Rules (Must Follow)
+
+### 1) Script style: directive, not manuscript
+
+Write in imperative, model-guiding language. Preferred patterns:
+- “Explain to the learner …”
+- “Ask the learner to …”
+- “Have the learner choose …”
+- “After collecting {{var}}, restate the choice and branch …”
+
+Disallowed patterns:
+- Long, polished prose written as if it is the final learner-facing lecture.
+- Author/lesson-plan meta narration (e.g., “Knowledge Block …”, “In this lesson you will …”, “Deliverable: …”).
+
+### 2) Interaction syntax: prompt outside, options inside
+
+For MarkdownFlow interactions, keep the question/prompt **outside** the syntax line.
+The interaction line must contain **only option labels** or a short `...` input placeholder.
+The `?[]` interaction syntax must be on its own line. Never put prompt text and `?[]` on the same line.
+
+Do not place a learner-facing question after `%{{var}}` inside `?[%{{var}} ...]`. Anything after `%{{var}}` is parsed as selectable content, so a question there becomes part of the interaction instead of the prompt.
+
+For input interactions, write both:
+- A specific, learner-facing question before the interaction line.
+- A shorter input placeholder after `...` inside the interaction line.
+
+Bad:
+`?[%{{topic}} Please pick a topic: A | B | C]`
+`?[%{{choice}} Which option best matches your situation? Option A | Option B | Option C | ...Other]`
+`?[%{{example}} What is one situation where you want to apply this idea this week? ...Describe your situation]`
+`Ask the learner: Which option best matches your situation? ?[%{{choice}} Option A | Option B | Option C]`
+
+Good:
+`Ask the learner to pick a topic.`
+`?[%{{topic}} A | B | C]`
+`Ask the learner: Which option best matches your situation?`
+`?[%{{choice}} Option A | Option B | Option C | ...Other]`
+`Ask the learner: What is one specific situation where you want to apply this idea this week?`
+`?[%{{example}} ...Brief situation]`
+
+### 3) Mandatory anchoring + downstream effect
+
+After every interaction, the script must:
+1. Restate the selection explicitly as an instruction (not as polished narration), e.g.: `Restate the learner's current choice as {{var}}.`
+2. Use {{var}} to create a visible downstream effect (branching explanation, examples, practice difficulty, feedback).
+
+### 4) Visuals: describe, do not inline source markup
+
+- Do not embed raw SVG/HTML source code inside lesson MarkdownFlow files.
+- Unless the user explicitly asks for SVG, HTML, Mermaid, PlantUML, Graphviz, or other diagram source/markup, do not proactively generate visual source code or diagram markup.
+- Default behavior: when a visual is needed, write a natural-language instruction such as “Show an image that …” and pair it with a brief explanation of what the visual is meant to convey.
+- If the user asks for a visual but does not specify the format, prefer natural-language image/diagram placeholders over executable or embeddable diagram code.
 
 ## Pipeline Overview
 
@@ -61,14 +114,14 @@ Run all five phases from raw material to a live deployed course.
 
 ### Path B: Author Only
 
-Run Phase 1–4 to produce optimized MDF scripts without deploying. Sub-paths:
+Run Phase 1–4 to produce optimized MarkdownFlow scripts without deploying. Sub-paths:
 - **Segment only**: Phase 1 alone for structured segments and manual review.
 - **Generate only**: Phase 3 alone on pre-existing segments to produce lesson scripts.
 - **Optimize only**: Phase 4 alone to audit and improve existing MarkdownFlow scripts.
 
 ### Path C: Deploy Only
 
-Run Phase 5 alone to deploy pre-existing MDF files to the AI-Shifu platform.
+Run Phase 5 alone to deploy pre-existing MarkdownFlow files to the AI-Shifu platform.
 
 ### Path D: Manage Existing
 
@@ -153,7 +206,7 @@ All gates must pass:
 - Each lesson resolves one core question.
 - Each lesson contains at least one valid MarkdownFlow interaction, max five interactions total.
 - Each lesson includes a minimum teaching loop: setup, explanation, interaction, close.
-- Lesson language is learner-facing, not pipeline narration.
+- Lesson language must be **instructional/directive** (model-guiding), not pipeline narration.
 - Each lesson includes at least one deepening interaction (calibration, boundary check, or counterintuitive prompt).
 - Action tasks are either immediately executable or explicitly linked to later modules.
 - Variable naming is consistent and traceable.
@@ -161,7 +214,7 @@ All gates must pass:
 - Do not wrap full lessons in deterministic blocks (`=== ===` or `!=== !===`).
 - Deterministic blocks are reserved for legally or operationally fixed statements only.
 - If an image must remain unchanged, use single-line deterministic syntax per image.
-- Use `---` between instructional blocks to keep pacing readable.
+
 - Every variable collection step must produce immediate feedback and downstream effect.
 - Core knowledge points require visual + textual explanation together.
 - Consecutive variable collection cannot exceed three variables.
@@ -211,7 +264,7 @@ Generate runnable MarkdownFlow scripts for each lesson.
 
 Use these defaults unless lesson content requires a justified variation:
 
-1. Learner-facing language only.
+1. Instructional/directive language only (a teaching script, not a final manuscript).
 2. Variable collection is distributed, not front-loaded.
 3. Build evidence chain from observation to mechanism to conclusion.
 4. Use visual-first explanation for abstract concepts, then textual interpretation.
@@ -256,10 +309,9 @@ Optional modules:
 
 ### Visual-Text Coordination
 
-- Include an SVG cover in each lesson by default.
-- Every core concept must include at least one visual-plus-explanation pair.
-- Visuals compress structure; text explains mechanism, limits, and pitfalls.
-- Replace unstable source images with generated SVG/HTML visuals when needed.
+- If a visual is needed, describe it in natural language (e.g., "Show an image that …").
+- Pair every visual instruction with a brief explanation of what the visual is meant to convey.
+- Do not inline raw SVG/HTML markup in MarkdownFlow lesson files.
 
 ### Interaction Design
 
@@ -314,7 +366,7 @@ See `references/optimization-methodology.md`.
 
 ### High-Standard Constraints
 
-- Separate knowledge blocks with `---`.
+
 - Include a lesson cover visual by default.
 - Keep max interactions per lesson at five (recommended three to four).
 - Place interactions at decision points, not only at lesson start.
@@ -324,7 +376,6 @@ See `references/optimization-methodology.md`.
 - Spread global variable collection across lessons.
 - Do not recollect the same variable unless marked as staged comparison.
 - Treat semantic duplicates as duplicates even if variable names differ.
-- Use stable input syntax: `?[%{{var}}...prompt]`.
 - Keep ending structure lesson-appropriate; interactive endings are optional.
 - Every core concept needs visual-plus-text explanation.
 - Avoid internal authoring terms in learner-facing copy.
@@ -383,7 +434,7 @@ See `references/review-checklist.md`.
 
 ## Phase 5: Deployment
 
-Deploy optimized MDF lesson scripts to the AI-Shifu platform as live courses.
+Deploy optimized MarkdownFlow lesson scripts to the AI-Shifu platform as live courses.
 
 ### Prerequisites
 
@@ -403,7 +454,7 @@ Always use CLI commands. Never make raw HTTP/API calls directly.
 
 ### Course Directory
 
-MDF lesson scripts must be organized in a course directory before deployment. See `references/course-directory-spec.md` for the full specification.
+MarkdownFlow lesson scripts must be organized in a course directory before deployment. See `references/course-directory-spec.md` for the full specification.
 
 When continuing from Phase 4 (Path A), write optimized scripts into the course directory structure automatically.
 
@@ -416,6 +467,7 @@ build --course-dir ./course-a/                          # Build shifu-import.jso
 import --new --json-file ./course-a/shifu-import.json   # Import as new course
 publish <shifu_bid>                                      # Make course live
 show <shifu_bid>                                         # Verify course structure
+show <shifu_bid> <outline_bid>                           # Read a specific lesson
 ```
 
 See `references/cli-reference.md` for the complete command reference and `references/import-json-format.md` for the JSON schema.
@@ -430,7 +482,7 @@ See `references/cli-reference.md` for the complete command reference and `refere
 5. Verify via platform URL.
 
 **Standalone deployment (Path C):**
-1. Ensure course directory is ready with MDF files.
+1. Ensure course directory is ready with MarkdownFlow files.
 2. Run `build`, `import`, `publish` as above.
 
 ### Common Management
@@ -453,8 +505,9 @@ archive <shifu_bid>
 
 After any deployment or management operation, verify the result:
 1. Admin console: `https://app.ai-shifu.cn/shifu/<shifu_bid>` (cn) or `https://app.ai-shifu.com/shifu/<shifu_bid>` (global)
-2. Preview: `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true`
-3. Check each lesson's MDF content, variable collection, and interaction logic.
+2. Course preview: `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true` (cn) or `https://app.ai-shifu.com/c/<shifu_bid>?preview=true` (global)
+3. Lesson preview: `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>` (cn) or `https://app.ai-shifu.com/c/<shifu_bid>?preview=true&lessonid=<outline_bid>` (global)
+4. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's MarkdownFlow content, variable collection, and interaction logic.
 
 ### Phase 5 Validation
 
@@ -469,39 +522,30 @@ After any deployment or management operation, verify the result:
 
 See `references/markdownflow-spec.md` for the quick reference.
 
-1. Variables:
-   - Use `{{var_name}}` for references.
-   - Variable names cannot contain spaces.
-   - Undefined variables default to `"UNKNOWN"`.
-
-2. Interactions:
-   - Single-select: `?[%{{var}} Option A | Option B | Option C]`
-   - Multi-select: `?[%{{var}} Option A || Option B || Option C]`
-   - Input: `?[%{{var}} ... enter your answer]`
-   - Button + input: `?[%{{var}} Option A | Option B | ...Other, please specify]`
-
-3. Segments:
-   - Use `---` between segments.
-   - Each segment should serve one clear instructional objective.
-
-4. Deterministic output:
-   - Single-line fixed text: `===fixed text===`
-   - Multi-line fixed text:
-   ```md
-   !===
-   Line 1
-   Line 2
-   !===
-   ```
-
-5. Authoring principle:
+Authoring principle:
    - Script text should guide generation behavior.
    - Do not output full polished learner prose as fixed text.
    - Never lock full lesson bodies inside deterministic blocks.
    - For fixed images, use one deterministic line per image.
    - After each interaction, restate learner selection and reflect it in downstream content.
-   - For input prompts, include example phrasing to reduce blank responses.
-   - Use stable input syntax: `?[%{{var}}...prompt]`.
+   - For input interactions, put the full learner-facing question before the interaction line and use only a short placeholder after `...`.
+   - Treat `...` as a structural input marker, not as decorative punctuation.
+   - For pure input, place `...` directly before a short input placeholder: `?[%{{var}} ...Short placeholder]`.
+   - For select + input, place `...` at the start of the option that opens free text: `...Other, please specify`.
+   - Never place `...` at the end of prompt text or option labels.
+
+Common syntax mistakes to avoid:
+   - Incorrect: `?[%{{var}} Prompt text...]`
+   - Incorrect: `?[%{{var}} Option A | Option B | Other, please specify...]`
+   - Incorrect: `?[%{{var}} Question prompt? Option A | Option B | Option C]`
+   - Incorrect: `?[%{{var}} Full learner-facing question? ...Short placeholder]`
+   - Incorrect: `Ask the learner the question prompt. ?[%{{var}} Option A | Option B | Option C]`
+   - Correct: `Ask the learner the full question.`
+   - Correct: `?[%{{var}} ...Short placeholder]`
+   - Correct: `?[%{{var}} Option A | Option B | ...Other, please specify]`
+   - Correct: Prompt text followed by the interaction line, e.g.:
+     Ask the learner the question prompt.
+     ?[%{{var}} Option A | Option B | Option C]
 
 ## Shared Constraints
 
@@ -534,6 +578,9 @@ Can normalize:
 
 - Each lesson includes at least one deepening interaction (calibration, boundary check, or misconception correction).
 - Interaction prompts must be concrete and directly answerable.
+- Learner-facing questions must appear before the interaction line, not inside `?[%{{var}} ...]`.
+- `?[]` interaction syntax must be on a standalone line.
+- For input interactions, the pre-interaction question must be more specific than the short `...` placeholder.
 - `*_viewpoint_check` interactions must branch by option and drive different next steps.
 - Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.
 - Every interaction variable must create visible downstream impact.

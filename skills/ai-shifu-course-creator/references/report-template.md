@@ -111,4 +111,5 @@ Validation:
 
 Verification URLs:
 - Admin console:
-- Preview:
+- Course preview:
+- Lesson preview:

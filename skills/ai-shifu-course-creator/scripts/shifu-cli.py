@@ -165,7 +165,7 @@ def cmd_login(args):
         # Step 2: Verify code and save token
         print("Verifying code...")
         data = _login_post(base_url, "/api/user/verify_sms_code",
-                           {"mobile": phone, "sms_code": sms_code}, "Verification failed")
+                           {"mobile": phone, "sms_code": sms_code, "login_context": "admin"}, "Verification failed")
 
         token = data.get("data")
         if not token:
@@ -186,7 +186,7 @@ def cmd_login(args):
         _login_post(base_url, "/api/user/send_sms_code",
                     {"mobile": phone}, "Failed to send SMS")
         print(f"SMS code sent to {masked}. "
-              f"Run again with --sms-code <code> to complete login.")
+              f"Run again with --sms-code <4-digit-code> to complete login.")
 
 
 # ── List ───────────────────────────────────────────────────────────────────────
@@ -219,13 +219,13 @@ def cmd_list(args):
 
 # ── Show ───────────────────────────────────────────────────────────────────────
 def cmd_show(args):
-    """Show course detail / outline tree / MDF content."""
+    """Show course detail / outline tree / MarkdownFlow content."""
     base_url, token = resolve_auth(args)
     shifu_bid = args.shifu_bid
     outline_bid = args.outline_bid
 
     if outline_bid:
-        # Show MDF content for a specific lesson
+        # Show MarkdownFlow content for a specific lesson
         result = api(base_url, token, "get",
                      f"/shifus/{shifu_bid}/outlines/{outline_bid}/mdflow")
         content = result.get("data", "") if isinstance(result, dict) else result
@@ -268,7 +268,7 @@ def cmd_show(args):
 
 # ── History ────────────────────────────────────────────────────────────────────
 def cmd_history(args):
-    """Show MDF revision history for a lesson."""
+    """Show MarkdownFlow revision history for a lesson."""
     base_url, token = resolve_auth(args)
     result = api(base_url, token, "get",
                  f"/shifus/{args.shifu_bid}/outlines/{args.outline_bid}/mdflow/history")
@@ -417,19 +417,19 @@ def cmd_add_lesson(args):
     parent_label = f" under {args.parent_bid}" if args.parent_bid else ""
     print(f"Created lesson: {outline_bid} ({args.name}){parent_label}")
 
-    # Write MDF content if provided
+    # Write MarkdownFlow content if provided
     if args.mdf_file:
         with open(args.mdf_file, "r", encoding="utf-8") as f:
             content = f.read()
         api(base_url, token, "post",
             f"/shifus/{shifu_bid}/outlines/{outline_bid}/mdflow",
             json={"data": content})
-        print(f"  MDF saved ({len(content)} chars)")
+        print(f"  MarkdownFlow saved ({len(content)} chars)")
 
 
 # ── Update Lesson ──────────────────────────────────────────────────────────────
 def cmd_update_lesson(args):
-    """Update MDF content for an existing lesson (with optimistic locking)."""
+    """Update MarkdownFlow content for an existing lesson (with optimistic locking)."""
     base_url, token = resolve_auth(args)
     shifu_bid = args.shifu_bid
     outline_bid = args.outline_bid
@@ -597,7 +597,7 @@ def _import_flat(base_url, token, json_file, shifu_bid):
             api(base_url, token, "post",
                 f"/shifus/{shifu_bid}/outlines/{new_bid}/mdflow",
                 json={"data": content})
-            print(f"    MDF saved ({len(content)} chars)")
+            print(f"    MarkdownFlow saved ({len(content)} chars)")
 
         created.append({"bid": new_bid, "title": title})
         time.sleep(0.3)
@@ -619,7 +619,7 @@ def _import_flat(base_url, token, json_file, shifu_bid):
             api(base_url, token, "post",
                 f"/shifus/{shifu_bid}/outlines/{new_bid}/mdflow",
                 json={"data": content})
-            print(f"    MDF saved ({len(content)} chars)")
+            print(f"    MarkdownFlow saved ({len(content)} chars)")
 
         created.append({"bid": new_bid, "title": title})
         time.sleep(0.3)
@@ -726,7 +726,7 @@ def _build_import_json(course_dir, title=None, description=None,
             ch_bid = str(uuid.uuid4()).replace("-", "")
             ch_title = ch_def["title"]
 
-            # Chapter item (container, no MDF content)
+            # Chapter item (container, no MarkdownFlow content)
             outline_items.append({
                 "outline_item_bid": ch_bid,
                 "title": ch_title,
@@ -793,7 +793,7 @@ def _build_import_json(course_dir, title=None, description=None,
         chapter_bid = str(uuid.uuid4()).replace("-", "")
         chapter_title = chapter_name or title
 
-        # Chapter item (container, no MDF content)
+        # Chapter item (container, no MarkdownFlow content)
         outline_items.append({
             "outline_item_bid": chapter_bid,
             "title": chapter_title,
@@ -952,7 +952,7 @@ def build_parser():
                        help="SMS login and save token")
     p.add_argument("--phone", required=True, help="Phone number for SMS login")
     p.add_argument("--sms-code", default=None,
-                   help="SMS verification code (skip interactive input)")
+                   help="4-digit SMS verification code")
     p.add_argument("--region", choices=["cn", "global"], default=None,
                    help="Region: cn (中国大陆) or global (非中国大陆)")
 
@@ -961,14 +961,14 @@ def build_parser():
 
     # ── show ──
     p = sub.add_parser("show", parents=[parent_parser],
-                       help="Show course detail or lesson MDF content")
+                       help="Show course detail or lesson MarkdownFlow content")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("outline_bid", nargs="?", default=None,
                    help="Outline BID (omit to show tree)")
 
     # ── history ──
     p = sub.add_parser("history", parents=[parent_parser],
-                       help="Show MDF revision history")
+                       help="Show MarkdownFlow revision history")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("outline_bid", help="Outline BID")
 
@@ -1004,16 +1004,16 @@ def build_parser():
                        help="Add a new lesson under a chapter")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("--name", required=True, help="Lesson name")
-    p.add_argument("--mdf-file", default=None, help="MDF content file")
+    p.add_argument("--mdf-file", default=None, help="MarkdownFlow content file")
     p.add_argument("--parent-bid", required=True,
                    help="Parent chapter BID (use add-chapter to create one first)")
 
     # ── update-lesson ──
     p = sub.add_parser("update-lesson", parents=[parent_parser],
-                       help="Update lesson MDF content")
+                       help="Update lesson MarkdownFlow content")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("outline_bid", help="Outline BID")
-    p.add_argument("--mdf-file", required=True, help="MDF content file")
+    p.add_argument("--mdf-file", required=True, help="MarkdownFlow content file")
 
     # ── rename-lesson ──
     p = sub.add_parser("rename-lesson", parents=[parent_parser],

@@ -1,10 +1,10 @@
 # Deploy Only Example (Phase 5)
 
-Deploy pre-existing MDF files without running the authoring pipeline.
+Deploy pre-existing MarkdownFlow files without running the authoring pipeline.
 
 ## Prerequisites
 
-A course directory with MDF lesson files already prepared:
+A course directory with MarkdownFlow lesson files already prepared:
 
 ```
 my-course/
@@ -51,5 +51,5 @@ python3 {skillDir}/scripts/shifu-cli.py archive xyz789
 ## Acceptance Notes
 
 - Phase 5 executed independently (Path C).
-- Course deployed from pre-existing MDF files.
+- Course deployed from pre-existing MarkdownFlow files.
 - Management commands used for ongoing operations (Path D).

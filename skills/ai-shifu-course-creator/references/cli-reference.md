@@ -15,12 +15,13 @@ Run login once — the token persists in `{skillDir}/.env` for subsequent comman
 login --phone 13800138000 --region cn
 
 # Step 2: Complete login with the code
-login --phone 13800138000 --region cn --sms-code 123456
+login --phone 13800138000 --region cn --sms-code 1234
 ```
 
 Region options: `cn` (maps to `https://app.ai-shifu.cn`) or `global` (maps to `https://app.ai-shifu.com`). You can also use `--base-url` to override the URL directly.
 
 Alternatively, set environment variables or CLI flags:
+
 - `--base-url` or `SHIFU_BASE_URL` in `.env`
 - `--token` or `SHIFU_TOKEN` in `.env`
 
@@ -36,9 +37,9 @@ When no valid token is available, guide the user through login:
 4. Ask for their registered phone number.
 5. Send SMS code:
    `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --region cn`
-6. Ask the user for the verification code they received.
+6. Ask the user for the 4-digit verification code they received.
 7. Complete login:
-   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --region cn --sms-code <code>`
+   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --region cn --sms-code <4-digit-code>`
 8. Token is automatically saved — proceed with the requested operation.
 
 Always use CLI commands. Never make raw HTTP/API calls directly.
@@ -48,10 +49,12 @@ Always use CLI commands. Never make raw HTTP/API calls directly.
 ```bash
 list                                          # List all courses
 show <shifu_bid>                              # Show course details + outline tree
-show <shifu_bid> <outline_bid>                # Read a lesson's MDF content
-history <shifu_bid> <outline_bid>             # MDF revision history
+show <shifu_bid> <outline_bid>                # Read a lesson's MarkdownFlow content
+history <shifu_bid> <outline_bid>             # MarkdownFlow revision history
 export <shifu_bid> [-o file.json]             # Export course as JSON
 ```
+
+Use `show <shifu_bid>` to get lesson `outline_bid` values for lesson-specific preview URLs, such as `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>` (cn) or `https://app.ai-shifu.com/c/<shifu_bid>?preview=true&lessonid=<outline_bid>` (global).
 
 ## Create Commands
 
@@ -93,12 +96,13 @@ import --new --course-dir ./course-a/ [--title "..."] [--chapter-name "..."]
 build --course-dir ./course-a/ [-o shifu-import.json] [--title "..."] [--chapter-name "..."]
 ```
 
-The `build` command works entirely offline — it reads local MDF files and produces `shifu-import.json` without any network calls. The `import --course-dir` option combines build + import in one step.
+The `build` command works entirely offline — it reads local MarkdownFlow files and produces `shifu-import.json` without any network calls. The `import --course-dir` option combines build + import in one step.
 
 Build behavior:
+
 - **Course title** resolution order: `--title` CLI arg -> first heading in `README.md` -> directory name
 - **Chapter structure**: if `structure.json` exists, generates multi-chapter structure per its definition; otherwise creates a single chapter (named via `--chapter-name` or defaults to course title) containing all `lesson-*.md` files in sorted order
-- **Lesson title** resolution order: `title` field in `structure.json` -> `lesson_title: ...` line in MDF content -> filename derived (e.g., `lesson-01.md` -> "Lesson 01")
+- **Lesson title** resolution order: `title` field in `structure.json` -> `lesson_title: ...` line in MarkdownFlow content -> filename derived (e.g., `lesson-01.md` -> "Lesson 01")
 
 ## State Management
 

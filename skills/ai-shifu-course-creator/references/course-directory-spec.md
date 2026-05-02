@@ -9,7 +9,7 @@
   shifu-import.json    # Generated import file (output of build)
   structure.json       # Chapter structure (optional, for multi-chapter courses)
   lessons/
-    lesson-01.md       # MDF lesson file
+    lesson-01.md       # MarkdownFlow lesson file
     lesson-02.md
     ...
 ```
@@ -22,7 +22,7 @@ When `structure.json` is not present, `build` auto-discovers only `lesson-*.md` 
 
 Defines the AI engine's role, teaching style, and interaction rules at the course level. The `build` command reads this file and populates `shifu.llm_system_prompt` automatically.
 
-Note: MDF files do not support HTML comments (`<!-- -->`). The parser discards them entirely, so the AI engine never sees them. Write instructions as plain text directly in the MDF content.
+Note: MarkdownFlow files do not support HTML comments (`<!-- -->`). The parser discards them entirely, so the AI engine never sees them. Write instructions as plain text directly in the MarkdownFlow content.
 
 ## structure.json
 
@@ -45,7 +45,8 @@ Schema:
 ```
 
 Field reference:
+
 - `chapters[].title` (required): Chapter display name
 - `chapters[].lessons[]` (required): Array of lesson objects
 - `chapters[].lessons[].file` (required): Filename in the `lessons/` directory (must exist)
-- `chapters[].lessons[].title` (optional): Lesson display name. If omitted, auto-extracted from MDF content (`lesson_title: ...` line) or derived from filename
+- `chapters[].lessons[].title` (optional): Lesson display name. If omitted, auto-extracted from MarkdownFlow content (`lesson_title: ...` line) or derived from filename

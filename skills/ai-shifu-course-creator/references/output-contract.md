@@ -4,7 +4,7 @@
 
 1. `lesson_mdf_scripts`
 - One MarkdownFlow file per lesson.
-- Learner-facing language only.
+- Instructional/directive teaching-script language only (model-guiding), not a final learner manuscript.
 
 2. `course_index`
 - `lesson_id`
@@ -56,7 +56,7 @@ Each item:
     {
       "lesson_id": "L01",
       "lesson_title": "Core Loop Setup",
-      "mdf_script": "## Objective\n...\n?[%{{learner_goal}} Option A | Option B]\n---\n...",
+      "mdf_script": "## Objective\n...\n?[%{{learner_goal}} Option A | Option B]\n...",
       "used_variables": ["learner_goal"],
       "depends_on_lessons": []
     }
