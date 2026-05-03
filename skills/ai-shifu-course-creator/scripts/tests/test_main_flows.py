@@ -180,6 +180,52 @@ class UnitFlows(unittest.TestCase):
         with open(md_path, "r", encoding="utf-8") as f:
             self.assertEqual(f.read(), "你是一位耐心的导师。")
 
+    # R3 — variable extraction from MarkdownFlow content
+    def test_R3_extract_used_variables_from_markdownflow(self):
+        """The CLI auto-derives used_variables from the {{var}} / ?[%{{var}}] patterns."""
+        shifu_cli = self._load_shifu_cli()
+        cases = [
+            ("", []),
+            ("plain text", []),
+            ("Use {{name}} here.", ["name"]),
+            ("Use {{name}} twice: {{name}}.", ["name"]),                       # dedup
+            ("?[%{{topic}} A | B | C]", ["topic"]),                           # collection syntax
+            ("Hello {{name}}, choose ?[%{{topic}} A | B]", ["name", "topic"]),
+            ("Chinese: {{用户名}} 也支持。", ["用户名"]),                      # Unicode word chars
+            ("{{ spaced }} works too", ["spaced"]),                           # whitespace inside braces
+        ]
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertEqual(shifu_cli._extract_used_variables(text), expected)
+
+    def test_R3_compute_depends_on_lessons(self):
+        """An item that uses a variable collected by another item gets a dependency."""
+        shifu_cli = self._load_shifu_cli()
+        items = {
+            "bidA": {"markdownflow_prompt": "Pick: ?[%{{x}} A | B]", "used_variables": ["x"]},
+            "bidB": {"markdownflow_prompt": "Reflect on {{x}}.", "used_variables": ["x"]},
+            "bidC": {"markdownflow_prompt": "Plain text.", "used_variables": []},
+            "bidD": {"markdownflow_prompt": "?[%{{y}} 1 | 2]", "used_variables": ["y"]},
+        }
+        shifu_cli._compute_depends_on_lessons(items)
+        self.assertEqual(items["bidA"]["depends_on_lessons"], [],
+                         "producer should not depend on itself")
+        self.assertEqual(items["bidB"]["depends_on_lessons"], ["bidA"],
+                         "consumer should depend on producer")
+        self.assertEqual(items["bidC"]["depends_on_lessons"], [])
+        self.assertEqual(items["bidD"]["depends_on_lessons"], [],
+                         "an item that produces but does not consume y has no dep")
+
+    @staticmethod
+    def _load_shifu_cli():
+        """Import shifu-cli.py despite its dashed filename (not a valid Python module name)."""
+        import importlib.util
+        cli_path = os.path.join(os.path.dirname(__file__), "..", "shifu-cli.py")
+        spec = importlib.util.spec_from_file_location("shifu_cli", cli_path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
     # E4 — extract refuses to overwrite without --force
     def test_E4_extract_refuses_overwrite(self):
         d = os.path.join(self.tmp, "ow")

@@ -288,6 +288,55 @@ def _ensure_course_dir(course_dir):
     os.makedirs(os.fspath(course_dir), exist_ok=True)
 
 
+# ── Variable extraction from MarkdownFlow content ─────────────────────────────
+# All MarkdownFlow variables follow the {{var_name}} form (this also covers
+# the ?[%{{var}} ...] interaction syntax — `{{var}}` appears literally inside).
+_MARKDOWNFLOW_VAR_PATTERN = re.compile(r'\{\{\s*(\w+)\s*\}\}')
+
+# `?[%{{var}} ...]` is the *collection* syntax: an item that contains this
+# pattern is the producer / collector of `var`. Used to compute depends_on_lessons.
+_MARKDOWNFLOW_COLLECTOR_PATTERN = re.compile(r'\?\[\s*%\{\{\s*(\w+)\s*\}\}')
+
+
+def _extract_used_variables(text):
+    """Return the ordered, de-duplicated variable names referenced in a
+    MarkdownFlow string. Empty list when text is empty."""
+    if not text:
+        return []
+    seen = []
+    for match in _MARKDOWNFLOW_VAR_PATTERN.finditer(text):
+        var = match.group(1)
+        if var and var not in seen:
+            seen.append(var)
+    return seen
+
+
+def _compute_depends_on_lessons(items):
+    """Populate items.<bid>.depends_on_lessons in place.
+
+    A "producer" of variable `var` is the first item (in items.values() iteration
+    order) whose markdownflow_prompt contains the collection syntax `?[%{{var}} ...]`.
+    Any consumer that uses `var` but doesn't produce it gets a dependency entry
+    on the producer's bid.
+    """
+    var_to_producer = {}
+    for bid, item in items.items():
+        text = item.get("markdownflow_prompt", "") or ""
+        for match in _MARKDOWNFLOW_COLLECTOR_PATTERN.finditer(text):
+            var = match.group(1)
+            if var and var not in var_to_producer:
+                var_to_producer[var] = bid
+
+    for bid, item in items.items():
+        used = item.get("used_variables", []) or []
+        deps = []
+        for var in used:
+            producer = var_to_producer.get(var)
+            if producer and producer != bid and producer not in deps:
+                deps.append(producer)
+        item["depends_on_lessons"] = deps
+
+
 # ── Wire <-> course.json transformation ────────────────────────────────────────
 # See ADR-001 §D3 (schema) and §D10 (pull protocol).
 # Platform UNIT_TYPE values (see ai-shifu/src/api/flaskr/service/shifu/consts.py):
@@ -341,14 +390,18 @@ def _transform_export_to_course(export):
         bid = oi.get("outline_item_bid")
         if not isinstance(bid, str) or not bid:
             continue
+        content = oi.get("content", "") or ""
         items[bid] = {
             "type": _wire_type_to_local(oi.get("type")),
             "title": oi.get("title", "") or "",
-            "markdownflow_prompt": oi.get("content", "") or "",
-            "used_variables": [],
+            "markdownflow_prompt": content,
+            "used_variables": _extract_used_variables(content),
             "depends_on_lessons": [],
-            "source_span_map": [],
+            "source_span_map": [],  # cannot be recovered from server; Phase 1 fills if available
         }
+    # Cross-item analysis: depends_on_lessons depends on the full items map,
+    # so it has to run after every item is populated.
+    _compute_depends_on_lessons(items)
 
     def convert_outline_node(node):
         """Recursively convert a wire structure node (type='outline') to local form."""
