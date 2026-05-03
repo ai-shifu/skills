@@ -447,6 +447,18 @@ A course is represented locally as a single `course.json` file. The platform is 
 
 When continuing from Phase 4 (Path A), serialize optimized scripts directly into a `course.json` (no separate directory tree, no `system-prompt.md`, no `lessons/*.md`).
 
+### Local Working Directory
+
+When the skill creates a brand-new `course.json` and the user has not specified a location, place it at:
+
+```
+<cwd>/<course-slug>/course.json
+```
+
+where `<cwd>` is the agent's current working directory and `<course-slug>` is a short, kebab-case slug derived from the course title.
+
+An explicit user instruction or a project-level convention (e.g. in `CLAUDE.md`) overrides this default.
+
 ### CLI Quick Reference
 
 Core deployment commands:
