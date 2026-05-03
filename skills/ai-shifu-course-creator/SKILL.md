@@ -316,7 +316,7 @@ Optional modules:
 Return per lesson:
 - `lesson_id`
 - `lesson_title`
-- `mdf_script`
+- `markdownflow_prompt`
 - `used_variables`
 - `depends_on_lessons`
 
@@ -441,54 +441,66 @@ When no valid token is available, guide the user through the SMS login flow via 
 
 Always use CLI commands. Never make raw HTTP/API calls directly.
 
-### Course Directory
+### Course File
 
-MarkdownFlow lesson scripts must be organized in a course directory before deployment. See `references/course-directory-spec.md` for the full specification.
+A course is represented locally as a single `course.json` file. The platform is the authoritative source; the local file is an ephemeral working copy that can be regenerated at any time via `pull`. See `references/course-directory-spec.md` for the full schema.
 
-When continuing from Phase 4 (Path A), write optimized scripts into the course directory structure automatically.
+When continuing from Phase 4 (Path A), serialize optimized scripts directly into a `course.json` (no separate directory tree, no `system-prompt.md`, no `lessons/*.md`).
 
 ### CLI Quick Reference
 
 Core deployment commands:
 
 ```bash
-build --course-dir ./course-a/                          # Build shifu-import.json (offline)
-import --new --json-file ./course-a/shifu-import.json   # Import as new course
-publish <shifu_bid>                                      # Make course live
-show <shifu_bid>                                         # Verify course structure
-show <shifu_bid> <outline_bid>                           # Read a specific lesson
+import --new --course-dir ./     # Create new course; auto-pulls to refresh local with real bids
+pull <shifu_bid> --to ./          # Download an existing course as a single course.json
+push --course-dir ./                     # Push local changes (diff + fine-grained API calls)
+publish <shifu_bid>                           # Make course live
+show <shifu_bid>                              # Verify course structure
 ```
 
-See `references/cli-reference.md` for the complete command reference and `references/import-json-format.md` for the JSON schema.
+For local-only field round-tripping (extracting a single MarkdownFlow into a `.md` for editing in an external editor):
+
+```bash
+extract --course-dir ./ --outline-bid <bid> -o lesson.md
+embed   --course-dir ./ --outline-bid <bid> --from lesson.md
+
+extract --course-dir ./ --course-prompt -o course-prompt.md
+embed   --course-dir ./ --course-prompt --from course-prompt.md
+```
+
+See `references/cli-reference.md` for the complete command reference, `references/course-directory-spec.md` for the local schema, and `references/import-json-format.md` for the platform wire format.
 
 ### Deployment Workflow
 
-**From pipeline (Path A continuation):**
-1. Write Phase 4 outputs into the course directory (`lessons/`, `README.md`, `system-prompt.md`, optional `structure.json`).
-2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
-3. Run `import --new --json-file <dir>/shifu-import.json` to create the course.
-4. Run `publish <shifu_bid>` to make it live.
-5. Verify via platform URL.
+**From pipeline (Path A continuation, brand-new course):**
+1. Write Phase 4 outputs into a single `course.json` (placeholder bids `new:c01` / `new:l01` for items not yet on the server).
+2. `import --new --course-dir ./`. The CLI creates the empty shifu, posts metadata, adds chapters and lessons (with explicit `type` to distinguish them), writes MarkdownFlow content, and reorders. It then **auto-pulls** to overwrite `course.json` with real bids and revisions. After this, the file is in "pulled" state — ready for further `push` cycles.
+3. `publish <shifu_bid>` to make it live.
+4. Verify via platform URL.
 
-**Standalone deployment (Path C):**
-1. Ensure course directory is ready with MarkdownFlow files.
-2. Run `build`, `import`, `publish` as above.
+**Updating an existing course (Path D, optimization workflow):**
+1. `pull <shifu_bid> --to ./` to fetch the authoritative state into a local file.
+2. Edit `course.json` (directly, or via `extract` / `embed` for `.md` round-tripping).
+3. `push --course-dir ./` to apply the diff. The CLI computes the changes (metadata + add/delete items + content updates with optimistic locking + rename + reorder), executes them in safe order, then re-pulls to refresh local revisions.
+4. Optional: `publish <shifu_bid>` if the changes should go live.
+
+**Brand-new local course not yet imported:**
+- Construct `course.json` with placeholder `outline_item_bid` strings (any prefix; `new:<seq>` is the convention) and an empty `deployment` object. Run `import --new` as in Path A.
 
 ### Common Management
 
-Use these commands for ongoing course operations (Path D):
+Use these commands for course-level operations:
 
 ```bash
 list                                                   # List all courses
 show <shifu_bid>                                       # Show course outline
-update-meta <shifu_bid> --name "..." --description "..."
-update-lesson <shifu_bid> <outline_bid> --mdf-file updated.md
-rename-lesson <shifu_bid> <outline_bid> --name "New Name"
-reorder <shifu_bid> --order bid1,bid2,bid3
-delete-lesson <shifu_bid> <outline_bid>
 publish <shifu_bid>
 archive <shifu_bid>
+unarchive <shifu_bid>
 ```
+
+Granular mutation commands (`update-meta`, `add-chapter`, `add-lesson`, `update-lesson`, `rename-lesson`, `delete-lesson`, `reorder`) still exist as building blocks but are normally used by `push` internally. See `references/cli-reference.md` if scripting one-off mutations.
 
 ### Verification
 
@@ -500,9 +512,9 @@ After any deployment or management operation, verify the result:
 
 ### Phase 5 Validation
 
-- Import completes without errors.
+- `import` / `push` completes without errors and the auto-pull at the end leaves `course.json` with no `new:*` placeholder bids and a populated `deployment.shifu_bid`.
 - Course is accessible via platform URL.
-- Lesson count and structure match the source directory.
+- Outline count and structure match the local `course.json`.
 - Published course is reachable in preview mode.
 
 ---

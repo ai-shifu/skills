@@ -6,98 +6,160 @@ All commands use `{skillDir}/scripts/shifu-cli.py`. Prefix every call with:
 python3 {skillDir}/scripts/shifu-cli.py <command>
 ```
 
+Always go through the CLI. Never call platform HTTP / API endpoints directly.
+
 ## Authentication
 
 Run login once — the token persists in `{skillDir}/.env` for subsequent commands:
 
 ```bash
-# Step 1: Send SMS verification code
+# Step 1: send SMS code
 login --phone 13800138000
 
-# Step 2: Complete login with the code
+# Step 2: complete login with the 4-digit code
 login --phone 13800138000 --sms-code 1234
 ```
 
-The CLI always talks to `https://app.ai-shifu.cn`. To skip the SMS login, set `--token` / `SHIFU_TOKEN` directly.
+The CLI always talks to `https://app.ai-shifu.cn`. To skip the SMS flow, set `SHIFU_TOKEN` in `.env` or pass `--token` explicitly.
 
-### Agent Login Flow
+### Agent login flow
 
-When no valid token is available, guide the user through login:
+When no valid token is available, walk the user through:
 
 1. Ask for their registered phone number.
-2. Send SMS code:
-   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone>`
-3. Ask the user for the 4-digit verification code they received.
-4. Complete login:
-   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --sms-code <4-digit-code>`
-5. Token is automatically saved — proceed with the requested operation.
+2. `login --phone <phone>` to send the SMS.
+3. Ask the user for the 4-digit code they received.
+4. `login --phone <phone> --sms-code <code>` to finalize. Token is saved automatically.
 
-Always use CLI commands. Never make raw HTTP/API calls directly.
+## Single-File Workflow Commands (recommended)
 
-## Query Commands
+These commands operate on a single `course.json` file (see `course-directory-spec.md` for the schema). They are the recommended path for authoring and synchronization.
+
+### `pull` — server → local
 
 ```bash
-list                                          # List all courses
-show <shifu_bid>                              # Show course details + outline tree
-show <shifu_bid> <outline_bid>                # Read a lesson's MarkdownFlow content
+pull <shifu_bid> --to <path/> [--force-overwrite]
+```
+
+Downloads a course as a single `course.json`. Internally calls `GET /export` once for shifu metadata + all outline_items (with content embedded) + structure tree, then `GET /draft-meta` once per outline_item for the optimistic-locking revision (O(1+N) total).
+
+By default refuses to overwrite an existing file; pass `--force-overwrite` to replace.
+
+### `push` — local → server
+
+```bash
+push --course-dir <path/>
+```
+
+Diffs the local file against the current server state and applies fine-grained mutations: metadata update → add new chapters → add new lessons → delete obsolete items → rename → update MarkdownFlow content (with optimistic locking) → reorder. After all mutations succeed, automatically re-pulls to refresh local revisions.
+
+`push` requires the file to already have `deployment.shifu_bid` set (i.e. a course that came from a previous `pull` or `import`). For brand-new courses, use `import --new` instead.
+
+Conflict handling:
+
+- **MarkdownFlow content**: server-side optimistic locking on `base_revision`. If another client modified an item since you pulled, the platform returns a conflict and `push` aborts; re-`pull` and try again.
+- **Metadata** (`title` / `description` / `course_prompt` / outline titles): no server-side concurrency control; last write wins. The diff layer surfaces these changes but does not gate them.
+
+### `extract` / `embed` — round-trip a single field
+
+For human editing in an external `.md` editor.
+
+```bash
+extract --course-dir <course-dir> --course-prompt -o <path.md> [--force]
+extract --course-dir <course-dir> --outline-bid <bid> -o <path.md> [--force]
+
+embed --course-dir <course-dir> --course-prompt --from <path.md>
+embed --course-dir <course-dir> --outline-bid <bid> --from <path.md>
+```
+
+Pure local file ops, no platform calls. `embed` writes back via atomic `temp + rename`. `extract` refuses to overwrite without `--force`.
+
+### `validate` — schema check
+
+```bash
+validate --course-dir <course-dir> --mode push|import
+```
+
+Runs the local schema validator. `push` mode rejects placeholder `new:*` bids; `import` mode allows them. Returns exit 0 on valid, 1 on errors (each printed with a JSON path).
+
+### `import --new` — create a brand-new course
+
+```bash
+import --new --course-dir <path/>
+```
+
+Creates a new course on the platform from a local `course.json` containing placeholder bids. Internally: `PUT /shifus` (empty shifu) → `update-meta` → `add-chapter` × N → `add-lesson` × N → `update-mdflow` × N → `reorder` → **auto `pull --force-overwrite`** to refresh the local file with real bids and revisions.
+
+`import` is brand-new-only. To update an existing course, use `push`. The legacy `import <existing-shifu-bid>` mode has been removed (ADR-001 §D9).
+
+## Read-only Commands
+
+```bash
+list                                          # List all courses you can access
+show <shifu_bid>                              # Course detail + outline tree
+show <shifu_bid> <outline_bid>                # Read a single item's MarkdownFlow content
 history <shifu_bid> <outline_bid>             # MarkdownFlow revision history
-export <shifu_bid> [-o file.json]             # Export course as JSON
+export <shifu_bid> [-o file.json]             # Export wire-format JSON (legacy; pull is preferred)
 ```
 
-Use `show <shifu_bid>` to get lesson `outline_bid` values for lesson-specific preview URLs, such as `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>`.
+## Granular Mutation Commands
 
-## Create Commands
-
-```bash
-create --name "Title" [--description "Desc"]
-add-chapter <shifu_bid> --name "Chapter Name"
-add-lesson <shifu_bid> --name "Name" --mdf-file lesson.md --parent-bid <chapter_bid>
-```
-
-## Update Commands
+These are the building blocks `push` uses internally. Most agents should prefer `push` since it diffs and applies all changes atomically. Use the granular commands only when scripting one-off changes.
 
 ```bash
-update-meta <shifu_bid> [--name "..."] [--description "..."] [--system-prompt-file prompt.md]
-update-lesson <shifu_bid> <outline_bid> --mdf-file lesson.md    # Uses optimistic locking
-rename-lesson <shifu_bid> <outline_bid> --name "New Name"
-reorder <shifu_bid> --order bid1,bid2,bid3
-```
-
-`update-lesson` fetches the current revision before saving. If another user modified the lesson since you last read it, the server returns a conflict.
-
-## Delete Commands
-
-```bash
+create --name "..." [--description "..."]                                    # Create empty shifu (no outlines)
+update-meta <shifu_bid> [--name "..."] [--description "..."] [--system-prompt-file file.md]
+add-chapter <shifu_bid> --name "..."                                          # Create top-level outline (type=chapter)
+add-lesson <shifu_bid> --name "..." --parent-bid <chapter_bid> [--markdownflow-file ...]
+update-lesson <shifu_bid> <outline_bid> --markdownflow-file <file.md>                  # Save MarkdownFlow with optimistic lock
+rename-lesson <shifu_bid> <outline_bid> --name "..."
 delete-lesson <shifu_bid> <outline_bid>
+reorder <shifu_bid> --tree-file <tree.json>     # Submit complete outlines tree
+reorder <shifu_bid> --json '<inline-json>'      # Same, inline string
 ```
 
-## Bulk Import
+Reorder schema (matches platform `ReorderOutlineDto`):
+
+```json
+[
+  {"bid": "<chapter-bid>", "children": [
+    {"bid": "<lesson-bid>", "children": []},
+    {"bid": "<lesson-bid>", "children": []}
+  ]}
+]
+```
+
+The reorder endpoint supports cross-chapter moves: a lesson's bid can appear under a different chapter's `children` and the platform updates positions accordingly.
+
+## Legacy Commands (kept for compatibility)
 
 ```bash
-# Flat JSON import
-import <shifu_bid> --json-file course.json
-import --new --json-file course.json
-
-# One-step build + import from course directory
-import <shifu_bid> --course-dir ./course-a/ [--title "..."] [--chapter-name "..."]
-import --new --course-dir ./course-a/ [--title "..."] [--chapter-name "..."]
-
-# Local build only (offline, generates shifu-import.json)
-build --course-dir ./course-a/ [-o shifu-import.json] [--title "..."] [--chapter-name "..."]
+import --new --json-file <flat.json>                       # Old wire-format JSON import
+import --new --legacy-course-dir <dir>                     # Old multi-file course directory format
+build --course-dir <dir> [-o file.json]                    # Build wire-format JSON from an old multi-file course directory
 ```
 
-The `build` command works entirely offline — it reads local MarkdownFlow files and produces `shifu-import.json` without any network calls. The `import --course-dir` option combines build + import in one step.
+`--legacy-course-dir` accepts the **old** multi-file layout (`README.md` + `system-prompt.md` + `lessons/lesson-*.md` + optional `structure.json`) — distinct from the new single-file `course.json` mode that the recommended `--course-dir` flag uses. New code should always use the recommended single-file path. See ADR-001 for the migration rationale.
 
-Build behavior:
-
-- **Course title** resolution order: `--title` CLI arg -> first heading in `README.md` -> directory name
-- **Chapter structure**: if `structure.json` exists, generates multi-chapter structure per its definition; otherwise creates a single chapter (named via `--chapter-name` or defaults to course title) containing all `lesson-*.md` files in sorted order
-- **Lesson title** resolution order: `title` field in `structure.json` -> `lesson_title: ...` line in MarkdownFlow content -> filename derived (e.g., `lesson-01.md` -> "Lesson 01")
+`build` no longer has a recommended use case for new courses; the single-file `course.json` is the canonical local format. Keep `build` only for legacy scripts that still depend on the wire-format JSON output.
 
 ## State Management
 
 ```bash
-publish <shifu_bid>       # Publish course (makes it live)
-archive <shifu_bid>       # Archive course
-unarchive <shifu_bid>     # Restore archived course
+publish <shifu_bid>       # Publish (Draft → Published; no bid changes)
+archive <shifu_bid>       # Archive (hides from active listing; data preserved)
+unarchive <shifu_bid>     # Restore an archived course
 ```
+
+## Field-Name Glossary (local ↔ wire)
+
+| Local `course.json` | Wire (export / import / detail) |
+|---|---|
+| `course.title` | `shifu.title` (export) / `name` (detail) |
+| `course.description` | `shifu.description` / `description` |
+| `course.course_prompt` | `shifu.llm_system_prompt` / `system_prompt` |
+| `items.<bid>.type` | `outline_items[].type` (int 400 / 401) |
+| `items.<bid>.markdownflow_prompt` | `outline_items[].content` |
+| `structure[*].outline_item_bid` | `outline_items[].outline_item_bid` and tree-node `bid` |
+
+The CLI handles translation transparently; agents authoring `course.json` only see the local names.
