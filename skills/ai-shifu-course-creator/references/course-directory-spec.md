@@ -5,7 +5,7 @@
 ```
 <course>/
   README.md            # Course metadata (title from first heading)
-  system-prompt.md     # Course-level system prompt (AI role and teaching style)
+  course-prompt.md     # Course-level prompt (AI role and teaching style)
   shifu-import.json    # Generated import file (output of build)
   structure.json       # Chapter structure (optional, for multi-chapter courses)
   lessons/
@@ -18,9 +18,9 @@
 
 When `structure.json` is not present, `build` auto-discovers only `lesson-*.md` files (e.g., `lesson-01.md`, `lesson-02.md`) and ignores other filenames. When `structure.json` is present, lesson files are taken from `chapters[].lessons[].file` and any filename is accepted as long as it exists.
 
-## system-prompt.md
+## course-prompt.md
 
-Defines the AI engine's role, teaching style, and interaction rules at the course level. The `build` command reads this file and populates `shifu.llm_system_prompt` automatically.
+Defines the AI engine's role, teaching style, and interaction rules at the course level. The `build` command reads this file and populates `shifu.course_prompt` in the import JSON automatically (which the CLI maps to the platform API field `system_prompt` on import).
 
 Note: MarkdownFlow files do not support HTML comments (`<!-- -->`). The parser discards them entirely, so the AI engine never sees them. Write instructions as plain text directly in the MarkdownFlow content.
 

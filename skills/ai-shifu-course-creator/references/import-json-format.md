@@ -14,7 +14,7 @@ The `build` command generates a `shifu-import.json` file that can be imported to
     "keywords": "keywords",
     "llm": "",
     "llm_temperature": 0,
-    "llm_system_prompt": "<content from system-prompt.md>",
+    "course_prompt": "<content from course-prompt.md>",
     "ask_enabled_status": 5101,
     "price": 0.0
   },
@@ -34,7 +34,7 @@ The `build` command generates a `shifu-import.json` file that can be imported to
 
 ## Key Fields
 
-- `llm_system_prompt`: Course-level AI role definition (from `system-prompt.md`)
+- `course_prompt`: Course-level AI role definition (from `course-prompt.md`). The CLI maps this to the platform API field `system_prompt` when calling `/shifus/<bid>/detail`.
 - `type: 401`: Regular lesson node
 - `parent_bid`: Empty string = chapter (top-level container); non-empty = lesson (child node with MarkdownFlow content). Use `add-chapter` to create chapters, then pass the chapter BID as `--parent-bid` when creating lessons
 - `content`: The MarkdownFlow prompt content (this is the core teaching material)

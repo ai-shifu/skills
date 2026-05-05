@@ -31,7 +31,7 @@ Produces optimized MarkdownFlow lesson scripts (see `pipeline-full.md` for detai
 ```
 my-course/
   README.md
-  system-prompt.md
+  course-prompt.md
   structure.json
   lessons/
     lesson-01.md

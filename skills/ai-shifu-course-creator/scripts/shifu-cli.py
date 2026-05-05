@@ -321,10 +321,10 @@ def cmd_update_meta(args):
     # Fetch current detail to preserve unchanged fields
     current = api(base_url, token, "get", f"/shifus/{shifu_bid}/detail")
 
-    system_prompt = current.get("system_prompt", "")
-    if args.system_prompt_file:
-        with open(args.system_prompt_file, "r", encoding="utf-8") as f:
-            system_prompt = f.read().strip()
+    course_prompt = current.get("system_prompt", "")
+    if args.course_prompt_file:
+        with open(args.course_prompt_file, "r", encoding="utf-8") as f:
+            course_prompt = f.read().strip()
 
     keywords = current.get("keywords", "")
     if isinstance(keywords, list):
@@ -340,7 +340,7 @@ def cmd_update_meta(args):
         "keywords": keywords,
         "model": current.get("model", ""),
         "temperature": current.get("temperature", 0.3),
-        "system_prompt": system_prompt,
+        "system_prompt": course_prompt,
         "tts_enabled": current.get("tts_enabled", False),
         "tts_provider": current.get("tts_provider", "minimax"),
         "tts_model": current.get("tts_model", ""),
@@ -493,7 +493,7 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         "keywords": keywords,
         "model": shifu_info.get("llm", ""),
         "temperature": shifu_info.get("llm_temperature", 0.3),
-        "system_prompt": shifu_info.get("llm_system_prompt", ""),
+        "system_prompt": shifu_info.get("course_prompt", ""),
     }
     price = shifu_info.get("price")
     if price and price > 0:
@@ -652,13 +652,13 @@ def _build_import_json(course_dir, title=None, description=None,
         print(f"Error: lessons directory not found: {lessons_dir}")
         sys.exit(1)
 
-    # Read system prompt if exists
-    llm_system_prompt = ""
-    sys_prompt_path = os.path.join(course_dir, "system-prompt.md")
-    if os.path.exists(sys_prompt_path):
-        with open(sys_prompt_path, "r", encoding="utf-8") as f:
-            llm_system_prompt = f.read().strip()
-        print(f"Loaded system prompt ({len(llm_system_prompt)} chars)")
+    # Read course-level prompt if exists
+    course_prompt = ""
+    prompt_path = os.path.join(course_dir, "course-prompt.md")
+    if os.path.exists(prompt_path):
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            course_prompt = f.read().strip()
+        print(f"Loaded course prompt ({len(course_prompt)} chars)")
 
     # Scan lesson files
     lesson_files = sorted([
@@ -744,7 +744,7 @@ def _build_import_json(course_dir, title=None, description=None,
                     "prerequisite_item_bids": "",
                     "llm": "",
                     "llm_temperature": 0,
-                    "llm_system_prompt": llm_system_prompt,
+                    "llm_system_prompt": course_prompt,
                     "ask_enabled_status": 5101,
                     "ask_llm": "",
                     "ask_llm_temperature": 0.0,
@@ -807,7 +807,7 @@ def _build_import_json(course_dir, title=None, description=None,
                 "prerequisite_item_bids": "",
                 "llm": "",
                 "llm_temperature": 0,
-                "llm_system_prompt": llm_system_prompt,
+                "llm_system_prompt": course_prompt,
                 "ask_enabled_status": 5101,
                 "ask_llm": "",
                 "ask_llm_temperature": 0.0,
@@ -837,7 +837,7 @@ def _build_import_json(course_dir, title=None, description=None,
             "avatar_res_bid": "",
             "llm": "",
             "llm_temperature": 0,
-            "llm_system_prompt": llm_system_prompt,
+            "course_prompt": course_prompt,
             "ask_enabled_status": 5101,
             "ask_llm": "",
             "ask_llm_temperature": 0.0,
@@ -960,8 +960,8 @@ def build_parser():
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("--name", default=None, help="New course name")
     p.add_argument("--description", default=None, help="New description")
-    p.add_argument("--system-prompt-file", default=None,
-                   help="File containing system prompt")
+    p.add_argument("--course-prompt-file", default=None,
+                   help="File containing course-level prompt")
 
     # ── add-chapter ──
     p = sub.add_parser("add-chapter", parents=[parent_parser],

@@ -57,7 +57,7 @@ add-lesson <shifu_bid> --name "Name" --mdf-file lesson.md --parent-bid <chapter_
 ## Update Commands
 
 ```bash
-update-meta <shifu_bid> [--name "..."] [--description "..."] [--system-prompt-file prompt.md]
+update-meta <shifu_bid> [--name "..."] [--description "..."] [--course-prompt-file prompt.md]
 update-lesson <shifu_bid> <outline_bid> --mdf-file lesson.md    # Uses optimistic locking
 rename-lesson <shifu_bid> <outline_bid> --name "New Name"
 reorder <shifu_bid> --order bid1,bid2,bid3

@@ -464,7 +464,7 @@ See `references/cli-reference.md` for the complete command reference and `refere
 ### Deployment Workflow
 
 **From pipeline (Path A continuation):**
-1. Write Phase 4 outputs into the course directory (`lessons/`, `README.md`, `system-prompt.md`, optional `structure.json`).
+1. Write Phase 4 outputs into the course directory (`lessons/`, `README.md`, `course-prompt.md`, optional `structure.json`).
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
 3. Run `import --new --json-file <dir>/shifu-import.json` to create the course.
 4. Run `publish <shifu_bid>` to make it live.

@@ -9,7 +9,7 @@ A course directory with MarkdownFlow lesson files already prepared:
 ```
 my-course/
   README.md
-  system-prompt.md
+  course-prompt.md
   lessons/
     lesson-01.md
     lesson-02.md
