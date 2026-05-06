@@ -138,7 +138,7 @@ def cmd_login(args):
     if sms_code:
         # Step 2: Verify code and save token
         print("Verifying code...")
-        data = _login_post(base_url, "/api/user/verify_sms_code",
+        data = _login_post(base_url, "/api/user/login_sms",
                            {"mobile": phone, "sms_code": sms_code, "login_context": "admin"}, "Verification failed")
 
         token = data.get("data")
@@ -157,7 +157,7 @@ def cmd_login(args):
     else:
         # Step 1: Send SMS code only, then exit
         print(f"Sending SMS code to {masked}...")
-        _login_post(base_url, "/api/user/send_sms_code",
+        _login_post(base_url, "/api/user/console_send_sms_code",
                     {"mobile": phone}, "Failed to send SMS")
         print(f"SMS code sent to {masked}. "
               f"Run again with --sms-code <4-digit-code> to complete login.")
