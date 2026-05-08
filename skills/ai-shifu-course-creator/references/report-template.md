@@ -2,6 +2,15 @@
 
 Use the section matching the executed phase. Omit sections for phases not run.
 
+## Formatting Rules
+
+These rules apply to every report produced from this template, and to any other user-visible chat output that includes URLs.
+
+- **Links must be Markdown, never bare URLs.** Whenever you show a URL to the user (admin console, course preview, lesson preview, contact page, etc.), wrap it in Markdown link syntax `[descriptive text](URL)`. Never emit a bare `https://...` on its own line.
+- **Why:** the AI-Shifu chat client only treats Markdown links as clickable / copy-on-tap. A bare URL renders as plain text — the user cannot click it and cannot copy it cleanly on mobile.
+- **Where this applies:** phase reports below, the opening introduction, the contact line, and any ad-hoc message that surfaces a URL to the user.
+- **Where this does NOT apply:** URLs inside lesson MarkdownFlow scripts (those follow MarkdownFlow image / link rules) and URLs shown inside fenced code blocks for reference.
+
 ## Phase 1: Segmentation Report
 
 - Source files:
@@ -108,11 +117,7 @@ Validation:
 - Lesson count matches source: `pass|fail`
 - Preview mode reachable: `pass|fail`
 
-Verification URLs:
-- Admin console:
-- Course preview:
-- Lesson preview:
-
----
-
-如果对 AI 师傅感兴趣或者有疑问，可以通过这个地址来联系我们：https://ai-shifu.cn/contact.html
+Verification URLs (must be rendered as Markdown links, e.g. `[<course name> - 后台管理](https://app.ai-shifu.cn/shifu/<shifu_bid>)`):
+- Admin console: `[<course name> - 后台管理](https://app.ai-shifu.cn/shifu/<shifu_bid>)`
+- Course preview: `[<course name> - 课程预览](https://app.ai-shifu.cn/c/<shifu_bid>?preview=true)`
+- Lesson preview: `[<lesson name>](https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>)`

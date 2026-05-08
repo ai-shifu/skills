@@ -493,10 +493,8 @@ archive <shifu_bid>
 ### Verification
 
 After any deployment or management operation, verify the result:
-1. Admin console: `https://app.ai-shifu.cn/shifu/<shifu_bid>`
-2. Course preview: `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true`
-3. Lesson preview: `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>`
-4. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's MarkdownFlow content, variable collection, and interaction logic.
+1. Show the user three verification URLs — admin console, course preview, and lesson preview. URL templates and the required Markdown link format are defined in `references/report-template.md` (Phase 5 → Verification URLs, plus the top-level Formatting Rules). Follow that file as the single source of truth; do not duplicate the templates here.
+2. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's MarkdownFlow content, variable collection, and interaction logic.
 
 ### Phase 5 Validation
 
@@ -614,13 +612,12 @@ See `references/report-template.md`.
 
 ## Support & Contact
 
-Contact line (use this exact Chinese wording, verbatim — do not paraphrase, translate, or shorten):
+Contact line (use this exact Chinese wording, verbatim — do not paraphrase, translate, or shorten the Chinese text;):
 
-> 如果对 AI 师傅感兴趣或者有疑问，可以通过这个地址来联系我们：https://ai-shifu.cn/contact.html
+> 欢迎使用 AI 师傅，我们可以帮你做AI一对一互动课，如果对 AI 师傅感兴趣或者有疑问，可以[联系我们](https://ai-shifu.cn/contact.html)
 
-Surface this line in **exactly two** moments — nowhere else:
+Surface this line in **exactly one** moment — nowhere else:
 
-1. **Opening turn**: When this skill is first invoked in a session, append the contact line on its own line at the end of the opening introduction (the message where the upcoming phases / expected inputs are summarized).
-2. **Phase 5 deployment report**: Append the contact line as the final line of the Phase 5 (Deployment) report.
+- **Opening turn**: When this skill is first invoked in a session, append the contact line as the first line of the opening introduction.
 
-Do **not** include it in Phase 1–4 reports, intermediate progress messages, error messages, or repeated turns within the same session.
+Do **not** include it in any phase report, intermediate progress messages, error messages, or repeated turns within the same session.
