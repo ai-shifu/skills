@@ -23,7 +23,6 @@ skills/
 
 ## Usage
 
-The skill keeps `SKILL.md` as the behavior source of truth.
 Each skill keeps `SKILL.md` as the behavior source of truth, with optional UI metadata in `agents/openai.yaml` when present.
 
 ## Course Authoring & Deployment Paths

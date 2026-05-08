@@ -19,7 +19,7 @@ Use this tone:
 ## Section writing pattern
 
 ### 1. Summary
-Use 3-5 bullets.
+Use 3-6 bullets.
 Each bullet should usually contain:
 - one direct data point
 - one implication
@@ -137,7 +137,27 @@ Typical stage framing:
 - promising start but still shallow learning depth
 - engagement signal exists but not enough evidence for a mature conclusion
 
-### 8. One-line conclusion
+### 8. Recommended Actions
+This section should be practical and ordered by impact first.
+
+Preferred pattern:
+- action
+- why this action matters now
+- what evidence supports it
+
+Good action buckets:
+- rewrite or simplify a bottleneck chapter
+- add examples or applied walkthroughs
+- improve chapter transitions or pacing
+- strengthen onboarding or expectation setting
+- adjust pricing, coupon use, or campaign packaging when business data supports it
+
+Avoid vague actions such as:
+- "keep observing"
+- "improve the course experience"
+- "do more promotion"
+
+### 9. One-line conclusion
 Write one sentence that can be pasted directly into a creator sync, review note, or management update.
 It should include:
 - current course state
@@ -145,5 +165,5 @@ It should include:
 - one main limit
 - one next-step direction when possible
 
-### 9. Metric notes
+### 10. Metric notes
 Always state denominator and metric boundary when the report may be reused outside the original analysis context. In the reference report style, this section is explicit and operational rather than decorative.
