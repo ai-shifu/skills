@@ -137,7 +137,8 @@ def api_request(
                 },
                 ensure_ascii=False,
                 indent=2,
-            )
+            ),
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -154,10 +155,11 @@ def api_request(
                     },
                     ensure_ascii=False,
                     indent=2,
-                )
+                ),
+                file=sys.stderr,
             )
             sys.exit(1)
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        print(json.dumps(payload, ensure_ascii=False, indent=2), file=sys.stderr)
         sys.exit(1)
     return payload.get("data")
 
@@ -324,6 +326,13 @@ def cmd_export(args: argparse.Namespace) -> None:
 
 def cmd_bundle(args: argparse.Namespace) -> None:
     base_url, token = resolve_auth(args)
+    invalid_types = [export_type for export_type in args.export_types if export_type not in EXPORT_TYPES]
+    if invalid_types:
+        print(
+            f"Unsupported export types: {', '.join(invalid_types)}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     timezone_params = {"timezone": args.timezone} if args.timezone else {}
     context = api_request(
         base_url,
@@ -333,9 +342,6 @@ def cmd_bundle(args: argparse.Namespace) -> None:
     )
     bundle: dict[str, Any] = {"context": context, "exports": {}}
     for export_type in args.export_types:
-        if export_type not in EXPORT_TYPES:
-            print(f"Unsupported export type: {export_type}", file=sys.stderr)
-            sys.exit(1)
         bundle["exports"][export_type] = api_request(
             base_url,
             token,
