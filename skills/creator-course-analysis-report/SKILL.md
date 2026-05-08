@@ -95,6 +95,26 @@ If critical data is missing, continue with a partial report and mark the missing
 
 When the user invokes this skill directly for AI-Shifu creator analysis, prefer the following conversation flow.
 
+### Default guided flow
+
+Unless the user already provided a valid course id and explicitly asked for a narrow export, prefer this default guided workflow:
+
+1. Briefly explain what the skill does.
+2. Check whether a valid login is already available.
+3. If login is missing or expired, guide the user through phone + SMS-code login.
+4. After login succeeds, list the current account's available courses.
+5. Ask which course the user wants to analyze.
+6. Run the owner check for that selected course.
+7. Ask whether to export:
+   - report only
+   - report + learner data table + follow-up data table
+8. Fetch only the data needed for the selected output mode.
+9. Generate the report or report-plus-tables in the interaction language.
+
+Keep the interaction concise, direct, and task-oriented. Match the steady product-assistant tone used by other AI-Shifu skills: explain the current step, state the next action, and avoid overly chatty or playful phrasing.
+
+See `references/conversation-flow.md` for the recommended wording pattern and the exact decision points.
+
 ### If the user provides only a course id or `shifu_bid`
 
 1. Treat this as a live-course lookup request.
@@ -161,6 +181,40 @@ then the skill should:
 4. proceed with the smallest number of clarification questions needed to keep the run accurate
 
 If live lookup fails only because auth is stale, the next question should be about login recovery, not about CSV upload.
+
+### Course selection after login
+
+After a successful live login, do not immediately ask the user to type a course id from memory unless there is only one possible course. Prefer this order:
+
+1. call the entry/list surface
+2. show the courses owned by the current account
+3. let the user choose by course name or `shifu_bid`
+4. if there are too many courses, show the top slice and still accept a direct `shifu_bid`
+
+When listing courses, keep the list lightweight. Prefer:
+
+- course name
+- `shifu_bid`
+- learner count when available
+- order count when available
+
+If the entry surface returns no course, say so clearly instead of pretending the account has analysis-ready content.
+
+### Output mode selection
+
+For live guided use, prefer exactly two user-facing choices:
+
+1. report only
+2. report + learner data table + follow-up data table
+
+Do not force the user to understand internal mode labels such as `report-only` or `report-with-exports`. Translate those internal modes into plain product language in the interaction.
+
+Map them as follows:
+
+- `report only` -> `report-only`
+- `report + learner data table + follow-up data table` -> `report-with-exports`
+
+If the user asks for only one detail table, honor that narrower request instead of forcing the bundled export.
 
 ## Analysis Order
 
@@ -306,8 +360,10 @@ If an export manifest is needed, keep that separate as well:
 
 ### Export language rule
 
-- keep raw detail export fields as close to source fields as possible
-- do not translate source-column meaning inline if that would make the export unstable
+- report body language follows the interaction language unless the user explicitly requests another language
+- detail-table headers and surrounding explanatory text should follow the interaction language as well
+- keep raw detail cell values as close to source values as possible
+- do not translate source text fields such as learner nicknames, follow-up content, or answer content unless the user explicitly asks for translated raw content
 - when bilingual delivery is requested, prefer translating the report files while keeping raw exports source-stable unless the user explicitly asks for translated export headers
 
 ## Detail Output Discipline
