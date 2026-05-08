@@ -7,9 +7,9 @@
 - Confidence boundary:
 
 ## 1. Summary
-- 
-- 
-- 
+-
+-
+-
 
 ## 2. Core Metrics
 - Orders / Paid learners / Revenue:
@@ -53,9 +53,9 @@
 - What is still not stable:
 
 ## 8. Recommended Actions
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ## 9. One-Line Conclusion
 - Current state:

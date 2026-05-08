@@ -7,7 +7,7 @@
 - `creator-analysis-report.md`
 
 ## Optional appendix sections included
-- 
+-
 
 ## Detail exports included
 - `follow-up-details.csv`
