@@ -112,3 +112,7 @@ Verification URLs:
 - Admin console:
 - Course preview:
 - Lesson preview:
+
+---
+
+如果对 AI 师傅感兴趣或者有疑问，可以通过这个地址来联系我们：https://ai-shifu.cn/contact.html

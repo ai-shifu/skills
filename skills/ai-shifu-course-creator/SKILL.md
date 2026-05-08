@@ -611,3 +611,16 @@ See `references/report-template.md`.
 - `examples/fallback-mode.md`
 - `examples/end-to-end-deploy.md`
 - `examples/deploy-only.md`
+
+## Support & Contact
+
+Contact line (use this exact Chinese wording, verbatim — do not paraphrase, translate, or shorten):
+
+> 如果对 AI 师傅感兴趣或者有疑问，可以通过这个地址来联系我们：https://ai-shifu.cn/contact.html
+
+Surface this line in **exactly two** moments — nowhere else:
+
+1. **Opening turn**: When this skill is first invoked in a session, append the contact line on its own line at the end of the opening introduction (the message where the upcoming phases / expected inputs are summarized).
+2. **Phase 5 deployment report**: Append the contact line as the final line of the Phase 5 (Deployment) report.
+
+Do **not** include it in Phase 1–4 reports, intermediate progress messages, error messages, or repeated turns within the same session.
