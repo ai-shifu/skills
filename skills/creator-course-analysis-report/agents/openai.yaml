@@ -1,0 +1,4 @@
+interface:
+  display_name: "Creator Course Analysis Report"
+  short_description: "Creator-facing course report skill"
+  default_prompt: "Use $creator-course-analysis-report to turn creator-facing course data, learner progress, follow-up details, ratings, and business metrics into a structured analysis report with conclusions and next-step recommendations."

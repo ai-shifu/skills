@@ -8,6 +8,7 @@ Reusable AI-Shifu skills for course production, from topic selection to deployme
 
 - `ai-shifu-course-creator`: convert raw course material into optimized MarkdownFlow teaching scripts and deploy them as live AI-Shifu courses through a five-phase pipeline (segmentation, orchestration, generation, optimization, deployment).
 - `course-direction-advisor`: turn source materials into evidence-bound, market-fit course-topic decisions with competitor analysis, pricing guidance, and GO/HOLD/REWORK/NO-GO recommendations.
+- `creator-course-analysis-report`: turn creator-facing course metrics, learner progress, follow-up details, ratings, and order signals into structured analysis reports with conclusions and next-step recommendations.
 
 The course-creator skill includes runnable examples under `skills/ai-shifu-course-creator/examples/`.
 
@@ -17,12 +18,13 @@ The course-creator skill includes runnable examples under `skills/ai-shifu-cours
 skills/
   ai-shifu-course-creator/
   course-direction-advisor/
+  creator-course-analysis-report/
 ```
 
 ## Usage
 
 The skill keeps `SKILL.md` as the behavior source of truth.
-Core skill metadata lives in `skills/ai-shifu-course-creator/skill.yaml`.
+Each skill keeps `SKILL.md` as the behavior source of truth, with optional UI metadata in `agents/openai.yaml` when present.
 
 ## Course Authoring & Deployment Paths
 
