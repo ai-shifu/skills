@@ -117,7 +117,9 @@ Validation:
 - Lesson count matches source: `pass|fail`
 - Preview mode reachable: `pass|fail`
 
-Verification URLs (must be rendered as Markdown links, e.g. `[<course name> - 后台管理](https://app.ai-shifu.cn/shifu/<shifu_bid>)`):
-- Admin console: `[<course name> - 后台管理](https://app.ai-shifu.cn/shifu/<shifu_bid>)`
-- Course preview: `[<course name> - 课程预览](https://app.ai-shifu.cn/c/<shifu_bid>?preview=true)`
-- Lesson preview: `[<lesson name>](https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>)`
+Verification URLs:
+
+The deployment script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block that lists the admin console, the course preview, and one preview URL per lesson. Copy those URLs **verbatim** from the script output and wrap each one in a Markdown link — never reconstruct them from a template, and never hand-edit query parameters. Use these descriptive labels:
+- Admin console → `[<course name> - 后台管理](<URL from script>)`
+- Course preview → `[<course name> - 课程预览](<URL from script>)`
+- Lesson preview → `[<lesson name>](<URL from script>)`

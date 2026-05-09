@@ -518,7 +518,7 @@ archive <shifu_bid>
 ### Verification
 
 After any deployment or management operation, verify the result:
-1. Show the user three verification URLs — admin console, course preview, and lesson preview. URL templates and the required Markdown link format are defined in `references/report-template.md` (Phase 5 → Verification URLs, plus the top-level Formatting Rules). Follow that file as the single source of truth; do not duplicate the templates here.
+1. Show the user three verification URLs — admin console, course preview, and lesson preview. The script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block — copy those URLs verbatim and wrap each in a Markdown link per `references/report-template.md` (Phase 5 → Verification URLs, plus the top-level Formatting Rules). Never reconstruct URLs from a template by hand.
 2. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's MarkdownFlow content, variable collection, and interaction logic.
 
 ### Phase 5 Validation

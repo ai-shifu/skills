@@ -62,7 +62,7 @@ python3 {skillDir}/scripts/shifu-cli.py publish abc123-def456
 python3 {skillDir}/scripts/shifu-cli.py show abc123-def456
 ```
 
-Platform URLs:
+Platform URLs (these are copied verbatim from the `Verification URLs:` block printed by `publish` / `import` / `show` — do not reconstruct them):
 
 - Admin: `https://app.ai-shifu.cn/shifu/abc123-def456`
 - Course preview: `https://app.ai-shifu.cn/c/abc123-def456?preview=true`
