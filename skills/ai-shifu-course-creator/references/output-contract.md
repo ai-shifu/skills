@@ -90,7 +90,7 @@ Each item:
       "effect_scope": "cross_lesson"
     }
   ],
-  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The current course is *...*. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ..."
+  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The current course is *...*. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ...\n\n# Drawing\n- ..."
 }
 ```
 
