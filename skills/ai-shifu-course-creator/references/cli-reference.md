@@ -44,7 +44,7 @@ history <shifu_bid> <outline_bid>             # MarkdownFlow revision history
 export <shifu_bid> [-o file.json]             # Export course as JSON
 ```
 
-Use `show <shifu_bid>` to get lesson `outline_bid` values for lesson-specific preview URLs, such as `https://app.ai-shifu.cn/c/<shifu_bid>?preview=true&lessonid=<outline_bid>`.
+`show` (without `outline_bid`), `create`, `import`, and `publish` all print a `Verification URLs:` block — admin console, course preview, and one preview URL per lesson. Copy those URLs as-is when reporting deployment results; never reconstruct them from a template.
 
 ## Create Commands
 

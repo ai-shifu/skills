@@ -104,6 +104,37 @@ def fmt_time(ts):
         return ts[:16] if len(ts) >= 16 else ts
 
 
+def _print_verification_urls(base_url, shifu_bid, tree=None):
+    """Print admin + course preview + (optional) per-lesson preview URLs.
+
+    Skill docs instruct the LLM to transcribe these lines verbatim. Do not
+    let the LLM reconstruct URLs from a template — that has historically led
+    to wrong path (/shifu vs /c) and wrong param name (outline_bid vs lessonid).
+    """
+    print("\nVerification URLs:")
+    print(f"  Admin console:  {base_url}/shifu/{shifu_bid}")
+    print(f"  Course preview: {base_url}/c/{shifu_bid}?preview=true")
+    if tree:
+        items = tree if isinstance(tree, list) else [tree]
+        leaves = []
+
+        def walk(nodes):
+            for node in nodes:
+                children = node.get("children", [])
+                if children:
+                    walk(children)
+                else:
+                    bid = node.get("bid", "")
+                    if bid:
+                        leaves.append((node.get("name", ""), bid))
+
+        walk(items)
+        if leaves:
+            print("  Lesson preview:")
+            for name, bid in leaves:
+                print(f"    {name}: {base_url}/c/{shifu_bid}?preview=true&lessonid={bid}")
+
+
 # ── Login ──────────────────────────────────────────────────────────────────────
 def _login_post(base_url, path, payload, error_prefix):
     """POST to a user-auth endpoint and return parsed JSON, exit on failure."""
@@ -239,6 +270,8 @@ def cmd_show(args):
         print("Outline tree:")
         print_tree(tree if isinstance(tree, list) else [tree])
 
+        _print_verification_urls(base_url, shifu_bid, tree)
+
 
 # ── History ────────────────────────────────────────────────────────────────────
 def cmd_history(args):
@@ -309,7 +342,7 @@ def cmd_create(args):
     bid = result.get("bid") or result.get("shifu_bid")
     print(f"Created course: {bid}")
     print(f"  Name: {args.name}")
-    print(f"  URL:  {base_url}/shifu/{bid}")
+    _print_verification_urls(base_url, bid)
 
 
 # ── Update Meta ────────────────────────────────────────────────────────────────
@@ -601,7 +634,8 @@ def _import_flat(base_url, token, json_file, shifu_bid):
     print(f"\nDone! Shifu: {shifu_bid}")
     print(f"  Course: {shifu_info['title']}")
     print(f"  Chapters: {len(parents)}, Lessons: {len(children)}")
-    print(f"  URL: {base_url}/shifu/{shifu_bid}")
+    final_tree = api_safe(base_url, token, "get", f"/shifus/{shifu_bid}/outlines")
+    _print_verification_urls(base_url, shifu_bid, final_tree)
     return shifu_bid
 
 
@@ -888,6 +922,8 @@ def cmd_publish(args):
     base_url, token = resolve_auth(args)
     api(base_url, token, "post", f"/shifus/{args.shifu_bid}/publish", json={})
     print(f"Published: {args.shifu_bid}")
+    tree = api_safe(base_url, token, "get", f"/shifus/{args.shifu_bid}/outlines")
+    _print_verification_urls(base_url, args.shifu_bid, tree)
 
 
 def cmd_archive(args):
