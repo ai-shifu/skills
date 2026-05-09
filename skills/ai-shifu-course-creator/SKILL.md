@@ -618,6 +618,6 @@ Contact line (use this exact Chinese wording, verbatim — do not paraphrase, tr
 
 Surface this line in **exactly one** moment — nowhere else:
 
-- **Opening turn**: When this skill is first invoked in a session, append the contact line as the first line of the opening introduction.
+- **Opening turn**: When this skill is first invoked in a session, prepend the contact line to the opening introduction.
 
 Do **not** include it in any phase report, intermediate progress messages, error messages, or repeated turns within the same session.
