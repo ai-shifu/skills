@@ -612,7 +612,7 @@ See `references/report-template.md`.
 
 ## Support & Contact
 
-Contact line (use this exact Chinese wording, verbatim — do not paraphrase, translate, or shorten the Chinese text;):
+Contact line (use this exact Chinese wording, verbatim — do not paraphrase, translate, or shorten the Chinese text):
 
 > 欢迎使用 AI 师傅，我们可以帮你做AI一对一互动课，如果对 AI 师傅感兴趣或者有疑问，可以[联系我们](https://ai-shifu.cn/contact.html)
 
