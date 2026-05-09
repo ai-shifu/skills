@@ -18,6 +18,12 @@
 - Downstream usage
 - Cross-lesson dependencies
 
+4. `course_prompt`
+- Markdown string (runnable AI-Shifu course-level system prompt).
+- Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`.
+- Conditional section: `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
+- Authoring rules: `course-prompt-rules.md`. Fillable template and Substitution Map: `course-prompt-template.md`.
+
 ## Artifact Schemas
 
 ### `lesson_mdf_scripts` (array, required)
@@ -48,6 +54,13 @@ Each item:
 - `used_in` (array of lesson ids, required)
 - `effect_scope` (string enum: `local|cross_lesson`, required)
 
+### `course_prompt` (string, required)
+
+- Markdown string starting with `# Role`.
+- Six required `# Section` blocks: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`.
+- Conditional `# Translation Rules` section per `course-prompt-rules.md` `## Conditional Sections`.
+- Single source of truth at the course level; do not embed per-lesson interaction logic.
+
 ## Minimal Output Example
 
 ```json
@@ -76,7 +89,8 @@ Each item:
       "used_in": ["L01", "L02"],
       "effect_scope": "cross_lesson"
     }
-  ]
+  ],
+  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The current course is *...*. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ...\n\n# Drawing\n- ..."
 }
 ```
 
