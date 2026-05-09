@@ -20,8 +20,8 @@
 
 4. `course_prompt`
 - Markdown string (runnable AI-Shifu course-level system prompt).
-- Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`.
-- Conditional sections: `# Drawing` (when the course involves visuals), `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
+- Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`.
+- Conditional section: `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
 - Authoring rules: `course-prompt-rules.md`. Fillable template and Substitution Map: `course-prompt-template.md`.
 
 ## Artifact Schemas
@@ -57,8 +57,8 @@ Each item:
 ### `course_prompt` (string, required)
 
 - Markdown string starting with `# Role`.
-- Five required `# Section` blocks: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`.
-- Conditional `# Drawing` and `# Translation Rules` sections per `course-prompt-rules.md` `## Conditional Sections`.
+- Six required `# Section` blocks: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`.
+- Conditional `# Translation Rules` section per `course-prompt-rules.md` `## Conditional Sections`.
 - Single source of truth at the course level; do not embed per-lesson interaction logic.
 
 ## Minimal Output Example

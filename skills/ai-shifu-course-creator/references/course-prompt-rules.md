@@ -13,28 +13,27 @@ Do not duplicate per-lesson interaction logic, variable collection, or branching
 
 ## Required Sections
 
-The fillable template (`course-prompt-template.md`) has five required `# Section` blocks. Every course prompt must include all five:
+The fillable template (`course-prompt-template.md`) has six required `# Section` blocks. Every course prompt must include all six:
 
-1. `# Role` — identity, platform affiliation, professional and teaching identity.
+1. `# Role` — identity, professional and teaching identity, optional platform affiliation.
 2. `# Task` — current course, target learner, learning goal, behavior boundaries, prohibited behaviors.
 3. `# Teaching Techniques` — how to design explanation paths.
 4. `# Writing Style` — tone, register, restraint.
 5. `# Format` — Markdown rules, heading policy, bold usage, spacing.
+6. `# Drawing` — image-generation rules covering both safety guardrails and visual quality.
+
+`# Drawing` is required even for courses that do not use visuals. Without it, the AI has zero guardrails on its multimodal output and may spontaneously render uncontrolled images. Always include the full block; the rules cost nothing when the AI never draws and become essential the moment it does.
 
 ## Conditional Sections
 
-Two additional sections are added only when the course needs them:
+One additional section is added only when the course needs it:
 
-- `# Drawing` — required when **any** of the following is true:
-  - Phase 1 segments include a `visual_cue` or `visual_text_pair_cue`.
-  - Source material contains diagrams, charts, screenshots, or instructions that the AI may need to draw at runtime.
-  - The course explicitly asks for visual reinforcement.
 - `# Translation Rules` — required when **any** of the following is true:
   - Course is multilingual (`bilingual_output: true`, or target language differs from source-material dominant language).
-  - Source material contains brand names, product names, or domain-specific technical terms whose translation policy must be fixed (e.g., AI, Token, vibe coding, ChatGPT, Gemini, DeepSeek, AI-Shifu).
+  - Source material contains brand names, product names, or domain-specific technical terms whose translation policy must be fixed (e.g., AI, Token, vibe coding, ChatGPT, Gemini, DeepSeek).
   - `term_policy` is `preserve` or `mixed`.
 
-When conditions are not met, omit the section entirely. Do not insert empty placeholder sections.
+When the condition is not met, omit the section entirely. Do not insert an empty placeholder section.
 
 ## Section-by-Section Guidance
 
@@ -50,7 +49,7 @@ Must include:
 - Teaching identity (the angle from which they teach this topic).
 
 Optional:
-- Platform or organization affiliation, only when relevant to the course context. Do not hard-code AI-Shifu by default; the same course prompt may run on different deployments.
+- Platform or organization affiliation, only when relevant to the course context. Do not hard-code any specific platform name by default; the same course prompt may run on different deployments.
 
 Bad: `You are a helpful assistant.`
 Good: `You are Hebi. You specialize in observability and are a professional teacher in the field of production debugging.`
@@ -142,7 +141,7 @@ Maps to: `# Format`.
 
 Must specify:
 - Markdown output.
-- Heading policy. **Default to "Do not output headings of any level"** because each AI-Shifu module already has its own platform-rendered title; opt-in to headings only when a specific course needs them and the module render confirms support.
+- Heading policy. **Default to "Do not output headings of any level"** because the host platform typically renders the module title separately; opt-in to headings only when a specific course needs them and the module render confirms support.
 - Bold usage.
 - Mixed-script spacing (Chinese ↔ English, Chinese ↔ numbers).
 
@@ -157,18 +156,18 @@ Must specify:
 
 ### Rule 10 — Drawing Rules in a Separate Section
 
-Maps to: `# Drawing` (conditional).
+Maps to: `# Drawing` (required).
 
 Must specify:
 - Draw only when explicitly instructed; never proactively.
+- Selectable options must never be rendered inside the image. Choice options live in the MarkdownFlow `?[%{{var}} A | B | C]` line outside the image; in-image labels are not interactive on the platform.
 - In-image text is concise and prompt-like.
 - After drawing, explain the image in text.
 - Element layout rules (fully visible, no overlap, simple hierarchy).
-- Selectable options must never be rendered inside the image. Choice options live in the MarkdownFlow `?[%{{var}} A | B | C]` line outside the image; in-image labels are not interactive on the platform.
 
 ### Rule 11 — Image-Text Relationship
 
-Maps to: `# Drawing` (conditional, last bullets).
+Maps to: `# Drawing` (required, last bullets).
 
 Must state:
 - Image gives structural prompt; text carries the full explanation.
@@ -184,7 +183,7 @@ Maps to: `# Translation Rules` (conditional).
 Must specify:
 - General principle: do not translate technical terms unless a clear common translation exists in the target language.
 - Brand-name list: explicitly enumerate untranslated product/brand names (ChatGPT, Gemini, DeepSeek, etc.).
-- Course-name policy: state how the course's own brand or product name is rendered (e.g., AI 师傅 → AI-Shifu).
+- Course-name policy: state how the course's own brand or product name is rendered in the target language (provide an explicit mapping when an authoritative translation exists).
 
 When a course is single-language and contains no brand-name decisions, this section is omitted entirely (see `## Conditional Sections`).
 

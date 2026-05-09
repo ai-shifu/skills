@@ -2,24 +2,24 @@
 
 ## Required Sections
 
-Every course prompt must include all five:
+Every course prompt must include all six:
 
 1. `# Role`
 2. `# Task`
 3. `# Teaching Techniques`
 4. `# Writing Style`
 5. `# Format`
+6. `# Drawing`
 
 ## Conditional Sections
 
 Add only when the trigger applies (see `course-prompt-rules.md` `## Conditional Sections`):
 
-- `# Drawing` — when the course involves visuals.
 - `# Translation Rules` — when the course is multilingual or contains brand / domain terms whose translation policy must be fixed.
 
 ## Fillable Template
 
-Copy the block below into `course-prompt.md` and replace every `XXX` with course-specific content. Keep the section order. Drop `# Drawing` and / or `# Translation Rules` if the trigger conditions are not met.
+Copy the block below into `course-prompt.md` and replace every `XXX` with course-specific content. Keep the section order. Drop `# Translation Rules` if the trigger condition is not met.
 
 ```markdown
 # Role
@@ -67,8 +67,8 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 
 # Drawing
 - Only draw when explicitly instructed to draw. Do not proactively create visuals.
-- Text inside the image should be concise and only serve as prompts.
 - Do not put selectable options inside the image. Selection options must appear in the MarkdownFlow interaction line outside the image; in-image option labels are not clickable on the platform.
+- Text inside the image should be concise and only serve as prompts.
 - After drawing, explain the content of the image in text.
 - When explaining, assume the user has not seen the image.
 - The image is responsible for structural prompting; the text is responsible for the full explanation.
@@ -78,13 +78,13 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 
 # Translation Rules
 - Do not translate technical terms such as AI, Token, and vibe coding unless there is a clear commonly accepted translation in the target language.
-- The English name of AI 师傅 is AI-Shifu.
+- Render any course-specific brand or product name exactly as defined in the course glossary; do not invent a translation.
 - Product names such as ChatGPT, Gemini, and DeepSeek should not be translated.
 ```
 
 ## Filled Example
 
-A minimal example based on the "Metric Drift Diagnosis" course used in `examples/end-to-end-deploy.md`. The course has no visuals and is single-language, so `# Drawing` and `# Translation Rules` are omitted.
+A minimal example based on the "Metric Drift Diagnosis" course used in `examples/end-to-end-deploy.md`. The course is single-language, so `# Translation Rules` is omitted.
 
 ```markdown
 # Role
@@ -129,6 +129,17 @@ You specialize in production observability and are a professional teacher in the
 - Only bold truly important information. Avoid overusing bold.
 - Do not bold an entire paragraph.
 - Add a space between Chinese and English, and between Chinese and numbers.
+
+# Drawing
+- Only draw when explicitly instructed to draw. Do not proactively create visuals.
+- Do not put selectable options inside the image. Selection options must appear in the MarkdownFlow interaction line outside the image; in-image option labels are not clickable on the platform.
+- Text inside the image should be concise and only serve as prompts.
+- After drawing, explain the content of the image in text.
+- When explaining, assume the user has not seen the image.
+- The image is responsible for structural prompting; the text is responsible for the full explanation.
+- Do not simply repeat the image content in text. Instead, add background, causality, examples, and usage explanations.
+- All elements must be fully visible and must not overlap.
+- Do not generate too many fragmented elements. Keep the visual hierarchy simple.
 ```
 
 ## Substitution Map

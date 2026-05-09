@@ -418,7 +418,7 @@ See `references/review-checklist.md`.
 
 Produce a course-level prompt (`course_prompt`) alongside lesson optimization. It defines the AI engine's role, task, teaching techniques, writing style, format, and (conditionally) drawing and translation rules at the course level. It is loaded once per course and applied to every lesson, so it must capture cross-lesson constants — not per-lesson interaction logic.
 
-Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`. Conditional sections: `# Drawing` (when the course involves visuals), `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
+Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing` (always include in full — without it the AI has no guardrails on multimodal output). Conditional section: `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
 
 Auto-fill placeholders from existing artifacts instead of asking the author again: `course_profile`, `delivery_constraints`, resolved target language (per `references/language-resolution.md`), Phase 1 visual cues, and `term_policy`. Do not duplicate per-lesson variable collection or branching here — those belong in lesson MarkdownFlow.
 
@@ -431,7 +431,7 @@ See `references/course-prompt-rules.md` for the 12 authoring rules and `referenc
 - `viewpoint_check` interactions branch and trigger distinct next actions.
 - Uncollected variable references and semantic duplicate interactions are removed.
 - Output remains runnable with no loss of source information density.
-- A `course_prompt` artifact is produced when input includes course material, with all five required sections present (Drawing and Translation Rules may be omitted when their trigger conditions do not apply).
+- A `course_prompt` artifact is produced when input includes course material, with all six required sections present. `# Translation Rules` may be omitted when its trigger condition does not apply.
 
 ---
 
