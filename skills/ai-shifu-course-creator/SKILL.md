@@ -430,7 +430,7 @@ See `references/review-checklist.md`.
 
 ### Course Prompt
 
-Produce a course-level prompt (`course_prompt`) alongside lesson optimization. It defines the AI engine's role, task, teaching techniques, writing style, format, and (conditionally) drawing and translation rules at the course level. It is loaded once per course and applied to every lesson, so it must capture cross-lesson constants — not per-lesson interaction logic.
+Produce a course-level prompt (`course_prompt`) alongside lesson optimization. It defines the AI engine's role, task, teaching techniques, writing style, format, and drawing rules (always required), plus translation rules when triggered. It is loaded once per course and applied to every lesson, so it must capture cross-lesson constants — not per-lesson interaction logic.
 
 Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing` (always include in full — without it the AI has no guardrails on multimodal output). Conditional section: `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
 

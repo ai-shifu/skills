@@ -196,7 +196,7 @@ When generating the course prompt, consume already-collected artifacts instead o
 - `delivery_constraints.must_cover_topics` / `avoid_topics` → informs `# Task` boundary bullet.
 - Resolved target language (per `language-resolution.md`) → drives `# Writing Style` language and any `# Translation Rules` decisions.
 - `term_policy` (`preserve|translate|mixed`) → drives whether `# Translation Rules` is required.
-- Phase 1 `visual_cue` / `visual_text_pair_cue` presence → drives whether `# Drawing` is required.
+- Phase 1 `visual_cue` / `visual_text_pair_cue` presence → informs how detailed the `# Drawing` guidance should be (`# Drawing` itself is always required).
 - Course title from `README.md` → fills `# Task` course-name bullet.
 
 `course-prompt-template.md` provides a one-to-one substitution map between `XXX` placeholders and these inputs.
