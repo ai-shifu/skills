@@ -164,6 +164,7 @@ Must specify:
 - In-image text is concise and prompt-like.
 - After drawing, explain the image in text.
 - Element layout rules (fully visible, no overlap, simple hierarchy).
+- Selectable options must never be rendered inside the image. Choice options live in the MarkdownFlow `?[%{{var}} A | B | C]` line outside the image; in-image labels are not interactive on the platform.
 
 ### Rule 11 — Image-Text Relationship
 
