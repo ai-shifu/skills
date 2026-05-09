@@ -414,6 +414,16 @@ See `references/review-checklist.md`.
 - Visual tasks without explanatory text.
 - Rigid template consistency at the cost of lesson specificity.
 
+### Course Prompt
+
+Produce a course-level prompt (`course_prompt`) alongside lesson optimization. It defines the AI engine's role, task, teaching techniques, writing style, format, and (conditionally) drawing and translation rules at the course level. It is loaded once per course and applied to every lesson, so it must capture cross-lesson constants — not per-lesson interaction logic.
+
+Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`. Conditional sections: `# Drawing` (when the course involves visuals), `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
+
+Auto-fill placeholders from existing artifacts instead of asking the author again: `course_profile`, `delivery_constraints`, resolved target language (per `references/language-resolution.md`), Phase 1 visual cues, and `term_policy`. Do not duplicate per-lesson variable collection or branching here — those belong in lesson MarkdownFlow.
+
+See `references/course-prompt-rules.md` for the 12 authoring rules and `references/course-prompt-template.md` for the fillable template and Substitution Map.
+
 ### Phase 4 Validation
 
 - Conclusion and risk level are presented first.
@@ -421,6 +431,7 @@ See `references/review-checklist.md`.
 - `viewpoint_check` interactions branch and trigger distinct next actions.
 - Uncollected variable references and semantic duplicate interactions are removed.
 - Output remains runnable with no loss of source information density.
+- A `course_prompt` artifact is produced when input includes course material, with all five required sections present (Drawing and Translation Rules may be omitted when their trigger conditions do not apply).
 
 ---
 
@@ -464,14 +475,14 @@ See `references/cli-reference.md` for the complete command reference and `refere
 ### Deployment Workflow
 
 **From pipeline (Path A continuation):**
-1. Write Phase 4 outputs into the course directory (`lessons/`, `README.md`, `course-prompt.md`, optional `structure.json`).
+1. Write Phase 4 outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-prompt.md` (the Phase 4 `course_prompt` artifact, structured per `references/course-prompt-template.md`), optional `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
 3. Run `import --new --json-file <dir>/shifu-import.json` to create the course.
 4. Run `publish <shifu_bid>` to make it live.
 5. Verify via platform URL.
 
 **Standalone deployment (Path C):**
-1. Ensure course directory is ready with MarkdownFlow files.
+1. Ensure course directory is ready with MarkdownFlow lesson files and a `course-prompt.md`. If the course prompt is not yet authored, follow `references/course-prompt-template.md` (and `references/course-prompt-rules.md` for guidance) before running `build`.
 2. Run `build`, `import`, `publish` as above.
 
 ### Common Management

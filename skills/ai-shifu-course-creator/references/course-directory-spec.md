@@ -22,6 +22,8 @@ When `structure.json` is not present, `build` auto-discovers only `lesson-*.md` 
 
 Defines the AI engine's role, teaching style, and interaction rules at the course level. The `build` command reads this file and populates `shifu.course_prompt` in the import JSON automatically (which the CLI maps to the platform API field `system_prompt` on import).
 
+Authoring rules and a fillable template live in `course-prompt-rules.md` and `course-prompt-template.md`.
+
 Note: MarkdownFlow files do not support HTML comments (`<!-- -->`). The parser discards them entirely, so the AI engine never sees them. Write instructions as plain text directly in the MarkdownFlow content.
 
 ## structure.json
