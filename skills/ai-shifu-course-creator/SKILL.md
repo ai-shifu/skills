@@ -364,7 +364,7 @@ Always use CLI commands. Never make raw HTTP/API calls directly.
 
 Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `references/cli/course-directory-spec.md` for the full specification.
 
-When continuing from Phase 4 (Path A), write optimized scripts into the course directory structure automatically.
+When continuing from Phase 4 (Path A), write the optimized Teaching Prompts and Course Prompt into the course directory structure automatically.
 
 ### CLI Quick Reference
 
