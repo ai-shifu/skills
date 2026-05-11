@@ -1,10 +1,15 @@
-# MarkdownFlow Quick Spec
+# MarkdownFlow Spec
+
+Authoritative source for MarkdownFlow syntax, runtime constraints, and preservation rules. Violating anything here makes the script fail to parse, reference an uncollected variable, or silently lose source content. For pedagogical / quality-of-teaching constraints, see [pedagogy.md](pedagogy.md).
 
 ## Variables
 
 - Reference syntax: `{{var_name}}`
 - No spaces in variable names
 - Undefined variables resolve to `UNKNOWN`
+- Variables must be collected (via an interaction line) before being referenced in learner-facing text
+- See [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy) for collection pacing, downstream-effect, and semantic-duplication rules
+- See [data-contracts.md#variable-table](data-contracts.md#variable-table) for the `global_variable_table` schema
 
 ## Interactions
 
@@ -59,7 +64,9 @@ Ask the learner: Which option best matches your situation? ?[%{{choice}} Option 
 - Incorrect: `?[%{{learner_goal}} Describe your goal in one sentence...]`
 - Incorrect: `?[%{{difficulty_type}} Concept unclear | Need practice | Other, please specify...]`
 
-## Deterministic Output
+For interaction-design quality (concrete prompts, branching, deepening interactions), see [pedagogy.md#interaction-design](pedagogy.md#interaction-design).
+
+## Deterministic Blocks
 
 - Single-line fixed text: `===fixed text===`
 - Multi-line fixed text:
@@ -70,3 +77,38 @@ Line 1
 Line 2
 !===
 ```
+
+Use deterministic blocks only for truly fixed content (legally or operationally locked statements, fixed images). Do not lock entire lessons in fixed syntax — that defeats the model-guiding purpose of MarkdownFlow.
+
+## Preservation
+
+### Immutable Assets
+
+- Code blocks and fence language.
+- Image URLs, alt text, and ordering.
+- Regulated wording or fixed numeric thresholds.
+
+### Controlled Rewriting
+
+Allowed:
+- Filler removal.
+- Sentence smoothing.
+- Structural reorganization for lesson clarity.
+
+Not allowed:
+- Silent factual changes.
+- Unmarked omission of required source evidence.
+- Variable references before collection.
+
+### Deterministic Block Policy
+
+Use deterministic blocks only for truly fixed content. Do not lock entire lessons in fixed syntax. For images that must remain unchanged, use single-line deterministic syntax per image.
+
+## Common Mistakes
+
+- `?[%{{var}} Prompt text…]` — `...` placed at end of prompt instead of before placeholder.
+- `?[%{{var}} A | B | Other, please specify…]` — same issue inside an option label.
+- `?[%{{var}} Question prompt? Option A | Option B]` — question inside the interaction line; move it to the line above.
+- `Ask the learner the question. ?[%{{var}} A | B | C]` — interaction not on its own line.
+- Wrapping an entire lesson body in `=== … ===` or `!=== … !===`.
+- Referencing `{{var}}` in learner-facing text before any `?[%{{var}} …]` collects it.

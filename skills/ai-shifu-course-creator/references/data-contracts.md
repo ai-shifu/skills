@@ -1,0 +1,213 @@
+# Data Contracts
+
+Authoritative source for all schemas crossing the skill boundary: what comes in (input), what goes out (output), how output target language is resolved, and the per-lesson and per-variable shapes.
+
+## Input Contract
+
+### Required
+
+Provide one of:
+- A single long transcript or course document.
+- A set of topic-aligned documents with intended order.
+
+### Optional
+
+- Learner persona.
+- Lesson granularity preference (`short`, `medium`, `long`).
+- Terminology and tone constraints.
+- Non-negotiable source fragments.
+- `course_profile` object.
+- `delivery_constraints` object.
+- `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`).
+- `bilingual_output` (`true|false`).
+- `term_policy` (`preserve|translate|mixed`).
+- `quote_policy` (`translate_only|original_plus_translation`).
+
+### Recommended Object Shapes
+
+#### `course_profile`
+
+```json
+{
+  "audience_level": "beginner|intermediate|advanced",
+  "prerequisite_level": "none|basic|strong",
+  "lesson_duration_minutes": 12,
+  "lesson_count_target": 8,
+  "assessment_mode": "quiz|project|discussion|mixed"
+}
+```
+
+#### `delivery_constraints`
+
+```json
+{
+  "interaction_density": "low|medium|high",
+  "platform_limits": ["no_iframe", "markdown_only"],
+  "must_cover_topics": ["topic-a", "topic-b"],
+  "avoid_topics": ["topic-x"],
+  "non_negotiable_fragments": ["exact quote or code block id"]
+}
+```
+
+### Minimal Input Payload Example
+
+```json
+{
+  "course_material": "long transcript or merged markdown",
+  "generation_constraints": {
+    "persona": "hands-on mentor",
+    "lesson_granularity": "short"
+  },
+  "course_profile": {
+    "audience_level": "beginner",
+    "lesson_duration_minutes": 10,
+    "lesson_count_target": 6,
+    "assessment_mode": "project"
+  },
+  "delivery_constraints": {
+    "interaction_density": "medium",
+    "must_cover_topics": ["core workflow", "failure handling"]
+  }
+}
+```
+
+### Validation Rules
+
+- Input files must be readable text or markdown.
+- If multiple files are provided, ordering must be explicit.
+- Source language and expected output language should be specified when multilingual content exists.
+- Explicit output language requests must not be overridden by source-language mixes (see [Language Resolution](#language-resolution)).
+
+## Output Contract
+
+### Required Artifacts
+
+1. `lesson_mdf_scripts` — one MarkdownFlow file per lesson; instructional/directive teaching-script language only (model-guiding), not a final learner manuscript. See [Lesson Schema](#lesson-schema).
+2. `course_index` — `lesson_id`, `lesson_title`, `core_question`, `source_span_map`.
+3. `global_variable_table` — see [Variable Table](#variable-table).
+4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`. Conditional section: `# Translation Rules`.
+
+### `course_index` Schema (array, required)
+
+Each item:
+- `lesson_id` (string, required)
+- `lesson_title` (string, required)
+- `core_question` (string, required)
+- `source_span_map` (array of `{source_id, start, end}`, required)
+
+### `course_prompt` (string, required)
+
+- Markdown string starting with `# Role`.
+- Six required `# Section` blocks: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`.
+- Conditional `# Translation Rules` section per [course-prompt.md](course-prompt.md) `## Conditional Sections`.
+- Single source of truth at the course level; do not embed per-lesson interaction logic.
+
+### Minimal Output Example
+
+```json
+{
+  "lesson_mdf_scripts": [
+    {
+      "lesson_id": "L01",
+      "lesson_title": "Core Loop Setup",
+      "mdf_script": "## Objective\n...\n?[%{{learner_goal}} Option A | Option B]\n...",
+      "used_variables": ["learner_goal"],
+      "depends_on_lessons": []
+    }
+  ],
+  "course_index": [
+    {
+      "lesson_id": "L01",
+      "lesson_title": "Core Loop Setup",
+      "core_question": "What makes this loop stable in production?",
+      "source_span_map": [{"source_id": "doc-1", "start": 120, "end": 286}]
+    }
+  ],
+  "global_variable_table": [
+    {
+      "name": "learner_goal",
+      "collected_in": "L01",
+      "used_in": ["L01", "L02"],
+      "effect_scope": "cross_lesson"
+    }
+  ],
+  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The current course is *...*. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ...\n\n# Drawing\n- ..."
+}
+```
+
+### Phase 5 Artifacts
+
+5. `deployed_course_url` — Platform URL of the deployed course.
+6. `shifu_bid` — Course BID on the AI-Shifu platform.
+
+#### `deployment_result` (object, optional)
+
+- `shifu_bid` (string, required)
+- `deployed_course_url` (string, required)
+- `lesson_count` (number, required)
+- `status` (string enum: `published|draft`, required)
+
+### Delivery Guarantees
+
+- Stable schema across reruns.
+- Deterministic references for lesson ids and source spans.
+- Partial rerun support for changed lessons.
+
+## Variable Table
+
+`global_variable_table` is an array. Each item:
+
+- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`.
+- `collected_in` (string, required) — `lesson_id` where the variable is first collected.
+- `used_in` (array of lesson ids, required) — every lesson that references the variable.
+- `effect_scope` (string enum: `local|cross_lesson`, required).
+
+For variable *syntax* see [markdownflow.md#variables](markdownflow.md#variables); for variable *strategy and pacing* see [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy).
+
+## Lesson Schema
+
+Each item in `lesson_mdf_scripts` (Phase 3 per-lesson output):
+
+- `lesson_id` (string, required) — stable, deterministic identifier.
+- `lesson_title` (string, required) — concise learner-facing title.
+- `mdf_script` (string, required) — runnable MarkdownFlow content; instructional/directive language only.
+- `used_variables` (array of strings, required) — every variable referenced or collected in this lesson; cross-check with [Variable Table](#variable-table).
+- `depends_on_lessons` (array of lesson ids, required) — explicit list; empty list if none.
+
+### Minimal Example
+
+```json
+{
+  "lesson_id": "L03",
+  "lesson_title": "Diagnose the Bottleneck",
+  "mdf_script": "## Objective\nFind the bottleneck and test one fix.\n---\n?[%{{bottleneck_guess}} CPU bound | IO bound | Lock contention]\n---\nBased on {{bottleneck_guess}}, run the matching test first.",
+  "used_variables": ["bottleneck_guess"],
+  "depends_on_lessons": ["L02"]
+}
+```
+
+## Language Resolution
+
+### Priority Order
+
+Resolve target language with this strict priority:
+
+1. `explicit_output_language_request` — language explicitly stated in the current user prompt.
+2. `target_language_parameter` — `target_language` field supplied in the input payload (BCP-47 recommended).
+3. `prior_context_language_directive` — language requirement declared **outside** the current prompt but visible to the skill: project/system instructions (e.g. `CLAUDE.md`), earlier turns of the same conversation, or directives injected by the calling agent. The skill cannot read external platform/account locale settings, so only in-context directives count here.
+4. `prompt_language_detection` — language detected from the wording of the current user prompt itself.
+5. `source_material_dominant_language` — the dominant language of the supplied course material.
+6. `default_fallback_language` — `zh-CN`.
+
+### Control Fields
+
+- `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`)
+- `bilingual_output` (`true|false`)
+- `term_policy` (`preserve|translate|mixed`)
+- `quote_policy` (`translate_only|original_plus_translation`)
+
+### Rules
+
+- Do not restrict supported languages to a fixed list.
+- If output language is explicit, source-language distribution must not override it.
+- Learner-facing script text must follow resolved target language unless `bilingual_output` is true.
