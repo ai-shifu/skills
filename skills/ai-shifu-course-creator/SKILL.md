@@ -51,7 +51,7 @@ See `references/data-contracts.md#input-contract` for recommended object shapes.
 
 ## Output Boundary
 
-- Final outputs are **MarkdownFlow teaching scripts**.
+- Final outputs are **Teaching Prompts** (one per lesson) and a **Course Prompt** (one per course), both written in MarkdownFlow.
 - The script must be **directive/instructional** (i.e., it tells the model how to teach), not a polished, directly learner-addressed “final lecture/manuscript”.
 - Avoid author-side meta labels such as “Knowledge Block 1/2/3”, “Lesson Objective”, or “Deliverable”. Keep those as implicit structure, not visible narration.
 - Authoring rules, pipeline notes, and process instructions stay in skill docs and references, not in lesson outputs.
@@ -89,14 +89,14 @@ Run all five phases from raw material to a live deployed course.
 
 ### Path B: Author Only
 
-Run Phase 1–4 to produce optimized MarkdownFlow scripts without deploying. Sub-paths:
+Run Phase 1–4 to produce optimized Teaching Prompts and a Course Prompt without deploying. Sub-paths:
 - **Segment only**: Phase 1 alone for structured segments and manual review.
 - **Generate only**: Phase 3 alone on pre-existing segments to produce Teaching Prompts.
-- **Optimize only**: Phase 4 alone to audit and improve existing MarkdownFlow scripts.
+- **Optimize only**: Phase 4 alone to audit and improve existing Teaching Prompts.
 
 ### Path C: Deploy Only
 
-Run Phase 5 alone to deploy pre-existing MarkdownFlow files to the AI-Shifu platform.
+Run Phase 5 alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform.
 
 ### Path D: Manage Existing
 
@@ -160,14 +160,14 @@ See `references/pedagogy.md#segmentation-methodology`.
 
 ## Phase 2: Orchestration
 
-Convert raw course material into runnable lesson-level MarkdownFlow scripts by coordinating segmentation and generation.
+Convert raw course material into runnable Teaching Prompts (one per lesson) by coordinating segmentation and generation.
 
 ### Workflow
 
 1. Normalize source ordering and merge input material.
 2. Run Phase 1 for cleanup and semantic segmentation.
 3. Generate lesson-cut candidates with one core question each.
-4. Run Phase 3 for lesson-level MarkdownFlow scripts.
+4. Run Phase 3 to generate per-lesson Teaching Prompts.
 5. Build course index and global variable table.
 6. Recompute only failed lessons through strict gating.
 
@@ -195,7 +195,7 @@ When source quality is weak:
 
 ### Phase 2 Outputs
 
-- Lesson MarkdownFlow scripts (one file per lesson).
+- Teaching Prompts (one per lesson).
 - Course index (lesson id, title, core question, source mapping).
 - Global variable table (definition, use, cross-lesson references).
 
@@ -211,7 +211,7 @@ See `references/data-contracts.md#output-contract` and `references/markdownflow.
 
 ## Phase 3: Generation
 
-Generate runnable MarkdownFlow scripts for each lesson.
+Generate a runnable Teaching Prompt for each lesson.
 
 ### Teaching Pattern Baseline
 
@@ -257,7 +257,7 @@ See `references/data-contracts.md#lesson-schema`.
 
 ## Phase 4: Optimization
 
-Audit and improve existing MarkdownFlow teaching prompts. This phase is not for writing from scratch.
+Audit and improve existing Teaching Prompts (and the Course Prompt). This phase is not for writing from scratch.
 
 ### When to Use
 
@@ -413,7 +413,7 @@ archive <shifu_bid>
 
 After any deployment or management operation, verify the result:
 1. Show the user three verification URLs — admin console, course preview, and lesson preview. The script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block — copy those URLs verbatim and wrap each in a Markdown link per `references/report-template.md` (Phase 5 → Verification URLs, plus the top-level Formatting Rules). Never reconstruct URLs from a template by hand.
-2. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's MarkdownFlow content, variable collection, and interaction logic.
+2. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's Teaching Prompt, variable collection, and interaction logic.
 
 ### Phase 5 Validation
 
