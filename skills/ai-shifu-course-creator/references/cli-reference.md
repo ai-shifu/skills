@@ -22,7 +22,9 @@ The CLI always talks to `https://app.ai-shifu.cn`. To skip the SMS login, set `-
 
 ### Agent Login Flow
 
-When no valid token is available, guide the user through login. Do **not** ask "are you registered yet?" or present a registration branch — AI-Shifu's SMS login auto-creates an account on first use, so the same flow works for both new and returning users. Just ask which phone number they want to use, then proceed:
+When no valid token is available, guide the user through login. AI-Shifu's SMS login auto-creates an account on first use, so the same flow works for both new and returning users.
+
+**Do not ask the user whether they have registered for AI-Shifu.** Do not present a "have you signed up yet?" question, an A/B choice between "log in" and "sign up", or any other registration-status branch. Go straight to asking for the phone number:
 
 1. Ask the user which phone number they want to use with AI-Shifu.
 2. Send SMS code:
