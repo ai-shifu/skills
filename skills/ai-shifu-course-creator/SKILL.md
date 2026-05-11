@@ -1,11 +1,11 @@
 ---
 name: ai-shifu-course-creator
-description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing MarkdownFlow (MDF) lesson scripts. Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Trigger on any mention of AI-Shifu, AI师傅, or MarkdownFlow course scripting.
+description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, or Course Prompt authoring.
 ---
 
 # Course Creator
 
-Convert raw course material into runnable, optimized MarkdownFlow lesson scripts and deploy them as live AI-Shifu courses.
+Convert raw course material into runnable, optimized Teaching Prompts (per-lesson) and a Course Prompt (course-level), then deploy them as a live AI-Shifu course. Both prompt artifacts are written in MarkdownFlow.
 
 ## Support & Contact
 
@@ -27,6 +27,8 @@ Do **not** include the line in routine phase reports, ordinary progress messages
 - Fallback mode: Input is incomplete or low quality; produce coarse outputs, mark uncertainty, and provide focused rerun hints.
 
 ## Cross-cutting Concerns
+
+**Vocabulary**: MarkdownFlow is the **format** (a DSL). **Teaching Prompts** (per-lesson) and **Course Prompts** (course-level) are the two products written in it. The references files below split by concern, not by product.
 
 These topics span multiple references files. Use this table to locate the authoritative source for each aspect of a concern before authoring or auditing:
 
@@ -57,7 +59,7 @@ See `references/data-contracts.md#input-contract` for recommended object shapes.
 
 ## MarkdownFlow Authoring Hard Rules (Must Follow)
 
-These are the four red-line rules every lesson script must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
+These are the four red-line rules every Teaching Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
 
 1. **Script style: directive, not manuscript.** Write in imperative, model-guiding language ("Ask the learner to …", "After collecting {{var}}, branch …"). Do not produce polished learner-facing prose or author/lesson-plan meta narration. See `references/pedagogy.md#script-style`.
 
@@ -81,7 +83,7 @@ Run all five phases from raw material to a live deployed course.
 
 1. Phase 1: Segment raw material into semantic units.
 2. Phase 2: Orchestrate lesson boundaries and generate scripts.
-3. Phase 3: Generate per-lesson MarkdownFlow scripts (called internally by Phase 2).
+3. Phase 3: Generate per-lesson Teaching Prompts (called internally by Phase 2).
 4. Phase 4: Audit and optimize final scripts.
 5. Phase 5: Build, import, and publish to the AI-Shifu platform.
 
@@ -89,7 +91,7 @@ Run all five phases from raw material to a live deployed course.
 
 Run Phase 1–4 to produce optimized MarkdownFlow scripts without deploying. Sub-paths:
 - **Segment only**: Phase 1 alone for structured segments and manual review.
-- **Generate only**: Phase 3 alone on pre-existing segments to produce lesson scripts.
+- **Generate only**: Phase 3 alone on pre-existing segments to produce Teaching Prompts.
 - **Optimize only**: Phase 4 alone to audit and improve existing MarkdownFlow scripts.
 
 ### Path C: Deploy Only
@@ -201,7 +203,7 @@ See `references/data-contracts.md#output-contract` and `references/markdownflow.
 
 ### Phase 2 Validation
 
-- All Phase 2 artifacts present: lesson MarkdownFlow scripts, course index, global variable table.
+- All Phase 2 artifacts present: Teaching Prompts (one per lesson), course index, global variable table.
 - Fallback outputs include explicit uncertainty markers and rerun hints.
 - All mandatory gates pass (see `### Mandatory Gates` above).
 
@@ -239,7 +241,7 @@ Optional modules: viewpoint calibration, misconception correction, dual delivera
 Return per lesson:
 - `lesson_id`
 - `lesson_title`
-- `mdf_script`
+- `teaching_prompt`
 - `used_variables`
 - `depends_on_lessons`
 
@@ -247,8 +249,8 @@ See `references/data-contracts.md#lesson-schema`.
 
 ### Phase 3 Validation
 
-- Each `mdf_script` is valid runnable MarkdownFlow.
-- Per-lesson schema populated per `references/data-contracts.md#lesson-schema` (lesson_id, lesson_title, mdf_script, used_variables, depends_on_lessons).
+- Each `teaching_prompt` is valid runnable MarkdownFlow.
+- Per-lesson schema populated per `references/data-contracts.md#lesson-schema` (lesson_id, lesson_title, teaching_prompt, used_variables, depends_on_lessons).
 - Pedagogical and syntax constraints pass — see `references/pedagogy.md` and `references/markdownflow.md`.
 
 ---
@@ -330,7 +332,7 @@ Produce a course-level prompt (`course_prompt`) alongside lesson optimization. I
 
 Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing` (always include in full — without it the AI has no guardrails on multimodal output). Conditional section: `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
 
-Auto-fill placeholders from existing artifacts instead of asking the author again: `course_profile`, `delivery_constraints`, resolved target language (per `references/data-contracts.md#language-resolution`), Phase 1 visual cues, and `term_policy`. Do not duplicate per-lesson variable collection or branching here — those belong in lesson MarkdownFlow.
+Auto-fill placeholders from existing artifacts instead of asking the author again: `course_profile`, `delivery_constraints`, resolved target language (per `references/data-contracts.md#language-resolution`), Phase 1 visual cues, and `term_policy`. Do not duplicate per-lesson variable collection or branching here — those belong in the Teaching Prompts.
 
 See `references/course-prompt.md#authoring-rules` for the 12 authoring rules and `references/course-prompt.md#fillable-template` for the fillable template and Substitution Map.
 
@@ -343,7 +345,7 @@ See `references/course-prompt.md#authoring-rules` for the 12 authoring rules and
 
 ## Phase 5: Deployment
 
-Deploy optimized MarkdownFlow lesson scripts to the AI-Shifu platform as live courses.
+Deploy optimized Teaching Prompts to the AI-Shifu platform as live courses.
 
 ### Prerequisites
 
@@ -360,7 +362,7 @@ Always use CLI commands. Never make raw HTTP/API calls directly.
 
 ### Course Directory
 
-MarkdownFlow lesson scripts must be organized in a course directory before deployment. See `references/cli/course-directory-spec.md` for the full specification.
+Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `references/cli/course-directory-spec.md` for the full specification.
 
 When continuing from Phase 4 (Path A), write optimized scripts into the course directory structure automatically.
 
@@ -388,7 +390,7 @@ See `references/cli/cli-reference.md` for the complete command reference and `re
 5. Verify via platform URL.
 
 **Standalone deployment (Path C):**
-1. Ensure course directory is ready with MarkdownFlow lesson files and a `course-prompt.md`. If the course prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`.
+1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`) and a `course-prompt.md`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`.
 2. Run `build`, `import`, `publish` as above.
 
 ### Common Management
@@ -399,7 +401,7 @@ Use these commands for ongoing course operations (Path D):
 list                                                   # List all courses
 show <shifu_bid>                                       # Show course outline
 update-meta <shifu_bid> --name "..." --description "..."
-update-lesson <shifu_bid> <outline_bid> --mdf-file updated.md
+update-lesson <shifu_bid> <outline_bid> --teaching-prompt-file updated.md
 rename-lesson <shifu_bid> <outline_bid> --name "New Name"
 reorder <shifu_bid> --order bid1,bid2,bid3
 delete-lesson <shifu_bid> <outline_bid>

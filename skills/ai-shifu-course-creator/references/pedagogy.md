@@ -1,10 +1,12 @@
 # Pedagogy
 
-Authoritative source for pedagogical / quality-of-teaching constraints — design patterns, cognitive techniques, segmentation methodology, optimization methodology, and the teaching-side rules around variables, interactions, and visual-text coordination. Violating anything here generally produces a script that *runs* but teaches poorly. For syntax / runtime constraints (which make scripts fail to parse), see [markdownflow.md](markdownflow.md).
+Authoritative source for **Teaching Prompt** design constraints — patterns, cognitive techniques, segmentation methodology, optimization methodology, and the teaching-side rules around variables, interactions, and visual-text coordination. Violating anything here generally produces a Teaching Prompt that *runs* but teaches poorly.
+
+For format syntax / runtime constraints (which make any prompt fail to parse), see [markdownflow.md](markdownflow.md). For Course Prompt design (the course-level AI persona / style document), see [course-prompt.md](course-prompt.md).
 
 ## Script Style
 
-Lesson MarkdownFlow is a *teaching script* the AI engine reads, not a polished learner-facing lecture. Write in imperative, model-guiding language.
+A Teaching Prompt is the per-lesson MarkdownFlow document the AI engine reads at runtime — it is a *script that guides teaching*, not a polished learner-facing lecture. Write in imperative, model-guiding language.
 
 Preferred patterns:
 - "Explain to the learner …"
@@ -163,6 +165,6 @@ These are the *teaching* rules around interactions. For interaction *syntax* see
 
 - If a visual is needed, describe it in natural language (e.g., "Show an image that …").
 - Pair every visual instruction with a brief explanation of what the visual is meant to convey.
-- Do not embed raw SVG/HTML/Mermaid/PlantUML/Graphviz markup inside lesson MarkdownFlow files unless the user explicitly asks for that format.
+- Do not embed raw SVG/HTML/Mermaid/PlantUML/Graphviz markup inside Teaching Prompts unless the user explicitly asks for that format.
 - Default to natural-language image/diagram placeholders.
 - Every core concept needs visual + textual explanation together; the visual carries structural prompting, the text carries the full explanation (assume the learner has not seen the image).

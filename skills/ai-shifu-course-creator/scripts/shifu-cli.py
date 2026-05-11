@@ -424,14 +424,14 @@ def cmd_add_lesson(args):
     parent_label = f" under {args.parent_bid}" if args.parent_bid else ""
     print(f"Created lesson: {outline_bid} ({args.name}){parent_label}")
 
-    # Write MarkdownFlow content if provided
-    if args.mdf_file:
-        with open(args.mdf_file, "r", encoding="utf-8") as f:
+    # Write Teaching Prompt if provided
+    if args.teaching_prompt_file:
+        with open(args.teaching_prompt_file, "r", encoding="utf-8") as f:
             content = f.read()
         api(base_url, token, "post",
             f"/shifus/{shifu_bid}/outlines/{outline_bid}/mdflow",
             json={"data": content})
-        print(f"  MarkdownFlow saved ({len(content)} chars)")
+        print(f"  Teaching Prompt saved ({len(content)} chars)")
 
 
 # ── Update Lesson ──────────────────────────────────────────────────────────────
@@ -448,8 +448,8 @@ def cmd_update_lesson(args):
     if isinstance(current, dict):
         base_revision = current.get("revision")
 
-    # Step 2: Read new content
-    with open(args.mdf_file, "r", encoding="utf-8") as f:
+    # Step 2: Read new Teaching Prompt content
+    with open(args.teaching_prompt_file, "r", encoding="utf-8") as f:
         content = f.read()
 
     # Step 3: POST with base_revision
@@ -967,14 +967,14 @@ def build_parser():
 
     # ── show ──
     p = sub.add_parser("show", parents=[parent_parser],
-                       help="Show course detail or lesson MarkdownFlow content")
+                       help="Show course detail or a lesson's Teaching Prompt")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("outline_bid", nargs="?", default=None,
                    help="Outline BID (omit to show tree)")
 
     # ── history ──
     p = sub.add_parser("history", parents=[parent_parser],
-                       help="Show MarkdownFlow revision history")
+                       help="Show Teaching Prompt revision history")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("outline_bid", help="Outline BID")
 
@@ -1010,16 +1010,18 @@ def build_parser():
                        help="Add a new lesson under a chapter")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("--name", required=True, help="Lesson name")
-    p.add_argument("--mdf-file", default=None, help="MarkdownFlow content file")
+    p.add_argument("--teaching-prompt-file", default=None,
+                   help="Teaching Prompt file (MarkdownFlow format)")
     p.add_argument("--parent-bid", required=True,
                    help="Parent chapter BID (use add-chapter to create one first)")
 
     # ── update-lesson ──
     p = sub.add_parser("update-lesson", parents=[parent_parser],
-                       help="Update lesson MarkdownFlow content")
+                       help="Update a lesson's Teaching Prompt")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("outline_bid", help="Outline BID")
-    p.add_argument("--mdf-file", required=True, help="MarkdownFlow content file")
+    p.add_argument("--teaching-prompt-file", required=True,
+                   help="Teaching Prompt file (MarkdownFlow format)")
 
     # ── rename-lesson ──
     p = sub.add_parser("rename-lesson", parents=[parent_parser],

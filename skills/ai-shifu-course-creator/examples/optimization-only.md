@@ -4,7 +4,7 @@
 
 ```json
 {
-  "existing_mdf_script": "## Objective\nUnderstand retry policy.\n---\n?[%{{answer}} yes | no]\n---\nGreat job.",
+  "existing_teaching_prompt": "## Objective\nUnderstand retry policy.\n---\n?[%{{answer}} yes | no]\n---\nGreat job.",
   "course_material": "Learner must differentiate transient vs permanent failure and choose a matching retry stop rule.",
   "optimization_constraints": {
     "max_interactions": 4,
@@ -48,7 +48,7 @@ If {{failure_type}} is permanent, stop retries and open a corrective task.
 
 ```json
 {
-  "existing_mdf_script": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\n?[%{{choose_fix}} option A | option B]\n---\nUse {{unknown_variable}} now.",
+  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\n?[%{{choose_fix}} option A | option B]\n---\nUse {{unknown_variable}} now.",
   "course_material": "",
   "optimization_constraints": {
     "fallback_mode": true,

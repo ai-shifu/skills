@@ -82,7 +82,7 @@ Provide one of:
 
 ### Required Artifacts
 
-1. `lesson_mdf_scripts` — one MarkdownFlow file per lesson; instructional/directive teaching-script language only (model-guiding), not a final learner manuscript. See [Lesson Schema](#lesson-schema).
+1. `lesson_teaching_prompts` — one Teaching Prompt per lesson (written in MarkdownFlow). Instructional/directive language only (model-guiding), not a final learner manuscript. See [Lesson Schema](#lesson-schema).
 2. `course_index` — `lesson_id`, `lesson_title`, `core_question`, `source_span_map`.
 3. `global_variable_table` — see [Variable Table](#variable-table).
 4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`. Conditional section: `# Translation Rules`.
@@ -106,11 +106,11 @@ Each item:
 
 ```json
 {
-  "lesson_mdf_scripts": [
+  "lesson_teaching_prompts": [
     {
       "lesson_id": "L01",
       "lesson_title": "Core Loop Setup",
-      "mdf_script": "## Objective\n...\n?[%{{learner_goal}} Option A | Option B]\n...",
+      "teaching_prompt": "## Objective\n...\n?[%{{learner_goal}} Option A | Option B]\n...",
       "used_variables": ["learner_goal"],
       "depends_on_lessons": []
     }
@@ -166,11 +166,11 @@ For variable *syntax* see [markdownflow.md#variables](markdownflow.md#variables)
 
 ## Lesson Schema
 
-Each item in `lesson_mdf_scripts` (Phase 3 per-lesson output):
+Each item in `lesson_teaching_prompts` (Phase 3 per-lesson output):
 
 - `lesson_id` (string, required) — stable, deterministic identifier.
 - `lesson_title` (string, required) — concise learner-facing title.
-- `mdf_script` (string, required) — runnable MarkdownFlow content; instructional/directive language only.
+- `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content (written in MarkdownFlow); instructional/directive language only.
 - `used_variables` (array of strings, required) — every variable referenced or collected in this lesson; cross-check with [Variable Table](#variable-table).
 - `depends_on_lessons` (array of lesson ids, required) — explicit list; empty list if none.
 
@@ -180,7 +180,7 @@ Each item in `lesson_mdf_scripts` (Phase 3 per-lesson output):
 {
   "lesson_id": "L03",
   "lesson_title": "Diagnose the Bottleneck",
-  "mdf_script": "## Objective\nFind the bottleneck and test one fix.\n---\n?[%{{bottleneck_guess}} CPU bound | IO bound | Lock contention]\n---\nBased on {{bottleneck_guess}}, run the matching test first.",
+  "teaching_prompt": "## Objective\nFind the bottleneck and test one fix.\n---\n?[%{{bottleneck_guess}} CPU bound | IO bound | Lock contention]\n---\nBased on {{bottleneck_guess}}, run the matching test first.",
   "used_variables": ["bottleneck_guess"],
   "depends_on_lessons": ["L02"]
 }

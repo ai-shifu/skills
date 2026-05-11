@@ -6,12 +6,12 @@ Authoritative source for the course-level prompt artifact: what it is, the 12 au
 
 The course prompt defines the AI engine's **course-level persona and operating rules** — the role it plays, how it teaches, how it writes, how it formats output, and how it draws and translates. It is loaded once per course and applied to every lesson.
 
-This is **not the same as a lesson script**:
+**Both Teaching Prompt and Course Prompt are written in MarkdownFlow**, but they serve different roles:
 
-- Lesson scripts (per-lesson MarkdownFlow) carry **single-lesson teaching instructions**: what to explain, what variable to collect, what to branch on.
-- Course prompt carries **cross-lesson constants**: identity, voice, format, terminology, drawing policy.
+- **Teaching Prompt** (per-lesson) carries **single-lesson teaching instructions**: what to explain, what variable to collect, what to branch on. There is one per lesson. Design rules: see [pedagogy.md](pedagogy.md).
+- **Course Prompt** (course-level) carries **cross-lesson constants**: identity, voice, format, terminology, drawing policy. There is one per course. Design rules: this file.
 
-Do not duplicate per-lesson interaction logic, variable collection, or branching here. If a rule only applies to one lesson, it belongs in that lesson's MarkdownFlow, not in the course prompt.
+Do not duplicate per-lesson interaction logic, variable collection, or branching here. If a rule only applies to one lesson, it belongs in that lesson's Teaching Prompt, not in the Course Prompt.
 
 ## Required Sections
 
@@ -104,7 +104,7 @@ Must list (at minimum):
 - Do not freely elaborate beyond the instruction.
 - Do not output content unrelated to the course.
 
-Note: rhetorical questions used **inside** an explanation are allowed as a teaching device. The prohibition is on tail-prompts that ask the learner to continue, answer, or move on at the end of a turn — that role belongs to the lesson script's interactions.
+Note: rhetorical questions used **inside** an explanation are allowed as a teaching device. The prohibition is on tail-prompts that ask the learner to continue, answer, or move on at the end of a turn — that role belongs to the Teaching Prompt's interactions.
 
 Bad (tail-prompt): `So, are you ready to move on to the next part?`
 Good (rhetorical inside explanation): `Why does this metric jump matter? Because it tells us the upstream queue stalled — and that is the real failure signal we want to catch.`
@@ -344,9 +344,9 @@ You specialize in production observability and are a professional teacher in the
 
 ## What Not to Put Here
 
-- Per-lesson variable collection or branching logic — belongs in lesson MarkdownFlow.
+- Per-lesson variable collection or branching logic — belongs in the Teaching Prompt for that lesson.
 - Specific lesson-cut decisions, lesson titles, or lesson order — belongs in `course_index` and `structure.json`.
-- Source-material excerpts or learner-facing scripts — belongs in lesson MarkdownFlow.
+- Source-material excerpts or learner-facing scripts — belongs in the Teaching Prompt for that lesson.
 - Pipeline / authoring instructions for downstream phases — belongs in skill docs, not in a runtime prompt.
 - HTML comments (`<!-- -->`) — the MarkdownFlow parser strips them, so the AI engine never sees them. Write instructions as plain Markdown.
 

@@ -100,7 +100,7 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 
 ```json
 {
-  "existing_mdf_script": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\nUse {{unknown_variable}} now.",
+  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\nUse {{unknown_variable}} now.",
   "course_material": "",
   "optimization_constraints": {
     "fallback_mode": true,

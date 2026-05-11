@@ -1,6 +1,8 @@
 # MarkdownFlow Spec
 
-Authoritative source for MarkdownFlow syntax, runtime constraints, and preservation rules. Violating anything here makes the script fail to parse, reference an uncollected variable, or silently lose source content. For pedagogical / quality-of-teaching constraints, see [pedagogy.md](pedagogy.md).
+MarkdownFlow is the **format** (a small DSL) used to author both **Teaching Prompts** (per-lesson, runtime teaching instructions) and **Course Prompts** (course-level AI persona / style / drawing rules). This file is the authoritative source for the format itself — syntax, runtime constraints, and preservation rules. Violating anything here makes the prompt fail to parse, reference an uncollected variable, or silently lose source content.
+
+For pedagogical / quality-of-teaching constraints (which apply to Teaching Prompts), see [pedagogy.md](pedagogy.md). For Course Prompt structure and authoring rules, see [course-prompt.md](course-prompt.md).
 
 ## Variables
 

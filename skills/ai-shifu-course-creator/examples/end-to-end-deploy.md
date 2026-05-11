@@ -22,7 +22,7 @@
 
 ## Phase 1–4 (Author)
 
-Produces optimized MarkdownFlow lesson scripts (see `pipeline-full.md` for detailed output).
+Produces optimized Teaching Prompts (see `pipeline-full.md` for detailed output).
 
 ## Phase 5 Output (Deployment)
 
@@ -71,5 +71,5 @@ Platform URLs (these are copied verbatim from the `Verification URLs:` block pri
 ## Acceptance Notes
 
 - All five phases executed end-to-end.
-- MarkdownFlow files written to course directory, built, imported, and published.
+- Teaching Prompts (MarkdownFlow) written to course directory, built, imported, and published.
 - Course is live and accessible via platform URL.
