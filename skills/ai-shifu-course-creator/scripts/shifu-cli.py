@@ -587,7 +587,7 @@ def _import_flat(base_url, token, json_file, shifu_bid):
     total = len(outline_items)
     count = 0
 
-    # Phase 1: Create parent items (chapters)
+    # Segmentation: Create parent items (chapters)
     for item in parents:
         count += 1
         title = item["title"]
@@ -609,7 +609,7 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         created.append({"bid": new_bid, "title": title})
         time.sleep(0.3)
 
-    # Phase 2: Create child items (lessons) with mapped parent_bid
+    # Orchestration: Create child items (lessons) with mapped parent_bid
     for item in children:
         count += 1
         title = item["title"]

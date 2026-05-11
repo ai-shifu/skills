@@ -1,4 +1,4 @@
-# Optimization Only Example (Phase 4)
+# Optimization Only Example
 
 ## Minimal Input
 

@@ -135,7 +135,7 @@ Each item:
 }
 ```
 
-### Phase 5 Artifacts
+### Artifacts
 
 5. `deployed_course_url` — Platform URL of the deployed course.
 6. `shifu_bid` — Course BID on the AI-Shifu platform.
@@ -166,7 +166,7 @@ For variable *syntax* see [markdownflow.md#variables](markdownflow.md#variables)
 
 ## Lesson Schema
 
-Each item in `lesson_teaching_prompts` (Phase 3 per-lesson output):
+Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 
 - `lesson_id` (string, required) — stable, deterministic identifier.
 - `lesson_title` (string, required) — concise learner-facing title.

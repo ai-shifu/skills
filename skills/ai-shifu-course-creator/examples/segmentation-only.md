@@ -1,4 +1,4 @@
-# Segmentation Only Example (Phase 1)
+# Segmentation Only Example
 
 ## Minimal Input
 

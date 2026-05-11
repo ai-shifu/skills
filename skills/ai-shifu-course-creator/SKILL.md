@@ -71,40 +71,55 @@ These are the four red-line rules every Teaching Prompt must satisfy. Full Bad/G
 
 ## Pipeline Overview
 
+The stages are **not** a flat linear pipeline. **Orchestration is an end-to-end driver** that internally calls Segmentation and Generation. Only Optimization and Deployment actually run in linear sequence after Orchestration completes.
+
 ```
-Phase 1: Segmentation → Phase 2: Orchestration → Phase 3: Generation → Phase 4: Optimization → Phase 5: Deployment
+Raw material
+   │
+   ▼
+Orchestration                            ← end-to-end driver
+   ├── calls Segmentation                 (cleanup + semantic segmentation)
+   └── calls Generation                   (per-lesson Teaching Prompts)
+        │
+        │  Orchestration outputs: Teaching Prompts + course_index
+        │                 + global_variable_table
+        ▼
+Optimization                              (audit + optimize)
+        │
+        ▼
+Deployment                                (build + import + publish to platform)
 ```
+
+Segmentation, Generation, and Optimization can each be invoked standalone — see [Usage Paths](#usage-paths) Path B for the sub-paths (Segment only / Generate only / Optimize only).
 
 ## Usage Paths
 
 ### Path A: End-to-End
 
-Run all five phases from raw material to a live deployed course.
+Run the full pipeline from raw material to a live deployed course.
 
-1. Phase 1: Segment raw material into semantic units.
-2. Phase 2: Orchestrate lesson boundaries and generate scripts.
-3. Phase 3: Generate per-lesson Teaching Prompts (called internally by Phase 2).
-4. Phase 4: Audit and optimize final scripts.
-5. Phase 5: Build, import, and publish to the AI-Shifu platform.
+1. **Orchestration** drives Segmentation and Generation end-to-end, then runs cross-lesson gating to produce Teaching Prompts + course_index + variable table.
+2. **Optimization** audits and improves Orchestration's output, plus produces the Course Prompt.
+3. **Deployment** writes the course directory, builds, imports, and publishes to the AI-Shifu platform.
 
 ### Path B: Author Only
 
-Run Phase 1–4 to produce optimized Teaching Prompts and a Course Prompt without deploying. Sub-paths:
-- **Segment only**: Phase 1 alone for structured segments and manual review.
-- **Generate only**: Phase 3 alone on pre-existing segments to produce Teaching Prompts.
-- **Optimize only**: Phase 4 alone to audit and improve existing Teaching Prompts.
+Run Segmentation through Optimization to produce optimized Teaching Prompts and a Course Prompt without deploying. Sub-paths:
+- **Segment only**: Segmentation alone for structured segments and manual review.
+- **Generate only**: Generation alone on pre-existing segments to produce Teaching Prompts.
+- **Optimize only**: Optimization alone to audit and improve existing Teaching Prompts.
 
 ### Path C: Deploy Only
 
-Run Phase 5 alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform.
+Run Deployment alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform.
 
 ### Path D: Manage Existing
 
-Use Phase 5 management commands (list, show, update, rename, reorder, delete, publish, archive) on courses already on the platform.
+Use Deployment management commands (list, show, update, rename, reorder, delete, publish, archive) on courses already on the platform.
 
 ---
 
-## Phase 1: Segmentation
+## Segmentation
 
 Turn messy course source material into a reliable intermediate structure for downstream lesson generation.
 
@@ -140,7 +155,7 @@ Capture these fields for downstream teaching quality:
 - `interaction_intent_cue`: intent labels such as diagnose, branch, calibrate, compare.
 - `compare_cue`: candidate prompts for before/after comparison.
 
-### Phase 1 Outputs
+### Outputs
 
 - Ordered segment list.
 - Lesson boundary candidates.
@@ -150,7 +165,7 @@ Capture these fields for downstream teaching quality:
 
 See `references/pedagogy.md#segmentation-methodology`.
 
-### Phase 1 Validation
+### Validation
 
 - Segment output covers all valid source spans in traceable order.
 - Transfer-signal fields are complete and usable downstream.
@@ -158,22 +173,24 @@ See `references/pedagogy.md#segmentation-methodology`.
 
 ---
 
-## Phase 2: Orchestration
+## Orchestration
+
+**Role**: end-to-end orchestrator for Path A. Orchestration calls Segmentation (segmentation) and Generation (generation) internally, then performs the cross-lesson work that those atomic phases cannot — course index, global variable table, and mandatory gating.
 
 Convert raw course material into runnable Teaching Prompts (one per lesson) by coordinating segmentation and generation.
 
 ### Workflow
 
 1. Normalize source ordering and merge input material.
-2. Run Phase 1 for cleanup and semantic segmentation.
+2. Run Segmentation for cleanup and semantic segmentation.
 3. Generate lesson-cut candidates with one core question each.
-4. Run Phase 3 to generate per-lesson Teaching Prompts.
+4. Run Generation to generate per-lesson Teaching Prompts.
 5. Build course index and global variable table.
 6. Recompute only failed lessons through strict gating.
 
 ### Mandatory Gates
 
-All gates must pass before Phase 2 declares lessons complete:
+All gates must pass before Orchestration declares lessons complete:
 
 - **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `references/markdownflow.md#preservation`; no unresolved or uncollected variable references; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `references/markdownflow.md#deterministic-blocks`.
 - **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, minimum teaching loop, at least one deepening interaction, max five interactions per lesson, variable-collection pacing, viewpoint branching, and visual-text pairing — all per `references/pedagogy.md#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`.
@@ -193,7 +210,7 @@ When source quality is weak:
 - Mark uncertain spans explicitly.
 - Continue with best-effort generation instead of stopping.
 
-### Phase 2 Outputs
+### Outputs
 
 - Teaching Prompts (one per lesson).
 - Course index (lesson id, title, core question, source mapping).
@@ -201,15 +218,15 @@ When source quality is weak:
 
 See `references/data-contracts.md#output-contract` and `references/markdownflow.md#preservation`.
 
-### Phase 2 Validation
+### Validation
 
-- All Phase 2 artifacts present: Teaching Prompts (one per lesson), course index, global variable table.
+- All Orchestration artifacts present: Teaching Prompts (one per lesson), course index, global variable table.
 - Fallback outputs include explicit uncertainty markers and rerun hints.
 - All mandatory gates pass (see `### Mandatory Gates` above).
 
 ---
 
-## Phase 3: Generation
+## Generation
 
 Generate a runnable Teaching Prompt for each lesson.
 
@@ -236,7 +253,7 @@ Required anchors:
 
 Optional modules: viewpoint calibration, misconception correction, dual deliverables (understanding + action), cross-lesson bridge sentence, additional visual-text reinforcement blocks.
 
-### Phase 3 Outputs
+### Outputs
 
 Return per lesson:
 - `lesson_id`
@@ -247,7 +264,7 @@ Return per lesson:
 
 See `references/data-contracts.md#lesson-schema`.
 
-### Phase 3 Validation
+### Validation
 
 - Each `teaching_prompt` is valid runnable MarkdownFlow.
 - Per-lesson schema populated per `references/data-contracts.md#lesson-schema` (lesson_id, lesson_title, teaching_prompt, used_variables, depends_on_lessons).
@@ -255,7 +272,7 @@ See `references/data-contracts.md#lesson-schema`.
 
 ---
 
-## Phase 4: Optimization
+## Optimization
 
 Audit and improve existing Teaching Prompts (and the Course Prompt). This phase is not for writing from scratch.
 
@@ -281,7 +298,7 @@ See `references/pedagogy.md#optimization-methodology`.
 
 ### High-Standard Constraints
 
-Apply Phase 4 audits against the full constraint set:
+Apply Optimization audits against the full constraint set:
 
 - Pedagogical constraints (variable strategy, interaction design, visual-text coordination, lesson loop, information density): `references/pedagogy.md`.
 - Syntax / runtime constraints (preservation, deterministic blocks, variable references): `references/markdownflow.md`.
@@ -332,18 +349,18 @@ Produce a course-level prompt (`course_prompt`) alongside lesson optimization. I
 
 Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing` (always include in full — without it the AI has no guardrails on multimodal output). Conditional section: `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
 
-Auto-fill placeholders from existing artifacts instead of asking the author again: `course_profile`, `delivery_constraints`, resolved target language (per `references/data-contracts.md#language-resolution`), Phase 1 visual cues, and `term_policy`. Do not duplicate per-lesson variable collection or branching here — those belong in the Teaching Prompts.
+Auto-fill placeholders from existing artifacts instead of asking the author again: `course_profile`, `delivery_constraints`, resolved target language (per `references/data-contracts.md#language-resolution`), Segmentation visual cues, and `term_policy`. Do not duplicate per-lesson variable collection or branching here — those belong in the Teaching Prompts.
 
 See `references/course-prompt.md#authoring-rules` for the 12 authoring rules and `references/course-prompt.md#fillable-template` for the fillable template and Substitution Map.
 
-### Phase 4 Validation
+### Validation
 
 - Conclusion and risk level presented first; full review against `references/review-checklist.md`.
 - A `course_prompt` artifact is produced when input includes course material, with all six required sections present. `# Translation Rules` may be omitted when its trigger condition does not apply.
 
 ---
 
-## Phase 5: Deployment
+## Deployment
 
 Deploy optimized Teaching Prompts to the AI-Shifu platform as live courses.
 
@@ -364,7 +381,7 @@ Always use CLI commands. Never make raw HTTP/API calls directly.
 
 Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `references/cli/course-directory-spec.md` for the full specification.
 
-When continuing from Phase 4 (Path A), write the optimized Teaching Prompts and Course Prompt into the course directory structure automatically.
+When continuing from Optimization (Path A), write the optimized Teaching Prompts and Course Prompt into the course directory structure automatically.
 
 ### CLI Quick Reference
 
@@ -383,7 +400,7 @@ See `references/cli/cli-reference.md` for the complete command reference and `re
 ### Deployment Workflow
 
 **From pipeline (Path A continuation):**
-1. Write Phase 4 outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-prompt.md` (the Phase 4 `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), optional `structure.json`.
+1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), optional `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
 3. Run `import --new --json-file <dir>/shifu-import.json` to create the course.
 4. Run `publish <shifu_bid>` to make it live.
@@ -412,10 +429,10 @@ archive <shifu_bid>
 ### Verification
 
 After any deployment or management operation, verify the result:
-1. Show the user three verification URLs — admin console, course preview, and lesson preview. The script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block — copy those URLs verbatim and wrap each in a Markdown link per `references/report-template.md` (Phase 5 → Verification URLs, plus the top-level Formatting Rules). Never reconstruct URLs from a template by hand.
+1. Show the user three verification URLs — admin console, course preview, and lesson preview. The script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block — copy those URLs verbatim and wrap each in a Markdown link per `references/report-template.md` (Deployment → Verification URLs, plus the top-level Formatting Rules). Never reconstruct URLs from a template by hand.
 2. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's Teaching Prompt, variable collection, and interaction logic.
 
-### Phase 5 Validation
+### Validation
 
 - Import completes without errors.
 - Course is accessible via platform URL.

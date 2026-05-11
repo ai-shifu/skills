@@ -1,6 +1,6 @@
 # Review Checklist
 
-Phase 4 全面审计清单 — Phase 4 Optimization 必须把每条都过一遍。其他 Phase 的阶段交付检查见 SKILL.md 各 Phase 内的 Validation 段。
+Optimization 全面审计清单 — Optimization Optimization 必须把每条都过一遍。其他 Phase 的阶段交付检查见 SKILL.md 各 Phase 内的 Validation 段。
 
 ## Coverage
 

@@ -1,4 +1,4 @@
-# Full Pipeline Example (Phase 1 → 2 → 3 → 4)
+# Full Pipeline Example (Segmentation → Orchestration → Generation → Optimization)
 
 ## Input Payload (example)
 
@@ -23,7 +23,7 @@
 }
 ```
 
-## Phase 1 Output (Segmentation)
+## Segmentation Output
 
 ```json
 {
@@ -54,7 +54,7 @@
 }
 ```
 
-## Phase 2 + 3 Output (Orchestration + Generation)
+## Orchestration + Generation Output
 
 ```json
 {
@@ -86,7 +86,7 @@ Identify the highest-signal diagnostic step.
 Based on {{diagnosis_choice}}, we run one focused verification next.
 ```
 
-## Phase 4 Output (Optimization)
+## Optimization Output
 
 ```json
 {

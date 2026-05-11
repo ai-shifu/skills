@@ -198,7 +198,7 @@ When generating the course prompt, consume already-collected artifacts instead o
 - `delivery_constraints.must_cover_topics` / `avoid_topics` → informs `# Task` boundary bullet.
 - Resolved target language (per [data-contracts.md#language-resolution](data-contracts.md#language-resolution)) → drives `# Writing Style` language and any `# Translation Rules` decisions.
 - `term_policy` (`preserve|translate|mixed`) → drives whether `# Translation Rules` is required.
-- Phase 1 `visual_cue` / `visual_text_pair_cue` presence → informs how detailed the `# Drawing` guidance should be (`# Drawing` itself is always required).
+- Segmentation `visual_cue` / `visual_text_pair_cue` presence → informs how detailed the `# Drawing` guidance should be (`# Drawing` itself is always required).
 - Course title from `README.md` → fills `# Task` course-name bullet.
 
 The [Substitution Map](#substitution-map) below provides a one-to-one mapping between `XXX` placeholders in the template and these inputs.
@@ -333,12 +333,12 @@ You specialize in production observability and are a professional teacher in the
 | Placeholder | Section | Source |
 |---|---|---|
 | `XXX` (teacher name) | `# Role` line 1 | Author choice; default to a course-specific persona name. |
-| `XXX` (specialty) | `# Role` line 2 | Phase 1 dominant topic; cross-check with `course_index` core questions. |
-| `XXX` (field) | `# Role` line 2 | Phase 1 dominant topic. |
+| `XXX` (specialty) | `# Role` line 2 | Segmentation dominant topic; cross-check with `course_index` core questions. |
+| `XXX` (field) | `# Role` line 2 | Segmentation dominant topic. |
 | `*XXX*` (course name) | `# Task` bullet 1 | `README.md` course title. |
-| `XXX` (master target) | `# Task` bullet 1 | Phase 2 course-level goal; aggregate of `course_index` core questions. |
+| `XXX` (master target) | `# Task` bullet 1 | Orchestration course-level goal; aggregate of `course_index` core questions. |
 | `XXX learners` | `# Task` bullet 2 | `course_profile.audience_level` + `prerequisite_level`. |
-| `XXX problems` | `# Task` bullet 2 | `delivery_constraints.must_cover_topics`; cross-check with Phase 1 segments. |
+| `XXX problems` | `# Task` bullet 2 | `delivery_constraints.must_cover_topics`; cross-check with Segmentation segments. |
 
 `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`, and `# Translation Rules` are constants — copy verbatim and adjust only when a course has a justified reason. Document any deviation in the course `README.md` so future updates know it is intentional.
 
@@ -352,8 +352,8 @@ You specialize in production observability and are a professional teacher in the
 
 ## Cross-References
 
-- [data-contracts.md#output-contract](data-contracts.md#output-contract) — `course_prompt` as a Phase 4 artifact.
+- [data-contracts.md#output-contract](data-contracts.md#output-contract) — `course_prompt` as an Optimization-stage artifact.
 - [data-contracts.md#language-resolution](data-contracts.md#language-resolution) — target-language resolution priority.
 - [data-contracts.md#input-contract](data-contracts.md#input-contract) — `course_profile`, `delivery_constraints`, `term_policy` shapes.
 - [cli/course-directory-spec.md](cli/course-directory-spec.md) — where `course-prompt.md` lives in the course directory and how `build` consumes it (already in `cli/` subdir).
-- SKILL.md `## Phase 4: Optimization` (Course Prompt subsection) and `## Phase 5: Deployment` (deployment workflow step 1).
+- SKILL.md `## Optimization` (Course Prompt subsection) and `## Deployment` (deployment workflow step 1).

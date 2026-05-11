@@ -1,4 +1,4 @@
-# Deploy Only Example (Phase 5)
+# Deploy Only Example
 
 Deploy pre-existing Teaching Prompts (and a Course Prompt) without running the authoring pipeline.
 
@@ -50,6 +50,6 @@ python3 {skillDir}/scripts/shifu-cli.py archive xyz789
 
 ## Acceptance Notes
 
-- Phase 5 executed independently (Path C).
+- Deployment executed independently (Path C).
 - Course deployed from pre-existing Teaching Prompts.
 - Management commands used for ongoing operations (Path D).

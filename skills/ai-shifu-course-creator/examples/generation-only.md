@@ -1,4 +1,4 @@
-# Generation Only Example (Phase 3)
+# Generation Only Example
 
 ## Minimal Input
 
