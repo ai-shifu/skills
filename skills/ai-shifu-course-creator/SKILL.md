@@ -48,6 +48,7 @@ Use these optional controls across all phases:
 
 - `course_profile` (json): audience and pedagogical parameters.
 - `delivery_constraints` (json): platform limits, topic policy, and non-negotiable fragments.
+- `target_language` (BCP-47 string, e.g. `zh-CN` / `en-US` / `fr-FR`): explicit output language; takes priority over prompt-language detection. Full priority order in `references/data-contracts.md#language-resolution`.
 
 Field-level schemas with example JSON in `references/data-contracts.md#recommended-object-shapes`.
 
@@ -61,7 +62,7 @@ Keep author-side scaffolding out of Teaching Prompt and Course Prompt outputs:
 
 ## Teaching Prompt and Course Prompt Authoring Hard Rules (Must Follow)
 
-These are the four red-line rules every Teaching Prompt and Course Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
+These are the five red-line rules every Teaching Prompt and Course Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
 
 1. **Script style: directive, not manuscript.** Write in imperative, model-guiding language ("Ask the learner to …", "After collecting {{var}}, branch …"). Do not produce polished learner-facing prose or author/lesson-plan meta narration. See `references/pedagogy.md#script-style`.
 
@@ -70,6 +71,8 @@ These are the four red-line rules every Teaching Prompt and Course Prompt must s
 3. **Mandatory anchoring + downstream effect.** After every interaction, restate the learner's selection as an instruction (`Restate the learner's current choice as {{var}}.`) and use `{{var}}` to drive a visible downstream effect (branching explanation, examples, difficulty, feedback). See `references/pedagogy.md#interaction-design`.
 
 4. **Visuals: describe, do not inline source markup.** Use natural-language image instructions ("Show an image that …") paired with text explanation. Do not inline SVG/HTML/Mermaid/PlantUML/Graphviz markup unless the user explicitly asks for that format. See `references/pedagogy.md#visual-text-coordination`.
+
+5. **Output language must be resolved before any prompt content.** Run Language Resolution per `references/data-contracts.md#language-resolution` before producing Teaching Prompt or Course Prompt content. The user's invocation language counts as `prompt_language_detection` (priority 4) and must be used when no higher-priority directive exists. Examples in this skill and in `references/` are written in English for canonical illustration only — do NOT let example language override the resolved output language. If the user invokes in Chinese, all interactions, option labels, downstream text, and the Course Prompt itself must be in Chinese.
 
 ## Pipeline Overview
 

@@ -1,5 +1,7 @@
 # Full Pipeline Example (Segmentation → Orchestration → Generation → Optimization)
 
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
+
 ## Input Payload (example)
 
 ```json

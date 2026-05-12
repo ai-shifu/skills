@@ -1,5 +1,7 @@
 # Generation Only Example
 
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
+
 ## Minimal Input
 
 ```json
