@@ -224,3 +224,49 @@ Resolve target language with this strict priority:
 - Do not restrict supported languages to a fixed list.
 - If output language is explicit, source-language distribution must not override it.
 - Learner-facing script text must follow resolved target language unless `bilingual_output` is true.
+
+## Fallback Output Extensions
+
+When a phase runs under fallback mode (see SKILL.md `## Execution Modes`), its standard output is augmented with the following fields. Standard-mode output omits these fields entirely; fallback-mode output adds them on top of the standard schema.
+
+### Segmentation fallback fields
+
+Per-segment (extends [Segment Schema](#segment-schema)):
+
+- `uncertainty` (string enum: `low|medium|high`) — confidence on the segment's interpretation.
+
+Top-level addition to the Segmentation output:
+
+- `rerun_hints` (array of strings) — user-facing prompts describing what authoritative input would resolve the uncertainty.
+
+### Orchestration fallback fields
+
+Per-lesson (extends `course_index` items):
+
+- `uncertainty` (string enum: `low|medium|high`).
+
+Top-level addition:
+
+- `rerun_plan` (object, required when any lesson is uncertain):
+  - `lessons_to_rerun` (array of lesson ids).
+  - `reason` (string) — why the rerun is needed.
+
+### Generation fallback fields
+
+Per-lesson (extends [Lesson Schema](#lesson-schema)):
+
+- `fallback_mode` (boolean) — `true` when this lesson was generated under fallback.
+- `assumptions` (array of strings) — assumptions made due to incomplete input.
+- `upgrade_notes` (array of strings) — what additional input would upgrade this lesson.
+
+### Optimization fallback fields
+
+Inside `risk_and_issue_report`:
+
+- `coverage_status` (string enum: `complete|partial|unknown_without_source`).
+
+Top-level addition:
+
+- `follow_up` (array of strings) — required inputs to complete a full-coverage audit.
+
+For the four end-to-end fallback scenarios, see `examples/fallback-mode.md`.

@@ -32,14 +32,14 @@
       "segment_id": "S01",
       "segment_type": "concept",
       "core_point": "Metric drift signals a systemic shift, not just noise.",
-      "preserve_block": "no",
+      "preserve_block": false,
       "source_span": {"start": 0, "end": 42}
     },
     {
       "segment_id": "S02",
       "segment_type": "concept",
       "core_point": "Classify causes before applying fixes.",
-      "preserve_block": "no",
+      "preserve_block": false,
       "source_span": {"start": 43, "end": 78}
     }
   ],
@@ -100,7 +100,8 @@ Based on {{diagnosis_choice}}, we run one focused verification next.
       "issue_class": "explanation_clarity",
       "change": "add brief boundary note after diagnosis selection"
     }
-  ]
+  ],
+  "course_prompt": "# Role\nYou are a practical coach helping beginners diagnose bottlenecks.\n\n# Task\nGuide the learner through observation → classification → one focused verification.\n\n# Teaching Techniques\nEvidence chain; one core question per lesson; viewpoint branching on diagnosis choice.\n\n# Writing Style\nDirective, concise, action-oriented; English (en-US).\n\n# Format\nMarkdownFlow; `?[]` interactions on standalone lines.\n\n# Drawing\nDescribe diagnostic flow visually in natural language; do not inline SVG/Mermaid."
 }
 ```
 

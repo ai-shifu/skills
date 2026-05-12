@@ -37,10 +37,13 @@ Structured segments provided:
 {
   "lesson_id": "L02",
   "lesson_title": "Verify the Fix",
+  "teaching_prompt": "## Objective\nChoose the fastest signal that proves the fix works.\n---\n?[%{{verification_signal}} p95 latency trend | error-rate slope | lock-wait drop]\n---\nYou selected {{verification_signal}}. Use this as the first verification checkpoint.",
   "used_variables": ["verification_signal"],
   "depends_on_lessons": ["L01"]
 }
 ```
+
+Rendered `teaching_prompt` value:
 
 ```md
 ## Objective
@@ -70,6 +73,10 @@ You selected {{verification_signal}}. Use this as the first verification checkpo
 ```json
 {
   "lesson_id": "L07",
+  "lesson_title": "Pick a Rollback Trigger",
+  "teaching_prompt": "## Objective\nPick a rollback trigger that minimizes blast radius.\n---\n?[%{{rollback_trigger_viewpoint_check}} latency spike threshold | error budget burn threshold]\n---\nGiven {{rollback_trigger_viewpoint_check}}, define one immediate rollback condition and one follow-up diagnostic.",
+  "used_variables": ["rollback_trigger_viewpoint_check"],
+  "depends_on_lessons": [],
   "fallback_mode": true,
   "assumptions": [
     "No cross-lesson variable carryover is used.",
@@ -80,6 +87,8 @@ You selected {{verification_signal}}. Use this as the first verification checkpo
   ]
 }
 ```
+
+Rendered `teaching_prompt` value:
 
 ```md
 ## Objective

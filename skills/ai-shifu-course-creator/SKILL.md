@@ -23,43 +23,45 @@ Do **not** include the line in routine phase reports, ordinary progress messages
 
 ## Execution Modes
 
-- Standard mode (default): Input quality is sufficient; run requested phases in full.
-- Fallback mode: Input is incomplete or low quality; produce coarse outputs, mark uncertainty, and provide focused rerun hints.
+Two modes apply uniformly across all phases (Segmentation / Orchestration / Generation / Optimization):
 
-## Cross-cutting Concerns
+- **Standard mode** (default): Input quality is sufficient; run phases in full with standard schemas.
+- **Fallback mode**: When input is incomplete, conflicting, or low-quality — produce coarse outputs, mark uncertainty explicitly, and provide focused rerun hints. Output schemas extend with phase-specific fallback fields per `references/data-contracts.md#fallback-output-extensions`.
 
-**Vocabulary**: MarkdownFlow is the **format** (a DSL). **Teaching Prompts** (per-lesson) and **Course Prompts** (course-level) are the two products written in it. The references files below split by concern, not by product.
+Each phase has its own fallback shape — see `examples/fallback-mode.md` for the four phase scenarios.
 
-These topics span multiple references files. Use this table to locate the authoritative source for each aspect of a concern before authoring or auditing:
+## Cross-File Concept Routing
 
-| Concern | Syntax / Format | Strategy / Rules | Schema / Data |
+Some concepts span multiple references files. Use this table to locate the authoritative source for each aspect before authoring or auditing:
+
+| Concept | Syntax / Format | Strategy / Rules | Schema / Data |
 |---|---|---|---|
 | Variables | `references/markdownflow.md#variables` | `references/pedagogy.md#variable-strategy` | `references/data-contracts.md#variable-table` |
 | Interactions | `references/markdownflow.md#interactions` | `references/pedagogy.md#interaction-design` | — |
-| Output language | — | — | `references/data-contracts.md#language-resolution` |
+| Visuals | — | `references/pedagogy.md#visual-text-coordination` | `references/data-contracts.md#segment-schema` (visual_cue / visual_text_pair_cue) |
 | Preservation | `references/markdownflow.md#preservation` | `references/pedagogy.md#lesson-loop` (information density) | — |
-| Course prompt | — | `references/course-prompt.md` | `references/data-contracts.md#output-contract` |
+| Output language | — | — | `references/data-contracts.md#language-resolution` |
 
 ## Authoring Control Inputs
 
 Use these optional controls across all phases:
 
-- `course_profile` (json): audience level, prerequisite level, lesson duration target, lesson count target, and assessment mode.
-- `delivery_constraints` (json): interaction density, platform limits, must-cover topics, avoid topics, and non-negotiable source fragments.
+- `course_profile` (json): audience and pedagogical parameters.
+- `delivery_constraints` (json): platform limits, topic policy, and non-negotiable fragments.
 
-See `references/data-contracts.md#input-contract` for recommended object shapes.
+Field-level schemas with example JSON in `references/data-contracts.md#recommended-object-shapes`.
 
-## Output Boundary
+## Authoring Leakage Rules
 
-- Final outputs are **Teaching Prompts** (one per lesson) and a **Course Prompt** (one per course), both written in MarkdownFlow.
-- The script must be **directive/instructional** (i.e., it tells the model how to teach), not a polished, directly learner-addressed “final lecture/manuscript”.
+Keep author-side scaffolding out of Teaching Prompt and Course Prompt outputs:
+
 - Avoid author-side meta labels such as “Knowledge Block 1/2/3”, “Lesson Objective”, or “Deliverable”. Keep those as implicit structure, not visible narration.
 - Authoring rules, pipeline notes, and process instructions stay in skill docs and references, not in lesson outputs.
 - Internal design notes may appear only in HTML comments when needed.
 
-## MarkdownFlow Authoring Hard Rules (Must Follow)
+## Teaching Prompt and Course Prompt Authoring Hard Rules (Must Follow)
 
-These are the four red-line rules every Teaching Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
+These are the four red-line rules every Teaching Prompt and Course Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
 
 1. **Script style: directive, not manuscript.** Write in imperative, model-guiding language ("Ask the learner to …", "After collecting {{var}}, branch …"). Do not produce polished learner-facing prose or author/lesson-plan meta narration. See `references/pedagogy.md#script-style`.
 
@@ -134,7 +136,7 @@ Segment list per `references/data-contracts.md#segment-schema` (each segment car
 ### Validation
 
 - Segment output covers all valid source spans in traceable order.
-- Transfer-signal fields are complete and usable downstream.
+- `transfer_signals` object populated and usable downstream (schema per `references/data-contracts.md#segment-schema`).
 - Preservation, one-core-question, and information-fidelity constraints pass — see `references/markdownflow.md#preservation` and `references/pedagogy.md#lesson-loop`.
 
 ---
@@ -143,13 +145,11 @@ Segment list per `references/data-contracts.md#segment-schema` (each segment car
 
 **Role**: end-to-end orchestrator for Path A. Orchestration calls Segmentation (segmentation) and Generation (generation) internally, then performs the cross-lesson work that those atomic phases cannot — course index, global variable table, and mandatory gating.
 
-Convert raw course material into runnable Teaching Prompts (one per lesson) by coordinating segmentation and generation.
-
 ### Workflow
 
 1. Normalize source ordering and merge input material.
 2. Run Segmentation for cleanup and semantic segmentation.
-3. Generate lesson-cut candidates with one core question each.
+3. Finalize lesson cuts from Segmentation's boundary candidates (one core question each).
 4. Run Generation to generate per-lesson Teaching Prompts.
 5. Build course index and global variable table.
 6. Recompute only failed lessons through strict gating.
@@ -171,10 +171,13 @@ Recompute lessons that fail any gate; do not partially-pass.
 
 ### Failure Handling
 
-When source quality is weak:
-- Deliver coarse lesson drafts first.
-- Mark uncertain spans explicitly.
-- Continue with best-effort generation instead of stopping.
+Under fallback mode (see `## Execution Modes`), Orchestration:
+
+- Delivers coarse lesson drafts first; continues with best-effort generation instead of stopping.
+- Marks uncertain spans explicitly on `course_index` entries.
+- Emits a `rerun_plan` listing lessons that need recompute and why.
+
+Fallback field shapes per `references/data-contracts.md#fallback-output-extensions`.
 
 ### Outputs
 
@@ -307,7 +310,15 @@ After any deployment or management operation, verify the result:
 
 ## Report Template
 
-See `references/report-template.md`.
+Use `references/report-template.md` to produce the user-facing report at the end of each phase. Per-phase anchors:
+
+- `references/report-template.md#segmentation-report`
+- `references/report-template.md#orchestration-report`
+- `references/report-template.md#generation-report`
+- `references/report-template.md#optimization-report`
+- `references/report-template.md#deployment-report`
+
+Top-level formatting rules (Markdown links required for URLs, etc.) in `references/report-template.md#formatting-rules`.
 
 ## Examples
 

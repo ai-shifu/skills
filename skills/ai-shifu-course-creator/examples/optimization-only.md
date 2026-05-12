@@ -30,7 +30,8 @@
       "issue_class": "interaction_no_branching",
       "change": "branch feedback by learner option and add next-step action"
     }
-  ]
+  ],
+  "course_prompt": "# Role\nYou are a coach helping beginners reason about retry policy.\n\n# Task\nDifferentiate transient vs permanent failure and select a retry stop rule.\n\n# Teaching Techniques\nViewpoint branching on failure type; bounded retries with backoff for transient.\n\n# Writing Style\nDirective, action-oriented.\n\n# Format\nMarkdownFlow; `?[]` interactions on standalone lines.\n\n# Drawing\nDescribe failure taxonomy visually in natural language."
 }
 ```
 
@@ -96,5 +97,5 @@ You selected {{fix_choice}}. Apply one verification step before rollout.
 - Syntax stays runnable after edits.
 - Coverage and meaning are closer to source material.
 - Runtime safety fixes are applied first.
-- Missing-source uncertainty is explicit in the report.
+- Missing-source uncertainty is explicit in the report; `course_prompt` artifact is omitted when `course_material` is empty (per SKILL.md `## Optimization` → Validation).
 - Edits stay minimal and avoid broad rewrites.
