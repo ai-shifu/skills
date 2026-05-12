@@ -250,13 +250,16 @@ Apply Optimization audits against the full constraint set:
 
 ### Course Prompt
 
-Optimization also produces a course-level `course_prompt` artifact when input includes course material. Purpose, required sections, the 12 authoring rules, fillable template, and substitution map all live in `references/course-prompt.md` (`#authoring-rules`, `#fillable-template`). Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues, `term_policy`) instead of re-asking the author. Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
+Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **filling the template at `references/course-prompt.md#fillable-template` section-by-section, not by free-form composition**. Each of the six required sections has a Must-Specify list in `references/course-prompt.md#authoring-rules` (Rules 1–12) — every listed bullet must appear in the generated `course_prompt`'s corresponding section (in the resolved output language). Do not omit a Must-Specify bullet just because the source material does not explicitly demand it; these bullets are platform-level constraints.
+
+Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues, `term_policy`) instead of re-asking the author. Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
 
 ### Validation
 
 - Conclusion and overall risk level presented first (report structure per `references/report-template.md`).
 - Full review against `references/review-checklist.md` passes, or remaining gaps are explicitly listed as non-blocking suggestions.
 - A `course_prompt` artifact is produced when input includes course material, with all six required sections present. `# Translation Rules` may be omitted when its trigger condition does not apply.
+- Generated `course_prompt` covers every Must-Specify bullet in `references/course-prompt.md` Rules 1–12 (audit each section against its rule list — especially `# Drawing`, which is the most commonly under-filled section).
 
 ---
 
