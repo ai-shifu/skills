@@ -21,6 +21,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - Action tasks executable now or explicitly linked to a downstream lesson.
 - Variable naming consistent and traceable across lessons.
 - Carryover statements only where cross-lesson dependency is allowed.
+- Lesson structure follows the content, not a forced uniform template that erases lesson specificity.
 
 ## Interaction Quality
 

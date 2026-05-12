@@ -153,6 +153,19 @@ Each item:
 - Deterministic references for lesson ids and source spans.
 - Partial rerun support for changed lessons.
 
+## Segment Schema
+
+Each item in the Segmentation output (consumed by Orchestration and Generation):
+
+- `segment_id` (string, required) — stable identifier within the run.
+- `segment_type` (string enum, required) — one of `concept`, `example`, `code`, `image`, `exercise`, `transition`; semantics in [pedagogy.md#segment-types](pedagogy.md#segment-types).
+- `core_point` (string, required) — the single teachable point this segment carries.
+- `preserve_block` (boolean, required) — `true` for code/image/table/required-quote blocks that must reach the lesson verbatim per [markdownflow.md#preservation](markdownflow.md#preservation).
+- `source_span` (string, required) — traceable reference back to the source material.
+- `transfer_signals` (object, required) — downstream teaching-quality cues; field names and meanings defined in [pedagogy.md#transfer-signals](pedagogy.md#transfer-signals).
+
+For segmentation rules and methodology see [pedagogy.md#segmentation-methodology](pedagogy.md#segmentation-methodology).
+
 ## Variable Table
 
 `global_variable_table` is an array. Each item:

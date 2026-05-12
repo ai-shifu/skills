@@ -125,45 +125,11 @@ Turn messy course source material into a reliable intermediate structure for dow
 
 ### Workflow
 
-1. Remove filler language and duplicated phrasing without changing meaning.
-2. Mark immutable blocks: code, images, and tables.
-3. Segment by semantic continuity instead of headings alone.
-4. Propose lesson boundaries with one core question per lesson.
-5. Return source-linked structured segments.
-
-### Segment Schema
-
-Each segment includes:
-- `segment_id`
-- `segment_type` (`concept`, `example`, `code`, `image`, `exercise`, `transition`)
-- `core_point`
-- `preserve_block` (`yes` or `no`)
-- `source_span`
-
-### Transfer Signals
-
-Capture these fields for downstream teaching quality:
-- `learner_hook`: statements that can trigger learner reflection.
-- `evidence_type`: one of history, phenomenon, data, mechanism, or conclusion.
-- `visual_cue`: fragments suited for SVG/HTML visual support.
-- `concept_conflict`: candidate idea conflicts for cognitive contrast.
-- `boundary_cue`: clues for validity boundaries.
-- `action_cue`: clues that can become immediate or staged actions.
-- `density_cue`: high-information chunks that should not be diluted.
-- `quote_cue`: original wording worth preserving.
-- `visual_text_pair_cue`: clues for "visual first, explanation second" blocks.
-- `interaction_intent_cue`: intent labels such as diagnose, branch, calibrate, compare.
-- `compare_cue`: candidate prompts for before/after comparison.
+See `references/pedagogy.md#segmentation-methodology` for the full methodology (cleanup, immutable-block marking, semantic segmentation, lesson-boundary proposal, source linking).
 
 ### Outputs
 
-- Ordered segment list.
-- Lesson boundary candidates.
-- One core question per lesson.
-- Preservation block index.
-- Full transfer-signal package.
-
-See `references/pedagogy.md#segmentation-methodology`.
+Segment list per `references/data-contracts.md#segment-schema` (each segment carries id, type, core point, preservation flag, source span, and transfer signals), plus lesson boundary candidates with one core question each.
 
 ### Validation
 
@@ -212,17 +178,13 @@ When source quality is weak:
 
 ### Outputs
 
-- Teaching Prompts (one per lesson).
-- Course index (lesson id, title, core question, source mapping).
-- Global variable table (definition, use, cross-lesson references).
-
-See `references/data-contracts.md#output-contract` and `references/markdownflow.md#preservation`.
+See `references/data-contracts.md#output-contract` for the Teaching Prompts, course index, and global variable table schemas; preservation rules per `references/markdownflow.md#preservation`.
 
 ### Validation
 
-- All Orchestration artifacts present: Teaching Prompts (one per lesson), course index, global variable table.
+- All artifacts present per `references/data-contracts.md#output-contract`.
 - Fallback outputs include explicit uncertainty markers and rerun hints.
-- All mandatory gates pass (see `### Mandatory Gates` above).
+- All Mandatory Gates above pass.
 
 ---
 
@@ -232,19 +194,12 @@ Generate a runnable Teaching Prompt for each lesson.
 
 ### Teaching Pattern Baseline
 
-Generate each lesson against these defaults unless content requires a justified variation:
-
-1. Directive script style — a teaching script, not a final manuscript.
-2. Distributed variable collection, not front-loaded; every collected variable affects downstream content.
-3. Evidence chain: observation → mechanism → conclusion; visual-first for abstract concepts.
-4. At least one deepening interaction (calibration, boundary check, or misconception correction) per lesson.
-5. At least one reusable deliverable; action steps either immediately executable or explicitly staged.
-
-Full patterns and constraints — variable strategy, interaction design, visual-text coordination — see `references/pedagogy.md#teaching-patterns`, `#cognitive-techniques`, `#variable-strategy`, `#interaction-design`, `#visual-text-coordination`.
+Apply the patterns and constraints in `references/pedagogy.md#teaching-patterns`, `#cognitive-techniques`, `#variable-strategy`, `#interaction-design`, and `#visual-text-coordination` unless content requires a justified variation.
 
 ### Single-Lesson Generation Strategy
 
-Required anchors:
+Required anchors per lesson:
+
 1. Opening objective plus visual cover.
 2. Evidence-chain explanation.
 3. At least one effective interaction with visible downstream effect.
@@ -255,20 +210,13 @@ Optional modules: viewpoint calibration, misconception correction, dual delivera
 
 ### Outputs
 
-Return per lesson:
-- `lesson_id`
-- `lesson_title`
-- `teaching_prompt`
-- `used_variables`
-- `depends_on_lessons`
-
-See `references/data-contracts.md#lesson-schema`.
+Per-lesson schema in `references/data-contracts.md#lesson-schema`.
 
 ### Validation
 
 - Each `teaching_prompt` is valid runnable MarkdownFlow.
-- Per-lesson schema populated per `references/data-contracts.md#lesson-schema` (lesson_id, lesson_title, teaching_prompt, used_variables, depends_on_lessons).
-- Pedagogical and syntax constraints pass — see `references/pedagogy.md` and `references/markdownflow.md`.
+- Per-lesson schema populated per `references/data-contracts.md#lesson-schema`.
+- Pedagogical and syntax constraints pass per `references/pedagogy.md` and `references/markdownflow.md`.
 
 ---
 
@@ -278,23 +226,7 @@ Audit and improve existing Teaching Prompts (and the Course Prompt). This phase 
 
 ### When to Use
 
-- Gap analysis against source material.
-- Script quality upgrades without full rewrites.
-- Consistent chapter style with lower runtime failure risk.
-
-### Core Method
-
-1. Start with a low-friction entry point (cover visual + one light interaction).
-2. Ensure interactions change downstream logic.
-3. Keep structure content-driven, not template-driven.
-4. Build evidence chain: observation/history -> mechanism/data -> conclusion.
-5. Use visuals for abstract structure and text for mechanism + boundaries.
-6. Add viewpoint calibration with branching feedback.
-7. Include concrete correction actions for major misconceptions.
-8. Keep deliverables executable and reusable.
-9. Stabilize syntax and variable usage.
-
-See `references/pedagogy.md#optimization-methodology`.
+Use Optimization when existing Teaching Prompts or a Course Prompt need audit and targeted improvement — gap analysis against source, quality upgrades without full rewrites, and lowering runtime failure risk. Not for from-scratch authoring.
 
 ### High-Standard Constraints
 
@@ -302,60 +234,22 @@ Apply Optimization audits against the full constraint set:
 
 - Pedagogical constraints (variable strategy, interaction design, visual-text coordination, lesson loop, information density): `references/pedagogy.md`.
 - Syntax / runtime constraints (preservation, deterministic blocks, variable references): `references/markdownflow.md`.
-- Exhaustive checklist for the audit pass: `references/review-checklist.md`.
+- Exhaustive audit checklist (failure modes are these constraints negated): `references/review-checklist.md`.
 
 ### Optimization Workflow
 
-1. Define scope (single lesson vs full course).
-2. Build coverage matrix: source points -> script coverage.
-3. Label issue classes:
-   - `coverage_gap`
-   - `meaning_shift`
-   - `explanation_clarity`
-   - `interaction_no_branching`
-   - `visual_constraints_missing`
-   - `variable_or_syntax_risk`
-4. Apply smallest safe edits first.
-5. Run checklist validation before final output.
-6. Re-check visual-text pairing for every core concept.
-7. Re-check variable lifecycle (collection, reference timing, reuse).
-8. Re-check semantic duplication in interaction prompts.
-9. Re-check viewpoint branching and downstream action coupling.
-
-See `references/review-checklist.md`.
-
-### Required Output Style
-
-- Present conclusion and risk level first.
-- Then provide grouped change list by issue class.
-- Use file-level references for traceability.
-- If duplicate script versions exist, declare the authoritative one.
-- If cross-lesson dependency is disallowed, remove dependency text and unbound carryover variables.
-
-### Common Failure Patterns
-
-- Structural edits without content-depth recovery.
-- Over-abstraction that drifts from source meaning.
-- Hidden cross-lesson variables causing runtime failures.
-- Vague prompts that models cannot execute reliably.
-- Viewpoint options that still return identical feedback.
-- Repeated semantic questions with different variable names.
-- Visual tasks without explanatory text.
-- Rigid template consistency at the cost of lesson specificity.
+1. Define scope (single lesson vs full course); if multiple script versions exist, declare the authoritative one before editing.
+2. Build a coverage matrix mapping source points to script coverage.
+3. Run the full audit per `references/review-checklist.md`, classify findings using the issue taxonomy in `references/pedagogy.md#optimization-methodology`, and apply smallest safe edits first.
 
 ### Course Prompt
 
-Produce a course-level prompt (`course_prompt`) alongside lesson optimization. It defines the AI engine's role, task, teaching techniques, writing style, format, and drawing rules (always required), plus translation rules when triggered. It is loaded once per course and applied to every lesson, so it must capture cross-lesson constants — not per-lesson interaction logic.
-
-Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing` (always include in full — without it the AI has no guardrails on multimodal output). Conditional section: `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
-
-Auto-fill placeholders from existing artifacts instead of asking the author again: `course_profile`, `delivery_constraints`, resolved target language (per `references/data-contracts.md#language-resolution`), Segmentation visual cues, and `term_policy`. Do not duplicate per-lesson variable collection or branching here — those belong in the Teaching Prompts.
-
-See `references/course-prompt.md#authoring-rules` for the 12 authoring rules and `references/course-prompt.md#fillable-template` for the fillable template and Substitution Map.
+Optimization also produces a course-level `course_prompt` artifact when input includes course material. Purpose, required sections, the 12 authoring rules, fillable template, and substitution map all live in `references/course-prompt.md` (`#authoring-rules`, `#fillable-template`). Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues, `term_policy`) instead of re-asking the author. Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
 
 ### Validation
 
-- Conclusion and risk level presented first; full review against `references/review-checklist.md`.
+- Conclusion and overall risk level presented first (report structure per `references/report-template.md`).
+- Full review against `references/review-checklist.md` passes, or remaining gaps are explicitly listed as non-blocking suggestions.
 - A `course_prompt` artifact is produced when input includes course material, with all six required sections present. `# Translation Rules` may be omitted when its trigger condition does not apply.
 
 ---
@@ -371,31 +265,17 @@ Deploy optimized Teaching Prompts to the AI-Shifu platform as live courses.
 
 ### Authentication
 
-See `references/cli/cli-reference.md` for the full login flow.
-
-When no valid token is available, guide the user through the SMS login flow via `shifu-cli.py login` (phone number + 4-digit verification code). The CLI defaults to `https://app.ai-shifu.cn`.
+When no valid token is available, guide the user through `shifu-cli.py login` (SMS flow: phone number + 4-digit verification code; CLI defaults to `https://app.ai-shifu.cn`). Full flow in `references/cli/cli-reference.md#authentication`.
 
 Always use CLI commands. Never make raw HTTP/API calls directly.
 
 ### Course Directory
 
-Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `references/cli/course-directory-spec.md` for the full specification.
+Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `references/cli/course-directory-spec.md` for the full specification. When continuing from Optimization (Path A), write the optimized Teaching Prompts and Course Prompt into this structure automatically.
 
-When continuing from Optimization (Path A), write the optimized Teaching Prompts and Course Prompt into the course directory structure automatically.
+### CLI Commands
 
-### CLI Quick Reference
-
-Core deployment commands:
-
-```bash
-build --course-dir ./course-a/                          # Build shifu-import.json (offline)
-import --new --json-file ./course-a/shifu-import.json   # Import as new course
-publish <shifu_bid>                                      # Make course live
-show <shifu_bid>                                         # Verify course structure
-show <shifu_bid> <outline_bid>                           # Read a specific lesson
-```
-
-See `references/cli/cli-reference.md` for the complete command reference and `references/cli/import-json-format.md` for the JSON schema.
+All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
 
 ### Deployment Workflow
 
@@ -409,22 +289,6 @@ See `references/cli/cli-reference.md` for the complete command reference and `re
 **Standalone deployment (Path C):**
 1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`) and a `course-prompt.md`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`.
 2. Run `build`, `import`, `publish` as above.
-
-### Common Management
-
-Use these commands for ongoing course operations (Path D):
-
-```bash
-list                                                   # List all courses
-show <shifu_bid>                                       # Show course outline
-update-meta <shifu_bid> --name "..." --description "..."
-update-lesson <shifu_bid> <outline_bid> --teaching-prompt-file updated.md
-rename-lesson <shifu_bid> <outline_bid> --name "New Name"
-reorder <shifu_bid> --order bid1,bid2,bid3
-delete-lesson <shifu_bid> <outline_bid>
-publish <shifu_bid>
-archive <shifu_bid>
-```
 
 ### Verification
 
