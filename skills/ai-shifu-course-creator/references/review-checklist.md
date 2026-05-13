@@ -28,6 +28,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - Interactions are concrete and answerable.
 - Learner-facing questions appear before interaction syntax, not after `%{{var}}` inside `?[%{{var}} ...]`.
 - Each `?[]` interaction appears on its own line.
+- If the pre-interaction text enumerates or describes choices, the `?[]` option labels match those choices exactly — same set, order, and wording.
 - Input interactions include a specific pre-interaction question plus a shorter `...` placeholder.
 - At least one deepening interaction per lesson (calibration, boundary check, or misconception correction).
 - Branching paths are distinct where required; `*_viewpoint_check` interactions branch by option.

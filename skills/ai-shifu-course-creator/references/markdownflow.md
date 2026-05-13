@@ -28,6 +28,7 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 - Inside the interaction line, include only interaction content: option labels for select interactions, and input markers/placeholders such as `...Other` or `...Brief situation` where applicable.
 - Do not place learner-facing question text after `%{{var}}`; it will become part of the interaction content.
 - For input interactions, include both the full question before the interaction line and a shorter placeholder after `...`.
+- If the pre-interaction text enumerates or describes the choices, the option labels in the `?[]` line must match those choices exactly — same set, same order, same wording. The narrative options and the interaction options must not drift apart.
 
 Correct:
 
@@ -112,5 +113,6 @@ Use deterministic blocks only for truly fixed content. Do not lock entire lesson
 - `?[%{{var}} A | B | Other, please specify…]` — same issue inside an option label.
 - `?[%{{var}} Question prompt? Option A | Option B]` — question inside the interaction line; move it to the line above.
 - `Ask the learner the question. ?[%{{var}} A | B | C]` — interaction not on its own line.
+- Pre-interaction text enumerates choices A / B / C but `?[%{{var}} X | Y | Z]` exposes a different set — the narrative description and the interaction options must stay aligned (same set, order, and wording).
 - Wrapping an entire lesson body in `=== … ===` or `!=== … !===`.
 - Referencing `{{var}}` in learner-facing text before any `?[%{{var}} …]` collects it.
