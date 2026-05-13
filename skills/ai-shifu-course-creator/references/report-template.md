@@ -9,9 +9,9 @@ These rules apply to every report produced from this template, and to any other 
 - **Links must be Markdown, never bare URLs.** Whenever you show a URL to the user (admin console, course preview, lesson preview, contact page, etc.), wrap it in Markdown link syntax `[descriptive text](URL)`. Never emit a bare `https://...` on its own line.
 - **Why:** the AI-Shifu chat client only treats Markdown links as clickable / copy-on-tap. A bare URL renders as plain text — the user cannot click it and cannot copy it cleanly on mobile.
 - **Where this applies:** phase reports below, the opening introduction, the contact line, and any ad-hoc message that surfaces a URL to the user.
-- **Where this does NOT apply:** URLs inside lesson MarkdownFlow scripts (those follow MarkdownFlow image / link rules) and URLs shown inside fenced code blocks for reference.
+- **Where this does NOT apply:** URLs inside Teaching Prompts (those follow MarkdownFlow image / link rules) and URLs shown inside fenced code blocks for reference.
 
-## Phase 1: Segmentation Report
+## Segmentation Report
 
 - Source files:
 - Processing mode: `standard|fallback`
@@ -32,7 +32,7 @@ Next actions:
 - Targeted reruns:
 - Downstream handoff notes:
 
-## Phase 2: Orchestration Report
+## Orchestration Report
 
 - Input set:
 - Execution mode: `standard|fallback`
@@ -55,7 +55,7 @@ Rerun plan:
 - Lessons to rerun:
 - Dependency-linked lessons:
 
-## Phase 3: Generation Report
+## Generation Report
 
 - Lesson id:
 - Execution mode: `standard|fallback`
@@ -78,7 +78,7 @@ Follow-up:
 - Rerun needed: `yes|no`
 - Upstream dependency notes:
 
-## Phase 4: Optimization Report
+## Optimization Report
 
 - Target script(s):
 - Source material set:
@@ -102,7 +102,7 @@ Validation:
 - Interaction branching check: `pass|fail`
 - Density preservation check: `pass|fail`
 
-## Phase 5: Deployment Report
+## Deployment Report
 
 - Course directory:
 - Build result: `success|fail`

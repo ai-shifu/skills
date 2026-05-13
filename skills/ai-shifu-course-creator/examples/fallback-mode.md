@@ -1,8 +1,10 @@
 # Fallback Mode Example
 
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
+
 Demonstrates degraded-input handling across phases.
 
-## Phase 1 Fallback: Conflicting Sources
+## Segmentation Fallback: Conflicting Sources
 
 ```json
 {
@@ -32,7 +34,7 @@ Output includes uncertainty markers and rerun hints:
 }
 ```
 
-## Phase 2 Fallback: Incomplete Input
+## Orchestration Fallback: Incomplete Input
 
 ```json
 {
@@ -71,7 +73,7 @@ Select a first-pass classification rule.
 Current evidence is partial; confirm one canonical taxonomy before final pass.
 ```
 
-## Phase 3 Fallback: Minimal Segments
+## Generation Fallback: Minimal Segments
 
 ```json
 {
@@ -96,11 +98,11 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 }
 ```
 
-## Phase 4 Fallback: No Source Material
+## Optimization Fallback: No Source Material
 
 ```json
 {
-  "existing_mdf_script": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\nUse {{unknown_variable}} now.",
+  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\nUse {{unknown_variable}} now.",
   "course_material": "",
   "optimization_constraints": {
     "fallback_mode": true,

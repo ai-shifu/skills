@@ -1,10 +1,12 @@
-# Optimization Only Example (Phase 4)
+# Optimization Only Example
+
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
 
 ## Minimal Input
 
 ```json
 {
-  "existing_mdf_script": "## Objective\nUnderstand retry policy.\n---\n?[%{{answer}} yes | no]\n---\nGreat job.",
+  "existing_teaching_prompt": "## Objective\nUnderstand retry policy.\n---\n?[%{{answer}} yes | no]\n---\nGreat job.",
   "course_material": "Learner must differentiate transient vs permanent failure and choose a matching retry stop rule.",
   "optimization_constraints": {
     "max_interactions": 4,
@@ -30,7 +32,8 @@
       "issue_class": "interaction_no_branching",
       "change": "branch feedback by learner option and add next-step action"
     }
-  ]
+  ],
+  "course_prompt": "# Role\nYou are a coach helping beginners reason about retry policy.\n\n# Task\nDifferentiate transient vs permanent failure and select a retry stop rule.\n\n# Teaching Techniques\nViewpoint branching on failure type; bounded retries with backoff for transient.\n\n# Writing Style\nDirective, action-oriented.\n\n# Format\nMarkdownFlow; `?[]` interactions on standalone lines.\n\n# Drawing\nDescribe failure taxonomy visually in natural language."
 }
 ```
 
@@ -48,7 +51,7 @@ If {{failure_type}} is permanent, stop retries and open a corrective task.
 
 ```json
 {
-  "existing_mdf_script": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\n?[%{{choose_fix}} option A | option B]\n---\nUse {{unknown_variable}} now.",
+  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\n?[%{{choose_fix}} option A | option B]\n---\nUse {{unknown_variable}} now.",
   "course_material": "",
   "optimization_constraints": {
     "fallback_mode": true,
@@ -96,5 +99,5 @@ You selected {{fix_choice}}. Apply one verification step before rollout.
 - Syntax stays runnable after edits.
 - Coverage and meaning are closer to source material.
 - Runtime safety fixes are applied first.
-- Missing-source uncertainty is explicit in the report.
+- Missing-source uncertainty is explicit in the report; `course_prompt` artifact is omitted when `course_material` is empty (per SKILL.md `## Optimization` → Validation).
 - Edits stay minimal and avoid broad rewrites.

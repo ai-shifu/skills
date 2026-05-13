@@ -1,10 +1,12 @@
-# Deploy Only Example (Phase 5)
+# Deploy Only Example
 
-Deploy pre-existing MarkdownFlow files without running the authoring pipeline.
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
+
+Deploy pre-existing Teaching Prompts (and a Course Prompt) without running the authoring pipeline.
 
 ## Prerequisites
 
-A course directory with MarkdownFlow lesson files already prepared:
+A course directory with Teaching Prompts (one MarkdownFlow file per lesson) already prepared:
 
 ```
 my-course/
@@ -39,7 +41,7 @@ python3 {skillDir}/scripts/shifu-cli.py list
 python3 {skillDir}/scripts/shifu-cli.py show xyz789
 
 # Update a lesson
-python3 {skillDir}/scripts/shifu-cli.py update-lesson xyz789 <outline_bid> --mdf-file ./updated-lesson.md
+python3 {skillDir}/scripts/shifu-cli.py update-lesson xyz789 <outline_bid> --teaching-prompt-file ./updated-lesson.md
 
 # Rename a lesson
 python3 {skillDir}/scripts/shifu-cli.py rename-lesson xyz789 <outline_bid> --name "New Lesson Name"
@@ -50,6 +52,6 @@ python3 {skillDir}/scripts/shifu-cli.py archive xyz789
 
 ## Acceptance Notes
 
-- Phase 5 executed independently (Path C).
-- Course deployed from pre-existing MarkdownFlow files.
+- Deployment executed independently (Path C).
+- Course deployed from pre-existing Teaching Prompts.
 - Management commands used for ongoing operations (Path D).

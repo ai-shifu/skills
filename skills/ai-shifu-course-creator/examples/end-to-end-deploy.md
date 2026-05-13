@@ -1,4 +1,6 @@
-# End-to-End Deploy Example (Phase 1 → 2 → 3 → 4 → 5)
+# End-to-End Deploy Example (Segmentation → Orchestration → Generation → Optimization → Deployment)
+
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
 
 ## Input Payload (example)
 
@@ -20,11 +22,11 @@
 }
 ```
 
-## Phase 1–4 (Author)
+## Segmentation through Optimization (Author)
 
-Produces optimized MarkdownFlow lesson scripts (see `pipeline-full.md` for detailed output).
+Produces optimized Teaching Prompts (see `pipeline-full.md` for detailed output).
 
-## Phase 5 Output (Deployment)
+## Deployment Output
 
 ### Step 1: Build Course Directory
 
@@ -70,6 +72,6 @@ Platform URLs (these are copied verbatim from the `Verification URLs:` block pri
 
 ## Acceptance Notes
 
-- All five phases executed end-to-end.
-- MarkdownFlow files written to course directory, built, imported, and published.
+- All pipeline stages executed end-to-end.
+- Teaching Prompts (MarkdownFlow) written to course directory, built, imported, and published.
 - Course is live and accessible via platform URL.

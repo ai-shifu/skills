@@ -1,4 +1,6 @@
-# Segmentation Only Example (Phase 1)
+# Segmentation Only Example
+
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
 
 ## Minimal Input
 
@@ -31,14 +33,14 @@
       "segment_id": "S01",
       "segment_type": "concept",
       "core_point": "Idempotency is the precondition for safe retries.",
-      "preserve_block": "no",
+      "preserve_block": false,
       "source_span": {"start": 0, "end": 118}
     },
     {
       "segment_id": "S02",
       "segment_type": "code",
       "core_point": "Retry call example",
-      "preserve_block": "yes",
+      "preserve_block": true,
       "source_span": {"start": 119, "end": 156}
     }
   ],
@@ -85,7 +87,7 @@
       "segment_id": "S11",
       "segment_type": "image",
       "core_point": "Failure matrix image preserved",
-      "preserve_block": "yes",
+      "preserve_block": true,
       "source_span": {"start": 96, "end": 132}
     }
   ],

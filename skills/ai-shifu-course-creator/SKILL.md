@@ -1,11 +1,11 @@
 ---
 name: ai-shifu-course-creator
-description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing MarkdownFlow (MDF) lesson scripts. Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Trigger on any mention of AI-Shifu, AI师傅, or MarkdownFlow course scripting.
+description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, or Course Prompt authoring.
 ---
 
 # Course Creator
 
-Convert raw course material into runnable, optimized MarkdownFlow lesson scripts and deploy them as live AI-Shifu courses.
+Convert raw course material into runnable, optimized Teaching Prompts (per-lesson) and a Course Prompt (course-level), then deploy them as a live AI-Shifu course. Both prompt artifacts are written in MarkdownFlow.
 
 ## Support & Contact
 
@@ -23,213 +23,148 @@ Do **not** include the line in routine phase reports, ordinary progress messages
 
 ## Execution Modes
 
-- Standard mode (default): Input quality is sufficient; run requested phases in full.
-- Fallback mode: Input is incomplete or low quality; produce coarse outputs, mark uncertainty, and provide focused rerun hints.
+Two modes apply uniformly across all phases (Segmentation / Orchestration / Generation / Optimization):
 
-## Language Resolution Policy
+- **Standard mode** (default): Input quality is sufficient; run phases in full with standard schemas.
+- **Fallback mode**: When input is incomplete, conflicting, or low-quality — produce coarse outputs, mark uncertainty explicitly, and provide focused rerun hints. Output schemas extend with phase-specific fallback fields per `references/data-contracts.md#fallback-output-extensions`.
 
-See `references/language-resolution.md` for the resolution priority and policy.
+Each phase has its own fallback shape — see `examples/fallback-mode.md` for the four phase scenarios.
+
+## Cross-File Concept Routing
+
+Some concepts span multiple references files. Use this table to locate the authoritative source for each aspect before authoring or auditing:
+
+| Concept | Syntax / Format | Strategy / Rules | Schema / Data |
+|---|---|---|---|
+| Variables | `references/markdownflow.md#variables` | `references/pedagogy.md#variable-strategy` | `references/data-contracts.md#variable-table` |
+| Interactions | `references/markdownflow.md#interactions` | `references/pedagogy.md#interaction-design` | — |
+| Visuals | — | `references/pedagogy.md#visual-text-coordination` | `references/data-contracts.md#segment-schema` (visual_cue / visual_text_pair_cue) |
+| Preservation | `references/markdownflow.md#preservation` | `references/pedagogy.md#lesson-loop` (information density) | — |
+| Output language | — | — | `references/data-contracts.md#language-resolution` |
 
 ## Authoring Control Inputs
 
 Use these optional controls across all phases:
 
-- `course_profile` (json): audience level, prerequisite level, lesson duration target, lesson count target, and assessment mode.
-- `delivery_constraints` (json): interaction density, platform limits, must-cover topics, avoid topics, and non-negotiable source fragments.
+- `course_profile` (json): audience and pedagogical parameters.
+- `delivery_constraints` (json): platform limits, topic policy, and non-negotiable fragments.
+- `target_language` (BCP-47 string, e.g. `zh-CN` / `en-US` / `fr-FR`): explicit output language; takes priority over prompt-language detection. Full priority order in `references/data-contracts.md#language-resolution`.
 
-See `references/input-contract.md` for recommended object shapes.
+Field-level schemas with example JSON in `references/data-contracts.md#recommended-object-shapes`.
 
-## Output Boundary
+## Authoring Leakage Rules
 
-- Final outputs are **MarkdownFlow teaching scripts**.
-- The script must be **directive/instructional** (i.e., it tells the model how to teach), not a polished, directly learner-addressed “final lecture/manuscript”.
+Keep author-side scaffolding out of Teaching Prompt and Course Prompt outputs:
+
 - Avoid author-side meta labels such as “Knowledge Block 1/2/3”, “Lesson Objective”, or “Deliverable”. Keep those as implicit structure, not visible narration.
 - Authoring rules, pipeline notes, and process instructions stay in skill docs and references, not in lesson outputs.
 - Internal design notes may appear only in HTML comments when needed.
 
-## MarkdownFlow Authoring Hard Rules (Must Follow)
+## Teaching Prompt and Course Prompt Authoring Hard Rules (Must Follow)
 
-### 1) Script style: directive, not manuscript
+These are the five red-line rules every Teaching Prompt and Course Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
 
-Write in imperative, model-guiding language. Preferred patterns:
-- “Explain to the learner …”
-- “Ask the learner to …”
-- “Have the learner choose …”
-- “After collecting {{var}}, restate the choice and branch …”
+1. **Script style: directive, not manuscript.** Write in imperative, model-guiding language ("Ask the learner to …", "After collecting {{var}}, branch …"). Do not produce polished learner-facing prose or author/lesson-plan meta narration. See `references/pedagogy.md#script-style`.
 
-Disallowed patterns:
-- Long, polished prose written as if it is the final learner-facing lecture.
-- Author/lesson-plan meta narration (e.g., “Knowledge Block …”, “In this lesson you will …”, “Deliverable: …”).
+2. **Interaction syntax: prompt outside, options inside.** Keep the learner-facing question on the line **before** the interaction; put only option labels or a short `...` input placeholder inside `?[%{{var}} ...]`. Each `?[]` is on its own line. See `references/markdownflow.md#interactions` for full Bad/Good examples and the `...` input-marker rules.
 
-### 2) Interaction syntax: prompt outside, options inside
+3. **Mandatory anchoring + downstream effect.** After every interaction, restate the learner's selection as an instruction (`Restate the learner's current choice as {{var}}.`) and use `{{var}}` to drive a visible downstream effect (branching explanation, examples, difficulty, feedback). See `references/pedagogy.md#interaction-design`.
 
-For MarkdownFlow interactions, keep the question/prompt **outside** the syntax line.
-The interaction line must contain **only option labels** or a short `...` input placeholder.
-The `?[]` interaction syntax must be on its own line. Never put prompt text and `?[]` on the same line.
+4. **Visuals: describe, do not inline source markup.** Use natural-language image instructions ("Show an image that …") paired with text explanation. Do not inline SVG/HTML/Mermaid/PlantUML/Graphviz markup unless the user explicitly asks for that format. See `references/pedagogy.md#visual-text-coordination`.
 
-Do not place a learner-facing question after `%{{var}}` inside `?[%{{var}} ...]`. Anything after `%{{var}}` is parsed as selectable content, so a question there becomes part of the interaction instead of the prompt.
-
-For input interactions, write both:
-- A specific, learner-facing question before the interaction line.
-- A shorter input placeholder after `...` inside the interaction line.
-
-Bad:
-`?[%{{topic}} Please pick a topic: A | B | C]`
-`?[%{{choice}} Which option best matches your situation? Option A | Option B | Option C | ...Other]`
-`?[%{{example}} What is one situation where you want to apply this idea this week? ...Describe your situation]`
-`Ask the learner: Which option best matches your situation? ?[%{{choice}} Option A | Option B | Option C]`
-
-Good:
-`Ask the learner to pick a topic.`
-`?[%{{topic}} A | B | C]`
-`Ask the learner: Which option best matches your situation?`
-`?[%{{choice}} Option A | Option B | Option C | ...Other]`
-`Ask the learner: What is one specific situation where you want to apply this idea this week?`
-`?[%{{example}} ...Brief situation]`
-
-### 3) Mandatory anchoring + downstream effect
-
-After every interaction, the script must:
-1. Restate the selection explicitly as an instruction (not as polished narration), e.g.: `Restate the learner's current choice as {{var}}.`
-2. Use {{var}} to create a visible downstream effect (branching explanation, examples, practice difficulty, feedback).
-
-### 4) Visuals: describe, do not inline source markup
-
-- Do not embed raw SVG/HTML source code inside lesson MarkdownFlow files.
-- Unless the user explicitly asks for SVG, HTML, Mermaid, PlantUML, Graphviz, or other diagram source/markup, do not proactively generate visual source code or diagram markup.
-- Default behavior: when a visual is needed, write a natural-language instruction such as “Show an image that …” and pair it with a brief explanation of what the visual is meant to convey.
-- If the user asks for a visual but does not specify the format, prefer natural-language image/diagram placeholders over executable or embeddable diagram code.
+5. **Output language must be resolved before any prompt content.** Run Language Resolution per `references/data-contracts.md#language-resolution` before producing Teaching Prompt or Course Prompt content. The user's invocation language counts as `prompt_language_detection` (priority 4) and must be used when no higher-priority directive exists. Examples in this skill and in `references/` are written in English for canonical illustration only — do NOT let example language override the resolved output language. If the user invokes in Chinese, all interactions, option labels, downstream text, and the Course Prompt itself must be in Chinese.
 
 ## Pipeline Overview
 
+The stages are **not** a flat linear pipeline. **Orchestration is an end-to-end driver** that internally calls Segmentation and Generation. Only Optimization and Deployment actually run in linear sequence after Orchestration completes.
+
 ```
-Phase 1: Segmentation → Phase 2: Orchestration → Phase 3: Generation → Phase 4: Optimization → Phase 5: Deployment
+Raw material
+   │
+   ▼
+Orchestration                            ← end-to-end driver
+   ├── calls Segmentation                 (cleanup + semantic segmentation)
+   └── calls Generation                   (per-lesson Teaching Prompts)
+        │
+        │  Orchestration outputs: Teaching Prompts + course_index
+        │                 + global_variable_table
+        ▼
+Optimization                              (audit + optimize)
+        │
+        ▼
+Deployment                                (build + import + publish to platform)
 ```
+
+Segmentation, Generation, and Optimization can each be invoked standalone — see [Usage Paths](#usage-paths) Path B for the sub-paths (Segment only / Generate only / Optimize only).
 
 ## Usage Paths
 
 ### Path A: End-to-End
 
-Run all five phases from raw material to a live deployed course.
+Run the full pipeline from raw material to a live deployed course.
 
-1. Phase 1: Segment raw material into semantic units.
-2. Phase 2: Orchestrate lesson boundaries and generate scripts.
-3. Phase 3: Generate per-lesson MarkdownFlow scripts (called internally by Phase 2).
-4. Phase 4: Audit and optimize final scripts.
-5. Phase 5: Build, import, and publish to the AI-Shifu platform.
+1. **Orchestration** drives Segmentation and Generation end-to-end, then runs cross-lesson gating to produce Teaching Prompts + course_index + variable table.
+2. **Optimization** audits and improves Orchestration's output, plus produces the Course Prompt.
+3. **Deployment** writes the course directory, builds, imports, and publishes to the AI-Shifu platform.
 
 ### Path B: Author Only
 
-Run Phase 1–4 to produce optimized MarkdownFlow scripts without deploying. Sub-paths:
-- **Segment only**: Phase 1 alone for structured segments and manual review.
-- **Generate only**: Phase 3 alone on pre-existing segments to produce lesson scripts.
-- **Optimize only**: Phase 4 alone to audit and improve existing MarkdownFlow scripts.
+Run Segmentation through Optimization to produce optimized Teaching Prompts and a Course Prompt without deploying. Sub-paths:
+- **Segment only**: Segmentation alone for structured segments and manual review.
+- **Generate only**: Generation alone on pre-existing segments to produce Teaching Prompts.
+- **Optimize only**: Optimization alone to audit and improve existing Teaching Prompts.
 
 ### Path C: Deploy Only
 
-Run Phase 5 alone to deploy pre-existing MarkdownFlow files to the AI-Shifu platform.
+Run Deployment alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform.
 
 ### Path D: Manage Existing
 
-Use Phase 5 management commands (list, show, update, rename, reorder, delete, publish, archive) on courses already on the platform.
+Use Deployment management commands (list, show, update, rename, reorder, delete, publish, archive) on courses already on the platform.
 
 ---
 
-## Phase 1: Segmentation
+## Segmentation
 
 Turn messy course source material into a reliable intermediate structure for downstream lesson generation.
 
 ### Workflow
 
-1. Remove filler language and duplicated phrasing without changing meaning.
-2. Mark immutable blocks: code, images, and tables.
-3. Segment by semantic continuity instead of headings alone.
-4. Propose lesson boundaries with one core question per lesson.
-5. Return source-linked structured segments.
+See `references/pedagogy.md#segmentation-methodology` for the full methodology (cleanup, immutable-block marking, semantic segmentation, lesson-boundary proposal, source linking).
 
-### Segment Schema
+### Outputs
 
-Each segment includes:
-- `segment_id`
-- `segment_type` (`concept`, `example`, `code`, `image`, `exercise`, `transition`)
-- `core_point`
-- `preserve_block` (`yes` or `no`)
-- `source_span`
+Segment list per `references/data-contracts.md#segment-schema` (each segment carries id, type, core point, preservation flag, source span, and transfer signals), plus lesson boundary candidates with one core question each.
 
-### Transfer Signals
-
-Capture these fields for downstream teaching quality:
-- `learner_hook`: statements that can trigger learner reflection.
-- `evidence_type`: one of history, phenomenon, data, mechanism, or conclusion.
-- `visual_cue`: fragments suited for SVG/HTML visual support.
-- `concept_conflict`: candidate idea conflicts for cognitive contrast.
-- `boundary_cue`: clues for validity boundaries.
-- `action_cue`: clues that can become immediate or staged actions.
-- `density_cue`: high-information chunks that should not be diluted.
-- `quote_cue`: original wording worth preserving.
-- `visual_text_pair_cue`: clues for "visual first, explanation second" blocks.
-- `interaction_intent_cue`: intent labels such as diagnose, branch, calibrate, compare.
-- `compare_cue`: candidate prompts for before/after comparison.
-
-### Phase 1 Outputs
-
-- Ordered segment list.
-- Lesson boundary candidates.
-- One core question per lesson.
-- Preservation block index.
-- Full transfer-signal package.
-
-See `references/segmentation-rules.md`.
-
-### Phase 1 Validation
+### Validation
 
 - Segment output covers all valid source spans in traceable order.
-- Code/image/table blocks keep original placement and format.
-- Every lesson candidate resolves to one core question.
-- Transfer-signal fields are complete and usable downstream.
-- Cleanup does not alter key facts or terminology.
+- `transfer_signals` object populated and usable downstream (schema per `references/data-contracts.md#segment-schema`).
+- Preservation, one-core-question, and information-fidelity constraints pass — see `references/markdownflow.md#preservation` and `references/pedagogy.md#lesson-loop`.
 
 ---
 
-## Phase 2: Orchestration
+## Orchestration
 
-Convert raw course material into runnable lesson-level MarkdownFlow scripts by coordinating segmentation and generation.
+**Role**: end-to-end orchestrator for Path A. Orchestration calls Segmentation (segmentation) and Generation (generation) internally, then performs the cross-lesson work that those atomic phases cannot — course index, global variable table, and mandatory gating.
 
 ### Workflow
 
 1. Normalize source ordering and merge input material.
-2. Run Phase 1 for cleanup and semantic segmentation.
-3. Generate lesson-cut candidates with one core question each.
-4. Run Phase 3 for lesson-level MarkdownFlow scripts.
+2. Run Segmentation for cleanup and semantic segmentation.
+3. Finalize lesson cuts from Segmentation's boundary candidates (one core question each).
+4. Run Generation to generate per-lesson Teaching Prompts.
 5. Build course index and global variable table.
 6. Recompute only failed lessons through strict gating.
 
 ### Mandatory Gates
 
-All gates must pass:
-- Code blocks are preserved character-by-character.
-- Image links and relative placement are preserved.
-- Each lesson resolves one core question.
-- Each lesson contains at least one valid MarkdownFlow interaction, max five interactions total.
-- Each lesson includes a minimum teaching loop: setup, explanation, interaction, close.
-- Lesson language must be **instructional/directive** (model-guiding), not pipeline narration.
-- Each lesson includes at least one deepening interaction (calibration, boundary check, or counterintuitive prompt).
-- Action tasks are either immediately executable or explicitly linked to later modules.
-- Variable naming is consistent and traceable.
-- No unresolved placeholder variables in learner-facing text.
-- Do not wrap full lessons in deterministic blocks (`=== ===` or `!=== !===`).
-- Deterministic blocks are reserved for legally or operationally fixed statements only.
-- If an image must remain unchanged, use single-line deterministic syntax per image.
+All gates must pass before Orchestration declares lessons complete:
 
-- Every variable collection step must produce immediate feedback and downstream effect.
-- Core knowledge points require visual + textual explanation together.
-- Consecutive variable collection cannot exceed three variables.
-- Do not recollect the same variable unless explicitly marked as staged comparison.
-- Never reference uncollected variables.
-- Interaction prompts must be concrete and directly answerable.
-- Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.
-- `*_viewpoint_check` interactions must branch by option and drive different next steps.
-- Every interaction variable must create visible downstream impact.
+- **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `references/markdownflow.md#preservation`; no unresolved or uncollected variable references; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `references/markdownflow.md#deterministic-blocks`.
+- **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, minimum teaching loop, at least one deepening interaction, max five interactions per lesson, variable-collection pacing, viewpoint branching, and visual-text pairing — all per `references/pedagogy.md#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`.
+
+Recompute lessons that fail any gate; do not partially-pass.
 
 ### Rerun Rules
 
@@ -239,219 +174,98 @@ All gates must pass:
 
 ### Failure Handling
 
-When source quality is weak:
-- Deliver coarse lesson drafts first.
-- Mark uncertain spans explicitly.
-- Continue with best-effort generation instead of stopping.
+Under fallback mode (see `## Execution Modes`), Orchestration:
 
-### Phase 2 Outputs
+- Delivers coarse lesson drafts first; continues with best-effort generation instead of stopping.
+- Marks uncertain spans explicitly on `course_index` entries.
+- Emits a `rerun_plan` listing lessons that need recompute and why.
 
-- Lesson MarkdownFlow scripts (one file per lesson).
-- Course index (lesson id, title, core question, source mapping).
-- Global variable table (definition, use, cross-lesson references).
+Fallback field shapes per `references/data-contracts.md#fallback-output-extensions`.
 
-See `references/output-contract.md` and `references/preservation-rules.md`.
+### Outputs
 
-### Phase 2 Validation
+See `references/data-contracts.md#output-contract` for the Teaching Prompts, course index, and global variable table schemas; preservation rules per `references/markdownflow.md#preservation`.
 
-- Lesson scripts, course index, and variable table are all present.
-- Code/image preservation is exact and position-safe.
-- One-core-question and interaction cap rules are satisfied per lesson.
-- No unresolved variables or no-op interactions remain.
+### Validation
+
+- All artifacts present per `references/data-contracts.md#output-contract`.
 - Fallback outputs include explicit uncertainty markers and rerun hints.
+- All Mandatory Gates above pass.
 
 ---
 
-## Phase 3: Generation
+## Generation
 
-Generate runnable MarkdownFlow scripts for each lesson.
+Generate a runnable Teaching Prompt for each lesson.
 
 ### Teaching Pattern Baseline
 
-Use these defaults unless lesson content requires a justified variation:
-
-1. Instructional/directive language only (a teaching script, not a final manuscript).
-2. Variable collection is distributed, not front-loaded.
-3. Build evidence chain from observation to mechanism to conclusion.
-4. Use visual-first explanation for abstract concepts, then textual interpretation.
-5. Every collected variable must immediately affect downstream content.
-6. Include at least one deepening interaction (calibration, boundary check, or misconception correction).
-7. Include at least one reusable deliverable.
-8. Action steps must be immediately executable or explicitly staged for downstream lessons.
-9. Use carryover statements only if cross-lesson dependency is allowed.
-10. Avoid exposing internal authoring terms in learner-facing text.
-11. Keep interaction prompts concrete and answerable.
-12. `*_viewpoint_check` prompts must branch with distinct feedback paths.
-13. Repeated interaction patterns are allowed only when framed as staged comparison.
-
-See `references/teaching-patterns.md` and `references/cognitive-techniques.md`.
+Apply the patterns and constraints in `references/pedagogy.md#teaching-patterns`, `#cognitive-techniques`, `#variable-strategy`, `#interaction-design`, and `#visual-text-coordination` unless content requires a justified variation.
 
 ### Single-Lesson Generation Strategy
 
-Required anchors:
+Required anchors per lesson:
+
 1. Opening objective plus visual cover.
 2. Evidence-chain explanation.
 3. At least one effective interaction with visible downstream effect.
 4. At least one reusable deliverable.
 5. Lesson close with summary or decision checkpoint.
 
-Optional modules:
-- Viewpoint calibration.
-- Misconception correction.
-- Dual deliverables (understanding + action).
-- Cross-lesson bridge sentence.
-- Additional visual-text reinforcement blocks.
+Optional modules: viewpoint calibration, misconception correction, dual deliverables (understanding + action), cross-lesson bridge sentence, additional visual-text reinforcement blocks.
 
-### Variable Strategy
+### Outputs
 
-- Prefer at most one variable collection per module.
-- Max five interactions per lesson (recommended three to four).
-- No more than three consecutive variable collections before feedback.
-- Reuse global variables when possible; add lesson-local variables only when required.
-- Every variable must have downstream utility (branching, depth control, or deliverable variation).
-- No unresolved placeholders in learner-facing text.
-- Do not recollect the same variable unless explicitly marked as staged comparison.
-- Prevent semantic duplicates even when variable names differ.
+Per-lesson schema in `references/data-contracts.md#lesson-schema`.
 
-### Visual-Text Coordination
+### Validation
 
-- If a visual is needed, describe it in natural language (e.g., "Show an image that …").
-- Pair every visual instruction with a brief explanation of what the visual is meant to convey.
-- Do not inline raw SVG/HTML markup in MarkdownFlow lesson files.
-
-### Interaction Design
-
-- Use no more than one `viewpoint_check` in a lesson unless justified.
-- Each `viewpoint_check` must trigger a concrete next action.
-- If using a "restate-boundary-counterintuitive" pattern, branch by option with distinct content.
-
-### Phase 3 Outputs
-
-Return per lesson:
-- `lesson_id`
-- `lesson_title`
-- `mdf_script`
-- `used_variables`
-- `depends_on_lessons`
-
-See `references/lesson-template.md`.
-
-### Phase 3 Validation
-
-- Minimum teaching loop exists (setup, explanation, interaction, close).
-- Interaction outcomes visibly alter downstream content.
-- Variable safety rules pass (collect before reference, no duplicate recollection).
-- Core concepts satisfy visual-plus-text coordination.
-- Script remains valid and runnable MarkdownFlow.
+- Each `teaching_prompt` is valid runnable MarkdownFlow.
+- Per-lesson schema populated per `references/data-contracts.md#lesson-schema`.
+- Pedagogical and syntax constraints pass per `references/pedagogy.md` and `references/markdownflow.md`.
 
 ---
 
-## Phase 4: Optimization
+## Optimization
 
-Audit and improve existing MarkdownFlow teaching prompts. This phase is not for writing from scratch.
+Audit and improve existing Teaching Prompts (and the Course Prompt). This phase is not for writing from scratch.
 
 ### When to Use
 
-- Gap analysis against source material.
-- Script quality upgrades without full rewrites.
-- Consistent chapter style with lower runtime failure risk.
-
-### Core Method
-
-1. Start with a low-friction entry point (cover visual + one light interaction).
-2. Ensure interactions change downstream logic.
-3. Keep structure content-driven, not template-driven.
-4. Build evidence chain: observation/history -> mechanism/data -> conclusion.
-5. Use visuals for abstract structure and text for mechanism + boundaries.
-6. Add viewpoint calibration with branching feedback.
-7. Include concrete correction actions for major misconceptions.
-8. Keep deliverables executable and reusable.
-9. Stabilize syntax and variable usage.
-
-See `references/optimization-methodology.md`.
+Use Optimization when existing Teaching Prompts or a Course Prompt need audit and targeted improvement — gap analysis against source, quality upgrades without full rewrites, and lowering runtime failure risk. Not for from-scratch authoring.
 
 ### High-Standard Constraints
 
+Apply Optimization audits against the full constraint set:
 
-- Include a lesson cover visual by default.
-- Keep max interactions per lesson at five (recommended three to four).
-- Place interactions at decision points, not only at lesson start.
-- Every interaction must trigger immediate feedback plus downstream effect.
-- Limit consecutive variable collection to three.
-- No uncollected variables in learner-facing text.
-- Spread global variable collection across lessons.
-- Do not recollect the same variable unless marked as staged comparison.
-- Treat semantic duplicates as duplicates even if variable names differ.
-- Keep ending structure lesson-appropriate; interactive endings are optional.
-- Every core concept needs visual-plus-text explanation.
-- Avoid internal authoring terms in learner-facing copy.
-- Keep prompts concrete and answerable.
-- `*_viewpoint_check` interactions must branch by option.
-- Preserve source information density; do not trade substance for fluency.
+- Pedagogical constraints (variable strategy, interaction design, visual-text coordination, lesson loop, information density): `references/pedagogy.md`.
+- Syntax / runtime constraints (preservation, deterministic blocks, variable references): `references/markdownflow.md`.
+- Exhaustive audit checklist (failure modes are these constraints negated): `references/review-checklist.md`.
 
 ### Optimization Workflow
 
-1. Define scope (single lesson vs full course).
-2. Build coverage matrix: source points -> script coverage.
-3. Label issue classes:
-   - `coverage_gap`
-   - `meaning_shift`
-   - `explanation_clarity`
-   - `interaction_no_branching`
-   - `visual_constraints_missing`
-   - `variable_or_syntax_risk`
-4. Apply smallest safe edits first.
-5. Run checklist validation before final output.
-6. Re-check visual-text pairing for every core concept.
-7. Re-check variable lifecycle (collection, reference timing, reuse).
-8. Re-check semantic duplication in interaction prompts.
-9. Re-check viewpoint branching and downstream action coupling.
-
-See `references/review-checklist.md`.
-
-### Required Output Style
-
-- Present conclusion and risk level first.
-- Then provide grouped change list by issue class.
-- Use file-level references for traceability.
-- If duplicate script versions exist, declare the authoritative one.
-- If cross-lesson dependency is disallowed, remove dependency text and unbound carryover variables.
-
-### Common Failure Patterns
-
-- Structural edits without content-depth recovery.
-- Over-abstraction that drifts from source meaning.
-- Hidden cross-lesson variables causing runtime failures.
-- Vague prompts that models cannot execute reliably.
-- Viewpoint options that still return identical feedback.
-- Repeated semantic questions with different variable names.
-- Visual tasks without explanatory text.
-- Rigid template consistency at the cost of lesson specificity.
+1. Define scope (single lesson vs full course); if multiple script versions exist, declare the authoritative one before editing.
+2. Build a coverage matrix mapping source points to script coverage.
+3. Run the full audit per `references/review-checklist.md`, classify findings using the issue taxonomy in `references/pedagogy.md#optimization-methodology`, and apply smallest safe edits first.
 
 ### Course Prompt
 
-Produce a course-level prompt (`course_prompt`) alongside lesson optimization. It defines the AI engine's role, task, teaching techniques, writing style, format, and drawing rules (always required), plus translation rules when triggered. It is loaded once per course and applied to every lesson, so it must capture cross-lesson constants — not per-lesson interaction logic.
+Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **filling the template at `references/course-prompt.md#fillable-template` section-by-section, not by free-form composition**. Each of the six required sections has a Must-Specify list in `references/course-prompt.md#authoring-rules` (Rules 1–12) — every listed bullet must appear in the generated `course_prompt`'s corresponding section (in the resolved output language). Do not omit a Must-Specify bullet just because the source material does not explicitly demand it; these bullets are platform-level constraints.
 
-Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing` (always include in full — without it the AI has no guardrails on multimodal output). Conditional section: `# Translation Rules` (when multilingual or when brand/domain terms need a fixed translation policy).
+Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues, `term_policy`) instead of re-asking the author. Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
 
-Auto-fill placeholders from existing artifacts instead of asking the author again: `course_profile`, `delivery_constraints`, resolved target language (per `references/language-resolution.md`), Phase 1 visual cues, and `term_policy`. Do not duplicate per-lesson variable collection or branching here — those belong in lesson MarkdownFlow.
+### Validation
 
-See `references/course-prompt-rules.md` for the 12 authoring rules and `references/course-prompt-template.md` for the fillable template and Substitution Map.
-
-### Phase 4 Validation
-
-- Conclusion and risk level are presented first.
-- All issue classes are fully audited.
-- `viewpoint_check` interactions branch and trigger distinct next actions.
-- Uncollected variable references and semantic duplicate interactions are removed.
-- Output remains runnable with no loss of source information density.
+- Conclusion and overall risk level presented first (report structure per `references/report-template.md`).
+- Full review against `references/review-checklist.md` passes, or remaining gaps are explicitly listed as non-blocking suggestions.
 - A `course_prompt` artifact is produced when input includes course material, with all six required sections present. `# Translation Rules` may be omitted when its trigger condition does not apply.
+- Generated `course_prompt` covers every Must-Specify bullet in `references/course-prompt.md` Rules 1–12 (audit each section against its rule list — especially `# Drawing`, which is the most commonly under-filled section).
 
 ---
 
-## Phase 5: Deployment
+## Deployment
 
-Deploy optimized MarkdownFlow lesson scripts to the AI-Shifu platform as live courses.
+Deploy optimized Teaching Prompts to the AI-Shifu platform as live courses.
 
 ### Prerequisites
 
@@ -460,68 +274,38 @@ Deploy optimized MarkdownFlow lesson scripts to the AI-Shifu platform as live co
 
 ### Authentication
 
-See `references/cli-reference.md` for the full login flow.
-
-When no valid token is available, guide the user through the SMS login flow via `shifu-cli.py login` (phone number + 4-digit verification code). The CLI defaults to `https://app.ai-shifu.cn`.
+When no valid token is available, guide the user through `shifu-cli.py login` (SMS flow: phone number + 4-digit verification code; CLI defaults to `https://app.ai-shifu.cn`). Full flow in `references/cli/cli-reference.md#authentication`.
 
 Always use CLI commands. Never make raw HTTP/API calls directly.
 
 ### Course Directory
 
-MarkdownFlow lesson scripts must be organized in a course directory before deployment. See `references/course-directory-spec.md` for the full specification.
+Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `references/cli/course-directory-spec.md` for the full specification. When continuing from Optimization (Path A), write the optimized Teaching Prompts and Course Prompt into this structure automatically.
 
-When continuing from Phase 4 (Path A), write optimized scripts into the course directory structure automatically.
+### CLI Commands
 
-### CLI Quick Reference
-
-Core deployment commands:
-
-```bash
-build --course-dir ./course-a/                          # Build shifu-import.json (offline)
-import --new --json-file ./course-a/shifu-import.json   # Import as new course
-publish <shifu_bid>                                      # Make course live
-show <shifu_bid>                                         # Verify course structure
-show <shifu_bid> <outline_bid>                           # Read a specific lesson
-```
-
-See `references/cli-reference.md` for the complete command reference and `references/import-json-format.md` for the JSON schema.
+All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
 
 ### Deployment Workflow
 
 **From pipeline (Path A continuation):**
-1. Write Phase 4 outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-prompt.md` (the Phase 4 `course_prompt` artifact, structured per `references/course-prompt-template.md`), optional `structure.json`.
+1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), optional `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
 3. Run `import --new --json-file <dir>/shifu-import.json` to create the course.
 4. Run `publish <shifu_bid>` to make it live.
 5. Verify via platform URL.
 
 **Standalone deployment (Path C):**
-1. Ensure course directory is ready with MarkdownFlow lesson files and a `course-prompt.md`. If the course prompt is not yet authored, follow `references/course-prompt-template.md` (and `references/course-prompt-rules.md` for guidance) before running `build`.
+1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`) and a `course-prompt.md`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`.
 2. Run `build`, `import`, `publish` as above.
-
-### Common Management
-
-Use these commands for ongoing course operations (Path D):
-
-```bash
-list                                                   # List all courses
-show <shifu_bid>                                       # Show course outline
-update-meta <shifu_bid> --name "..." --description "..."
-update-lesson <shifu_bid> <outline_bid> --mdf-file updated.md
-rename-lesson <shifu_bid> <outline_bid> --name "New Name"
-reorder <shifu_bid> --order bid1,bid2,bid3
-delete-lesson <shifu_bid> <outline_bid>
-publish <shifu_bid>
-archive <shifu_bid>
-```
 
 ### Verification
 
 After any deployment or management operation, verify the result:
-1. Show the user three verification URLs — admin console, course preview, and lesson preview. The script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block — copy those URLs verbatim and wrap each in a Markdown link per `references/report-template.md` (Phase 5 → Verification URLs, plus the top-level Formatting Rules). Never reconstruct URLs from a template by hand.
-2. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's MarkdownFlow content, variable collection, and interaction logic.
+1. Show the user three verification URLs — admin console, course preview, and lesson preview. The script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block — copy those URLs verbatim and wrap each in a Markdown link per `references/report-template.md` (Deployment → Verification URLs, plus the top-level Formatting Rules). Never reconstruct URLs from a template by hand.
+2. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's Teaching Prompt, variable collection, and interaction logic.
 
-### Phase 5 Validation
+### Validation
 
 - Import completes without errors.
 - Course is accessible via platform URL.
@@ -530,100 +314,17 @@ After any deployment or management operation, verify the result:
 
 ---
 
-## MarkdownFlow Syntax (Required)
-
-See `references/markdownflow-spec.md` for the quick reference.
-
-Authoring principle:
-   - Script text should guide generation behavior.
-   - Do not output full polished learner prose as fixed text.
-   - Never lock full lesson bodies inside deterministic blocks.
-   - For fixed images, use one deterministic line per image.
-   - After each interaction, restate learner selection and reflect it in downstream content.
-   - For input interactions, put the full learner-facing question before the interaction line and use only a short placeholder after `...`.
-   - Treat `...` as a structural input marker, not as decorative punctuation.
-   - For pure input, place `...` directly before a short input placeholder: `?[%{{var}} ...Short placeholder]`.
-   - For select + input, place `...` at the start of the option that opens free text: `...Other, please specify`.
-   - Never place `...` at the end of prompt text or option labels.
-
-Common syntax mistakes to avoid:
-   - Incorrect: `?[%{{var}} Prompt text...]`
-   - Incorrect: `?[%{{var}} Option A | Option B | Other, please specify...]`
-   - Incorrect: `?[%{{var}} Question prompt? Option A | Option B | Option C]`
-   - Incorrect: `?[%{{var}} Full learner-facing question? ...Short placeholder]`
-   - Incorrect: `Ask the learner the question prompt. ?[%{{var}} Option A | Option B | Option C]`
-   - Correct: `Ask the learner the full question.`
-   - Correct: `?[%{{var}} ...Short placeholder]`
-   - Correct: `?[%{{var}} Option A | Option B | ...Other, please specify]`
-   - Correct: Prompt text followed by the interaction line, e.g.:
-     Ask the learner the question prompt.
-     ?[%{{var}} Option A | Option B | Option C]
-
-## Shared Constraints
-
-### Preservation Rules
-
-See `references/preservation-rules.md`.
-
-Must preserve:
-- Code content and fence language.
-- Image URLs, alt text, and relative placement.
-- Domain terms and factual statements.
-
-Can normalize:
-- Speech filler.
-- Sentence breaks and punctuation.
-- Redundant transitions.
-
-### Variable Rules
-
-- Collect before reference; never use uncollected variables.
-- No more than three consecutive variable collections before feedback.
-- Max five interactions per lesson (recommended three to four).
-- Every variable must produce downstream utility.
-- No unresolved placeholders in learner-facing text.
-- Do not recollect the same variable unless explicitly marked as staged comparison.
-- Prevent semantic duplicates even when variable names differ.
-- Reuse global variables when possible.
-
-### Interaction Rules
-
-- Each lesson includes at least one deepening interaction (calibration, boundary check, or misconception correction).
-- Interaction prompts must be concrete and directly answerable.
-- Learner-facing questions must appear before the interaction line, not inside `?[%{{var}} ...]`.
-- `?[]` interaction syntax must be on a standalone line.
-- For input interactions, the pre-interaction question must be more specific than the short `...` placeholder.
-- `*_viewpoint_check` interactions must branch by option and drive different next steps.
-- Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.
-- Every interaction variable must create visible downstream impact.
-
-## Validation Checkpoints
-
-### Phase 1 (Segmentation)
-- Source span traceability and immutable block preservation.
-- One core question per lesson candidate.
-
-### Phase 2 (Orchestration)
-- All mandatory gates pass.
-- Course index, variable table, and lesson scripts are complete.
-
-### Phase 3 (Generation)
-- Teaching loop, variable safety, visual-text coordination.
-- Script is valid runnable MarkdownFlow.
-
-### Phase 4 (Optimization)
-- All issue classes audited.
-- Interaction branching and variable lifecycle validated.
-- No loss of source information density.
-
-### Phase 5 (Deployment)
-- Import completes without errors.
-- Course is accessible and lesson structure matches source.
-- Published course is reachable in preview mode.
-
 ## Report Template
 
-See `references/report-template.md`.
+Use `references/report-template.md` to produce the user-facing report at the end of each phase. Per-phase anchors:
+
+- `references/report-template.md#segmentation-report`
+- `references/report-template.md#orchestration-report`
+- `references/report-template.md#generation-report`
+- `references/report-template.md#optimization-report`
+- `references/report-template.md#deployment-report`
+
+Top-level formatting rules (Markdown links required for URLs, etc.) in `references/report-template.md#formatting-rules`.
 
 ## Examples
 

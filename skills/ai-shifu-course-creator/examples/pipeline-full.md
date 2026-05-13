@@ -1,4 +1,6 @@
-# Full Pipeline Example (Phase 1 → 2 → 3 → 4)
+# Full Pipeline Example (Segmentation → Orchestration → Generation → Optimization)
+
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
 
 ## Input Payload (example)
 
@@ -23,7 +25,7 @@
 }
 ```
 
-## Phase 1 Output (Segmentation)
+## Segmentation Output
 
 ```json
 {
@@ -32,14 +34,14 @@
       "segment_id": "S01",
       "segment_type": "concept",
       "core_point": "Metric drift signals a systemic shift, not just noise.",
-      "preserve_block": "no",
+      "preserve_block": false,
       "source_span": {"start": 0, "end": 42}
     },
     {
       "segment_id": "S02",
       "segment_type": "concept",
       "core_point": "Classify causes before applying fixes.",
-      "preserve_block": "no",
+      "preserve_block": false,
       "source_span": {"start": 43, "end": 78}
     }
   ],
@@ -54,7 +56,7 @@
 }
 ```
 
-## Phase 2 + 3 Output (Orchestration + Generation)
+## Orchestration + Generation Output
 
 ```json
 {
@@ -86,7 +88,7 @@ Identify the highest-signal diagnostic step.
 Based on {{diagnosis_choice}}, we run one focused verification next.
 ```
 
-## Phase 4 Output (Optimization)
+## Optimization Output
 
 ```json
 {
@@ -100,7 +102,8 @@ Based on {{diagnosis_choice}}, we run one focused verification next.
       "issue_class": "explanation_clarity",
       "change": "add brief boundary note after diagnosis selection"
     }
-  ]
+  ],
+  "course_prompt": "# Role\nYou are a practical coach helping beginners diagnose bottlenecks.\n\n# Task\nGuide the learner through observation → classification → one focused verification.\n\n# Teaching Techniques\nEvidence chain; one core question per lesson; viewpoint branching on diagnosis choice.\n\n# Writing Style\nDirective, concise, action-oriented; English (en-US).\n\n# Format\nMarkdownFlow; `?[]` interactions on standalone lines.\n\n# Drawing\nDescribe diagnostic flow visually in natural language; do not inline SVG/Mermaid."
 }
 ```
 
