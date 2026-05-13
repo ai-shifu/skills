@@ -24,10 +24,9 @@ The CLI always talks to `https://app.ai-shifu.cn`. To skip the SMS login, set `-
 
 When no valid token is available, guide the user through login. AI-Shifu's SMS login auto-creates an account on first use, so the same flow works for both new and returning users.
 
-Two rules govern how to run this flow:
+Fixed flow: ask for phone → send code → ask for SMS code → complete. Run the steps in order.
 
-- **No candidate set exists.** The phone number is the user's own number, and the SMS code is whatever message the user just received — both must be typed by the user verbatim. Do not present, suggest, or pre-fill any candidate values, examples, or option lists; there is nothing to choose from.
-- **Login is linear and branchless.** Steps run in order with no fork: ask phone → send code → ask code → complete. There is no registration-status branch ("have you signed up?"), no skip / defer branch, and no intermediate confirmation step. Each step's only output is the next step's input.
+Do not ask anything else. No status checks ("have you signed up / logged in before?"), no readiness or intent confirmations ("ready to start?", "I'll provide my phone"), no acknowledgment pauses, no recaps between steps. Each turn collects exactly the next value (phone, then SMS code), nothing else.
 
 Steps:
 
