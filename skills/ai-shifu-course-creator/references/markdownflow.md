@@ -69,6 +69,38 @@ Ask the learner: Which option best matches your situation? ?[%{{choice}} Option 
 
 For interaction-design quality (concrete prompts, branching, deepening interactions), see [pedagogy.md#interaction-design](pedagogy.md#interaction-design).
 
+## Branching on User Input
+
+MarkdownFlow has no programming-style conditionals, loops, or boolean logic. There is no parser that evaluates `{{var}} == "A"`; there are no `if` blocks, `switch` blocks, or ternary expressions to wire up control flow.
+
+Branching is enacted by writing **natural-language instructions** that describe what the AI should generate under each possible learner input. Phrasings such as "If the learner's input is X, then …" are **generation strategies the AI follows**, not `if`-`else` code.
+
+Example:
+
+```markdown
+Ask the learner for their stance on the claim above.
+?[%{{attitude}} Agree | Partially agree | Disagree]
+
+The learner's stance is {{attitude}}.
+
+- If the learner's stance is Agree, acknowledge the agreement appreciatively.
+- If the learner's stance is Partially agree, ask which parts they agree with and which parts they do not.
+- If the learner's stance is Disagree, ask why they disagree.
+```
+
+The bullet phrasing reads like `if`, but it is not `if` — it is an instruction the AI engine interprets while generating. Nothing in MarkdownFlow evaluates the condition. The branching is enacted by the AI following the instruction.
+
+### No program syntax around `{{var}}`
+
+A Teaching Prompt looks like code (variables, interaction markers, branched outcomes), but it is read by a language model, not executed by an interpreter. Wrapping `{{var}}` in `if`-`else` blocks, ternary expressions, `switch` / `case`, or fenced pseudo-code blocks makes the script look like a program and pushes the AI toward executing-not-interpreting behavior, which degrades teaching quality.
+
+Express every branch as a plain instruction sentence:
+
+- Bad: `if {{level}} == "beginner": use simple analogies`
+- Good: `For {{level}} = beginner, use simple analogies; for intermediate, introduce technical terms; for expert, go deep into edge cases.`
+
+> The point of MarkdownFlow is not to write the lesson content directly, but to use natural language to precisely instruct the AI on how to generate content under each possible learner input.
+
 ## Deterministic Blocks
 
 - Single-line fixed text: `===fixed text===`
@@ -114,5 +146,6 @@ Use deterministic blocks only for truly fixed content. Do not lock entire lesson
 - `?[%{{var}} Question prompt? Option A | Option B]` — question inside the interaction line; move it to the line above.
 - `Ask the learner the question. ?[%{{var}} A | B | C]` — interaction not on its own line.
 - Pre-interaction text enumerates choices A / B / C but `?[%{{var}} X | Y | Z]` exposes a different set — the narrative description and the interaction options must stay aligned (same set, order, and wording).
+- `if {{var}} == "A": …` / `{{#if var}}…{{/if}}` / `switch ({{var}}) { … }` — program-style branching syntax around `{{var}}`. MarkdownFlow has no conditional parser; express branches as plain instruction sentences (see [Branching on User Input](#branching-on-user-input)).
 - Wrapping an entire lesson body in `=== … ===` or `!=== … !===`.
 - Referencing `{{var}}` in learner-facing text before any `?[%{{var}} …]` collects it.
