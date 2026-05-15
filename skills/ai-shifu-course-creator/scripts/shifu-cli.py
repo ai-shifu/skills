@@ -1005,7 +1005,7 @@ def cmd_analytics_query(args):
     transport_ok, payload = api_analytics(base_url, token, body)
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
-    if not transport_ok or payload.get("code") != 0:
+    if not transport_ok or not isinstance(payload, dict) or payload.get("code") != 0:
         sys.exit(1)
 
 
