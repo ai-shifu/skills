@@ -224,8 +224,41 @@ def cmd_login(args):
 
 
 # ── List ───────────────────────────────────────────────────────────────────────
+def _fetch_published_title(base_url, token, shifu_bid):
+    """Run analytics Recipe 0b for one shifu_bid and return the published
+    title (or None if there is no current published row — typically means
+    the course is still a draft or was unpublished)."""
+
+    body = {
+        "shifu_bid": shifu_bid,
+        "table": "shifu_published_shifus",
+        "select": ["title", "updated_at"],
+        "limit": 1,
+    }
+    ok, payload = api_analytics(base_url, token, body)
+    if not ok or not isinstance(payload, dict) or payload.get("code") != 0:
+        return None
+    data = payload.get("data") or {}
+    rows = data.get("rows") or []
+    columns = data.get("columns") or []
+    if not rows:
+        return None
+    try:
+        title_idx = columns.index("title")
+    except ValueError:
+        return None
+    return rows[0][title_idx]
+
+
 def cmd_list(args):
-    """List all courses."""
+    """List all courses with both draft and published titles.
+
+    The /shifus endpoint returns the draft snapshot; we additionally run
+    one analytics Recipe 0b call per shifu_bid to fetch the live published
+    title. When the two diverge, the author has renamed the draft and has
+    not yet republished — surface this so downstream agents do not mistake
+    the draft title for the live learner-facing title.
+    """
     base_url, token = resolve_auth(args)
     result = api(base_url, token, "get", "/shifus")
 
@@ -238,17 +271,37 @@ def cmd_list(args):
         print("No courses found.")
         return
 
-    # Table output
-    print(f"{'BID':<34} {'Name':<30} {'Status':<10} {'Updated':<18}")
-    print("-" * 94)
+    rows = []
+    diverged = 0
     for c in courses:
         bid = c.get("bid", c.get("shifu_bid", ""))
-        name = c.get("name", c.get("title", ""))[:28]
-        status = c.get("status", "")
-        updated = fmt_time(c.get("updated_at", ""))
-        print(f"{bid:<34} {name:<30} {status:<10} {updated:<18}")
+        draft = c.get("name", c.get("title", ""))
+        published = _fetch_published_title(base_url, token, bid) if bid else None
+        if published is None:
+            published_disp = "(draft only)"
+        elif published == draft:
+            published_disp = "(same)"
+        else:
+            published_disp = published
+            diverged += 1
+        rows.append({
+            "bid": bid,
+            "draft": draft,
+            "published_disp": published_disp,
+            "status": c.get("status", ""),
+            "updated": fmt_time(c.get("updated_at", "")),
+        })
 
-    print(f"\nTotal: {len(courses)} courses")
+    # Table output
+    print(f"{'BID':<34} {'Draft Name':<26} {'Published Name':<26} {'Status':<10} {'Updated':<18}")
+    print("-" * 116)
+    for r in rows:
+        print(
+            f"{r['bid']:<34} {r['draft'][:24]:<26} {r['published_disp'][:24]:<26} "
+            f"{r['status']:<10} {r['updated']:<18}"
+        )
+
+    print(f"\nTotal: {len(courses)} courses ({diverged} with draft/published title divergence)")
 
 
 # ── Show ───────────────────────────────────────────────────────────────────────
@@ -1009,6 +1062,97 @@ def cmd_analytics_query(args):
         sys.exit(1)
 
 
+def _fetch_draft_title(base_url, token, shifu_bid):
+    """Run analytics Recipe 0c for one shifu_bid; returns draft title or None."""
+
+    body = {
+        "shifu_bid": shifu_bid,
+        "table": "shifu_draft_shifus",
+        "select": ["title", "updated_at"],
+        "limit": 1,
+    }
+    ok, payload = api_analytics(base_url, token, body)
+    if not ok or not isinstance(payload, dict) or payload.get("code") != 0:
+        return None
+    data = payload.get("data") or {}
+    rows = data.get("rows") or []
+    columns = data.get("columns") or []
+    if not rows:
+        return None
+    try:
+        title_idx = columns.index("title")
+    except ValueError:
+        return None
+    return rows[0][title_idx]
+
+
+def cmd_find_title(args):
+    """Resolve a course-title keyword to the canonical current title(s).
+
+    Three-step lookup per PDF §1 of the 2026-05-15 query handbook:
+      1. List the caller's shifu_bids via /shifus.
+      2. For each shifu_bid, fetch the current published title (Recipe 0b)
+         and the current draft title (Recipe 0c).
+      3. Match the keyword against both titles (case-insensitive, whitespace-
+         normalized) and report grouped results: Published, Draft-only,
+         No match.
+
+    Historical / renamed titles never appear in this output by construction
+    — Recipe 0b/0c only return the `deleted = 0` row.
+    """
+
+    base_url, token = resolve_auth(args)
+    keyword = args.keyword
+    if not keyword or len(keyword.strip()) < 1:
+        print("Error: keyword must be a non-empty string")
+        sys.exit(1)
+
+    needle = keyword.replace(" ", "").lower()
+
+    result = api(base_url, token, "get", "/shifus")
+    courses = result if isinstance(result, list) else (result or {}).get("items", [])
+    if not courses:
+        print("No courses found for this account.")
+        return
+
+    published_matches = []  # (shifu_bid, published_title)
+    draft_only_matches = []  # (shifu_bid, draft_title)
+
+    def _matches(title):
+        if not title:
+            return False
+        return needle in title.replace(" ", "").lower()
+
+    for c in courses:
+        bid = c.get("bid", c.get("shifu_bid", ""))
+        if not bid:
+            continue
+        published = _fetch_published_title(base_url, token, bid)
+        if published is not None and _matches(published):
+            published_matches.append((bid, published))
+            continue
+        # Either no published row, or published title didn't match.
+        # Fall back to draft to catch courses with no live publication or
+        # courses whose draft has been renamed but not republished.
+        if published is None:
+            draft = _fetch_draft_title(base_url, token, bid)
+            if draft is not None and _matches(draft):
+                draft_only_matches.append((bid, draft))
+
+    if published_matches:
+        print(f"Published (current live title matches '{keyword}'):")
+        for bid, title in published_matches:
+            print(f"  {bid}  {title}")
+    if draft_only_matches:
+        print(f"\nDraft-only (no published row; draft title matches '{keyword}'):")
+        for bid, title in draft_only_matches:
+            print(f"  {bid}  {title}  (draft only — not yet published)")
+    if not published_matches and not draft_only_matches:
+        print(f"No courses you own currently have a title matching '{keyword}'.")
+        print("If the user is sure of the name, they may be remembering a "
+              "historical title — check `shifu-cli.py list` for current titles.")
+
+
 # ── CLI Entry Point ────────────────────────────────────────────────────────────
 def build_parser():
     """Build and return the argument parser with all subcommands."""
@@ -1165,6 +1309,14 @@ def build_parser():
     src.add_argument("--dsl", help="DSL body as an inline JSON string")
     src.add_argument("--dsl-file", help="Path to a JSON file containing the DSL body")
 
+    # ── find-title ──
+    p = sub.add_parser("find-title", parents=[parent_parser],
+                       help="Find courses by current title (published + draft)")
+    p.add_argument("keyword",
+                   help="Title keyword to search for (case-insensitive, "
+                        "whitespace-normalized; matches current published and "
+                        "draft titles only — never historical / renamed titles)")
+
     return parser
 
 
@@ -1198,6 +1350,7 @@ def main():
         "archive": cmd_archive,
         "unarchive": cmd_unarchive,
         "analytics-query": cmd_analytics_query,
+        "find-title": cmd_find_title,
     }
 
     handler = commands.get(args.command)

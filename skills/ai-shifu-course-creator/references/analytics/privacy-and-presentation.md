@@ -76,6 +76,21 @@ Hard rules (any violation → `11002`):
 
 The remaining `type` values — `303` input, `309` phone, `310` checkcode and similar widget types — contain learner PII and are blocked at the protocol level. Use aggregation templates (recipes 11 and 12) by default and fetch raw content only when specifically reviewing follow-up conversations (recipes 13–15).
 
+## Course title is not history — hard rule
+
+When the user names a course by title and asks for data, you must resolve the **current** `shifu_bid → title` mapping before issuing any downstream query. The current title comes from:
+
+1. The `shifu_published_shifus` row with `deleted = 0` (authoritative — there is at most one).
+2. If no published row exists, the `shifu_draft_shifus` row with `deleted = 0`, and flag the course as "currently in draft" to the user.
+
+Historical / renamed / deleted titles (`deleted = 1` rows in either table) are **never** the answer to "this course is currently called …". Specific failure modes this rule prevents:
+
+- The user says "show me data on 跟 AI 学 AI 通识". You happen to remember a `shifu_bid` that historically carried that title. You silently use it. Reality: that `shifu_bid` was renamed half a year ago to something completely different; the user actually meant a different course. **You report numbers from the wrong course.**
+- A title you saw in an earlier turn of this same conversation does not count as the current title. The author may have renamed the course mid-conversation. Re-resolve via Recipe 0b whenever you take a destructive or final action on a title-named course.
+- Do not bypass this with `shifu-cli.py list` — that command lists drafts only, so a course whose draft title leads its published title appears under the wrong name in the listing.
+
+When the only matches are historical, state it explicitly: "This course was previously called X. It is currently called Y. Are you asking about Y, or do you mean a different course?" Never silently substitute one for the other.
+
 ## `var_variable_values.value` — Aggregate-Only
 
 Learners may enter free-text personal information into course variables. Aggregate only (`group_by value count`); never paste the raw value list to the user. Recipe 8 shows the canonical safe pattern.
