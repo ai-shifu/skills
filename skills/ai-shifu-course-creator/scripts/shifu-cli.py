@@ -83,12 +83,18 @@ def api_safe(base_url, token, method, path, **kwargs):
         return None
 
 
-def api_analytics(base_url, token, body):
+def api_analytics(base_url, token, body, session=None):
     """POST a DSL query to /api/creator-analytics/query.
 
     Unlike api(), does NOT exit on non-zero `code` — analytics business
     errors (11001-11007, 1001, 1004, 1005) carry meaning the agent must
     see in order to fix the DSL or re-authenticate.
+
+    ``session`` is an optional :class:`requests.Session` for connection
+    reuse when the caller is fanning out many small queries (e.g.
+    ``cmd_list`` / ``cmd_find_title`` issuing one metadata lookup per
+    shifu_bid). Reusing the same TCP / TLS session avoids re-doing the
+    handshake on every request.
 
     Returns (transport_ok, payload). On transport_ok the payload is the
     parsed JSON response (may carry a non-zero code). On transport failure
@@ -100,8 +106,9 @@ def api_analytics(base_url, token, body):
         "Token": token,
         "Content-Type": "application/json",
     }
+    http = session if session is not None else requests
     try:
-        resp = requests.post(url, headers=headers, json=body, timeout=30)
+        resp = http.post(url, headers=headers, json=body, timeout=30)
     except requests.RequestException as e:
         return False, {"transport_error": str(e)}
     if not resp.ok:
@@ -224,18 +231,27 @@ def cmd_login(args):
 
 
 # ── List ───────────────────────────────────────────────────────────────────────
-def _fetch_published_title(base_url, token, shifu_bid):
-    """Run analytics Recipe 0b for one shifu_bid and return the published
-    title (or None if there is no current published row — typically means
-    the course is still a draft or was unpublished)."""
+def _fetch_shifu_title(base_url, token, shifu_bid, *, table_key, session=None):
+    """Fetch the current title from one of the shifu metadata tables.
+
+    ``table_key`` selects which side of the published/draft pair to query:
+    ``shifu_published_shifus`` for the live learner-facing title (Recipe
+    0b) or ``shifu_draft_shifus`` for the editor copy (Recipe 0c).
+    Returns the title string, or ``None`` when there is no current row
+    (typically: course is unpublished, or never had a draft saved).
+
+    ``session`` is passed through to :func:`api_analytics` to enable
+    TCP/TLS connection reuse when the caller is doing one lookup per
+    shifu_bid in a tight loop.
+    """
 
     body = {
         "shifu_bid": shifu_bid,
-        "table": "shifu_published_shifus",
-        "select": ["title", "updated_at"],
+        "table": table_key,
+        "select": ["title"],
         "limit": 1,
     }
-    ok, payload = api_analytics(base_url, token, body)
+    ok, payload = api_analytics(base_url, token, body, session=session)
     if not ok or not isinstance(payload, dict) or payload.get("code") != 0:
         return None
     data = payload.get("data") or {}
@@ -273,24 +289,40 @@ def cmd_list(args):
 
     rows = []
     diverged = 0
-    for c in courses:
-        bid = c.get("bid", c.get("shifu_bid", ""))
-        draft = c.get("name", c.get("title", ""))
-        published = _fetch_published_title(base_url, token, bid) if bid else None
-        if published is None:
-            published_disp = "(draft only)"
-        elif published == draft:
-            published_disp = "(same)"
-        else:
-            published_disp = published
-            diverged += 1
-        rows.append({
-            "bid": bid,
-            "draft": draft,
-            "published_disp": published_disp,
-            "status": c.get("status", ""),
-            "updated": fmt_time(c.get("updated_at", "")),
-        })
+    # Reuse a single requests.Session for the per-course metadata lookups.
+    # This avoids a fresh TCP / TLS handshake for every shifu_bid when the
+    # author owns many courses; the handshake itself dominates latency on
+    # a remote API, so connection pooling alone shaves the wall time
+    # roughly in half without adding concurrency complexity.
+    with requests.Session() as session:
+        for c in courses:
+            bid = c.get("bid", c.get("shifu_bid", ""))
+            draft = c.get("name", c.get("title", ""))
+            published = (
+                _fetch_shifu_title(
+                    base_url,
+                    token,
+                    bid,
+                    table_key="shifu_published_shifus",
+                    session=session,
+                )
+                if bid
+                else None
+            )
+            if published is None:
+                published_disp = "(draft only)"
+            elif published == draft:
+                published_disp = "(same)"
+            else:
+                published_disp = published
+                diverged += 1
+            rows.append({
+                "bid": bid,
+                "draft": draft,
+                "published_disp": published_disp,
+                "status": c.get("status", ""),
+                "updated": fmt_time(c.get("updated_at", "")),
+            })
 
     # Table output
     print(f"{'BID':<34} {'Draft Name':<26} {'Published Name':<26} {'Status':<10} {'Updated':<18}")
@@ -1062,30 +1094,6 @@ def cmd_analytics_query(args):
         sys.exit(1)
 
 
-def _fetch_draft_title(base_url, token, shifu_bid):
-    """Run analytics Recipe 0c for one shifu_bid; returns draft title or None."""
-
-    body = {
-        "shifu_bid": shifu_bid,
-        "table": "shifu_draft_shifus",
-        "select": ["title", "updated_at"],
-        "limit": 1,
-    }
-    ok, payload = api_analytics(base_url, token, body)
-    if not ok or not isinstance(payload, dict) or payload.get("code") != 0:
-        return None
-    data = payload.get("data") or {}
-    rows = data.get("rows") or []
-    columns = data.get("columns") or []
-    if not rows:
-        return None
-    try:
-        title_idx = columns.index("title")
-    except ValueError:
-        return None
-    return rows[0][title_idx]
-
-
 def cmd_find_title(args):
     """Resolve a course-title keyword to the canonical current title(s).
 
@@ -1102,12 +1110,19 @@ def cmd_find_title(args):
     """
 
     base_url, token = resolve_auth(args)
-    keyword = args.keyword
-    if not keyword or len(keyword.strip()) < 1:
-        print("Error: keyword must be a non-empty string")
-        sys.exit(1)
-
+    keyword = args.keyword or ""
     needle = keyword.replace(" ", "").lower()
+    # Mirror the backend metadata-table `title like` floor (>= 2 non-wildcard
+    # characters, see references/analytics/dsl.md). A 1-character keyword
+    # would substring-match almost every title client-side and rarely help
+    # the user; reject early with a clear message rather than fan out a
+    # cascade of low-signal API calls.
+    if len(needle) < 2:
+        print(
+            "Error: keyword must contain at least 2 non-whitespace characters "
+            "(case-insensitive prefix / substring matching)"
+        )
+        sys.exit(1)
 
     result = api(base_url, token, "get", "/shifus")
     courses = result if isinstance(result, list) else (result or {}).get("items", [])
@@ -1116,38 +1131,62 @@ def cmd_find_title(args):
         return
 
     published_matches = []  # (shifu_bid, published_title)
-    draft_only_matches = []  # (shifu_bid, draft_title)
+    # draft_matches holds courses whose draft title matches the keyword
+    # but whose published title (if any) does not. Each row carries the
+    # current published title alongside so the user can see the rename
+    # state at a glance ("currently published as: X" vs "draft only").
+    draft_matches = []  # (shifu_bid, draft_title, published_title_or_None)
 
     def _matches(title):
         if not title:
             return False
         return needle in title.replace(" ", "").lower()
 
-    for c in courses:
-        bid = c.get("bid", c.get("shifu_bid", ""))
-        if not bid:
-            continue
-        published = _fetch_published_title(base_url, token, bid)
-        if published is not None and _matches(published):
-            published_matches.append((bid, published))
-            continue
-        # Either no published row, or published title didn't match.
-        # Fall back to draft to catch courses with no live publication or
-        # courses whose draft has been renamed but not republished.
-        if published is None:
-            draft = _fetch_draft_title(base_url, token, bid)
+    with requests.Session() as session:
+        for c in courses:
+            bid = c.get("bid", c.get("shifu_bid", ""))
+            if not bid:
+                continue
+            published = _fetch_shifu_title(
+                base_url,
+                token,
+                bid,
+                table_key="shifu_published_shifus",
+                session=session,
+            )
+            if published is not None and _matches(published):
+                published_matches.append((bid, published))
+                continue
+            # Either no published row, or the published title does not match.
+            # Always check the draft — a course whose draft has been renamed
+            # but not yet republished is exactly the case `find-title` exists
+            # to surface. (Previous logic checked draft only when published
+            # was None, which silently dropped renamed-but-still-published
+            # courses; flagged in PR #48 AI review.)
+            draft = _fetch_shifu_title(
+                base_url,
+                token,
+                bid,
+                table_key="shifu_draft_shifus",
+                session=session,
+            )
             if draft is not None and _matches(draft):
-                draft_only_matches.append((bid, draft))
+                draft_matches.append((bid, draft, published))
 
     if published_matches:
         print(f"Published (current live title matches '{keyword}'):")
         for bid, title in published_matches:
             print(f"  {bid}  {title}")
-    if draft_only_matches:
-        print(f"\nDraft-only (no published row; draft title matches '{keyword}'):")
-        for bid, title in draft_only_matches:
-            print(f"  {bid}  {title}  (draft only — not yet published)")
-    if not published_matches and not draft_only_matches:
+    if draft_matches:
+        print(f"\nDraft (matches '{keyword}'; not yet republished):")
+        for bid, draft, published in draft_matches:
+            if published is None:
+                print(f"  {bid}  {draft}  (draft only — not yet published)")
+            else:
+                print(
+                    f'  {bid}  {draft}  (currently published as: "{published}")'
+                )
+    if not published_matches and not draft_matches:
         print(f"No courses you own currently have a title matching '{keyword}'.")
         print("If the user is sure of the name, they may be remembering a "
               "historical title — check `shifu-cli.py list` for current titles.")
