@@ -10,10 +10,11 @@ Enter the analytics path when a course author or admin asks about:
 - orders, revenue, refunds, payment-channel distribution
 - ratings, listen-vs-read preference
 - follow-up Q&A counts or specific learner conversations
-- token consumption, slow responses, cache hit rate
-- credit consumption (by day, model, scene)
+- credit consumption (by day, model, scene, usage type, billing metric)
 - audience profile distribution (goals, level, preferences)
 - individual learner tracking — with the privacy rules in `privacy-and-presentation.md`
+
+> Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits via `bill_daily_usage_metrics.consumed_credits`.
 
 Do **not** enter the analytics path when the user asks only "what courses do I have?" or "how many courses?" — that is answered by `shifu-cli.py list` alone.
 
@@ -88,7 +89,7 @@ The CLI prints the full response on every call. When the response carries a non-
 | `0` | Success | Parse `data.columns` / `data.rows`, then apply the Translation Gate |
 | `11001` | No access to this course | Confirm the `shifu_bid` is owned by the logged-in user; switch course or stop |
 | `11002` | Invalid DSL | Re-check required fields, duplicate `alias`, or leading-wildcard `like` |
-| `11003` | Table not in whitelist | Use one of the 9 tables in `tables.md` |
+| `11003` | Table not in whitelist | Use one of the 8 tables in `tables.md` |
 | `11004` | Field not in whitelist | Check field name or pick a different table |
 | `11005` | Operator not in whitelist | Use one of the 12 operators in `dsl.md` |
 | `11006` | Aggregate function not in whitelist | Use one of the 6 aggregate functions in `dsl.md` |
@@ -105,6 +106,6 @@ Each query is scoped to one `shifu_bid`. The endpoint does not support cross-cou
 ## What Lives Where
 
 - `dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail)
-- `tables.md` — the 9 tables, their fields, all code/enum translation tables, ID translation rules, and data traps
-- `recipes.md` — 21 ready-to-run DSL templates by scenario
+- `tables.md` — the 8 tables, their fields, all code/enum translation tables, ID translation rules, and the duplicate-row trap
+- `recipes.md` — ready-to-run DSL templates by scenario
 - `privacy-and-presentation.md` — `user_users` / `generated_content` / `var_variable_values` privacy rules, plus the Translation Gate for user-facing output

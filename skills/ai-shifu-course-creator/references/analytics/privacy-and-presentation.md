@@ -102,7 +102,7 @@ Pass every result through these checks before showing it to the user:
 3. **Monetary values** → add currency unit (¥/CNY/USD), 2 decimal places
 4. **Timestamps** (`created_at`, `updated_at` etc.) → convert to local-timezone readable format (`2026-05-12 14:23`); never show raw ISO timestamps
 5. **Ratios / percentages** → use percent form ("62%" not "0.623")
-6. **Token counts** → use K/M for values over 10,000 ("4.0M tokens" not "4013428")
+6. **Credits** → round `consumed_credits` to 2 decimal places (e.g. `154.05 积分`); never invent or re-derive credit values from anything other than `bill_daily_usage_metrics.consumed_credits`
 
 ### Bad example (do not answer like this)
 
