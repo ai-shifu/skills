@@ -6,7 +6,7 @@ All examples are CLI invocations. Read `overview.md` first if you have not alrea
 
 ```json
 {
-  "table": "<one of the 9 tables>",
+  "table": "<one of the 8 tables>",
   "select":    ["<field>", "..."],
   "where":     [{ "field": "<f>", "op": "<op>", "value": <value> }],
   "group_by":  ["<field>", "..."],
@@ -51,7 +51,7 @@ Every aggregate must carry an `alias` — the output column is named after it.
 
 ## Per-Learner (`user_bid`) Dimension
 
-7 of the 9 tables support per-learner grouping (everything except `user_users`, which has its own rules in `privacy-and-presentation.md`, and `bill_daily_usage_metrics`, which has no `user_bid` column).
+6 of the 8 tables support per-learner grouping (everything except `user_users`, which has its own rules in `privacy-and-presentation.md`, and `bill_daily_usage_metrics`, which has no `user_bid` column).
 
 **Guard rail**: when `user_bid` appears in `select`, it **must** also appear in `group_by`.
 
@@ -87,7 +87,7 @@ The remaining `type` values (`303` input, `309` phone, `310` checkcode, etc.) co
 
 The endpoint automatically applies these filters — do **not** add them to your DSL:
 
-- All 8 non-`user_users` tables are scoped to the CLI-supplied `shifu_bid`.
+- All 7 non-`user_users` tables are scoped to the CLI-supplied `shifu_bid`.
 - All tables except `shifu_user_archives` automatically filter `deleted = 0` (`shifu_user_archives` has no `deleted` column).
 
 `user_users` is a global user table (no `shifu_bid` column) with its own restricted-access rules in `privacy-and-presentation.md`.

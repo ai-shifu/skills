@@ -1,6 +1,6 @@
 ---
 name: ai-shifu-course-creator
-description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Also covers post-deployment analytics on those courses — learner count, completion rate, stuck lessons, orders, revenue, ratings, token cost, credit consumption, audience profiles, and individual learner tracking. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, Course Prompt authoring, course analytics, creator analytics, 学习人数, 完成率, 卡课节, 订单收入, 积分消耗, or learner progress.
+description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Also covers post-deployment analytics on those courses — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profiles, and individual learner tracking. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, Course Prompt authoring, course analytics, creator analytics, 学习人数, 完成率, 卡课节, 订单收入, 积分消耗, or learner progress.
 ---
 
 # Course Creator
@@ -126,7 +126,7 @@ Use Deployment management commands (list, show, update, rename, reorder, delete,
 
 ### Path E: Course Analytics
 
-Query post-deployment data on a live course — learner count, completion rate, stuck lessons, orders, revenue, ratings, token cost, credit consumption, audience profile, individual learner tracking. Reuses the Deployment authentication (token in `.env`); resolves `shifu_bid` via CLI `list` and outline via CLI `show`; runs DSL queries via CLI `analytics-query`. Always go through the CLI — never raw HTTP. See the `## Analytics` section below and `references/analytics/overview.md`.
+Query post-deployment data on a live course — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profile, individual learner tracking. Reuses the Deployment authentication (token in `.env`); resolves `shifu_bid` via CLI `list` and outline via CLI `show`; runs DSL queries via CLI `analytics-query`. Always go through the CLI — never raw HTTP. See the `## Analytics` section below and `references/analytics/overview.md`.
 
 ---
 
@@ -322,7 +322,7 @@ After any deployment or management operation, verify the result:
 
 ## Analytics
 
-Post-deployment data queries on live courses. Trigger this section whenever a course author or admin asks about learner count, completion rate, stuck lessons, orders, revenue, ratings, follow-up Q&A volume, token cost, credit consumption, audience profile distribution, or individual learner tracking.
+Post-deployment data queries on live courses. Trigger this section whenever a course author or admin asks about learner count, completion rate, stuck lessons, orders, revenue, ratings, follow-up Q&A volume, credit consumption, audience profile distribution, or individual learner tracking.
 
 ### CLI-Only Rule
 
@@ -340,8 +340,8 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 
 - `references/analytics/overview.md` — entry point, full workflow, error codes
 - `references/analytics/dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail)
-- `references/analytics/tables.md` — 9 tables, fields, all code/enum translation tables, ID translation rules, four data traps (duplicate rows / scenes / record_level / billable)
-- `references/analytics/recipes.md` — 21 ready-to-run DSL templates by scenario
+- `references/analytics/tables.md` — 8 tables, fields, all code/enum translation tables, ID translation rules, duplicate-row trap
+- `references/analytics/recipes.md` — ready-to-run DSL templates by scenario
 - `references/analytics/privacy-and-presentation.md` — `user_users` restricted access, `generated_content` whitelist, `var_variable_values.value` aggregate-only rule, Translation Gate, refusal rules
 
 ### Validation
@@ -349,7 +349,7 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 - Token resolved through the Deployment Authentication path, not a hand-rolled lookup.
 - `shifu_bid` and outline mappings established before any course-level query.
 - DSL body matches grammar in `dsl.md`; filters reflect the user's intent (e.g. `status = 502` for "paid", not `>= 502`).
-- Trap filters applied where relevant: `usage_scene = 1203` and `record_level = 0` on `bill_usage` aggregates.
+- Credit queries scope to `usage_scene = 1203` when measuring learner-side consumption (preview is `1202`, debug is `1201`).
 - Translation Gate applied before the answer is shown.
 - Privacy refusals honoured for inaccessible fields (phone, email, real name, ID number, avatar, birthday).
 
