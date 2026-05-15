@@ -83,6 +83,35 @@ def api_safe(base_url, token, method, path, **kwargs):
         return None
 
 
+def api_analytics(base_url, token, body):
+    """POST a DSL query to /api/creator-analytics/query.
+
+    Unlike api(), does NOT exit on non-zero `code` — analytics business
+    errors (11001-11007, 1001, 1004, 1005) carry meaning the agent must
+    see in order to fix the DSL or re-authenticate.
+
+    Returns (transport_ok, payload). On transport_ok the payload is the
+    parsed JSON response (may carry a non-zero code). On transport failure
+    payload is a small dict describing what went wrong.
+    """
+    url = f"{base_url}/api/creator-analytics/query"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Token": token,
+        "Content-Type": "application/json",
+    }
+    try:
+        resp = requests.post(url, headers=headers, json=body, timeout=30)
+    except requests.RequestException as e:
+        return False, {"transport_error": str(e)}
+    if not resp.ok:
+        return False, {"http_status": resp.status_code, "text": resp.text[:1000]}
+    try:
+        return True, resp.json()
+    except json.JSONDecodeError:
+        return False, {"parse_error": "non-JSON response", "text": resp.text[:1000]}
+
+
 def safe_join_path(base_dir, filename):
     """Safely join base_dir and filename, preventing path traversal attacks."""
     joined = os.path.realpath(os.path.join(base_dir, filename))
@@ -940,6 +969,46 @@ def cmd_unarchive(args):
     print(f"Unarchived: {args.shifu_bid}")
 
 
+def cmd_analytics_query(args):
+    """Run a DSL query against the creator-analytics endpoint.
+
+    Output is the full JSON response (success rows or business error code)
+    printed to stdout. Exit code is 0 only when the API returns code == 0.
+    """
+    base_url, token = resolve_auth(args)
+
+    if args.dsl_file:
+        try:
+            with open(args.dsl_file, "r", encoding="utf-8") as f:
+                body = json.load(f)
+        except (OSError, json.JSONDecodeError) as e:
+            print(f"Error reading --dsl-file: {e}")
+            sys.exit(1)
+    else:
+        try:
+            body = json.loads(args.dsl)
+        except json.JSONDecodeError as e:
+            print(f"Error parsing --dsl JSON: {e}")
+            sys.exit(1)
+
+    if not isinstance(body, dict):
+        print("Error: DSL body must be a JSON object")
+        sys.exit(1)
+
+    existing = body.get("shifu_bid")
+    if existing and existing != args.shifu_bid:
+        print(f"Error: shifu_bid in DSL body ({existing}) "
+              f"does not match positional arg ({args.shifu_bid})")
+        sys.exit(1)
+    body["shifu_bid"] = args.shifu_bid
+
+    transport_ok, payload = api_analytics(base_url, token, body)
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+    if not transport_ok or not isinstance(payload, dict) or payload.get("code") != 0:
+        sys.exit(1)
+
+
 # ── CLI Entry Point ────────────────────────────────────────────────────────────
 def build_parser():
     """Build and return the argument parser with all subcommands."""
@@ -1088,6 +1157,14 @@ def build_parser():
                        help="Unarchive a course")
     p.add_argument("shifu_bid", help="Course BID")
 
+    # ── analytics-query ──
+    p = sub.add_parser("analytics-query", parents=[parent_parser],
+                       help="Run a DSL query against the creator-analytics endpoint")
+    p.add_argument("shifu_bid", help="Course BID")
+    src = p.add_mutually_exclusive_group(required=True)
+    src.add_argument("--dsl", help="DSL body as an inline JSON string")
+    src.add_argument("--dsl-file", help="Path to a JSON file containing the DSL body")
+
     return parser
 
 
@@ -1120,6 +1197,7 @@ def main():
         "publish": cmd_publish,
         "archive": cmd_archive,
         "unarchive": cmd_unarchive,
+        "analytics-query": cmd_analytics_query,
     }
 
     handler = commands.get(args.command)

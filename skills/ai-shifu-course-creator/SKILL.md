@@ -1,6 +1,6 @@
 ---
 name: ai-shifu-course-creator
-description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, or Course Prompt authoring.
+description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Also covers post-deployment analytics on those courses — learner count, completion rate, stuck lessons, orders, revenue, ratings, token cost, credit consumption, audience profiles, and individual learner tracking. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, Course Prompt authoring, course analytics, creator analytics, 学习人数, 完成率, 卡课节, 订单收入, 积分消耗, or learner progress.
 ---
 
 # Course Creator
@@ -93,9 +93,11 @@ Optimization                              (audit + optimize)
         │
         ▼
 Deployment                                (build + import + publish to platform)
+        │
+        ╰─ optional ─▶ Analytics          (post-deployment data queries on live courses)
 ```
 
-Segmentation, Generation, and Optimization can each be invoked standalone — see [Usage Paths](#usage-paths) Path B for the sub-paths (Segment only / Generate only / Optimize only).
+Segmentation, Generation, and Optimization can each be invoked standalone — see [Usage Paths](#usage-paths) Path B for the sub-paths (Segment only / Generate only / Optimize only). Analytics is a separate post-deployment path — see Path E.
 
 ## Usage Paths
 
@@ -121,6 +123,10 @@ Run Deployment alone to deploy pre-existing Teaching Prompts and a Course Prompt
 ### Path D: Manage Existing
 
 Use Deployment management commands (list, show, update, rename, reorder, delete, publish, archive) on courses already on the platform.
+
+### Path E: Course Analytics
+
+Query post-deployment data on a live course — learner count, completion rate, stuck lessons, orders, revenue, ratings, token cost, credit consumption, audience profile, individual learner tracking. Reuses the Deployment authentication (token in `.env`); resolves `shifu_bid` via CLI `list` and outline via CLI `show`; runs DSL queries via CLI `analytics-query`. Always go through the CLI — never raw HTTP. See the `## Analytics` section below and `references/analytics/overview.md`.
 
 ---
 
@@ -311,6 +317,41 @@ After any deployment or management operation, verify the result:
 - Course is accessible via platform URL.
 - Lesson count and structure match the source directory.
 - Published course is reachable in preview mode.
+
+---
+
+## Analytics
+
+Post-deployment data queries on live courses. Trigger this section whenever a course author or admin asks about learner count, completion rate, stuck lessons, orders, revenue, ratings, follow-up Q&A volume, token cost, credit consumption, audience profile distribution, or individual learner tracking.
+
+### CLI-Only Rule
+
+**All analytics traffic goes through `scripts/shifu-cli.py analytics-query`. Never write raw HTTP, never read tokens directly, never compose `Authorization` / `Token` headers by hand.** The CLI handles authentication and transport; the agent's job is to translate a user question into a DSL JSON body and pass it to the CLI.
+
+### Workflow
+
+1. **Resolve credentials** — reuse the Deployment authentication. If `.env` lacks a valid `SHIFU_TOKEN`, guide the user through `shifu-cli.py login` per `references/cli/cli-reference.md#agent-login-flow`.
+2. **Resolve the course** — run `shifu-cli.py list` to map `shifu_bid → name`. Cache the mapping in context.
+3. **Resolve the outline** (only for course-level analysis) — run `shifu-cli.py show <shifu_bid>` to map `outline_item_bid → name / position`. Skipping this makes outline-dimension numbers unreadable.
+4. **Run DSL queries** — `shifu-cli.py analytics-query <shifu_bid> --dsl '<json-body>'` (or `--dsl-file query.json` for long bodies).
+5. **Translate before presenting** — pass every result through the Translation Gate in `references/analytics/privacy-and-presentation.md`. Never paste raw codes (`601`, `502`, `1101`), raw `*_bid` strings, or raw `user_bid` values in user-facing output.
+
+### References
+
+- `references/analytics/overview.md` — entry point, full workflow, error codes
+- `references/analytics/dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail)
+- `references/analytics/tables.md` — 9 tables, fields, all code/enum translation tables, ID translation rules, four data traps (duplicate rows / scenes / record_level / billable)
+- `references/analytics/recipes.md` — 21 ready-to-run DSL templates by scenario
+- `references/analytics/privacy-and-presentation.md` — `user_users` restricted access, `generated_content` whitelist, `var_variable_values.value` aggregate-only rule, Translation Gate, refusal rules
+
+### Validation
+
+- Token resolved through the Deployment Authentication path, not a hand-rolled lookup.
+- `shifu_bid` and outline mappings established before any course-level query.
+- DSL body matches grammar in `dsl.md`; filters reflect the user's intent (e.g. `status = 502` for "paid", not `>= 502`).
+- Trap filters applied where relevant: `usage_scene = 1203` and `record_level = 0` on `bill_usage` aggregates.
+- Translation Gate applied before the answer is shown.
+- Privacy refusals honoured for inaccessible fields (phone, email, real name, ID number, avatar, birthday).
 
 ---
 

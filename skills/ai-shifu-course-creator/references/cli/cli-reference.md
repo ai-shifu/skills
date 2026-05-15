@@ -52,6 +52,25 @@ export <shifu_bid> [-o file.json]             # Export course as JSON
 
 `show` (without `outline_bid`), `create`, `import`, and `publish` all print a `Verification URLs:` block — admin console, course preview, and one preview URL per lesson. Copy those URLs as-is when reporting deployment results; never reconstruct them from a template.
 
+## Analytics Query
+
+```bash
+analytics-query <shifu_bid> --dsl '<json>'        # Inline DSL body
+analytics-query <shifu_bid> --dsl-file query.json # DSL body from a JSON file
+```
+
+Runs a DSL query against the creator-analytics endpoint and prints the full JSON response (success rows or business error code) to stdout. The CLI handles authentication headers automatically — never call the endpoint directly.
+
+The `shifu_bid` positional argument is injected into the body; if the DSL JSON already carries a `shifu_bid`, it must match the positional argument.
+
+Exit codes:
+- `0` — API responded with `code == 0` (the response carries `data.columns` / `data.rows`).
+- `1` — transport failure, JSON parse failure, or business error code (e.g. `11001` no access to course, `11002`-`11007` invalid DSL, `1001` / `1004` / `1005` token expired or missing).
+
+The full response is always printed to stdout regardless of exit code, so the agent can read the error code and either fix the DSL or guide the user to re-login. The CLI deliberately does not exit before printing analytics business errors.
+
+Use this command in conjunction with the analytics references in `references/analytics/` — never construct raw HTTP calls.
+
 ## Create Commands
 
 ```bash
