@@ -326,7 +326,10 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 
 ### CLI-Only Rule
 
-**All analytics traffic goes through `scripts/shifu-cli.py analytics-query`. Never write raw HTTP, never read tokens directly, never compose `Authorization` / `Token` headers by hand.** The CLI handles authentication and transport; the agent's job is to translate a user question into a DSL JSON body and pass it to the CLI.
+**All analytics traffic goes through `scripts/shifu-cli.py`. Never write raw HTTP, never read tokens directly, never compose `Authorization` / `Token` headers by hand.** Two analytics commands cover the surface:
+
+- `shifu-cli.py analytics-query <bid> --dsl '<json-body>'` — DSL queries against the whitelisted tables (`learn_progress_records`, `learn_generated_blocks`, `learn_lesson_feedbacks`, `order_orders`, `var_variable_values`, `shifu_user_archives`, `user_users`, `shifu_published_shifus`, `shifu_draft_shifus`). The agent's job is to translate a user question into a DSL JSON body and pass it to the CLI.
+- `shifu-cli.py credit-detail <bid> [--start … --end … --scene 1203 --usage-type 1101 …]` — server-side join of `bill_usage` × `credit_ledger_entries` for credit consumption queries. Use this whenever the user asks about credits / spend, **not** a DSL query against `bill_daily_usage_metrics` (that table is empty in production until the daily aggregation cron is enabled). `--scene 1203` restricts to learner-driven spend (preview is `1202`, debug is `1201`).
 
 ### Workflow
 
