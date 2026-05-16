@@ -126,3 +126,38 @@ publish <shifu_bid>       # Publish course (makes it live)
 archive <shifu_bid>       # Archive course
 unarchive <shifu_bid>     # Restore archived course
 ```
+
+## CLI Output & Encoding
+
+### Known issue: Chinese characters garbled in agent environments
+
+When running CLI commands (especially `list` and `show`) from an agent's Bash tool, Chinese characters in stdout may appear garbled (mojibake) even with `PYTHONIOENCODING=utf-8` set. This is caused by the agent's subprocess pipe not inheriting the correct locale settings.
+
+**Recommended workaround** — write JSON output to a UTF-8 file, then read it with the agent's file-reading tool:
+
+```bash
+# Instead of reading garbled stdout directly:
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '<json>' > /tmp/shifu_result.json
+# Then read /tmp/shifu_result.json with the agent's file reader
+```
+
+For `list` and `show`, which output formatted tables (not JSON), pipe through a JSON serialization helper or redirect to file:
+
+```bash
+python3 -c "
+import subprocess, json, sys
+result = subprocess.run(
+    ['python3', 'scripts/shifu-cli.py', 'show', '<bid>'],
+    capture_output=True, text=True, encoding='utf-8'
+)
+print(result.stdout)
+" > /tmp/shifu_show.txt
+```
+
+### For analytics-query and credit-detail
+
+These already output JSON via `json.dumps(ensure_ascii=False)`, so they work correctly when redirected to a file. The garbling only affects the pipe encoding — the JSON data itself is UTF-8.
+
+### Token persistence
+
+The token is saved to `{skillDir}/.env` after a successful login. Subsequent commands automatically read it. If the token expires (error codes `1001` / `1004` / `1005`), re-run the login flow — the token file is overwritten in place.

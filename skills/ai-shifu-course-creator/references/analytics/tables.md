@@ -212,3 +212,18 @@ A learner can have multiple progress records for the **same lesson** (`outline_i
 If the user asks "how much revenue did my course earn" → DSL `order_orders`. If the user asks "how many credits did I spend / what did it cost" → `shifu-cli.py credit-detail`. **These are completely different — do not mix them.**
 
 The `credit-detail` endpoint returns the absolute credit amount (`ABS(credit_ledger_entries.amount)`) already in account-currency units; no further conversion needed. Do not try to re-derive credits from token counts — token data is not part of the creator surface.
+
+## Tables That Do NOT Exist (common wrong guesses)
+
+When in doubt, do not guess — only the 10 tables above are valid. These table names do **not** exist and will trigger `11003` (table not in whitelist):
+
+| Wrong guess | Why it fails | Use instead |
+|---|---|---|
+| `user_logs` | Does not exist | `learn_generated_blocks` for interaction data, `learn_progress_records` for progress |
+| `logs` / `event_logs` | Does not exist | Same as above |
+| `billing` / `usage` | Does not exist | `bill_daily_usage_metrics` (currently empty) or `shifu-cli.py credit-detail` |
+| `credits` / `credit_logs` | Does not exist | `shifu-cli.py credit-detail <bid>` |
+| `users` | Wrong name (it's `user_users`) | `user_users` |
+| `lessons` / `courses` | Does not exist | `shifu_published_shifus` / `shifu_draft_shifus` for metadata, `learn_progress_records` for learner data |
+
+**Rule**: if a table name is not in the "10 Tables at a Glance" table above, it does not exist. Do not try it — you will get `11003`.

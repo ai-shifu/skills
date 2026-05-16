@@ -354,6 +354,8 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 - Follow-up counts anchored on `type = 321` (not `role = 2`), and rely on the API's auto-injected `status = 1` rather than an explicit clause.
 - Translation Gate applied before the answer is shown.
 - Privacy refusals honoured for inaccessible fields (phone, email, real name, ID number, avatar, birthday).
+- When CLI output contains Chinese characters that appear garbled in the agent's Bash tool, write output to a UTF-8 file and read with the file-reading tool instead (see `references/cli/cli-reference.md#cli-output--encoding`).
+- Table name verified against the 10 whitelisted tables in `tables.md`. Never guess a table name — invalid names trigger `11003`.
 
 ---
 
