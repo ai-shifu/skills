@@ -93,7 +93,12 @@ def _post_creator_analytics(base_url, token, path, body, session=None):
     is fanning out many small queries.
     """
 
-    url = f"{base_url}/api/creator-analytics{path}"
+    # Tolerate `path` with or without a leading slash — callers in this
+    # file consistently pass "/query" / "/credit-detail", but stripping
+    # guards against a future caller forgetting the slash, which would
+    # otherwise produce "/api/creator-analyticsquery". Flagged on PR #49
+    # review.
+    url = f"{base_url}/api/creator-analytics/{path.lstrip('/')}"
     headers = {
         "Authorization": f"Bearer {token}",
         "Token": token,
@@ -1224,20 +1229,45 @@ def cmd_credit_detail(args):
         body["start_date"] = args.start
     if args.end:
         body["end_date"] = args.end
+    # --scene / --usage-type are comma-separated integers. Two guards
+    # (raised on PR #49 review):
+    #   1. ValueError → report on stderr (CLI best practice) and exit 1.
+    #   2. Parsed list empty (e.g. user passed `--scene " "`) → exit 1
+    #      explicitly rather than silently sending an empty list, which
+    #      the backend would reject with `11002 invalidDsl` anyway; the
+    #      explicit local error gives a cleaner message.
     if args.scene:
         try:
-            body["usage_scene"] = [int(s) for s in args.scene.split(",") if s.strip()]
+            scenes = [int(s) for s in args.scene.split(",") if s.strip()]
         except ValueError:
-            print("Error: --scene must be a comma-separated list of integers")
+            print(
+                "Error: --scene must be a comma-separated list of integers",
+                file=sys.stderr,
+            )
             sys.exit(1)
+        if not scenes:
+            print(
+                "Error: --scene must contain at least one integer",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        body["usage_scene"] = scenes
     if args.usage_type:
         try:
-            body["usage_type"] = [
-                int(t) for t in args.usage_type.split(",") if t.strip()
-            ]
+            usage_types = [int(t) for t in args.usage_type.split(",") if t.strip()]
         except ValueError:
-            print("Error: --usage-type must be a comma-separated list of integers")
+            print(
+                "Error: --usage-type must be a comma-separated list of integers",
+                file=sys.stderr,
+            )
             sys.exit(1)
+        if not usage_types:
+            print(
+                "Error: --usage-type must contain at least one integer",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        body["usage_type"] = usage_types
     if args.limit is not None:
         body["limit"] = args.limit
     if args.offset is not None:
