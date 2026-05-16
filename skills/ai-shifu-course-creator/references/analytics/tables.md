@@ -1,25 +1,37 @@
 # Analytics Tables & Codes
 
-The 8 tables you can query, the fields each carries, the code/enum tables to translate raw values, the ID translation rules, and the data trap to be aware of.
+The 10 tables you can query, the fields each carries, the code/enum tables to translate raw values, the ID translation rules, and the data traps to be aware of.
 
-## 8 Tables at a Glance
+## 10 Tables at a Glance
 
 | Table | Answers | Key fields |
 |---|---|---|
 | `learn_progress_records` | Learner count / completion rate / stuck lesson / recent activity / **lessons completed per learner** | `user_bid`, `outline_item_bid`, `status` (601-608, see code table), `created_at` |
-| `learn_generated_blocks` | Content interaction count / likes / type popularity / **interactions per learner** / **follow-up Q&A replay** | `user_bid`, `type` (see code table), `role` (1 teacher/AI · 2 learner · 3 UI, **integer**), `liked` (-1/0/1), `generated_content` (raw text, restricted — see `dsl.md`) |
+| `learn_generated_blocks` | Content interaction count / likes / type popularity / **interactions per learner** / **follow-up Q&A replay** | `user_bid`, `progress_record_bid`, `outline_item_bid`, `type` (see code table), `role` (1 teacher/AI · 2 learner · 3 UI, **integer**), `status` (1 active / 0 history — **API auto-filters to 1**), `position` (block ordering within a `progress_record_bid`), `liked` (-1/0/1), `generated_content` (raw text, restricted — see `dsl.md`) |
 | `learn_lesson_feedbacks` | Lesson ratings / read-vs-listen mode preference / **avg rating per learner** | `user_bid`, `progress_record_bid`, `mode` (read/listen), `score` (1-5) |
 | `order_orders` | Enrolments / revenue / channel distribution / refund rate / **total spend per learner** | `user_bid`, `status` (501-505, see code table; **paid** = `502`), `payment_channel` (pingxx/stripe/alipay/wechatpay/…), `paid_price` |
 | `var_variable_values` | Learner profile distribution (goals / level / preferences) | `user_bid`, `variable_bid`, `value` (aggregate only — **do not select raw value**; see `privacy-and-presentation.md`) |
 | `shifu_user_archives` | Active learner count / archive rate | `user_bid`, `archived` (0 active / 1 archived) |
-| `bill_daily_usage_metrics` | **Credit consumption** (by day / model / scene / usage type / billing metric) — `consumed_credits` is the authoritative wallet-deduction figure | `stat_date`, `usage_scene` (1201 debug / 1202 preview / 1203 learner production), `usage_type` (1101 LLM / 1102 TTS), `provider`, `model`, `billing_metric` (7451 LLM input / 7452 LLM cache / 7453 LLM output), `consumed_credits` (**exact credits, already converted at the billing rate**), `record_count`; filterable by `stat_date` / `usage_scene` / `usage_type` / `provider` / `model` / `billing_metric` |
+| `bill_daily_usage_metrics` | **Credit consumption** (by day / model / scene / usage type / billing metric) — `consumed_credits` is the authoritative wallet-deduction figure | `stat_date`, `creator_bid` (the wallet that absorbed the deduction — by construction equals the caller's bid because `shifu_bid` scope already binds the result), `usage_scene` (1201 debug / 1202 preview / 1203 learner production), `usage_type` (1101 LLM / 1102 TTS), `provider`, `model`, `billing_metric` (7451 LLM input / 7452 LLM cache / 7453 LLM output), `consumed_credits` (**exact credits, already converted at the billing rate**), `record_count`; filterable by `stat_date` / `usage_scene` / `usage_type` / `provider` / `model` / `billing_metric` |
 | `user_users` ⚠️ | **Look up nickname by known `user_bid`** / **reverse-look up `user_bid` by phone or email** | `user_bid`, `nickname` (auto PII-redacted), `user_identify` (masked, e.g. `138*****000`); restricted-access rules in `privacy-and-presentation.md` |
+| `shifu_published_shifus` 🆕 | **Current published title for one of my courses** / does the same `shifu_bid` have rename history? | `title`, `created_user_bid`, `created_at`, `updated_at`. **Row-lookup only** — aggregate / group_by are rejected; `title` accepts `op=like` with trailing-% (anti-enumeration: ≥ 2 non-wildcard chars); `limit ≤ 50`; owner-only (auto-filtered to `created_user_bid = <you>`) |
+| `shifu_draft_shifus` 🆕 | **Current draft (editor) title** — useful when the draft has been renamed but not yet re-published, so the published title still lags | Same fields and restrictions as `shifu_published_shifus` |
 
-The 7 tables other than `user_users` are automatically scoped to the CLI-supplied `shifu_bid`; all tables except `shifu_user_archives` automatically filter `deleted = 0`. Do **not** include either in your DSL.
+The 9 shifu-scoped tables (everything except `user_users`) are automatically constrained to the CLI-supplied `shifu_bid`; all tables except `shifu_user_archives` automatically filter `deleted = 0`. The two `shifu_*_shifus` metadata tables additionally auto-filter `created_user_bid = <caller>` so the row's author must be the caller. `learn_generated_blocks` additionally auto-filters `status = 1` so rerolled history rows do not skew follow-up counts. Do **not** add any of these to your DSL — they are injected.
 
 `user_users` is a **global** user table (no `shifu_bid` column). Its access is heavily restricted — read `privacy-and-presentation.md` before querying.
 
 **Token usage is intentionally not exposed.** Creators can only see credit consumption via `bill_daily_usage_metrics.consumed_credits` (already rate-adjusted by the billing settlement job). Raw token counts are not a creator-facing data surface — they live in internal billing tables not reachable from this DSL.
+
+## Course title is "current published", not "history"
+
+A single `shifu_bid` can carry many rows across the two metadata tables — every save in the editor and every republish leaves an audit trail. Treat them as snapshots, never as the source of "what is the course called now":
+
+- **Current published title (authoritative)** = the row in `shifu_published_shifus` with `deleted = 0` (there is at most one — the API enforces it).
+- **Current draft title** = the row in `shifu_draft_shifus` with `deleted = 0`. After a rename in the editor this title leads the published one until the author republishes.
+- **Historical / renamed titles** = rows with `deleted = 1` in either table. These are **never** the answer to "this course is currently called …". If a user mentions a title from memory and only the historical rows match, tell them so explicitly — do not silently report a historical title as the current one.
+
+PDF §0 + §7 of the 2026-05-15 query handbook describes the failure mode this rule prevents: the same `shifu_bid` was incorrectly reported as `跟 AI 学 AI 通识` because that title appeared in its history, even though the row with `deleted = 0` had since been renamed to `李卓:K12 AI 教育产品的一线实践`. Always anchor the title from the `deleted = 0` row of the published table; fall back to the draft only when published has no matching row.
 
 ## `learn_generated_blocks` type codes
 
@@ -36,7 +48,24 @@ The 7 tables other than `user_users` are automatically scoped to the CLI-supplie
 
 `role` (integer): `1` = teacher / AI (`assistant`) · `2` = learner (`user`) · `3` = UI widget
 
+> **Trap — `role = 2` is not only follow-up questions.** The learner-input role is shared by input widgets (`type = 303` input, `type = 309` phone, `type = 310` checkcode, etc.). To count *follow-up* questions specifically, filter `type = 321` — do **not** key off `role = 2` alone. (PDF §6 trap #1.)
+
+`status` (integer): `1` = current live row · `0` = superseded by a reroll. The API auto-injects `status = 1`, so a follow-up count reflects what the learner actually sees, not earlier rerolls. The DSL still accepts `status` in `filter` / `group_by` for debugging — but adding `status = 1` explicitly is redundant.
+
+`position` (integer): index of this block within the lesson's `progress_record_bid`. Used as the deterministic ordering key for follow-up Q&A pairing — see "Follow-up Q&A four-key pairing" below.
+
 `liked` (integer): `-1` thumbs down · `0` no reaction · `1` thumbs up
+
+## Follow-up Q&A four-key pairing
+
+The 2026-05-15 query handbook PDF §6 recommends pairing a `type = 321` learner question to its `type = 322` LLM answer by `(progress_record_bid, shifu_bid, outline_item_bid, position)` rather than time order alone:
+
+- `shifu_bid` is already constant per query (CLI scope).
+- `progress_record_bid` pins the conversation thread for one learner-lesson session.
+- `outline_item_bid` distinguishes simultaneous threads if the learner is in multiple lessons.
+- `position` is the within-thread ordering — the question's `position`, plus the next `position` value for the answer.
+
+`created_at` time-ordering still works as a fallback when `position` is missing or two blocks share a position (rare but possible during concurrent generation). Recipe 22 in `recipes.md` shows the canonical 3-step pairing.
 
 ## `learn_progress_records.status`
 

@@ -10,13 +10,16 @@ Enter the analytics path when a course author or admin asks about:
 - orders, revenue, refunds, payment-channel distribution
 - ratings, listen-vs-read preference
 - follow-up Q&A counts or specific learner conversations
+- follow-up Q&A volume by lesson
 - credit consumption (by day, model, scene, usage type, billing metric)
+- which wallet absorbed the deduction for a given course
 - audience profile distribution (goals, level, preferences)
 - individual learner tracking — with the privacy rules in `privacy-and-presentation.md`
+- **course title resolution** — "what is my course `<title>` currently called", "did I rename it", "is the draft title diverging from the published title" (use the Course Metadata recipes 0a–0c in `recipes.md`)
 
 > Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits via `bill_daily_usage_metrics.consumed_credits`.
 
-Do **not** enter the analytics path when the user asks only "what courses do I have?" or "how many courses?" — that is answered by `shifu-cli.py list` alone.
+Do **not** enter the analytics path when the user asks only "how many courses do I have?" — that is a `shifu-cli.py list` call. **But** if the user names a course by title (e.g. "show me the data on 跟 AI 学 AI 通识"), resolve the current `shifu_bid → title` via Course Metadata recipes first, *then* run the downstream analytics — `shifu-cli.py list` is a draft snapshot and can leak historical / renamed titles.
 
 ## CLI-Only Rule
 
@@ -76,9 +79,10 @@ Cross-course analysis: send one `analytics-query` per `shifu_bid` and merge resu
 
 ## Picking the Right DSL
 
-1. Translate the user's question into a DSL body using `dsl.md` (syntax), `tables.md` (which table answers which question + which fields exist), and `recipes.md` (21 ready-to-use templates).
+1. Translate the user's question into a DSL body using `dsl.md` (syntax), `tables.md` (which table answers which question + which fields exist), and `recipes.md` (Course Metadata 0a–0c + 23 numbered scenario recipes).
 2. Apply the privacy rules in `privacy-and-presentation.md` if the query touches `user_users`, `generated_content`, or `var_variable_values.value`.
 3. Apply the Translation Gate in `privacy-and-presentation.md` before presenting any result.
+4. **If the user mentioned a course by title**, run Course Metadata Recipe 0a / 0b first to confirm the current `shifu_bid → title` mapping. Never report a historical title as the course's current name.
 
 ## Error Codes the CLI May Surface
 
@@ -89,7 +93,7 @@ The CLI prints the full response on every call. When the response carries a non-
 | `0` | Success | Parse `data.columns` / `data.rows`, then apply the Translation Gate |
 | `11001` | No access to this course | Confirm the `shifu_bid` is owned by the logged-in user; switch course or stop |
 | `11002` | Invalid DSL | Re-check required fields, duplicate `alias`, or leading-wildcard `like` |
-| `11003` | Table not in whitelist | Use one of the 8 tables in `tables.md` |
+| `11003` | Table not in whitelist | Use one of the 10 tables in `tables.md` |
 | `11004` | Field not in whitelist | Check field name or pick a different table |
 | `11005` | Operator not in whitelist | Use one of the 12 operators in `dsl.md` |
 | `11006` | Aggregate function not in whitelist | Use one of the 6 aggregate functions in `dsl.md` |
@@ -105,7 +109,7 @@ Each query is scoped to one `shifu_bid`. The endpoint does not support cross-cou
 
 ## What Lives Where
 
-- `dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail)
-- `tables.md` — the 8 tables, their fields, all code/enum translation tables, ID translation rules, and the duplicate-row trap
-- `recipes.md` — ready-to-run DSL templates by scenario
+- `dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)
+- `tables.md` — the 10 tables, their fields, all code/enum translation tables, ID translation rules, the duplicate-row trap, the `role = 2 ≠ follow-up` trap, and the "course title is not history" rule
+- `recipes.md` — ready-to-run DSL templates by scenario (Course Metadata 0a–0c, then 23 numbered scenario recipes including follow-up four-key pairing and follow-up per lesson)
 - `privacy-and-presentation.md` — `user_users` / `generated_content` / `var_variable_values` privacy rules, plus the Translation Gate for user-facing output

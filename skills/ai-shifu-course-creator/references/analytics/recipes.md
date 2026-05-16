@@ -1,8 +1,64 @@
 # Analytics Recipes
 
-Ready-to-run DSL templates, grouped by scenario. Every example is a `shifu-cli.py analytics-query` invocation — substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list`. Read `dsl.md` and `tables.md` first for grammar and field meanings.
+Ready-to-run DSL templates, grouped by scenario. Every example is a `shifu-cli.py analytics-query` invocation — substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Read `dsl.md` and `tables.md` first for grammar and field meanings.
 
 The DSL bodies omit `shifu_bid` — the CLI injects it from the positional argument.
+
+## Course Metadata (resolve `shifu_bid ↔ current title`)
+
+> Whenever the user mentions a course by **title**, resolve the current `shifu_bid → title` mapping via the metadata tables **before** issuing any downstream analytics query. The CLI's `shifu-cli.py list` is a one-shot draft snapshot — it does not detect rename history, does not distinguish current vs historical titles, and (most importantly) does not show whether the draft title has diverged from the live published title. The 2026-05-15 query handbook PDF documents the exact failure this prevents: reporting a historical title as the course's "current name" because it once appeared in the rename history.
+>
+> **Rules (read these before any title lookup):**
+>
+> 1. The current published title is the row in `shifu_published_shifus` with `deleted = 0`. Treat that title as authoritative for any answer the user sees.
+> 2. If the published table has no `deleted = 0` row for the `shifu_bid`, fall back to `shifu_draft_shifus.deleted = 0` and tell the user the course is currently a draft (not live).
+> 3. Historical titles (`deleted = 1` rows in either table) are **never** the answer to "this course is currently called …". When a user-supplied title only matches historical rows, say so explicitly: "this course used to be called X; it is currently called Y."
+> 4. When matching by user-supplied keyword, normalize whitespace client-side (`replace(title, ' ', '')`) before comparing — the DB stores titles with whatever spacing the author used.
+
+### Recipe 0a — Find my courses by current published title
+
+The most common case: the user names a course you have not previously resolved this session.
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"shifu_published_shifus",
+ "where":[{"field":"title","op":"like","value":"<keyword>%"}],
+ "select":["title","created_user_bid","updated_at"],
+ "limit":50
+}'
+```
+
+> The keyword must be ≥ 2 non-wildcard characters (anti-enumeration guard); trailing `%` only. Returns titles for the **caller's own published courses** whose name starts with the keyword. The `<bid>` positional value is required by the CLI; pick any one of your `shifu_bid` values from `shifu-cli.py list` — the metadata query is still constrained to the caller's own rows by the auto-injected `created_user_bid` filter, but the CLI's positional argument also clamps `shifu_bid`, so for cross-course lookups you fan out one call per known `shifu_bid` and merge client-side. (Path: when the user has many courses, run Recipe 0a once per known `shifu_bid` from `list`, then aggregate.)
+
+### Recipe 0b — Confirm the current title of a known `shifu_bid`
+
+When you already have a `shifu_bid` (from a prior list / show call) and want to verify the live name:
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"shifu_published_shifus",
+ "select":["title","created_user_bid","updated_at"],
+ "limit":1
+}'
+```
+
+> Returns at most one row (the current published title). Empty result = the course is not currently published; switch to Recipe 0c.
+
+### Recipe 0c — Check the draft title when no published row exists
+
+If Recipe 0b returns empty, the course is in draft (not yet published or unpublished). Look at the editor copy instead:
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"shifu_draft_shifus",
+ "select":["title","created_user_bid","updated_at"],
+ "limit":1
+}'
+```
+
+> When the published title and the draft title disagree, surface both to the user — the discrepancy usually means a recent rename that has not been republished yet.
+
+**CLI shortcut**: `shifu-cli.py find-title <keyword>` chains Recipes 0a → 0c on every course you own and prints a grouped Published / Draft-only / Historical table.
 
 ## Progress
 
@@ -251,6 +307,8 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ## Follow-up Q&A
 
+> **All Recipe 17–22 templates below**: the API auto-filters `status = 1` on `learn_generated_blocks`. Rerolled-history blocks (`status = 0`) never appear in your counts. Do not add a `status = 1` clause yourself — it is redundant. Conversely, to count follow-up questions, always anchor on `type = 321`; **do not** key off `role = 2` (which also marks input / phone / checkcode widgets — see the trap in `tables.md`).
+
 ### Recipe 17 — Total follow-up questions + unique questioners
 
 ```bash
@@ -322,7 +380,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ### Recipe 22 — Latest follow-ups with asker identity (3-step combo)
 
-End-to-end view for "list the latest N follow-up questions with **who asked**, the answer, and timestamps". Uses three `analytics-query` calls — the second and third batch values pulled from the first — and is joined client-side by `user_bid` and `progress_record_bid`. `user_identify` always comes back masked (`138*****000`); a `nickname` containing a phone / email / ID number is redacted to `[REDACTED-XXX]`. Plain-text phone numbers are not retrievable through this API — see `privacy-and-presentation.md`.
+End-to-end view for "list the latest N follow-up questions with **who asked**, the answer, and timestamps". Uses three `analytics-query` calls — the second and third batch values pulled from the first — and is joined client-side by `user_bid` and the four-key tuple `(progress_record_bid, shifu_bid, outline_item_bid, position)`. `user_identify` always comes back masked (`138*****000`); a `nickname` containing a phone / email / ID number is redacted to `[REDACTED-XXX]`. Plain-text phone numbers are not retrievable through this API — see `privacy-and-presentation.md`.
 
 Substitute `<N>` (default 10, ≤ 100) below; cap the user_users batch to 50 dedup'd `user_bid` values.
 
@@ -332,13 +390,13 @@ Substitute `<N>` (default 10, ≤ 100) below; cap the user_users batch to 50 ded
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "table":"learn_generated_blocks",
  "where":[{"field":"type","op":"=","value":321}],
- "select":["user_bid","generated_content","progress_record_bid","created_at"],
+ "select":["user_bid","generated_content","progress_record_bid","outline_item_bid","position","created_at"],
  "order_by":[{"field":"created_at","dir":"desc"}],
  "limit":10
 }'
 ```
 
-Each row is one question: `(user_bid, question_text, progress_record_bid, asked_at)`.
+Each row is one question: `(user_bid, question_text, progress_record_bid, outline_item_bid, position, asked_at)`. The 4-tuple `(progress_record_bid, outline_item_bid, position, asked_at)` is what you use to pair against the matching answer below.
 
 **Step 2 — fetch the matching LLM answers**
 
@@ -350,13 +408,13 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "where":[
    {"field":"type","op":"=","value":322},
    {"field":"progress_record_bid","op":"in","value":["<prb-1>","<prb-2>","..."]}],
- "select":["generated_content","progress_record_bid","created_at"],
- "order_by":[{"field":"created_at","dir":"asc"}],
+ "select":["generated_content","progress_record_bid","outline_item_bid","position","created_at"],
+ "order_by":[{"field":"position","dir":"asc"}],
  "limit":100
 }'
 ```
 
-> Pairing rule: for each Step-1 question with `(progress_record_bid = P, asked_at = T)`, the answer is the earliest Step-2 row with the same `progress_record_bid = P` and `created_at > T`. A lesson may have multiple Q&A turns under the same `progress_record_bid`; the time-ordering is what distinguishes them.
+> **Pairing rule (four-key, preferred)**: for each Step-1 question row with `(progress_record_bid = P, outline_item_bid = L, position = POS, asked_at = T)`, the matching answer is the Step-2 row with the same `(P, L)` and the smallest `position > POS`. The four-key tuple is what the platform stores deterministically — no time-of-day ambiguity, no race-condition surprises if two answers landed within the same second. Time-order is a **fallback** only used when `position` is missing on either side: pick the earliest Step-2 row with the same `(P, L)` and `created_at > T`. Each lesson can carry multiple Q&A turns under the same `progress_record_bid` — the `(L, POS)` pair is what distinguishes them.
 
 **Step 3 — resolve the askers' nicknames and (masked) phones**
 
@@ -387,3 +445,23 @@ Final shape per row:
 > **Learner A (Python 学徒 · 138\*\*\*\*\*000)** asked in **Lesson 3.1 装饰器与闭包** at `2026-05-13 21:42`: "闭包和装饰器啥区别?" → AI answer: "闭包是…"
 
 If the user starts from a phone number and wants to know which learner asked, run `privacy-and-presentation.md` Use B (`user_identify = "13800138000"` exact match) to get the `user_bid` first, then filter Step 1 by that `user_bid` (`{"field":"user_bid","op":"=","value":"<u-bid>"}`) — `in` / `like` / range on `user_identify` are rejected to prevent enumeration.
+
+### Recipe 23 — Follow-up questions per lesson
+
+Where are learners actually asking? Group `type = 321` by `outline_item_bid` to find which lessons drive follow-up traffic:
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"learn_generated_blocks",
+ "where":[{"field":"type","op":"=","value":321}],
+ "select":["outline_item_bid"],
+ "group_by":["outline_item_bid"],
+ "aggregate":[
+   {"fn":"count","alias":"asks"},
+   {"fn":"count_distinct","field":"user_bid","alias":"askers"}],
+ "order_by":[{"field":"asks","dir":"desc"}],
+ "limit":50
+}'
+```
+
+> Translate each `outline_item_bid` to "Lesson X.Y: \<title\>" via the `shifu-cli.py show <bid>` outline cache before presenting. High-ask lessons are usually candidates for content reinforcement (more concrete examples / explicit interaction). Low-ask lessons are often either very clear *or* skipped — cross-reference with `learn_progress_records` to tell which.

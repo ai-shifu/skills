@@ -6,7 +6,7 @@ All examples are CLI invocations. Read `overview.md` first if you have not alrea
 
 ```json
 {
-  "table": "<one of the 8 tables>",
+  "table": "<one of the 10 tables>",
   "select":    ["<field>", "..."],
   "where":     [{ "field": "<f>", "op": "<op>", "value": <value> }],
   "group_by":  ["<field>", "..."],
@@ -51,7 +51,7 @@ Every aggregate must carry an `alias` — the output column is named after it.
 
 ## Per-Learner (`user_bid`) Dimension
 
-6 of the 8 tables support per-learner grouping (everything except `user_users`, which has its own rules in `privacy-and-presentation.md`, and `bill_daily_usage_metrics`, which has no `user_bid` column).
+6 of the 10 tables support per-learner grouping. Excluded: `user_users` (has its own rules in `privacy-and-presentation.md`), `bill_daily_usage_metrics` (no `user_bid` column — it is a daily summary), and the two `shifu_*_shifus` metadata tables (course-level, not learner-level — they describe the course itself).
 
 **Guard rail**: when `user_bid` appears in `select`, it **must** also appear in `group_by`.
 
@@ -87,7 +87,13 @@ The remaining `type` values (`303` input, `309` phone, `310` checkcode, etc.) co
 
 The endpoint automatically applies these filters — do **not** add them to your DSL:
 
-- All 7 non-`user_users` tables are scoped to the CLI-supplied `shifu_bid`.
+- All 9 non-`user_users` tables are scoped to the CLI-supplied `shifu_bid`.
 - All tables except `shifu_user_archives` automatically filter `deleted = 0` (`shifu_user_archives` has no `deleted` column).
+- `learn_generated_blocks` auto-filters `status = 1`. Rerolled history rows (`status = 0`) never appear in your results — your follow-up counts reflect the live learner experience.
+- The two `shifu_*_shifus` metadata tables auto-filter `created_user_bid = <caller>` — you can only see metadata for courses you authored, not for courses a co-author shared with you (those still come through analytics, but the title/rename history stays owner-only).
 
 `user_users` is a global user table (no `shifu_bid` column) with its own restricted-access rules in `privacy-and-presentation.md`.
+
+## Creator-Scoped Tables (`shifu_published_shifus` / `shifu_draft_shifus`)
+
+These two tables are row-lookup only: no aggregates, no `group_by`, hard limit of 50, `title` `like` requires ≥ 2 non-wildcard characters (anti-enumeration). Use them via the Course Metadata recipes (0a–0c) in `recipes.md` to resolve "what is `shifu_bid` X currently called". The author-secret fields (`llm_system_prompt`, `ask_*`, `keywords`, `description`, etc.) are **not** selectable — even the owner cannot read them through this DSL.

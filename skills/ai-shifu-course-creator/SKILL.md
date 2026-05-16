@@ -331,7 +331,7 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 ### Workflow
 
 1. **Resolve credentials** — reuse the Deployment authentication. If `.env` lacks a valid `SHIFU_TOKEN`, guide the user through `shifu-cli.py login` per `references/cli/cli-reference.md#agent-login-flow`.
-2. **Resolve the course** — run `shifu-cli.py list` to map `shifu_bid → name`. Cache the mapping in context.
+2. **Resolve the course** — run `shifu-cli.py list` (or `shifu-cli.py find-title <keyword>`) to map `shifu_bid ↔ course name`. **If the user mentioned a course by title**, always resolve the *current* `shifu_bid → title` via Course Metadata recipes 0a / 0b in `references/analytics/recipes.md` before issuing downstream queries — `list` is a draft snapshot and can show stale or historical titles. Never report a historical title as the course's current name.
 3. **Resolve the outline** (only for course-level analysis) — run `shifu-cli.py show <shifu_bid>` to map `outline_item_bid → name / position`. Skipping this makes outline-dimension numbers unreadable.
 4. **Run DSL queries** — `shifu-cli.py analytics-query <shifu_bid> --dsl '<json-body>'` (or `--dsl-file query.json` for long bodies).
 5. **Translate before presenting** — pass every result through the Translation Gate in `references/analytics/privacy-and-presentation.md`. Never paste raw codes (`601`, `502`, `1101`), raw `*_bid` strings, or raw `user_bid` values in user-facing output.
@@ -339,17 +339,19 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 ### References
 
 - `references/analytics/overview.md` — entry point, full workflow, error codes
-- `references/analytics/dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail)
-- `references/analytics/tables.md` — 8 tables, fields, all code/enum translation tables, ID translation rules, duplicate-row trap
-- `references/analytics/recipes.md` — ready-to-run DSL templates by scenario
-- `references/analytics/privacy-and-presentation.md` — `user_users` restricted access, `generated_content` whitelist, `var_variable_values.value` aggregate-only rule, Translation Gate, refusal rules
+- `references/analytics/dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)
+- `references/analytics/tables.md` — 10 tables, fields, all code/enum translation tables, ID translation rules, duplicate-row trap, role = 2 ≠ follow-up trap, "course title is not history" rule
+- `references/analytics/recipes.md` — Course Metadata 0a–0c + 23 numbered scenario recipes (including four-key follow-up pairing and follow-ups per lesson)
+- `references/analytics/privacy-and-presentation.md` — `user_users` restricted access, `generated_content` whitelist, `var_variable_values.value` aggregate-only rule, "course title is not history" hard rule, Translation Gate, refusal rules
 
 ### Validation
 
 - Token resolved through the Deployment Authentication path, not a hand-rolled lookup.
+- When the user mentioned a course by title, the current `shifu_bid → title` was confirmed via Course Metadata Recipe 0a / 0b before the downstream query ran. Historical titles were never substituted for current ones.
 - `shifu_bid` and outline mappings established before any course-level query.
 - DSL body matches grammar in `dsl.md`; filters reflect the user's intent (e.g. `status = 502` for "paid", not `>= 502`).
 - Credit queries scope to `usage_scene = 1203` when measuring learner-side consumption (preview is `1202`, debug is `1201`).
+- Follow-up counts anchored on `type = 321` (not `role = 2`), and rely on the API's auto-injected `status = 1` rather than an explicit clause.
 - Translation Gate applied before the answer is shown.
 - Privacy refusals honoured for inaccessible fields (phone, email, real name, ID number, avatar, birthday).
 
