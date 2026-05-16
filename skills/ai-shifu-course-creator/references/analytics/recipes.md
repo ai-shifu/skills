@@ -160,101 +160,92 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 > Each row's `progress_record_bid` must be translated to a chapter/lesson name via the two-step lookup in `tables.md` (ID Field Translation Rules).
 
-## Credit Consumption (use `bill_daily_usage_metrics`)
+## Credit Consumption (use `shifu-cli.py credit-detail`)
 
-> `consumed_credits` is the authoritative wallet-deduction figure — already rate-adjusted by the billing settlement job. No further conversion needed. Always add `where usage_scene = 1203` when measuring real learner-driven spend (1202 = author preview, 1201 = author debug).
+> **The DSL `bill_daily_usage_metrics` recipes that lived here previously are deprecated.** That table is currently empty in production because the daily aggregation Celery beat job is not registered. Use the `credit-detail` CLI command below — it joins `bill_usage` × `credit_ledger_entries` server-side and returns the real credit deduction for the requested shifu. When the daily aggregation job is eventually enabled, the DSL recipes can be reinstated for "by-day trend" queries; until then `credit-detail` is the only path.
 
-### Recipe 8 — Total credits over a date range
-
-```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
- "table":"bill_daily_usage_metrics",
- "aggregate":[{"fn":"sum","field":"consumed_credits","alias":"total_credits"}],
- "where":[
-   {"field":"usage_scene","op":"=","value":1203},
-   {"field":"stat_date","op":"between","value":["2026-05-01","2026-05-14"]}],
- "limit":1
-}'
-```
-
-### Recipe 9 — Credits: LLM vs TTS split
+### Recipe 8 — Today's credit consumption
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
- "table":"bill_daily_usage_metrics",
- "select":["usage_type"],
- "aggregate":[{"fn":"sum","field":"consumed_credits","alias":"credits"}],
- "where":[{"field":"usage_scene","op":"=","value":1203}],
- "group_by":["usage_type"],
- "limit":10
-}'
+python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-16 --end 2026-05-16
 ```
 
-> Returns: `usage_type = 1101` (LLM) vs `1102` (TTS) credit breakdown.
+Returns `summary` (total credits, distinct users / progress records, wallet creator, time range) plus `rows` (per-usage detail: created_at, user_bid, progress_record_bid, outline_item_bid, usage_type, usage_scene, provider, model, credits).
 
-### Recipe 10 — Credits by model (ranked)
+### Recipe 9 — Credits over an arbitrary date window
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
- "table":"bill_daily_usage_metrics",
- "select":["provider","model"],
- "aggregate":[{"fn":"sum","field":"consumed_credits","alias":"credits"}],
- "where":[{"field":"usage_scene","op":"=","value":1203}],
- "group_by":["provider","model"],
- "order_by":[{"field":"credits","dir":"desc"}],
- "limit":10
-}'
+python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-01 --end 2026-05-15
 ```
 
-### Recipe 11 — Daily credit trend
+`start` / `end` are inclusive ISO dates; end must be on or after start.
+
+### Recipe 10 — Production-only spend (exclude preview / debug)
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
- "table":"bill_daily_usage_metrics",
- "select":["stat_date"],
- "aggregate":[{"fn":"sum","field":"consumed_credits","alias":"credits"}],
- "where":[{"field":"usage_scene","op":"=","value":1203}],
- "group_by":["stat_date"],
- "order_by":[{"field":"stat_date","dir":"asc"}],
- "limit":90
-}'
+python3 scripts/shifu-cli.py credit-detail <bid> --scene 1203
 ```
 
-### Recipe 12 — Input vs cache vs output credit split
+`--scene` accepts a comma-separated subset of `{1201, 1202, 1203}` (debug / preview / production). Combine with `--start` / `--end` to scope a window.
+
+### Recipe 11 — LLM-only vs TTS-only
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
- "table":"bill_daily_usage_metrics",
- "select":["billing_metric"],
- "aggregate":[{"fn":"sum","field":"consumed_credits","alias":"credits"}],
- "where":[
-   {"field":"usage_scene","op":"=","value":1203},
-   {"field":"usage_type","op":"=","value":1101}],
- "group_by":["billing_metric"],
- "order_by":[{"field":"credits","dir":"desc"}],
- "limit":10
-}'
+# LLM only
+python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1101
+
+# TTS only
+python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1102
 ```
 
-> Returns three rows for LLM (`usage_type = 1101`): `billing_metric = 7451` (input), `7452` (cache-hit, typically the cheapest), `7453` (output). Use this to identify whether output tokens or uncached input is the dominant cost driver.
+`--usage-type` accepts a comma-separated subset of `{1101, 1102}`.
 
-### Recipe 13 — Single-day deep-dive (locate an unusually expensive day)
+### Recipe 12 — Pagination for large windows
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
- "table":"bill_daily_usage_metrics",
- "select":["provider","model","usage_scene","usage_type","billing_metric"],
- "aggregate":[
-   {"fn":"sum","field":"consumed_credits","alias":"credits"},
-   {"fn":"sum","field":"record_count","alias":"calls"}],
- "where":[{"field":"stat_date","op":"=","value":"2026-05-13"}],
- "group_by":["provider","model","usage_scene","usage_type","billing_metric"],
- "order_by":[{"field":"credits","dir":"desc"}],
- "limit":50
-}'
+python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-01 --limit 200 --offset 200
 ```
 
-> Use this when a single day's total jumps unexpectedly. The full provider × model × scene × metric breakdown surfaces which combination drove the spike. Note that `usage_scene = 1202` rows here are author-side previews, not learner activity.
+`--limit` caps at 1000; the `summary` block always reflects the full filtered set regardless of paging.
+
+### Recipe 13 — Reading the response
+
+Pseudo-shape:
+
+```json
+{
+  "code": 0,
+  "data": {
+    "summary": {
+      "total_records":   52,
+      "total_credits":   "26.6900",
+      "unique_users":    1,
+      "unique_progress": 5,
+      "wallet_creator_bid": "029bacf0...",
+      "time_range": ["2026-05-15 16:05:18", "2026-05-15 23:45:17"]
+    },
+    "rows": [
+      {
+        "usage_bid": "...",
+        "created_at": "2026-05-15 23:45:17",
+        "user_bid": "...",
+        "progress_record_bid": "...",
+        "outline_item_bid": "...",
+        "usage_type":  1101,
+        "usage_scene": 1203,
+        "provider":    "deepseek",
+        "model":       "deepseek-v4-flash",
+        "credits":     "0.5100",
+        "wallet_creator_bid": "029bacf0..."
+      }
+    ],
+    "limit":  100,
+    "offset": 0
+  }
+}
+```
+
+`total_credits` and per-row `credits` are decimal strings (preserved precisely from the ledger, no float rounding). Apply the standard translation rules before presenting: `outline_item_bid` → "Lesson X.Y: <title>"; `user_bid` → ordinal labels (Learner A / B / C) per `privacy-and-presentation.md`; round credits to 2 decimal places (e.g. `26.69 积分`).
 
 ## Active Learners
 

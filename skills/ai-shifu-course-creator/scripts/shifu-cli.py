@@ -83,24 +83,17 @@ def api_safe(base_url, token, method, path, **kwargs):
         return None
 
 
-def api_analytics(base_url, token, body, session=None):
-    """POST a DSL query to /api/creator-analytics/query.
+def _post_creator_analytics(base_url, token, path, body, session=None):
+    """POST to a /api/creator-analytics/<path> endpoint with auth headers.
 
-    Unlike api(), does NOT exit on non-zero `code` — analytics business
-    errors (11001-11007, 1001, 1004, 1005) carry meaning the agent must
-    see in order to fix the DSL or re-authenticate.
-
-    ``session`` is an optional :class:`requests.Session` for connection
-    reuse when the caller is fanning out many small queries (e.g.
-    ``cmd_list`` / ``cmd_find_title`` issuing one metadata lookup per
-    shifu_bid). Reusing the same TCP / TLS session avoids re-doing the
-    handshake on every request.
-
-    Returns (transport_ok, payload). On transport_ok the payload is the
-    parsed JSON response (may carry a non-zero code). On transport failure
-    payload is a small dict describing what went wrong.
+    Shared transport helper for the DSL query and credit-detail endpoints.
+    Returns (transport_ok, payload). Non-zero business codes do NOT raise —
+    callers need to surface them. ``session`` is an optional
+    :class:`requests.Session` for TCP / TLS connection reuse when the caller
+    is fanning out many small queries.
     """
-    url = f"{base_url}/api/creator-analytics/query"
+
+    url = f"{base_url}/api/creator-analytics{path}"
     headers = {
         "Authorization": f"Bearer {token}",
         "Token": token,
@@ -117,6 +110,24 @@ def api_analytics(base_url, token, body, session=None):
         return True, resp.json()
     except json.JSONDecodeError:
         return False, {"parse_error": "non-JSON response", "text": resp.text[:1000]}
+
+
+def api_analytics(base_url, token, body, session=None):
+    """POST a DSL query to /api/creator-analytics/query."""
+    return _post_creator_analytics(base_url, token, "/query", body, session=session)
+
+
+def api_credit_detail(base_url, token, body, session=None):
+    """POST to /api/creator-analytics/credit-detail.
+
+    Unlike ``api_analytics``, this endpoint is not DSL-based — it expects a
+    fixed schema (``shifu_bid`` + optional date/scene/type filters and
+    pagination) and the backend handles the bill_usage × credit_ledger_entries
+    join server-side. See ``cmd_credit_detail`` for the CLI surface.
+    """
+    return _post_creator_analytics(
+        base_url, token, "/credit-detail", body, session=session
+    )
 
 
 def safe_join_path(base_dir, filename):
@@ -1192,6 +1203,53 @@ def cmd_find_title(args):
               "historical title — check `shifu-cli.py list` for current titles.")
 
 
+# ── Credit Detail ──────────────────────────────────────────────────────────────
+def cmd_credit_detail(args):
+    """Fetch server-side joined credit consumption detail for one shifu.
+
+    Calls POST /api/creator-analytics/credit-detail, which joins
+    bill_usage × credit_ledger_entries on (source_bid = usage_bid AND
+    source_type = USAGE). Returns a per-row payload alongside a summary
+    block (total records, total credits, distinct users, distinct progress
+    records, wallet creator bid, time range).
+
+    Use this whenever the user asks about credit consumption — the DSL
+    bill_daily_usage_metrics table is empty in production until the daily
+    aggregation cron is enabled.
+    """
+
+    base_url, token = resolve_auth(args)
+    body = {"shifu_bid": args.shifu_bid}
+    if args.start:
+        body["start_date"] = args.start
+    if args.end:
+        body["end_date"] = args.end
+    if args.scene:
+        try:
+            body["usage_scene"] = [int(s) for s in args.scene.split(",") if s.strip()]
+        except ValueError:
+            print("Error: --scene must be a comma-separated list of integers")
+            sys.exit(1)
+    if args.usage_type:
+        try:
+            body["usage_type"] = [
+                int(t) for t in args.usage_type.split(",") if t.strip()
+            ]
+        except ValueError:
+            print("Error: --usage-type must be a comma-separated list of integers")
+            sys.exit(1)
+    if args.limit is not None:
+        body["limit"] = args.limit
+    if args.offset is not None:
+        body["offset"] = args.offset
+
+    ok, payload = api_credit_detail(base_url, token, body)
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+    if not ok or not isinstance(payload, dict) or payload.get("code") != 0:
+        sys.exit(1)
+
+
 # ── CLI Entry Point ────────────────────────────────────────────────────────────
 def build_parser():
     """Build and return the argument parser with all subcommands."""
@@ -1356,6 +1414,23 @@ def build_parser():
                         "whitespace-normalized; matches current published and "
                         "draft titles only — never historical / renamed titles)")
 
+    # ── credit-detail ──
+    p = sub.add_parser("credit-detail", parents=[parent_parser],
+                       help="Fetch joined credit consumption detail for one shifu")
+    p.add_argument("shifu_bid", help="Course BID")
+    p.add_argument("--start", help="Inclusive ISO date lower bound, e.g. 2026-05-15")
+    p.add_argument("--end", help="Inclusive ISO date upper bound, e.g. 2026-05-16")
+    p.add_argument("--scene",
+                   help="Comma-separated usage_scene codes, e.g. 1202,1203 "
+                        "(1201 debug / 1202 preview / 1203 production)")
+    p.add_argument("--usage-type", dest="usage_type",
+                   help="Comma-separated usage_type codes, e.g. 1101,1102 "
+                        "(1101 LLM / 1102 TTS)")
+    p.add_argument("--limit", type=int, default=None,
+                   help="Row count cap, 1..1000 (default 100 server-side)")
+    p.add_argument("--offset", type=int, default=None,
+                   help="Pagination offset (default 0)")
+
     return parser
 
 
@@ -1390,6 +1465,7 @@ def main():
         "unarchive": cmd_unarchive,
         "analytics-query": cmd_analytics_query,
         "find-title": cmd_find_title,
+        "credit-detail": cmd_credit_detail,
     }
 
     handler = commands.get(args.command)
