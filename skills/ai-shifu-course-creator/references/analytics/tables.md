@@ -12,7 +12,7 @@ The 10 tables you can query, the fields each carries, the code/enum tables to tr
 | `order_orders` | Enrolments / revenue / channel distribution / refund rate / **total spend per learner** | `user_bid`, `status` (501-505, see code table; **paid** = `502`), `payment_channel` (pingxx/stripe/alipay/wechatpay/…), `paid_price` |
 | `var_variable_values` | Learner profile distribution (goals / level / preferences) | `user_bid`, `variable_bid`, `value` (aggregate only — **do not select raw value**; see `privacy-and-presentation.md`) |
 | `shifu_user_archives` | Active learner count / archive rate | `user_bid`, `archived` (0 active / 1 archived) |
-| `bill_daily_usage_metrics` | **Credit consumption** (by day / model / scene / usage type / billing metric) — `consumed_credits` is the authoritative wallet-deduction figure | `stat_date`, `creator_bid` (the wallet that absorbed the deduction — by construction equals the caller's bid because `shifu_bid` scope already binds the result), `usage_scene` (1201 debug / 1202 preview / 1203 learner production), `usage_type` (1101 LLM / 1102 TTS), `provider`, `model`, `billing_metric` (7451 LLM input / 7452 LLM cache / 7453 LLM output), `consumed_credits` (**exact credits, already converted at the billing rate**), `record_count`; filterable by `stat_date` / `usage_scene` / `usage_type` / `provider` / `model` / `billing_metric` |
+| `bill_daily_usage_metrics` ⚠️ EMPTY | Was designed to hold pre-aggregated daily credit totals. **Currently 0 rows in production** — the `billing.aggregate_daily_usage_metrics` Celery beat job is not yet registered, so nothing populates this table. **Do not query for credit data via this DSL table; use `shifu-cli.py credit-detail` instead** (server-side bill_usage × credit_ledger_entries join). When the cron is eventually enabled, the previous DSL recipes will work again — until then they always return empty. | `stat_date`, `creator_bid`, `usage_scene` (1201 debug / 1202 preview / 1203 production), `usage_type` (1101 LLM / 1102 TTS), `provider`, `model`, `billing_metric` (7451 LLM input / 7452 LLM cache / 7453 LLM output), `consumed_credits`, `record_count` |
 | `user_users` ⚠️ | **Look up nickname by known `user_bid`** / **reverse-look up `user_bid` by phone or email** | `user_bid`, `nickname` (auto PII-redacted), `user_identify` (masked, e.g. `138*****000`); restricted-access rules in `privacy-and-presentation.md` |
 | `shifu_published_shifus` 🆕 | **Current published title for one of my courses** / does the same `shifu_bid` have rename history? | `title`, `created_user_bid`, `created_at`, `updated_at`. **Row-lookup only** — aggregate / group_by are rejected; `title` accepts `op=like` with trailing-% (anti-enumeration: ≥ 2 non-wildcard chars); `limit ≤ 50`; owner-only (auto-filtered to `created_user_bid = <you>`) |
 | `shifu_draft_shifus` 🆕 | **Current draft (editor) title** — useful when the draft has been renamed but not yet re-published, so the published title still lags | Same fields and restrictions as `shifu_published_shifus` |
@@ -21,7 +21,7 @@ The 9 shifu-scoped tables (everything except `user_users`) are automatically con
 
 `user_users` is a **global** user table (no `shifu_bid` column). Its access is heavily restricted — read `privacy-and-presentation.md` before querying.
 
-**Token usage is intentionally not exposed.** Creators can only see credit consumption via `bill_daily_usage_metrics.consumed_credits` (already rate-adjusted by the billing settlement job). Raw token counts are not a creator-facing data surface — they live in internal billing tables not reachable from this DSL.
+**Token usage is intentionally not exposed.** Creators can only see *credit* consumption. The canonical real-time path is `shifu-cli.py credit-detail <bid>`, which the backend joins on the fly from `bill_usage` × `credit_ledger_entries` and returns ABS(amount) as `credits` (positive). When the daily aggregation cron is enabled, `bill_daily_usage_metrics.consumed_credits` will become the path for "by-day trend" DSL queries; until then it is empty and `credit-detail` is the only working path.
 
 ## Course title is "current published", not "history"
 
@@ -203,12 +203,12 @@ A learner can have multiple progress records for the **same lesson** (`outline_i
 
 ## Three Independent "Amounts" — Never Mix
 
-| Amount type | Source | Who pays | Queryable in DSL |
+| Amount type | Source | Who pays | How to query |
 |---|---|---|---|
-| **Course price / revenue** | `order_orders.paid_price` | Learner pays the creator | yes |
-| **Model call credit consumption** | `bill_daily_usage_metrics.consumed_credits` | Creator's credits are deducted | yes |
-| **Plan / credit pack purchases** | Internal billing tables | Creator recharges credits | no |
+| **Course price / revenue** | `order_orders.paid_price` | Learner pays the creator | DSL `order_orders` |
+| **Model call credit consumption** | `credit_ledger_entries.amount` (joined with `bill_usage` server-side) | Creator's credits are deducted | `shifu-cli.py credit-detail <bid>` (`bill_daily_usage_metrics` is currently empty pending cron registration) |
+| **Plan / credit pack purchases** | Internal billing tables | Creator recharges credits | not queryable |
 
-If the user asks "how much revenue did my course earn" → query `order_orders`. If the user asks "how many credits did I spend / what did it cost" → query `bill_daily_usage_metrics`. **These are completely different — do not mix them.**
+If the user asks "how much revenue did my course earn" → DSL `order_orders`. If the user asks "how many credits did I spend / what did it cost" → `shifu-cli.py credit-detail`. **These are completely different — do not mix them.**
 
-`consumed_credits` is the only credit-cost figure exposed to creators; it is already rate-adjusted by the billing settlement job. Do not try to re-derive credits from token counts — token data is not part of the creator DSL surface.
+The `credit-detail` endpoint returns the absolute credit amount (`ABS(credit_ledger_entries.amount)`) already in account-currency units; no further conversion needed. Do not try to re-derive credits from token counts — token data is not part of the creator surface.

@@ -350,7 +350,7 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 - When the user mentioned a course by title, the current `shifu_bid → title` was confirmed via Course Metadata Recipe 0a / 0b before the downstream query ran. Historical titles were never substituted for current ones.
 - `shifu_bid` and outline mappings established before any course-level query.
 - DSL body matches grammar in `dsl.md`; filters reflect the user's intent (e.g. `status = 502` for "paid", not `>= 502`).
-- Credit queries scope to `usage_scene = 1203` when measuring learner-side consumption (preview is `1202`, debug is `1201`).
+- Credit consumption queries use `shifu-cli.py credit-detail` (server-side join). Do **not** issue a DSL query against `bill_daily_usage_metrics` — it is empty in production pending the daily aggregation cron. To restrict to learner-driven spend pass `--scene 1203` (preview is `1202`, debug is `1201`).
 - Follow-up counts anchored on `type = 321` (not `role = 2`), and rely on the API's auto-injected `status = 1` rather than an explicit clause.
 - Translation Gate applied before the answer is shown.
 - Privacy refusals honoured for inaccessible fields (phone, email, real name, ID number, avatar, birthday).

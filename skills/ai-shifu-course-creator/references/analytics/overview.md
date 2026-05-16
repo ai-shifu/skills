@@ -11,7 +11,7 @@ Enter the analytics path when a course author or admin asks about:
 - ratings, listen-vs-read preference
 - follow-up Q&A counts or specific learner conversations
 - follow-up Q&A volume by lesson
-- credit consumption (by day, model, scene, usage type, billing metric)
+- credit consumption (per-charge detail / by day / by model / by scene / by usage type) — use `shifu-cli.py credit-detail` (the DSL `bill_daily_usage_metrics` table is currently empty in production until the daily aggregation cron is registered)
 - which wallet absorbed the deduction for a given course
 - audience profile distribution (goals, level, preferences)
 - individual learner tracking — with the privacy rules in `privacy-and-presentation.md`
@@ -83,6 +83,7 @@ Cross-course analysis: send one `analytics-query` per `shifu_bid` and merge resu
 2. Apply the privacy rules in `privacy-and-presentation.md` if the query touches `user_users`, `generated_content`, or `var_variable_values.value`.
 3. Apply the Translation Gate in `privacy-and-presentation.md` before presenting any result.
 4. **If the user mentioned a course by title**, run Course Metadata Recipe 0a / 0b first to confirm the current `shifu_bid → title` mapping. Never report a historical title as the course's current name.
+5. **If the user asks about credit consumption**, use `shifu-cli.py credit-detail` instead of issuing a DSL query against `bill_daily_usage_metrics` — that table is empty in production pending the daily aggregation cron.
 
 ## Error Codes the CLI May Surface
 
