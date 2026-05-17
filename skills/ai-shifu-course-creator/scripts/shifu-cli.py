@@ -127,7 +127,7 @@ def api_credit_detail(base_url, token, body, session=None):
 
     Unlike ``api_analytics``, this endpoint is not DSL-based — it expects a
     fixed schema (``shifu_bid`` + optional date/scene/type filters and
-    pagination) and the backend handles the bill_usage × credit_ledger_entries
+    pagination) and the backend handles the bill_usage x credit_ledger_entries
     join server-side. See ``cmd_credit_detail`` for the CLI surface.
     """
     return _post_creator_analytics(
@@ -1209,11 +1209,38 @@ def cmd_find_title(args):
 
 
 # ── Credit Detail ──────────────────────────────────────────────────────────────
+def _parse_int_list_arg(raw, flag_name):
+    """Parse a comma-separated integer list argument.
+
+    Shared by ``--scene`` and ``--usage-type`` (flagged on PR #50 review
+    as duplicated logic). Reports both the parse-failure and the empty-
+    result cases on stderr and exits 1, so the CLI never sends an empty
+    list to the backend (which would reject it as ``11002 invalidDsl``)
+    and never silently drops a malformed value.
+    """
+
+    try:
+        parsed = [int(item) for item in raw.split(",") if item.strip()]
+    except ValueError:
+        print(
+            f"Error: {flag_name} must be a comma-separated list of integers",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if not parsed:
+        print(
+            f"Error: {flag_name} must contain at least one integer",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return parsed
+
+
 def cmd_credit_detail(args):
     """Fetch server-side joined credit consumption detail for one shifu.
 
     Calls POST /api/creator-analytics/credit-detail, which joins
-    bill_usage × credit_ledger_entries on (source_bid = usage_bid AND
+    bill_usage x credit_ledger_entries on (source_bid = usage_bid AND
     source_type = USAGE). Returns a per-row payload alongside a summary
     block (total records, total credits, distinct users, distinct progress
     records, wallet creator bid, time range).
@@ -1225,52 +1252,55 @@ def cmd_credit_detail(args):
 
     base_url, token = resolve_auth(args)
     body = {"shifu_bid": args.shifu_bid}
+
+    # Date range — parse and validate locally so a malformed --start /
+    # --end does not round-trip to the backend as 11002 invalidDsl
+    # (PR #50 review). Same stderr + exit-1 style as the --scene /
+    # --usage-type guards below.
+    start_d = None
+    end_d = None
     if args.start:
+        try:
+            start_d = datetime.fromisoformat(args.start).date()
+        except ValueError:
+            print(
+                "Error: --start must be an ISO date (YYYY-MM-DD)",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         body["start_date"] = args.start
     if args.end:
+        try:
+            end_d = datetime.fromisoformat(args.end).date()
+        except ValueError:
+            print(
+                "Error: --end must be an ISO date (YYYY-MM-DD)",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         body["end_date"] = args.end
-    # --scene / --usage-type are comma-separated integers. Two guards
-    # (raised on PR #49 review):
-    #   1. ValueError → report on stderr (CLI best practice) and exit 1.
-    #   2. Parsed list empty (e.g. user passed `--scene " "`) → exit 1
-    #      explicitly rather than silently sending an empty list, which
-    #      the backend would reject with `11002 invalidDsl` anyway; the
-    #      explicit local error gives a cleaner message.
+    if start_d and end_d and end_d < start_d:
+        print("Error: --end must be on or after --start", file=sys.stderr)
+        sys.exit(1)
+
     if args.scene:
-        try:
-            scenes = [int(s) for s in args.scene.split(",") if s.strip()]
-        except ValueError:
-            print(
-                "Error: --scene must be a comma-separated list of integers",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        if not scenes:
-            print(
-                "Error: --scene must contain at least one integer",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        body["usage_scene"] = scenes
+        body["usage_scene"] = _parse_int_list_arg(args.scene, "--scene")
     if args.usage_type:
-        try:
-            usage_types = [int(t) for t in args.usage_type.split(",") if t.strip()]
-        except ValueError:
-            print(
-                "Error: --usage-type must be a comma-separated list of integers",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        if not usage_types:
-            print(
-                "Error: --usage-type must contain at least one integer",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        body["usage_type"] = usage_types
+        body["usage_type"] = _parse_int_list_arg(args.usage_type, "--usage-type")
+
+    # --limit / --offset bounds match the backend's
+    # ANALYTICS_QUERY_LIMIT_MAX (1000) and offset >= 0 contract; check
+    # locally so an obvious typo reports a clean error instead of an
+    # 11007 invalidLimit round-trip (PR #50 review).
     if args.limit is not None:
+        if args.limit < 1 or args.limit > 1000:
+            print("Error: --limit must be in [1, 1000]", file=sys.stderr)
+            sys.exit(1)
         body["limit"] = args.limit
     if args.offset is not None:
+        if args.offset < 0:
+            print("Error: --offset must be >= 0", file=sys.stderr)
+            sys.exit(1)
         body["offset"] = args.offset
 
     ok, payload = api_credit_detail(base_url, token, body)

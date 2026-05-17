@@ -108,6 +108,71 @@ The CLI exits non-zero on any of the above except `code == 0`, but the full payl
 
 Each query is scoped to one `shifu_bid`. The endpoint does not support cross-course joins; merge across courses in the agent context, not in the DSL.
 
+## Quick Question → Table Lookup
+
+Before constructing any DSL, identify the correct table. Use this map:
+
+| User asks about... | Table | Key filter | Key field |
+|---|---|---|---|
+| Learner count / completion / stuck lessons | `learn_progress_records` | `status = 603` (completed), `602` (stuck) | `outline_item_bid`, `status` |
+| **Follow-up questions / Q&A** | `learn_generated_blocks` | **`type = 321`** (NOT `role = 2`!) | `type`, `generated_content` |
+| LLM answers to follow-ups | `learn_generated_blocks` | `type = 322` | `generated_content`, `position` |
+| Lesson ratings / read vs listen | `learn_lesson_feedbacks` | — | `score`, `mode` |
+| Orders / revenue / payment channel | `order_orders` | `status = 502` (paid) | `paid_price`, `payment_channel` |
+| Audience profile distribution | `var_variable_values` | — | `variable_bid`, `value` (aggregate only!) |
+| Active learner count / archive rate | `shifu_user_archives` | `archived = 0` | `user_bid` |
+| Credit consumption (by day/model/scene) | `bill_daily_usage_metrics` | `usage_scene = 1203` (learner production) | `consumed_credits`, `stat_date` |
+| **Credit consumption (raw detail)** | **`shifu-cli.py credit-detail`** | `--scene 1203` | CLI command, NOT a DSL query |
+| Look up learner nickname | `user_users` | — | `nickname`, `user_identify` |
+| Current course title | `shifu_published_shifus` | `deleted = 0` (auto-injected) | `title` |
+| Draft course title | `shifu_draft_shifus` | `deleted = 0` (auto-injected) | `title` |
+
+> **Two credit paths**: `bill_daily_usage_metrics` for daily aggregated trends via DSL; `shifu-cli.py credit-detail` for raw per-usage detail (server-side join). They answer different questions — use the right one.
+
+## Common Pitfalls (read this before your first query)
+
+These are the mistakes that most commonly cause repeated failed queries and wasted time:
+
+### Pitfall 1 — Follow-up questions: use `type = 321`, NOT `role = 2`
+
+`role = 2` (learner) matches ALL learner input widgets — follow-up questions, form inputs, phone numbers, verification codes. To count follow-up questions specifically, filter `type = 321` (`mdask`). This is the single most common analytics mistake.
+
+```json
+// WRONG — includes form inputs, phone numbers, etc.
+{"where": [{"field": "role", "op": "=", "value": 2}]}
+
+// CORRECT — only actual follow-up questions
+{"where": [{"field": "type", "op": "=", "value": 321}]}
+```
+
+### Pitfall 2 — Credit queries: `credit-detail` vs `bill_daily_usage_metrics`
+
+These are **different tools for different questions**:
+- `shifu-cli.py credit-detail <bid>` — raw per-usage detail, server-side join, **always works**. Use for "how many credits did I spend", "what did my learners cost me", per-lesson breakdown.
+- DSL against `bill_daily_usage_metrics` — daily aggregated trends by model/scene/type. **Currently empty in production** (cron not registered). Do not use for credit data — it always returns zero rows.
+
+### Pitfall 3 — `where` must be an array, not a single object
+
+The DSL requires `where` to be an array of filter objects:
+
+```json
+// WRONG — server rejects with 11002
+{"where": {"field": "type", "op": "=", "value": 321}}
+
+// CORRECT — always an array
+{"where": [{"field": "type", "op": "=", "value": 321}]}
+```
+
+### Pitfall 4 — Table name guessing
+
+Do not guess table names — the schema has 10 tables and many sound-alike names. Always check the full list in `tables.md` first. Common wrong guesses:
+- "user logs" or "user_logs" → does not exist. Use `learn_generated_blocks` for interaction data, `learn_progress_records` for progress data.
+- "billing" or "usage" → `bill_daily_usage_metrics` (currently empty) or `shifu-cli.py credit-detail` for actual credit data.
+
+### Pitfall 5 — Missing `outline_item_bid` in output
+
+When querying lesson-level data (stuck lessons, follow-ups per lesson, ratings), you must run `shifu-cli.py show <shifu_bid>` first to build the `outline_item_bid → name` mapping. Showing raw `outline_item_bid` hashes to the user is unreadable and violates the Translation Gate.
+
 ## What Lives Where
 
 - `dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)

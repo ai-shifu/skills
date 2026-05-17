@@ -1,8 +1,8 @@
 # Analytics Recipes
 
-Ready-to-run DSL templates, grouped by scenario. Every example is a `shifu-cli.py analytics-query` invocation — substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Read `dsl.md` and `tables.md` first for grammar and field meanings.
+Ready-to-run templates, grouped by scenario. Most examples run through `shifu-cli.py analytics-query <bid> --dsl '…'` (the DSL path); the **Credit Consumption** section is the exception — it uses `shifu-cli.py credit-detail <bid> …` because `bill_daily_usage_metrics` is empty in production until the daily aggregation cron is enabled, so the DSL recipes there are deprecated. Substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Read `dsl.md` and `tables.md` first for grammar and field meanings.
 
-The DSL bodies omit `shifu_bid` — the CLI injects it from the positional argument.
+For DSL recipes, the bodies omit `shifu_bid` — the CLI injects it from the positional argument. For `credit-detail`, all parameters are flags on the command line; see the Credit Consumption section below for the full reference.
 
 ## Course Metadata (resolve `shifu_bid ↔ current title`)
 

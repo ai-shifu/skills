@@ -97,3 +97,55 @@ The endpoint automatically applies these filters — do **not** add them to your
 ## Creator-Scoped Tables (`shifu_published_shifus` / `shifu_draft_shifus`)
 
 These two tables are row-lookup only: no aggregates, no `group_by`, hard limit of 50, `title` `like` requires ≥ 2 non-wildcard characters (anti-enumeration). Use them via the Course Metadata recipes (0a–0c) in `recipes.md` to resolve "what is `shifu_bid` X currently called". The author-secret fields (`llm_system_prompt`, `ask_*`, `keywords`, `description`, etc.) are **not** selectable — even the owner cannot read them through this DSL.
+
+## Syntax Gotchas (common DSL construction mistakes)
+
+These are the syntax errors that cause the most 11002 rejections. Double-check before sending.
+
+### `aggregate` (singular), not `aggregates`
+
+The key is `aggregate` — a single array of aggregate objects. Plural `aggregates` is rejected.
+
+```json
+// WRONG
+{"aggregates": [{"fn":"count","alias":"n"}]}
+
+// CORRECT
+{"aggregate": [{"fn":"count","alias":"n"}]}
+```
+
+### `where` is always an array
+
+Even with a single filter, `where` must be an array of filter objects:
+
+```json
+// WRONG — server rejects
+{"where": {"field":"type", "op":"=", "value": 321}}
+
+// CORRECT
+{"where": [{"field":"type", "op":"=", "value": 321}]}
+```
+
+### `order_by` uses `field` + `dir`, not `column` + `direction`
+
+```json
+// WRONG
+{"order_by": [{"column":"asks", "direction":"desc"}]}
+
+// CORRECT
+{"order_by": [{"field":"asks", "dir":"desc"}]}
+```
+
+### Every `select` field must appear in `group_by` when `aggregate` is present
+
+```json
+// WRONG — `outline_item_bid` in select but not in group_by
+{"select":["outline_item_bid"], "group_by":[], "aggregate":[{"fn":"count","alias":"n"}]}
+
+// CORRECT
+{"select":["outline_item_bid"], "group_by":["outline_item_bid"], "aggregate":[{"fn":"count","alias":"n"}]}
+```
+
+### `shifu_bid` in body must match the CLI positional arg
+
+If you include `shifu_bid` in the JSON body, it must be identical to the `<shifu_bid>` CLI argument. Best practice: omit it from the body and let the CLI inject it.
