@@ -50,7 +50,7 @@ history <shifu_bid> <outline_bid>             # Teaching Prompt revision history
 export <shifu_bid> [-o file.json]             # Export course as JSON
 ```
 
-`show` (without `outline_bid`), `create`, `import`, and `publish` all print a `Verification URLs:` block — admin console, course preview, and one preview URL per lesson. Copy those URLs as-is when reporting deployment results; never reconstruct them from a template.
+`show` (without `outline_bid`), `create`, `import`, and `publish` all print a `Verification URLs:` block. Lines included depend on the command: `publish` and `show` add a `Published URL:` line (the public student-facing address — `<base>/c/<bid>` without `preview=true`); `create` and `import` omit it because the course is not yet published. Each URL is followed by a one-line `# ...` Chinese hint about its purpose. Per-lesson preview URLs are no longer printed — if you need one, use `show <shifu_bid>` to find the `outline_bid` and build `<base>/c/<bid>?preview=true&lessonid=<outline_bid>` on demand. Copy printed URLs as-is when reporting; never reconstruct them from a template.
 
 ## Analytics Query
 

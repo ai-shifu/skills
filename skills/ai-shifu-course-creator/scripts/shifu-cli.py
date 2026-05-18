@@ -156,35 +156,28 @@ def fmt_time(ts):
         return ts[:16] if len(ts) >= 16 else ts
 
 
-def _print_verification_urls(base_url, shifu_bid, tree=None):
-    """Print admin + course preview + (optional) per-lesson preview URLs.
+def _print_verification_urls(base_url, shifu_bid, include_published=False):
+    """Print admin + course preview, and (when published) the public URL.
 
     Skill docs instruct the LLM to transcribe these lines verbatim. Do not
     let the LLM reconstruct URLs from a template — that has historically led
     to wrong path (/shifu vs /c) and wrong param name (outline_bid vs lessonid).
+
+    `include_published=True` adds the public student-facing URL (no preview
+    query param). Callers should set it only when the course is known to be
+    in a published state (e.g. right after `publish`, or in `show` which
+    queries existing courses that are typically already published).
+    Lesson-level URLs are intentionally not printed — they bloat reports for
+    multi-lesson courses; build one on demand via `show <shifu_bid>` if needed.
     """
     print("\nVerification URLs:")
-    print(f"  Admin console:  {base_url}/shifu/{shifu_bid}")
-    print(f"  Course preview: {base_url}/c/{shifu_bid}?preview=true")
-    if tree:
-        items = tree if isinstance(tree, list) else [tree]
-        leaves = []
-
-        def walk(nodes):
-            for node in nodes:
-                children = node.get("children", [])
-                if children:
-                    walk(children)
-                else:
-                    bid = node.get("bid", "")
-                    if bid:
-                        leaves.append((node.get("name", ""), bid))
-
-        walk(items)
-        if leaves:
-            print("  Lesson preview:")
-            for name, bid in leaves:
-                print(f"    {name}: {base_url}/c/{shifu_bid}?preview=true&lessonid={bid}")
+    print(f"  Admin console:    {base_url}/shifu/{shifu_bid}")
+    print("    # 课程的管理后台地址：需要管理课程的内容、设置小节是否隐藏、是否付费等，在这里操作。")
+    print(f"  Course preview:   {base_url}/c/{shifu_bid}?preview=true")
+    print("    # 课程预览地址：仅课程作者本人可见，用于发布前后自测课程效果。")
+    if include_published:
+        print(f"  Published URL:    {base_url}/c/{shifu_bid}")
+        print("    # 课程的公开学习地址：可以发送给学员使用。仅在课程已发布后生效。")
 
 
 # ── Login ──────────────────────────────────────────────────────────────────────
@@ -400,7 +393,7 @@ def cmd_show(args):
         print("Outline tree:")
         print_tree(tree if isinstance(tree, list) else [tree])
 
-        _print_verification_urls(base_url, shifu_bid, tree)
+        _print_verification_urls(base_url, shifu_bid, include_published=True)
 
 
 # ── History ────────────────────────────────────────────────────────────────────
@@ -764,8 +757,7 @@ def _import_flat(base_url, token, json_file, shifu_bid):
     print(f"\nDone! Shifu: {shifu_bid}")
     print(f"  Course: {shifu_info['title']}")
     print(f"  Chapters: {len(parents)}, Lessons: {len(children)}")
-    final_tree = api_safe(base_url, token, "get", f"/shifus/{shifu_bid}/outlines")
-    _print_verification_urls(base_url, shifu_bid, final_tree)
+    _print_verification_urls(base_url, shifu_bid)
     return shifu_bid
 
 
@@ -1052,8 +1044,7 @@ def cmd_publish(args):
     base_url, token = resolve_auth(args)
     api(base_url, token, "post", f"/shifus/{args.shifu_bid}/publish", json={})
     print(f"Published: {args.shifu_bid}")
-    tree = api_safe(base_url, token, "get", f"/shifus/{args.shifu_bid}/outlines")
-    _print_verification_urls(base_url, args.shifu_bid, tree)
+    _print_verification_urls(base_url, args.shifu_bid, include_published=True)
 
 
 def cmd_archive(args):

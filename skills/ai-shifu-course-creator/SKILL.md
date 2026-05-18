@@ -271,7 +271,12 @@ Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_cons
 
 ## Deployment
 
-Deploy optimized Teaching Prompts to the AI-Shifu platform as live courses.
+Ship optimized Teaching Prompts to the AI-Shifu platform as live courses. Two distinct actions are involved and should not be conflated:
+
+- **Deploy** — upload local course files to the platform via `build` + `import`. After this the course exists on the platform but is not yet visible to learners on a public URL.
+- **Publish** — run `publish` on the platform, which pushes the current draft to the public student-facing URL. Only after this step does `<base>/c/<bid>` (no `preview=true`) work.
+
+The standard end-to-end flow chains both: build → import (deploy) → publish.
 
 ### Prerequisites
 
@@ -297,18 +302,18 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 **From pipeline (Path A continuation):**
 1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), optional `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
-3. Run `import --new --json-file <dir>/shifu-import.json` to create the course.
-4. Run `publish <shifu_bid>` to make it live.
+3. **Deploy**: Run `import --new --json-file <dir>/shifu-import.json` to upload the course onto the platform.
+4. **Publish**: Run `publish <shifu_bid>` to push the course to its public student-facing URL.
 5. Verify via platform URL.
 
 **Standalone deployment (Path C):**
 1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`) and a `course-prompt.md`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`.
-2. Run `build`, `import`, `publish` as above.
+2. Run `build` → `import` (deploy) → `publish` as above.
 
 ### Verification
 
 After any deployment or management operation, verify the result:
-1. Show the user three verification URLs — admin console, course preview, and lesson preview. The script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block — copy those URLs verbatim and wrap each in a Markdown link per `references/report-template.md` (Deployment → Verification URLs, plus the top-level Formatting Rules). Never reconstruct URLs from a template by hand.
+1. Show the user the verification URLs the script printed — admin console, course preview, and (when the script also printed it) the published public URL. Copy URLs verbatim from the script output and render each as three lines: a Markdown link, a bare URL on the next line for copy-friendliness, and a third line with the fixed Chinese description (per `references/report-template.md` — Deployment → Verification URLs, plus the top-level Formatting Rules exception). Never reconstruct URLs from a template by hand. Lesson-level URLs are intentionally omitted to keep the report scannable; if the user later asks for a specific lesson link, use `show <shifu_bid>` to find the `outline_bid` and build it on demand.
 2. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's Teaching Prompt, variable collection, and interaction logic.
 
 ### Validation

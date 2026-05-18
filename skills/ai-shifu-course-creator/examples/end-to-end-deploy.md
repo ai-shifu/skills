@@ -64,11 +64,17 @@ python3 {skillDir}/scripts/shifu-cli.py publish abc123-def456
 python3 {skillDir}/scripts/shifu-cli.py show abc123-def456
 ```
 
-Platform URLs (these are copied verbatim from the `Verification URLs:` block printed by `publish` / `import` / `show` — do not reconstruct them):
+Platform URLs (copied verbatim from the `Verification URLs:` block printed by `publish` / `import` / `show` — do not reconstruct them; render each as Markdown link + bare URL + a Chinese-description line per `references/report-template.md`):
 
-- Admin: `https://app.ai-shifu.cn/shifu/abc123-def456`
-- Course preview: `https://app.ai-shifu.cn/c/abc123-def456?preview=true`
-- Lesson preview: `https://app.ai-shifu.cn/c/abc123-def456?preview=true&lessonid=<outline_bid>`
+- [我的课程 - 后台管理](https://app.ai-shifu.cn/shifu/abc123-def456)
+  https://app.ai-shifu.cn/shifu/abc123-def456
+  课程的管理后台地址：需要管理课程的内容、设置小节是否隐藏、是否付费等，在这里操作。
+- [我的课程 - 课程预览](https://app.ai-shifu.cn/c/abc123-def456?preview=true)
+  https://app.ai-shifu.cn/c/abc123-def456?preview=true
+  课程预览地址：仅课程作者本人可见，用于发布前后自测课程效果。
+- [我的课程 - 已发布课程](https://app.ai-shifu.cn/c/abc123-def456)
+  https://app.ai-shifu.cn/c/abc123-def456
+  课程的公开学习地址：可以发送给学员使用。仅在课程已发布后生效。
 
 ## Acceptance Notes
 
