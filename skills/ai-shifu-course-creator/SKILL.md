@@ -308,7 +308,7 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 ### Verification
 
 After any deployment or management operation, verify the result:
-1. Show the user three verification URLs — admin console, course preview, and lesson preview. The script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block — copy those URLs verbatim and wrap each in a Markdown link per `references/report-template.md` (Deployment → Verification URLs, plus the top-level Formatting Rules). Never reconstruct URLs from a template by hand.
+1. Show the user the verification URLs the script printed — admin console, course preview, and (when the script also printed it) the published public URL. Copy URLs verbatim from the script output and render each as three lines: a Markdown link, a bare URL on the next line for copy-friendliness, and a `↳` line with the fixed Chinese description (per `references/report-template.md` — Deployment → Verification URLs, plus the top-level Formatting Rules exception). Never reconstruct URLs from a template by hand. Lesson-level URLs are intentionally omitted to keep the report scannable; if the user later asks for a specific lesson link, use `show <shifu_bid>` to find the `outline_bid` and build it on demand.
 2. Use `show <shifu_bid>` to get the lesson `outline_bid`, then check each lesson's Teaching Prompt, variable collection, and interaction logic.
 
 ### Validation

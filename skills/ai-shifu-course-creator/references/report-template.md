@@ -6,10 +6,15 @@ Use the section matching the executed phase. Omit sections for phases not run.
 
 These rules apply to every report produced from this template, and to any other user-visible chat output that includes URLs.
 
-- **Links must be Markdown, never bare URLs.** Whenever you show a URL to the user (admin console, course preview, lesson preview, contact page, etc.), wrap it in Markdown link syntax `[descriptive text](URL)`. Never emit a bare `https://...` on its own line.
+- **Links must be Markdown, never bare URLs.** Whenever you show a URL to the user (admin console, course preview, contact page, etc.), wrap it in Markdown link syntax `[descriptive text](URL)`. Never emit a bare `https://...` on its own line.
 - **Why:** the AI-Shifu chat client only treats Markdown links as clickable / copy-on-tap. A bare URL renders as plain text — the user cannot click it and cannot copy it cleanly on mobile.
 - **Where this applies:** phase reports below, the opening introduction, the contact line, and any ad-hoc message that surfaces a URL to the user.
 - **Where this does NOT apply:** URLs inside Teaching Prompts (those follow MarkdownFlow image / link rules) and URLs shown inside fenced code blocks for reference.
+- **Exception — deployment / management Verification URLs.** When transcribing the `Verification URLs:` block printed by `shifu-cli.py` (`publish` / `import` / `create` / `show`), emit each URL as **three lines**:
+  1. A Markdown link — `[<course name> - <用途中文标签>](<URL>)`
+  2. The same URL again on its own line (intentionally bare), indented two spaces — so the user can long-press / select to copy it cleanly.
+  3. A `↳` line with the short Chinese description of what that URL is for (see Deployment Report → Verification URLs for the fixed phrasing).
+  The bare URL on line 2 is the only place a bare URL is allowed; it exists because copying out of a rendered Markdown link is unreliable on some clients.
 
 ## Segmentation Report
 
@@ -119,7 +124,33 @@ Validation:
 
 Verification URLs:
 
-The deployment script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block that lists the admin console, the course preview, and one preview URL per lesson. Copy those URLs **verbatim** from the script output and wrap each one in a Markdown link — never reconstruct them from a template, and never hand-edit query parameters. Use these descriptive labels:
-- Admin console → `[<course name> - 后台管理](<URL from script>)`
-- Course preview → `[<course name> - 课程预览](<URL from script>)`
-- Lesson preview → `[<lesson name>](<URL from script>)`
+The deployment script (`shifu-cli.py publish` / `import` / `create` / `show`) prints a `Verification URLs:` block. **What you must show the user is dictated by what the script printed — don't add lines that aren't there, don't drop lines that are.** Possible lines:
+
+- `Admin console:` — always present.
+- `Course preview:` — always present.
+- `Published URL:` — present only after `publish` and on `show` (i.e. when the course is in a published state). `create` / `import` deliberately omit it because the course is not yet published; the public address would 404.
+
+Lesson-level preview URLs are no longer printed at all (they used to clutter reports for multi-lesson courses). If the user later asks for a specific lesson link, run `show <shifu_bid>` to find the `outline_bid` and hand-build `<base>/c/<bid>?preview=true&lessonid=<outline_bid>` on demand — don't pre-emit them.
+
+Copy each printed URL **verbatim** (never reconstruct from a template, never hand-edit query parameters) and render it as three lines per the top-level Formatting Rules exception. Use these fixed labels and Chinese descriptions:
+
+- Admin console →
+  ```
+  - [<course name> - 后台管理](<URL from script>)
+    <URL from script>
+    ↳ 课程的管理后台地址。需要修改课程内容、调整 lesson、查看分析数据时，在这里操作。
+  ```
+- Course preview →
+  ```
+  - [<course name> - 课程预览](<URL from script>)
+    <URL from script>
+    ↳ 老师专用的预览地址。仅课程作者本人可见，用于发布前后自测课程效果。
+  ```
+- Published URL (only when the script printed it) →
+  ```
+  - [<course name> - 已发布课程](<URL from script>)
+    <URL from script>
+    ↳ 课程的对外公开地址，可以复制给学员使用。仅在课程已 publish 后生效。
+  ```
+
+When the script did **not** print `Published URL:` (typical for fresh `create` / `import` runs), show only the two existing blocks and add one line below them: `> 课程尚未发布，运行 \`publish <shifu_bid>\` 后会得到可对外分享的地址。`
