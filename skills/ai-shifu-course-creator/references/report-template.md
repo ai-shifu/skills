@@ -135,19 +135,19 @@ Lesson-level preview URLs are no longer printed at all (they used to clutter rep
 Copy each printed URL **verbatim** (never reconstruct from a template, never hand-edit query parameters) and render it as three lines per the top-level Formatting Rules exception. Use these fixed labels and Chinese descriptions:
 
 - Admin console →
-  ```
+  ```md
   - [<course name> - 后台管理](<URL from script>)
     <URL from script>
     课程的管理后台地址：需要管理课程的内容、设置小节是否隐藏、是否付费等，在这里操作。
   ```
 - Course preview →
-  ```
+  ```md
   - [<course name> - 课程预览](<URL from script>)
     <URL from script>
     课程预览地址：仅课程作者本人可见，用于发布前后自测课程效果。
   ```
 - Published URL (only when the script printed it) →
-  ```
+  ```md
   - [<course name> - 已发布课程](<URL from script>)
     <URL from script>
     课程的公开学习地址：可以发送给学员使用。仅在课程已发布后生效。
