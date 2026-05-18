@@ -271,12 +271,12 @@ Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_cons
 
 ## Deployment
 
-Ship optimized Teaching Prompts to the AI-Shifu platform as live courses. Two distinct actions are involved — use the right Chinese term when talking to the user:
+Ship optimized Teaching Prompts to the AI-Shifu platform as live courses. Two distinct actions are involved and should not be conflated:
 
-- **部署 (Deploy)** — upload local course files to the platform via `build` + `import`. After this the course exists on the platform but is not yet visible to learners on a public URL.
-- **发布 (Publish)** — run `publish` on the platform, which pushes the current draft to the public student-facing URL. Only after this step does `<base>/c/<bid>` (no `preview=true`) work.
+- **Deploy** — upload local course files to the platform via `build` + `import`. After this the course exists on the platform but is not yet visible to learners on a public URL.
+- **Publish** — run `publish` on the platform, which pushes the current draft to the public student-facing URL. Only after this step does `<base>/c/<bid>` (no `preview=true`) work.
 
-The standard end-to-end flow chains both: build → import (部署) → publish (发布).
+The standard end-to-end flow chains both: build → import (deploy) → publish.
 
 ### Prerequisites
 
@@ -302,13 +302,13 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 **From pipeline (Path A continuation):**
 1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), optional `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
-3. **部署**: Run `import --new --json-file <dir>/shifu-import.json` to upload the course onto the platform.
-4. **发布**: Run `publish <shifu_bid>` to push the course to its public student-facing URL.
+3. **Deploy**: Run `import --new --json-file <dir>/shifu-import.json` to upload the course onto the platform.
+4. **Publish**: Run `publish <shifu_bid>` to push the course to its public student-facing URL.
 5. Verify via platform URL.
 
 **Standalone deployment (Path C):**
 1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`) and a `course-prompt.md`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`.
-2. Run `build` → `import` (部署) → `publish` (发布) as above.
+2. Run `build` → `import` (deploy) → `publish` as above.
 
 ### Verification
 
