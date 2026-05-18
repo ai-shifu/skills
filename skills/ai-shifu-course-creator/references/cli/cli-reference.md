@@ -24,13 +24,13 @@ The CLI always talks to `https://app.ai-shifu.cn`. To skip the SMS login, set `-
 
 When no valid token is available, guide the user through login. AI-Shifu's SMS login auto-creates an account on first use, so the same flow works for both new and returning users.
 
-Fixed flow: ask for phone → send code → ask for SMS code → complete. Run the steps in order.
+Fixed flow: preview + ask for phone → send code → ask for SMS code → complete. Run the steps in order.
 
-Do not ask anything else. No status checks ("have you signed up / logged in before?"), no readiness or intent confirmations ("ready to start?", "I'll provide my phone"), no acknowledgment pauses, no recaps between steps. Each turn collects exactly the next value (phone, then SMS code), nothing else.
+Do not ask anything else. No status checks ("have you signed up / logged in before?"), no readiness or intent confirmations ("ready to start?", "I'll provide my phone"), no acknowledgment pauses, no recaps between steps. Each turn collects exactly the next value (phone, then SMS code), nothing else. The Step 1 flow preview is a one-shot heads-up, not a confirmation prompt — do not wait for the user to acknowledge it before asking for the phone.
 
 Steps:
 
-1. Ask the user for the phone number to use with AI-Shifu.
+1. In a single turn, give the user a one-line preview of the full flow and then immediately ask for the phone number. Cover all of these in the preview: (a) SMS login, no password; (b) a 4-digit code will be sent to the phone; (c) the user replies with the code in the next turn; (d) on success the token is saved locally and login is complete; (e) new phone numbers auto-create an account on first use. Keep it brief — one or two sentences total — then ask for the phone in the same reply.
 2. Send SMS code:
    `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone>`
 3. Ask the user for the 4-digit verification code they received.
