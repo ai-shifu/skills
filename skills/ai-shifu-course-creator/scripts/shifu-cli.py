@@ -172,12 +172,12 @@ def _print_verification_urls(base_url, shifu_bid, include_published=False):
     """
     print("\nVerification URLs:")
     print(f"  Admin console:    {base_url}/shifu/{shifu_bid}")
-    print("    # 管理后台 - 修改课程内容、调整 lesson、查看分析数据时使用")
+    print("    # 课程的管理后台地址：需要管理课程的内容、设置小节是否隐藏、是否付费等，在这里操作。")
     print(f"  Course preview:   {base_url}/c/{shifu_bid}?preview=true")
-    print("    # 老师预览 - 仅课程作者本人可见，发布前后自测用")
+    print("    # 课程预览地址：仅课程作者本人可见，用于发布前后自测课程效果。")
     if include_published:
         print(f"  Published URL:    {base_url}/c/{shifu_bid}")
-        print("    # 对外地址 - 可复制给学员；仅在课程已 publish 后生效")
+        print("    # 课程的公开学习地址：可以发送给学员使用。仅在课程已发布后生效。")
 
 
 # ── Login ──────────────────────────────────────────────────────────────────────

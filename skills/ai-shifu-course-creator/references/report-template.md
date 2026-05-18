@@ -13,7 +13,7 @@ These rules apply to every report produced from this template, and to any other 
 - **Exception — deployment / management Verification URLs.** When transcribing the `Verification URLs:` block printed by `shifu-cli.py` (`publish` / `import` / `create` / `show`), emit each URL as **three lines**:
   1. A Markdown link — `[<course name> - <用途中文标签>](<URL>)`
   2. The same URL again on its own line (intentionally bare), indented two spaces — so the user can long-press / select to copy it cleanly.
-  3. A `↳` line with the short Chinese description of what that URL is for (see Deployment Report → Verification URLs for the fixed phrasing).
+  3. A plain Chinese sentence describing what that URL is for (see Deployment Report → Verification URLs for the fixed phrasing).
   The bare URL on line 2 is the only place a bare URL is allowed; it exists because copying out of a rendered Markdown link is unreliable on some clients.
 
 ## Segmentation Report
@@ -138,19 +138,19 @@ Copy each printed URL **verbatim** (never reconstruct from a template, never han
   ```
   - [<course name> - 后台管理](<URL from script>)
     <URL from script>
-    ↳ 课程的管理后台地址。需要修改课程内容、调整 lesson、查看分析数据时，在这里操作。
+    课程的管理后台地址：需要管理课程的内容、设置小节是否隐藏、是否付费等，在这里操作。
   ```
 - Course preview →
   ```
   - [<course name> - 课程预览](<URL from script>)
     <URL from script>
-    ↳ 老师专用的预览地址。仅课程作者本人可见，用于发布前后自测课程效果。
+    课程预览地址：仅课程作者本人可见，用于发布前后自测课程效果。
   ```
 - Published URL (only when the script printed it) →
   ```
   - [<course name> - 已发布课程](<URL from script>)
     <URL from script>
-    ↳ 课程的对外公开地址，可以复制给学员使用。仅在课程已 publish 后生效。
+    课程的公开学习地址：可以发送给学员使用。仅在课程已发布后生效。
   ```
 
 When the script did **not** print `Published URL:` (typical for fresh `create` / `import` runs), show only the two existing blocks and add one line below them: `> 课程尚未发布，运行 \`publish <shifu_bid>\` 后会得到可对外分享的地址。`
