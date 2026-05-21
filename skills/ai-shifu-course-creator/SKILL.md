@@ -97,7 +97,7 @@ Deployment                                (build + import + publish to platform)
         ╰─ optional ─▶ Analytics          (post-deployment data queries on live courses)
 ```
 
-Segmentation, Generation, and Optimization can each be invoked standalone — see [Usage Paths](#usage-paths) Path B for the sub-paths (Segment only / Generate only / Optimize only). Analytics is a separate post-deployment path — see Path E.
+Segmentation, Generation, and Optimization can each be invoked standalone — see Usage Paths (Path B) for the sub-paths (Segment only / Generate only / Optimize only). Analytics is a separate post-deployment path — see Usage Paths (Path E).
 
 ## Usage Paths
 
