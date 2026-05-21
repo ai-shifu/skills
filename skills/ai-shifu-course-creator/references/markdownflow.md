@@ -10,6 +10,7 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 - No spaces in variable names
 - Undefined variables resolve to `UNKNOWN`
 - Variables must be collected (via an interaction line) before being referenced in learner-facing text
+- System variables are the exception to the collection rule. AI-Shifu pre-populates `sys_user_nickname`, `sys_user_style`, and `sys_user_background`; generated courses may reference these variables directly and must not collect them with interaction lines.
 - See [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy) for collection pacing, downstream-effect, and semantic-duplication rules
 - See [data-contracts.md#variable-table](data-contracts.md#variable-table) for the `global_variable_table` schema
 
@@ -29,6 +30,7 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 - Do not place learner-facing question text after `%{{var}}`; it will become part of the interaction content.
 - For input interactions, include both the full question before the interaction line and a shorter placeholder after `...`.
 - If the pre-interaction text enumerates or describes the choices, the option labels in the `?[]` line must match those choices exactly — same set, same order, same wording. The narrative options and the interaction options must not drift apart.
+- Do not create interaction lines for system variables: `?[%{{sys_user_nickname}} ...]`, `?[%{{sys_user_style}} ...]`, and `?[%{{sys_user_background}} ...]` are forbidden in generated courses.
 
 Correct:
 

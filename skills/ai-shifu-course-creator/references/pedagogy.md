@@ -147,6 +147,22 @@ These are the *teaching* rules around variables — when to collect, how often, 
 - Prevent semantic duplicates even when variable names differ.
 - Spread global variable collection across lessons.
 
+### System Variables
+
+AI-Shifu provides three system-level learner variables before the course runs. Generated courses may assume these variables already have values:
+
+- `sys_user_nickname` — the learner's preferred form of address.
+- `sys_user_style` — the learner's preferred teaching style.
+- `sys_user_background` — the learner's identity and background.
+
+Do not actively collect these variables in generated courses. Do not ask the learner to provide their nickname, teaching style, or background, and do not generate interaction lines such as `?[%{{sys_user_nickname}} ...]`, `?[%{{sys_user_style}} ...]`, or `?[%{{sys_user_background}} ...]`.
+
+Use the system variables only where they create visible personalization:
+
+- Use `{{sys_user_style}}` in the Course Prompt's writing-style rules to control the course-wide teaching voice.
+- Use `{{sys_user_background}}` in the Course Prompt's learner profile and in Teaching Prompts when choosing examples, analogies, scenarios, explanation depth, and practice framing.
+- Use `{{sys_user_nickname}}` only when a direct address is natural, such as a greeting or acknowledgement. Avoid mechanically inserting the learner's name into every section.
+
 ## Interaction Design
 
 These are the *teaching* rules around interactions. For interaction *syntax* see [markdownflow.md#interactions](markdownflow.md#interactions).

@@ -167,7 +167,7 @@ Segment list per `references/data-contracts.md#segment-schema` (each segment car
 
 All gates must pass before Orchestration declares lessons complete:
 
-- **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `references/markdownflow.md#preservation`; no unresolved or uncollected variable references; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `references/markdownflow.md#deterministic-blocks`.
+- **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `references/markdownflow.md#preservation`; no unresolved or uncollected variable references except AI-Shifu system variables; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `references/markdownflow.md#deterministic-blocks`.
 - **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, minimum teaching loop, at least one deepening interaction, max five interactions per lesson, variable-collection pacing, viewpoint branching, and visual-text pairing — all per `references/pedagogy.md#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`.
 
 Recompute lessons that fail any gate; do not partially-pass.

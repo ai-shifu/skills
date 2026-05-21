@@ -171,7 +171,7 @@ For segmentation rules and methodology see [pedagogy.md#segmentation-methodology
 `global_variable_table` is an array. Each item:
 
 - `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`.
-- `collected_in` (string, required) — `lesson_id` where the variable is first collected.
+- `collected_in` (string, required) — `lesson_id` where the variable is first collected. For AI-Shifu system variables `sys_user_nickname`, `sys_user_style`, and `sys_user_background`, use `system` because these values are pre-populated by the platform and must not be collected by generated courses.
 - `used_in` (array of lesson ids, required) — every lesson that references the variable.
 - `effect_scope` (string enum: `local|cross_lesson`, required).
 
@@ -184,7 +184,7 @@ Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 - `lesson_id` (string, required) — stable, deterministic identifier.
 - `lesson_title` (string, required) — concise learner-facing title.
 - `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content (written in MarkdownFlow); instructional/directive language only.
-- `used_variables` (array of strings, required) — every variable referenced or collected in this lesson; cross-check with [Variable Table](#variable-table).
+- `used_variables` (array of strings, required) — every variable referenced or collected in this lesson, including any referenced system variables; cross-check with [Variable Table](#variable-table).
 - `depends_on_lessons` (array of lesson ids, required) — explicit list; empty list if none.
 
 ### Minimal Example
