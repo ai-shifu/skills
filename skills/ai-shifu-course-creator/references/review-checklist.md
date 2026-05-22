@@ -38,7 +38,8 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 ## Variable Safety
 
-- Variables are collected before use.
+- Variables are collected before use, except `sys_user_nickname`, `sys_user_style`, and `sys_user_background`, which are AI-Shifu system variables.
+- Generated courses do not ask the learner to provide `sys_user_nickname`, `sys_user_style`, or `sys_user_background`, and do not create `?[%{{sys_user_*}} ...]` interaction lines.
 - No duplicate semantic collection unless comparison intent is explicit.
 - No unresolved placeholders in learner-facing content.
 - No more than three consecutive variable collections before feedback.
