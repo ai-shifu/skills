@@ -115,6 +115,92 @@ Line 2
 
 Use deterministic blocks only for truly fixed content (legally or operationally locked statements, fixed images). Do not lock entire lessons in fixed syntax — that defeats the model-guiding purpose of MarkdownFlow.
 
+## Images
+
+Images in Teaching Prompts have two valid forms. The form is chosen by intent, not by aesthetics:
+
+- **3.1 — fixed display** (the image should appear exactly as authored, no layout customization needed): use a standard markdown image inside a **single-line deterministic block**.
+- **3.2 — HTML view** (the image needs width control, alignment, a caption, side-by-side layout, …): write a **natural-language instruction** to the runtime model. Do **not** wrap HTML in deterministic blocks — that defeats the runtime's ability to adapt layout.
+
+In both forms the URL **must** come from the platform (`https://resource.ai-shifu.cn/<uuid32>`). Obtain it by running `shifu-cli.py upload-image --file <local-path>` (or `--url <remote-url>`); never invent URLs and never reuse external image links directly.
+
+### 3.1 Fixed image (standard markdown + deterministic)
+
+```markdown
+===![short description of what the image conveys](https://resource.ai-shifu.cn/abcd…)===
+```
+
+- The `===…===` wrapper is required. Without it the runtime model is free to rewrite, omit, or paraphrase the image (cf. *Preservation → Immutable Assets* below).
+- The alt text must describe **what information the image carries** (e.g. `gradient descent three-step diagram`), not `image1` / `figure`. The alt is also the fallback when the image fails to load.
+- Follow the image with a paragraph of explanatory text. The text must not merely restate the image; it must add context, causality, examples, or usage. Assume the reader cannot see the image. (See `course-prompt.md` *Rule 11 — Image-Text Relationship*.)
+
+### 3.2 HTML view image (instruction-style, not fixed output)
+
+**Key idea**: MarkdownFlow is a set of natural-language instructions to a runtime model — it is not a template. When you need HTML layout for an image, write an instruction that *tells the runtime model* what image to insert, what it shows, and how to lay it out. The runtime model produces the actual HTML each time it generates. Do **not** put the HTML inside `===…===` / `!=== … !===` — deterministic blocks mean "output verbatim" and strip the runtime's ability to adapt.
+
+Three things must be enforced **through wording**, not through deterministic blocks:
+
+- The image URL **must be preserved exactly as written** (no shortening, no rewriting, no invention).
+- The alt / image description **must not be dropped**.
+- The image **must appear** at this position; the runtime cannot decide to omit it for length or flow.
+
+Each sample below is an instruction the LLM can drop directly into a Teaching Prompt. The runtime model reads it and emits the appropriate HTML.
+
+**Width control** — image takes only half the column:
+
+```markdown
+在此处插入一张图片(以 HTML <img> 方式嵌入)。
+- URL(必须原样保留):https://resource.ai-shifu.cn/aaaa
+- 图片内容:梯度下降三步示意
+- 展示方式:宽度约占容器一半(max-width 50% 左右),保持原始宽高比
+```
+
+**Alignment** — center / left / float:
+
+```markdown
+在此处插入一张图片(以 HTML 方式居中显示)。
+- URL(必须原样保留):https://resource.ai-shifu.cn/bbbb
+- 图片内容:Transformer 注意力计算流程
+- 展示方式:水平居中,宽度不超过容器 70%
+```
+
+**figure + figcaption** — formal caption under the image:
+
+```markdown
+在此处插入一张带图注的图片,使用 HTML <figure>/<figcaption> 结构。
+- URL(必须原样保留):https://resource.ai-shifu.cn/cccc
+- 图片内容:Transformer 单层结构
+- 图注文字(必须原样输出,不要改写):图 3. Transformer 单层结构
+- 展示方式:居中,图注样式淡灰色小字
+```
+
+The locked caption is enforced by the wording `必须原样输出,不要改写`. **Do not** add a separate `===图 3. …===` deterministic block to lock the caption — instruction-style HTML images keep every locked element inside the instruction itself.
+
+**Side-by-side multi-image** — comparison / before-after:
+
+```markdown
+在此处并排展示两张图片用于左右对照,使用 HTML(flex 或 table 任选)。
+- 左图 URL(必须原样保留):https://resource.ai-shifu.cn/dddd,内容:处理前
+- 右图 URL(必须原样保留):https://resource.ai-shifu.cn/eeee,内容:处理后
+- 展示方式:左右并排,每张约占容器宽度 48%,中间留出小间距
+```
+
+**General rules when writing an HTML-view image instruction**:
+
+- Open with `在此处插入一张图片(以 HTML …方式)` so the runtime recognises this paragraph as an image directive, not narrative text.
+- Every URL line must carry the phrase `(必须原样保留)` — this is the hard-lock signal to the runtime.
+- Give an `图片内容: …` line so the runtime knows what the image depicts (it can derive a contextual alt from this).
+- Describe layout in natural language, not CSS pixel values. Say `占一半宽度` / `略小于容器`, not `width: 432px`. Different viewports want different numbers; let the runtime pick.
+- For multi-image layouts, list each image's URL and content as separate bullets — the runtime preserves order more reliably than from a single inline sentence.
+
+### 3.3 Which form to use
+
+| Intent | Form |
+|---|---|
+| Image displays as-is, default size, no layout customization | **3.1** `===![alt](url)===` |
+| Specific width / alignment / caption / side-by-side layout | **3.2** instruction-style HTML directive |
+| Locked content + layout customization | **3.2** — express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`); do **not** mix in deterministic blocks |
+
 ## Preservation
 
 ### Immutable Assets
@@ -149,3 +235,10 @@ Use deterministic blocks only for truly fixed content. Do not lock entire lesson
 - `if {{var}} == "A": …` / `{{#if var}}…{{/if}}` / `switch ({{var}}) { … }` — program-style branching syntax around `{{var}}`. MarkdownFlow has no conditional parser; express branches as plain instruction sentences (see [Branching on User Input](#branching-on-user-input)).
 - Wrapping an entire lesson body in `=== … ===` or `!=== … !===`.
 - Referencing `{{var}}` in learner-facing text before any `?[%{{var}} …]` collects it.
+- Bare `![alt](url)` for an image that should display as-is — the runtime model is free to rewrite or drop it. Wrap in `===…===` (form 3.1).
+- Putting an HTML `<img>` / `<figure>` / `<div>` block inside `!=== … !===` — defeats the layout adaptability that HTML-view images exist for. Switch to the instruction-style form (3.2).
+- Adding a separate `===caption text===` block inside or beside a 3.2 instruction to lock the caption — instruction-style images lock content through wording (`必须原样输出 / 必须原样保留 / 不要改写`), not by mixing in deterministic blocks.
+- Hardcoding CSS pixel values in a 3.2 instruction (`width: 432px`) — different viewports need different sizes. Describe layout in natural language (`占一半宽度`, `略小于容器`).
+- Forgetting the `(必须原样保留)` phrase on a URL line in a 3.2 instruction — the runtime may then shorten, paraphrase, or invent the URL.
+- Alt text or `图片内容` that just says `图片` / `示意图` — these carry no information; describe what the image *conveys*.
+- Using a URL that is not on `resource.ai-shifu.cn` — every image must be uploaded via `shifu-cli.py upload-image` first.

@@ -178,6 +178,8 @@ Must state:
 
 Rules 10 and 11 share the same `# Drawing` section in the actual template; treat them as one block when authoring.
 
+For *runtime image syntax* — how to actually embed an author-provided image URL into MarkdownFlow (fixed-display via `===![alt](url)===` vs HTML-view instruction-style directives) — see `markdownflow.md#images`. Rules 10/11 govern *generated drawings* (when the AI engine produces visuals at runtime); the syntax in `markdownflow.md#images` governs *pre-uploaded image assets* (when the author supplies a file or URL via `shifu-cli.py upload-image`).
+
 ### Rule 12 — Translation and Terminology Rules
 
 Maps to: `# Translation Rules` (conditional).

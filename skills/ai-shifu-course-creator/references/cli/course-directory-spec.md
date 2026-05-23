@@ -12,7 +12,50 @@
     lesson-01.md       # Teaching Prompt (MarkdownFlow)
     lesson-02.md
     ...
+  assets/              # Image assets (optional)
+    image-manifest.json  # Auto-maintained by upload-image: local → remote → alt
+    raw/                 # Recommended location for the author's original images
 ```
+
+## assets/
+
+The `assets/` directory is created and maintained by `shifu-cli.py upload-image --course-dir <dir>`. It exists to give the course a stable record of which images have been uploaded, what they convey, and what their `resource.ai-shifu.cn` URLs are.
+
+`image-manifest.json` schema:
+
+```json
+{
+  "images": [
+    {
+      "local": "assets/raw/gradient-descent.heic",
+      "remote": "https://resource.ai-shifu.cn/abcd…",
+      "alt": "梯度下降三步示意",
+      "uploaded_at": "2026-05-23T08:42:31Z",
+      "bytes": 612345,
+      "original_bytes": 4521000,
+      "mime": "image/jpeg",
+      "filename": "gradient-descent-1a2b3c4d.jpg"
+    },
+    {
+      "source_url": "https://example.com/diagram.png",
+      "remote": "https://resource.ai-shifu.cn/efgh…",
+      "alt": "Transformer 注意力计算流程",
+      "uploaded_at": "2026-05-23T08:45:02Z"
+    }
+  ]
+}
+```
+
+Field reference:
+
+- `local` (file uploads): path relative to `<course-dir>` when possible, otherwise absolute. Acts as the dedup key — uploading the same path again updates the entry rather than appending.
+- `source_url` (URL uploads): the original remote URL provided to `--url`. Acts as the dedup key for URL-based uploads.
+- `remote`: the platform OSS URL produced by upload. This is the value that should appear in Teaching Prompts.
+- `alt`: description supplied via `--alt`. Not auto-rendered into MarkdownFlow — the authoring LLM still writes a contextual alt.
+- `uploaded_at`: UTC ISO 8601 timestamp.
+- `bytes` / `original_bytes` / `mime` / `filename` (file uploads only): book-keeping for the preprocessed payload that was actually sent.
+
+`assets/raw/` is a recommendation, not enforced: store originals there so the manifest's `local` paths are stable across machines. The `build` command ignores `assets/` entirely.
 
 ## Lesson Files
 
