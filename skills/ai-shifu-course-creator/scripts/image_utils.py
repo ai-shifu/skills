@@ -74,12 +74,12 @@ def prepare_image(src_path: Path) -> PreparedImage:
 
     original_bytes = src_path.stat().st_size
 
-    if src_path.suffix.lower() in HEIC_EXTS and not _register_heif_if_available():
+    heif_available = _register_heif_if_available()
+    if src_path.suffix.lower() in HEIC_EXTS and not heif_available:
         raise ValueError(
             f"{src_path.suffix} requires pillow-heif. "
             "Install with: pip install -r scripts/requirements.txt"
         )
-    _register_heif_if_available()
 
     try:
         with Image.open(src_path) as im:
@@ -88,7 +88,7 @@ def prepare_image(src_path: Path) -> PreparedImage:
             has_alpha = _has_alpha(im)
             im = _resize_if_needed(im, MAX_SIDE)
             if has_alpha:
-                data, ext, mime = _encode_png(im)
+                data, ext, mime = _encode_png(im, MAX_BYTES)
             else:
                 data, ext, mime = _encode_jpeg_under_limit(im, MAX_BYTES)
     except UnidentifiedImageError as e:
@@ -132,50 +132,59 @@ def _resize_if_needed(im: Image.Image, max_side: int) -> Image.Image:
     return im.resize(new_size, Image.LANCZOS)
 
 
+_DOWNSCALE_ROUNDS = 6
+
+
 def _encode_jpeg_under_limit(
     im: Image.Image, max_bytes: int
 ) -> tuple[bytes, str, str]:
     if im.mode != "RGB":
         im = im.convert("RGB")
-    last: bytes | None = None
     for q in JPEG_QUALITY_LADDER:
         buf = io.BytesIO()
         im.save(buf, format="JPEG", quality=q, optimize=True, progressive=True)
         data = buf.getvalue()
-        last = data
         if len(data) <= max_bytes:
             return data, ".jpg", "image/jpeg"
 
-    downscaled = _resize_if_needed(im, max(im.size) * 3 // 4)
-    if downscaled is not im:
+    work = im
+    for _ in range(_DOWNSCALE_ROUNDS):
+        next_im = _resize_if_needed(work, max(work.size) * 3 // 4)
+        if next_im is work:
+            break
+        work = next_im
         buf = io.BytesIO()
-        downscaled.save(
+        work.save(
             buf, format="JPEG", quality=JPEG_QUALITY_LADDER[-1],
             optimize=True, progressive=True,
         )
         data = buf.getvalue()
         if len(data) <= max_bytes:
             return data, ".jpg", "image/jpeg"
-        last = data
 
-    assert last is not None
-    return last, ".jpg", "image/jpeg"
+    raise ValueError(
+        f"image cannot be compressed under {max_bytes} bytes without excessive loss"
+    )
 
 
-def _encode_png(im: Image.Image) -> tuple[bytes, str, str]:
+def _encode_png(im: Image.Image, max_bytes: int) -> tuple[bytes, str, str]:
     if im.mode not in ("RGBA", "LA", "P"):
         im = im.convert("RGBA")
-    buf = io.BytesIO()
-    im.save(buf, format="PNG", optimize=True)
-    data = buf.getvalue()
+    work = im
+    for _ in range(_DOWNSCALE_ROUNDS + 1):
+        buf = io.BytesIO()
+        work.save(buf, format="PNG", optimize=True)
+        data = buf.getvalue()
+        if len(data) <= max_bytes:
+            return data, ".png", "image/png"
+        next_im = _resize_if_needed(work, max(work.size) * 3 // 4)
+        if next_im is work:
+            break
+        work = next_im
 
-    if len(data) > MAX_BYTES:
-        downscaled = _resize_if_needed(im, max(im.size) * 3 // 4)
-        if downscaled is not im:
-            buf = io.BytesIO()
-            downscaled.save(buf, format="PNG", optimize=True)
-            data = buf.getvalue()
-    return data, ".png", "image/png"
+    raise ValueError(
+        f"PNG cannot be compressed under {max_bytes} bytes without excessive loss"
+    )
 
 
 def _safe_stem(stem: str) -> str:

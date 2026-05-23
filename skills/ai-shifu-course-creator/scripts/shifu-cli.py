@@ -102,7 +102,12 @@ def api_upload(base_url, token, filename, file_bytes, mime, resource_id=None):
         print(f"API error: POST /upfile (HTTP {resp.status_code})")
         print(f"  Response: {resp.text[:500]}")
         sys.exit(1)
-    payload = resp.json()
+    try:
+        payload = resp.json()
+    except json.JSONDecodeError:
+        print("API error: POST /upfile returned non-JSON response")
+        print(f"  Response: {resp.text[:500]}")
+        sys.exit(1)
     if payload.get("code") != 0:
         print("API error: POST /upfile")
         print(f"  Response: {json.dumps(payload, ensure_ascii=False)}")
@@ -1381,10 +1386,8 @@ def cmd_upload_image(args):
     """
     base_url, token = resolve_auth(args)
 
-    if bool(args.file) == bool(args.url):
-        print("Error: provide exactly one of --file or --url", file=sys.stderr)
-        sys.exit(1)
-
+    # --file and --url are enforced as a required mutually exclusive group by
+    # the argparse subparser, so we don't need to revalidate that here.
     course_dir = Path(args.course_dir).resolve() if args.course_dir else None
     alt = args.alt or ""
 
@@ -1422,7 +1425,13 @@ def cmd_upload_image(args):
             try:
                 local_rel = str(src_path.relative_to(course_dir))
             except ValueError:
-                local_rel = str(src_path)
+                local_rel = src_path.name
+                print(
+                    f"warning: {src_path} is outside --course-dir; "
+                    f"recording only the filename ({local_rel}) in manifest "
+                    "(cross-machine dedup may be imperfect)",
+                    file=sys.stderr,
+                )
             _update_manifest(course_dir, {
                 "local": local_rel,
                 "remote": remote_url,
