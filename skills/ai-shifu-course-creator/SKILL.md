@@ -70,7 +70,9 @@ These are the five red-line rules every Teaching Prompt and Course Prompt must s
 
 3. **Mandatory anchoring + downstream effect.** After every interaction, restate the learner's selection as an instruction (`Restate the learner's current choice as {{var}}.`) and use `{{var}}` to drive a visible downstream effect (branching explanation, examples, difficulty, feedback). See `references/pedagogy.md#interaction-design`.
 
-4. **Visuals: describe, do not inline source markup.** Use natural-language image instructions ("Show an image that …") paired with text explanation. Do not inline SVG/HTML/Mermaid/PlantUML/Graphviz markup unless the user explicitly asks for that format. See `references/pedagogy.md#visual-text-coordination`.
+4. **Visuals: two regimes — "no asset" vs "asset uploaded".**
+   - When the author has **not** provided any image asset (only the topic / a description): continue to use natural-language image instructions ("Show an image that …") paired with text explanation. Do not inline SVG/HTML/Mermaid/PlantUML/Graphviz markup. See `references/pedagogy.md#visual-text-coordination`.
+   - When the author **has** provided image assets (local files or remote URLs): you must first upload them via `shifu-cli.py upload-image` to obtain `resource.ai-shifu.cn` URLs, then embed each image into the Teaching Prompt using one of the two forms defined in `references/markdownflow.md#images` (3.1 deterministic-wrapped standard markdown, or 3.2 instruction-style HTML view). See the sub-section **Working with Author-Provided Images** below for the full workflow including the path you must take when you cannot actually see the image contents.
 
 5. **Output language must be resolved before any prompt content.** Run Language Resolution per `references/data-contracts.md#language-resolution` before producing Teaching Prompt or Course Prompt content. The user's invocation language counts as `prompt_language_detection` (priority 4) and must be used when no higher-priority directive exists. Examples in this skill and in `references/` are written in English for canonical illustration only — do NOT let example language override the resolved output language. If the user invokes in Chinese, all interactions, option labels, downstream text, and the Course Prompt itself must be in Chinese.
 
@@ -167,7 +169,7 @@ Segment list per `references/data-contracts.md#segment-schema` (each segment car
 
 All gates must pass before Orchestration declares lessons complete:
 
-- **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `references/markdownflow.md#preservation`; no unresolved or uncollected variable references; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `references/markdownflow.md#deterministic-blocks`.
+- **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `references/markdownflow.md#preservation`; no unresolved or uncollected variable references; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `references/markdownflow.md#deterministic-blocks`; every image URL must be on the `resource.ai-shifu.cn` domain — fixed images wrapped in a single-line deterministic block, HTML-view images expressed as instruction-style directives with the `(必须原样保留)` URL phrase per `references/markdownflow.md#images`.
 - **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, minimum teaching loop, at least one deepening interaction, max five interactions per lesson, variable-collection pacing, viewpoint branching, and visual-text pairing — all per `references/pedagogy.md#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`.
 
 Recompute lessons that fail any gate; do not partially-pass.
@@ -229,6 +231,38 @@ Per-lesson schema in `references/data-contracts.md#lesson-schema`.
 - Each `teaching_prompt` is valid runnable MarkdownFlow.
 - Per-lesson schema populated per `references/data-contracts.md#lesson-schema`.
 - Pedagogical and syntax constraints pass per `references/pedagogy.md` and `references/markdownflow.md`.
+
+### Working with Author-Provided Images
+
+When the author supplies image assets — local files (any format incl. heic/heif), or remote URLs — three steps apply *within* Generation (and any later phase that touches the same lessons):
+
+**1. Understand each image before placing it.**
+
+You cannot decide which lesson a picture belongs to, or what alt text to write, without knowing what the image actually shows. Two regimes:
+
+- **You can see the image** (the user attached it in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position by `references/pedagogy.md#visual-text-coordination` and `references/course-prompt.md` Rule 10/11.
+- **You cannot see the image** (the user only gave you a file path / URL, or your model is text-only): **stop and ask the user**. Do not guess from the filename. Offer two options: (a) the user provides a one-sentence description per image (you will pass it as `--alt`), or (b) the user renames each file to a semantically meaningful name so you can infer the topic. Proceed only after one of these is in place.
+
+**2. Upload via `shifu-cli.py upload-image` and capture the URL.**
+
+```bash
+# Local file (preprocessed: max side 2048 px, ≤2 MB, JPEG q=85 / PNG for alpha):
+python3 {skillDir}/scripts/shifu-cli.py upload-image \
+  --file /path/to/photo.heic --course-dir ./my-course/ --alt "梯度下降三步示意"
+
+# Remote URL (backend downloads + re-hosts):
+python3 {skillDir}/scripts/shifu-cli.py upload-image \
+  --url https://example.com/diagram.png --course-dir ./my-course/ --alt "Transformer 单层结构"
+```
+
+The command prints one line — the `https://resource.ai-shifu.cn/<uuid32>` URL — to stdout; the manifest at `<course-dir>/assets/image-manifest.json` is updated automatically. See `references/cli/cli-reference.md` for full flag reference.
+
+**3. Embed in MarkdownFlow per `references/markdownflow.md#images`.**
+
+- Default to **3.1** (deterministic-wrapped standard markdown) — the image just displays as-is.
+- Use **3.2** (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout. Express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`); never mix deterministic blocks into the instruction.
+
+Either way, the explanatory paragraph immediately after the image is mandatory (cf. `course-prompt.md` Rule 11).
 
 ---
 

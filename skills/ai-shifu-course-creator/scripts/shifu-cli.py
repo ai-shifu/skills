@@ -83,6 +83,33 @@ def api_safe(base_url, token, method, path, **kwargs):
         return None
 
 
+def api_upload(base_url, token, filename, file_bytes, mime, resource_id=None):
+    """POST multipart to /api/shifu/upfile. Exits on transport / business error.
+
+    Kept separate from api() because requests must control the multipart
+    Content-Type (with boundary) itself — api() pins application/json.
+    """
+    url = f"{base_url}/api/shifu/upfile"
+    headers = {"Cookie": f"token={token}"}
+    files = {"file": (filename, file_bytes, mime)}
+    data = {"resource_id": resource_id} if resource_id else None
+    try:
+        resp = requests.post(url, headers=headers, files=files, data=data, timeout=60)
+    except requests.RequestException as e:
+        print(f"API transport error: POST /upfile ({e})")
+        sys.exit(1)
+    if not resp.ok:
+        print(f"API error: POST /upfile (HTTP {resp.status_code})")
+        print(f"  Response: {resp.text[:500]}")
+        sys.exit(1)
+    payload = resp.json()
+    if payload.get("code") != 0:
+        print("API error: POST /upfile")
+        print(f"  Response: {json.dumps(payload, ensure_ascii=False)}")
+        sys.exit(1)
+    return payload.get("data")
+
+
 def _post_creator_analytics(base_url, token, path, body, session=None):
     """POST to a /api/creator-analytics/<path> endpoint with auth headers.
 
@@ -1301,6 +1328,126 @@ def cmd_credit_detail(args):
         sys.exit(1)
 
 
+# ── Upload Image ───────────────────────────────────────────────────────────────
+def _load_manifest(manifest_path):
+    if not manifest_path.exists():
+        return {"images": []}
+    try:
+        with manifest_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {"images": []}
+    if not isinstance(data, dict) or not isinstance(data.get("images"), list):
+        return {"images": []}
+    return data
+
+
+def _write_manifest(manifest_path, manifest):
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = manifest_path.with_suffix(manifest_path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    tmp.replace(manifest_path)
+
+
+def _update_manifest(course_dir, entry):
+    """Upsert an image entry by 'local' (file path) or 'source_url' (URL upload)."""
+    manifest_path = Path(course_dir) / "assets" / "image-manifest.json"
+    manifest = _load_manifest(manifest_path)
+
+    key_field = "local" if entry.get("local") else "source_url"
+    key_value = entry[key_field]
+    existing_idx = None
+    for i, item in enumerate(manifest["images"]):
+        if item.get(key_field) == key_value:
+            existing_idx = i
+            break
+    if existing_idx is None:
+        manifest["images"].append(entry)
+    else:
+        manifest["images"][existing_idx] = entry
+
+    _write_manifest(manifest_path, manifest)
+    print(f"info: manifest updated at {manifest_path}", file=sys.stderr)
+
+
+def cmd_upload_image(args):
+    """Upload a local image (with preprocessing) or a remote URL to ai-shifu OSS.
+
+    Outputs ONLY the resulting URL to stdout — designed to be captured into the
+    Teaching Prompt by an LLM or a shell pipeline. Diagnostic messages (manifest
+    writes, etc.) go to stderr.
+    """
+    base_url, token = resolve_auth(args)
+
+    if bool(args.file) == bool(args.url):
+        print("Error: provide exactly one of --file or --url", file=sys.stderr)
+        sys.exit(1)
+
+    course_dir = Path(args.course_dir).resolve() if args.course_dir else None
+    alt = args.alt or ""
+
+    if args.file:
+        src_path = Path(args.file).resolve()
+        if args.no_process:
+            if not src_path.is_file():
+                print(f"Error: file not found: {src_path}", file=sys.stderr)
+                sys.exit(1)
+            file_bytes = src_path.read_bytes()
+            ext = src_path.suffix.lower() or ".jpg"
+            mime_guess = {
+                ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+                ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp",
+            }.get(ext, "application/octet-stream")
+            filename = src_path.name
+            mime = mime_guess
+            original_bytes = len(file_bytes)
+        else:
+            from image_utils import prepare_image  # local import keeps Pillow optional
+            try:
+                prepared = prepare_image(src_path)
+            except ValueError as e:
+                print(f"Error: {e}", file=sys.stderr)
+                sys.exit(1)
+            file_bytes = prepared.data
+            filename = prepared.filename
+            mime = prepared.mime
+            original_bytes = prepared.original_bytes
+
+        remote_url = api_upload(base_url, token, filename, file_bytes, mime)
+        print(remote_url)
+
+        if course_dir is not None:
+            try:
+                local_rel = str(src_path.relative_to(course_dir))
+            except ValueError:
+                local_rel = str(src_path)
+            _update_manifest(course_dir, {
+                "local": local_rel,
+                "remote": remote_url,
+                "alt": alt,
+                "uploaded_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "bytes": len(file_bytes),
+                "original_bytes": original_bytes,
+                "mime": mime,
+                "filename": filename,
+            })
+        return
+
+    # URL upload path — backend downloads, validates Content-Type, re-hosts.
+    remote_url = api(base_url, token, "post", "/url-upfile", json={"url": args.url})
+    print(remote_url)
+
+    if course_dir is not None:
+        _update_manifest(course_dir, {
+            "source_url": args.url,
+            "remote": remote_url,
+            "alt": alt,
+            "uploaded_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        })
+
+
 # ── CLI Entry Point ────────────────────────────────────────────────────────────
 def build_parser():
     """Build and return the argument parser with all subcommands."""
@@ -1465,6 +1612,19 @@ def build_parser():
                         "whitespace-normalized; matches current published and "
                         "draft titles only — never historical / renamed titles)")
 
+    # ── upload-image ──
+    p = sub.add_parser("upload-image", parents=[parent_parser],
+                       help="Upload a local image (auto-preprocessed) or a remote URL to OSS")
+    src = p.add_mutually_exclusive_group(required=True)
+    src.add_argument("--file", help="Local image path (any common format incl. heic)")
+    src.add_argument("--url", help="Remote http(s) image URL; backend re-hosts it")
+    p.add_argument("--course-dir", default=None,
+                   help="Course directory to record upload in assets/image-manifest.json")
+    p.add_argument("--alt", default=None,
+                   help="Short description of what the image conveys (stored in manifest)")
+    p.add_argument("--no-process", action="store_true",
+                   help="Skip local preprocessing and upload bytes as-is (debug only)")
+
     # ── credit-detail ──
     p = sub.add_parser("credit-detail", parents=[parent_parser],
                        help="Fetch joined credit consumption detail for one shifu")
@@ -1517,6 +1677,7 @@ def main():
         "analytics-query": cmd_analytics_query,
         "find-title": cmd_find_title,
         "credit-detail": cmd_credit_detail,
+        "upload-image": cmd_upload_image,
     }
 
     handler = commands.get(args.command)
