@@ -334,14 +334,14 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 ### Deployment Workflow
 
 **From pipeline (Path A continuation):**
-1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), optional `structure.json`.
+1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), and required `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
 3. **Deploy**: Run `import --new --json-file <dir>/shifu-import.json` to upload the course onto the platform.
 4. **Publish**: Run `publish <shifu_bid>` to push the course to its public student-facing URL.
 5. Verify via platform URL.
 
 **Standalone deployment (Path C):**
-1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`) and a `course-prompt.md`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`.
+1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`), a `course-prompt.md`, and `structure.json`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`. If `structure.json` is missing, create it before running `build`.
 2. Run `build` → `import` (deploy) → `publish` as above.
 
 ### Verification
