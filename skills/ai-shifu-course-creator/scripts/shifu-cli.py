@@ -4,7 +4,6 @@
 import argparse
 import json
 import os
-import re
 import sys
 import time
 import uuid
@@ -823,11 +822,8 @@ def cmd_import(args):
 
 
 # ── Build ──────────────────────────────────────────────────────────────────────
-def _extract_lesson_title(content, filename):
-    """Extract lesson_title from HTML comment block, fallback to filename."""
-    match = re.search(r'lesson_title:\s*(.+)', content)
-    if match:
-        return match.group(1).strip()
+def _derive_lesson_title(filename):
+    """Derive a readable lesson title from the lesson filename."""
     name = Path(filename).stem
     return name.replace("-", " ").title()
 
@@ -920,7 +916,7 @@ def _build_import_json(course_dir, title=None, description=None,
                     content = f.read()
 
                 item_bid = str(uuid.uuid4()).replace("-", "")
-                ls_title = ls_def.get("title") or _extract_lesson_title(content, ls_file)
+                ls_title = ls_def.get("title") or _derive_lesson_title(ls_file)
 
                 outline_items.append({
                     "outline_item_bid": item_bid,
@@ -983,7 +979,7 @@ def _build_import_json(course_dir, title=None, description=None,
                 content = f.read()
 
             item_bid = str(uuid.uuid4()).replace("-", "")
-            lesson_title = _extract_lesson_title(content, filename)
+            lesson_title = _derive_lesson_title(filename)
 
             outline_items.append({
                 "outline_item_bid": item_bid,

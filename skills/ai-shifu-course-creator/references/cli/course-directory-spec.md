@@ -82,7 +82,7 @@ Schema:
       "title": "Chapter Title",
       "lessons": [
         {"file": "lesson-01.md", "title": "Lesson Title"},
-        {"file": "lesson-02.md"}
+        {"file": "lesson-02.md", "title": "Another Lesson Title"}
       ]
     }
   ]
@@ -94,4 +94,4 @@ Field reference:
 - `chapters[].title` (required): Chapter display name
 - `chapters[].lessons[]` (required): Array of lesson objects
 - `chapters[].lessons[].file` (required): Filename in the `lessons/` directory (must exist)
-- `chapters[].lessons[].title` (optional): Lesson display name. If omitted, auto-extracted from the Teaching Prompt (`lesson_title: ...` line in the MarkdownFlow content) or derived from filename
+- `chapters[].lessons[].title` (required): Lesson display name.

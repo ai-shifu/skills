@@ -117,7 +117,7 @@ Build behavior:
 
 - **Course title** resolution order: `--title` CLI arg -> first heading in `README.md` -> directory name
 - **Chapter structure**: if `structure.json` exists, generates multi-chapter structure per its definition; otherwise creates a single chapter (named via `--chapter-name` or defaults to course title) containing all `lesson-*.md` files in sorted order
-- **Lesson title** resolution order: `title` field in `structure.json` -> `lesson_title: ...` line in the Teaching Prompt -> filename derived (e.g., `lesson-01.md` -> "Lesson 01")
+- **Lesson title** resolution order: `title` field in `structure.json` -> filename derived (e.g., `lesson-01.md` -> "Lesson 01")
 
 ## Image Upload
 
