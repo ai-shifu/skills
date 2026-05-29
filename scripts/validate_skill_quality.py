@@ -8,17 +8,20 @@ from __future__ import annotations
 
 import re
 import sys
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
 RE_KEBAB_CASE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 RE_XML_TAG = re.compile(r"[<>]")
 RE_REF_PATH = re.compile(r"references/[A-Za-z0-9_./-]+\.md")
+RE_SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
 FORBIDDEN_WORDS = {"claude", "anthropic"}
 
 MAX_DESCRIPTION_LEN = 1024
 MIN_DESCRIPTION_LEN_RECOMMENDED = 50
 MAX_COMPATIBILITY_LEN = 500
+CODEX_PLUGIN_PATH_FIELDS = ("skills", "mcpServers", "apps", "hooks")
 
 
 @dataclass
@@ -163,6 +166,149 @@ def validate_skill(skill_dir: Path, issues: IssueBag) -> None:
             )
 
 
+def _require_non_empty_str(
+    obj: dict[str, object],
+    field: str,
+    issues: IssueBag,
+    label: str,
+) -> str:
+    value = obj.get(field)
+    if not isinstance(value, str) or not value.strip():
+        issues.add_error(f"{label}: field '{field}' must be a non-empty string")
+        return ""
+    return value.strip()
+
+
+def _validate_plugin_relative_path(
+    repo_root: Path,
+    value: object,
+    issues: IssueBag,
+    label: str,
+) -> None:
+    if not isinstance(value, str) or not value.strip():
+        issues.add_error(f"{label} must be a non-empty string path")
+        return
+    if not value.startswith("./"):
+        issues.add_error(f"{label} must start with ./")
+        return
+
+    rel = value[2:]
+    if not rel:
+        issues.add_error(f"{label} must not be empty")
+        return
+
+    parts = rel.split("/")
+    for index, part in enumerate(parts):
+        is_trailing_slash = part == "" and index == len(parts) - 1
+        if is_trailing_slash:
+            continue
+        if part in {"", ".", ".."}:
+            issues.add_error(f"{label} must stay inside the plugin root")
+            return
+
+    normalized = rel[:-1] if rel.endswith("/") else rel
+    target = (repo_root / normalized).resolve()
+    try:
+        target.relative_to(repo_root.resolve())
+    except ValueError:
+        issues.add_error(f"{label} must stay inside the plugin root")
+        return
+
+    if not target.exists():
+        issues.add_error(f"{label} points to a missing path: {value}")
+
+
+def validate_codex_plugin_manifest(repo_root: Path, issues: IssueBag) -> None:
+    manifest_path = repo_root / ".codex-plugin" / "plugin.json"
+    if not manifest_path.exists():
+        issues.add_error(".codex-plugin/plugin.json is required for Codex plugin installs")
+        return
+
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        issues.add_error(f"{manifest_path}: invalid JSON: {exc}")
+        return
+
+    if not isinstance(manifest, dict):
+        issues.add_error(f"{manifest_path}: root value must be an object")
+        return
+
+    name = _require_non_empty_str(manifest, "name", issues, str(manifest_path))
+    if name and not RE_KEBAB_CASE.match(name):
+        issues.add_error(f"{manifest_path}: field 'name' must be kebab-case")
+
+    version = _require_non_empty_str(manifest, "version", issues, str(manifest_path))
+    if version and not RE_SEMVER.match(version):
+        issues.add_error(f"{manifest_path}: field 'version' must be strict semver")
+
+    for field in ("description", "homepage", "repository", "license"):
+        _require_non_empty_str(manifest, field, issues, str(manifest_path))
+
+    author = manifest.get("author")
+    if not isinstance(author, dict):
+        issues.add_error(f"{manifest_path}: field 'author' must be an object")
+    else:
+        _require_non_empty_str(author, "name", issues, f"{manifest_path}: author")
+
+    keywords = manifest.get("keywords")
+    if not isinstance(keywords, list) or not keywords:
+        issues.add_error(f"{manifest_path}: field 'keywords' must be a non-empty array")
+    elif not all(isinstance(item, str) and item.strip() for item in keywords):
+        issues.add_error(f"{manifest_path}: field 'keywords' must contain only non-empty strings")
+
+    interface = manifest.get("interface")
+    if not isinstance(interface, dict):
+        issues.add_error(f"{manifest_path}: field 'interface' must be an object")
+    else:
+        for field in (
+            "displayName",
+            "shortDescription",
+            "longDescription",
+            "developerName",
+            "category",
+        ):
+            _require_non_empty_str(interface, field, issues, f"{manifest_path}: interface")
+
+        capabilities = interface.get("capabilities")
+        if not isinstance(capabilities, list) or not capabilities:
+            issues.add_error(
+                f"{manifest_path}: interface.capabilities must be a non-empty array"
+            )
+        elif not all(isinstance(item, str) and item.strip() for item in capabilities):
+            issues.add_error(
+                f"{manifest_path}: interface.capabilities must contain only non-empty strings"
+            )
+
+    has_component = False
+    for field in CODEX_PLUGIN_PATH_FIELDS:
+        if field not in manifest:
+            continue
+        has_component = True
+        value = manifest[field]
+        if isinstance(value, list):
+            for index, item in enumerate(value):
+                _validate_plugin_relative_path(
+                    repo_root,
+                    item,
+                    issues,
+                    f"{manifest_path}: {field}[{index}]",
+                )
+        else:
+            _validate_plugin_relative_path(
+                repo_root,
+                value,
+                issues,
+                f"{manifest_path}: {field}",
+            )
+
+    if not has_component:
+        issues.add_error(
+            f"{manifest_path}: at least one component path is required "
+            "(skills, mcpServers, apps, or hooks)"
+        )
+
+
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
     skills_root = repo_root / "skills"
@@ -176,6 +322,7 @@ def main() -> int:
         return 1
 
     issues = IssueBag()
+    validate_codex_plugin_manifest(repo_root, issues)
     for skill_dir in skill_dirs:
         validate_skill(skill_dir, issues)
 

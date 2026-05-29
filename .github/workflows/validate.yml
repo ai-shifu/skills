@@ -23,3 +23,6 @@ jobs:
 
       - name: Validate skill quality
         run: python3 scripts/validate_skill_quality.py
+
+      - name: Run validation tests
+        run: python3 scripts/test_validate_skill_quality.py

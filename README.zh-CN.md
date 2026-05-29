@@ -24,6 +24,18 @@ skills/
 skill 以 `SKILL.md` 作为行为定义。
 机器可读元数据位于 `skills/ai-shifu-course-creator/skill.yaml`。
 
+## Codex Plugin
+
+本仓库已包含 Codex 插件清单：`.codex-plugin/plugin.json`。
+该插件将仓库中的 `./skills/` 目录暴露给 Codex，便于通过插件市场或
+Git-backed plugin source 安装并列出这些 skills。
+
+Codex plugin id：
+
+```text
+ai-shifu-skills
+```
+
 ## 课程生产与部署路径
 
 按控制粒度选择其一：
@@ -69,6 +81,7 @@ skill 以 `SKILL.md` 作为行为定义。
 
 ```bash
 python3 scripts/validate_skill_quality.py
+python3 scripts/test_validate_skill_quality.py
 ```
 
 ## 语言策略（面向使用者）

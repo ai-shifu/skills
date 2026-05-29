@@ -1,0 +1,28 @@
+{
+  "name": "ai-shifu-skills",
+  "version": "0.1.0",
+  "description": "Reusable AI-Shifu skills for course production, topic direction, and deployment workflows.",
+  "author": {
+    "name": "AI-Shifu",
+    "url": "https://github.com/ai-shifu"
+  },
+  "homepage": "https://github.com/ai-shifu/skills",
+  "repository": "https://github.com/ai-shifu/skills",
+  "license": "MIT",
+  "keywords": ["ai-shifu", "skills", "course-authoring", "course-production"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AI-Shifu Skills",
+    "shortDescription": "Course production skills for AI-Shifu.",
+    "longDescription": "Reusable AI-Shifu skills for course topic advising, MarkdownFlow script generation, optimization, deployment, and course operations workflows.",
+    "developerName": "AI-Shifu",
+    "category": "Education",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://github.com/ai-shifu/skills",
+    "defaultPrompt": [
+      "Use ai-shifu-course-creator to turn source material into a deployable course.",
+      "Use course-direction-advisor to evaluate a course direction."
+    ],
+    "brandColor": "#10A37F"
+  }
+}

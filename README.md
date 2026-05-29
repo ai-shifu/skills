@@ -24,6 +24,19 @@ skills/
 The skill keeps `SKILL.md` as the behavior source of truth.
 Core skill metadata lives in `skills/ai-shifu-course-creator/skill.yaml`.
 
+## Codex Plugin
+
+This repository includes a Codex plugin manifest at `.codex-plugin/plugin.json`.
+The plugin exposes the repository's `./skills/` directory so Codex can install
+and list the bundled skills through a plugin marketplace or a direct Git-backed
+plugin source.
+
+Codex plugin id:
+
+```text
+ai-shifu-skills
+```
+
 ## Course Authoring & Deployment Paths
 
 Choose one path based on control needs:
@@ -69,6 +82,7 @@ Use management commands (list, show, update, rename, reorder, delete, publish, a
 
 ```bash
 python3 scripts/validate_skill_quality.py
+python3 scripts/test_validate_skill_quality.py
 ```
 
 ## Language Policy
