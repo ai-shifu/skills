@@ -309,8 +309,9 @@ Ship optimized Teaching Prompts to the AI-Shifu platform as live courses. Two di
 
 - **Deploy** — upload local course files to the platform via `build` + `import`. After this the course exists on the platform but is not yet visible to learners on a public URL.
 - **Publish** — run `publish` on the platform, which pushes the current draft to the public student-facing URL. Only after this step does `<base>/c/<bid>` (no `preview=true`) work.
+- **Sync** — keep a local course directory and the platform draft version-consistent. The platform draft is the single source of truth (it carries an auto-incrementing `revision`); `pull` brings the cloud copy down and records its version in `.shifu-sync.json`, and the version-aware write commands (`update-lesson` / `update-meta` / `import` with `--course-dir`) refuse to overwrite a change another editor pushed — they auto-pull and back up your edit instead. Think `git pull` before `git push`.
 
-The standard end-to-end flow chains both: build → import (deploy) → publish.
+The standard end-to-end flow chains deploy + publish: build → import (deploy) → publish. When **editing an existing course**, use the sync loop instead: **`pull` → edit locally → `status` → `update-lesson` / `import` (push) → `publish`.**
 
 ### Prerequisites
 
@@ -329,7 +330,7 @@ Teaching Prompts must be organized in a course directory (one MarkdownFlow file 
 
 ### CLI Commands
 
-All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
+All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; version sync: `pull` / `status`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
 
 ### Deployment Workflow
 
@@ -343,6 +344,39 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 **Standalone deployment (Path C):**
 1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`), a `course-prompt.md`, and `structure.json`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`. If `structure.json` is missing, create it before running `build`.
 2. Run `build` → `import` (deploy) → `publish` as above.
+
+### Version Sync Workflow
+
+When **modifying an existing course** (not a first-time deploy), treat the
+platform draft as the source of truth and pull before you push:
+
+1. **`pull <shifu_bid> --course-dir <dir>`** — bring the current cloud draft into
+   the local directory. This writes `README.md` / `course-prompt.md` /
+   `lessons/lesson-NN.md` / `structure.json` and records every lesson's cloud
+   `revision` (plus the course-level revision) into `.shifu-sync.json`. Always
+   pull before editing a course someone else may also be editing.
+2. **Edit locally** — change the lesson files / course prompt in place.
+3. **`status --course-dir <dir>`** — see what diverged: `behind` (cloud changed,
+   pull again), `locally modified` (your pending edits), `new`/`deleted` on server.
+4. **Push** with the version-aware commands, passing `--course-dir` so they use
+   the recorded baseline: `update-lesson <bid> <ob> --teaching-prompt-file f.md
+   --course-dir <dir>` for a single lesson, or `import <bid> --course-dir <dir>`
+   for the whole course.
+5. **`publish <bid>`** when ready for learners.
+
+**Conflict recovery contract.** If a push reports a conflict (another editor
+advanced the cloud since your last sync), the CLI: (a) backs up your un-pushed
+change — to `<lesson>.conflict` for a lesson edit, `.shifu-meta.conflict.json`
+for meta, or `.conflict-backup-<ts>/` for a whole-course import; (b) auto-pulls
+the latest cloud copy over local; (c) prints who changed it and when; and
+(d) **exits with code 2** (vs 0 success / 1 hard error). When you see exit 2,
+re-read the freshly pulled lesson, re-apply your change on that new baseline,
+and run the push again. Never force the old content back — the cloud version is
+authoritative.
+
+> `.shifu-sync.json` is auto-maintained; never hand-edit it. Without
+> `--course-dir`, `update-lesson` still works but only compares against the
+> cloud head, so it cannot detect a concurrent edit — prefer the sync loop.
 
 ### Verification
 
