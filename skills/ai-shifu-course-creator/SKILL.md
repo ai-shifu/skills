@@ -347,8 +347,26 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 
 ### Version Sync Workflow
 
-When **modifying an existing course** (not a first-time deploy), treat the
-platform draft as the source of truth and pull before you push:
+**Clarify intent before modifying.** When the user asks to "change / improve /
+rewrite" a course but their intent is ambiguous, do not guess between the two
+fundamentally different outcomes — **ask first**:
+
+- **Edit in place** — change the *existing* course's Teaching Prompts / Course
+  Prompt and push back to the same `shifu_bid`. Learners on the existing course
+  URL see the update after `publish`. This is the version-sync loop below.
+- **Fork into a new course** — take the existing course as a starting point but
+  create a *separate* new course (`import --new` / `create`), leaving the
+  original untouched. Use this when the user wants to keep the original intact,
+  experiment, or produce a variant.
+
+Signals that should trigger the question: the user says "based on this course
+make…", "a new version", "另存为", "改完单独发一个", or otherwise hints at keeping
+the original. When unsure which one they mean, ask a single clarifying question
+before touching anything — an in-place edit that the user expected to be a fork
+(or vice-versa) is expensive to undo. Only proceed once the target is clear.
+
+When **modifying an existing course** in place (not a first-time deploy), treat
+the platform draft as the source of truth and pull before you push:
 
 1. **`pull <shifu_bid> --course-dir <dir>`** — bring the current cloud draft into
    the local directory. This writes `README.md` / `course-prompt.md` /
