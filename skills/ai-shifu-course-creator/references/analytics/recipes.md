@@ -60,6 +60,57 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 **CLI shortcut**: `shifu-cli.py find-title <keyword>` chains Recipes 0a → 0c on every course you own and prints a grouped Published / Draft-only / Historical table.
 
+## Course Overview (one-stop popularity dashboard)
+
+### Recipe 0d — Course overview: learners + orders + revenue + recent activity
+
+Use this when the user wants a high-level snapshot of a course rather than one specific metric — the same set of numbers the admin dashboard shows (学员数 / 订单数 / 营收 / 最近活跃). Run these small queries and combine client-side; do **not** look for a single "stats" REST endpoint and do **not** open the admin dashboard in a browser — every one of these numbers comes from `analytics-query`.
+
+```bash
+# 1) Learner count (distinct learners who entered the course)
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"learn_progress_records",
+ "aggregate":[{"fn":"count_distinct","field":"user_bid","alias":"learners"}],
+ "limit":1
+}'
+
+# 1b) Most-recent activity time (latest progress record; row-query, not max() — min/max are numeric-only)
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"learn_progress_records",
+ "select":["created_at"],
+ "order_by":[{"field":"created_at","dir":"desc"}],
+ "limit":1
+}'
+
+# 2) Paid order count + revenue (status = 502 paid; never use >=, it leaks refunds/pending)
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"order_orders",
+ "where":[{"field":"status","op":"=","value":502}],
+ "aggregate":[
+   {"fn":"count","alias":"orders"},
+   {"fn":"sum","field":"paid_price","alias":"revenue"}],
+ "limit":1
+}'
+
+# 3) Active (non-archived) learner count
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"shifu_user_archives",
+ "where":[{"field":"archived","op":"=","value":0}],
+ "aggregate":[{"fn":"count_distinct","field":"user_bid","alias":"active_learners"}],
+ "limit":1
+}'
+```
+
+口径说明（present these definitions alongside the numbers so they are unambiguous):
+
+- **学员数 (learners)** = `count_distinct(user_bid)` on `learn_progress_records` — everyone who entered the course (Method ① in `tables.md`). This is the dashboard's "学员数".
+- **订单数 (orders)** = `count` of `order_orders` rows with `status = 502` — paid orders (includes ¥0 free enrolments). For *strictly paid* (`paid_price > 0`) use Recipe 3; for the full funnel use Recipe 5.
+- **营收 (revenue)** = `sum(paid_price)` over the same `status = 502` rows. Round to 2 decimals (`¥5,870.70`).
+- **最近活跃 (last_active)** = the `created_at` of the latest `learn_progress_records` row (query 1b). Convert to local time before presenting.
+- **活跃学员 (active_learners)** = non-archived learners (`shifu_user_archives.archived = 0`); usually ≤ 学员数 because some learners archived the course.
+
+> Want only one of these? Use the focused recipe instead: learners → Recipe 1, orders/revenue → Recipe 3 / 5 / 6, active learners → Recipe 14. Recipe 0d is the bundle for "just show me everything at a glance".
+
 ## Progress
 
 ### Recipe 1 — Progress funnel

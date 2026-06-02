@@ -52,6 +52,23 @@ Use these optional controls across all phases:
 
 Field-level schemas with example JSON in `references/data-contracts.md#recommended-object-shapes`.
 
+## Data & Statistics Routing (read this before answering any "numbers" question)
+
+This skill is mostly about *authoring* and *deploying* courses, but it **also answers post-deployment data questions** about a live course — and that capability already lives here, locally. Whenever the user asks for any kind of data, metric, or statistic about a course — regardless of how they phrase it — do **not** look for the answer in the creation/deployment commands, do **not** guess a REST endpoint, and do **not** open the admin dashboard in a browser. Route to the Analytics path (Path E / the `## Analytics` section below); the local CLI is the authoritative source and the references tell you exactly what is queryable.
+
+**How to get the numbers** — all course data comes from `scripts/shifu-cli.py`; the platform exposes no per-course statistics REST endpoint, so this CLI is the single, complete source. Standard flow:
+1. `shifu-cli.py list` → resolve `shifu_bid` (and current title; if the user named a course by title, confirm via Course Metadata recipes 0a–0c first).
+2. `shifu-cli.py show <shifu_bid>` → resolve outline (only for lesson-level dimensions).
+3. `shifu-cli.py analytics-query <shifu_bid> --dsl '<json>'` for table queries, or `shifu-cli.py credit-detail <shifu_bid> …` for credit/spend.
+
+Run `shifu-cli.py --help` to see the available subcommands (`analytics-query` and `credit-detail` are both there).
+
+**Decide what to query yourself** — there is no fixed phrase→query mapping to match against; translate the user's actual question into the right table + DSL using the references:
+- `references/analytics/overview.md` — entry point, the question→table quick-lookup, error codes.
+- `references/analytics/recipes.md` — ready-to-run DSL by scenario (e.g. Recipe 0d bundles learners + orders + revenue + recent activity for a one-glance course overview).
+- `references/analytics/tables.md` — the 10 tables, their fields, and all code/enum translations.
+- `references/analytics/dsl.md` — DSL grammar.
+
 ## Authoring Leakage Rules
 
 Keep author-side scaffolding out of Teaching Prompt and Course Prompt outputs:
@@ -128,7 +145,7 @@ Use Deployment management commands (list, show, update, rename, reorder, delete,
 
 ### Path E: Course Analytics
 
-Query post-deployment data on a live course — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profile, individual learner tracking. Reuses the Deployment authentication (token in `.env`); resolves `shifu_bid` via CLI `list` and outline via CLI `show`; runs DSL queries via CLI `analytics-query`. Always go through the CLI — never raw HTTP. See the `## Analytics` section below and `references/analytics/overview.md`.
+Triggered by any question about a live course's data / metrics / statistics (see **`## Data & Statistics Routing`** above for how to route and where the references live). Query post-deployment data — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profile, individual learner tracking. Reuses the Deployment authentication (token in `.env`); resolves `shifu_bid` via CLI `list` and outline via CLI `show`; runs DSL queries via CLI `analytics-query` (credit/spend via `credit-detail`). Always go through the CLI — never raw HTTP, never browser-scrape the admin dashboard. See the `## Analytics` section below and `references/analytics/overview.md`.
 
 ---
 
@@ -413,7 +430,7 @@ After any deployment or management operation, verify the result:
 
 ## Analytics
 
-Post-deployment data queries on live courses. Trigger this section whenever a course author or admin asks about learner count, completion rate, stuck lessons, orders, revenue, ratings, follow-up Q&A volume, credit consumption, audience profile distribution, or individual learner tracking.
+Post-deployment data queries on live courses. Trigger this section whenever a course author or admin asks about learner count, completion rate, stuck lessons, orders, revenue, ratings, follow-up Q&A volume, credit consumption, audience profile distribution, or individual learner tracking. (If you arrived here from the top-level **`## Data & Statistics Routing`** block, the three-step flow is restated below; for a one-glance course overview use Recipe 0d in `references/analytics/recipes.md`.)
 
 ### CLI-Only Rule
 
