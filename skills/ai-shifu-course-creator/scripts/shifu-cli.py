@@ -81,13 +81,19 @@ def api(base_url, token, method, path, **kwargs):
     return data.get("data")
 
 
-def api_safe(base_url, token, method, path, **kwargs):
-    """Make an API call, return None on error instead of exiting."""
+def api_safe(base_url, token, method, path, session=None, **kwargs):
+    """Make an API call, return None on error instead of exiting.
+
+    ``session`` is an optional :class:`requests.Session` for TCP/TLS connection
+    reuse when a caller fans out many small requests (e.g. ``status`` querying
+    per-lesson draft-meta), mirroring the pooling in ``_post_creator_analytics``.
+    """
     url = f"{base_url}/api/shifu{path}"
     headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
     kwargs.setdefault("timeout", 30)
+    http = session if session is not None else requests
     try:
-        resp = getattr(requests, method)(url, headers=headers, **kwargs)
+        resp = getattr(http, method)(url, headers=headers, **kwargs)
         if not resp.ok:
             return None
         data = resp.json()
@@ -655,6 +661,8 @@ def _flatten_outline_tree(tree):
 
     def walk(items, parent_bid, depth):
         for it in (items or []):
+            if not isinstance(it, dict):
+                continue
             bid = it.get("bid") or it.get("outline_item_bid") or ""
             if not bid:
                 continue
@@ -768,11 +776,21 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force
             "is_chapter": False, "content_sha256": _sha256_text(content),
         })
 
-    # README.md — title only, preserved if present (unless force).
+    # README.md — keep the title in sync with the cloud course name. The first
+    # heading is what `build` uses as the course title, so a stale heading would
+    # otherwise be pushed back up on the next import. Preserve any author body
+    # below the heading; only the title line is rewritten (full write if absent).
     name = detail.get("name", "")
     readme = course_path / "README.md"
     if force or not readme.exists():
         readme.write_text(f"# {name}\n", encoding="utf-8")
+    else:
+        lines = readme.read_text(encoding="utf-8").splitlines()
+        if lines and lines[0].lstrip().startswith("#"):
+            lines[0] = f"# {name}"
+        else:
+            lines.insert(0, f"# {name}")
+        readme.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
     # course-prompt.md — cloud-authoritative system prompt.
     course_prompt = detail.get("system_prompt", "") or ""
@@ -866,34 +884,39 @@ def cmd_status(args):
     behind, locally_modified, deleted_remote = [], [], []
     manifest_bids = set()
     uptodate = 0
-    for entry in manifest.get("lessons", []):
-        bid = entry.get("outline_bid")
-        if bid:
-            manifest_bids.add(bid)
-        if entry.get("is_chapter"):
-            continue
-        if bid not in cloud_bids:
-            deleted_remote.append(entry)
-            continue
-        meta = api_safe(base_url, token, "get",
-                        f"/shifus/{shifu_bid}/draft-meta?outline_bid={bid}") or {}
-        cloud_rev = meta.get("revision")
-        local_rev = entry.get("revision")
-        is_behind = (cloud_rev is not None and local_rev is not None
-                     and cloud_rev > local_rev)
-        if is_behind:
-            behind.append((entry, local_rev, cloud_rev, meta))
-        # Local edit detection via content hash.
-        is_local_mod = False
-        if entry.get("file"):
-            dest = safe_join_path(course_dir, entry["file"])
-            cur_hash = _sha256_file(dest) if dest else None
-            if (cur_hash is not None and entry.get("content_sha256")
-                    and cur_hash != entry["content_sha256"]):
-                locally_modified.append(entry)
-                is_local_mod = True
-        if not is_behind and not is_local_mod:
-            uptodate += 1
+    # Reuse one connection for the per-lesson draft-meta lookups — on a remote
+    # API the TCP/TLS handshake dominates, so pooling roughly halves wall time
+    # for multi-lesson courses (same pattern as cmd_list / cmd_find_title).
+    with requests.Session() as session:
+        for entry in manifest.get("lessons", []):
+            bid = entry.get("outline_bid")
+            if bid:
+                manifest_bids.add(bid)
+            if entry.get("is_chapter"):
+                continue
+            if bid not in cloud_bids:
+                deleted_remote.append(entry)
+                continue
+            meta = api_safe(base_url, token, "get",
+                            f"/shifus/{shifu_bid}/draft-meta?outline_bid={bid}",
+                            session=session) or {}
+            cloud_rev = meta.get("revision")
+            local_rev = entry.get("revision")
+            is_behind = (cloud_rev is not None and local_rev is not None
+                         and cloud_rev > local_rev)
+            if is_behind:
+                behind.append((entry, local_rev, cloud_rev, meta))
+            # Local edit detection via content hash.
+            is_local_mod = False
+            if entry.get("file"):
+                dest = safe_join_path(course_dir, entry["file"])
+                cur_hash = _sha256_file(dest) if dest else None
+                if (cur_hash is not None and entry.get("content_sha256")
+                        and cur_hash != entry["content_sha256"]):
+                    locally_modified.append(entry)
+                    is_local_mod = True
+            if not is_behind and not is_local_mod:
+                uptodate += 1
     new_remote = sorted(cloud_bids - manifest_bids)
 
     print(f"Course: {manifest['course'].get('name', '')}  (shifu_bid {shifu_bid})")
@@ -925,7 +948,9 @@ def cmd_status(args):
             print(f"  {entry.get('file') or entry.get('outline_bid')}   {entry.get('name', '')}")
     print(f"\nUp to date: {uptodate} lessons")
 
-    diverged = bool(behind or new_remote or deleted_remote) or (
+    # A locally-modified working tree counts as diverged too, so `status
+    # --exit-code` can guard import/push automation against unsynced edits.
+    diverged = bool(behind or new_remote or deleted_remote or locally_modified) or (
         cloud_course_rev is not None and local_course_rev is not None
         and cloud_course_rev > local_course_rev)
     if getattr(args, "exit_code", False) and diverged:
@@ -955,16 +980,25 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
     course_path = Path(course_dir)
     backup_location = None
 
-    if scope == "lesson" and local_file and attempted_content is not None:
-        dest = safe_join_path(course_dir, local_file)
+    if scope == "lesson" and attempted_content is not None:
+        # Always persist the attempted edit before the pull overwrites local —
+        # even when the lesson has no manifest mapping (local_file is None), in
+        # which case fall back to a deterministic conflict file in the course dir
+        # so the pending content is never lost.
+        dest = safe_join_path(course_dir, local_file) if local_file else None
         if dest:
             destp = Path(dest)
             bak = destp.with_name(destp.name + ".conflict")
             if bak.exists():
                 bak = destp.with_name(destp.name + f".conflict-{ts}")
-            bak.parent.mkdir(parents=True, exist_ok=True)
-            bak.write_text(attempted_content, encoding="utf-8")
-            backup_location = str(bak)
+        else:
+            stem = outline_bid or "lesson"
+            bak = course_path / f".{stem}.conflict.md"
+            if bak.exists():
+                bak = course_path / f".{stem}.conflict-{ts}.md"
+        bak.parent.mkdir(parents=True, exist_ok=True)
+        bak.write_text(attempted_content, encoding="utf-8")
+        backup_location = str(bak)
     elif scope == "meta":
         bakp = course_path / ".shifu-meta.conflict.json"
         bakp.write_text(
@@ -1094,7 +1128,12 @@ def cmd_update_meta(args):
     if manifest and manifest.get("shifu_bid") == shifu_bid:
         fresh = api_safe(base_url, token, "get",
                          f"/shifus/{shifu_bid}/draft-meta") or {}
-        course = manifest.setdefault("course", {})
+        # Use an explicit check rather than setdefault: a hand-edited manifest
+        # with "course": null would make setdefault return None and crash below.
+        course = manifest.get("course")
+        if not isinstance(course, dict):
+            course = {}
+            manifest["course"] = course
         # Update each field only when the re-read returned it, so a transient
         # draft-meta GET failure (fresh == {}) does not null out the baseline.
         if fresh.get("revision") is not None:

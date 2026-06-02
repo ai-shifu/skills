@@ -8,7 +8,7 @@
   course-prompt.md     # Course-level prompt (AI role and teaching style)
   shifu-import.json    # Generated import file (output of build)
   structure.json       # Chapter structure (optional, for multi-chapter courses)
-  .shifu-sync.json     # Auto-maintained by pull/push: local↔cloud version link
+  .shifu-sync.json     # Auto-maintained by pull + version-aware writes (update-lesson/update-meta/import): local↔cloud version link
   lessons/
     lesson-01.md       # Teaching Prompt (MarkdownFlow)
     lesson-02.md
