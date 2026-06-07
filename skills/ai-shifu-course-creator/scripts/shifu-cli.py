@@ -1036,8 +1036,9 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
     if backup_location:
         print(f"  Your un-pushed change was saved to: {backup_location}",
               file=sys.stderr)
-    print("  Re-apply your edit on the freshly pulled baseline, then run the "
-          "command again.", file=sys.stderr)
+    print("  Re-apply your edit on the freshly pulled baseline and run the "
+          "command again — repeat until it succeeds (exit 0). This is a retry, "
+          "not a failure; never force the old content back.", file=sys.stderr)
 
 
 # ── Create ─────────────────────────────────────────────────────────────────────

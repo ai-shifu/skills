@@ -364,50 +364,70 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 
 ### Version Sync Workflow
 
-**Clarify intent before modifying.** When the user asks to "change / improve /
-rewrite" a course but their intent is ambiguous, do not guess between the two
-fundamentally different outcomes — **ask first**:
+The platform DB is the single source of truth. Every course-editing request runs
+a **front guard** to fix the target *before* any authoring, then a **pull → edit
+→ push** loop that converges like `git pull` before `git push`. This mirrors the
+editing flowchart exactly.
 
-- **Edit in place** — change the *existing* course's Teaching Prompts / Course
-  Prompt and push back to the same `shifu_bid`. Learners on the existing course
-  URL see the update after `publish`. This is the version-sync loop below.
-- **Fork into a new course** — take the existing course as a starting point but
-  create a *separate* new course (`import --new` / `create`), leaving the
-  original untouched. Use this when the user wants to keep the original intact,
-  experiment, or produce a variant.
+#### Front guard — decide the target before doing any work
 
-Signals that should trigger the question: the user says "based on this course
-make…", "a new version", "另存为", "改完单独发一个", or otherwise hints at keeping
-the original. When unsure which one they mean, ask a single clarifying question
-before touching anything — an in-place edit that the user expected to be a fork
-(or vice-versa) is expensive to undo. Only proceed once the target is clear.
+Run this the moment a course-editing intent is recognized, *before* investing in
+authoring, so you never build on the wrong target:
 
-When **modifying an existing course** in place (not a first-time deploy), treat
-the platform draft as the source of truth and pull before you push:
+1. **Recognize intent** — is the user creating a **new** course, or **editing** an
+   existing one?
+2. **Ensure login** — the existence check queries the cloud, so if `.env` has no
+   valid token, guide the user through `login` first
+   (`references/cli/cli-reference.md#authentication`).
+3. **Check whether the course already exists** — run `find-title <keyword>`
+   (targeted title search; do **not** dump the whole `list`).
+4. **Branch — exactly as the flowchart:**
+   - **New intent + a match exists** → **ASK the user**: edit the existing course,
+     or create a separate new one?
+     - *Edit it* → `pull <shifu_bid> --course-dir <dir>` (download), then edit locally.
+     - *Create new* → author locally, then `import --new`.
+   - **New intent + no match** → author locally, then `import --new`.
+   - **Edit intent + a match exists** → `pull <shifu_bid> --course-dir <dir>`, then
+     edit locally. **Do not ask** new-vs-edit — the intent is unambiguous; if
+     `find-title` returns several, only disambiguate *which* course.
+   - **Edit intent + no match** → author locally, then `import --new` (nothing to
+     edit yet).
 
-1. **`pull <shifu_bid> --course-dir <dir>`** — bring the current cloud draft into
-   the local directory. This writes `README.md` / `course-prompt.md` /
-   `lessons/lesson-NN.md` / `structure.json` and records every lesson's cloud
-   `revision` (plus the course-level revision) into `.shifu-sync.json`. Always
-   pull before editing a course someone else may also be editing.
+> The new-vs-edit question fires in exactly one case — **new intent + an existing
+> course** — to resolve the fork-vs-edit ambiguity. An edit intent never triggers it.
+
+#### Pull → edit → push (converging loop)
+
+Once the target is a download of an existing course, treat the platform draft as
+the source of truth:
+
+1. **`pull <shifu_bid> --course-dir <dir>`** — download the cloud draft into the
+   local dir (writes `README.md` / `course-prompt.md` / `lessons/lesson-NN.md` /
+   `structure.json` and records each lesson + course `revision` into `.shifu-sync.json`).
 2. **Edit locally** — change the lesson files / course prompt in place.
 3. **`status --course-dir <dir>`** — see what diverged: `behind` (cloud changed,
    pull again), `locally modified` (your pending edits), `new`/`deleted` on server.
-4. **Push** with the version-aware commands, passing `--course-dir` so they use
-   the recorded baseline: `update-lesson <bid> <ob> --teaching-prompt-file f.md
-   --course-dir <dir>` for a single lesson, or `import <bid> --course-dir <dir>`
-   for the whole course.
+4. **Push** with `--course-dir` so the recorded baseline is used:
+   `update-lesson <bid> <ob> --teaching-prompt-file f.md --course-dir <dir>` for a
+   single lesson, or `import <bid> --course-dir <dir>` for the whole course.
 5. **`publish <bid>`** when ready for learners.
 
-**Conflict recovery contract.** If a push reports a conflict (another editor
-advanced the cloud since your last sync), the CLI: (a) backs up your un-pushed
-change — to `<lesson>.conflict` for a lesson edit, `.shifu-meta.conflict.json`
-for meta, or `.conflict-backup-<ts>/` for a whole-course import; (b) auto-pulls
-the latest cloud copy over local; (c) prints who changed it and when; and
-(d) **exits with code 2** (vs 0 success / 1 hard error). When you see exit 2,
-re-read the freshly pulled lesson, re-apply your change on that new baseline,
-and run the push again. Never force the old content back — the cloud version is
-authoritative.
+**Convergence loop on conflict — this IS the flowchart's "上传 → 线上是否有新版本 →
+是 → 下载 → 重新合并 → 上传" loop.** A push checks whether the cloud advanced since
+your last sync — that is the *"is there a newer version online?"* decision:
+
+- **No newer version → push succeeds (exit 0) → done.** Proceed to `publish`.
+- **Newer version → push reports a conflict (exit 2).** The CLI has **already**:
+  (a) backed up your un-pushed change — `<lesson>.conflict` for a lesson,
+  `.shifu-meta.conflict.json` for meta, `.conflict-backup-<ts>/` for a whole-course
+  import; (b) auto-pulled the latest cloud copy over local; (c) printed who changed
+  it and when. **Exit 2 means "retry", not "give up".** Then **loop**:
+  1. Re-read the freshly pulled lesson / files (the new baseline).
+  2. Re-apply your intended change on top of it (you, the agent, do the merge — the
+     CLI never auto-merges content).
+  3. Run the same push again.
+  4. **Repeat until the push succeeds (exit 0).** Never force the old content back —
+     the cloud is authoritative.
 
 > `.shifu-sync.json` is auto-maintained; never hand-edit it. Without
 > `--course-dir`, `update-lesson` still works but only compares against the
