@@ -114,6 +114,7 @@ Before constructing any DSL, identify the correct table. Use this map:
 
 | User asks about... | Table | Key filter | Key field |
 |---|---|---|---|
+| **Course overview (high-level snapshot, not one metric)** | `learn_progress_records` + `order_orders` + `shifu_user_archives` | see **Recipe 0d** | bundles learners + orders + revenue + recent activity |
 | Learner count / completion / stuck lessons | `learn_progress_records` | `status = 603` (completed), `602` (stuck) | `outline_item_bid`, `status` |
 | **Follow-up questions / Q&A** | `learn_generated_blocks` | **`type = 321`** (NOT `role = 2`!) | `type`, `generated_content` |
 | LLM answers to follow-ups | `learn_generated_blocks` | `type = 322` | `generated_content`, `position` |

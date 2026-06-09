@@ -8,6 +8,7 @@
   course-prompt.md     # Course-level prompt (AI role and teaching style)
   shifu-import.json    # Generated import file (output of build)
   structure.json       # Chapter structure (optional, for multi-chapter courses)
+  .shifu-sync.json     # Auto-maintained by pull + version-aware writes (update-lesson/update-meta/import): local↔cloud version link
   lessons/
     lesson-01.md       # Teaching Prompt (MarkdownFlow)
     lesson-02.md
@@ -56,6 +57,38 @@ Field reference:
 - `bytes` / `original_bytes` / `mime` / `filename` (file uploads only): book-keeping for the preprocessed payload that was actually sent.
 
 `assets/raw/` is a recommendation, not enforced: store originals there so the manifest's `local` paths are stable across machines. The `build` command ignores `assets/` entirely.
+
+## .shifu-sync.json
+
+Auto-maintained by `pull` and the version-aware write commands
+(`update-lesson` / `update-meta` / `import`). **Do not hand-edit.** It records
+the link between this local directory and the cloud course so pushes behave like
+`git push` (compare baseline before uploading) rather than blindly overwriting.
+
+Schema (abridged):
+
+```json
+{
+  "schema_version": 1,
+  "shifu_bid": "a1b2c3…",
+  "base_url": "https://app.ai-shifu.cn",
+  "course": {"revision": 42, "name": "…", "updated_at": "…", "updated_user_bid": "…"},
+  "lessons": [
+    {"file": "lessons/lesson-01.md", "outline_bid": "9a8b…", "name": "…",
+     "parent_bid": "ch_001", "revision": 1187, "is_chapter": false,
+     "content_sha256": "…"},
+    {"file": null, "outline_bid": "ch_001", "name": "第一章", "parent_bid": "",
+     "revision": null, "is_chapter": true}
+  ],
+  "last_pull_at": "…", "last_push_at": "…"
+}
+```
+
+The per-lesson `revision` is the optimistic-locking baseline (the version at
+last pull/push) — how `status` detects "behind" and how a push detects a
+concurrent edit. `content_sha256` lets `status` tell whether the local file was
+edited since the last sync. See
+`references/cli/cli-reference.md#version-sync-pull--status` for the workflow.
 
 ## Lesson Files
 

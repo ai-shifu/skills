@@ -52,6 +52,23 @@ Use these optional controls across all phases:
 
 Field-level schemas with example JSON in `references/data-contracts.md#recommended-object-shapes`.
 
+## Data & Statistics Routing (read this before answering any "numbers" question)
+
+This skill is mostly about *authoring* and *deploying* courses, but it **also answers post-deployment data questions** about a live course — and that capability already lives here, locally. Whenever the user asks for any kind of data, metric, or statistic about a course — regardless of how they phrase it — do **not** look for the answer in the creation/deployment commands, do **not** guess a REST endpoint, and do **not** open the admin dashboard in a browser. Route to the Analytics path (Path E / the `## Analytics` section below); the local CLI is the authoritative source and the references tell you exactly what is queryable.
+
+**How to get the numbers** — all course data comes from `scripts/shifu-cli.py`; the platform exposes no per-course statistics REST endpoint, so this CLI is the single, complete source. Standard flow:
+1. `shifu-cli.py list` → resolve `shifu_bid` (and current title; if the user named a course by title, confirm via Course Metadata recipes 0a–0c first).
+2. `shifu-cli.py show <shifu_bid>` → resolve outline (only for lesson-level dimensions).
+3. `shifu-cli.py analytics-query <shifu_bid> --dsl '<json>'` for table queries, or `shifu-cli.py credit-detail <shifu_bid> …` for credit/spend.
+
+Run `shifu-cli.py --help` to see the available subcommands (`analytics-query` and `credit-detail` are both there).
+
+**Decide what to query yourself** — there is no fixed phrase→query mapping to match against; translate the user's actual question into the right table + DSL using the references:
+- `references/analytics/overview.md` — entry point, the question→table quick-lookup, error codes.
+- `references/analytics/recipes.md` — ready-to-run DSL by scenario (e.g. Recipe 0d bundles learners + orders + revenue + recent activity for a one-glance course overview).
+- `references/analytics/tables.md` — the 10 tables, their fields, and all code/enum translations.
+- `references/analytics/dsl.md` — DSL grammar.
+
 ## Authoring Leakage Rules
 
 Keep author-side scaffolding out of Teaching Prompt and Course Prompt outputs:
@@ -76,11 +93,50 @@ These are the five red-line rules every Teaching Prompt and Course Prompt must s
 
 5. **Output language must be resolved before any prompt content.** Run Language Resolution per `references/data-contracts.md#language-resolution` before producing Teaching Prompt or Course Prompt content. The user's invocation language counts as `prompt_language_detection` (priority 4) and must be used when no higher-priority directive exists. Examples in this skill and in `references/` are written in English for canonical illustration only — do NOT let example language override the resolved output language. If the user invokes in Chinese, all interactions, option labels, downstream text, and the Course Prompt itself must be in Chinese.
 
+## Step 0 — Resolve the Course Target (MANDATORY before any authoring)
+
+**This runs first for every course-creation or editing request — before
+Orchestration, before proposing any course architecture/outline, before writing a
+single lesson.** The AI-Shifu platform DB is the single source of truth; you must
+know whether you are creating a brand-new course or editing an existing one
+*before* you invest in authoring. **Do NOT jump straight to a course outline or
+"架构方案".** Even when the user clearly says "make a new course", first check the
+cloud for an existing one — this is the explicit front guard from the editing
+flowchart.
+
+1. **Recognize intent** — new course, or edit an existing one?
+2. **Ensure login** — the existence check needs the cloud. If `.env` has no valid
+   token, guide the user through `shifu-cli.py login` **now**
+   (`references/cli/cli-reference.md#authentication`).
+3. **Check whether a related course already exists** — run
+   `shifu-cli.py find-title <keyword>` (targeted title search; do **not** dump the
+   whole `list`).
+4. **Branch — exactly as the editing flowchart:**
+   - **New intent + a match exists** → **ASK the user**: edit that existing course,
+     or create a separate new one? *Edit it* → `pull <bid> --course-dir <dir>` then
+     edit locally; *Create new* → author from scratch, then `import --new`.
+   - **New intent + no match** → author from scratch, then `import --new`.
+   - **Edit intent + a match exists** → `pull <bid> --course-dir <dir>`, then edit
+     locally. **Do NOT ask** new-vs-edit; if several match, only resolve *which* one.
+   - **Edit intent + no match** → author from scratch, then `import --new`.
+
+Only **after** the target is resolved do you enter the authoring pipeline below.
+When the target is an existing course, you author **on top of the pulled copy**,
+then push via the converging loop in **Deployment → Version Sync Workflow**. Full
+branch/loop details live there; the gate itself is here because it must fire first.
+
 ## Pipeline Overview
 
-The stages are **not** a flat linear pipeline. **Orchestration is an end-to-end driver** that internally calls Segmentation and Generation. Only Optimization and Deployment actually run in linear sequence after Orchestration completes.
+The stages are **not** a flat linear pipeline. **Step 0 (above) gates the whole
+pipeline.** **Orchestration is an end-to-end driver** that internally calls Segmentation and Generation. Only Optimization and Deployment actually run in linear sequence after Orchestration completes.
 
 ```
+Course request
+   │
+   ▼
+Step 0: Resolve Course Target            ← MANDATORY front guard: login + find-title + branch
+   │   (new vs edit existing; pull the existing course BEFORE authoring)
+   ▼
 Raw material
    │
    ▼
@@ -107,6 +163,7 @@ Segmentation, Generation, and Optimization can each be invoked standalone — se
 
 Run the full pipeline from raw material to a live deployed course.
 
+0. **Step 0 front guard (first, always)** — resolve new-vs-edit via `login` + `find-title`; if editing an existing course, `pull` it before authoring. See **## Step 0**.
 1. **Orchestration** drives Segmentation and Generation end-to-end, then runs cross-lesson gating to produce Teaching Prompts + course_index + variable table.
 2. **Optimization** audits and improves Orchestration's output, plus produces the Course Prompt.
 3. **Deployment** writes the course directory, builds, imports, and publishes to the AI-Shifu platform.
@@ -120,7 +177,7 @@ Run Segmentation through Optimization to produce optimized Teaching Prompts and 
 
 ### Path C: Deploy Only
 
-Run Deployment alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform.
+Run Deployment alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform. **Run Step 0 first** (`## Step 0`) to resolve new-vs-existing — deploy as `import --new`, or `pull` + edit + push into an existing course.
 
 ### Path D: Manage Existing
 
@@ -128,7 +185,7 @@ Use Deployment management commands (list, show, update, rename, reorder, delete,
 
 ### Path E: Course Analytics
 
-Query post-deployment data on a live course — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profile, individual learner tracking. Reuses the Deployment authentication (token in `.env`); resolves `shifu_bid` via CLI `list` and outline via CLI `show`; runs DSL queries via CLI `analytics-query`. Always go through the CLI — never raw HTTP. See the `## Analytics` section below and `references/analytics/overview.md`.
+Triggered by any question about a live course's data / metrics / statistics (see **`## Data & Statistics Routing`** above for how to route and where the references live). Query post-deployment data — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profile, individual learner tracking. Reuses the Deployment authentication (token in `.env`); resolves `shifu_bid` via CLI `list` and outline via CLI `show`; runs DSL queries via CLI `analytics-query` (credit/spend via `credit-detail`). Always go through the CLI — never raw HTTP, never browser-scrape the admin dashboard. See the `## Analytics` section below and `references/analytics/overview.md`.
 
 ---
 
@@ -309,8 +366,9 @@ Ship optimized Teaching Prompts to the AI-Shifu platform as live courses. Two di
 
 - **Deploy** — upload local course files to the platform via `build` + `import`. After this the course exists on the platform but is not yet visible to learners on a public URL.
 - **Publish** — run `publish` on the platform, which pushes the current draft to the public student-facing URL. Only after this step does `<base>/c/<bid>` (no `preview=true`) work.
+- **Sync** — keep a local course directory and the platform draft version-consistent. The platform draft is the single source of truth (it carries an auto-incrementing `revision`); `pull` brings the cloud copy down and records its version in `.shifu-sync.json`, and the version-aware write commands (`update-lesson` / `update-meta` / `import` with `--course-dir`) refuse to overwrite a change another editor pushed — they auto-pull and back up your edit instead. Think `git pull` before `git push`.
 
-The standard end-to-end flow chains both: build → import (deploy) → publish.
+The standard end-to-end flow chains deploy + publish: build → import (deploy) → publish. When **editing an existing course**, use the sync loop instead: **`pull` → edit locally → `status` → `update-lesson` / `import` (push) → `publish`.**
 
 ### Prerequisites
 
@@ -329,7 +387,7 @@ Teaching Prompts must be organized in a course directory (one MarkdownFlow file 
 
 ### CLI Commands
 
-All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
+All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; version sync: `pull` / `status`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
 
 ### Deployment Workflow
 
@@ -343,6 +401,52 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 **Standalone deployment (Path C):**
 1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`), a `course-prompt.md`, and `structure.json`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`. If `structure.json` is missing, create it before running `build`.
 2. Run `build` → `import` (deploy) → `publish` as above.
+
+### Version Sync Workflow
+
+The platform DB is the single source of truth. The **front guard** that fixes the
+target (new-vs-edit, login + `find-title`, and pulling the existing course) is
+**Step 0 — run it first, see `## Step 0`**. This section covers what happens once
+the target is an existing course you have pulled: the **pull → edit → push** loop
+that converges like `git pull` before `git push`. Together they mirror the editing
+flowchart exactly.
+
+#### Pull → edit → push (converging loop)
+
+Once the target is a download of an existing course, treat the platform draft as
+the source of truth:
+
+1. **`pull <shifu_bid> --course-dir <dir>`** — download the cloud draft into the
+   local dir (writes `README.md` / `course-prompt.md` / `lessons/lesson-NN.md` /
+   `structure.json` and records each lesson + course `revision` into `.shifu-sync.json`).
+2. **Edit locally** — change the lesson files / course prompt in place.
+3. **`status --course-dir <dir>`** — see what diverged: `behind` (cloud changed,
+   pull again), `locally modified` (your pending edits), `new`/`deleted` on server.
+4. **Push** with `--course-dir` so the recorded baseline is used:
+   `update-lesson <bid> <ob> --teaching-prompt-file f.md --course-dir <dir>` for a
+   single lesson, or `import <bid> --course-dir <dir>` for the whole course.
+5. **`publish <bid>`** when ready for learners.
+
+**Convergence loop on conflict — this IS the flowchart's "上传 → 线上是否有新版本 →
+是 → 下载 → 重新合并 → 上传" loop.** A push checks whether the cloud advanced since
+your last sync — that is the *"is there a newer version online?"* decision:
+
+- **No newer version → push succeeds (exit 0) → done.** Proceed to `publish`.
+- **Newer version → push reports a conflict (exit 2).** The CLI has **already**:
+  (a) backed up your un-pushed change — `<lesson>.conflict` for a lesson,
+  `.shifu-meta.conflict.json` for meta, `.conflict-backup-<ts>/` for a whole-course
+  import; (b) auto-pulled the latest cloud copy over local; (c) printed who changed
+  it and when. **Exit 2 means "retry", not "give up".** Then **loop**:
+  1. Re-read the freshly pulled lesson / files (the new baseline).
+  2. Re-apply your intended change on top of it (you, the agent, do the merge — the
+     CLI never auto-merges content).
+  3. Run the same push again.
+  4. **Repeat until the push succeeds (exit 0).** Never force the old content back —
+     the cloud is authoritative.
+
+> `.shifu-sync.json` is auto-maintained; never hand-edit it. Without
+> `--course-dir`, `update-lesson` still works but only compares against the
+> cloud head, so it cannot detect a concurrent edit — prefer the sync loop.
 
 ### Verification
 
@@ -361,7 +465,7 @@ After any deployment or management operation, verify the result:
 
 ## Analytics
 
-Post-deployment data queries on live courses. Trigger this section whenever a course author or admin asks about learner count, completion rate, stuck lessons, orders, revenue, ratings, follow-up Q&A volume, credit consumption, audience profile distribution, or individual learner tracking.
+Post-deployment data queries on live courses. Trigger this section whenever a course author or admin asks about learner count, completion rate, stuck lessons, orders, revenue, ratings, follow-up Q&A volume, credit consumption, audience profile distribution, or individual learner tracking. (If you arrived here from the top-level **`## Data & Statistics Routing`** block, the three-step flow is restated below; for a one-glance course overview use Recipe 0d in `references/analytics/recipes.md`.)
 
 ### CLI-Only Rule
 

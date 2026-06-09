@@ -2,8 +2,10 @@
 """AI-Shifu Course CLI - Unified tool for course CRUD operations."""
 
 import argparse
+import hashlib
 import json
 import os
+import shutil
 import sys
 import time
 import uuid
@@ -17,6 +19,20 @@ from dotenv import load_dotenv, set_key
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
 DEFAULT_BASE_URL = "https://app.ai-shifu.cn"
+
+# Backend ERROR_CODE["server.shifu.draftConflict"] — the optimistic-lock
+# conflict raised by POST .../mdflow when the cloud draft advanced past the
+# client's base_revision under a *different* editor. Confirmed in the ai-shifu
+# backend at src/api/error_codes.json:53 ("server.shifu.draftConflict": 4007).
+# Critically, the backend returns this as HTTP 200 with code=4007 (not a 4xx),
+# so api() below — which exits on any non-zero code — cannot surface it; the
+# version-sync write paths route through api_conflict_aware() instead.
+DRAFT_CONFLICT_CODE = 4007
+
+# Exit codes used by the version-sync write commands so automation can tell a
+# retryable conflict apart from a hard failure:
+#   0 = success, 1 = hard error (api() default), 2 = conflict auto-pulled, redo
+EXIT_CONFLICT = 2
 
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
@@ -65,13 +81,19 @@ def api(base_url, token, method, path, **kwargs):
     return data.get("data")
 
 
-def api_safe(base_url, token, method, path, **kwargs):
-    """Make an API call, return None on error instead of exiting."""
+def api_safe(base_url, token, method, path, session=None, **kwargs):
+    """Make an API call, return None on error instead of exiting.
+
+    ``session`` is an optional :class:`requests.Session` for TCP/TLS connection
+    reuse when a caller fans out many small requests (e.g. ``status`` querying
+    per-lesson draft-meta), mirroring the pooling in ``_post_creator_analytics``.
+    """
     url = f"{base_url}/api/shifu{path}"
     headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
     kwargs.setdefault("timeout", 30)
+    http = session if session is not None else requests
     try:
-        resp = getattr(requests, method)(url, headers=headers, **kwargs)
+        resp = getattr(http, method)(url, headers=headers, **kwargs)
         if not resp.ok:
             return None
         data = resp.json()
@@ -80,6 +102,42 @@ def api_safe(base_url, token, method, path, **kwargs):
         return data.get("data")
     except (requests.RequestException, json.JSONDecodeError):
         return None
+
+
+def api_conflict_aware(base_url, token, method, path, **kwargs):
+    """POST helper that recognizes the draft optimistic-lock conflict.
+
+    Unlike api() — which exits on any non-zero business code — this helper
+    distinguishes the three outcomes the version-sync write paths care about:
+
+      ("ok",       data_dict)  # code == 0; e.g. {"new_revision": <int>}
+      ("conflict", meta_dict)  # code == DRAFT_CONFLICT_CODE; meta_dict is
+                               #   data.meta = {revision, updated_at,
+                               #                updated_user{user_bid, phone}}
+
+    Any other non-zero code, or a transport / HTTP error, is treated as a hard
+    failure: it prints the response and sys.exit(1), matching api()'s contract.
+    The conflict arrives as HTTP 200 + code=4007 (see DRAFT_CONFLICT_CODE), so
+    resp.ok is True in that case — we branch on the business code, not status.
+    """
+    url = f"{base_url}/api/shifu{path}"
+    headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
+    kwargs.setdefault("timeout", 30)
+    resp = getattr(requests, method)(url, headers=headers, **kwargs)
+    if not resp.ok:
+        print(f"API error: {method.upper()} {path} (HTTP {resp.status_code})")
+        print(f"  Response: {resp.text[:500]}")
+        sys.exit(1)
+    data = resp.json()
+    code = data.get("code")
+    if code == 0:
+        return ("ok", data.get("data") or {})
+    if code == DRAFT_CONFLICT_CODE:
+        meta = ((data.get("data") or {}).get("meta")) or {}
+        return ("conflict", meta)
+    print(f"API error: {method.upper()} {path}")
+    print(f"  Response: {json.dumps(data, ensure_ascii=False)}")
+    sys.exit(1)
 
 
 def api_upload(base_url, token, filename, file_bytes, mime, resource_id=None):
@@ -209,6 +267,110 @@ def _print_verification_urls(base_url, shifu_bid, include_published=False):
     if include_published:
         print(f"  Published URL:    {base_url}/c/{shifu_bid}")
         print("    # 课程的公开学习地址：可以发送给学员使用。仅在课程已发布后生效。")
+
+
+# ── Version Sync Manifest (.shifu-sync.json) ────────────────────────────────────
+# Persists the local↔cloud version link for a course directory: shifu_bid, the
+# course-level draft revision, and per-lesson {file, outline_bid, revision}. This
+# is what lets the write commands behave like `git push` — compare the recorded
+# baseline against the cloud head before uploading, instead of blindly taking the
+# latest cloud revision (which never detects a concurrent edit). Atomic-write
+# semantics mirror the image-manifest helpers (_write_manifest, below).
+SYNC_MANIFEST_NAME = ".shifu-sync.json"
+
+
+def _now_iso():
+    """UTC timestamp, second precision, Z-suffixed — matches image-manifest style."""
+    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _mask_phone(phone):
+    """Mask a phone/contact for display (3 head + 4 tail), mirroring cmd_login."""
+    if not phone:
+        return ""
+    return phone[:3] + "****" + phone[-4:] if len(phone) >= 7 else phone
+
+
+def _sha256_text(text):
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _sha256_file(path):
+    """Hash a lesson file as utf-8 text (matches how pull writes it). None if missing."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return _sha256_text(f.read())
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def _sync_path(course_dir):
+    return Path(course_dir) / SYNC_MANIFEST_NAME
+
+
+def _load_sync(course_dir):
+    """Load .shifu-sync.json, or None when absent/corrupt so callers fall back.
+
+    Returning None (rather than a default skeleton) lets a command tell
+    "no manifest → legacy behavior" apart from "manifest exists, use it".
+    """
+    if not course_dir:
+        return None
+    path = _sync_path(course_dir)
+    if not path.exists():
+        return None
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("lessons"), list):
+        return None
+    return data
+
+
+def _write_sync(course_dir, manifest):
+    """Atomically write the sync manifest (write .tmp then replace)."""
+    path = _sync_path(course_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    tmp.replace(path)
+
+
+def _sync_lesson_by_bid(manifest, outline_bid):
+    for item in manifest.get("lessons", []):
+        if item.get("outline_bid") == outline_bid:
+            return item
+    return None
+
+
+def _sync_lesson_by_file(manifest, rel_file):
+    for item in manifest.get("lessons", []):
+        if item.get("file") == rel_file:
+            return item
+    return None
+
+
+def _set_lesson_revision(manifest, outline_bid, revision, name=None, content_sha256=None):
+    """Upsert the revision (and optionally name / content hash) for an outline."""
+    entry = _sync_lesson_by_bid(manifest, outline_bid)
+    if entry is None:
+        entry = {
+            "file": None, "outline_bid": outline_bid, "name": name,
+            "parent_bid": "", "revision": revision, "is_chapter": False,
+            "content_sha256": content_sha256,
+        }
+        manifest.setdefault("lessons", []).append(entry)
+    else:
+        entry["revision"] = revision
+        if name is not None:
+            entry["name"] = name
+        if content_sha256 is not None:
+            entry["content_sha256"] = content_sha256
+    return entry
 
 
 # ── Login ──────────────────────────────────────────────────────────────────────
@@ -486,6 +648,405 @@ def cmd_export(args):
             print(resp.text)
 
 
+# ── Pull / Status / Auto-Pull (Version Sync) ────────────────────────────────────
+def _flatten_outline_tree(tree):
+    """Depth-first flatten of the outline tree, preserving sibling order.
+
+    Returns a list of {bid, name, parent_bid, is_chapter}. A node is a chapter
+    container (no MarkdownFlow content) when it has children OR sits at the top
+    level; everything else is a leaf lesson. This mirrors the 2-level
+    chapter→lesson shape that `_build_import_json` produces.
+    """
+    flat = []
+
+    def walk(items, parent_bid, depth):
+        for it in (items or []):
+            if not isinstance(it, dict):
+                continue
+            bid = it.get("bid") or it.get("outline_item_bid") or ""
+            if not bid:
+                continue
+            children = it.get("children", []) or []
+            flat.append({
+                "bid": bid,
+                "name": it.get("name", ""),
+                "parent_bid": parent_bid,
+                "is_chapter": bool(children) or depth == 0,
+            })
+            if children:
+                walk(children, bid, depth + 1)
+
+    walk(tree if isinstance(tree, list) else [tree], "", 0)
+    return flat
+
+
+def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force=False):
+    """Fetch detail + outline tree + every lesson's mdflow + course draft-meta,
+    write them into the course directory, and (re)write .shifu-sync.json.
+
+    This is the single "cloud → local" writer, reused by `pull`, by import's
+    manifest re-seed, and by _auto_pull_overwrite's recovery step. Returns the
+    freshly written manifest dict.
+
+    backup: when True, any local file that diverges from the incoming cloud
+            content is copied to "<file>.local-<ts>.bak" before being
+            overwritten, so a forgotten local edit is never silently lost.
+    force:  when True, skip those backups and also overwrite README.md
+            (otherwise README is written only when absent, to preserve any
+            author notes beyond the title line).
+    """
+    course_path = Path(course_dir)
+    (course_path / "lessons").mkdir(parents=True, exist_ok=True)
+    ts = _now_iso().replace(":", "").replace("-", "")
+
+    detail = api(base_url, token, "get", f"/shifus/{shifu_bid}/detail")
+    if not isinstance(detail, dict):
+        detail = {}
+    tree = api(base_url, token, "get", f"/shifus/{shifu_bid}/outlines")
+    course_meta = api_safe(base_url, token, "get",
+                           f"/shifus/{shifu_bid}/draft-meta") or {}
+
+    existing = _load_sync(course_dir)
+    existing_by_bid = {}
+    if existing:
+        for e in existing.get("lessons", []):
+            if e.get("outline_bid"):
+                existing_by_bid[e["outline_bid"]] = e
+
+    flat = _flatten_outline_tree(tree)
+
+    # Assign stable lesson filenames: reuse a prior manifest filename for the
+    # same outline_bid, otherwise pick the next free lesson-NN.md.
+    used_files = set()
+    for node in flat:
+        if not node["is_chapter"]:
+            prev = existing_by_bid.get(node["bid"])
+            if prev and prev.get("file"):
+                used_files.add(prev["file"])
+
+    def _next_free_lesson():
+        i = 1
+        while True:
+            cand = f"lessons/lesson-{i:02d}.md"
+            if cand not in used_files:
+                used_files.add(cand)
+                return cand
+            i += 1
+
+    def _backup_if_divergent(dest_path, incoming):
+        if force or not backup or not dest_path.exists():
+            return
+        try:
+            cur = dest_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return
+        if cur != incoming:
+            bak = dest_path.with_name(dest_path.name + f".local-{ts}.bak")
+            bak.write_text(cur, encoding="utf-8")
+            print(f"  backed up local edit: {dest_path.name} -> {bak.name}",
+                  file=sys.stderr)
+
+    manifest_lessons = []
+    for node in flat:
+        if node["is_chapter"]:
+            manifest_lessons.append({
+                "file": None, "outline_bid": node["bid"], "name": node["name"],
+                "parent_bid": node["parent_bid"], "revision": None,
+                "is_chapter": True, "content_sha256": None,
+            })
+            continue
+        md = api(base_url, token, "get",
+                 f"/shifus/{shifu_bid}/outlines/{node['bid']}/mdflow")
+        if isinstance(md, dict):
+            content = md.get("data", "") or ""
+            revision = md.get("revision")
+        else:
+            content, revision = (md or ""), None
+        prev = existing_by_bid.get(node["bid"])
+        relfile = prev["file"] if (prev and prev.get("file")) else _next_free_lesson()
+        dest = safe_join_path(str(course_path), relfile)
+        if dest is not None:
+            destp = Path(dest)
+            _backup_if_divergent(destp, content)
+            destp.parent.mkdir(parents=True, exist_ok=True)
+            destp.write_text(content, encoding="utf-8")
+            manifest_file, content_hash = relfile, _sha256_text(content)
+        else:
+            # safe_join_path rejected the path (e.g. a corrupt prior manifest's
+            # file value) — the file was not written, so don't claim it exists.
+            manifest_file, content_hash = None, None
+        manifest_lessons.append({
+            "file": manifest_file, "outline_bid": node["bid"], "name": node["name"],
+            "parent_bid": node["parent_bid"], "revision": revision,
+            "is_chapter": False, "content_sha256": content_hash,
+        })
+
+    # README.md — keep the title in sync with the cloud course name. The first
+    # heading is what `build` uses as the course title, so a stale heading would
+    # otherwise be pushed back up on the next import. Preserve any author body
+    # below the heading; only the title line is rewritten (full write if absent).
+    name = detail.get("name", "")
+    readme = course_path / "README.md"
+    if force or not readme.exists():
+        readme.write_text(f"# {name}\n", encoding="utf-8")
+    else:
+        lines = readme.read_text(encoding="utf-8").splitlines()
+        if lines and lines[0].lstrip().startswith("#"):
+            lines[0] = f"# {name}"
+        else:
+            lines.insert(0, f"# {name}")
+        readme.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+
+    # course-prompt.md — cloud-authoritative system prompt.
+    course_prompt = detail.get("system_prompt", "") or ""
+    cp_path = course_path / "course-prompt.md"
+    _backup_if_divergent(cp_path, course_prompt)
+    cp_path.write_text(course_prompt, encoding="utf-8")
+
+    # structure.json — regenerate the chapter→lesson shape so a later `build`
+    # reproduces the same tree. `file` is relative to lessons/ per the spec.
+    bid_to_relfile = {}
+    for entry in manifest_lessons:
+        if entry.get("file"):
+            bid_to_relfile[entry["outline_bid"]] = entry["file"]
+    chapters = []
+    for ch in [n for n in flat if n["is_chapter"] and n["parent_bid"] == ""]:
+        ch_lessons = []
+        for n in flat:
+            if not n["is_chapter"] and n["parent_bid"] == ch["bid"]:
+                relfile = bid_to_relfile.get(n["bid"], "")
+                fname = relfile.split("/", 1)[1] if relfile.startswith("lessons/") else relfile
+                if fname:
+                    ch_lessons.append({"file": fname, "title": n["name"]})
+        chapters.append({"title": ch["name"], "lessons": ch_lessons})
+    (course_path / "structure.json").write_text(
+        json.dumps({"chapters": chapters}, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8")
+
+    manifest = {
+        "schema_version": 1,
+        "shifu_bid": shifu_bid,
+        "base_url": base_url,
+        "course": {
+            "revision": course_meta.get("revision"),
+            "name": name,
+            "updated_at": course_meta.get("updated_at"),
+            "updated_user_bid": (course_meta.get("updated_user") or {}).get("user_bid"),
+        },
+        "lessons": manifest_lessons,
+        "last_pull_at": _now_iso(),
+        "last_push_at": existing.get("last_push_at") if existing else None,
+    }
+    if existing and existing.get("published"):
+        manifest["published"] = existing["published"]
+    _write_sync(course_dir, manifest)
+    return manifest
+
+
+def cmd_pull(args):
+    """Pull a course from the platform into a local course directory (git pull)."""
+    base_url, token = resolve_auth(args)
+    manifest = _pull_into_dir(base_url, token, args.shifu_bid, args.course_dir,
+                              backup=not args.force, force=args.force)
+    lessons = [x for x in manifest["lessons"] if not x.get("is_chapter")]
+    chapters = [x for x in manifest["lessons"] if x.get("is_chapter")]
+    print(f"Pulled {args.shifu_bid} into {args.course_dir}")
+    print(f"  Course: {manifest['course'].get('name', '')}  "
+          f"(revision {manifest['course'].get('revision')})")
+    print(f"  Chapters: {len(chapters)}, Lessons: {len(lessons)}")
+    print(f"  Manifest: {_sync_path(args.course_dir)}")
+    _print_verification_urls(base_url, args.shifu_bid)
+
+
+def cmd_status(args):
+    """Compare the local sync manifest against cloud revisions (git status)."""
+    base_url, token = resolve_auth(args)
+    course_dir = args.course_dir
+    manifest = _load_sync(course_dir)
+    if not manifest:
+        print(f"No {SYNC_MANIFEST_NAME} in {course_dir}. "
+              f"Run `pull <shifu_bid> --course-dir {course_dir}` first.")
+        sys.exit(1)
+    shifu_bid = manifest.get("shifu_bid")
+
+    course_meta = api_safe(base_url, token, "get",
+                           f"/shifus/{shifu_bid}/draft-meta") or {}
+    cloud_course_rev = course_meta.get("revision")
+    local_course_rev = (manifest.get("course") or {}).get("revision")
+
+    tree = api(base_url, token, "get", f"/shifus/{shifu_bid}/outlines")
+    cloud_bids = set()
+
+    def _collect(items):
+        for it in (items or []):
+            b = it.get("bid") or it.get("outline_item_bid")
+            if b:
+                cloud_bids.add(b)
+            _collect(it.get("children"))
+
+    _collect(tree if isinstance(tree, list) else [tree])
+
+    behind, locally_modified, deleted_remote = [], [], []
+    manifest_bids = set()
+    uptodate = 0
+    # Reuse one connection for the per-lesson draft-meta lookups — on a remote
+    # API the TCP/TLS handshake dominates, so pooling roughly halves wall time
+    # for multi-lesson courses (same pattern as cmd_list / cmd_find_title).
+    with requests.Session() as session:
+        for entry in manifest.get("lessons", []):
+            bid = entry.get("outline_bid")
+            if bid:
+                manifest_bids.add(bid)
+            if entry.get("is_chapter"):
+                continue
+            if bid not in cloud_bids:
+                deleted_remote.append(entry)
+                continue
+            meta = api_safe(base_url, token, "get",
+                            f"/shifus/{shifu_bid}/draft-meta?outline_bid={bid}",
+                            session=session) or {}
+            cloud_rev = meta.get("revision")
+            local_rev = entry.get("revision")
+            is_behind = (cloud_rev is not None and local_rev is not None
+                         and cloud_rev > local_rev)
+            if is_behind:
+                behind.append((entry, local_rev, cloud_rev, meta))
+            # Local edit detection via content hash.
+            is_local_mod = False
+            if entry.get("file"):
+                dest = safe_join_path(course_dir, entry["file"])
+                cur_hash = _sha256_file(dest) if dest else None
+                if (cur_hash is not None and entry.get("content_sha256")
+                        and cur_hash != entry["content_sha256"]):
+                    locally_modified.append(entry)
+                    is_local_mod = True
+            if not is_behind and not is_local_mod:
+                uptodate += 1
+    new_remote = sorted(cloud_bids - manifest_bids)
+
+    print(f"Course: {manifest['course'].get('name', '')}  (shifu_bid {shifu_bid})")
+    if cloud_course_rev is None:
+        print("Course meta: unknown (failed to fetch cloud revision)")
+    elif local_course_rev is not None and cloud_course_rev > local_course_rev:
+        print(f"Course meta: BEHIND (local rev {local_course_rev} < cloud {cloud_course_rev}) "
+              f"— run `pull`")
+    else:
+        print(f"Course meta: up to date (revision {local_course_rev})")
+
+    if behind:
+        print("\nBehind (cloud changed — run `pull`; your local copy is stale):")
+        for entry, lr, cr, meta in behind:
+            who = _mask_phone((meta.get("updated_user") or {}).get("phone")) \
+                or (meta.get("updated_user") or {}).get("user_bid") or "?"
+            print(f"  {entry.get('file') or entry.get('outline_bid')}   "
+                  f"{entry.get('name', '')}   local rev {lr} < cloud {cr}   (by {who})")
+    if locally_modified:
+        print("\nLocally modified (will be pushed on next update-lesson / import):")
+        for entry in locally_modified:
+            print(f"  {entry.get('file')}   {entry.get('name', '')}")
+    if new_remote:
+        print("\nNew on server (not in local manifest — run `pull`):")
+        for b in new_remote:
+            print(f"  [bid {b}]")
+    if deleted_remote:
+        print("\nDeleted on server:")
+        for entry in deleted_remote:
+            print(f"  {entry.get('file') or entry.get('outline_bid')}   {entry.get('name', '')}")
+    print(f"\nUp to date: {uptodate} lessons")
+
+    # A locally-modified working tree counts as diverged too, so `status
+    # --exit-code` can guard import/push automation against unsynced edits.
+    diverged = bool(behind or new_remote or deleted_remote or locally_modified) or (
+        cloud_course_rev is not None and local_course_rev is not None
+        and cloud_course_rev > local_course_rev)
+    if getattr(args, "exit_code", False) and diverged:
+        sys.exit(1)
+
+
+def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
+                         outline_bid=None, attempted_content=None,
+                         local_file=None, intended_meta=None, conflict_meta=None):
+    """Cloud-wins recovery shared by the version-guarded write commands.
+
+    Backs up the local pending work (so nothing is lost), pulls the cloud copy
+    over local, then prints actionable guidance. NEVER overwrites the cloud and
+    NEVER silently drops local edits. scope ∈ {"lesson", "meta", "import"} only
+    selects how the pending work is backed up; the cloud refresh is always the
+    whole course (a conflict means the manifest's revisions are broadly stale).
+    Callers must sys.exit(EXIT_CONFLICT) after this returns.
+    """
+    if not course_dir:
+        print("\n⚠ Conflict: the course was changed on the server, but no "
+              "--course-dir was given so the local copy cannot be auto-pulled.\n"
+              "  Re-run with --course-dir to enable version sync, then retry.",
+              file=sys.stderr)
+        return
+
+    ts = _now_iso().replace(":", "").replace("-", "")
+    course_path = Path(course_dir)
+    backup_location = None
+
+    if scope == "lesson" and attempted_content is not None:
+        # Always persist the attempted edit before the pull overwrites local —
+        # even when the lesson has no manifest mapping (local_file is None), in
+        # which case fall back to a deterministic conflict file in the course dir
+        # so the pending content is never lost.
+        dest = safe_join_path(course_dir, local_file) if local_file else None
+        if dest:
+            destp = Path(dest)
+            bak = destp.with_name(destp.name + ".conflict")
+            if bak.exists():
+                bak = destp.with_name(destp.name + f".conflict-{ts}")
+        else:
+            stem = outline_bid or "lesson"
+            bak = course_path / f".{stem}.conflict.md"
+            if bak.exists():
+                bak = course_path / f".{stem}.conflict-{ts}.md"
+        bak.parent.mkdir(parents=True, exist_ok=True)
+        bak.write_text(attempted_content, encoding="utf-8")
+        backup_location = str(bak)
+    elif scope == "meta":
+        bakp = course_path / ".shifu-meta.conflict.json"
+        bakp.write_text(
+            json.dumps(intended_meta or {}, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8")
+        backup_location = str(bakp)
+    elif scope == "import":
+        backup_dir = course_path / f".conflict-backup-{ts}"
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        for rel in ("README.md", "course-prompt.md", "structure.json"):
+            src = course_path / rel
+            if src.exists():
+                shutil.copy2(src, backup_dir / rel)
+        lessons_src = course_path / "lessons"
+        if lessons_src.is_dir():
+            shutil.copytree(lessons_src, backup_dir / "lessons", dirs_exist_ok=True)
+        backup_location = str(backup_dir)
+
+    # Pull cloud over local. For lesson/meta scope, backup=True so any *other*
+    # divergent local file is still preserved as .local-<ts>.bak. For import
+    # scope the entire tree was already copied to .conflict-backup-<ts>/ above,
+    # so skip the redundant per-file backups. force=False keeps README intact.
+    _pull_into_dir(base_url, token, shifu_bid, course_dir,
+                   backup=(scope != "import"), force=False)
+
+    cm = conflict_meta or {}
+    who = _mask_phone((cm.get("updated_user") or {}).get("phone")) \
+        or (cm.get("updated_user") or {}).get("user_bid") or "another editor"
+    when = fmt_time(cm.get("updated_at")) if cm.get("updated_at") else ""
+    print("", file=sys.stderr)
+    print(f"⚠ Conflict: this course was changed on the server by {who}"
+          + (f" at {when}" if when else "") + ".", file=sys.stderr)
+    print(f"  Cloud is now authoritative and has been pulled into {course_dir}.",
+          file=sys.stderr)
+    if backup_location:
+        print(f"  Your un-pushed change was saved to: {backup_location}",
+              file=sys.stderr)
+    print("  Re-apply your edit on the freshly pulled baseline and run the "
+          "command again — repeat until it succeeds (exit 0). This is a retry, "
+          "not a failure; never force the old content back.", file=sys.stderr)
+
+
 # ── Create ─────────────────────────────────────────────────────────────────────
 def cmd_create(args):
     """Create a new empty course."""
@@ -501,9 +1062,34 @@ def cmd_create(args):
 
 # ── Update Meta ────────────────────────────────────────────────────────────────
 def cmd_update_meta(args):
-    """Update course metadata (name, description, system prompt, etc.)."""
+    """Update course metadata (name, description, system prompt, etc.).
+
+    The detail POST has no server-side optimistic lock, so version protection is
+    client-side: when --course-dir has a manifest, the course-level draft
+    revision is compared against the recorded baseline before writing. Because
+    the client cannot cheaply tell "I made the cloud change" from "someone else
+    did", any cloud advance is treated conservatively as a conflict — and an
+    over-pull is safe (local is always backed up first). On conflict it
+    auto-pulls, records the intended change, and exits non-zero.
+    """
     base_url, token = resolve_auth(args)
     shifu_bid = args.shifu_bid
+    course_dir = getattr(args, "course_dir", None)
+
+    manifest = _load_sync(course_dir) if course_dir else None
+    if manifest and manifest.get("shifu_bid") == shifu_bid:
+        local_course_rev = (manifest.get("course") or {}).get("revision")
+        cloud_meta = api_safe(base_url, token, "get",
+                              f"/shifus/{shifu_bid}/draft-meta") or {}
+        cloud_rev = cloud_meta.get("revision")
+        if (cloud_rev is not None and local_course_rev is not None
+                and cloud_rev > local_course_rev):
+            intended = {"name": args.name, "description": args.description,
+                        "course_prompt_file": args.course_prompt_file}
+            _auto_pull_overwrite(base_url, token, shifu_bid, course_dir,
+                                 scope="meta", intended_meta=intended,
+                                 conflict_meta=cloud_meta)
+            sys.exit(EXIT_CONFLICT)
 
     # Fetch current detail to preserve unchanged fields
     current = api(base_url, token, "get", f"/shifus/{shifu_bid}/detail")
@@ -543,6 +1129,35 @@ def cmd_update_meta(args):
 
     api(base_url, token, "post", f"/shifus/{shifu_bid}/detail", json=payload)
     print(f"Updated metadata for {shifu_bid}")
+
+    # Re-read the course-level revision (the detail POST response does not carry
+    # it) and record it as the new baseline so subsequent edits compare cleanly.
+    if manifest and manifest.get("shifu_bid") == shifu_bid:
+        fresh = api_safe(base_url, token, "get", f"/shifus/{shifu_bid}/draft-meta")
+        if not isinstance(fresh, dict) or fresh.get("revision") is None:
+            # The POST already bumped the cloud revision; if we cannot read the
+            # new value, writing the *old* revision back (with a fresh
+            # last_push_at) would make the next edit see cloud > local and raise
+            # a false conflict. Leave the manifest untouched and tell the user.
+            print("Warning: could not read the new course revision from the "
+                  "server; the sync manifest was left unchanged. Run "
+                  "`pull --course-dir <dir>` to resync.", file=sys.stderr)
+        else:
+            # Explicit check (not setdefault): a hand-edited manifest with
+            # "course": null would make setdefault return None and crash below.
+            course = manifest.get("course")
+            if not isinstance(course, dict):
+                course = {}
+                manifest["course"] = course
+            course["revision"] = fresh.get("revision")
+            course["name"] = payload.get("name", course.get("name"))
+            if fresh.get("updated_at") is not None:
+                course["updated_at"] = fresh.get("updated_at")
+            fresh_user = (fresh.get("updated_user") or {}).get("user_bid")
+            if fresh_user is not None:
+                course["updated_user_bid"] = fresh_user
+            manifest["last_push_at"] = _now_iso()
+            _write_sync(course_dir, manifest)
 
 
 # ── Add Chapter ────────────────────────────────────────────────────────────────
@@ -590,33 +1205,69 @@ def cmd_add_lesson(args):
 
 # ── Update Lesson ──────────────────────────────────────────────────────────────
 def cmd_update_lesson(args):
-    """Update MarkdownFlow content for an existing lesson (with optimistic locking)."""
+    """Update a lesson's MarkdownFlow with version-aware optimistic locking.
+
+    When --course-dir points at a directory with a .shifu-sync.json manifest,
+    base_revision is the *recorded baseline* for this outline (its revision at
+    last pull/push) — so a concurrent edit by someone else is actually detected.
+    Without a manifest the command falls back to the legacy behavior of taking
+    the current cloud head as the baseline (degraded protection). On conflict it
+    auto-pulls the cloud copy, backs up the attempted edit, and exits non-zero.
+    """
     base_url, token = resolve_auth(args)
     shifu_bid = args.shifu_bid
     outline_bid = args.outline_bid
+    course_dir = getattr(args, "course_dir", None)
 
-    # Step 1: Get current revision for optimistic locking
-    current = api(base_url, token, "get",
-                  f"/shifus/{shifu_bid}/outlines/{outline_bid}/mdflow")
+    manifest = _load_sync(course_dir) if course_dir else None
+    entry = None
     base_revision = None
-    if isinstance(current, dict):
-        base_revision = current.get("revision")
+    if manifest and manifest.get("shifu_bid") == shifu_bid:
+        entry = _sync_lesson_by_bid(manifest, outline_bid)
+        if entry:
+            base_revision = entry.get("revision")
+    if base_revision is None:
+        # Legacy fallback: take the cloud head as baseline (no concurrency guard).
+        current = api(base_url, token, "get",
+                      f"/shifus/{shifu_bid}/outlines/{outline_bid}/mdflow")
+        if isinstance(current, dict):
+            base_revision = current.get("revision")
+        if course_dir and not manifest:
+            print("  note: no .shifu-sync.json — version protection degraded; "
+                  "run `pull` first for full conflict detection.", file=sys.stderr)
 
-    # Step 2: Read new Teaching Prompt content
     with open(args.teaching_prompt_file, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Step 3: POST with base_revision
     payload = {"data": content}
-    if base_revision:
+    if base_revision is not None:
         payload["base_revision"] = base_revision
 
-    api(base_url, token, "post",
-        f"/shifus/{shifu_bid}/outlines/{outline_bid}/mdflow",
-        json=payload)
+    status, result = api_conflict_aware(
+        base_url, token, "post",
+        f"/shifus/{shifu_bid}/outlines/{outline_bid}/mdflow", json=payload)
+
+    if status == "conflict":
+        _auto_pull_overwrite(
+            base_url, token, shifu_bid, course_dir, scope="lesson",
+            outline_bid=outline_bid, attempted_content=content,
+            local_file=(entry or {}).get("file"), conflict_meta=result)
+        sys.exit(EXIT_CONFLICT)
+
+    new_revision = result.get("new_revision")
+    if manifest and entry is not None:
+        _set_lesson_revision(manifest, outline_bid, new_revision,
+                             content_sha256=_sha256_text(content))
+        manifest["last_push_at"] = _now_iso()
+        _write_sync(course_dir, manifest)
+        # Keep the local lesson file in lockstep with what was just pushed, so a
+        # subsequent `status` reports clean instead of "locally modified".
+        if entry.get("file"):
+            dest = safe_join_path(course_dir, entry["file"])
+            if dest:
+                Path(dest).write_text(content, encoding="utf-8")
     print(f"Updated lesson {outline_bid} ({len(content)} chars)")
-    if base_revision:
-        print(f"  Base revision: {base_revision}")
+    print(f"  Base revision: {base_revision} -> new revision: {new_revision}")
 
 
 # ── Rename Lesson ──────────────────────────────────────────────────────────────
@@ -804,6 +1455,23 @@ def cmd_import(args):
     base_url, token = resolve_auth(args)
     shifu_bid = None if args.new else args.shifu_bid
 
+    # Version preflight: when re-importing into an existing, version-tracked
+    # course, refuse to clobber changes another editor pushed since the last
+    # sync — auto-pull instead (the whole local tree is backed up first).
+    if shifu_bid and args.course_dir:
+        pre = _load_sync(args.course_dir)
+        if pre and pre.get("shifu_bid") == shifu_bid:
+            local_rev = (pre.get("course") or {}).get("revision")
+            cloud_meta = api_safe(base_url, token, "get",
+                                  f"/shifus/{shifu_bid}/draft-meta") or {}
+            cloud_rev = cloud_meta.get("revision")
+            if (cloud_rev is not None and local_rev is not None
+                    and cloud_rev > local_rev):
+                _auto_pull_overwrite(base_url, token, shifu_bid, args.course_dir,
+                                     scope="import", conflict_meta=cloud_meta)
+                sys.exit(EXIT_CONFLICT)
+
+    result_bid = None
     if args.course_dir:
         # Build JSON first, then import
         json_file = _build_import_json(
@@ -813,12 +1481,20 @@ def cmd_import(args):
             keywords=getattr(args, "keywords", None),
             chapter_name=getattr(args, "chapter_name", None),
         )
-        _import_flat(base_url, token, json_file, shifu_bid)
+        result_bid = _import_flat(base_url, token, json_file, shifu_bid)
     elif args.json_file:
-        _import_flat(base_url, token, args.json_file, shifu_bid)
+        result_bid = _import_flat(base_url, token, args.json_file, shifu_bid)
     else:
         print("Error: provide --json-file or --course-dir")
         sys.exit(1)
+
+    # Re-seed the sync manifest from the freshly imported cloud state so future
+    # edits are version-tracked. Phase 1 import is destructive (all outline bids
+    # are regenerated), so a pull is the reliable way to capture them.
+    if args.course_dir and result_bid:
+        _pull_into_dir(base_url, token, result_bid, args.course_dir,
+                       backup=False, force=False)
+        print(f"  Sync manifest seeded: {_sync_path(args.course_dir)}")
 
 
 # ── Build ──────────────────────────────────────────────────────────────────────
@@ -1485,6 +2161,24 @@ def build_parser():
     p.add_argument("outline_bid", nargs="?", default=None,
                    help="Outline BID (omit to show tree)")
 
+    # ── pull ──
+    p = sub.add_parser("pull", parents=[parent_parser],
+                       help="Pull a course from the platform into a local "
+                            "course directory and write .shifu-sync.json")
+    p.add_argument("shifu_bid", help="Course BID")
+    p.add_argument("--course-dir", required=True,
+                   help="Local course directory to write into")
+    p.add_argument("--force", action="store_true",
+                   help="Overwrite local files without backing up divergent edits")
+
+    # ── status ──
+    p = sub.add_parser("status", parents=[parent_parser],
+                       help="Compare local .shifu-sync.json against cloud revisions")
+    p.add_argument("--course-dir", required=True,
+                   help="Local course directory containing .shifu-sync.json")
+    p.add_argument("--exit-code", action="store_true",
+                   help="Exit non-zero when local and cloud have diverged")
+
     # ── history ──
     p = sub.add_parser("history", parents=[parent_parser],
                        help="Show Teaching Prompt revision history")
@@ -1511,6 +2205,9 @@ def build_parser():
     p.add_argument("--description", default=None, help="New description")
     p.add_argument("--course-prompt-file", default=None,
                    help="File containing course-level prompt")
+    p.add_argument("--course-dir", default=None,
+                   help="Course directory with .shifu-sync.json (enables version "
+                        "conflict protection)")
 
     # ── add-chapter ──
     p = sub.add_parser("add-chapter", parents=[parent_parser],
@@ -1535,6 +2232,9 @@ def build_parser():
     p.add_argument("outline_bid", help="Outline BID")
     p.add_argument("--teaching-prompt-file", required=True,
                    help="Teaching Prompt file (MarkdownFlow format)")
+    p.add_argument("--course-dir", default=None,
+                   help="Course directory with .shifu-sync.json (uses the recorded "
+                        "revision as the edit baseline; auto-pulls on conflict)")
 
     # ── rename-lesson ──
     p = sub.add_parser("rename-lesson", parents=[parent_parser],
@@ -1664,6 +2364,8 @@ def main():
         "login": cmd_login,
         "list": cmd_list,
         "show": cmd_show,
+        "pull": cmd_pull,
+        "status": cmd_status,
         "history": cmd_history,
         "export": cmd_export,
         "create": cmd_create,
