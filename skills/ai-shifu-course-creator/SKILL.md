@@ -93,11 +93,50 @@ These are the five red-line rules every Teaching Prompt and Course Prompt must s
 
 5. **Output language must be resolved before any prompt content.** Run Language Resolution per `references/data-contracts.md#language-resolution` before producing Teaching Prompt or Course Prompt content. The user's invocation language counts as `prompt_language_detection` (priority 4) and must be used when no higher-priority directive exists. Examples in this skill and in `references/` are written in English for canonical illustration only — do NOT let example language override the resolved output language. If the user invokes in Chinese, all interactions, option labels, downstream text, and the Course Prompt itself must be in Chinese.
 
+## Step 0 — Resolve the Course Target (MANDATORY before any authoring)
+
+**This runs first for every course-creation or editing request — before
+Orchestration, before proposing any course architecture/outline, before writing a
+single lesson.** The AI-Shifu platform DB is the single source of truth; you must
+know whether you are creating a brand-new course or editing an existing one
+*before* you invest in authoring. **Do NOT jump straight to a course outline or
+"架构方案".** Even when the user clearly says "make a new course", first check the
+cloud for an existing one — this is the explicit front guard from the editing
+flowchart.
+
+1. **Recognize intent** — new course, or edit an existing one?
+2. **Ensure login** — the existence check needs the cloud. If `.env` has no valid
+   token, guide the user through `shifu-cli.py login` **now**
+   (`references/cli/cli-reference.md#authentication`).
+3. **Check whether a related course already exists** — run
+   `shifu-cli.py find-title <keyword>` (targeted title search; do **not** dump the
+   whole `list`).
+4. **Branch — exactly as the editing flowchart:**
+   - **New intent + a match exists** → **ASK the user**: edit that existing course,
+     or create a separate new one? *Edit it* → `pull <bid> --course-dir <dir>` then
+     edit locally; *Create new* → author from scratch, then `import --new`.
+   - **New intent + no match** → author from scratch, then `import --new`.
+   - **Edit intent + a match exists** → `pull <bid> --course-dir <dir>`, then edit
+     locally. **Do NOT ask** new-vs-edit; if several match, only resolve *which* one.
+   - **Edit intent + no match** → author from scratch, then `import --new`.
+
+Only **after** the target is resolved do you enter the authoring pipeline below.
+When the target is an existing course, you author **on top of the pulled copy**,
+then push via the converging loop in **Deployment → Version Sync Workflow**. Full
+branch/loop details live there; the gate itself is here because it must fire first.
+
 ## Pipeline Overview
 
-The stages are **not** a flat linear pipeline. **Orchestration is an end-to-end driver** that internally calls Segmentation and Generation. Only Optimization and Deployment actually run in linear sequence after Orchestration completes.
+The stages are **not** a flat linear pipeline. **Step 0 (above) gates the whole
+pipeline.** **Orchestration is an end-to-end driver** that internally calls Segmentation and Generation. Only Optimization and Deployment actually run in linear sequence after Orchestration completes.
 
 ```
+Course request
+   │
+   ▼
+Step 0: Resolve Course Target            ← MANDATORY front guard: login + find-title + branch
+   │   (new vs edit existing; pull the existing course BEFORE authoring)
+   ▼
 Raw material
    │
    ▼
@@ -124,6 +163,7 @@ Segmentation, Generation, and Optimization can each be invoked standalone — se
 
 Run the full pipeline from raw material to a live deployed course.
 
+0. **Step 0 front guard (first, always)** — resolve new-vs-edit via `login` + `find-title`; if editing an existing course, `pull` it before authoring. See **## Step 0**.
 1. **Orchestration** drives Segmentation and Generation end-to-end, then runs cross-lesson gating to produce Teaching Prompts + course_index + variable table.
 2. **Optimization** audits and improves Orchestration's output, plus produces the Course Prompt.
 3. **Deployment** writes the course directory, builds, imports, and publishes to the AI-Shifu platform.
@@ -137,7 +177,7 @@ Run Segmentation through Optimization to produce optimized Teaching Prompts and 
 
 ### Path C: Deploy Only
 
-Run Deployment alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform.
+Run Deployment alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform. **Run Step 0 first** (`## Step 0`) to resolve new-vs-existing — deploy as `import --new`, or `pull` + edit + push into an existing course.
 
 ### Path D: Manage Existing
 
@@ -364,37 +404,12 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 
 ### Version Sync Workflow
 
-The platform DB is the single source of truth. Every course-editing request runs
-a **front guard** to fix the target *before* any authoring, then a **pull → edit
-→ push** loop that converges like `git pull` before `git push`. This mirrors the
-editing flowchart exactly.
-
-#### Front guard — decide the target before doing any work
-
-Run this the moment a course-editing intent is recognized, *before* investing in
-authoring, so you never build on the wrong target:
-
-1. **Recognize intent** — is the user creating a **new** course, or **editing** an
-   existing one?
-2. **Ensure login** — the existence check queries the cloud, so if `.env` has no
-   valid token, guide the user through `login` first
-   (`references/cli/cli-reference.md#authentication`).
-3. **Check whether the course already exists** — run `find-title <keyword>`
-   (targeted title search; do **not** dump the whole `list`).
-4. **Branch — exactly as the flowchart:**
-   - **New intent + a match exists** → **ASK the user**: edit the existing course,
-     or create a separate new one?
-     - *Edit it* → `pull <shifu_bid> --course-dir <dir>` (download), then edit locally.
-     - *Create new* → author locally, then `import --new`.
-   - **New intent + no match** → author locally, then `import --new`.
-   - **Edit intent + a match exists** → `pull <shifu_bid> --course-dir <dir>`, then
-     edit locally. **Do not ask** new-vs-edit — the intent is unambiguous; if
-     `find-title` returns several, only disambiguate *which* course.
-   - **Edit intent + no match** → author locally, then `import --new` (nothing to
-     edit yet).
-
-> The new-vs-edit question fires in exactly one case — **new intent + an existing
-> course** — to resolve the fork-vs-edit ambiguity. An edit intent never triggers it.
+The platform DB is the single source of truth. The **front guard** that fixes the
+target (new-vs-edit, login + `find-title`, and pulling the existing course) is
+**Step 0 — run it first, see `## Step 0`**. This section covers what happens once
+the target is an existing course you have pulled: the **pull → edit → push** loop
+that converges like `git pull` before `git push`. Together they mirror the editing
+flowchart exactly.
 
 #### Pull → edit → push (converging loop)
 
