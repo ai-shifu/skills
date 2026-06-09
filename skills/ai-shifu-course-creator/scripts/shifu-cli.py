@@ -770,10 +770,15 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force
             _backup_if_divergent(destp, content)
             destp.parent.mkdir(parents=True, exist_ok=True)
             destp.write_text(content, encoding="utf-8")
+            manifest_file, content_hash = relfile, _sha256_text(content)
+        else:
+            # safe_join_path rejected the path (e.g. a corrupt prior manifest's
+            # file value) — the file was not written, so don't claim it exists.
+            manifest_file, content_hash = None, None
         manifest_lessons.append({
-            "file": relfile, "outline_bid": node["bid"], "name": node["name"],
+            "file": manifest_file, "outline_bid": node["bid"], "name": node["name"],
             "parent_bid": node["parent_bid"], "revision": revision,
-            "is_chapter": False, "content_sha256": _sha256_text(content),
+            "is_chapter": False, "content_sha256": content_hash,
         })
 
     # README.md — keep the title in sync with the cloud course name. The first
@@ -920,8 +925,9 @@ def cmd_status(args):
     new_remote = sorted(cloud_bids - manifest_bids)
 
     print(f"Course: {manifest['course'].get('name', '')}  (shifu_bid {shifu_bid})")
-    if cloud_course_rev is not None and local_course_rev is not None \
-            and cloud_course_rev > local_course_rev:
+    if cloud_course_rev is None:
+        print("Course meta: unknown (failed to fetch cloud revision)")
+    elif local_course_rev is not None and cloud_course_rev > local_course_rev:
         print(f"Course meta: BEHIND (local rev {local_course_rev} < cloud {cloud_course_rev}) "
               f"— run `pull`")
     else:
@@ -1127,26 +1133,31 @@ def cmd_update_meta(args):
     # Re-read the course-level revision (the detail POST response does not carry
     # it) and record it as the new baseline so subsequent edits compare cleanly.
     if manifest and manifest.get("shifu_bid") == shifu_bid:
-        fresh = api_safe(base_url, token, "get",
-                         f"/shifus/{shifu_bid}/draft-meta") or {}
-        # Use an explicit check rather than setdefault: a hand-edited manifest
-        # with "course": null would make setdefault return None and crash below.
-        course = manifest.get("course")
-        if not isinstance(course, dict):
-            course = {}
-            manifest["course"] = course
-        # Update each field only when the re-read returned it, so a transient
-        # draft-meta GET failure (fresh == {}) does not null out the baseline.
-        if fresh.get("revision") is not None:
+        fresh = api_safe(base_url, token, "get", f"/shifus/{shifu_bid}/draft-meta")
+        if not isinstance(fresh, dict) or fresh.get("revision") is None:
+            # The POST already bumped the cloud revision; if we cannot read the
+            # new value, writing the *old* revision back (with a fresh
+            # last_push_at) would make the next edit see cloud > local and raise
+            # a false conflict. Leave the manifest untouched and tell the user.
+            print("Warning: could not read the new course revision from the "
+                  "server; the sync manifest was left unchanged. Run "
+                  "`pull --course-dir <dir>` to resync.", file=sys.stderr)
+        else:
+            # Explicit check (not setdefault): a hand-edited manifest with
+            # "course": null would make setdefault return None and crash below.
+            course = manifest.get("course")
+            if not isinstance(course, dict):
+                course = {}
+                manifest["course"] = course
             course["revision"] = fresh.get("revision")
-        course["name"] = payload.get("name", course.get("name"))
-        if fresh.get("updated_at") is not None:
-            course["updated_at"] = fresh.get("updated_at")
-        fresh_user = (fresh.get("updated_user") or {}).get("user_bid")
-        if fresh_user is not None:
-            course["updated_user_bid"] = fresh_user
-        manifest["last_push_at"] = _now_iso()
-        _write_sync(course_dir, manifest)
+            course["name"] = payload.get("name", course.get("name"))
+            if fresh.get("updated_at") is not None:
+                course["updated_at"] = fresh.get("updated_at")
+            fresh_user = (fresh.get("updated_user") or {}).get("user_bid")
+            if fresh_user is not None:
+                course["updated_user_bid"] = fresh_user
+            manifest["last_push_at"] = _now_iso()
+            _write_sync(course_dir, manifest)
 
 
 # ── Add Chapter ────────────────────────────────────────────────────────────────
