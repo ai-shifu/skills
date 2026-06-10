@@ -8,7 +8,7 @@ These rules apply to every report produced from this template, and to any other 
 
 - **Links must be Markdown, never bare URLs.** Whenever you show a URL to the user (admin console, course preview, contact page, etc.), wrap it in Markdown link syntax `[descriptive text](URL)`. Never emit a bare `https://...` on its own line.
 - **Why:** the AI-Shifu chat client only treats Markdown links as clickable / copy-on-tap. A bare URL renders as plain text — the user cannot click it and cannot copy it cleanly on mobile.
-- **Where this applies:** phase reports below, the opening introduction, the contact line, and any ad-hoc message that surfaces a URL to the user.
+- **Where this applies:** phase reports below, the opening introduction, contact mentions, and any ad-hoc message that surfaces a URL to the user.
 - **Where this does NOT apply:** URLs inside Teaching Prompts (those follow MarkdownFlow image / link rules) and URLs shown inside fenced code blocks for reference.
 - **Exception — deployment / management Verification URLs.** When transcribing the `Verification URLs:` block printed by `shifu-cli.py` (`publish` / `import` / `create` / `show`), emit each URL as **three lines**:
   1. A Markdown link — `[<course name> - <用途中文标签>](<URL>)`
