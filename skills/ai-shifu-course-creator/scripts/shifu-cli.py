@@ -2,6 +2,7 @@
 """AI-Shifu Course CLI - Unified tool for course CRUD operations."""
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -53,12 +54,26 @@ def save_env(token):
 
 
 def resolve_auth(args):
-    """Resolve token from CLI args or .env. Base URL is fixed to DEFAULT_BASE_URL."""
+    """Resolve token from CLI args or .env. Base URL is fixed to DEFAULT_BASE_URL.
+
+    When the JWT carries a ``time_stamp`` older than 7 days, a warning is printed
+    to stderr (the authoritative expiry check is the backend's DB record, so this
+    is only a nudge — the call still proceeds).
+    """
     token = getattr(args, "token", None) or os.environ.get("SHIFU_TOKEN")
     if not token:
         print("Error: no token available. Run 'shifu-cli.py login' first, "
               "or use --token / set SHIFU_TOKEN in .env")
         sys.exit(1)
+
+    payload = _jwt_payload(token)
+    if payload:
+        ts = payload.get("time_stamp")
+        if ts and (time.time() - ts) > TOKEN_EXPIRE_SECONDS:
+            print("Warning: token may be expired (issued > 7 days ago). "
+                  "Run `shifu-cli.py verify` to check, or `shifu-cli.py login` "
+                  "to re-login.",
+                  file=sys.stderr)
 
     return DEFAULT_BASE_URL, token
 
@@ -430,6 +445,68 @@ def cmd_login(args):
                     {"mobile": phone}, "Failed to send SMS")
         print(f"SMS code sent to {masked}. "
               f"Run again with --sms-code <4-digit-code> to complete login.")
+
+
+# ── Verify Token ────────────────────────────────────────────────────────────────
+TOKEN_EXPIRE_SECONDS = 604800  # 7 days, matches backend TOKEN_EXPIRE_TIME
+
+# Backend error codes that mean "token is not usable":
+_TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
+# 1001 = userNotFound, 1004 = userNotLogin, 1005 = userTokenExpired
+
+
+def _jwt_payload(token):
+    """Decode the JWT payload (no verification) for a lightweight expiry hint.
+
+    The ai-shifu JWT only carries ``user_id`` + ``time_stamp`` (no ``exp``), so a
+    true expiry check requires asking the backend.  We just extract ``time_stamp``
+    for a cheap early warning — the authoritative decision is in ``cmd_verify``.
+    Returns None when the token cannot be parsed as a JWT.
+    """
+    try:
+        encoded = token.split(".")[1]
+        # JWT base64url: replace URL-safe chars and add padding
+        encoded = encoded.replace("-", "+").replace("_", "/")
+        encoded += "=" * ((4 - len(encoded) % 4) % 4)
+        return json.loads(base64.b64decode(encoded))
+    except Exception:
+        return None
+
+
+def cmd_verify(args):
+    """Check whether the stored token is still valid, using a lightweight API call.
+
+    Exit codes:
+      0 — token is valid (API accepted it)
+      1 — token is expired / invalid (error codes 1001 / 1004 / 1005)
+      2 — unknown (network / service error — cannot determine)
+    """
+    base_url, token = resolve_auth(args)
+    try:
+        url = f"{base_url}/api/shifu/shifus?limit=1"
+        headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
+        resp = requests.get(url, headers=headers, timeout=15)
+    except requests.RequestException as e:
+        print(f"Token status: unknown (network error: {e})")
+        sys.exit(2)
+    if not resp.ok:
+        print(f"Token status: unknown (HTTP {resp.status_code})")
+        sys.exit(2)
+    try:
+        data = resp.json()
+    except ValueError:
+        print("Token status: unknown (invalid JSON response)")
+        sys.exit(2)
+    code = data.get("code")
+    if code == 0:
+        print("Token is valid")
+        sys.exit(0)
+    if code in _TOKEN_ERROR_CODES:
+        print("Token is expired or invalid — re-run `shifu-cli.py login`")
+        sys.exit(1)
+    # Any other business code (e.g. no courses) — the token was recognised.
+    print(f"Token is valid (API returned code {code})")
+    sys.exit(0)
 
 
 # ── List ───────────────────────────────────────────────────────────────────────
@@ -2271,6 +2348,11 @@ def build_parser():
     p.add_argument("--sms-code", default=None,
                    help="4-digit SMS verification code")
 
+    # ── verify ──
+    sub.add_parser("verify", parents=[parent_parser],
+                   help="Check whether the stored token is still valid "
+                        "(exit 0 = valid, 1 = expired, 2 = unknown)")
+
     # ── list ──
     sub.add_parser("list", parents=[parent_parser], help="List all courses")
 
@@ -2495,6 +2577,7 @@ def main():
 
     commands = {
         "login": cmd_login,
+        "verify": cmd_verify,
         "list": cmd_list,
         "show": cmd_show,
         "pull": cmd_pull,

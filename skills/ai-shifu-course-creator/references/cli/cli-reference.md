@@ -8,35 +8,85 @@ python3 {skillDir}/scripts/shifu-cli.py <command>
 
 ## Authentication
 
-Run login once — the token persists in `{skillDir}/.env` for subsequent commands:
+The token persists in `{skillDir}/.env` and is valid for **7 days**, with each
+successful API call refreshing the expiry (sliding window — an active user never
+expires).  Before every operation that needs a token, run the one-shot check:
 
 ```bash
-# Step 1: Send SMS verification code
+verify                         # exit 0 = valid, 1 = expired, 2 = unknown
+```
+
+When `verify` returns 1, run the SMS login once:
+
+```bash
+# Step 1: Send SMS verification code (once per session — see below)
 login --phone 13800138000
 
-# Step 2: Complete login with the code
+# Step 2: Complete login with the 4-digit code
 login --phone 13800138000 --sms-code 1234
 ```
 
-The CLI always talks to `https://app.ai-shifu.cn`. To skip the SMS login, set `--token` / `SHIFU_TOKEN` directly.
+The CLI always talks to `https://app.ai-shifu.cn`. To skip the SMS login, set
+`--token` / `SHIFU_TOKEN` directly.
 
 ### Agent Login Flow
 
-When no valid token is available, guide the user through login. AI-Shifu's SMS login auto-creates an account on first use, so the same flow works for both new and returning users.
+**Gate: run `shifu-cli.py verify` first.** Exit 0 → skip login entirely; exit 1
+→ run the flow below **once**; exit 2 → retry later, do NOT trigger a new login.
 
-Fixed flow: preview + ask for phone → send code → ask for SMS code → complete. Run the steps in order.
+**Hard constraint — one phone number = one SMS send per login session.**  Each
+phone number is capped at **5 SMS codes per day**.  Sending a second SMS when the
+first is still in transit wastes a slot and risks locking the user out.  The
+agent MUST:
+- Collect the phone number → send `login --phone <phone>` **exactly once**.
+- If the user asks "didn't receive / resend", reply "验证码在 60 秒内到达，请稍等" —
+  do NOT resend unless **3 consecutive wrong codes** have been entered.
+- After the 3rd consecutive wrong code, send `login --phone <phone>` one more
+  time (this is the final SMS for this session).
 
-Do not ask anything else. No status checks ("have you signed up / logged in before?"), no readiness or intent confirmations ("ready to start?", "I'll provide my phone"), no acknowledgment pauses, no recaps between steps. Each turn collects exactly the next value (phone, then SMS code), nothing else. The Step 1 flow preview is a one-shot heads-up, not a confirmation prompt — do not wait for the user to acknowledge it before asking for the phone.
+Fixed flow: verify → (only if needed) ask for phone → send code → ask for SMS
+code → complete. Run the steps in order. Do not ask anything else.
+
+Do not ask anything else. No status checks ("have you signed up / logged in
+before?"), no readiness or intent confirmations ("ready to start?", "I'll
+provide my phone"), no acknowledgment pauses, no recaps between steps. Each turn
+collects exactly the next value (phone, then SMS code), nothing else. The
+Step 1 flow preview is a one-shot heads-up, not a confirmation prompt — do not
+wait for the user to acknowledge it before asking for the phone.
 
 Steps:
 
-1. In a single turn, give the user a one-line preview of the full flow and then immediately ask for the phone number. Cover all of these in the preview: (a) SMS login, no password; (b) a 4-digit code will be sent to the phone; (c) the user replies with the code in the next turn; (d) on success the token is saved locally and login is complete; (e) new phone numbers auto-create an account on first use. Keep it brief — one or two sentences total — then ask for the phone in the same reply.
-2. Send SMS code:
+1. In a single turn, give the user a one-line preview of the full flow and then
+   immediately ask for the phone number. Cover all of these in the preview:
+   (a) SMS login, no password; (b) a 4-digit code will be sent to the phone;
+   (c) the user replies with the code in the next turn; (d) on success the token
+   is saved locally and login is complete; (e) new phone numbers auto-create an
+   account on first use. Keep it brief — one or two sentences total — then ask
+   for the phone in the same reply.
+2. Send SMS code **once**:
    `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone>`
 3. Ask the user for the 4-digit verification code they received.
 4. Complete login:
    `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --sms-code <4-digit-code>`
 5. Token is automatically saved — proceed with the requested operation.
+
+**Error → agent behavior quick reference:**
+
+| What happened | Agent response |
+|---|---|
+| `verify` exit 0 | Token valid — continue, no login |
+| `verify` exit 1 | Run the SMS flow above **once** |
+| `verify` exit 2 | Network issue — retry `verify` later |
+| login returned "SMS sent" | Wait for user to provide code; do NOT resend |
+| login returned "smsSendTooFrequent" | Wait 60 s then retry; do NOT send the phone again |
+| login returned sms code error (1st or 2nd time) | Ask user to re-enter code; do NOT resend SMS |
+| login returned sms code error (**3rd** consecutive time) | Re-send `login --phone <phone>` to get a new code |
+| Any API call returned code 1005 (token expired) | Run `verify` → login flow |
+
+**Token persistence.** The login step writes `SHIFU_TOKEN=<jwt>` into
+`{skillDir}/.env`. Once saved, `verify` is the gate — the token stays valid for
+7 days with sliding refresh. If the token expires (error codes `1001` / `1004`
+/ `1005`), re-run the login flow — the `.env` is overwritten in place.
 
 Always use CLI commands. Never make raw HTTP/API calls directly.
 
