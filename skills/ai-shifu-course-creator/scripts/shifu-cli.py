@@ -648,14 +648,60 @@ def cmd_export(args):
             print(resp.text)
 
 
+# ── Course Attributes (round-trip via structure.json + course-config.json) ──────
+COURSE_CONFIG_NAME = "course-config.json"
+
+# Per-lesson learning-access type ("guest"/"trial"/"normal") <-> the Chinese the
+# editor shows. guest = 无需登录, trial = 试看(需登录), normal = 需付费.
+ACCESS_TYPES = ("guest", "trial", "normal")
+
+# Course-level attributes that round-trip through course-config.json. The course
+# name lives in README.md and the system prompt in course-prompt.md, so they are
+# intentionally NOT duplicated here.
+COURSE_CONFIG_DEFAULTS = {
+    "model": "", "temperature": 0.3, "price": 0, "keywords": [], "avatar": "",
+    "use_learner_language": False,
+    "tts_enabled": False, "tts_provider": "minimax", "tts_model": "",
+    "tts_voice_id": "", "tts_speed": 1.0, "tts_pitch": 0, "tts_emotion": "",
+    "ask_enabled_status": 5101, "ask_model": "", "ask_temperature": 0.0,
+    "ask_system_prompt": "", "ask_provider_config": {},
+}
+
+
+def _normalize_keywords(value):
+    """Coerce keywords to a list — some endpoints return a comma-joined string."""
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        return [k.strip() for k in value.split(",") if k.strip()]
+    return []
+
+
+def _course_config_from_detail(detail):
+    """Extract the round-trippable course-level attributes from a /detail dict."""
+    cfg = {}
+    for k, default in COURSE_CONFIG_DEFAULTS.items():
+        cfg[k] = detail.get(k, default)
+    cfg["keywords"] = _normalize_keywords(cfg.get("keywords"))
+    return cfg
+
+
+def _write_course_config(course_dir, cfg):
+    (Path(course_dir) / COURSE_CONFIG_NAME).write_text(
+        json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 # ── Pull / Status / Auto-Pull (Version Sync) ────────────────────────────────────
 def _flatten_outline_tree(tree):
     """Depth-first flatten of the outline tree, preserving sibling order.
 
-    Returns a list of {bid, name, parent_bid, is_chapter}. A node is a chapter
-    container (no MarkdownFlow content) when it has children OR sits at the top
-    level; everything else is a leaf lesson. This mirrors the 2-level
-    chapter→lesson shape that `_build_import_json` produces.
+    Returns a list of {bid, name, parent_bid, is_chapter, access, hidden}. A node
+    is a chapter container (no MarkdownFlow content) when it has children OR sits
+    at the top level; everything else is a leaf lesson. This mirrors the 2-level
+    chapter→lesson shape that `_build_import_json` produces. `access` is the
+    lesson's learning-access type ("guest"/"trial"/"normal") and `hidden` its
+    visibility — captured so a later build/import can round-trip them faithfully
+    (the platform otherwise resets them to defaults on re-import).
     """
     flat = []
 
@@ -672,6 +718,8 @@ def _flatten_outline_tree(tree):
                 "name": it.get("name", ""),
                 "parent_bid": parent_bid,
                 "is_chapter": bool(children) or depth == 0,
+                "access": it.get("type"),
+                "hidden": bool(it.get("is_hidden")),
             })
             if children:
                 walk(children, bid, depth + 1)
@@ -804,7 +852,10 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force
     cp_path.write_text(course_prompt, encoding="utf-8")
 
     # structure.json — regenerate the chapter→lesson shape so a later `build`
-    # reproduces the same tree. `file` is relative to lessons/ per the spec.
+    # reproduces the same tree. Each lesson also carries its `access` (learning
+    # permission) and `hidden` so build/import restore them instead of letting
+    # the platform reset every lesson to "guest" (无需登录). `file` is relative
+    # to lessons/ per the spec.
     bid_to_relfile = {}
     for entry in manifest_lessons:
         if entry.get("file"):
@@ -817,11 +868,20 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force
                 relfile = bid_to_relfile.get(n["bid"], "")
                 fname = relfile.split("/", 1)[1] if relfile.startswith("lessons/") else relfile
                 if fname:
-                    ch_lessons.append({"file": fname, "title": n["name"]})
+                    ch_lessons.append({
+                        "file": fname, "title": n["name"],
+                        "access": n.get("access") or "guest",
+                        "hidden": bool(n.get("hidden")),
+                    })
         chapters.append({"title": ch["name"], "lessons": ch_lessons})
     (course_path / "structure.json").write_text(
         json.dumps({"chapters": chapters}, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")
+
+    # course-config.json — cloud-authoritative course-level attributes (model,
+    # price, TTS, Ask, …) so a later build/import restores them faithfully
+    # instead of overwriting the cloud with hard-coded defaults.
+    _write_course_config(course_dir, _course_config_from_detail(detail))
 
     manifest = {
         "schema_version": 1,
@@ -1014,7 +1074,8 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
     elif scope == "import":
         backup_dir = course_path / f".conflict-backup-{ts}"
         backup_dir.mkdir(parents=True, exist_ok=True)
-        for rel in ("README.md", "course-prompt.md", "structure.json"):
+        for rel in ("README.md", "course-prompt.md", "structure.json",
+                    COURSE_CONFIG_NAME):
             src = course_path / rel
             if src.exists():
                 shutil.copy2(src, backup_dir / rel)
@@ -1091,41 +1152,24 @@ def cmd_update_meta(args):
                                  conflict_meta=cloud_meta)
             sys.exit(EXIT_CONFLICT)
 
-    # Fetch current detail to preserve unchanged fields
-    current = api(base_url, token, "get", f"/shifus/{shifu_bid}/detail")
-
-    course_prompt = current.get("system_prompt", "")
+    # Send ONLY the content fields the user is changing. The backend uses PATCH
+    # semantics (an omitted field is left unchanged), so we deliberately do NOT
+    # touch course attributes (model / price / TTS / Ask / keywords / avatar /
+    # use_learner_language) here — the skill does not manage attributes by
+    # default; they stay as set on the platform. To change an attribute, the user
+    # asks explicitly (e.g. `set-access` for a lesson's permission).
+    payload = {}
+    if args.name is not None:
+        payload["name"] = args.name
+    if args.description is not None:
+        payload["description"] = args.description
     if args.course_prompt_file:
         with open(args.course_prompt_file, "r", encoding="utf-8") as f:
-            course_prompt = f.read().strip()
-
-    keywords = current.get("keywords", "")
-    if isinstance(keywords, list):
-        pass  # already a list
-    elif isinstance(keywords, str):
-        keywords = [k.strip() for k in keywords.split(",") if k.strip()]
-
-    payload = {
-        "name": args.name if args.name is not None else current.get("name", ""),
-        "description": args.description if args.description is not None
-                       else current.get("description", ""),
-        "avatar": current.get("avatar", ""),
-        "keywords": keywords,
-        "model": current.get("model", ""),
-        "temperature": current.get("temperature", 0.3),
-        "system_prompt": course_prompt,
-        "tts_enabled": current.get("tts_enabled", False),
-        "tts_provider": current.get("tts_provider", "minimax"),
-        "tts_model": current.get("tts_model", ""),
-        "tts_voice_id": current.get("tts_voice_id", ""),
-        "tts_speed": current.get("tts_speed", 1.0),
-        "tts_pitch": current.get("tts_pitch", 0),
-        "tts_emotion": current.get("tts_emotion", ""),
-        "use_learner_language": current.get("use_learner_language", False),
-    }
-    price = current.get("price")
-    if price and price > 0:
-        payload["price"] = price
+            payload["system_prompt"] = f.read().strip()
+    if not payload:
+        print("Nothing to update "
+              "(provide --name / --description / --course-prompt-file).")
+        return
 
     api(base_url, token, "post", f"/shifus/{shifu_bid}/detail", json=payload)
     print(f"Updated metadata for {shifu_bid}")
@@ -1300,7 +1344,84 @@ def cmd_reorder(args):
     print(f"Reordered {len(bids)} lessons")
 
 
+# ── Set Access (learning permission) ────────────────────────────────────────────
+def _sync_structure_access(course_dir, outline_bid, access, hidden):
+    """Best-effort: reflect one lesson's access/hidden into local structure.json,
+    matched via the .shifu-sync.json outline_bid -> file mapping. No-op when the
+    manifest / structure.json is missing."""
+    manifest = _load_sync(course_dir)
+    if not manifest:
+        return
+    entry = _sync_lesson_by_bid(manifest, outline_bid)
+    if not entry or not entry.get("file"):
+        return
+    rel = entry["file"]
+    fname = rel.split("/", 1)[1] if rel.startswith("lessons/") else rel
+    sp = Path(course_dir) / "structure.json"
+    if not sp.exists():
+        return
+    try:
+        data = json.loads(sp.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    changed = False
+    for ch in data.get("chapters", []):
+        for ls in ch.get("lessons", []):
+            if ls.get("file") == fname:
+                ls["access"] = access
+                if hidden is not None:
+                    ls["hidden"] = hidden
+                changed = True
+    if changed:
+        sp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                      encoding="utf-8")
+
+
+def cmd_set_access(args):
+    """Set a lesson's learning-access type (guest/trial/normal) and optionally
+    its visibility, without re-importing the whole course."""
+    base_url, token = resolve_auth(args)
+    shifu_bid, outline_bid = args.shifu_bid, args.outline_bid
+    if args.access not in ACCESS_TYPES:
+        print(f"Error: --access must be one of: {', '.join(ACCESS_TYPES)}")
+        sys.exit(1)
+    hidden = None
+    if args.hidden is not None:
+        hidden = args.hidden == "true"
+
+    # Backend uses PATCH semantics, so send ONLY what we're changing — the
+    # lesson's name / system prompt / etc. are preserved by omission.
+    payload = {"type": args.access}
+    if hidden is not None:
+        payload["is_hidden"] = hidden
+    api(base_url, token, "post",
+        f"/shifus/{shifu_bid}/outlines/{outline_bid}", json=payload)
+
+    label = {"guest": "无需登录 (guest)", "trial": "试看/需登录 (trial)",
+             "normal": "需付费 (normal)"}[args.access]
+    print(f"Set lesson {outline_bid} access -> {label}"
+          + (f", hidden={hidden}" if hidden is not None else ""))
+
+    if getattr(args, "course_dir", None):
+        _sync_structure_access(args.course_dir, outline_bid, args.access, hidden)
+
+
 # ── Import ─────────────────────────────────────────────────────────────────────
+def _outline_create_payload(item, parent_bid=None):
+    """Build the PUT /outlines payload for one outline_item.
+
+    Only name (+ parent) — the skill does not push learning-access / visibility
+    by default. `import` is for new courses / structural changes; a newly created
+    outline gets the platform default and is then managed online (or via
+    `set-access`). Content iteration on an existing course should use
+    `update-lesson`, which never touches attributes.
+    """
+    payload = {"name": item["title"]}
+    if parent_bid:
+        payload["parent_bid"] = parent_bid
+    return payload
+
+
 def _import_flat(base_url, token, json_file, shifu_bid):
     """Import from flat JSON file (original shifu-api-import.py logic)."""
     with open(json_file, "r", encoding="utf-8") as f:
@@ -1320,32 +1441,16 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         shifu_bid = result.get("bid") or result.get("shifu_bid")
         print(f"  Created shifu: {shifu_bid}")
 
-    # Update shifu detail
-    keywords = shifu_info.get("keywords", "")
-    if isinstance(keywords, str):
-        keywords = [k.strip() for k in keywords.split(",") if k.strip()]
+    # Update shifu detail — send ONLY the content fields. The backend uses PATCH
+    # semantics, so omitting the course attributes (model / price / TTS / Ask /
+    # keywords / avatar / …) leaves them untouched: a re-import never resets them.
+    # A brand-new course (import --new) gets platform defaults for the omitted
+    # attributes. The skill does not push attributes by default.
     detail_payload = {
         "name": shifu_info["title"],
         "description": shifu_info.get("description", ""),
-        "avatar": shifu_info.get("avatar_res_bid", ""),
-        "keywords": keywords,
-        "model": shifu_info.get("llm", ""),
-        "temperature": shifu_info.get("llm_temperature", 0.3),
         "system_prompt": shifu_info.get("course_prompt", ""),
     }
-    price = shifu_info.get("price")
-    if price and price > 0:
-        detail_payload["price"] = price
-    detail_payload.update({
-        "tts_enabled": False,
-        "tts_provider": "minimax",
-        "tts_model": "",
-        "tts_voice_id": "",
-        "tts_speed": 1.0,
-        "tts_pitch": 0,
-        "tts_emotion": "",
-        "use_learner_language": False,
-    })
     for attempt in range(1, 4):
         result = api_safe(base_url, token, "post", f"/shifus/{shifu_bid}/detail",
                           json=detail_payload)
@@ -1400,7 +1505,7 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         old_bid = item.get("outline_item_bid", "")
 
         result = api(base_url, token, "put", f"/shifus/{shifu_bid}/outlines",
-                     json={"name": title})
+                     json=_outline_create_payload(item))
         new_bid = result.get("bid") or result.get("outline_item_bid")
         bid_map[old_bid] = new_bid
         print(f"  [{count}/{total}] Created: {title} ({new_bid})")
@@ -1423,7 +1528,7 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         new_parent = bid_map.get(old_parent, old_parent)
 
         result = api(base_url, token, "put", f"/shifus/{shifu_bid}/outlines",
-                     json={"name": title, "parent_bid": new_parent})
+                     json=_outline_create_payload(item, parent_bid=new_parent))
         new_bid = result.get("bid") or result.get("outline_item_bid")
         print(f"  [{count}/{total}] Created: {title} ({new_bid})")
 
@@ -2243,6 +2348,19 @@ def build_parser():
     p.add_argument("outline_bid", help="Outline BID")
     p.add_argument("--name", required=True, help="New lesson name")
 
+    # ── set-access ──
+    p = sub.add_parser("set-access", parents=[parent_parser],
+                       help="Set a lesson's learning-access type "
+                            "(guest=无需登录 / trial=试看 / normal=需付费)")
+    p.add_argument("shifu_bid", help="Course BID")
+    p.add_argument("outline_bid", help="Outline BID")
+    p.add_argument("--access", required=True, choices=["guest", "trial", "normal"],
+                   help="guest=无需登录, trial=试看(需登录), normal=需付费")
+    p.add_argument("--hidden", choices=["true", "false"], default=None,
+                   help="Optionally set visibility (default: keep current)")
+    p.add_argument("--course-dir", default=None,
+                   help="Also reflect the change into local structure.json")
+
     # ── delete-lesson ──
     p = sub.add_parser("delete-lesson", parents=[parent_parser],
                        help="Delete a lesson")
@@ -2374,6 +2492,7 @@ def main():
         "add-lesson": cmd_add_lesson,
         "update-lesson": cmd_update_lesson,
         "rename-lesson": cmd_rename_lesson,
+        "set-access": cmd_set_access,
         "delete-lesson": cmd_delete_lesson,
         "reorder": cmd_reorder,
         "import": cmd_import,
