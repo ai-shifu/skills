@@ -121,7 +121,20 @@ update-meta <shifu_bid> [--name "..."] [--description "..."] [--course-prompt-fi
 update-lesson <shifu_bid> <outline_bid> --teaching-prompt-file lesson.md [--course-dir ./course-a/]
 rename-lesson <shifu_bid> <outline_bid> --name "New Name"
 reorder <shifu_bid> --order bid1,bid2,bid3
+set-access <shifu_bid> <outline_bid> --access guest|trial|normal [--hidden true|false] [--course-dir ./course-a/]
 ```
+
+`update-meta` sends only the content fields you pass (`--name` / `--description`
+/ `--course-prompt-file`); it does **not** touch course attributes (model / price
+/ TTS / Ask / …) — the backend preserves any field left out. `rename-lesson`
+likewise changes only the name and no longer resets the lesson's learning
+permission.
+
+`set-access` sets one lesson's **learning permission** (`guest` = 无需登录 /
+`trial` = 试看·需登录 / `normal` = 需付费) without re-importing; it sends only
+`type` (+ `is_hidden` when `--hidden` is given), and the backend leaves the
+lesson's other fields untouched. With `--course-dir` it also writes the value
+into the `structure.json` reference.
 
 `update-lesson` and `update-meta` are version-aware when given `--course-dir`
 (a directory with a `.shifu-sync.json` from `pull`):
@@ -166,6 +179,25 @@ build --course-dir ./course-a/ [-o shifu-import.json] [--title "..."] [--chapter
 ```
 
 The `build` command works entirely offline — it reads the course directory's Teaching Prompts (one MarkdownFlow file per lesson under `lessons/`) and the Course Prompt, then produces `shifu-import.json` without any network calls. The `import --course-dir` option combines build + import in one step.
+
+**Course attributes are not pushed by default.** The skill manages course
+*content*; *attributes* (each lesson's learning permission / hidden state, and
+course-level model/price/TTS/Ask/…) are left to the platform. `build`/`import`
+send only content (lesson MarkdownFlow + course name/description/system prompt),
+and the backend uses **PATCH semantics** — any field a write omits is preserved.
+So `update-lesson` (content only) and `update-meta` (only the `--name` /
+`--description` / `--course-prompt-file` you pass) never touch attributes.
+
+`pull` still writes the attributes into `structure.json` (`access`/`hidden`) and
+`course-config.json` as a **read-only reference** for the agent. To change an
+attribute, do it explicitly: `set-access` for a lesson's permission, or the
+platform editor for course-level settings.
+
+> **Iterating an existing course:** prefer the non-destructive granular commands
+> — `pull → update-lesson / add-lesson / delete-lesson / reorder / set-access`.
+> The destructive whole-course `import` recreates every outline, so a recreated
+> lesson gets the platform default permission; use `import --new` for brand-new
+> courses, not to iterate an existing one.
 
 **Version-aware import.** When re-importing into an existing course with a
 `.shifu-sync.json` (`import <shifu_bid> --course-dir ...`), the CLI first checks

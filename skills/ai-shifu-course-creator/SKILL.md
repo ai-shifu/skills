@@ -385,9 +385,27 @@ Always use CLI commands. Never make raw HTTP/API calls directly.
 
 Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `references/cli/course-directory-spec.md` for the full specification. When continuing from Optimization (Path A), write the optimized Teaching Prompts and Course Prompt into this structure automatically.
 
+**Content vs attributes — the skill changes content, not attributes, by default.**
+A course has two parts: **content** (lesson MarkdownFlow + course name/prompt)
+and **attributes** (each lesson's learning permission `access` = 无需登录/试看/付费
+and `hidden`; course-level model/price/TTS/Ask/keywords/…). The skill pushes only
+content; **it never sends attributes by default**, and the platform backend uses
+PATCH semantics (any field a write omits is left unchanged), so iterating content
+never resets attributes. `pull` writes the current attributes into
+`structure.json` (`access`/`hidden`) and `course-config.json` as a **read-only
+reference** for you. Change attributes only when the user explicitly asks:
+`set-access <shifu_bid> <outline_bid> --access guest|trial|normal [--course-dir <dir>]`
+for a lesson's permission; course-level settings are changed in the platform editor.
+
+**Editing an existing course → use granular non-destructive commands**
+(`pull → update-lesson / add-lesson / delete-lesson / reorder / set-access`).
+The destructive whole-course `import` recreates every outline (a recreated lesson
+gets the platform-default permission), so reserve `import --new` for brand-new
+courses — do not use it to iterate an existing one.
+
 ### CLI Commands
 
-All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; version sync: `pull` / `status`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
+All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; version sync: `pull` / `status`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `set-access` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
 
 ### Deployment Workflow
 

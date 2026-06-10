@@ -6,8 +6,9 @@
 <course>/
   README.md            # Course metadata (title from first heading)
   course-prompt.md     # Course-level prompt (AI role and teaching style)
+  course-config.json   # Course-level attributes (model/price/TTS/Ask/…) — round-tripped so import doesn't reset them
   shifu-import.json    # Generated import file (output of build)
-  structure.json       # Chapter structure (optional, for multi-chapter courses)
+  structure.json       # Chapter structure + per-lesson access/hidden (optional, for multi-chapter courses)
   .shifu-sync.json     # Auto-maintained by pull + version-aware writes (update-lesson/update-meta/import): local↔cloud version link
   lessons/
     lesson-01.md       # Teaching Prompt (MarkdownFlow)
@@ -114,8 +115,8 @@ Schema:
     {
       "title": "Chapter Title",
       "lessons": [
-        {"file": "lesson-01.md", "title": "Lesson Title"},
-        {"file": "lesson-02.md", "title": "Another Lesson Title"}
+        {"file": "lesson-01.md", "title": "Lesson Title", "access": "guest", "hidden": false},
+        {"file": "lesson-02.md", "title": "Another Lesson Title", "access": "normal", "hidden": false}
       ]
     }
   ]
@@ -128,3 +129,30 @@ Field reference:
 - `chapters[].lessons[]` (required): Array of lesson objects
 - `chapters[].lessons[].file` (required): Filename in the `lessons/` directory (must exist)
 - `chapters[].lessons[].title` (required): Lesson display name.
+- `chapters[].lessons[].access` (read-only reference): learning permission — `guest` = 无需登录 (anyone), `trial` = 试看 (needs login), `normal` = 需付费 (paid). Written by `pull` so the agent can see each lesson's permission. **`build`/`import` do NOT push it** — the skill does not manage attributes by default; the platform keeps each lesson's permission (the backend preserves any field a write omits). To change a permission, use `set-access` (below).
+- `chapters[].lessons[].hidden` (read-only reference, bool): whether the lesson is hidden. Same as `access`: written by `pull`, not pushed by build/import.
+
+## course-config.json
+
+A **read-only snapshot** of the course-level attributes (model / price / TTS /
+Ask / keywords / …), written by `pull` so the agent can see the current settings.
+**`build`/`import` do NOT send it.** The skill does not push course attributes by
+default — the backend preserves any attribute a write leaves out, so iterating
+content never resets model/price/TTS/Ask. The course **name** lives in
+`README.md` and the **system prompt** in `course-prompt.md`.
+
+```json
+{
+  "model": "", "temperature": 0.3, "price": 0, "keywords": [], "avatar": "",
+  "use_learner_language": false,
+  "tts_enabled": false, "tts_provider": "minimax", "tts_model": "", "tts_voice_id": "",
+  "tts_speed": 1.0, "tts_pitch": 0, "tts_emotion": "",
+  "ask_enabled_status": 5101, "ask_model": "", "ask_temperature": 0.0,
+  "ask_system_prompt": "", "ask_provider_config": {}
+}
+```
+
+To change a single lesson's permission, use
+`shifu-cli.py set-access <shifu_bid> <outline_bid> --access guest|trial|normal [--hidden true|false] [--course-dir <dir>]`
+(passing `--course-dir` also updates the `structure.json` reference). Course-level
+attributes are changed in the platform editor.
