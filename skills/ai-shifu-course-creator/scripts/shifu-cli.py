@@ -681,14 +681,20 @@ def _course_config_from_detail(detail):
     """Extract the round-trippable course-level attributes from a /detail dict."""
     cfg = {}
     for k, default in COURSE_CONFIG_DEFAULTS.items():
-        cfg[k] = detail.get(k, default)
+        val = detail.get(k)
+        cfg[k] = val if val is not None else default
     cfg["keywords"] = _normalize_keywords(cfg.get("keywords"))
     return cfg
 
 
 def _write_course_config(course_dir, cfg):
-    (Path(course_dir) / COURSE_CONFIG_NAME).write_text(
-        json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    """Atomically write course-config.json (tmp + replace, same as _write_sync)."""
+    path = Path(course_dir) / COURSE_CONFIG_NAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n",
+                   encoding="utf-8")
+    tmp.replace(path)
 
 
 # ── Pull / Status / Auto-Pull (Version Sync) ────────────────────────────────────
@@ -1365,13 +1371,22 @@ def _sync_structure_access(course_dir, outline_bid, access, hidden):
     except (OSError, json.JSONDecodeError):
         return
     changed = False
-    for ch in data.get("chapters", []):
-        for ls in ch.get("lessons", []):
-            if ls.get("file") == fname:
-                ls["access"] = access
-                if hidden is not None:
-                    ls["hidden"] = hidden
-                changed = True
+    chapters = data.get("chapters")
+    if isinstance(chapters, list):
+        for ch in chapters:
+            if not isinstance(ch, dict):
+                continue
+            lessons = ch.get("lessons")
+            if not isinstance(lessons, list):
+                continue
+            for ls in lessons:
+                if not isinstance(ls, dict):
+                    continue
+                if ls.get("file") == fname:
+                    ls["access"] = access
+                    if hidden is not None:
+                        ls["hidden"] = hidden
+                    changed = True
     if changed:
         sp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
                       encoding="utf-8")
