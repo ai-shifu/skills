@@ -13,7 +13,7 @@ These rules apply to every report produced from this template, and to any other 
 - **Exception — deployment / management Verification URLs.** When transcribing the `Verification URLs:` block printed by `shifu-cli.py` (`publish` / `import` / `create` / `show`), emit each URL as **three lines**:
   1. A Markdown link — `[<course name> - <用途中文标签>](<URL>)`
   2. The same URL again on its own line (intentionally bare), indented two spaces — so the user can long-press / select to copy it cleanly.
-  3. A plain Chinese sentence describing what that URL is for (see Deployment Report → Verification URLs for the fixed phrasing).
+  3. The script's following Chinese `# ...` hint, copied verbatim without the leading `#`.
   The bare URL on line 2 is the only place a bare URL is allowed; it exists because copying out of a rendered Markdown link is unreliable on some clients.
 
 ## Segmentation Report
@@ -25,15 +25,18 @@ These rules apply to every report produced from this template, and to any other 
 - Immutable blocks preserved:
 
 Validation:
+
 - Source span traceability: `pass|fail`
 - Immutable block preservation: `pass|fail`
 - One-core-question lesson check: `pass|fail`
 
 Issues:
+
 - Blocking issues:
 - Non-blocking suggestions:
 
 Next actions:
+
 - Targeted reruns:
 - Downstream handoff notes:
 
@@ -47,16 +50,19 @@ Next actions:
 - Variable table status:
 
 Gate results:
+
 - Preservation gate: `pass|fail`
 - One-core-question gate: `pass|fail`
 - Interaction safety gate: `pass|fail`
 - Variable safety gate: `pass|fail`
 
 Issues:
+
 - Blocking issues:
 - Suggestions:
 
 Rerun plan:
+
 - Lessons to rerun:
 - Dependency-linked lessons:
 
@@ -70,16 +76,19 @@ Rerun plan:
 - Variables used:
 
 Validation:
+
 - Syntax validity: `pass|fail`
 - Variable safety: `pass|fail`
 - Visual-text coordination: `pass|fail`
 - Teaching loop completeness: `pass|fail`
 
 Issues:
+
 - Blocking issues:
 - Suggestions:
 
 Follow-up:
+
 - Rerun needed: `yes|no`
 - Upstream dependency notes:
 
@@ -91,6 +100,7 @@ Follow-up:
 - Overall risk: `low|medium|high`
 
 Issue breakdown:
+
 - Coverage gaps:
 - Meaning shifts:
 - Interaction issues:
@@ -98,10 +108,12 @@ Issue breakdown:
 - Variable/syntax issues:
 
 Changes applied:
+
 - File references:
 - Minimal-edit rationale:
 
 Validation:
+
 - Syntax check: `pass|fail`
 - Variable safety check: `pass|fail`
 - Interaction branching check: `pass|fail`
@@ -117,6 +129,7 @@ Validation:
 - Publish result: `success|fail`
 
 Validation:
+
 - Import without errors: `pass|fail`
 - Course accessible via URL: `pass|fail`
 - Lesson count matches source: `pass|fail`
@@ -132,25 +145,30 @@ The deployment script (`shifu-cli.py publish` / `import` / `create` / `show`) pr
 
 Lesson-level preview URLs are no longer printed at all (they used to clutter reports for multi-lesson courses). If the user later asks for a specific lesson link, run `show <shifu_bid>` to find the `outline_bid` and hand-build `<base>/c/<bid>?preview=true&lessonid=<outline_bid>` on demand — don't pre-emit them.
 
-Copy each printed URL **verbatim** (never reconstruct from a template, never hand-edit query parameters) and render it as three lines per the top-level Formatting Rules exception. Use these fixed labels and Chinese descriptions:
+Copy each printed URL **verbatim** (never reconstruct from a template, never hand-edit query parameters) and render it as three lines per the top-level Formatting Rules exception. The third line must be the script's following `# ...` hint copied verbatim, with the leading `#` and surrounding indentation removed. This keeps the script as the single source of truth for link-purpose and credit-consumption wording.
 
-- Admin console →
+- `Admin console:` → label `管理后台`
+
   ```md
-  - [<course name> - 后台管理](<URL from script>)
+  - [<course name> - 管理后台](<URL from script>)
     <URL from script>
-    课程的管理后台地址：需要管理课程的内容、设置小节是否隐藏、是否付费等，在这里操作。
+    <Chinese hint copied verbatim from the script output, without "#">
   ```
-- Course preview →
+
+- `Course preview:` → label `预览课程`
+
   ```md
-  - [<course name> - 课程预览](<URL from script>)
+  - [<course name> - 预览课程](<URL from script>)
     <URL from script>
-    课程预览地址：仅课程作者本人可见，用于发布前后自测课程效果。
+    <Chinese hint copied verbatim from the script output, without "#">
   ```
-- Published URL (only when the script printed it) →
+
+- `Published URL:` (only when the script printed it) → label `课程学习`
+
   ```md
-  - [<course name> - 已发布课程](<URL from script>)
+  - [<course name> - 课程学习](<URL from script>)
     <URL from script>
-    课程的公开学习地址：可以发送给学员使用。仅在课程已发布后生效。
+    <Chinese hint copied verbatim from the script output, without "#">
   ```
 
 When the script did **not** print `Published URL:` (typical for fresh `create` / `import` runs), show only the two existing blocks and add one line below them: `> 课程尚未发布，运行 \`publish <shifu_bid>\` 后会得到可对外分享的地址。`

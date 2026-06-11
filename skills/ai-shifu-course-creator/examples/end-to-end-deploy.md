@@ -66,15 +66,15 @@ python3 {skillDir}/scripts/shifu-cli.py show abc123-def456
 
 Platform URLs (copied verbatim from the `Verification URLs:` block printed by `publish` / `import` / `show` — do not reconstruct them; render each as Markdown link + bare URL + a Chinese-description line per `references/report-template.md`):
 
-- [我的课程 - 后台管理](https://app.ai-shifu.cn/shifu/abc123-def456)
-  https://app.ai-shifu.cn/shifu/abc123-def456
-  课程的管理后台地址：需要管理课程的内容、设置小节是否隐藏、是否付费等，在这里操作。
-- [我的课程 - 课程预览](https://app.ai-shifu.cn/c/abc123-def456?preview=true)
-  https://app.ai-shifu.cn/c/abc123-def456?preview=true
-  课程预览地址：仅课程作者本人可见，用于发布前后自测课程效果。
-- [我的课程 - 已发布课程](https://app.ai-shifu.cn/c/abc123-def456)
-  https://app.ai-shifu.cn/c/abc123-def456
-  课程的公开学习地址：可以发送给学员使用。仅在课程已发布后生效。
+- [管理后台](https://app.ai-shifu.cn/shifu/abc123-def456)
+  <https://app.ai-shifu.cn/shifu/abc123-def456>
+  点击会跳转到 AI 师傅管理后台，用于设置章节状态、收费与否，以及手工调整课程细节、调试 AI 一对一授课的效果。调试时会消耗课程创建者在 AI 师傅的积分。
+- [预览课程](https://app.ai-shifu.cn/c/abc123-def456?preview=true)
+  <https://app.ai-shifu.cn/c/abc123-def456?preview=true>
+  点击会跳转到 AI 师傅课程预览页，仅课程作者本人可见，用于正式发布前自测课程草稿的效果；预览会消耗课程创建者在 AI 师傅的积分。
+- [课程学习](https://app.ai-shifu.cn/c/abc123-def456)
+  <https://app.ai-shifu.cn/c/abc123-def456>
+  点击会跳转到 AI 师傅课程学习页，可以发送给学员使用且仅在课程已发布后有效；任何人学习都会消耗课程创建者在 AI 师傅的积分。
 
 ## Acceptance Notes
 
