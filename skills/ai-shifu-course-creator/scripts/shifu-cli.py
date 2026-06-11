@@ -35,6 +35,13 @@ DRAFT_CONFLICT_CODE = 4007
 #   0 = success, 1 = hard error (api() default), 2 = conflict auto-pulled, redo
 EXIT_CONFLICT = 2
 
+# Token lifetime (matches backend TOKEN_EXPIRE_TIME = 604800 = 7 days) and the
+# backend error codes that mean "token is not usable" — used by `verify` and the
+# resolve_auth() early-expiry hint.
+TOKEN_EXPIRE_SECONDS = 604800
+_TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
+# 1001 = userNotFound, 1004 = userNotLogin, 1005 = userTokenExpired
+
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
 def load_env():
@@ -53,6 +60,24 @@ def save_env(token):
     os.chmod(env_path, 0o600)
 
 
+def _jwt_payload(token):
+    """Decode the JWT payload (no verification) for a lightweight expiry hint.
+
+    The ai-shifu JWT only carries ``user_id`` + ``time_stamp`` (no ``exp``), so a
+    true expiry check requires asking the backend.  We just extract ``time_stamp``
+    for a cheap early warning — the authoritative decision is in ``cmd_verify``.
+    Returns None when the token cannot be parsed as a JWT.
+    """
+    try:
+        encoded = token.split(".")[1]
+        # JWT base64url: replace URL-safe chars and add padding
+        encoded = encoded.replace("-", "+").replace("_", "/")
+        encoded += "=" * ((4 - len(encoded) % 4) % 4)
+        return json.loads(base64.b64decode(encoded))
+    except Exception:
+        return None
+
+
 def resolve_auth(args):
     """Resolve token from CLI args or .env. Base URL is fixed to DEFAULT_BASE_URL.
 
@@ -69,7 +94,7 @@ def resolve_auth(args):
     payload = _jwt_payload(token)
     if payload:
         ts = payload.get("time_stamp")
-        if ts and (time.time() - ts) > TOKEN_EXPIRE_SECONDS:
+        if isinstance(ts, (int, float)) and (time.time() - ts) > TOKEN_EXPIRE_SECONDS:
             print("Warning: token may be expired (issued > 7 days ago). "
                   "Run `shifu-cli.py verify` to check, or `shifu-cli.py login` "
                   "to re-login.",
@@ -448,31 +473,6 @@ def cmd_login(args):
 
 
 # ── Verify Token ────────────────────────────────────────────────────────────────
-TOKEN_EXPIRE_SECONDS = 604800  # 7 days, matches backend TOKEN_EXPIRE_TIME
-
-# Backend error codes that mean "token is not usable":
-_TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
-# 1001 = userNotFound, 1004 = userNotLogin, 1005 = userTokenExpired
-
-
-def _jwt_payload(token):
-    """Decode the JWT payload (no verification) for a lightweight expiry hint.
-
-    The ai-shifu JWT only carries ``user_id`` + ``time_stamp`` (no ``exp``), so a
-    true expiry check requires asking the backend.  We just extract ``time_stamp``
-    for a cheap early warning — the authoritative decision is in ``cmd_verify``.
-    Returns None when the token cannot be parsed as a JWT.
-    """
-    try:
-        encoded = token.split(".")[1]
-        # JWT base64url: replace URL-safe chars and add padding
-        encoded = encoded.replace("-", "+").replace("_", "/")
-        encoded += "=" * ((4 - len(encoded) % 4) % 4)
-        return json.loads(base64.b64decode(encoded))
-    except Exception:
-        return None
-
-
 def cmd_verify(args):
     """Check whether the stored token is still valid, using a lightweight API call.
 
@@ -490,6 +490,12 @@ def cmd_verify(args):
         print(f"Token status: unknown (network error: {e})")
         sys.exit(2)
     if not resp.ok:
+        # A gateway/proxy can reject a bad token before the app runs — 401/403
+        # definitively mean "not authenticated", so report expired (exit 1) so the
+        # agent re-logins instead of retrying forever as if it were a network blip.
+        if resp.status_code in (401, 403):
+            print("Token is expired or invalid — re-run `shifu-cli.py login`")
+            sys.exit(1)
         print(f"Token status: unknown (HTTP {resp.status_code})")
         sys.exit(2)
     try:
