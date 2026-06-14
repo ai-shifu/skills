@@ -108,9 +108,17 @@ cloud for an existing one — this is the explicit front guard from the editing
 flowchart.
 
 1. **Recognize intent** — new course, or edit an existing one?
-2. **Ensure login** — the existence check needs the cloud. If `.env` has no valid
-   token, guide the user through `shifu-cli.py login` **now**
-   (`references/cli/cli-reference.md#authentication`).
+2. **Ensure login — verify first, do NOT re-login blindly.** Run
+   `shifu-cli.py verify`. It returns exit code `0` when the stored token is
+   still valid — skip login entirely and continue to step 3. Only when it
+   returns `1` (expired/invalid) do you guide the user through a **single**
+   SMS login session (below). Exit code `2` (network issue) means retry
+   later — still do NOT trigger a new login.
+   - **Token checks are cheap; SMS is expensive** — each phone number only
+     gets 5 SMS codes per day. Never re-login just because you're unsure —
+     `verify` answers the question.
+   - When a login is needed, follow the agent login flow in
+     `references/cli/cli-reference.md#agent-login-flow`.
 3. **Check whether a related course already exists** — run
    `shifu-cli.py find-title <keyword>` (targeted title search; do **not** dump the
    whole `list`).
@@ -380,7 +388,16 @@ The standard end-to-end flow chains deploy + publish: build → import (deploy) 
 
 ### Authentication
 
-When no valid token is available, guide the user through `shifu-cli.py login` (SMS flow: phone number + 4-digit verification code; CLI defaults to `https://app.ai-shifu.cn`). Full flow in `references/cli/cli-reference.md#authentication`.
+**Verify first — never re-login blindly.** Before any operation that needs a
+token, run `shifu-cli.py verify`:
+- exit `0` → token is valid, continue.  **Do NOT trigger the login flow.**
+- exit `1` → token is expired/invalid, guide the user through a **single**
+  SMS login session (see `references/cli/cli-reference.md#agent-login-flow`).
+- exit `2` → network issue, retry later — still do NOT trigger a new login.
+
+Each phone number only gets **5 SMS verification codes per day**.  Re-logging
+when the token is still valid wastes one of those slots and can lock the user
+out.  `verify` answers the question cheaply (one lightweight API call, no SMS).
 
 Always use CLI commands. Never make raw HTTP/API calls directly.
 
@@ -497,7 +514,7 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 
 ### Workflow
 
-1. **Resolve credentials** — reuse the Deployment authentication. If `.env` lacks a valid `SHIFU_TOKEN`, guide the user through `shifu-cli.py login` per `references/cli/cli-reference.md#agent-login-flow`.
+1. **Resolve credentials** — run `shifu-cli.py verify`. If exit 0 the stored token is valid; if exit 1, guide the user through the SMS login flow per `references/cli/cli-reference.md#agent-login-flow`.
 2. **Resolve the course** — run `shifu-cli.py list` (or `shifu-cli.py find-title <keyword>`) to map `shifu_bid ↔ course name`. **If the user mentioned a course by title**, always resolve the *current* `shifu_bid → title` via Course Metadata recipes 0a / 0b in `references/analytics/recipes.md` before issuing downstream queries — `list` is a draft snapshot and can show stale or historical titles. Never report a historical title as the course's current name.
 3. **Resolve the outline** (only for course-level analysis) — run `shifu-cli.py show <shifu_bid>` to map `outline_item_bid → name / position`. Skipping this makes outline-dimension numbers unreadable.
 4. **Run DSL queries** — `shifu-cli.py analytics-query <shifu_bid> --dsl '<json-body>'` (or `--dsl-file query.json` for long bodies).
