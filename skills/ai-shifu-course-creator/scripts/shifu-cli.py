@@ -92,7 +92,7 @@ def resolve_auth(args):
         sys.exit(1)
 
     payload = _jwt_payload(token)
-    if payload:
+    if isinstance(payload, dict):
         ts = payload.get("time_stamp")
         if isinstance(ts, (int, float)) and (time.time() - ts) > TOKEN_EXPIRE_SECONDS:
             print("Warning: token may be expired (issued > 7 days ago). "
@@ -502,6 +502,9 @@ def cmd_verify(args):
         data = resp.json()
     except ValueError:
         print("Token status: unknown (invalid JSON response)")
+        sys.exit(2)
+    if not isinstance(data, dict):
+        print("Token status: unknown (unexpected JSON response)")
         sys.exit(2)
     code = data.get("code")
     if code == 0:
