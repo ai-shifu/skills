@@ -157,6 +157,13 @@ items in the user's language. Resolve the usage scenario first; ask the
 listening-mode question only after the usage scenario or inferred format shows
 the course is not slide-only.
 
+Do not bypass this intake by inventing "conservative defaults" from a sparse
+topic or short brief. In particular, do not assume personalized AI self-study,
+thinking/self-check interactions, disabled listening mode, or a fixed chapter /
+lesson count before asking the relevant missing questions. Defaults below apply
+only after the user explicitly skips a question or asks you to continue without
+answering it.
+
 1. What usage scenarios should this course support? Multiple choices are
    allowed: students follow AI one-on-one for personalized self-study;
    interactive slides shown in class.
@@ -174,20 +181,21 @@ Use the answers as course-design constraints:
   selected, generate illustrated text with fuller explanations and visual-text
   pairing. If only interactive classroom slides are selected, generate pure
   slides with concise slide-style Teaching Prompts for human delivery.
-- If the usage-scenario question is unanswered, infer the format from the source
-  material structure instead of inventing a fixed default.
+- If the usage-scenario question is still unanswered after the user explicitly
+  skips it, infer the format from the source material structure instead of
+  inventing a fixed default.
 - Interaction choices determine where interactions appear: early learner
   context collection for adaptive teaching, pre-content prompts for thinking or
   misconception correction, and lesson-end self-checks for assessment.
-- If no interaction choice is selected or the user skips the question, do not
-  proactively design interaction blocks.
+- If the user selects no interaction purpose or explicitly skips the question,
+  do not proactively design interaction blocks.
 - If the resolved format is pure slides, disable listening mode and do not ask
   the listening-mode question. Otherwise, listening mode is disabled when
   unanswered; when explicitly enabled or disabled, carry that decision into the
   deployment handoff.
-- Chapter and lesson counts constrain the outline. If unanswered, infer
-  structure from source volume and existing lesson-granularity rules instead of
-  inventing a fixed default.
+- Chapter and lesson counts constrain the outline. If the user explicitly skips
+  this question, infer structure from source volume and existing
+  lesson-granularity rules instead of inventing a fixed default.
 
 ## Pipeline Overview
 
