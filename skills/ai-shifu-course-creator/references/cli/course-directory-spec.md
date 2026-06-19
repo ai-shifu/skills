@@ -141,6 +141,10 @@ default — the backend preserves any attribute a write leaves out, so iterating
 content never resets model/price/TTS/Ask. The course **name** lives in
 `README.md` and the **system prompt** in `course-prompt.md`.
 
+The exception is an explicit listening-mode update: `set-tts --course-dir`
+refreshes this snapshot after changing `tts_enabled`. It still does not make
+`build` or `import` push course-level attributes.
+
 ```json
 {
   "model": "", "temperature": 0.3, "price": 0, "keywords": [], "avatar": "",
@@ -154,5 +158,7 @@ content never resets model/price/TTS/Ask. The course **name** lives in
 
 To change a single lesson's permission, use
 `shifu-cli.py set-access <shifu_bid> <outline_bid> --access guest|trial|normal [--hidden true|false] [--course-dir <dir>]`
-(passing `--course-dir` also updates the `structure.json` reference). Course-level
-attributes are changed in the platform editor.
+(passing `--course-dir` also updates the `structure.json` reference). To change
+course listening mode, use
+`shifu-cli.py set-tts <shifu_bid> --enabled true|false [--course-dir <dir>]`.
+Other course-level attributes are changed in the platform editor.

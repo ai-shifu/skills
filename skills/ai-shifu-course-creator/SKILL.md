@@ -415,17 +415,19 @@ never resets attributes. `pull` writes the current attributes into
 `structure.json` (`access`/`hidden`) and `course-config.json` as a **read-only
 reference** for you. Change attributes only when the user explicitly asks:
 `set-access <shifu_bid> <outline_bid> --access guest|trial|normal [--course-dir <dir>]`
-for a lesson's permission; course-level settings are changed in the platform editor.
+for a lesson's permission; `set-tts <shifu_bid> --enabled true|false [--course-dir <dir>]`
+for course listening mode. Other course-level settings are changed in the
+platform editor.
 
 **Editing an existing course → use granular non-destructive commands**
-(`pull → update-lesson / add-lesson / delete-lesson / reorder / set-access`).
+(`pull → update-lesson / add-lesson / delete-lesson / reorder / set-access / set-tts`).
 The destructive whole-course `import` recreates every outline (a recreated lesson
 gets the platform-default permission), so reserve `import --new` for brand-new
 courses — do not use it to iterate an existing one.
 
 ### CLI Commands
 
-All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; version sync: `pull` / `status`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `set-access` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
+All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; version sync: `pull` / `status`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `set-access` / `set-tts` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
 
 ### Deployment Workflow
 
