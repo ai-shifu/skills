@@ -206,7 +206,9 @@ Use the answers as course-design constraints:
   context collection for adaptive teaching, pre-content prompts for thinking or
   misconception correction, and lesson-end self-checks for assessment.
 - If the user selects no interaction purpose or explicitly skips the question,
-  do not proactively design interaction blocks.
+  do not proactively design interaction blocks; during Orchestration, bypass
+  interaction-specific pedagogical gates that require an interaction step or a
+  deepening interaction.
 - If the resolved format is pure slides, disable listening mode and do not ask
   the listening-mode question. Otherwise, listening mode is disabled when
   unanswered; when explicitly enabled or disabled, carry that decision into the
@@ -320,7 +322,7 @@ Segment list per `references/data-contracts.md#segment-schema` (each segment car
 All gates must pass before Orchestration declares lessons complete:
 
 - **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `references/markdownflow.md#preservation`; no unresolved or uncollected variable references; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `references/markdownflow.md#deterministic-blocks`; every image URL must be on the `resource.ai-shifu.cn` domain — fixed images wrapped in a single-line deterministic block, HTML-view images expressed as instruction-style directives with the `(必须原样保留)` URL phrase per `references/markdownflow.md#images`.
-- **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, minimum teaching loop, at least one deepening interaction, max five interactions per lesson, variable-collection pacing, viewpoint branching, and visual-text pairing — all per `references/pedagogy.md#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`.
+- **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, minimum teaching loop, at least one deepening interaction, max five interactions per lesson, variable-collection pacing, viewpoint branching, and visual-text pairing — all per `references/pedagogy.md#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`. When Course Design Intake resolves to no interactions, bypass only the interaction-specific requirements that would force an interaction step or deepening interaction; keep the non-interaction requirements active.
 
 Recompute lessons that fail any gate; do not partially-pass.
 
