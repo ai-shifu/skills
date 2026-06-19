@@ -224,6 +224,9 @@ Resolve target language with this strict priority:
 - Do not restrict supported languages to a fixed list.
 - If output language is explicit, source-language distribution must not override it.
 - Learner-facing script text must follow resolved target language unless `bilingual_output` is true.
+- User-visible agent output must follow the resolved target language: chat replies, phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations.
+- Human-facing labels for skill concepts must be localized in the resolved target language. For Chinese, use “授课提示词” for “Teaching Prompt” and “课程提示词” for “Course Prompt” in user-visible prose and headings.
+- Stable machine-facing identifiers and verbatim source material remain unchanged even when the surrounding prose is localized: JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `lesson_teaching_prompts`, `teaching_prompt`, `course_prompt`), file names (`course-prompt.md`, `structure.json`), CLI commands and flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and quoted source text or direct quotations that must be preserved verbatim.
 
 ## Fallback Output Extensions
 
