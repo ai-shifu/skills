@@ -172,6 +172,7 @@ update-lesson <shifu_bid> <outline_bid> --teaching-prompt-file lesson.md [--cour
 rename-lesson <shifu_bid> <outline_bid> --name "New Name"
 reorder <shifu_bid> --order bid1,bid2,bid3
 set-access <shifu_bid> <outline_bid> --access guest|trial|normal [--hidden true|false] [--course-dir ./course-a/]
+set-tts <shifu_bid> --enabled true|false [--course-dir ./course-a/]
 ```
 
 `update-meta` sends only the content fields you pass (`--name` / `--description`
@@ -186,7 +187,12 @@ permission.
 lesson's other fields untouched. With `--course-dir` it also writes the value
 into the `structure.json` reference.
 
-`update-lesson` and `update-meta` are version-aware when given `--course-dir`
+`set-tts` enables or disables course listening mode without re-importing; it
+sends only `tts_enabled` and leaves provider/model/voice/speed/pitch/emotion
+unchanged. With `--course-dir` it refreshes `course-config.json` and records the
+new course revision in `.shifu-sync.json`.
+
+`update-lesson`, `update-meta`, and `set-tts` are version-aware when given `--course-dir`
 (a directory with a `.shifu-sync.json` from `pull`):
 
 - `update-lesson` uses the **recorded baseline** revision for that outline (its
@@ -195,11 +201,11 @@ into the `structure.json` reference.
   the legacy behavior of taking the current cloud head as the baseline
   (degraded — concurrent edits are not caught). On success it writes the new
   revision back to the manifest and keeps the local lesson file in lockstep.
-- `update-meta` has no server-side lock, so it compares the cloud course-level
-  revision against the manifest baseline before writing; any cloud advance is
-  treated conservatively as a conflict.
+- `update-meta` and `set-tts` have no server-side lock, so they compare the cloud
+  course-level revision against the manifest baseline before writing; any cloud
+  advance is treated conservatively as a conflict.
 
-**On conflict** both commands auto-pull the cloud copy over local (backing up
+**On conflict** these commands auto-pull the cloud copy over local (backing up
 your un-pushed change to `<file>.conflict` for a lesson, or
 `.shifu-meta.conflict.json` for meta — your work is never lost), print who
 changed it and when, and exit `2`. Re-apply your edit on the freshly pulled
@@ -240,11 +246,12 @@ So `update-lesson` (content only) and `update-meta` (only the `--name` /
 
 `pull` still writes the attributes into `structure.json` (`access`/`hidden`) and
 `course-config.json` as a **read-only reference** for the agent. To change an
-attribute, do it explicitly: `set-access` for a lesson's permission, or the
-platform editor for course-level settings.
+attribute, do it explicitly: `set-access` for a lesson's permission, `set-tts`
+for course listening mode, or the platform editor for other course-level
+settings.
 
 > **Iterating an existing course:** prefer the non-destructive granular commands
-> — `pull → update-lesson / add-lesson / delete-lesson / reorder / set-access`.
+> — `pull → update-lesson / add-lesson / delete-lesson / reorder / set-access / set-tts`.
 > The destructive whole-course `import` recreates every outline, so a recreated
 > lesson gets the platform default permission; use `import --new` for brand-new
 > courses, not to iterate an existing one.
