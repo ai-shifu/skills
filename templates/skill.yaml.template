@@ -1,5 +1,5 @@
 schema_version: "1.0"
-name: "skill-name"
+name: "Human-Readable Skill Name（中文展示名）"
 slug: "skill-slug"
 one_liner: "One-sentence value proposition."
 description: "Longer description for indexing and search."

@@ -1,5 +1,5 @@
 ---
-name: course-direction-advisor
+name: Course Direction Advisor（课程选题顾问）
 description: Turn user-provided source materials into market-fit course-topic decisions without exceeding the evidence boundary of the materials. Use when the user needs course topic selection, competitor analysis, pricing guidance, audience targeting, market positioning, or a decision on whether the material is strong and complete enough to support a course. Avoid when the topic is already fixed and the user only needs lesson breakdowns, scripts, or copy polishing.
 metadata:
   short-description: Select and validate market-fit course topics from source materials
