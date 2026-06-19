@@ -153,7 +153,9 @@ instruction, source material, or pulled course directory. Ask only for missing
 items; do not repeat questions whose answers are already clear.
 
 When any item is missing, ask only the corresponding questions for the missing
-items in the user's language:
+items in the user's language. Resolve the usage scenario first; ask the
+listening-mode question only after the usage scenario or inferred format shows
+the course is not slide-only.
 
 1. What usage scenarios should this course support? Multiple choices are
    allowed: students follow AI one-on-one for personalized self-study;
@@ -162,9 +164,8 @@ items in the user's language:
    learner context for adaptive teaching; ask before teaching to trigger
    thinking or break old assumptions; self-check learning effect at the end of
    each lesson. Choosing none means no interactions.
-3. If the usage scenario does not force slide-only output, should listening mode
-   be enabled so AI voice teaches the course? If the user does not answer,
-   default to disabled.
+3. If the course is not slide-only, should listening mode be enabled so AI voice
+   teaches the course? If the user does not answer, default to disabled.
 4. How many chapters and lessons should the course have?
 
 Use the answers as course-design constraints:
