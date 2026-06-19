@@ -104,10 +104,10 @@ def validate_skill(skill_dir: Path, issues: IssueBag) -> None:
     if not name:
         issues.add_error(f"{skill_md}: frontmatter 'name' field is required")
     else:
-        if RE_KEBAB_CASE.match(name):
+        if name == slug:
             issues.add_error(
-                f"{skill_md}: frontmatter 'name' must be human-readable, "
-                f"got slug-like value '{name}'"
+                f"{skill_md}: frontmatter 'name' must be a human-readable "
+                f"display name, but it matches the folder slug '{name}'"
             )
         elif not RE_HUMAN_READABLE_NAME.match(name):
             issues.add_error(
