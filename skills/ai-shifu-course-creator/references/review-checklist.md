@@ -26,7 +26,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 ## Interaction Quality
 
 - Interactions are concrete and answerable.
-- Interaction type matches the decision: single-select for mutually exclusive path choices, multi-select for non-exclusive goals, interests, modules, blockers, scenarios, experience, or practice needs.
+- Interaction type matches the decision: single-select for mutually exclusive path choices, multi-select for non-exclusive learner context, goals, interests, modules, blockers, scenarios, experience, or practice needs. For multi-select, downstream content is driven through combined feedback, prioritization, or tailored examples rather than exhaustive branching for every combination.
 - Learner-facing questions appear before interaction syntax, not after `%{{var}}` inside `?[%{{var}} ...]`.
 - Each `?[]` interaction appears on its own line.
 - If the pre-interaction text enumerates or describes choices, the `?[]` option labels match those choices exactly — same set, order, and wording.

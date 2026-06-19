@@ -88,7 +88,7 @@ These are the six red-line rules every Teaching Prompt and Course Prompt must sa
 
 2. **Interaction syntax: prompt outside, options inside.** Keep the learner-facing question on the line **before** the interaction; put only option labels or a short `...` input placeholder inside `?[%{{var}} ...]`. Each `?[]` is on its own line. See `references/markdownflow.md#interactions` for full Bad/Good examples and the `...` input-marker rules.
 
-3. **Interaction type selection: match the learner decision.** Use single-select when options are mutually exclusive or when one selected path drives a branch. Use multi-select when collecting non-exclusive goals, interests, modules, blockers, applicable scenarios, existing experience, or desired practice areas. Multi-select results should drive combined feedback, prioritization, or tailored examples; do not avoid multi-select merely because it is harder to enumerate every possible combination. See `references/pedagogy.md#interaction-design`.
+3. **Interaction type selection: match the learner decision.** Use single-select when options are mutually exclusive or when one selected path drives a branch. Use multi-select when collecting non-exclusive learner context, goals, interests, modules, blockers, scenarios, experience, or practice needs. Multi-select results should drive combined feedback, prioritization, or tailored examples; do not avoid multi-select merely because it is harder to enumerate every possible combination. See `references/pedagogy.md#interaction-design`.
 
 4. **Mandatory anchoring + downstream effect.** After every interaction, restate the learner's selection as an instruction (`Restate the learner's current choice as {{var}}.`) and use `{{var}}` to drive a visible downstream effect (branching explanation, examples, difficulty, feedback). See `references/pedagogy.md#interaction-design`.
 
@@ -280,7 +280,7 @@ Generate a runnable Teaching Prompt for each lesson.
 
 Apply the patterns and constraints in `references/pedagogy.md#teaching-patterns`, `#cognitive-techniques`, `#variable-strategy`, `#interaction-design`, and `#visual-text-coordination` unless content requires a justified variation.
 
-When generating interactions, explicitly choose the interaction type before writing the `?[]` line: mutually exclusive route decisions use single-select; non-exclusive learner context, interests, goals, blockers, modules, scenarios, experience, and practice needs use multi-select. If a lesson naturally asks "which of these apply?", default to multi-select unless the source or user says only one answer is allowed.
+When generating interactions, explicitly choose the interaction type before writing the `?[]` line: mutually exclusive route decisions use single-select; non-exclusive learner context, goals, interests, modules, blockers, scenarios, experience, or practice needs use multi-select. If a lesson naturally asks "which of these apply?", default to multi-select unless the source or user says only one answer is allowed.
 
 ### Single-Lesson Generation Strategy
 
