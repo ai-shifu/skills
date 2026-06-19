@@ -157,7 +157,7 @@ items in the user's language:
 
 1. What usage scenarios should this course support? Multiple choices are
    allowed: students follow AI one-on-one for personalized self-study;
-   interactive courseware shown in class.
+   interactive slides shown in class.
 2. What should interactions do? Multiple choices are allowed: understand
    learner context for adaptive teaching; ask before teaching to trigger
    thinking or break old assumptions; self-check learning effect at the end of
@@ -171,7 +171,7 @@ Use the answers as course-design constraints:
 
 - Usage scenario determines content format. If personalized AI self-study is
   selected, generate illustrated text with fuller explanations and visual-text
-  pairing. If only interactive classroom courseware is selected, generate pure
+  pairing. If only interactive classroom slides are selected, generate pure
   slides with concise slide-style Teaching Prompts for human delivery.
 - If the usage-scenario question is unanswered, infer the format from the source
   material structure instead of inventing a fixed default.
