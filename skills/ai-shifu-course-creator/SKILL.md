@@ -82,19 +82,21 @@ Keep author-side scaffolding out of Teaching Prompt and Course Prompt outputs:
 
 ## Teaching Prompt and Course Prompt Authoring Hard Rules (Must Follow)
 
-These are the five red-line rules every Teaching Prompt and Course Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
+These are the six red-line rules every Teaching Prompt and Course Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
 
 1. **Script style: directive, not manuscript.** Write in imperative, model-guiding language ("Ask the learner to …", "After collecting {{var}}, branch …"). Do not produce polished learner-facing prose or author/lesson-plan meta narration. See `references/pedagogy.md#script-style`.
 
 2. **Interaction syntax: prompt outside, options inside.** Keep the learner-facing question on the line **before** the interaction; put only option labels or a short `...` input placeholder inside `?[%{{var}} ...]`. Each `?[]` is on its own line. See `references/markdownflow.md#interactions` for full Bad/Good examples and the `...` input-marker rules.
 
-3. **Mandatory anchoring + downstream effect.** After every interaction, restate the learner's selection as an instruction (`Restate the learner's current choice as {{var}}.`) and use `{{var}}` to drive a visible downstream effect (branching explanation, examples, difficulty, feedback). See `references/pedagogy.md#interaction-design`.
+3. **Interaction type selection: match the learner decision.** Use single-select when options are mutually exclusive or when one selected path drives a branch. Use multi-select when collecting non-exclusive goals, interests, modules, blockers, applicable scenarios, existing experience, or desired practice areas. Multi-select results should drive combined feedback, prioritization, or tailored examples; do not avoid multi-select merely because it is harder to enumerate every possible combination. See `references/pedagogy.md#interaction-design`.
 
-4. **Visuals: two regimes — "no asset" vs "asset uploaded".**
+4. **Mandatory anchoring + downstream effect.** After every interaction, restate the learner's selection as an instruction (`Restate the learner's current choice as {{var}}.`) and use `{{var}}` to drive a visible downstream effect (branching explanation, examples, difficulty, feedback). See `references/pedagogy.md#interaction-design`.
+
+5. **Visuals: two regimes — "no asset" vs "asset uploaded".**
    - When the author has **not** provided any image asset (only the topic / a description): continue to use natural-language image instructions ("Show an image that …") paired with text explanation. Do not inline SVG/HTML/Mermaid/PlantUML/Graphviz markup. See `references/pedagogy.md#visual-text-coordination`.
    - When the author **has** provided image assets (local files or remote URLs): you must first upload them via `shifu-cli.py upload-image` to obtain `resource.ai-shifu.cn` URLs, then embed each image into the Teaching Prompt using one of the two forms defined in `references/markdownflow.md#images` (3.1 deterministic-wrapped standard markdown, or 3.2 instruction-style HTML view). See the sub-section **Working with Author-Provided Images** below for the full workflow including the path you must take when you cannot actually see the image contents.
 
-5. **Output language must be resolved before any prompt content.** Run Language Resolution per `references/data-contracts.md#language-resolution` before producing Teaching Prompt or Course Prompt content. The user's invocation language counts as `prompt_language_detection` (priority 4) and must be used when no higher-priority directive exists. Examples in this skill and in `references/` are written in English for canonical illustration only — do NOT let example language override the resolved output language. If the user invokes in Chinese, all interactions, option labels, downstream text, and the Course Prompt itself must be in Chinese.
+6. **Output language must be resolved before any prompt content.** Run Language Resolution per `references/data-contracts.md#language-resolution` before producing Teaching Prompt or Course Prompt content. The user's invocation language counts as `prompt_language_detection` (priority 4) and must be used when no higher-priority directive exists. Examples in this skill and in `references/` are written in English for canonical illustration only — do NOT let example language override the resolved output language. If the user invokes in Chinese, all interactions, option labels, downstream text, and the Course Prompt itself must be in Chinese.
 
 ## Step 0 — Resolve the Course Target (MANDATORY before any authoring)
 
@@ -277,6 +279,8 @@ Generate a runnable Teaching Prompt for each lesson.
 ### Teaching Pattern Baseline
 
 Apply the patterns and constraints in `references/pedagogy.md#teaching-patterns`, `#cognitive-techniques`, `#variable-strategy`, `#interaction-design`, and `#visual-text-coordination` unless content requires a justified variation.
+
+When generating interactions, explicitly choose the interaction type before writing the `?[]` line: mutually exclusive route decisions use single-select; non-exclusive learner context, interests, goals, blockers, modules, scenarios, experience, and practice needs use multi-select. If a lesson naturally asks "which of these apply?", default to multi-select unless the source or user says only one answer is allowed.
 
 ### Single-Lesson Generation Strategy
 
