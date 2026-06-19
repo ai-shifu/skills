@@ -136,6 +136,48 @@ When the target is an existing course, you author **on top of the pulled copy**,
 then push via the converging loop in **Deployment → Version Sync Workflow**. Full
 branch/loop details live there; the gate itself is here because it must fire first.
 
+## Course Design Intake (before Orchestration)
+
+Run this intake after **Step 0** and before Orchestration for:
+
+- Path A end-to-end course creation.
+- Path B author-only generation.
+- Existing-course edits that change the course structure, lesson design, or
+  interaction strategy.
+
+Do **not** run this intake for deploy-only, analytics, login, publish,
+management, or pure statistics requests.
+
+Before asking anything, extract answers already present in the user's current
+instruction, source material, or pulled course directory. Ask only for missing
+items; do not repeat questions whose answers are already clear.
+
+When any item is missing, ask these questions in the user's language:
+
+1. Is the content pure slides for a human instructor, or illustrated text?
+2. What should interactions do? Multiple choices are allowed: understand
+   learner context for adaptive teaching; ask before teaching to trigger
+   thinking or break old assumptions; self-check learning effect at the end of
+   each lesson. Choosing none means no interactions.
+3. Should listening mode be enabled so AI voice teaches the course? If the user
+   does not answer, default to disabled.
+4. How many chapters and lessons should the course have?
+
+Use the answers as course-design constraints:
+
+- Pure slides favor concise slide-style Teaching Prompts for human delivery;
+  illustrated text favors fuller explanations with visual-text pairing.
+- Interaction choices determine where interactions appear: early learner
+  context collection for adaptive teaching, pre-content prompts for thinking or
+  misconception correction, and lesson-end self-checks for assessment.
+- If no interaction choice is selected or the user skips the question, do not
+  proactively design interaction blocks.
+- Listening mode is disabled when unanswered; when explicitly enabled or
+  disabled, carry that decision into the deployment handoff.
+- Chapter and lesson counts constrain the outline. If unanswered, infer
+  structure from source volume and existing lesson-granularity rules instead of
+  inventing a fixed default.
+
 ## Pipeline Overview
 
 The stages are **not** a flat linear pipeline. **Step 0 (above) gates the whole
@@ -147,6 +189,9 @@ Course request
    ▼
 Step 0: Resolve Course Target            ← MANDATORY front guard: login + find-title + branch
    │   (new vs edit existing; pull the existing course BEFORE authoring)
+   ▼
+Course Design Intake                     ← ask only for missing design constraints
+   │   (format, interaction purpose, listening mode, chapter/lesson count)
    ▼
 Raw material
    │
