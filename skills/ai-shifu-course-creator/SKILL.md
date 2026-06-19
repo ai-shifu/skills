@@ -164,6 +164,13 @@ lesson count before asking the relevant missing questions. Defaults below apply
 only after the user explicitly skips a question or asks you to continue without
 answering it.
 
+Ask this intake as a step-by-step choice flow, not as one flat numbered
+checklist. Ask the usage-scenario question first, show its options, then wait
+for the user's answer before asking the next applicable question. After each
+answer, ask only the next still-missing applicable question. Do not offer
+"you can let me decide" or similar bypass wording before the required choice
+flow is complete.
+
 1. What usage scenarios should this course support? Multiple choices are
    allowed: students follow AI one-on-one for personalized self-study;
    interactive slides shown in class.
