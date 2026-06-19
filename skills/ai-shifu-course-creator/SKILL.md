@@ -136,6 +136,87 @@ When the target is an existing course, you author **on top of the pulled copy**,
 then push via the converging loop in **Deployment → Version Sync Workflow**. Full
 branch/loop details live there; the gate itself is here because it must fire first.
 
+## Course Design Intake (before Orchestration)
+
+Run this intake after **Step 0** and before Orchestration for:
+
+- Path A end-to-end course creation.
+- Path B author-only generation.
+- Existing-course edits that change the course structure, lesson design, or
+  interaction strategy.
+
+Do **not** run this intake for deploy-only, analytics, login, publish,
+management, or pure statistics requests.
+
+Before asking anything, extract answers already present in the user's current
+instruction, source material, or pulled course directory. Ask only for missing
+items; do not repeat questions whose answers are already clear.
+
+When any item is missing, ask only the corresponding questions for the missing
+items in the user's language. Resolve the usage scenario first; ask the
+listening-mode question only after the usage scenario or inferred format shows
+the course is not slide-only.
+
+Do not bypass this intake by inventing "conservative defaults" from a sparse
+topic or short brief. In particular, do not assume personalized AI self-study,
+thinking/self-check interactions, disabled listening mode, or a fixed chapter /
+lesson count before asking the relevant missing questions. Defaults below apply
+only after the user explicitly skips a question or asks you to continue without
+answering it.
+
+Ask this intake as a step-by-step choice flow, not as one flat numbered
+checklist. Ask the usage-scenario question first, show its options, then wait
+for the user's answer before asking the next applicable question. After each
+answer, ask only the next still-missing applicable question. Do not offer
+"you can let me decide" or similar bypass wording before the required choice
+flow is complete.
+
+1. What usage scenarios should this course support? Multiple choices are
+   allowed: students follow AI one-on-one for personalized self-study;
+   interactive slides shown in class.
+2. What should interactions do? Multiple choices are allowed: understand
+   learner context for adaptive teaching; ask before teaching to trigger
+   thinking or break old assumptions; self-check learning effect at the end of
+   each lesson. Choosing none means no interactions.
+3. If the course is not slide-only, should listening mode be enabled so AI voice
+   teaches the course? If the user does not answer, default to disabled.
+4. How many chapters and lessons should the course have?
+
+Use the answers as course-design constraints:
+
+- Usage scenario determines content format. If personalized AI self-study is
+  selected, generate illustrated text with fuller explanations and visual-text
+  pairing. If only interactive classroom slides are selected, generate pure
+  slides with concise slide-style Teaching Prompts for human delivery.
+- Pure slides are for classroom projection, not AI narration. For this format,
+  override the default one-on-one explanation style: Teaching Prompts should
+  produce slide-facing content and interaction blocks only. Do not write
+  lecture-script directives such as "explain to the learner", "walk through",
+  "use text to explain the diagram", or long narration paragraphs. Keep content
+  as slide titles, short bullets, visual layout instructions, prompts, options,
+  and concise feedback states that a human instructor can present.
+- For pure slides, the Course Prompt must describe the runtime role as producing
+  classroom interactive slides, not as conducting one-on-one tutoring. Do not
+  include course-level instructions that ask the AI to verbally explain the
+  lesson to a single learner.
+- If the usage-scenario question is still unanswered after the user explicitly
+  skips it, infer the format from the source material structure instead of
+  inventing a fixed default.
+- Interaction choices determine where interactions appear: early learner
+  context collection for adaptive teaching, pre-content prompts for thinking or
+  misconception correction, and lesson-end self-checks for assessment.
+- If the user selects no interaction purpose or explicitly skips the question,
+  do not proactively design interaction blocks; during Orchestration, bypass
+  interaction-specific pedagogical gates that require an interaction step or a
+  deepening interaction.
+- If the resolved format is pure slides, disable listening mode and do not ask
+  the listening-mode question. Otherwise, listening mode is disabled when
+  unanswered; when explicitly enabled or disabled, carry that decision into the
+  deployment handoff.
+- Chapter and lesson counts constrain the outline. If the user explicitly skips
+  this question, infer structure from source volume and existing
+  lesson-granularity rules instead of inventing a fixed default.
+
 ## Pipeline Overview
 
 The stages are **not** a flat linear pipeline. **Step 0 (above) gates the whole
@@ -150,6 +231,9 @@ Step 0: Resolve Course Target            ← MANDATORY front guard: login + find
    ▼
 Raw material
    │
+   ▼
+Course Design Intake                     ← ask only for missing design constraints
+   │   (usage scenario, interaction purpose, listening mode, chapter/lesson count)
    ▼
 Orchestration                            ← end-to-end driver
    ├── calls Segmentation                 (cleanup + semantic segmentation)
@@ -238,7 +322,7 @@ Segment list per `references/data-contracts.md#segment-schema` (each segment car
 All gates must pass before Orchestration declares lessons complete:
 
 - **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `references/markdownflow.md#preservation`; no unresolved or uncollected variable references; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `references/markdownflow.md#deterministic-blocks`; every image URL must be on the `resource.ai-shifu.cn` domain — fixed images wrapped in a single-line deterministic block, HTML-view images expressed as instruction-style directives with the `(必须原样保留)` URL phrase per `references/markdownflow.md#images`.
-- **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, minimum teaching loop, at least one deepening interaction, max five interactions per lesson, variable-collection pacing, viewpoint branching, and visual-text pairing — all per `references/pedagogy.md#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`.
+- **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, minimum teaching loop, at least one deepening interaction, max five interactions per lesson, variable-collection pacing, viewpoint branching, and visual-text pairing — all per `references/pedagogy.md#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`. When Course Design Intake resolves to no interactions, bypass only the interaction-specific requirements that would force an interaction step or deepening interaction; keep the non-interaction requirements active.
 
 Recompute lessons that fail any gate; do not partially-pass.
 
@@ -289,6 +373,24 @@ Required anchors per lesson:
 5. Lesson close with summary or decision checkpoint.
 
 Optional modules: viewpoint calibration, misconception correction, dual deliverables (understanding + action), cross-lesson bridge sentence, additional visual-text reinforcement blocks.
+
+### Slide-Only Generation Override
+
+When Course Design Intake resolves to pure slides / classroom interactive
+slides, replace the default explanation-heavy lesson pattern with a projection
+pattern:
+
+- Treat each lesson as a small slide deck controlled by a human instructor.
+- Generate slide-facing blocks: slide title, 2-4 short bullets, visual/layout
+  instruction, interaction prompt, options, and concise feedback states.
+- Keep interactions runnable with the normal MarkdownFlow syntax, but keep the
+  surrounding content presentation-oriented.
+- Do not include AI narration directives or learner-facing lecture prose such as
+  "向学习者说明", "讲解", "用文字解释", "讲清", or long paragraphs intended for the AI
+  to speak.
+- Do not require the normal visual-text explanation pair. In slide-only mode,
+  the visual itself and the short on-slide labels carry the projection content;
+  any explanation belongs to the human instructor, not the Teaching Prompt.
 
 ### Outputs
 
