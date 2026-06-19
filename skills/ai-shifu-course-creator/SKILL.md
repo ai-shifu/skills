@@ -155,28 +155,35 @@ items; do not repeat questions whose answers are already clear.
 When any item is missing, ask only the corresponding questions for the missing
 items in the user's language:
 
-1. Is the content pure slides for a human instructor, or illustrated text?
+1. What usage scenarios should this course support? Multiple choices are
+   allowed: students follow AI one-on-one for personalized self-study;
+   interactive courseware shown in class.
 2. What should interactions do? Multiple choices are allowed: understand
    learner context for adaptive teaching; ask before teaching to trigger
    thinking or break old assumptions; self-check learning effect at the end of
    each lesson. Choosing none means no interactions.
-3. Should listening mode be enabled so AI voice teaches the course? If the user
-   does not answer, default to disabled.
+3. If the usage scenario does not force slide-only output, should listening mode
+   be enabled so AI voice teaches the course? If the user does not answer,
+   default to disabled.
 4. How many chapters and lessons should the course have?
 
 Use the answers as course-design constraints:
 
-- Pure slides favor concise slide-style Teaching Prompts for human delivery;
-  illustrated text favors fuller explanations with visual-text pairing.
-- If the user does not answer the format question, infer format from the source
+- Usage scenario determines content format. If personalized AI self-study is
+  selected, generate illustrated text with fuller explanations and visual-text
+  pairing. If only interactive classroom courseware is selected, generate pure
+  slides with concise slide-style Teaching Prompts for human delivery.
+- If the usage-scenario question is unanswered, infer the format from the source
   material structure instead of inventing a fixed default.
 - Interaction choices determine where interactions appear: early learner
   context collection for adaptive teaching, pre-content prompts for thinking or
   misconception correction, and lesson-end self-checks for assessment.
 - If no interaction choice is selected or the user skips the question, do not
   proactively design interaction blocks.
-- Listening mode is disabled when unanswered; when explicitly enabled or
-  disabled, carry that decision into the deployment handoff.
+- If the resolved format is pure slides, disable listening mode and do not ask
+  the listening-mode question. Otherwise, listening mode is disabled when
+  unanswered; when explicitly enabled or disabled, carry that decision into the
+  deployment handoff.
 - Chapter and lesson counts constrain the outline. If unanswered, infer
   structure from source volume and existing lesson-granularity rules instead of
   inventing a fixed default.
@@ -197,7 +204,7 @@ Raw material
    │
    ▼
 Course Design Intake                     ← ask only for missing design constraints
-   │   (format, interaction purpose, listening mode, chapter/lesson count)
+   │   (usage scenario, interaction purpose, listening mode, chapter/lesson count)
    ▼
 Orchestration                            ← end-to-end driver
    ├── calls Segmentation                 (cleanup + semantic segmentation)
