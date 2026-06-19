@@ -152,7 +152,8 @@ Before asking anything, extract answers already present in the user's current
 instruction, source material, or pulled course directory. Ask only for missing
 items; do not repeat questions whose answers are already clear.
 
-When any item is missing, ask these questions in the user's language:
+When any item is missing, ask only the corresponding questions for the missing
+items in the user's language:
 
 1. Is the content pure slides for a human instructor, or illustrated text?
 2. What should interactions do? Multiple choices are allowed: understand
@@ -167,6 +168,8 @@ Use the answers as course-design constraints:
 
 - Pure slides favor concise slide-style Teaching Prompts for human delivery;
   illustrated text favors fuller explanations with visual-text pairing.
+- If the user does not answer the format question, infer format from the source
+  material structure instead of inventing a fixed default.
 - Interaction choices determine where interactions appear: early learner
   context collection for adaptive teaching, pre-content prompts for thinking or
   misconception correction, and lesson-end self-checks for assessment.
@@ -190,11 +193,11 @@ Course request
 Step 0: Resolve Course Target            ← MANDATORY front guard: login + find-title + branch
    │   (new vs edit existing; pull the existing course BEFORE authoring)
    ▼
-Course Design Intake                     ← ask only for missing design constraints
-   │   (format, interaction purpose, listening mode, chapter/lesson count)
-   ▼
 Raw material
    │
+   ▼
+Course Design Intake                     ← ask only for missing design constraints
+   │   (format, interaction purpose, listening mode, chapter/lesson count)
    ▼
 Orchestration                            ← end-to-end driver
    ├── calls Segmentation                 (cleanup + semantic segmentation)
