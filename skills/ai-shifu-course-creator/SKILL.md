@@ -188,6 +188,17 @@ Use the answers as course-design constraints:
   selected, generate illustrated text with fuller explanations and visual-text
   pairing. If only interactive classroom slides are selected, generate pure
   slides with concise slide-style Teaching Prompts for human delivery.
+- Pure slides are for classroom projection, not AI narration. For this format,
+  override the default one-on-one explanation style: Teaching Prompts should
+  produce slide-facing content and interaction blocks only. Do not write
+  lecture-script directives such as "explain to the learner", "walk through",
+  "use text to explain the diagram", or long narration paragraphs. Keep content
+  as slide titles, short bullets, visual layout instructions, prompts, options,
+  and concise feedback states that a human instructor can present.
+- For pure slides, the Course Prompt must describe the runtime role as producing
+  classroom interactive slides, not as conducting one-on-one tutoring. Do not
+  include course-level instructions that ask the AI to verbally explain the
+  lesson to a single learner.
 - If the usage-scenario question is still unanswered after the user explicitly
   skips it, infer the format from the source material structure instead of
   inventing a fixed default.
@@ -360,6 +371,24 @@ Required anchors per lesson:
 5. Lesson close with summary or decision checkpoint.
 
 Optional modules: viewpoint calibration, misconception correction, dual deliverables (understanding + action), cross-lesson bridge sentence, additional visual-text reinforcement blocks.
+
+### Slide-Only Generation Override
+
+When Course Design Intake resolves to pure slides / classroom interactive
+slides, replace the default explanation-heavy lesson pattern with a projection
+pattern:
+
+- Treat each lesson as a small slide deck controlled by a human instructor.
+- Generate slide-facing blocks: slide title, 2-4 short bullets, visual/layout
+  instruction, interaction prompt, options, and concise feedback states.
+- Keep interactions runnable with the normal MarkdownFlow syntax, but keep the
+  surrounding content presentation-oriented.
+- Do not include AI narration directives or learner-facing lecture prose such as
+  "向学习者说明", "讲解", "用文字解释", "讲清", or long paragraphs intended for the AI
+  to speak.
+- Do not require the normal visual-text explanation pair. In slide-only mode,
+  the visual itself and the short on-slide labels carry the projection content;
+  any explanation belongs to the human instructor, not the Teaching Prompt.
 
 ### Outputs
 
