@@ -14,6 +14,13 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - No author-side meta labels ("Knowledge Block", "Lesson Objective", "Deliverable").
 - No internal authoring terms exposed in learner-facing text.
 
+## User-Visible Language
+
+- User-visible prose follows the resolved target language from `data-contracts.md#language-resolution`.
+- Phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations are localized to the user's language.
+- Human-facing labels for canonical concepts are localized: for Chinese, use “授课提示词” instead of “Teaching Prompt” and “课程提示词” instead of “Course Prompt”.
+- Machine-facing identifiers remain unchanged: JSON keys, file names, CLI flags, API fields, code symbols, MarkdownFlow syntax, and required verbatim source quotes.
+
 ## Lesson Loop
 
 - Minimum teaching loop satisfied: setup → explanation → interaction → close.
