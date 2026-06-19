@@ -6,10 +6,10 @@
 
 ## 包含的 Skills
 
-- `ai-shifu-course-creator`：通过五阶段流水线（分段、编排、生成、优化、部署）将原始课程素材转换为优化后的可运行 MarkdownFlow 授课脚本，并部署为 AI 师傅平台上的在线课程。
-- `course-direction-advisor`：将素材转化为基于证据的、市场适配的课程选题决策，包含竞品分析、定价建议和 GO/HOLD/REWORK/NO-GO 推荐。
+- **AI-Shifu Course Creator（AI 师傅课程创作器）**：通过五阶段流水线（分段、编排、生成、优化、部署）将原始课程素材转换为优化后的可运行 MarkdownFlow 授课脚本，并部署为 AI 师傅平台上的在线课程。
+- **Course Direction Advisor（课程选题顾问）**：将素材转化为基于证据的、市场适配的课程选题决策，包含竞品分析、定价建议和 GO/HOLD/REWORK/NO-GO 推荐。
 
-course-creator skill 有可运行示例，位于 `skills/ai-shifu-course-creator/examples/`。
+AI-Shifu Course Creator（AI 师傅课程创作器） skill 有可运行示例，位于 `skills/ai-shifu-course-creator/examples/`。
 
 ## 仓库结构
 
@@ -22,7 +22,7 @@ skills/
 ## 使用说明
 
 skill 以 `SKILL.md` 作为行为定义。
-机器可读元数据位于 `skills/ai-shifu-course-creator/skill.yaml`。
+目录名是稳定的机器 slug；`name` frontmatter 字段是面向人的展示名。
 
 ## 课程生产与部署路径
 
