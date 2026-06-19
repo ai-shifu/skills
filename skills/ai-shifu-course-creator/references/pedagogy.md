@@ -157,7 +157,7 @@ These are the *teaching* rules around interactions. For interaction *syntax* see
 - Choose the interaction type by the nature of the learner decision:
   - Use single-select for mutually exclusive categories, path choices, viewpoint checks, or any interaction where one selected answer should drive a distinct branch.
   - Use multi-select for non-exclusive learner context, goals, interests, modules, blockers, applicable scenarios, prior experience, or desired practice areas.
-  - When the learner prompt means "which of these apply?", prefer multi-select unless the source or user explicitly limits the learner to one answer.
+  - When the interaction prompt means "which of these apply?", prefer multi-select unless the source or user explicitly limits the learner to one answer.
   - For multi-select, drive downstream content through combined feedback, prioritization, tailored examples, or coverage of the selected items; do not require an exhaustive branch for every possible option combination.
 - Every interaction must trigger immediate feedback **and** a visible downstream effect (branching explanation, examples, practice difficulty, feedback).
 - After every interaction, restate the learner's selection explicitly as an instruction (e.g., `Restate the learner's current choice as {{var}}.`), not as polished narration.
