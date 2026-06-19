@@ -1214,6 +1214,57 @@ def cmd_create(args):
 
 
 # ── Update Meta ────────────────────────────────────────────────────────────────
+def _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
+                                intended_meta):
+    """Check course-level draft revision conflicts before a detail write."""
+    if not (manifest and manifest.get("shifu_bid") == shifu_bid):
+        return
+
+    local_course_rev = (manifest.get("course") or {}).get("revision")
+    cloud_meta = api_safe(base_url, token, "get",
+                          f"/shifus/{shifu_bid}/draft-meta") or {}
+    cloud_rev = cloud_meta.get("revision")
+    if (cloud_rev is not None and local_course_rev is not None
+            and cloud_rev > local_course_rev):
+        _auto_pull_overwrite(base_url, token, shifu_bid, course_dir,
+                             scope="meta", intended_meta=intended_meta,
+                             conflict_meta=cloud_meta)
+        sys.exit(EXIT_CONFLICT)
+
+
+def _update_course_manifest_after_push(base_url, token, shifu_bid, course_dir,
+                                       manifest, course_updates=None):
+    """Re-read and record the new course-level revision after a detail write."""
+    fresh = api_safe(base_url, token, "get", f"/shifus/{shifu_bid}/draft-meta")
+    if not isinstance(fresh, dict) or fresh.get("revision") is None:
+        # The POST already bumped the cloud revision; if we cannot read the new
+        # value, writing the old revision back with a fresh last_push_at would
+        # make the next edit see cloud > local and raise a false conflict.
+        print("Warning: could not read the new course revision from the "
+              "server; the sync manifest was left unchanged. Run "
+              "`pull --course-dir <dir>` to resync.", file=sys.stderr)
+        return
+
+    # Explicit check (not setdefault): a hand-edited manifest with "course": null
+    # would make setdefault return None and crash below.
+    course = manifest.get("course")
+    if not isinstance(course, dict):
+        course = {}
+        manifest["course"] = course
+
+    course["revision"] = fresh.get("revision")
+    for key, value in (course_updates or {}).items():
+        if value is not None:
+            course[key] = value
+    if fresh.get("updated_at") is not None:
+        course["updated_at"] = fresh.get("updated_at")
+    fresh_user = (fresh.get("updated_user") or {}).get("user_bid")
+    if fresh_user is not None:
+        course["updated_user_bid"] = fresh_user
+    manifest["last_push_at"] = _now_iso()
+    _write_sync(course_dir, manifest)
+
+
 def cmd_update_meta(args):
     """Update course metadata (name, description, system prompt, etc.).
 
@@ -1230,19 +1281,10 @@ def cmd_update_meta(args):
     course_dir = getattr(args, "course_dir", None)
 
     manifest = _load_sync(course_dir) if course_dir else None
-    if manifest and manifest.get("shifu_bid") == shifu_bid:
-        local_course_rev = (manifest.get("course") or {}).get("revision")
-        cloud_meta = api_safe(base_url, token, "get",
-                              f"/shifus/{shifu_bid}/draft-meta") or {}
-        cloud_rev = cloud_meta.get("revision")
-        if (cloud_rev is not None and local_course_rev is not None
-                and cloud_rev > local_course_rev):
-            intended = {"name": args.name, "description": args.description,
-                        "course_prompt_file": args.course_prompt_file}
-            _auto_pull_overwrite(base_url, token, shifu_bid, course_dir,
-                                 scope="meta", intended_meta=intended,
-                                 conflict_meta=cloud_meta)
-            sys.exit(EXIT_CONFLICT)
+    intended = {"name": args.name, "description": args.description,
+                "course_prompt_file": args.course_prompt_file}
+    _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
+                                intended)
 
     # Send ONLY the content fields the user is changing. The backend uses PATCH
     # semantics (an omitted field is left unchanged), so we deliberately do NOT
@@ -1269,31 +1311,9 @@ def cmd_update_meta(args):
     # Re-read the course-level revision (the detail POST response does not carry
     # it) and record it as the new baseline so subsequent edits compare cleanly.
     if manifest and manifest.get("shifu_bid") == shifu_bid:
-        fresh = api_safe(base_url, token, "get", f"/shifus/{shifu_bid}/draft-meta")
-        if not isinstance(fresh, dict) or fresh.get("revision") is None:
-            # The POST already bumped the cloud revision; if we cannot read the
-            # new value, writing the *old* revision back (with a fresh
-            # last_push_at) would make the next edit see cloud > local and raise
-            # a false conflict. Leave the manifest untouched and tell the user.
-            print("Warning: could not read the new course revision from the "
-                  "server; the sync manifest was left unchanged. Run "
-                  "`pull --course-dir <dir>` to resync.", file=sys.stderr)
-        else:
-            # Explicit check (not setdefault): a hand-edited manifest with
-            # "course": null would make setdefault return None and crash below.
-            course = manifest.get("course")
-            if not isinstance(course, dict):
-                course = {}
-                manifest["course"] = course
-            course["revision"] = fresh.get("revision")
-            course["name"] = payload.get("name", course.get("name"))
-            if fresh.get("updated_at") is not None:
-                course["updated_at"] = fresh.get("updated_at")
-            fresh_user = (fresh.get("updated_user") or {}).get("user_bid")
-            if fresh_user is not None:
-                course["updated_user_bid"] = fresh_user
-            manifest["last_push_at"] = _now_iso()
-            _write_sync(course_dir, manifest)
+        _update_course_manifest_after_push(
+            base_url, token, shifu_bid, course_dir, manifest,
+            course_updates={"name": payload.get("name")})
 
 
 # ── Set TTS ───────────────────────────────────────────────────────────────────
@@ -1305,18 +1325,9 @@ def cmd_set_tts(args):
     course_dir = getattr(args, "course_dir", None)
 
     manifest = _load_sync(course_dir) if course_dir else None
-    if manifest and manifest.get("shifu_bid") == shifu_bid:
-        local_course_rev = (manifest.get("course") or {}).get("revision")
-        cloud_meta = api_safe(base_url, token, "get",
-                              f"/shifus/{shifu_bid}/draft-meta") or {}
-        cloud_rev = cloud_meta.get("revision")
-        if (cloud_rev is not None and local_course_rev is not None
-                and cloud_rev > local_course_rev):
-            intended = {"tts_enabled": enabled}
-            _auto_pull_overwrite(base_url, token, shifu_bid, course_dir,
-                                 scope="meta", intended_meta=intended,
-                                 conflict_meta=cloud_meta)
-            sys.exit(EXIT_CONFLICT)
+    intended = {"tts_enabled": enabled}
+    _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
+                                intended)
 
     # Send only the TTS switch. Provider/model/voice/speed/pitch/emotion remain
     # whatever the platform currently stores.
@@ -1335,24 +1346,8 @@ def cmd_set_tts(args):
                   f"{COURSE_CONFIG_NAME} was left unchanged. Run "
                   "`pull --course-dir <dir>` to resync.", file=sys.stderr)
 
-        fresh = api_safe(base_url, token, "get", f"/shifus/{shifu_bid}/draft-meta")
-        if not isinstance(fresh, dict) or fresh.get("revision") is None:
-            print("Warning: could not read the new course revision from the "
-                  "server; the sync manifest was left unchanged. Run "
-                  "`pull --course-dir <dir>` to resync.", file=sys.stderr)
-        else:
-            course = manifest.get("course")
-            if not isinstance(course, dict):
-                course = {}
-                manifest["course"] = course
-            course["revision"] = fresh.get("revision")
-            if fresh.get("updated_at") is not None:
-                course["updated_at"] = fresh.get("updated_at")
-            fresh_user = (fresh.get("updated_user") or {}).get("user_bid")
-            if fresh_user is not None:
-                course["updated_user_bid"] = fresh_user
-            manifest["last_push_at"] = _now_iso()
-            _write_sync(course_dir, manifest)
+        _update_course_manifest_after_push(base_url, token, shifu_bid,
+                                           course_dir, manifest)
 
 
 # ── Add Chapter ────────────────────────────────────────────────────────────────
