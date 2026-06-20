@@ -1079,8 +1079,23 @@ def cmd_status(args):
     _collect(tree if isinstance(tree, list) else [tree])
 
     behind, locally_modified, deleted_remote = [], [], []
+    course_locally_modified = []
     manifest_bids = set()
     uptodate = 0
+
+    desc_path = Path(course_dir) / COURSE_DESCRIPTION_NAME
+    manifest_course = manifest.get("course") or {}
+    manifest_description = manifest_course.get("description") or ""
+    if desc_path.exists():
+        try:
+            local_description = desc_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            local_description = None
+        if local_description is None or local_description != manifest_description:
+            course_locally_modified.append(COURSE_DESCRIPTION_NAME)
+    elif manifest_description:
+        course_locally_modified.append(COURSE_DESCRIPTION_NAME)
+
     # Reuse one connection for the per-lesson draft-meta lookups — on a remote
     # API the TCP/TLS handshake dominates, so pooling roughly halves wall time
     # for multi-lesson courses (same pattern as cmd_list / cmd_find_title).
@@ -1136,6 +1151,11 @@ def cmd_status(args):
         print("\nLocally modified (will be pushed on next update-lesson / import):")
         for entry in locally_modified:
             print(f"  {entry.get('file')}   {entry.get('name', '')}")
+    if course_locally_modified:
+        print("\nCourse metadata locally modified "
+              "(will be pushed on next update-meta / import):")
+        for relfile in course_locally_modified:
+            print(f"  {relfile}   description")
     if new_remote:
         print("\nNew on server (not in local manifest — run `pull`):")
         for b in new_remote:
@@ -1148,9 +1168,11 @@ def cmd_status(args):
 
     # A locally-modified working tree counts as diverged too, so `status
     # --exit-code` can guard import/push automation against unsynced edits.
-    diverged = bool(behind or new_remote or deleted_remote or locally_modified) or (
-        cloud_course_rev is not None and local_course_rev is not None
-        and cloud_course_rev > local_course_rev)
+    diverged = bool(
+        behind or new_remote or deleted_remote or locally_modified
+        or course_locally_modified
+    ) or (cloud_course_rev is not None and local_course_rev is not None
+          and cloud_course_rev > local_course_rev)
     if getattr(args, "exit_code", False) and diverged:
         sys.exit(1)
 
