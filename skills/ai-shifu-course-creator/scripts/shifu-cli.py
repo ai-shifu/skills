@@ -796,9 +796,6 @@ def _read_text_file(path, *, label):
 def _resolve_course_description(course_dir=None, description=None,
                                 description_file=None):
     """Resolve course description precedence for build/import/update-meta."""
-    if description is not None and description_file is not None:
-        print("Error: --description and --description-file are mutually exclusive.")
-        sys.exit(1)
     if description is not None:
         return description
     if description_file is not None:
@@ -2534,9 +2531,10 @@ def build_parser():
                        help="Update course metadata")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("--name", default=None, help="New course name")
-    p.add_argument("--description", default=None, help="New description")
-    p.add_argument("--description-file", default=None,
-                   help="File containing the new course description")
+    desc_group = p.add_mutually_exclusive_group()
+    desc_group.add_argument("--description", default=None, help="New description")
+    desc_group.add_argument("--description-file", default=None,
+                            help="File containing the new course description")
     p.add_argument("--course-prompt-file", default=None,
                    help="File containing course-level prompt")
     p.add_argument("--course-dir", default=None,
@@ -2624,10 +2622,11 @@ def build_parser():
                    help="Course directory (builds JSON then imports)")
     p.add_argument("--title", default=None,
                    help="Course title (only with --course-dir)")
-    p.add_argument("--description", default=None,
-                   help="Course description (only with --course-dir)")
-    p.add_argument("--description-file", default=None,
-                   help="Course description file (only with --course-dir)")
+    desc_group = p.add_mutually_exclusive_group()
+    desc_group.add_argument("--description", default=None,
+                            help="Course description (only with --course-dir)")
+    desc_group.add_argument("--description-file", default=None,
+                            help="Course description file (only with --course-dir)")
     p.add_argument("--keywords", default=None,
                    help="Keywords, comma-separated (only with --course-dir)")
     p.add_argument("--chapter-name", default=None,
@@ -2641,9 +2640,10 @@ def build_parser():
     p.add_argument("--title", default=None, help="Course title")
     p.add_argument("--chapter-name", default=None,
                    help="Chapter name (default: same as course title)")
-    p.add_argument("--description", default=None, help="Course description")
-    p.add_argument("--description-file", default=None,
-                   help="Course description file")
+    desc_group = p.add_mutually_exclusive_group()
+    desc_group.add_argument("--description", default=None, help="Course description")
+    desc_group.add_argument("--description-file", default=None,
+                            help="Course description file")
     p.add_argument("--keywords", default=None, help="Keywords (comma-separated)")
 
     # ── publish ──
