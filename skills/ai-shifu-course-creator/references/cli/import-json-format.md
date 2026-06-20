@@ -35,6 +35,7 @@ The `build` command generates a `shifu-import.json` file that can be imported to
 ## Key Fields
 
 - `course_prompt`: Course-level AI role definition (from `course-prompt.md`). The CLI maps this to the platform API field `system_prompt` when calling `/shifus/<bid>/detail`.
+- `description`: Learner-facing SEO/listing description. For course-directory builds, the CLI resolves it from `--description`, then `--description-file`, then `course-description.md`, then empty string.
 - `type: 401`: Regular lesson node
 - `parent_bid`: Empty string = chapter (top-level container); non-empty = lesson (child node with MarkdownFlow content). Use `add-chapter` to create chapters, then pass the chapter BID as `--parent-bid` when creating lessons
 - `content`: The MarkdownFlow prompt content (this is the core teaching material)

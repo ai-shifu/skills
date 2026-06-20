@@ -11,6 +11,7 @@ A course directory with Teaching Prompts (one MarkdownFlow file per lesson) alre
 ```
 my-course/
   README.md
+  course-description.md
   course-prompt.md
   lessons/
     lesson-01.md

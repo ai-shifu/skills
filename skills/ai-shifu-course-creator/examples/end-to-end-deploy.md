@@ -33,6 +33,7 @@ Produces optimized Teaching Prompts (see `pipeline-full.md` for detailed output)
 ```
 my-course/
   README.md
+  course-description.md
   course-prompt.md
   structure.json
   lessons/
@@ -42,6 +43,8 @@ my-course/
 ```
 
 ### Step 2: Build Import File
+
+`course-description.md` contains the generated SEO/listing description for the course.
 
 ```bash
 python3 {skillDir}/scripts/shifu-cli.py build --course-dir ./my-course/ --title "Metric Drift Diagnosis"
