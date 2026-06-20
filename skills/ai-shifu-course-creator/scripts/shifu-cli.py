@@ -788,7 +788,7 @@ def _write_course_config(course_dir, cfg):
 def _read_text_file(path, *, label):
     try:
         return Path(path).read_text(encoding="utf-8").strip()
-    except OSError as e:
+    except (OSError, UnicodeDecodeError) as e:
         print(f"Error: cannot read {label}: {e}")
         sys.exit(1)
 
@@ -815,8 +815,7 @@ def _write_course_description(course_dir, description):
     path = Path(course_dir) / COURSE_DESCRIPTION_NAME
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    text = (description or "").strip()
-    tmp.write_text((text + "\n") if text else "", encoding="utf-8")
+    tmp.write_text(description or "", encoding="utf-8")
     tmp.replace(path)
 
 
