@@ -1082,7 +1082,9 @@ def cmd_status(args):
 
     desc_path = Path(course_dir) / COURSE_DESCRIPTION_NAME
     manifest_course = manifest.get("course") or {}
-    manifest_description = manifest_course.get("description") or ""
+    manifest_description = manifest_course.get("description")
+    if manifest_description is None:
+        manifest_description = ""
     if desc_path.exists():
         try:
             local_description = desc_path.read_text(encoding="utf-8")
@@ -1346,11 +1348,14 @@ def cmd_update_meta(args):
             course_dir=course_dir,
             description=args.description,
         )
-    elif course_dir and (Path(course_dir) / COURSE_DESCRIPTION_NAME).exists():
+    elif (manifest and manifest.get("shifu_bid") == shifu_bid and course_dir
+          and (Path(course_dir) / COURSE_DESCRIPTION_NAME).exists()):
         local_description = _resolve_course_description(course_dir=course_dir)
         manifest_description = ((manifest or {}).get("course") or {}).get(
-            "description", "")
-        if manifest is None or local_description != manifest_description.strip():
+            "description")
+        if manifest_description is None:
+            manifest_description = ""
+        if local_description != manifest_description.strip():
             description = local_description
 
     intended = {"name": args.name, "description": description,
