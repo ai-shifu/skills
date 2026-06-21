@@ -114,8 +114,9 @@ The `build` and `import --course-dir` commands map this file to
 Old course directories without `course-description.md` remain valid; they build
 with an empty platform description unless an explicit description flag is used.
 `pull` writes the current cloud description back to this file, and
-`update-meta --description --course-dir` refreshes it after a successful
-platform update.
+`update-meta --course-dir` pushes this file when it has a local content change;
+`update-meta --description --course-dir` also refreshes the file after a
+successful platform update.
 
 ## course-prompt.md
 

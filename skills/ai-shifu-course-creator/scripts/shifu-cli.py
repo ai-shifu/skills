@@ -1088,7 +1088,8 @@ def cmd_status(args):
             local_description = desc_path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             local_description = None
-        if local_description is None or local_description != manifest_description:
+        if (local_description is None
+                or local_description.strip() != manifest_description.strip()):
             course_locally_modified.append(COURSE_DESCRIPTION_NAME)
     elif manifest_description:
         course_locally_modified.append(COURSE_DESCRIPTION_NAME)
@@ -1338,13 +1339,20 @@ def cmd_update_meta(args):
     base_url, token = resolve_auth(args)
     shifu_bid = args.shifu_bid
     course_dir = getattr(args, "course_dir", None)
+    manifest = _load_sync(course_dir) if course_dir else None
     description = None
     if args.description is not None:
         description = _resolve_course_description(
+            course_dir=course_dir,
             description=args.description,
         )
+    elif course_dir and (Path(course_dir) / COURSE_DESCRIPTION_NAME).exists():
+        local_description = _resolve_course_description(course_dir=course_dir)
+        manifest_description = ((manifest or {}).get("course") or {}).get(
+            "description", "")
+        if manifest is None or local_description != manifest_description.strip():
+            description = local_description
 
-    manifest = _load_sync(course_dir) if course_dir else None
     intended = {"name": args.name, "description": description,
                 "course_prompt_file": args.course_prompt_file}
     _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,

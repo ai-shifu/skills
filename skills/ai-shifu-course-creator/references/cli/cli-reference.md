@@ -177,9 +177,10 @@ set-tts <shifu_bid> --enabled true|false [--course-dir ./course-a/]
 ```
 
 `update-meta` sends only the content fields you pass (`--name` / `--description`
-/ `--course-prompt-file`); it does **not** touch course
+/ `--course-prompt-file`), plus a locally modified `course-description.md` when
+`--course-dir` is supplied; it does **not** touch course
 attributes (model / price / TTS / Ask / …) — the backend preserves any field
-left out. When `--course-dir` is supplied, a successful description update also
+left out. When `--course-dir` is supplied, a successful description update
 writes `course-description.md` and records the new course metadata baseline in
 `.shifu-sync.json`. `rename-lesson` likewise changes only the name and no longer
 resets the lesson's learning permission.
@@ -245,7 +246,8 @@ course-level model/price/TTS/Ask/…) are left to the platform. `build`/`import`
 send only content (lesson MarkdownFlow + course name/description/system prompt),
 and the backend uses **PATCH semantics** — any field a write omits is preserved.
 So `update-lesson` (content only) and `update-meta` (only the `--name` /
-`--description` / `--course-prompt-file` you pass) never
+`--description` / `--course-prompt-file` you pass, plus a locally modified
+`course-description.md` with `--course-dir`) never
 touch attributes.
 
 `pull` still writes the attributes into `structure.json` (`access`/`hidden`) and
