@@ -545,7 +545,7 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 5. Verify via platform URL.
 
 **Standalone deployment (Path C):**
-1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`), a `course-description.md` SEO summary, a `course-prompt.md`, and `structure.json`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`. If `structure.json` is missing, create it before running `build`. Existing directories without `course-description.md` still build, but the platform description will be empty unless `--description` or `--description-file` is provided.
+1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`), a `course-description.md` SEO summary, a `course-prompt.md`, and `structure.json`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`. If `structure.json` is missing, create it before running `build`. Existing directories without `course-description.md` still build, but the platform description will be empty unless `--description` is provided.
 2. Run `build` → `import` (deploy) → `publish` as above.
 
 ### Version Sync Workflow

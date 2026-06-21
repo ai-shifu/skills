@@ -793,13 +793,10 @@ def _read_text_file(path, *, label):
         sys.exit(1)
 
 
-def _resolve_course_description(course_dir=None, description=None,
-                                description_file=None):
+def _resolve_course_description(course_dir=None, description=None):
     """Resolve course description precedence for build/import/update-meta."""
     if description is not None:
         return description
-    if description_file is not None:
-        return _read_text_file(description_file, label="--description-file")
     if course_dir:
         path = Path(course_dir) / COURSE_DESCRIPTION_NAME
         if path.exists():
@@ -1342,16 +1339,13 @@ def cmd_update_meta(args):
     shifu_bid = args.shifu_bid
     course_dir = getattr(args, "course_dir", None)
     description = None
-    if (args.description is not None
-            or getattr(args, "description_file", None) is not None):
+    if args.description is not None:
         description = _resolve_course_description(
             description=args.description,
-            description_file=getattr(args, "description_file", None),
         )
 
     manifest = _load_sync(course_dir) if course_dir else None
     intended = {"name": args.name, "description": description,
-                "description_file": getattr(args, "description_file", None),
                 "course_prompt_file": args.course_prompt_file}
     _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
                                 intended)
@@ -1372,8 +1366,7 @@ def cmd_update_meta(args):
             payload["system_prompt"] = f.read().strip()
     if not payload:
         print("Nothing to update "
-              "(provide --name / --description / --description-file / "
-              "--course-prompt-file).")
+              "(provide --name / --description / --course-prompt-file).")
         return
 
     api(base_url, token, "post", f"/shifus/{shifu_bid}/detail", json=payload)
@@ -1815,7 +1808,6 @@ def cmd_import(args):
             course_dir=args.course_dir,
             title=getattr(args, "title", None),
             description=getattr(args, "description", None),
-            description_file=getattr(args, "description_file", None),
             keywords=getattr(args, "keywords", None),
             chapter_name=getattr(args, "chapter_name", None),
         )
@@ -1843,7 +1835,6 @@ def _derive_lesson_title(filename):
 
 
 def _build_import_json(course_dir, title=None, description=None,
-                       description_file=None,
                        keywords=None, chapter_name=None, output_path=None):
     """Build import JSON from a local course directory. Returns the output file path."""
     lessons_dir = os.path.join(course_dir, "lessons")
@@ -1884,7 +1875,6 @@ def _build_import_json(course_dir, title=None, description=None,
     description = _resolve_course_description(
         course_dir=course_dir,
         description=description,
-        description_file=description_file,
     )
 
     # Load chapter structure from structure.json if exists,
@@ -2081,7 +2071,6 @@ def cmd_build(args):
         course_dir=args.course_dir,
         title=args.title,
         description=args.description,
-        description_file=args.description_file,
         keywords=args.keywords,
         chapter_name=args.chapter_name,
         output_path=args.output,
@@ -2553,10 +2542,7 @@ def build_parser():
                        help="Update course metadata")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("--name", default=None, help="New course name")
-    desc_group = p.add_mutually_exclusive_group()
-    desc_group.add_argument("--description", default=None, help="New description")
-    desc_group.add_argument("--description-file", default=None,
-                            help="File containing the new course description")
+    p.add_argument("--description", default=None, help="New description")
     p.add_argument("--course-prompt-file", default=None,
                    help="File containing course-level prompt")
     p.add_argument("--course-dir", default=None,
@@ -2644,11 +2630,8 @@ def build_parser():
                    help="Course directory (builds JSON then imports)")
     p.add_argument("--title", default=None,
                    help="Course title (only with --course-dir)")
-    desc_group = p.add_mutually_exclusive_group()
-    desc_group.add_argument("--description", default=None,
-                            help="Course description (only with --course-dir)")
-    desc_group.add_argument("--description-file", default=None,
-                            help="Course description file (only with --course-dir)")
+    p.add_argument("--description", default=None,
+                   help="Course description (only with --course-dir)")
     p.add_argument("--keywords", default=None,
                    help="Keywords, comma-separated (only with --course-dir)")
     p.add_argument("--chapter-name", default=None,
@@ -2662,10 +2645,7 @@ def build_parser():
     p.add_argument("--title", default=None, help="Course title")
     p.add_argument("--chapter-name", default=None,
                    help="Chapter name (default: same as course title)")
-    desc_group = p.add_mutually_exclusive_group()
-    desc_group.add_argument("--description", default=None, help="Course description")
-    desc_group.add_argument("--description-file", default=None,
-                            help="Course description file")
+    p.add_argument("--description", default=None, help="Course description")
     p.add_argument("--keywords", default=None, help="Keywords (comma-separated)")
 
     # ── publish ──

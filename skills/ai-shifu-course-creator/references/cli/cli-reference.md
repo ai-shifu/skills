@@ -168,7 +168,7 @@ add-lesson <shifu_bid> --name "Name" --teaching-prompt-file lesson.md --parent-b
 ## Update Commands
 
 ```bash
-update-meta <shifu_bid> [--name "..."] [--description "..." | --description-file desc.md] [--course-prompt-file prompt.md] [--course-dir ./course-a/]
+update-meta <shifu_bid> [--name "..."] [--description "..."] [--course-prompt-file prompt.md] [--course-dir ./course-a/]
 update-lesson <shifu_bid> <outline_bid> --teaching-prompt-file lesson.md [--course-dir ./course-a/]
 rename-lesson <shifu_bid> <outline_bid> --name "New Name"
 reorder <shifu_bid> --order bid1,bid2,bid3
@@ -177,7 +177,7 @@ set-tts <shifu_bid> --enabled true|false [--course-dir ./course-a/]
 ```
 
 `update-meta` sends only the content fields you pass (`--name` / `--description`
-/ `--description-file` / `--course-prompt-file`); it does **not** touch course
+/ `--course-prompt-file`); it does **not** touch course
 attributes (model / price / TTS / Ask / …) — the backend preserves any field
 left out. When `--course-dir` is supplied, a successful description update also
 writes `course-description.md` and records the new course metadata baseline in
@@ -230,14 +230,14 @@ import <shifu_bid> --json-file course.json
 import --new --json-file course.json
 
 # One-step build + import from course directory
-import <shifu_bid> --course-dir ./course-a/ [--title "..."] [--description "..." | --description-file desc.md] [--chapter-name "..."]
-import --new --course-dir ./course-a/ [--title "..."] [--description "..." | --description-file desc.md] [--chapter-name "..."]
+import <shifu_bid> --course-dir ./course-a/ [--title "..."] [--description "..."] [--chapter-name "..."]
+import --new --course-dir ./course-a/ [--title "..."] [--description "..."] [--chapter-name "..."]
 
 # Local build only (offline, generates shifu-import.json)
-build --course-dir ./course-a/ [-o shifu-import.json] [--title "..."] [--description "..." | --description-file desc.md] [--chapter-name "..."]
+build --course-dir ./course-a/ [-o shifu-import.json] [--title "..."] [--description "..."] [--chapter-name "..."]
 ```
 
-The `build` command works entirely offline — it reads the course directory's Teaching Prompts (one MarkdownFlow file per lesson under `lessons/`), the Course Prompt, and the SEO course description, then produces `shifu-import.json` without any network calls. The `import --course-dir` option combines build + import in one step. Description resolution order is `--description` -> `--description-file` -> `<course-dir>/course-description.md` -> empty string. `--description` and `--description-file` are mutually exclusive.
+The `build` command works entirely offline — it reads the course directory's Teaching Prompts (one MarkdownFlow file per lesson under `lessons/`), the Course Prompt, and the SEO course description, then produces `shifu-import.json` without any network calls. The `import --course-dir` option combines build + import in one step. Description resolution order is `--description` -> `<course-dir>/course-description.md` -> empty string.
 
 **Course attributes are not pushed by default.** The skill manages course
 *content*; *attributes* (each lesson's learning permission / hidden state, and
@@ -245,7 +245,7 @@ course-level model/price/TTS/Ask/…) are left to the platform. `build`/`import`
 send only content (lesson MarkdownFlow + course name/description/system prompt),
 and the backend uses **PATCH semantics** — any field a write omits is preserved.
 So `update-lesson` (content only) and `update-meta` (only the `--name` /
-`--description` / `--description-file` / `--course-prompt-file` you pass) never
+`--description` / `--course-prompt-file` you pass) never
 touch attributes.
 
 `pull` still writes the attributes into `structure.json` (`access`/`hidden`) and
@@ -276,7 +276,7 @@ re-run). After a successful import the manifest is re-seeded via an automatic
 Build behavior:
 
 - **Course title** resolution order: `--title` CLI arg -> first heading in `README.md` -> directory name
-- **Course description** resolution order: `--description` CLI arg -> `--description-file` -> `course-description.md` -> empty string
+- **Course description** resolution order: `--description` CLI arg -> `course-description.md` -> empty string
 - **Chapter structure**: if `structure.json` exists, generates multi-chapter structure per its definition; otherwise creates a single chapter (named via `--chapter-name` or defaults to course title) containing all `lesson-*.md` files in sorted order
 - **Lesson title** resolution order: `title` field in `structure.json` -> filename derived (e.g., `lesson-01.md` -> "Lesson 01")
 

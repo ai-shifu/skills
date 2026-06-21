@@ -108,15 +108,14 @@ The `build` and `import --course-dir` commands map this file to
 `description` field. Resolution order is:
 
 1. `--description`
-2. `--description-file`
-3. `<course-dir>/course-description.md`
-4. empty string
+2. `<course-dir>/course-description.md`
+3. empty string
 
 Old course directories without `course-description.md` remain valid; they build
 with an empty platform description unless an explicit description flag is used.
 `pull` writes the current cloud description back to this file, and
-`update-meta --description` / `--description-file --course-dir` refreshes it
-after a successful platform update.
+`update-meta --description --course-dir` refreshes it after a successful
+platform update.
 
 ## course-prompt.md
 
