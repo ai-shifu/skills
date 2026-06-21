@@ -5,6 +5,7 @@
 ```
 <course>/
   README.md            # Course metadata (title from first heading)
+  course-description.md # SEO/listing description mapped to the platform description field
   course-prompt.md     # Course-level prompt (AI role and teaching style)
   course-config.json   # Course-level attributes (model/price/TTS/Ask/…) — round-tripped so import doesn't reset them
   shifu-import.json    # Generated import file (output of build)
@@ -73,7 +74,7 @@ Schema (abridged):
   "schema_version": 1,
   "shifu_bid": "a1b2c3…",
   "base_url": "https://app.ai-shifu.cn",
-  "course": {"revision": 42, "name": "…", "updated_at": "…", "updated_user_bid": "…"},
+  "course": {"revision": 42, "name": "…", "description": "…", "updated_at": "…", "updated_user_bid": "…"},
   "lessons": [
     {"file": "lessons/lesson-01.md", "outline_bid": "9a8b…", "name": "…",
      "parent_bid": "ch_001", "revision": 1187, "is_chapter": false,
@@ -94,6 +95,28 @@ edited since the last sync. See
 ## Lesson Files
 
 When `structure.json` is not present, `build` auto-discovers only `lesson-*.md` files (e.g., `lesson-01.md`, `lesson-02.md`) and ignores other filenames. When `structure.json` is present, lesson files are taken from `chapters[].lessons[].file` and any filename is accepted as long as it exists.
+
+## course-description.md
+
+Contains the learner-facing SEO/listing description for the course. Path A and
+Author Only outputs must generate this file from the course topic, target
+learners, and concrete learning outcomes; do not include author-side workflow
+notes.
+
+The `build` and `import --course-dir` commands map this file to
+`shifu.description` in `shifu-import.json`, which the CLI sends to the platform
+`description` field. Resolution order is:
+
+1. `--description`
+2. `<course-dir>/course-description.md`
+3. empty string
+
+Old course directories without `course-description.md` remain valid; they build
+with an empty platform description unless an explicit description flag is used.
+`pull` writes the current cloud description back to this file, and
+`update-meta --course-dir` pushes this file when it has a local content change;
+`update-meta --description --course-dir` also refreshes the file after a
+successful platform update.
 
 ## course-prompt.md
 
@@ -139,7 +162,8 @@ Ask / keywords / …), written by `pull` so the agent can see the current settin
 **`build`/`import` do NOT send it.** The skill does not push course attributes by
 default — the backend preserves any attribute a write leaves out, so iterating
 content never resets model/price/TTS/Ask. The course **name** lives in
-`README.md` and the **system prompt** in `course-prompt.md`.
+`README.md`, the SEO **description** in `course-description.md`, and the
+**system prompt** in `course-prompt.md`.
 
 The exception is an explicit listening-mode update: `set-tts --course-dir`
 refreshes this snapshot after changing `tts_enabled`. It still does not make

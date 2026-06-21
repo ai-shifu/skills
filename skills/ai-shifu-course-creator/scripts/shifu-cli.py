@@ -735,6 +735,7 @@ def cmd_export(args):
 
 
 # ── Course Attributes (round-trip via structure.json + course-config.json) ──────
+COURSE_DESCRIPTION_NAME = "course-description.md"
 COURSE_CONFIG_NAME = "course-config.json"
 
 # Per-lesson learning-access type ("guest"/"trial"/"normal") <-> the Chinese the
@@ -742,8 +743,9 @@ COURSE_CONFIG_NAME = "course-config.json"
 ACCESS_TYPES = ("guest", "trial", "normal")
 
 # Course-level attributes that round-trip through course-config.json. The course
-# name lives in README.md and the system prompt in course-prompt.md, so they are
-# intentionally NOT duplicated here.
+# name lives in README.md, the SEO description in course-description.md, and the
+# system prompt in course-prompt.md, so they are intentionally NOT duplicated
+# here.
 COURSE_CONFIG_DEFAULTS = {
     "model": "", "temperature": 0.3, "price": 0, "keywords": [], "avatar": "",
     "use_learner_language": False,
@@ -780,6 +782,34 @@ def _write_course_config(course_dir, cfg):
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n",
                    encoding="utf-8")
+    tmp.replace(path)
+
+
+def _read_text_file(path, *, label):
+    try:
+        return Path(path).read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"Error: cannot read {label}: {e}")
+        sys.exit(1)
+
+
+def _resolve_course_description(course_dir=None, description=None):
+    """Resolve course description precedence for build/import/update-meta."""
+    if description is not None:
+        return description
+    if course_dir:
+        path = Path(course_dir) / COURSE_DESCRIPTION_NAME
+        if path.exists():
+            return _read_text_file(path, label=str(path))
+    return ""
+
+
+def _write_course_description(course_dir, description):
+    """Atomically write the local SEO description file."""
+    path = Path(course_dir) / COURSE_DESCRIPTION_NAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(description or "", encoding="utf-8")
     tmp.replace(path)
 
 
@@ -937,6 +967,12 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force
             lines.insert(0, f"# {name}")
         readme.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
+    # course-description.md — cloud-authoritative SEO/course listing summary.
+    course_description = detail.get("description", "") or ""
+    desc_path = course_path / COURSE_DESCRIPTION_NAME
+    _backup_if_divergent(desc_path, course_description)
+    _write_course_description(course_dir, course_description)
+
     # course-prompt.md — cloud-authoritative system prompt.
     course_prompt = detail.get("system_prompt", "") or ""
     cp_path = course_path / "course-prompt.md"
@@ -982,6 +1018,7 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force
         "course": {
             "revision": course_meta.get("revision"),
             "name": name,
+            "description": course_description,
             "updated_at": course_meta.get("updated_at"),
             "updated_user_bid": (course_meta.get("updated_user") or {}).get("user_bid"),
         },
@@ -1039,8 +1076,26 @@ def cmd_status(args):
     _collect(tree if isinstance(tree, list) else [tree])
 
     behind, locally_modified, deleted_remote = [], [], []
+    course_locally_modified = []
     manifest_bids = set()
     uptodate = 0
+
+    desc_path = Path(course_dir) / COURSE_DESCRIPTION_NAME
+    manifest_course = manifest.get("course") or {}
+    manifest_description = manifest_course.get("description")
+    if manifest_description is None:
+        manifest_description = ""
+    if desc_path.exists():
+        try:
+            local_description = desc_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            local_description = None
+        if (local_description is None
+                or local_description.strip() != manifest_description.strip()):
+            course_locally_modified.append(COURSE_DESCRIPTION_NAME)
+    elif manifest_description:
+        course_locally_modified.append(COURSE_DESCRIPTION_NAME)
+
     # Reuse one connection for the per-lesson draft-meta lookups — on a remote
     # API the TCP/TLS handshake dominates, so pooling roughly halves wall time
     # for multi-lesson courses (same pattern as cmd_list / cmd_find_title).
@@ -1096,6 +1151,11 @@ def cmd_status(args):
         print("\nLocally modified (will be pushed on next update-lesson / import):")
         for entry in locally_modified:
             print(f"  {entry.get('file')}   {entry.get('name', '')}")
+    if course_locally_modified:
+        print("\nCourse metadata locally modified "
+              "(will be pushed on next update-meta / import):")
+        for relfile in course_locally_modified:
+            print(f"  {relfile}   description")
     if new_remote:
         print("\nNew on server (not in local manifest — run `pull`):")
         for b in new_remote:
@@ -1108,9 +1168,11 @@ def cmd_status(args):
 
     # A locally-modified working tree counts as diverged too, so `status
     # --exit-code` can guard import/push automation against unsynced edits.
-    diverged = bool(behind or new_remote or deleted_remote or locally_modified) or (
-        cloud_course_rev is not None and local_course_rev is not None
-        and cloud_course_rev > local_course_rev)
+    diverged = bool(
+        behind or new_remote or deleted_remote or locally_modified
+        or course_locally_modified
+    ) or (cloud_course_rev is not None and local_course_rev is not None
+          and cloud_course_rev > local_course_rev)
     if getattr(args, "exit_code", False) and diverged:
         sys.exit(1)
 
@@ -1166,8 +1228,8 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
     elif scope == "import":
         backup_dir = course_path / f".conflict-backup-{ts}"
         backup_dir.mkdir(parents=True, exist_ok=True)
-        for rel in ("README.md", "course-prompt.md", "structure.json",
-                    COURSE_CONFIG_NAME):
+        for rel in ("README.md", COURSE_DESCRIPTION_NAME, "course-prompt.md",
+                    "structure.json", COURSE_CONFIG_NAME):
             src = course_path / rel
             if src.exists():
                 shutil.copy2(src, backup_dir / rel)
@@ -1279,9 +1341,24 @@ def cmd_update_meta(args):
     base_url, token = resolve_auth(args)
     shifu_bid = args.shifu_bid
     course_dir = getattr(args, "course_dir", None)
-
     manifest = _load_sync(course_dir) if course_dir else None
-    intended = {"name": args.name, "description": args.description,
+    description = None
+    if args.description is not None:
+        description = _resolve_course_description(
+            course_dir=course_dir,
+            description=args.description,
+        )
+    elif (manifest and manifest.get("shifu_bid") == shifu_bid and course_dir
+          and (Path(course_dir) / COURSE_DESCRIPTION_NAME).exists()):
+        local_description = _resolve_course_description(course_dir=course_dir)
+        manifest_description = ((manifest or {}).get("course") or {}).get(
+            "description")
+        if manifest_description is None:
+            manifest_description = ""
+        if local_description != manifest_description.strip():
+            description = local_description
+
+    intended = {"name": args.name, "description": description,
                 "course_prompt_file": args.course_prompt_file}
     _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
                                 intended)
@@ -1295,8 +1372,8 @@ def cmd_update_meta(args):
     payload = {}
     if args.name is not None:
         payload["name"] = args.name
-    if args.description is not None:
-        payload["description"] = args.description
+    if description is not None:
+        payload["description"] = description
     if args.course_prompt_file:
         with open(args.course_prompt_file, "r", encoding="utf-8") as f:
             payload["system_prompt"] = f.read().strip()
@@ -1308,12 +1385,18 @@ def cmd_update_meta(args):
     api(base_url, token, "post", f"/shifus/{shifu_bid}/detail", json=payload)
     print(f"Updated metadata for {shifu_bid}")
 
+    if course_dir and "description" in payload:
+        _write_course_description(course_dir, payload["description"])
+
     # Re-read the course-level revision (the detail POST response does not carry
     # it) and record it as the new baseline so subsequent edits compare cleanly.
     if manifest and manifest.get("shifu_bid") == shifu_bid:
         _update_course_manifest_after_push(
             base_url, token, shifu_bid, course_dir, manifest,
-            course_updates={"name": payload.get("name")})
+            course_updates={
+                "name": payload.get("name"),
+                "description": payload.get("description"),
+            })
 
 
 # ── Set TTS ───────────────────────────────────────────────────────────────────
@@ -1801,6 +1884,11 @@ def _build_import_json(course_dir, title=None, description=None,
                 title = first_line.lstrip("#").strip()
         if not title:
             title = Path(course_dir).name
+
+    description = _resolve_course_description(
+        course_dir=course_dir,
+        description=description,
+    )
 
     # Load chapter structure from structure.json if exists,
     # otherwise auto-create a single chapter wrapping all lessons

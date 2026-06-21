@@ -262,12 +262,12 @@ Run the full pipeline from raw material to a live deployed course.
 
 0. **Step 0 front guard (first, always)** — resolve new-vs-edit via `login` + `find-title`; if editing an existing course, `pull` it before authoring. See **## Step 0**.
 1. **Orchestration** drives Segmentation and Generation end-to-end, then runs cross-lesson gating to produce Teaching Prompts + course_index + variable table.
-2. **Optimization** audits and improves Orchestration's output, plus produces the Course Prompt.
+2. **Optimization** audits and improves Orchestration's output, plus produces the Course Prompt and SEO course description.
 3. **Deployment** writes the course directory, builds, imports, and publishes to the AI-Shifu platform.
 
 ### Path B: Author Only
 
-Run Segmentation through Optimization to produce optimized Teaching Prompts and a Course Prompt without deploying. Sub-paths:
+Run Segmentation through Optimization to produce optimized Teaching Prompts, a Course Prompt, and an SEO course description without deploying. Sub-paths:
 - **Segment only**: Segmentation alone for structured segments and manual review.
 - **Generate only**: Generation alone on pre-existing segments to produce Teaching Prompts.
 - **Optimize only**: Optimization alone to audit and improve existing Teaching Prompts.
@@ -538,14 +538,14 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 ### Deployment Workflow
 
 **From pipeline (Path A continuation):**
-1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), and required `structure.json`.
+1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-description.md` (the generated SEO description, based on the course topic, target learners, and learning outcomes; no author-side process notes), `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), and required `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
 3. **Deploy**: Run `import --new --json-file <dir>/shifu-import.json` to upload the course onto the platform.
 4. **Publish**: Run `publish <shifu_bid>` to push the course to its public student-facing URL.
 5. Verify via platform URL.
 
 **Standalone deployment (Path C):**
-1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`), a `course-prompt.md`, and `structure.json`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`. If `structure.json` is missing, create it before running `build`.
+1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`), a `course-description.md` SEO summary, a `course-prompt.md`, and `structure.json`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`. If `structure.json` is missing, create it before running `build`. Existing directories without `course-description.md` still build, but the platform description will be empty unless `--description` is provided.
 2. Run `build` → `import` (deploy) → `publish` as above.
 
 ### Version Sync Workflow
@@ -563,9 +563,10 @@ Once the target is a download of an existing course, treat the platform draft as
 the source of truth:
 
 1. **`pull <shifu_bid> --course-dir <dir>`** — download the cloud draft into the
-   local dir (writes `README.md` / `course-prompt.md` / `lessons/lesson-NN.md` /
-   `structure.json` and records each lesson + course `revision` into `.shifu-sync.json`).
-2. **Edit locally** — change the lesson files / course prompt in place.
+   local dir (writes `README.md` / `course-description.md` / `course-prompt.md` /
+   `lessons/lesson-NN.md` / `structure.json` and records each lesson + course
+   `revision` into `.shifu-sync.json`).
+2. **Edit locally** — change the lesson files / course description / course prompt in place.
 3. **`status --course-dir <dir>`** — see what diverged: `behind` (cloud changed,
    pull again), `locally modified` (your pending edits), `new`/`deleted` on server.
 4. **Push** with `--course-dir` so the recorded baseline is used:

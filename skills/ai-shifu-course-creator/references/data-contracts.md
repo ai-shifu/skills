@@ -86,6 +86,7 @@ Provide one of:
 2. `course_index` — `lesson_id`, `lesson_title`, `core_question`, `source_span_map`.
 3. `global_variable_table` — see [Variable Table](#variable-table).
 4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`. Conditional section: `# Translation Rules`.
+5. `course_description` — SEO/listing description written to `course-description.md`; describe the course topic, target learners, and learning outcomes in learner-facing language. Do not include author-side workflow notes.
 
 ### `course_index` Schema (array, required)
 
@@ -101,6 +102,12 @@ Each item:
 - Six required `# Section` blocks: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`.
 - Conditional `# Translation Rules` section per [course-prompt.md](course-prompt.md) `## Conditional Sections`.
 - Single source of truth at the course level; do not embed per-lesson interaction logic.
+
+### `course_description` (string, required)
+
+- One concise learner-facing SEO/listing description.
+- Base it on the course topic, target learners, and concrete learning outcomes.
+- Write it to `course-description.md`; the CLI maps it to the platform `description` field during build/import.
 
 ### Minimal Output Example
 
@@ -131,14 +138,15 @@ Each item:
       "effect_scope": "cross_lesson"
     }
   ],
-  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The current course is *...*. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ...\n\n# Drawing\n- ..."
+  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The current course is *...*. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ...\n\n# Drawing\n- ...",
+  "course_description": "A practical course that helps beginner operators diagnose metric drift, identify likely causes, and choose one concrete fix."
 }
 ```
 
 ### Artifacts
 
-5. `deployed_course_url` — Platform URL of the deployed course.
-6. `shifu_bid` — Course BID on the AI-Shifu platform.
+6. `deployed_course_url` — Platform URL of the deployed course.
+7. `shifu_bid` — Course BID on the AI-Shifu platform.
 
 #### `deployment_result` (object, optional)
 
@@ -226,7 +234,7 @@ Resolve target language with this strict priority:
 - Learner-facing script text must follow resolved target language unless `bilingual_output` is true.
 - User-visible agent output must follow the resolved target language: chat replies, phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations.
 - Human-facing labels for skill concepts must be localized in the resolved target language. For Chinese, use “授课提示词” for “Teaching Prompt” and “课程提示词” for “Course Prompt” in user-visible prose and headings.
-- Stable machine-facing identifiers and verbatim source material remain unchanged even when the surrounding prose is localized: JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `lesson_teaching_prompts`, `teaching_prompt`, `course_prompt`), file names (`course-prompt.md`, `structure.json`), CLI commands and flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and quoted source text or direct quotations that must be preserved verbatim.
+- Stable machine-facing identifiers and verbatim source material remain unchanged even when the surrounding prose is localized: JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `lesson_teaching_prompts`, `teaching_prompt`, `course_prompt`, `course_description`), file names (`course-description.md`, `course-prompt.md`, `structure.json`), CLI commands and flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and quoted source text or direct quotations that must be preserved verbatim.
 
 ## Fallback Output Extensions
 
