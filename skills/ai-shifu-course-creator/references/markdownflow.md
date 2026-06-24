@@ -132,7 +132,7 @@ In both forms the URL **must** come from the platform (`https://resource.ai-shif
 
 - The `===…===` wrapper is required. Without it the runtime model is free to rewrite, omit, or paraphrase the image (cf. *Preservation → Immutable Assets* below).
 - The alt text must describe **what information the image carries** (e.g. `gradient descent three-step diagram`), not `image1` / `figure`. The alt is also the fallback when the image fails to load.
-- Follow the image with a paragraph of explanatory text. The text must not merely restate the image; it must add context, causality, examples, or usage. Assume the reader cannot see the image.
+- Follow the image with a paragraph of explanatory text. The text must not merely restate the image; it must add context, causality, examples, or usage. Assume the reader cannot see the image. (See `course-prompt.md` *Rule 11 — Slide-Text Relationship*.)
 
 ### 3.2 HTML view image (instruction-style, not fixed output)
 
