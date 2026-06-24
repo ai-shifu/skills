@@ -414,7 +414,7 @@ When the author supplies image assets — local files (any format incl. heic/hei
 
 You cannot decide which lesson a picture belongs to, or what alt text to write, without knowing what the image actually shows. Two regimes:
 
-- **You can see the image** (the user attached it in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position by `references/pedagogy.md#visual-text-coordination` and embed it by `references/markdownflow.md#images`.
+- **You can see the image** (the user attached it in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position by `references/pedagogy.md#visual-text-coordination` and `references/course-prompt.md` Rule 10/11.
 - **You cannot see the image** (the user only gave you a file path / URL, or your model is text-only): **stop and ask the user**. Do not guess from the filename. Offer two options: (a) the user provides a one-sentence description per image (you will pass it as `--alt`), or (b) the user renames each file to a semantically meaningful name so you can infer the topic. Proceed only after one of these is in place.
 
 **2. Upload via `shifu-cli.py upload-image` and capture the URL.**
@@ -436,7 +436,7 @@ The command prints one line — the `https://resource.ai-shifu.cn/<uuid32>` URL 
 - Default to **3.1** (deterministic-wrapped standard markdown) — the image just displays as-is.
 - Use **3.2** (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout. Express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`); never mix deterministic blocks into the instruction.
 
-Either way, the explanatory paragraph immediately after the image is mandatory (cf. `references/markdownflow.md#images`).
+Either way, the explanatory paragraph immediately after the image is mandatory (cf. `course-prompt.md` Rule 11).
 
 ---
 
