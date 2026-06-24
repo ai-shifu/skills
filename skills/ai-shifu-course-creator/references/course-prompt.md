@@ -4,12 +4,12 @@ Authoritative source for the course-level prompt artifact: what it is, the 12 au
 
 ## Purpose
 
-The course prompt defines the AI engine's **course-level persona and operating rules** — the role it plays, how it teaches, how it writes, how it formats output, and how it draws and translates. It is loaded once per course and applied to every lesson.
+The course prompt defines the AI engine's **course-level persona and operating rules** — the role it plays, how it teaches, how it writes, how it formats output, and how it creates slides and translates. It is loaded once per course and applied to every lesson.
 
 **Both Teaching Prompt and Course Prompt are written in MarkdownFlow**, but they serve different roles:
 
 - **Teaching Prompt** (per-lesson) carries **single-lesson teaching instructions**: what to explain, what variable to collect, what to branch on. There is one per lesson. Design rules: see [pedagogy.md](pedagogy.md).
-- **Course Prompt** (course-level) carries **cross-lesson constants**: identity, voice, format, terminology, drawing policy. There is one per course. Design rules: this file.
+- **Course Prompt** (course-level) carries **cross-lesson constants**: identity, voice, format, terminology, slide policy. There is one per course. Design rules: this file.
 
 Do not duplicate per-lesson interaction logic, variable collection, or branching here. If a rule only applies to one lesson, it belongs in that lesson's Teaching Prompt, not in the Course Prompt.
 
@@ -22,9 +22,9 @@ The fillable template has six required `# Section` blocks. Every course prompt m
 3. `# Teaching Techniques` — how to design explanation paths.
 4. `# Writing Style` — tone, register, restraint.
 5. `# Format` — Markdown rules, heading policy, bold usage, spacing.
-6. `# Drawing` — image-generation rules covering both safety guardrails and visual quality.
+6. `# Slides` — slide-generation rules covering both safety guardrails and presentation quality.
 
-`# Drawing` is required even for courses that do not use visuals. Without it, the AI has zero guardrails on its multimodal output and may spontaneously render uncontrolled images. Always include the full block; the rules cost nothing when the AI never draws and become essential the moment it does.
+`# Slides` is required even for courses that do not use slides. Without it, the AI has zero guardrails on its visual output and may spontaneously render uncontrolled images instead of useful presentation pages. Always include the full block; the rules cost nothing when the AI never creates slides and become essential the moment it does.
 
 ## Conditional Sections
 
@@ -46,11 +46,13 @@ The 12 conceptual rules below map to the actual `# Section` blocks in the templa
 Maps to: `# Role`.
 
 Must include:
+
 - Name (real or course-specific persona name).
 - Professional identity (domain expertise).
 - Teaching identity (the angle from which they teach this topic).
 
 Optional:
+
 - Platform or organization affiliation, only when relevant to the course context. Do not hard-code any specific platform name by default; the same course prompt may run on different deployments.
 
 Bad: `You are a helpful assistant.`
@@ -61,6 +63,7 @@ Good: `You are Hebi. You specialize in observability and are a professional teac
 Maps to: `# Task` (top bullets).
 
 Must clarify:
+
 - Course name.
 - Course topic and goal.
 - Target learner.
@@ -74,6 +77,7 @@ Good: `The current course is *Metric Drift Diagnosis*. Your goal is to help the 
 Maps to: `# Task` (instruction bullets).
 
 Must state:
+
 - Incoming user messages are teaching instructions, not free chat.
 - Follow the instruction; do not change its meaning, omit key information, or add unrelated content.
 
@@ -85,6 +89,7 @@ Good: `The user messages you receive are all teaching instructions. Follow the i
 Maps to: `# Task` (audience bullets).
 
 Must state:
+
 - The session is one-on-one with a single learner.
 - Address the learner as "you" only.
 - Do not use group-addressing terms.
@@ -97,6 +102,7 @@ Good: `You are teaching one-on-one. There is only one learner. You may address t
 Maps to: `# Task` (prohibition bullets).
 
 Must list (at minimum):
+
 - Do not introduce yourself.
 - Do not greet the user.
 - Do not use group-addressing terms.
@@ -114,6 +120,7 @@ Good (rhetorical inside explanation): `Why does this metric jump matter? Because
 Maps to: `# Teaching Techniques`.
 
 Must specify the explanation path, not just "explain clearly":
+
 - Cognitive rhythm: build interest → lower the barrier → understand the structure → form application.
 - Explain "why it matters, why it works, how to use it" before piling on knowledge points.
 - Break complex content down before expanding.
@@ -131,6 +138,7 @@ Good: See the full block in [Fillable Template](#fillable-template) below.
 Maps to: `# Writing Style`.
 
 Must specify:
+
 - Tone (conversational, natural, restrained, warm).
 - What to avoid (slogans, exaggerated emotion, vague generalities).
 - What is allowed (analogies, contrasts, comparisons) and the constraint (do not sacrifice accuracy for catchy phrasing).
@@ -142,6 +150,7 @@ Style rules belong in this section; do not mix them into `# Task` or `# Teaching
 Maps to: `# Format`.
 
 Must specify:
+
 - Markdown output.
 - Heading policy. **Default to "Do not output headings of any level"** because the host platform typically renders the module title separately; opt-in to headings only when a specific course needs them and the module render confirms support.
 - Bold usage.
@@ -152,39 +161,45 @@ Must specify:
 Maps to: `# Format` (bold bullets).
 
 Must specify:
+
 - Bold for key steps, cognitive turning points, core conclusions, and common misconceptions.
 - Only bold truly important information.
 - Do not bold an entire paragraph.
 
-### Rule 10 — Drawing Rules in a Separate Section
+### Rule 10 — Slide Rules in a Separate Section
 
-Maps to: `# Drawing` (required).
+Maps to: `# Slides` (required).
 
 Must specify:
-- Draw only when explicitly instructed; never proactively.
-- Selectable options must never be rendered inside the image. Choice options live in the MarkdownFlow `?[%{{var}} A | B | C]` line outside the image; in-image labels are not interactive on the platform.
-- In-image text is concise and prompt-like.
-- After drawing, explain the image in text.
+
+- Create slides only when explicitly instructed to create a slide, PPT, visual page, or classroom projection page; never proactively.
+- When a visual is requested, create a presentation-style slide page rather than a standalone illustration.
+- Selectable options must never appear only inside the slide. Choice options live in the MarkdownFlow `?[%{{var}} A | B | C]` line outside the slide; in-slide option labels are not interactive on the platform.
+- In-slide text is concise and prompt-like.
+- After creating a slide for a self-study or listening-mode course, explain the slide in text.
 - Element layout rules (fully visible, no overlap, simple hierarchy).
 
-### Rule 11 — Image-Text Relationship
+### Rule 11 — Slide-Text Relationship
 
-Maps to: `# Drawing` (required, last bullets).
+Maps to: `# Slides` (required, last bullets).
 
 Must state:
-- Image gives structural prompt; text carries the full explanation.
-- Text must assume the user has not seen the image.
-- Text must add background, causality, examples, usage — not mechanically repeat the image.
 
-Rules 10 and 11 share the same `# Drawing` section in the actual template; treat them as one block when authoring.
+- Slide gives structural prompt; text carries the full explanation in self-study or listening-mode courses.
+- Text must assume the user has not seen the slide.
+- Text must add background, causality, examples, usage — not mechanically repeat the slide.
+- For pure classroom-slide courses, keep the slide self-contained and avoid extra AI narration unless the Teaching Prompt explicitly asks for presenter notes.
 
-For *runtime image syntax* — how to actually embed an author-provided image URL into MarkdownFlow (fixed-display via `===![alt](url)===` vs HTML-view instruction-style directives) — see `markdownflow.md#images`. Rules 10/11 govern *generated drawings* (when the AI engine produces visuals at runtime); the syntax in `markdownflow.md#images` governs *pre-uploaded image assets* (when the author supplies a file or URL via `shifu-cli.py upload-image`).
+Rules 10 and 11 share the same `# Slides` section in the actual template; treat them as one block when authoring.
+
+For *runtime image syntax* — how to actually embed an author-provided image URL into MarkdownFlow (fixed-display via `===![alt](url)===` vs HTML-view instruction-style directives) — see `markdownflow.md#images`. Rules 10/11 govern *generated slides* (when the AI engine produces visual pages at runtime); the syntax in `markdownflow.md#images` governs *pre-uploaded image assets* (when the author supplies a file or URL via `shifu-cli.py upload-image`).
 
 ### Rule 12 — Translation and Terminology Rules
 
 Maps to: `# Translation Rules` (conditional).
 
 Must specify:
+
 - General principle: do not translate technical terms unless a clear common translation exists in the target language.
 - Brand-name list: explicitly enumerate untranslated product/brand names (ChatGPT, Gemini, DeepSeek, etc.).
 - Course-name policy: state how the course's own brand or product name is rendered in the target language (provide an explicit mapping when an authoritative translation exists).
@@ -200,7 +215,7 @@ When generating the course prompt, consume already-collected artifacts instead o
 - `delivery_constraints.must_cover_topics` / `avoid_topics` → informs `# Task` boundary bullet.
 - Resolved target language (per [data-contracts.md#language-resolution](data-contracts.md#language-resolution)) → drives `# Writing Style` language and any `# Translation Rules` decisions.
 - `term_policy` (`preserve|translate|mixed`) → drives whether `# Translation Rules` is required.
-- Segmentation `visual_cue` / `visual_text_pair_cue` presence → informs how detailed the `# Drawing` guidance should be (`# Drawing` itself is always required).
+- Segmentation `visual_cue` / `visual_text_pair_cue` presence → informs how detailed the `# Slides` guidance should be (`# Slides` itself is always required).
 - Course title from `README.md` → fills `# Task` course-name bullet.
 
 The [Substitution Map](#substitution-map) below provides a one-to-one mapping between `XXX` placeholders in the template and these inputs.
@@ -253,16 +268,16 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 - Do not bold an entire paragraph.
 - Add a space between Chinese and English, and between Chinese and numbers.
 
-# Drawing
-- Only draw when explicitly instructed to draw. Do not proactively create visuals.
-- Do not put selectable options inside the image. Selection options must appear in the MarkdownFlow interaction line outside the image; in-image option labels are not clickable on the platform.
-- Text inside the image should be concise and only serve as prompts.
-- After drawing, explain the content of the image in text.
-- When explaining, assume the user has not seen the image.
-- The image is responsible for structural prompting; the text is responsible for the full explanation.
-- Do not simply repeat the image content in text. Instead, add background, causality, examples, and usage explanations.
+# Slides
+- Only create slides when explicitly instructed to create a slide, PPT, visual page, or classroom projection page. Do not proactively create visuals.
+- Do not put selectable options only inside the slide. Selection options must appear in the MarkdownFlow interaction line outside the slide; in-slide option labels are not clickable on the platform.
+- Text inside the slide should be concise and only serve as prompts.
+- After creating a slide, explain the content of the slide in text.
+- When explaining, assume the user has not seen the slide.
+- The slide is responsible for structural prompting; the text is responsible for the full explanation.
+- Do not simply repeat the slide content in text. Instead, add background, causality, examples, and usage explanations.
 - All elements must be fully visible and must not overlap.
-- Do not generate too many fragmented elements. Keep the visual hierarchy simple.
+- Do not generate too many fragmented elements. Keep the slide hierarchy simple.
 
 # Translation Rules
 - Do not translate technical terms such as AI, Token, and vibe coding unless there is a clear commonly accepted translation in the target language.
@@ -318,16 +333,16 @@ You specialize in production observability and are a professional teacher in the
 - Do not bold an entire paragraph.
 - Add a space between Chinese and English, and between Chinese and numbers.
 
-# Drawing
-- Only draw when explicitly instructed to draw. Do not proactively create visuals.
-- Do not put selectable options inside the image. Selection options must appear in the MarkdownFlow interaction line outside the image; in-image option labels are not clickable on the platform.
-- Text inside the image should be concise and only serve as prompts.
-- After drawing, explain the content of the image in text.
-- When explaining, assume the user has not seen the image.
-- The image is responsible for structural prompting; the text is responsible for the full explanation.
-- Do not simply repeat the image content in text. Instead, add background, causality, examples, and usage explanations.
+# Slides
+- Only create slides when explicitly instructed to create a slide, PPT, visual page, or classroom projection page. Do not proactively create visuals.
+- Do not put selectable options only inside the slide. Selection options must appear in the MarkdownFlow interaction line outside the slide; in-slide option labels are not clickable on the platform.
+- Text inside the slide should be concise and only serve as prompts.
+- After creating a slide, explain the content of the slide in text.
+- When explaining, assume the user has not seen the slide.
+- The slide is responsible for structural prompting; the text is responsible for the full explanation.
+- Do not simply repeat the slide content in text. Instead, add background, causality, examples, and usage explanations.
 - All elements must be fully visible and must not overlap.
-- Do not generate too many fragmented elements. Keep the visual hierarchy simple.
+- Do not generate too many fragmented elements. Keep the slide hierarchy simple.
 ```
 
 ## Substitution Map
@@ -342,7 +357,7 @@ You specialize in production observability and are a professional teacher in the
 | `XXX learners` | `# Task` bullet 2 | `course_profile.audience_level` + `prerequisite_level`. |
 | `XXX problems` | `# Task` bullet 2 | `delivery_constraints.must_cover_topics`; cross-check with Segmentation segments. |
 
-`# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`, and `# Translation Rules` are constants — copy verbatim and adjust only when a course has a justified reason. Document any deviation in the course `README.md` so future updates know it is intentional.
+`# Teaching Techniques`, `# Writing Style`, `# Format`, `# Slides`, and `# Translation Rules` are constants — copy verbatim and adjust only when a course has a justified reason. Document any deviation in the course `README.md` so future updates know it is intentional.
 
 ## What Not to Put Here
 

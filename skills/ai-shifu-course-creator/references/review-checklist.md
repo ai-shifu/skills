@@ -72,5 +72,5 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 ## Course Prompt
 
 - A `course_prompt` artifact is produced when input includes course material.
-- All six required sections present (`# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`).
+- All six required sections present (`# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Slides`).
 - `# Translation Rules` included when (and only when) trigger condition applies.

@@ -85,7 +85,7 @@ Provide one of:
 1. `lesson_teaching_prompts` — one Teaching Prompt per lesson (written in MarkdownFlow). Instructional/directive language only (model-guiding), not a final learner manuscript. See [Lesson Schema](#lesson-schema).
 2. `course_index` — `lesson_id`, `lesson_title`, `core_question`, `source_span_map`.
 3. `global_variable_table` — see [Variable Table](#variable-table).
-4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`. Conditional section: `# Translation Rules`.
+4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Slides`. Conditional section: `# Translation Rules`.
 5. `course_description` — SEO/listing description written to `course-description.md`; describe the course topic, target learners, and learning outcomes in learner-facing language. Do not include author-side workflow notes.
 
 ### `course_index` Schema (array, required)
@@ -99,7 +99,7 @@ Each item:
 ### `course_prompt` (string, required)
 
 - Markdown string starting with `# Role`.
-- Six required `# Section` blocks: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Drawing`.
+- Six required `# Section` blocks: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Slides`.
 - Conditional `# Translation Rules` section per [course-prompt.md](course-prompt.md) `## Conditional Sections`.
 - Single source of truth at the course level; do not embed per-lesson interaction logic.
 
@@ -138,7 +138,7 @@ Each item:
       "effect_scope": "cross_lesson"
     }
   ],
-  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The current course is *...*. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ...\n\n# Drawing\n- ...",
+  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The current course is *...*. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ...\n\n# Slides\n- ...",
   "course_description": "A practical course that helps beginner operators diagnose metric drift, identify likely causes, and choose one concrete fix."
 }
 ```

@@ -168,8 +168,8 @@ These are the *teaching* rules around interactions. For interaction *syntax* see
 
 ## Visual-Text Coordination
 
-- If a visual is needed, describe it in natural language (e.g., "Show an image that …").
+- If a visual is needed, describe it in natural language as a slide or visual page (e.g., "Create a slide that …").
 - Pair every visual instruction with a brief explanation of what the visual is meant to convey.
 - Do not embed raw SVG/HTML/Mermaid/PlantUML/Graphviz markup inside Teaching Prompts unless the user explicitly asks for that format.
-- Default to natural-language image/diagram placeholders.
+- Default to natural-language slide/diagram placeholders.
 - Every core concept needs visual + textual explanation together; the visual carries structural prompting, the text carries the full explanation (assume the learner has not seen the image).
