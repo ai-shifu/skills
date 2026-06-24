@@ -181,7 +181,8 @@ flow is complete.
    thinking or break old assumptions; self-check learning effect at the end of
    each lesson. Choosing none means no interactions.
 3. If the course is not slide-only, should listening mode be enabled so AI voice
-   teaches the course? If the user does not answer, default to disabled.
+   teaches the course? When asking, also state that listening mode consumes more
+   AI-Shifu credits. If the user does not answer, default to disabled.
 4. How many chapters and lessons should the course have?
 
 Use the answers as course-design constraints:
@@ -212,9 +213,10 @@ Use the answers as course-design constraints:
   interaction-specific pedagogical gates that require an interaction step or a
   deepening interaction.
 - If the resolved format is pure slides, disable listening mode and do not ask
-  the listening-mode question. Otherwise, listening mode is disabled when
-  unanswered; when explicitly enabled or disabled, carry that decision into the
-  deployment handoff.
+  the listening-mode question. Otherwise, the listening-mode question must
+  mention the extra AI-Shifu credit consumption, and listening mode is disabled
+  when unanswered; when explicitly enabled or disabled, carry that decision into
+  the deployment handoff.
 - Chapter and lesson counts constrain the outline. If the user explicitly skips
   this question, infer structure from source volume and existing
   lesson-granularity rules instead of inventing a fixed default.
