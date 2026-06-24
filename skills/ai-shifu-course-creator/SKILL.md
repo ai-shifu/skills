@@ -93,7 +93,7 @@ These are the six red-line rules every Teaching Prompt and Course Prompt must sa
 4. **Mandatory anchoring + downstream effect.** After every interaction, restate the learner's selection as an instruction (`Restate the learner's current choice as {{var}}.`) and use `{{var}}` to drive a visible downstream effect (branching explanation, examples, difficulty, feedback). See `references/pedagogy.md#interaction-design`.
 
 5. **Visuals: two regimes — "no asset" vs "asset uploaded".**
-   - When the author has **not** provided any image asset (only the topic / a description): continue to use natural-language image instructions ("Show an image that …") paired with text explanation. Do not inline SVG/HTML/Mermaid/PlantUML/Graphviz markup. See `references/pedagogy.md#visual-text-coordination`.
+   - When the author has **not** provided any image asset (only the topic / a description): continue to use natural-language slide or visual-page instructions ("Create a slide that …") paired with text explanation. Do not inline SVG/HTML/Mermaid/PlantUML/Graphviz markup. See `references/pedagogy.md#visual-text-coordination`.
    - When the author **has** provided image assets (local files or remote URLs): you must first upload them via `shifu-cli.py upload-image` to obtain `resource.ai-shifu.cn` URLs, then embed each image into the Teaching Prompt using one of the two forms defined in `references/markdownflow.md#images` (3.1 deterministic-wrapped standard markdown, or 3.2 instruction-style HTML view). See the sub-section **Working with Author-Provided Images** below for the full workflow including the path you must take when you cannot actually see the image contents.
 
 6. **Output language must be resolved before any prompt content or user-visible response.** Run Language Resolution per `references/data-contracts.md#language-resolution` before producing Teaching Prompt or Course Prompt content, reports, phase summaries, status notes, artifact headings, or handoff instructions. The user's invocation language counts as `prompt_language_detection` (priority 4) and must be used when no higher-priority directive exists. Examples in this skill and in `references/` are written in English for canonical illustration only — do NOT let example language override the resolved output language. If the user invokes in Chinese, all user-visible prose, headings, artifact labels, interactions, option labels, downstream text, and the Course Prompt itself must be in Chinese. Preserve stable machine-facing identifiers such as JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `teaching_prompt`, `course_prompt`), file names (`course-prompt.md`, `structure.json`), CLI flags, API fields, MarkdownFlow syntax, code symbols, URLs, code samples, and quoted source text or direct quotations that must remain verbatim. For human-facing labels, localize canonical terms; for example, use “授课提示词” for “Teaching Prompt” and “课程提示词” for “Course Prompt” in Chinese user-visible output.
@@ -370,7 +370,7 @@ When generating interactions, explicitly choose the interaction type before writ
 
 Required anchors per lesson:
 
-1. Opening objective plus visual cover.
+1. Opening objective plus slide-style visual cover.
 2. Evidence-chain explanation.
 3. At least one effective interaction with visible downstream effect.
 4. At least one reusable deliverable.
@@ -473,7 +473,7 @@ Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_cons
 - Conclusion and overall risk level presented first (report structure per `references/report-template.md`).
 - Full review against `references/review-checklist.md` passes, or remaining gaps are explicitly listed as non-blocking suggestions.
 - A `course_prompt` artifact is produced when input includes course material, with all six required sections present. `# Translation Rules` may be omitted when its trigger condition does not apply.
-- Generated `course_prompt` covers every Must-Specify bullet in `references/course-prompt.md` Rules 1–12 (audit each section against its rule list — especially `# Drawing`, which is the most commonly under-filled section).
+- Generated `course_prompt` covers every Must-Specify bullet in `references/course-prompt.md` Rules 1–12 (audit each section against its rule list — especially `# Slides`, which is the most commonly under-filled section).
 
 ---
 

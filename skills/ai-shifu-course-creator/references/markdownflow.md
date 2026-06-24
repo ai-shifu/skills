@@ -1,6 +1,6 @@
 # MarkdownFlow Spec
 
-MarkdownFlow is the **format** (a small DSL) used to author both **Teaching Prompts** (per-lesson, runtime teaching instructions) and **Course Prompts** (course-level AI persona / style / drawing rules). This file is the authoritative source for the format itself — syntax, runtime constraints, and preservation rules. Violating anything here makes the prompt fail to parse, reference an uncollected variable, or silently lose source content.
+MarkdownFlow is the **format** (a small DSL) used to author both **Teaching Prompts** (per-lesson, runtime teaching instructions) and **Course Prompts** (course-level AI persona / style / slide rules). This file is the authoritative source for the format itself — syntax, runtime constraints, and preservation rules. Violating anything here makes the prompt fail to parse, reference an uncollected variable, or silently lose source content.
 
 For pedagogical / quality-of-teaching constraints (which apply to Teaching Prompts), see [pedagogy.md](pedagogy.md). For Course Prompt structure and authoring rules, see [course-prompt.md](course-prompt.md).
 
@@ -132,7 +132,7 @@ In both forms the URL **must** come from the platform (`https://resource.ai-shif
 
 - The `===…===` wrapper is required. Without it the runtime model is free to rewrite, omit, or paraphrase the image (cf. *Preservation → Immutable Assets* below).
 - The alt text must describe **what information the image carries** (e.g. `gradient descent three-step diagram`), not `image1` / `figure`. The alt is also the fallback when the image fails to load.
-- Follow the image with a paragraph of explanatory text. The text must not merely restate the image; it must add context, causality, examples, or usage. Assume the reader cannot see the image. (See `course-prompt.md` *Rule 11 — Image-Text Relationship*.)
+- Follow the image with a paragraph of explanatory text. The text must not merely restate the image; it must add context, causality, examples, or usage. Assume the reader cannot see the image. (See `course-prompt.md` *Rule 11 — Slide-Text Relationship*.)
 
 ### 3.2 HTML view image (instruction-style, not fixed output)
 
