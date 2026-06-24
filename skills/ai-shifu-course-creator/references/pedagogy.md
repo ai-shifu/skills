@@ -172,4 +172,4 @@ These are the *teaching* rules around interactions. For interaction *syntax* see
 - Pair every visual instruction with a brief explanation of what the visual is meant to convey.
 - Do not embed raw SVG/HTML/Mermaid/PlantUML/Graphviz markup inside Teaching Prompts unless the user explicitly asks for that format.
 - Default to natural-language slide/diagram placeholders.
-- Every core concept needs visual + textual explanation together; the visual carries structural prompting, the text carries the full explanation (assume the learner has not seen the image).
+- Every core concept needs visual + textual explanation together; the visual carries structural prompting, the text carries the full explanation (assume the learner has not seen the slide).
