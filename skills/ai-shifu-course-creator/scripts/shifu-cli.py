@@ -10,7 +10,7 @@ import shutil
 import sys
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -275,12 +275,19 @@ def safe_join_path(base_dir, filename):
 
 
 def fmt_time(ts):
-    """Format an ISO timestamp for display, return '' if missing."""
+    """Format a backend timestamp for display in the local timezone.
+
+    Backend timestamps are stored/returned as UTC; values without an explicit
+    offset are interpreted as UTC, then converted to the machine local timezone.
+    Returns '' if missing.
+    """
     if not ts:
         return ""
     try:
-        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        return dt.strftime("%Y-%m-%d %H:%M")
+        dt = datetime.fromisoformat(str(ts).strip().replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone().strftime("%Y-%m-%d %H:%M")
     except Exception:
         return ts[:16] if len(ts) >= 16 else ts
 
@@ -2036,7 +2043,7 @@ def _build_import_json(course_dir, title=None, description=None,
 
     import_data = {
         "version": "1.0",
-        "exported_at": datetime.now().isoformat(),
+        "exported_at": datetime.utcnow().isoformat(),
         "shifu": {
             "shifu_bid": shifu_bid,
             "title": title,
