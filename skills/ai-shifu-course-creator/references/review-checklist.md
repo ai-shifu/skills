@@ -52,6 +52,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - No duplicate semantic collection unless comparison intent is explicit.
 - No unresolved placeholders in learner-facing content.
 - Variable references in Teaching Prompt and Course Prompt content are written as substituted values; references that may run before the learner assigns a value handle the literal `UNKNOWN` fallback.
+- Enumerated/category variable branches state the substituted value in a natural sentence first, then use natural-language condition phrasing; branch headings must not use the raw `{{var}}` marker in comparison-style phrasing.
 - No more than three consecutive variable collections before feedback.
 - Every variable has cross-lesson or Course Prompt utility.
 - No throwaway named variables for continue buttons, confirmations, choices, or inputs used only inside the current lesson.

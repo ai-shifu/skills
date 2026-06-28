@@ -11,6 +11,7 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 - Every `{{var_name}}` marker in a Teaching Prompt or Course Prompt is substituted before generation with that variable's system value: the learner's stored value when set, or `UNKNOWN` when unset or empty
 - A variable marker is not an availability check. Do not model variables as present/absent or ready/not-ready; when a fallback matters, write instructions for the substituted value being the literal `UNKNOWN`
 - Prefer wording that still reads correctly after substitution, such as `The learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, use default examples; otherwise adapt examples to it.`
+- For enumerated or category branches, state the substituted value in a natural sentence first, such as `The learner level is {{level}}.` or `学习者基础是 {{learner_background}}。`, then write natural-language branch instructions. Do not turn the `{{var_name}}` marker into a comparison-style branch heading.
 - Do not reference a learner-answer variable without a corresponding variable-backed interaction and metadata entry
 - A named variable is required only when the learner's answer must be used outside the current lesson: referenced by `course-prompt.md`, reused in another lesson, or used for cross-lesson personalization, examples, summaries, or deliverables
 - No-variable interactions do not create learner variables; use them for lesson-local buttons, choices, inputs, branching, examples, feedback, and summaries that do not need to persist beyond the current lesson
@@ -95,7 +96,7 @@ For interaction-design quality (concrete prompts, branching, deepening interacti
 
 ## Branching on User Input
 
-MarkdownFlow has no programming-style conditionals, loops, or boolean logic. There is no parser that evaluates `{{var}} == "A"`; there are no `if` blocks, `switch` blocks, or ternary expressions to wire up control flow.
+MarkdownFlow has no programming-style conditionals, loops, or boolean logic. There is no parser that evaluates variable comparisons; there are no `if` blocks, `switch` blocks, or ternary expressions to wire up control flow.
 
 Branching is enacted by writing **natural-language instructions** that describe what the AI should generate under each possible learner input. Variable markers are substituted first, so write branches against the resulting value. Phrasings such as "If the learner's input is X, then …" are **generation strategies the AI follows**, not `if`-`else` code.
 
@@ -118,10 +119,25 @@ The bullet phrasing reads like `if`, but it is not `if` — it is an instruction
 
 A Teaching Prompt looks like code (variables, interaction markers, branched outcomes), but it is read by a language model, not executed by an interpreter. Wrapping `{{var}}` in `if`-`else` blocks, ternary expressions, `switch` / `case`, or fenced pseudo-code blocks makes the script look like a program and pushes the AI toward executing-not-interpreting behavior, which degrades teaching quality.
 
-Express every branch as a plain instruction sentence:
+Express every branch as a plain instruction sentence. For variables, state the substituted value naturally first, then branch with natural-language conditions:
 
-- Bad: `if {{level}} == "beginner": use simple analogies`
-- Good: `For {{level}} = beginner, use simple analogies; for intermediate, introduce technical terms; for expert, go deep into edge cases.`
+- Bad: program-style conditions around `{{level}}`
+- Good: `The learner level is {{level}}. For beginner learners, use simple analogies; for intermediate learners, introduce technical terms; for expert learners, go deep into edge cases.`
+
+For Chinese Teaching Prompts, use the same pattern:
+
+```markdown
+学习者基础是 {{learner_background}}。
+
+如果学习者是零基础：
+使用日常类比和少量术语，先建立直觉。
+
+如果学习者已经有基础：
+直接连接已有概念，并补充边界条件和常见误区。
+
+如果学习者基础是 UNKNOWN：
+先采用入门解释，再提供一个可选的进阶提示。
+```
 
 > The point of MarkdownFlow is not to write the lesson content directly, but to use natural language to precisely instruct the AI on how to generate content under each possible learner input.
 
@@ -259,7 +275,7 @@ Use deterministic blocks only for truly fixed content. Do not lock entire lesson
 - Creating a named variable for a continue button, confirmation, or current-lesson-only choice/input.
 - Using no-variable `?[...]` for an answer that must be used outside the current lesson.
 - Leaving the variable name blank after `%` as a substitute for no-variable syntax; use plain `?[...]` instead.
-- `if {{var}} == "A": …` / `{{#if var}}…{{/if}}` / `switch ({{var}}) { … }` — program-style branching syntax around `{{var}}`. MarkdownFlow has no conditional parser; express branches as plain instruction sentences (see [Branching on User Input](#branching-on-user-input)).
+- Program-style branching syntax around `{{var}}`, such as `if` / `else`, template conditionals, or `switch` blocks. MarkdownFlow has no conditional parser; express branches as plain instruction sentences (see [Branching on User Input](#branching-on-user-input)).
 - Wrapping an entire lesson body in `=== … ===` or `!=== … !===`.
 - Referencing `{{var}}` with no corresponding `?[%{{var}} ...]` collection and metadata entry.
 - Bare `![alt](url)` for an image that should display as-is — the runtime model is free to rewrite or drop it. Wrap in `===…===` (form 3.1).
