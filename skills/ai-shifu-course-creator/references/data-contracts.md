@@ -117,7 +117,7 @@ Each item:
     {
       "lesson_id": "L01",
       "lesson_title": "Core Loop Setup",
-      "teaching_prompt": "## Objective\n...\n?[%{{learner_goal}} Option A | Option B]\n...",
+      "teaching_prompt": "## Objective\nCollect the goal that should shape course-wide examples.\n---\n?[%{{learner_goal}} ...One-sentence goal]\n---\nThe learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, continue with the default production example; otherwise use a first example that matches it.",
       "used_variables": ["learner_goal"],
       "depends_on_lessons": []
     }
@@ -134,7 +134,7 @@ Each item:
     {
       "name": "learner_goal",
       "collected_in": "L01",
-      "used_in": ["course_prompt"],
+      "used_in": ["L01", "course_prompt"],
       "effect_scope": "cross_lesson"
     }
   ],
@@ -192,7 +192,7 @@ Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 - `lesson_id` (string, required) — stable, deterministic identifier.
 - `lesson_title` (string, required) — concise learner-facing title.
 - `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content (written in MarkdownFlow); instructional/directive language only.
-- `used_variables` (array of strings, required) — every named variable referenced or collected in this lesson; no-variable interactions are excluded. Cross-check with [Variable Table](#variable-table), including `course_prompt` entries when the Course Prompt references the same variable.
+- `used_variables` (array of strings, required) — every named variable referenced or collected in this lesson; no-variable interactions are excluded. Cross-check with [Variable Table](#variable-table): each item here must have a matching `global_variable_table` entry, and that entry's `used_in` list must include this lesson when the variable is referenced outside the interaction line. If the Course Prompt references the same variable, `used_in` must also include `course_prompt`.
 - `depends_on_lessons` (array of lesson ids, required) — explicit list; empty list if none.
 
 ### Minimal Example

@@ -256,8 +256,9 @@ Use deterministic blocks only for truly fixed content. Do not lock entire lesson
 - `?[%{{var}} Question prompt? Option A | Option B]` — question inside the interaction line; move it to the line above.
 - `Ask the learner the question. ?[%{{var}} A | B | C]` — interaction not on its own line.
 - Pre-interaction text enumerates choices A / B / C but `?[%{{var}} X | Y | Z]` exposes a different set — the narrative description and the interaction options must stay aligned (same set, order, and wording).
-- Creating a named variable for a continue button, confirmation, or current-lesson-only choice.
+- Creating a named variable for a continue button, confirmation, or current-lesson-only choice/input.
 - Using no-variable `?[...]` for an answer that must be used outside the current lesson.
+- Leaving the variable name blank after `%` as a substitute for no-variable syntax; use plain `?[...]` instead.
 - `if {{var}} == "A": …` / `{{#if var}}…{{/if}}` / `switch ({{var}}) { … }` — program-style branching syntax around `{{var}}`. MarkdownFlow has no conditional parser; express branches as plain instruction sentences (see [Branching on User Input](#branching-on-user-input)).
 - Wrapping an entire lesson body in `=== … ===` or `!=== … !===`.
 - Referencing `{{var}}` with no corresponding `?[%{{var}} ...]` collection and metadata entry.
