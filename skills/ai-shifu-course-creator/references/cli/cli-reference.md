@@ -292,7 +292,7 @@ upload-image --file <local-path> [--course-dir <dir>] [--alt "<description>"]
 upload-image --url <http(s)-url> [--course-dir <dir>] [--alt "<description>"]
 ```
 
-Stdout is **one line** — the resulting `https://resource.ai-shifu.cn/<uuid32>` URL. Diagnostic / manifest messages go to stderr, so a shell pipeline can capture the URL cleanly:
+Stdout is **one line** — the resulting `https://res.ai-shifu.cn/<uuid32>` URL. Diagnostic / manifest messages go to stderr, so a shell pipeline can capture the URL cleanly:
 
 ```bash
 URL=$(python3 scripts/shifu-cli.py upload-image --file diagram.png --course-dir ./my-course/ --alt "Transformer 单层结构")
