@@ -22,7 +22,7 @@
 
 ## assets/
 
-The `assets/` directory is created and maintained by `shifu-cli.py upload-image --course-dir <dir>`. It exists to give the course a stable record of which images have been uploaded, what they convey, and what their `resource.ai-shifu.cn` URLs are.
+The `assets/` directory is created and maintained by `shifu-cli.py upload-image --course-dir <dir>`. It exists to give the course a stable record of which images have been uploaded, what they convey, and what their `res.ai-shifu.cn` URLs are.
 
 `image-manifest.json` schema:
 
@@ -31,7 +31,7 @@ The `assets/` directory is created and maintained by `shifu-cli.py upload-image 
   "images": [
     {
       "local": "assets/raw/gradient-descent.heic",
-      "remote": "https://resource.ai-shifu.cn/abcd…",
+      "remote": "https://res.ai-shifu.cn/abcd…",
       "alt": "梯度下降三步示意",
       "uploaded_at": "2026-05-23T08:42:31Z",
       "bytes": 612345,
@@ -41,7 +41,7 @@ The `assets/` directory is created and maintained by `shifu-cli.py upload-image 
     },
     {
       "source_url": "https://example.com/diagram.png",
-      "remote": "https://resource.ai-shifu.cn/efgh…",
+      "remote": "https://res.ai-shifu.cn/efgh…",
       "alt": "Transformer 注意力计算流程",
       "uploaded_at": "2026-05-23T08:45:02Z"
     }
