@@ -12,7 +12,7 @@ Preferred patterns:
 - "Explain to the learner …"
 - "Ask the learner to …"
 - "Have the learner choose …"
-- "After collecting {{var}}, restate the choice and branch …"
+- "After collecting {{var}}, carry the learner's answer into the later lesson or Course Prompt that needs it …"
 
 Disallowed patterns:
 - Long, polished prose written as if it is the final learner-facing lecture.
@@ -141,8 +141,11 @@ These are the *teaching* rules around variables — when to collect, how often, 
 - Prefer at most one variable collection per module; distribute, don't front-load.
 - Max five interactions per lesson (recommended three to four).
 - No more than three consecutive variable collections before learner-visible feedback.
-- Reuse global variables when possible; add lesson-local variables only when required.
-- Every variable must have downstream utility (branching, depth control, or deliverable variation).
+- Reuse global variables when possible; add new named variables only when a learner answer must leave the current lesson.
+- Create a variable only when the learner's answer must be used outside the current lesson: referenced by `course-prompt.md`, reused in another lesson, or used for cross-lesson personalization, depth control, examples, summaries, or deliverable variation.
+- Use no-variable `?[...]` for lesson-local interactions, including current-lesson branching, examples, feedback, summaries, and free-text inputs.
+- Treat every variable reference as a substituted value. If the learner has not set it, the value is `UNKNOWN`; if fallback behavior is needed, describe what to do when the substituted value is `UNKNOWN`.
+- Every variable must have course-level or cross-lesson utility; do not create throwaway variables for continue buttons, confirmations, or choices used only inside the current lesson.
 - Do not recollect the same variable unless explicitly marked as staged comparison.
 - Prevent semantic duplicates even when variable names differ.
 - Spread global variable collection across lessons.
@@ -159,8 +162,10 @@ These are the *teaching* rules around interactions. For interaction *syntax* see
   - Use multi-select for non-exclusive learner context, goals, interests, modules, blockers, scenarios, experience, or practice needs.
   - When the interaction prompt means "which of these apply?", prefer multi-select unless the source or user explicitly limits the learner to one answer.
   - For multi-select, drive downstream content through combined feedback, prioritization, tailored examples, or coverage of the selected items; do not require an exhaustive branch for every possible option combination.
-- Every interaction must trigger immediate feedback **and** a visible downstream effect (branching explanation, examples, practice difficulty, feedback).
-- After every interaction, restate the learner's selection explicitly as an instruction (e.g., `Restate the learner's current choice as {{var}}.`), not as polished narration.
+- Before writing an interaction, decide whether the answer leaves the current lesson. If it will be referenced by the Course Prompt or another lesson, use a named variable. If it is used only in the current lesson, use no-variable `?[...]`, including for free-text input.
+- Every instructional interaction must trigger immediate feedback or a visible current-lesson effect. No-variable interactions can still drive current-lesson branching explanation, examples, practice difficulty, feedback, summaries, deliverables, or free-text reflection.
+- When a Course Prompt or later lesson can reference a variable before the collecting interaction has been answered, bind the substituted value in the prompt and write the default branch against `UNKNOWN`, not against variable readiness.
+- After every variable-backed interaction, use `{{var}}` only for the intended cross-lesson or course-level effect. For no-variable interactions, branch on the learner's current answer in natural language without `{{var}}`.
 - `*_viewpoint_check` interactions must branch by option and drive different next steps.
 - Use no more than one `viewpoint_check` per lesson unless justified.
 - Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.

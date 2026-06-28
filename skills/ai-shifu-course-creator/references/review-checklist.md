@@ -40,17 +40,21 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - Input interactions include a specific pre-interaction question plus a shorter `...` placeholder.
 - At least one deepening interaction per lesson (calibration, boundary check, or misconception correction).
 - Branching paths are distinct where required; `*_viewpoint_check` interactions branch by option.
-- Interaction results affect later content (visible downstream effect).
+- Instructional interaction results affect later content through immediate feedback or a visible downstream effect.
 - Repeated interaction semantics avoided across lessons unless comparison intent is explicit.
-- After every interaction, the script restates the learner's selection and uses `{{var}}` to drive downstream content.
+- Variable-backed interactions are used only when the answer must leave the current lesson.
+- Lesson-local branching, examples, feedback, summaries, and inputs use no-variable `?[...]` and do not introduce `{{var}}`.
 
 ## Variable Safety
 
-- Variables are collected before use.
+- Every referenced learner-answer variable has a corresponding variable-backed interaction and metadata entry.
+- Any learner answer used outside the current lesson, including `course-prompt.md`, later lessons, or cross-lesson personalization, difficulty control, examples, summaries, or deliverables, has a named variable.
 - No duplicate semantic collection unless comparison intent is explicit.
 - No unresolved placeholders in learner-facing content.
+- Variable references in Teaching Prompt and Course Prompt content are written as substituted values; references that may run before the learner assigns a value handle the literal `UNKNOWN` fallback.
 - No more than three consecutive variable collections before feedback.
-- Every variable has downstream utility (branching, depth control, deliverable variation).
+- Every variable has cross-lesson or Course Prompt utility.
+- No throwaway named variables for continue buttons, confirmations, choices, or inputs used only inside the current lesson.
 
 ## Visual-Text Coordination
 

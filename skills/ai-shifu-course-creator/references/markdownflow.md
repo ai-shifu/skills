@@ -1,6 +1,6 @@
 # MarkdownFlow Spec
 
-MarkdownFlow is the **format** (a small DSL) used to author both **Teaching Prompts** (per-lesson, runtime teaching instructions) and **Course Prompts** (course-level AI persona / style / slide rules). This file is the authoritative source for the format itself — syntax, runtime constraints, and preservation rules. Violating anything here makes the prompt fail to parse, reference an uncollected variable, or silently lose source content.
+MarkdownFlow is the **format** (a small DSL) used to author both **Teaching Prompts** (per-lesson, runtime teaching instructions) and **Course Prompts** (course-level AI persona / style / slide rules). This file is the authoritative source for the format itself — syntax, runtime constraints, and preservation rules. Violating anything here makes the prompt fail to parse, reference a learner-answer variable without a collection contract, or silently lose source content.
 
 For pedagogical / quality-of-teaching constraints (which apply to Teaching Prompts), see [pedagogy.md](pedagogy.md). For Course Prompt structure and authoring rules, see [course-prompt.md](course-prompt.md).
 
@@ -8,18 +8,28 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 
 - Reference syntax: `{{var_name}}`
 - No spaces in variable names
-- Undefined variables resolve to `UNKNOWN`
-- Variables must be collected (via an interaction line) before being referenced in learner-facing text
+- Every `{{var_name}}` marker in a Teaching Prompt or Course Prompt is substituted before generation with that variable's system value: the learner's stored value when set, or `UNKNOWN` when unset or empty
+- A variable marker is not an availability check. Do not model variables as present/absent or ready/not-ready; when a fallback matters, write instructions for the substituted value being the literal `UNKNOWN`
+- Prefer wording that still reads correctly after substitution, such as `The learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, use default examples; otherwise adapt examples to it.`
+- Do not reference a learner-answer variable without a corresponding variable-backed interaction and metadata entry
+- A named variable is required only when the learner's answer must be used outside the current lesson: referenced by `course-prompt.md`, reused in another lesson, or used for cross-lesson personalization, examples, summaries, or deliverables
+- No-variable interactions do not create learner variables; use them for lesson-local buttons, choices, inputs, branching, examples, feedback, and summaries that do not need to persist beyond the current lesson
 - See [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy) for collection pacing, downstream-effect, and semantic-duplication rules
 - See [data-contracts.md#variable-table](data-contracts.md#variable-table) for the `global_variable_table` schema
 
 ## Interactions
 
-- Single-select: `?[%{{var}} Option A | Option B | Option C]`
-- Multi-select: `?[%{{var}} Option A || Option B || Option C]`
-- Input: `?[%{{var}} ...Enter your answer]`
-- Single-select + input: `?[%{{var}} Option A | Option B | ...Other, please specify]`
-- Multi-select + input: `?[%{{var}} Option A || Option B || ...Other, please specify]`
+- Variable-backed single-select: `?[%{{var}} Option A | Option B | Option C]`
+- Variable-backed multi-select: `?[%{{var}} Option A || Option B || Option C]`
+- Variable-backed input: `?[%{{var}} ...Enter your answer]`
+- Variable-backed single-select + input: `?[%{{var}} Option A | Option B | ...Other, please specify]`
+- Variable-backed multi-select + input: `?[%{{var}} Option A || Option B || ...Other, please specify]`
+- No-variable flow button: `?[Continue]`
+- No-variable disposable choice: `?[Option A | Option B]`
+- No-variable input: `?[...Enter your answer]`
+- No-variable disposable choice + input: `?[Option A | Option B | ...Other, please specify]`
+
+Use variable-backed syntax only when the answer must leave the current lesson. Use no-variable `?[...]` for lesson-local buttons, choices, or inputs, including current-lesson branching and feedback. Do not leave the variable name blank as a substitute for no-variable syntax.
 
 ### Prompt Placement Rules
 
@@ -33,11 +43,19 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 Correct:
 
 ```markdown
-Ask the learner: Which option best matches your situation?
-?[%{{choice}} Option A | Option B | Option C | ...Other]
+Ask the learner: Which option best matches the next step for this lesson?
+?[Option A | Option B | Option C]
 
-Ask the learner: What is one specific situation where you want to apply this idea this week?
-?[%{{example}} ...Brief situation]
+After the learner answers, continue: for Option A, use the first explanation path; for Option B, use the second explanation path; for Option C, use the third explanation path.
+
+Ask the learner: What is one course-wide goal that should shape later lessons and the Course Prompt?
+?[%{{learner_goal}} ...One-sentence goal]
+
+Ask the learner: What is one risk in the current example?
+?[...Brief risk]
+
+Ask the learner whether they are ready to continue.
+?[Continue]
 ```
 
 Incorrect:
@@ -52,18 +70,24 @@ Ask the learner: Which option best matches your situation? ?[%{{choice}} Option 
 
 - `...` is an input marker, not punctuation.
 - `...` must appear immediately before the short free-text placeholder or free-text option label.
-- For pure input, use `?[%{{var}} ...Short placeholder]` after a fuller learner-facing question.
-- For select + input, put `...` at the start of the option that opens text entry, such as `...Other, please specify`.
+- For variable-backed pure input, use `?[%{{var}} ...Short placeholder]` after a fuller learner-facing question when the free-text answer must be used outside the current lesson.
+- For no-variable pure input, use `?[...Short placeholder]` after a fuller learner-facing question when the free-text answer is used only in the current lesson.
+- For select + input, put `...` at the start of the option that opens text entry, such as `...Other, please specify`, with or without a named variable depending on the persistence rule.
+- Do not add a variable solely because the answer is free text; named variables are for cross-lesson or course-level persistence.
 - Do not move `...` to the end of the prompt text.
 - Do not write `?[%{{var}} Prompt text...]`.
 - Do not write `?[%{{var}} Option A | Option B | Other, please specify...]`.
 
 ### Input Marker Examples
 
-- Correct:
-  Ask the learner: What is one goal you want this lesson to help you achieve in your current work?
+- Correct when the answer will be used outside the current lesson:
+  Ask the learner: What is one course-wide goal that should shape later lessons?
   ?[%{{learner_goal}} ...One-sentence goal]
-- Correct: `?[%{{difficulty_type}} Concept unclear | Need practice | ...Other, please specify]`
+- Correct when the answer is used only in the current lesson:
+  Ask the learner: What is the most important risk in this example?
+  ?[...Brief risk]
+- Correct when the answer will be used outside the current lesson: `?[%{{difficulty_type}} Concept unclear | Need practice | ...Other, please specify]`
+- Correct when the answer is used only in the current lesson: `?[Concept unclear | Need practice | ...Other, please specify]`
 - Incorrect: `?[%{{learner_goal}} Describe your goal in one sentence...]`
 - Incorrect: `?[%{{difficulty_type}} Concept unclear | Need practice | Other, please specify...]`
 
@@ -73,15 +97,15 @@ For interaction-design quality (concrete prompts, branching, deepening interacti
 
 MarkdownFlow has no programming-style conditionals, loops, or boolean logic. There is no parser that evaluates `{{var}} == "A"`; there are no `if` blocks, `switch` blocks, or ternary expressions to wire up control flow.
 
-Branching is enacted by writing **natural-language instructions** that describe what the AI should generate under each possible learner input. Phrasings such as "If the learner's input is X, then …" are **generation strategies the AI follows**, not `if`-`else` code.
+Branching is enacted by writing **natural-language instructions** that describe what the AI should generate under each possible learner input. Variable markers are substituted first, so write branches against the resulting value. Phrasings such as "If the learner's input is X, then …" are **generation strategies the AI follows**, not `if`-`else` code.
 
 Example:
 
 ```markdown
 Ask the learner for their stance on the claim above.
-?[%{{attitude}} Agree | Partially agree | Disagree]
+?[Agree | Partially agree | Disagree]
 
-The learner's stance is {{attitude}}.
+After the learner answers, respond to the selected stance.
 
 - If the learner's stance is Agree, acknowledge the agreement appreciatively.
 - If the learner's stance is Partially agree, ask which parts they agree with and which parts they do not.
@@ -219,7 +243,7 @@ Allowed:
 Not allowed:
 - Silent factual changes.
 - Unmarked omission of required source evidence.
-- Variable references before collection.
+- Learner-answer variable references without a corresponding variable-backed interaction and metadata entry.
 
 ### Deterministic Block Policy
 
@@ -232,9 +256,11 @@ Use deterministic blocks only for truly fixed content. Do not lock entire lesson
 - `?[%{{var}} Question prompt? Option A | Option B]` — question inside the interaction line; move it to the line above.
 - `Ask the learner the question. ?[%{{var}} A | B | C]` — interaction not on its own line.
 - Pre-interaction text enumerates choices A / B / C but `?[%{{var}} X | Y | Z]` exposes a different set — the narrative description and the interaction options must stay aligned (same set, order, and wording).
+- Creating a named variable for a continue button, confirmation, or current-lesson-only choice.
+- Using no-variable `?[...]` for an answer that must be used outside the current lesson.
 - `if {{var}} == "A": …` / `{{#if var}}…{{/if}}` / `switch ({{var}}) { … }` — program-style branching syntax around `{{var}}`. MarkdownFlow has no conditional parser; express branches as plain instruction sentences (see [Branching on User Input](#branching-on-user-input)).
 - Wrapping an entire lesson body in `=== … ===` or `!=== … !===`.
-- Referencing `{{var}}` in learner-facing text before any `?[%{{var}} …]` collects it.
+- Referencing `{{var}}` with no corresponding `?[%{{var}} ...]` collection and metadata entry.
 - Bare `![alt](url)` for an image that should display as-is — the runtime model is free to rewrite or drop it. Wrap in `===…===` (form 3.1).
 - Putting an HTML `<img>` / `<figure>` / `<div>` block inside `!=== … !===` — defeats the layout adaptability that HTML-view images exist for. Switch to the instruction-style form (3.2).
 - Adding a separate `===caption text===` block inside or beside a 3.2 instruction to lock the caption — instruction-style images lock content through wording (`必须原样输出 / 必须原样保留 / 不要改写`), not by mixing in deterministic blocks.
