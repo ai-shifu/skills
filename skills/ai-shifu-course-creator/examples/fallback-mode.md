@@ -68,7 +68,7 @@ Pipeline produces partial but runnable output:
 ## L03 Objective
 Select a first-pass classification rule.
 ---
-?[%{{classification_axis}} latency first | contention first]
+?[latency first | contention first]
 ---
 Current evidence is partial; confirm one canonical taxonomy before final pass.
 ```
@@ -102,7 +102,7 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 
 ```json
 {
-  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\nUse {{unknown_variable}} now.",
+  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\nUse {{fix_context}} now.",
   "course_material": "",
   "optimization_constraints": {
     "fallback_mode": true,

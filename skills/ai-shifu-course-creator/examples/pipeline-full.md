@@ -110,5 +110,5 @@ Based on {{diagnosis_choice}}, we run one focused verification next.
 ## Acceptance Notes
 
 - All four phases executed end-to-end.
-- One core question per lesson, variables collected before use.
+- One core question per lesson, every learner-answer variable has a corresponding variable-backed interaction and metadata entry.
 - Optimization pass found no blockers, only enhancement suggestions.

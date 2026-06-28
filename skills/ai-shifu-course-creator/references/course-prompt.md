@@ -13,6 +13,8 @@ The course prompt defines the AI engine's **course-level persona and operating r
 
 Do not duplicate per-lesson interaction logic, variable collection, or branching here. If a rule only applies to one lesson, it belongs in that lesson's Teaching Prompt, not in the Course Prompt.
 
+The Course Prompt may reference a named variable only when that variable is intentionally used for course-wide personalization. Like Teaching Prompts, every `{{var}}` marker in `course-prompt.md` is replaced with the variable's system value before generation: the learner's stored value when set, or `UNKNOWN` when unset or empty. Write course-level personalization rules against that substituted value, not against whether the variable is "available".
+
 ## Required Sections
 
 The fillable template has six required `# Section` blocks. Every course prompt must include all six:
@@ -362,6 +364,7 @@ You specialize in production observability and are a professional teacher in the
 ## What Not to Put Here
 
 - Per-lesson variable collection or branching logic — belongs in the Teaching Prompt for that lesson.
+- Variable availability checks. If the Course Prompt references a variable, write against the substituted value, for example: `The learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, use default examples; otherwise adapt examples to it.`
 - Specific lesson-cut decisions, lesson titles, or lesson order — belongs in `course_index` and `structure.json`.
 - Source-material excerpts or learner-facing scripts — belongs in the Teaching Prompt for that lesson.
 - Pipeline / authoring instructions for downstream phases — belongs in skill docs, not in a runtime prompt.

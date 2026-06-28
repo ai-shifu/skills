@@ -117,7 +117,7 @@ Each item:
     {
       "lesson_id": "L01",
       "lesson_title": "Core Loop Setup",
-      "teaching_prompt": "## Objective\n...\n?[%{{learner_goal}} Option A | Option B]\n...",
+      "teaching_prompt": "## Objective\nCollect the goal that should shape course-wide examples.\n---\n?[%{{learner_goal}} ...One-sentence goal]\n---\nThe learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, continue with the default production example; otherwise use a first example that matches it.",
       "used_variables": ["learner_goal"],
       "depends_on_lessons": []
     }
@@ -134,11 +134,11 @@ Each item:
     {
       "name": "learner_goal",
       "collected_in": "L01",
-      "used_in": ["L01", "L02"],
+      "used_in": ["L01", "course_prompt"],
       "effect_scope": "cross_lesson"
     }
   ],
-  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The current course is *...*. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ...\n\n# Slides\n- ...",
+  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, use the course default examples; otherwise adapt course-wide examples to it. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ...\n\n# Slides\n- ...",
   "course_description": "A practical course that helps beginner operators diagnose metric drift, identify likely causes, and choose one concrete fix."
 }
 ```
@@ -180,10 +180,10 @@ For segmentation rules and methodology see [pedagogy.md#segmentation-methodology
 
 - `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`.
 - `collected_in` (string, required) — `lesson_id` where the variable is first collected.
-- `used_in` (array of lesson ids, required) — every lesson that references the variable.
+- `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when `course-prompt.md` references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
 - `effect_scope` (string enum: `local|cross_lesson`, required).
 
-For variable *syntax* see [markdownflow.md#variables](markdownflow.md#variables); for variable *strategy and pacing* see [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy).
+Only named variables belong in `global_variable_table`. No-variable `?[...]` interactions do not create table entries. Use named variables only when the learner's answer must be used outside the current lesson; lesson-local branching, examples, feedback, summaries, and inputs stay no-variable. A variable referenced from `course-prompt.md` has `effect_scope: "cross_lesson"` because the Course Prompt can influence more than one lesson. Every reference is substituted with the variable's current system value before generation; before the learner sets a value, or when the stored value is empty, the substituted value is `UNKNOWN`. Still list `course_prompt` in `used_in` whenever `course-prompt.md` references the variable. For variable *syntax* see [markdownflow.md#variables](markdownflow.md#variables); for variable *strategy and pacing* see [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy).
 
 ## Lesson Schema
 
@@ -192,7 +192,7 @@ Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 - `lesson_id` (string, required) — stable, deterministic identifier.
 - `lesson_title` (string, required) — concise learner-facing title.
 - `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content (written in MarkdownFlow); instructional/directive language only.
-- `used_variables` (array of strings, required) — every variable referenced or collected in this lesson; cross-check with [Variable Table](#variable-table).
+- `used_variables` (array of strings, required) — every named variable referenced or collected in this lesson; no-variable interactions are excluded. Cross-check with [Variable Table](#variable-table): each item here must have a matching `global_variable_table` entry, and that entry's `used_in` list must include this lesson when the variable is referenced outside the interaction line. If the Course Prompt references the same variable, `used_in` must also include `course_prompt`.
 - `depends_on_lessons` (array of lesson ids, required) — explicit list; empty list if none.
 
 ### Minimal Example
@@ -201,8 +201,8 @@ Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 {
   "lesson_id": "L03",
   "lesson_title": "Diagnose the Bottleneck",
-  "teaching_prompt": "## Objective\nFind the bottleneck and test one fix.\n---\n?[%{{bottleneck_guess}} CPU bound | IO bound | Lock contention]\n---\nBased on {{bottleneck_guess}}, run the matching test first.",
-  "used_variables": ["bottleneck_guess"],
+  "teaching_prompt": "## Objective\nFind the bottleneck and test one fix.\n---\n?[CPU bound | IO bound | Lock contention]\n---\nAfter the learner answers, run the matching test first.",
+  "used_variables": [],
   "depends_on_lessons": ["L02"]
 }
 ```

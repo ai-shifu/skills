@@ -39,8 +39,8 @@ Structured segments provided:
 {
   "lesson_id": "L02",
   "lesson_title": "Verify the Fix",
-  "teaching_prompt": "## Objective\nChoose the fastest signal that proves the fix works.\n---\n?[%{{verification_signal}} p95 latency trend | error-rate slope | lock-wait drop]\n---\nYou selected {{verification_signal}}. Use this as the first verification checkpoint.",
-  "used_variables": ["verification_signal"],
+  "teaching_prompt": "## Objective\nChoose the fastest signal that proves the fix works.\n---\n?[p95 latency trend | error-rate slope | lock-wait drop]\n---\nAfter the learner answers, use the selected signal as the first verification checkpoint.",
+  "used_variables": [],
   "depends_on_lessons": ["L01"]
 }
 ```
@@ -51,9 +51,9 @@ Rendered `teaching_prompt` value:
 ## Objective
 Choose the fastest signal that proves the fix works.
 ---
-?[%{{verification_signal}} p95 latency trend | error-rate slope | lock-wait drop]
+?[p95 latency trend | error-rate slope | lock-wait drop]
 ---
-You selected {{verification_signal}}. Use this as the first verification checkpoint.
+After the learner answers, use the selected signal as the first verification checkpoint.
 ```
 
 ## Edge Case: Fallback with Minimal Context
@@ -76,8 +76,8 @@ You selected {{verification_signal}}. Use this as the first verification checkpo
 {
   "lesson_id": "L07",
   "lesson_title": "Pick a Rollback Trigger",
-  "teaching_prompt": "## Objective\nPick a rollback trigger that minimizes blast radius.\n---\n?[%{{rollback_trigger_viewpoint_check}} latency spike threshold | error budget burn threshold]\n---\nGiven {{rollback_trigger_viewpoint_check}}, define one immediate rollback condition and one follow-up diagnostic.",
-  "used_variables": ["rollback_trigger_viewpoint_check"],
+  "teaching_prompt": "## Objective\nPick a rollback trigger that minimizes blast radius.\n---\n?[latency spike threshold | error budget burn threshold]\n---\nAfter the learner answers, define one immediate rollback condition and one follow-up diagnostic for the selected trigger.",
+  "used_variables": [],
   "depends_on_lessons": [],
   "fallback_mode": true,
   "assumptions": [
@@ -96,14 +96,14 @@ Rendered `teaching_prompt` value:
 ## Objective
 Pick a rollback trigger that minimizes blast radius.
 ---
-?[%{{rollback_trigger_viewpoint_check}} latency spike threshold | error budget burn threshold]
+?[latency spike threshold | error budget burn threshold]
 ---
-Given {{rollback_trigger_viewpoint_check}}, define one immediate rollback condition and one follow-up diagnostic.
+After the learner answers, define one immediate rollback condition and one follow-up diagnostic for the selected trigger.
 ```
 
 ## Acceptance Notes
 
-- At least one interaction drives downstream text changes.
+- At least one interaction drives current-lesson text changes.
 - Core idea includes visual-plus-text explanation in final script.
 - Script remains valid in fallback mode.
 - Interaction count stays within declared limits.

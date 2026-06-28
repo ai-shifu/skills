@@ -30,7 +30,7 @@
   "change_list": [
     {
       "issue_class": "interaction_no_branching",
-      "change": "branch feedback by learner option and add next-step action"
+      "change": "remove the throwaway variable, branch feedback by learner option, and add next-step action"
     }
   ],
   "course_prompt": "# Role\nYou are a coach helping beginners reason about retry policy.\n\n# Task\nDifferentiate transient vs permanent failure and select a retry stop rule.\n\n# Teaching Techniques\nViewpoint branching on failure type; bounded retries with backoff for transient.\n\n# Writing Style\nDirective, action-oriented.\n\n# Format\nMarkdownFlow; `?[]` interactions on standalone lines.\n\n# Slides\nCreate failure-taxonomy slides in natural language."
@@ -41,17 +41,17 @@
 ## Objective
 Differentiate transient and permanent failures before choosing retry policy.
 ---
-?[%{{failure_type}} transient failure | permanent failure]
+?[transient failure | permanent failure]
 ---
-If {{failure_type}} is transient, apply bounded retries with backoff.
-If {{failure_type}} is permanent, stop retries and open a corrective task.
+If the learner chooses transient failure, apply bounded retries with backoff.
+If the learner chooses permanent failure, stop retries and open a corrective task.
 ```
 
 ## Edge Case: Missing Source Material
 
 ```json
 {
-  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\n?[%{{choose_fix}} option A | option B]\n---\nUse {{unknown_variable}} now.",
+  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\n?[%{{choose_fix}} option A | option B]\n---\nUse {{fix_context}} now.",
   "course_material": "",
   "optimization_constraints": {
     "fallback_mode": true,
@@ -76,7 +76,7 @@ If {{failure_type}} is permanent, stop retries and open a corrective task.
   "change_list": [
     {
       "issue_class": "variable_or_syntax_risk",
-      "change": "remove unknown variable reference and keep one canonical interaction variable"
+      "change": "remove the learner-answer reference with no collection contract and keep one canonical no-variable interaction"
     }
   ],
   "follow_up": [
@@ -89,9 +89,9 @@ If {{failure_type}} is permanent, stop retries and open a corrective task.
 ## Goal
 Pick one safe first fix.
 ---
-?[%{{fix_choice}} option A | option B]
+?[option A | option B]
 ---
-You selected {{fix_choice}}. Apply one verification step before rollout.
+After the learner answers, apply one verification step before rollout.
 ```
 
 ## Acceptance Notes
