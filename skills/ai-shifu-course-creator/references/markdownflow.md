@@ -11,7 +11,7 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 - Every `{{var_name}}` marker in a Teaching Prompt or Course Prompt is substituted before generation with that variable's system value: the learner's stored value when set, or `UNKNOWN` when unset or empty
 - A variable marker is not an availability check. Do not model variables as present/absent or ready/not-ready; when a fallback matters, write instructions for the substituted value being the literal `UNKNOWN`
 - Prefer wording that still reads correctly after substitution, such as `The learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, use default examples; otherwise adapt examples to it.`
-- For enumerated or category branches, state the substituted value in a natural sentence first, such as `The learner level is {{level}}.` or `学习者基础是 {{learner_background}}。`, then write natural-language branch instructions. Do not turn the `{{var_name}}` marker into a comparison-style branch heading.
+- For enumerated or category branches, state the substituted value in a natural sentence first, such as `The learner level is {{level}}.`, then write natural-language branch instructions.
 - Do not reference a learner-answer variable without a corresponding variable-backed interaction and metadata entry
 - A named variable is required only when the learner's answer must be used outside the current lesson: referenced by `course-prompt.md`, reused in another lesson, or used for cross-lesson personalization, examples, summaries, or deliverables
 - No-variable interactions do not create learner variables; use them for lesson-local buttons, choices, inputs, branching, examples, feedback, and summaries that do not need to persist beyond the current lesson
@@ -121,23 +121,7 @@ A Teaching Prompt looks like code (variables, interaction markers, branched outc
 
 Express every branch as a plain instruction sentence. For variables, state the substituted value naturally first, then branch with natural-language conditions:
 
-- Bad: program-style conditions around `{{level}}`
-- Good: `The learner level is {{level}}. For beginner learners, use simple analogies; for intermediate learners, introduce technical terms; for expert learners, go deep into edge cases.`
-
-For Chinese Teaching Prompts, use the same pattern:
-
-```markdown
-学习者基础是 {{learner_background}}。
-
-- 如果学习者是零基础：
-  使用日常类比和少量术语，先建立直觉。
-
-- 如果学习者已经有基础：
-  直接连接已有概念，并补充边界条件和常见误区。
-
-- 如果学习者基础是 UNKNOWN：
-  先采用入门解释，再提供一个可选的进阶提示。
-```
+`The learner level is {{level}}. For beginner learners, use simple analogies; for intermediate learners, introduce technical terms; for expert learners, go deep into edge cases.`
 
 > The point of MarkdownFlow is not to write the lesson content directly, but to use natural language to precisely instruct the AI on how to generate content under each possible learner input.
 
