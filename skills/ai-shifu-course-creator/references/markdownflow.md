@@ -121,7 +121,7 @@ A Teaching Prompt looks like code (variables, interaction markers, branched outc
 
 Express every branch as a plain instruction sentence. For variables, state the substituted value naturally first, then branch with natural-language conditions:
 
-`The learner level is {{level}}. For beginner learners, use simple analogies; for intermediate learners, introduce technical terms; for expert learners, go deep into edge cases.`
+`The learner level is {{level}}. If the learner level is UNKNOWN, start with the default beginner-friendly example; for beginner learners, use simple analogies; for intermediate learners, introduce technical terms; for expert learners, go deep into edge cases.`
 
 > The point of MarkdownFlow is not to write the lesson content directly, but to use natural language to precisely instruct the AI on how to generate content under each possible learner input.
 
