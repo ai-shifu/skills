@@ -85,7 +85,7 @@ Provide one of:
 1. `lesson_teaching_prompts` — one Teaching Prompt per lesson (written in MarkdownFlow). Instructional/directive language only (model-guiding), not a final learner manuscript. See [Lesson Schema](#lesson-schema).
 2. `course_index` — `lesson_id`, `lesson_title`, `core_question`, `source_span_map`.
 3. `global_variable_table` — see [Variable Table](#variable-table).
-4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required sections: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Slides`. Conditional section: `# Translation Rules`.
+4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required canonical sections: Role, Task, Teaching Techniques, Writing Style, Format, and Slides, rendered as Markdown headings in the resolved output language. Conditional canonical section: Translation Rules, also rendered in the resolved output language when required.
 5. `course_description` — SEO/listing description written to `course-description.md`; describe the course topic, target learners, and learning outcomes in learner-facing language. Do not include author-side workflow notes.
 
 ### `course_index` Schema (array, required)
@@ -98,9 +98,9 @@ Each item:
 
 ### `course_prompt` (string, required)
 
-- Markdown string starting with `# Role`.
-- Six required `# Section` blocks: `# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Slides`.
-- Conditional `# Translation Rules` section per [course-prompt.md](course-prompt.md) `## Conditional Sections`.
+- Markdown string starting with the rendered Role section heading in the resolved output language.
+- Six required Markdown section blocks in the canonical order from [course-prompt.md](course-prompt.md): Role, Task, Teaching Techniques, Writing Style, Format, and Slides. Render section headings and body text in the resolved output language.
+- Conditional Translation Rules section per [course-prompt.md](course-prompt.md) `## Conditional Sections`, rendered in the resolved output language when required.
 - Single source of truth at the course level; do not embed per-lesson interaction logic.
 
 ### `course_description` (string, required)
@@ -231,9 +231,9 @@ Resolve target language with this strict priority:
 
 - Do not restrict supported languages to a fixed list.
 - If output language is explicit, source-language distribution must not override it.
-- Learner-facing script text must follow resolved target language unless `bilingual_output` is true.
+- Learner-facing script text must follow resolved target language unless `bilingual_output` is true. When `quote_policy` is `original_plus_translation`, only the quote or source-material passage itself may keep the original language alongside the resolved-language translation.
 - User-visible agent output must follow the resolved target language: chat replies, phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations.
-- Human-facing labels for skill concepts must be localized in the resolved target language. For Chinese, use “授课提示词” for “Teaching Prompt” and “课程提示词” for “Course Prompt” in user-visible prose and headings.
+- Human-facing labels for skill concepts must follow the canonical terms in [SKILL.md#canonical-term-translation-table](../SKILL.md#canonical-term-translation-table) when the resolved target language is listed there; do not keep English labels merely because the skill docs and examples are written in English.
 - Stable machine-facing identifiers and verbatim source material remain unchanged even when the surrounding prose is localized: JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `lesson_teaching_prompts`, `teaching_prompt`, `course_prompt`, `course_description`), file names (`course-description.md`, `course-prompt.md`, `structure.json`), CLI commands and flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and quoted source text or direct quotations that must be preserved verbatim.
 
 ## Fallback Output Extensions

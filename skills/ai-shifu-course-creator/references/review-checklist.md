@@ -16,9 +16,10 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 ## User-Visible Language
 
-- User-visible prose follows the resolved target language from `data-contracts.md#language-resolution`.
-- Phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations are localized to the user's language.
-- Human-facing labels for canonical concepts are localized: for Chinese, use “授课提示词” instead of “Teaching Prompt” and “课程提示词” instead of “Course Prompt”.
+- User-visible agent output outside generated course content follows the resolved target language from `data-contracts.md#language-resolution`; bilingual output does not localize phase summaries, reports, headings, artifact labels, review notes, handoff instructions, or error explanations into multiple languages.
+- Generated course artifacts and learner-facing passages follow the resolved target language, except where bilingual output intentionally uses multiple languages or original-plus-translation quote policy applies to the quote or source-material passage itself.
+- Effective build metadata follows the resolved target language after precedence is applied: course title (`--title`, `README.md`, or directory-name fallback), course description (`--description` or `course-description.md`), chapter titles (`structure.json`, `--chapter-name`, or course-title fallback), and lesson titles.
+- Human-facing labels for canonical concepts follow [SKILL.md#canonical-term-translation-table](../SKILL.md#canonical-term-translation-table) when the resolved target language is listed there.
 - Machine-facing identifiers and verbatim source material remain unchanged: JSON keys, file names, CLI flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and required verbatim source quotes.
 
 ## Lesson Loop
@@ -77,5 +78,5 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 ## Course Prompt
 
 - A `course_prompt` artifact is produced when input includes course material.
-- All six required sections present (`# Role`, `# Task`, `# Teaching Techniques`, `# Writing Style`, `# Format`, `# Slides`).
-- `# Translation Rules` included when (and only when) trigger condition applies.
+- All six required canonical sections are present in order, with headings rendered in the resolved output language: Role, Task, Teaching Techniques, Writing Style, Format, and Slides.
+- The Translation Rules section is included when (and only when) its trigger condition applies, with its heading rendered in the resolved output language.
