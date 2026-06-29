@@ -145,7 +145,7 @@ These are the *teaching* rules around variables — when to collect, how often, 
 - Create a variable only when the learner's answer must be used outside the current lesson: referenced by `course-prompt.md`, reused in another lesson, or used for cross-lesson personalization, depth control, examples, summaries, or deliverable variation.
 - Use no-variable `?[...]` for lesson-local interactions, including current-lesson branching, examples, feedback, summaries, and free-text inputs.
 - Treat every variable reference as a substituted value. If the learner has not set it, the value is `UNKNOWN`; if fallback behavior is needed, describe what to do when the substituted value is `UNKNOWN`.
-- For enumerated or category variables, state the substituted value in a natural sentence before branching. Example: write `The learner level is {{level}}.` and then branch with `If the learner level is UNKNOWN, ...`.
+- For variable-based branches, state the substituted value in a natural sentence before branching. Example: write `The learner level is {{level}}.` and then branch with `If the learner level is UNKNOWN, ...`.
 - Every variable must have course-level or cross-lesson utility; do not create throwaway variables for continue buttons, confirmations, or choices used only inside the current lesson.
 - Do not recollect the same variable unless explicitly marked as staged comparison.
 - Prevent semantic duplicates even when variable names differ.

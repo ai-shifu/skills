@@ -11,7 +11,7 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 - Every `{{var_name}}` marker in a Teaching Prompt or Course Prompt is substituted before generation with that variable's system value: the learner's stored value when set, or `UNKNOWN` when unset or empty
 - A variable marker is not an availability check. Do not model variables as present/absent or ready/not-ready; when a fallback matters, write instructions for the substituted value being the literal `UNKNOWN`
 - Prefer wording that still reads correctly after substitution, such as `The learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, use default examples; otherwise adapt examples to it.`
-- For enumerated or category branches, state the substituted value in a natural sentence first, such as `The learner level is {{level}}.`, then write natural-language branch instructions.
+- For variable-based branches, state the substituted value in a natural sentence first, such as `The learner level is {{level}}.`, then write natural-language branch instructions.
 - Do not reference a learner-answer variable without a corresponding variable-backed interaction and metadata entry
 - A named variable is required only when the learner's answer must be used outside the current lesson: referenced by `course-prompt.md`, reused in another lesson, or used for cross-lesson personalization, examples, summaries, or deliverables
 - No-variable interactions do not create learner variables; use them for lesson-local buttons, choices, inputs, branching, examples, feedback, and summaries that do not need to persist beyond the current lesson
