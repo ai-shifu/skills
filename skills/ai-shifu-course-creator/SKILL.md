@@ -484,8 +484,8 @@ Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_cons
 
 - Conclusion and overall risk level presented first (report structure per `references/report-template.md`).
 - Full review against `references/review-checklist.md` passes, or remaining gaps are explicitly listed as non-blocking suggestions.
-- A `course_prompt` artifact is produced when input includes course material, with all six required sections present. `# Translation Rules` may be omitted when its trigger condition does not apply.
-- Generated `course_prompt` covers every Must-Specify bullet in `references/course-prompt.md` Rules 1–12 (audit each section against its rule list — especially `# Slides`, which is the most commonly under-filled section).
+- A `course_prompt` artifact is produced when input includes course material, with all six required canonical sections present. The Translation Rules section may be omitted when its trigger condition does not apply.
+- Generated `course_prompt` covers every Must-Specify bullet in `references/course-prompt.md` Rules 1–12 (audit each canonical section against its rule list — especially the Slides section, which is the most commonly under-filled section).
 
 ---
 
