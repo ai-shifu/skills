@@ -359,8 +359,6 @@ You specialize in production observability and are a professional teacher in the
 | `XXX learners` | `# Task` bullet 2 | `course_profile.audience_level` + `prerequisite_level`. |
 | `XXX problems` | `# Task` bullet 2 | `delivery_constraints.must_cover_topics`; cross-check with Segmentation segments. |
 
-`# Teaching Techniques`, `# Writing Style`, `# Format`, `# Slides`, and `# Translation Rules` are constants in meaning. Render them in the resolved output language and adjust only when a course has a justified reason. Document any deviation in the course `README.md` so future updates know it is intentional.
-
 ## What Not to Put Here
 
 - Per-lesson variable collection or branching logic — belongs in the Teaching Prompt for that lesson.
