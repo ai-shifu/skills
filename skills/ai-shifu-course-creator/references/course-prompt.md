@@ -17,22 +17,22 @@ The Course Prompt may reference a named variable only when that variable is inte
 
 ## Required Sections
 
-The fillable template has six required `# Section` blocks. Every course prompt must include all six:
+The fillable template has six required canonical sections. Every course prompt must include all six in order, with generated section headings rendered in the resolved output language:
 
-1. `# Role` — identity, professional and teaching identity, optional platform affiliation.
-2. `# Task` — current course, target learner, learning goal, behavior boundaries, prohibited behaviors.
-3. `# Teaching Techniques` — how to design explanation paths.
-4. `# Writing Style` — tone, register, restraint.
-5. `# Format` — Markdown rules, heading policy, bold usage, spacing.
-6. `# Slides` — slide-generation rules covering both safety guardrails and presentation quality.
+1. Role — identity, professional and teaching identity, optional platform affiliation.
+2. Task — current course, target learner, learning goal, behavior boundaries, prohibited behaviors.
+3. Teaching Techniques — how to design explanation paths.
+4. Writing Style — tone, register, restraint.
+5. Format — Markdown rules, heading policy, bold usage, spacing.
+6. Slides — slide-generation rules covering both safety guardrails and presentation quality.
 
-`# Slides` is required even for courses that do not use slides. Without it, the AI has zero guardrails on its visual output and may spontaneously render uncontrolled images instead of useful presentation pages. Always include the full block; the rules cost nothing when the AI never creates slides and become essential the moment it does.
+The Slides section is required even for courses that do not use slides. Without it, the AI has zero guardrails on its visual output and may spontaneously render uncontrolled images instead of useful presentation pages. Always include the full block; the rules cost nothing when the AI never creates slides and become essential the moment it does.
 
 ## Conditional Sections
 
 One additional section is added only when the course needs it:
 
-- `# Translation Rules` — required when **any** of the following is true:
+- Translation Rules — required when **any** of the following is true:
   - Course is multilingual (`bilingual_output: true`, or target language differs from source-material dominant language).
   - Source material contains brand names, product names, or domain-specific technical terms whose translation policy must be fixed (e.g., AI, Token, vibe coding, ChatGPT, Gemini, DeepSeek).
   - `term_policy` is `preserve` or `mixed`.
@@ -41,11 +41,11 @@ When the condition is not met, omit the section entirely. Do not insert an empty
 
 ## Authoring Rules
 
-The 12 conceptual rules below map to the actual `# Section` blocks in the template. Each rule lists the must-include points and a Bad/Good contrast.
+The 12 conceptual rules below map to the canonical sections in the template. Each rule lists the must-include points and a Bad/Good contrast.
 
 ### Rule 1 — Define the Teacher Role
 
-Maps to: `# Role`.
+Maps to: Role section.
 
 Must include:
 
@@ -62,7 +62,7 @@ Good: `You are Hebi. You specialize in observability and are a professional teac
 
 ### Rule 2 — Define the Current Course
 
-Maps to: `# Task` (top bullets).
+Maps to: Task section (top bullets).
 
 Must clarify:
 
@@ -76,7 +76,7 @@ Good: `The current course is *Metric Drift Diagnosis*. Your goal is to help the 
 
 ### Rule 3 — Clarify That User Messages Are Teaching Instructions
 
-Maps to: `# Task` (instruction bullets).
+Maps to: Task section (instruction bullets).
 
 Must state:
 
@@ -88,7 +88,7 @@ Good: `The user messages you receive are all teaching instructions. Follow the i
 
 ### Rule 4 — Emphasize the One-on-One Teaching Experience
 
-Maps to: `# Task` (audience bullets).
+Maps to: Task section (audience bullets).
 
 Must state:
 
@@ -101,7 +101,7 @@ Good: `You are teaching one-on-one. There is only one learner. You may address t
 
 ### Rule 5 — Define Prohibited Behaviors
 
-Maps to: `# Task` (prohibition bullets).
+Maps to: Task section (prohibition bullets).
 
 Must list (at minimum):
 
@@ -119,7 +119,7 @@ Good (rhetorical inside explanation): `Why does this metric jump matter? Because
 
 ### Rule 6 — Define Teaching Techniques
 
-Maps to: `# Teaching Techniques`.
+Maps to: Teaching Techniques section.
 
 Must specify the explanation path, not just "explain clearly":
 
@@ -137,7 +137,7 @@ Good: See the full block in [Fillable Template](#fillable-template) below.
 
 ### Rule 7 — Define Writing Style
 
-Maps to: `# Writing Style`.
+Maps to: Writing Style section.
 
 Must specify:
 
@@ -145,11 +145,11 @@ Must specify:
 - What to avoid (slogans, exaggerated emotion, vague generalities).
 - What is allowed (analogies, contrasts, comparisons) and the constraint (do not sacrifice accuracy for catchy phrasing).
 
-Style rules belong in this section; do not mix them into `# Task` or `# Teaching Techniques`.
+Style rules belong in this section; do not mix them into the Task or Teaching Techniques sections.
 
 ### Rule 8 — Define Output Format
 
-Maps to: `# Format`.
+Maps to: Format section.
 
 Must specify:
 
@@ -160,7 +160,7 @@ Must specify:
 
 ### Rule 9 — Define How to Highlight Key Content
 
-Maps to: `# Format` (bold bullets).
+Maps to: Format section (bold bullets).
 
 Must specify:
 
@@ -170,7 +170,7 @@ Must specify:
 
 ### Rule 10 — Slide Rules in a Separate Section
 
-Maps to: `# Slides` (required).
+Maps to: Slides section (required).
 
 Must specify:
 
@@ -183,7 +183,7 @@ Must specify:
 
 ### Rule 11 — Slide-Text Relationship
 
-Maps to: `# Slides` (required, last bullets).
+Maps to: Slides section (required, last bullets).
 
 Must state:
 
@@ -192,13 +192,13 @@ Must state:
 - Text must add background, causality, examples, usage — not mechanically repeat the slide.
 - For pure classroom-slide courses, keep the slide self-contained and avoid extra AI narration unless the Teaching Prompt explicitly asks for presenter notes.
 
-Rules 10 and 11 share the same `# Slides` section in the actual template; treat them as one block when authoring.
+Rules 10 and 11 share the same Slides section in the actual template; treat them as one block when authoring.
 
 For *runtime image syntax* — how to actually embed an author-provided image URL into MarkdownFlow (fixed-display via `===![alt](url)===` vs HTML-view instruction-style directives) — see `markdownflow.md#images`. Rules 10/11 govern *generated slides* (when the AI engine produces visual pages at runtime); the syntax in `markdownflow.md#images` governs *pre-uploaded image assets* (when the author supplies a file or URL via `shifu-cli.py upload-image`).
 
 ### Rule 12 — Translation and Terminology Rules
 
-Maps to: `# Translation Rules` (conditional).
+Maps to: Translation Rules section (conditional).
 
 Must specify:
 
@@ -212,13 +212,13 @@ When a course is single-language and contains no brand-name decisions, this sect
 
 When generating the course prompt, consume already-collected artifacts instead of asking the user again:
 
-- `course_profile.audience_level` (`beginner|intermediate|advanced`) → fills `# Task` target-learner bullet. See [data-contracts.md#input-contract](data-contracts.md#input-contract).
-- `course_profile.prerequisite_level` → informs `# Task` boundary bullet.
-- `delivery_constraints.must_cover_topics` / `avoid_topics` → informs `# Task` boundary bullet.
-- Resolved target language (per [data-contracts.md#language-resolution](data-contracts.md#language-resolution)) → drives `# Writing Style` language and any `# Translation Rules` decisions.
-- `term_policy` (`preserve|translate|mixed`) → drives whether `# Translation Rules` is required.
-- Segmentation `visual_cue` / `visual_text_pair_cue` presence → informs how detailed the `# Slides` guidance should be (`# Slides` itself is always required).
-- Course title from `README.md` → fills `# Task` course-name bullet.
+- `course_profile.audience_level` (`beginner|intermediate|advanced`) → fills the Task section target-learner bullet. See [data-contracts.md#input-contract](data-contracts.md#input-contract).
+- `course_profile.prerequisite_level` → informs the Task section boundary bullet.
+- `delivery_constraints.must_cover_topics` / `avoid_topics` → informs the Task section boundary bullet.
+- Resolved target language (per [data-contracts.md#language-resolution](data-contracts.md#language-resolution)) → drives Writing Style section language and any Translation Rules decisions.
+- `term_policy` (`preserve|translate|mixed`) → drives whether Translation Rules is required.
+- Segmentation `visual_cue` / `visual_text_pair_cue` presence → informs how detailed the Slides guidance should be (the Slides section itself is always required).
+- Course title from `README.md` → fills the Task section course-name bullet.
 
 The [Substitution Map](#substitution-map) below provides a one-to-one mapping between `XXX` placeholders in the template and these inputs.
 
@@ -351,13 +351,13 @@ You specialize in production observability and are a professional teacher in the
 
 | Placeholder | Section | Source |
 |---|---|---|
-| `XXX` (teacher name) | `# Role` line 1 | Author choice; default to a course-specific persona name. |
-| `XXX` (specialty) | `# Role` line 2 | Segmentation dominant topic; cross-check with `course_index` core questions. |
-| `XXX` (field) | `# Role` line 2 | Segmentation dominant topic. |
-| `*XXX*` (course name) | `# Task` bullet 1 | `README.md` course title. |
-| `XXX` (master target) | `# Task` bullet 1 | Orchestration course-level goal; aggregate of `course_index` core questions. |
-| `XXX learners` | `# Task` bullet 2 | `course_profile.audience_level` + `prerequisite_level`. |
-| `XXX problems` | `# Task` bullet 2 | `delivery_constraints.must_cover_topics`; cross-check with Segmentation segments. |
+| `XXX` (teacher name) | Role section line 1 | Author choice; default to a course-specific persona name. |
+| `XXX` (specialty) | Role section line 2 | Segmentation dominant topic; cross-check with `course_index` core questions. |
+| `XXX` (field) | Role section line 2 | Segmentation dominant topic. |
+| `*XXX*` (course name) | Task section bullet 1 | `README.md` course title. |
+| `XXX` (master target) | Task section bullet 1 | Orchestration course-level goal; aggregate of `course_index` core questions. |
+| `XXX learners` | Task section bullet 2 | `course_profile.audience_level` + `prerequisite_level`. |
+| `XXX problems` | Task section bullet 2 | `delivery_constraints.must_cover_topics`; cross-check with Segmentation segments. |
 
 ## What Not to Put Here
 
