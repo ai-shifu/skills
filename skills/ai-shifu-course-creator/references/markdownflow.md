@@ -129,14 +129,14 @@ For Chinese Teaching Prompts, use the same pattern:
 ```markdown
 学习者基础是 {{learner_background}}。
 
-如果学习者是零基础：
-使用日常类比和少量术语，先建立直觉。
+- 如果学习者是零基础：
+  使用日常类比和少量术语，先建立直觉。
 
-如果学习者已经有基础：
-直接连接已有概念，并补充边界条件和常见误区。
+- 如果学习者已经有基础：
+  直接连接已有概念，并补充边界条件和常见误区。
 
-如果学习者基础是 UNKNOWN：
-先采用入门解释，再提供一个可选的进阶提示。
+- 如果学习者基础是 UNKNOWN：
+  先采用入门解释，再提供一个可选的进阶提示。
 ```
 
 > The point of MarkdownFlow is not to write the lesson content directly, but to use natural language to precisely instruct the AI on how to generate content under each possible learner input.
