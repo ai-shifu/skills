@@ -62,6 +62,7 @@ Use this table for human-facing skill concept labels in user-visible prose, repo
 | Canonical term | en-US | zh-CN | Usage |
 |---|---|---|---|
 | `AI-Shifu` | AI-Shifu | AI 师傅 | Product name in human-facing prose. |
+| `Lesson` | Lesson | 节 / 课节 | Course lesson unit in human-facing prose. |
 | `Teaching Prompt` | Teaching Prompt | 授课提示词 | Per-lesson prompt artifact. |
 | `Course Prompt` | Course Prompt | 课程提示词 | Course-level prompt artifact. |
 
