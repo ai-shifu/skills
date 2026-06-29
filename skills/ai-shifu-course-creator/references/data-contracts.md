@@ -231,7 +231,7 @@ Resolve target language with this strict priority:
 
 - Do not restrict supported languages to a fixed list.
 - If output language is explicit, source-language distribution must not override it.
-- Learner-facing script text must follow resolved target language unless `bilingual_output` is true or `quote_policy` is `original_plus_translation`.
+- Learner-facing script text must follow resolved target language unless `bilingual_output` is true. When `quote_policy` is `original_plus_translation`, only the quote or source-material passage itself may keep the original language alongside the resolved-language translation.
 - User-visible agent output must follow the resolved target language: chat replies, phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations.
 - Human-facing labels for skill concepts must be localized with the canonical terms for the resolved target language; do not keep English labels merely because the skill docs and examples are written in English.
 - Stable machine-facing identifiers and verbatim source material remain unchanged even when the surrounding prose is localized: JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `lesson_teaching_prompts`, `teaching_prompt`, `course_prompt`, `course_description`), file names (`course-description.md`, `course-prompt.md`, `structure.json`), CLI commands and flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and quoted source text or direct quotations that must be preserved verbatim.
