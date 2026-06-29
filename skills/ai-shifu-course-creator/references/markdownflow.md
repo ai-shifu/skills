@@ -7,6 +7,7 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 ## Variables
 
 - Reference syntax: `{{var_name}}`
+- New variable names in generated course content should use the resolved output language
 - Variable names may use Unicode letters, numbers, and underscores, including non-English letters such as `{{学习目标}}`
 - Do not use spaces or punctuation in variable names
 - Every `{{var_name}}` marker in a Teaching Prompt or Course Prompt is substituted before generation with that variable's system value: the learner's stored value when set, or `UNKNOWN` when unset or empty
