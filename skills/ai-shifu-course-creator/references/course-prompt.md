@@ -224,7 +224,7 @@ The [Substitution Map](#substitution-map) below provides a one-to-one mapping be
 
 ## Fillable Template
 
-Copy the block below into `course-prompt.md` (the file in the course directory) and replace every `XXX` with course-specific content. Keep the section order. Drop `# Translation Rules` if the trigger condition is not met.
+Use the block below as the template for `course-prompt.md` (the file in the course directory), render it in the resolved output language, and replace every `XXX` with course-specific content. Keep the section order. Drop `# Translation Rules` if the trigger condition is not met.
 
 ```markdown
 # Role
@@ -359,7 +359,7 @@ You specialize in production observability and are a professional teacher in the
 | `XXX learners` | `# Task` bullet 2 | `course_profile.audience_level` + `prerequisite_level`. |
 | `XXX problems` | `# Task` bullet 2 | `delivery_constraints.must_cover_topics`; cross-check with Segmentation segments. |
 
-`# Teaching Techniques`, `# Writing Style`, `# Format`, `# Slides`, and `# Translation Rules` are constants — copy verbatim and adjust only when a course has a justified reason. Document any deviation in the course `README.md` so future updates know it is intentional.
+`# Teaching Techniques`, `# Writing Style`, `# Format`, `# Slides`, and `# Translation Rules` are constants in meaning. Render them in the resolved output language and adjust only when a course has a justified reason. Document any deviation in the course `README.md` so future updates know it is intentional.
 
 ## What Not to Put Here
 
