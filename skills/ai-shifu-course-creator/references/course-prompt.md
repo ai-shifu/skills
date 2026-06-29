@@ -224,7 +224,7 @@ The [Substitution Map](#substitution-map) below provides a one-to-one mapping be
 
 ## Fillable Template
 
-Use the block below as the template for `course-prompt.md` (the file in the course directory), render it in the resolved output language, and replace every `XXX` with course-specific content. Keep the section order. Drop `# Translation Rules` if the trigger condition is not met.
+Use the block below as the template for `course-prompt.md` (the file in the course directory), render it including section headings in the resolved output language, and replace every `XXX` with course-specific content. Keep the section order. Drop `# Translation Rules` if the trigger condition is not met.
 
 ```markdown
 # Role
