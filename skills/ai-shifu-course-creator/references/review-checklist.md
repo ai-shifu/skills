@@ -27,7 +27,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - Minimum teaching loop satisfied: setup → explanation → interaction → close.
 - One core question per lesson; resolved by lesson close.
 - Action tasks executable now or explicitly linked to a downstream lesson.
-- Variable naming consistent and traceable across lessons; non-English variable names are allowed.
+- Variable naming consistent and traceable across lessons; non-English variable names are allowed when composed of letters, numbers, and underscores.
 - Carryover statements only where cross-lesson dependency is allowed.
 - Lesson structure follows the content, not a forced uniform template that erases lesson specificity.
 

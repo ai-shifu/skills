@@ -178,7 +178,7 @@ For segmentation rules and methodology see [pedagogy.md#segmentation-methodology
 
 `global_variable_table` is an array. Each item:
 
-- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; non-English names such as `学习目标` are valid.
+- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; non-English names such as `学习目标` are valid when composed of letters, numbers, and underscores.
 - `collected_in` (string, required) — `lesson_id` where the variable is first collected.
 - `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when `course-prompt.md` references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
 - `effect_scope` (string enum: `local|cross_lesson`, required).

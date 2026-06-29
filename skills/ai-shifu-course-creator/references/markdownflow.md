@@ -7,8 +7,8 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 ## Variables
 
 - Reference syntax: `{{var_name}}`
-- No spaces in variable names
-- Variable names are not limited to English letters. Non-English names such as `{{学习目标}}` are valid.
+- Variable names may use Unicode letters, numbers, and underscores, including non-English letters such as `{{学习目标}}`
+- Do not use spaces or punctuation in variable names
 - Every `{{var_name}}` marker in a Teaching Prompt or Course Prompt is substituted before generation with that variable's system value: the learner's stored value when set, or `UNKNOWN` when unset or empty
 - A variable marker is not an availability check. Do not model variables as present/absent or ready/not-ready; when a fallback matters, write instructions for the substituted value being the literal `UNKNOWN`
 - Prefer wording that still reads correctly after substitution. Incorrect: `The learner goal is {{learner_goal}}. When the {{learner_goal}} is UNKNOWN, use default examples; otherwise adapt examples to it.` Correct: `The learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, use default examples; otherwise adapt examples to it.`

@@ -62,7 +62,7 @@ Every lesson must satisfy a minimum teaching loop and a few cross-cutting constr
 - **Minimum teaching loop**: setup → explanation → interaction → close. A lesson missing any of these four phases is incomplete.
 - **One core question per lesson**: each lesson resolves exactly one teachable question.
 - **Action tasks** must be either immediately executable by the learner or explicitly linked to a downstream lesson — no orphan actions.
-- **Variable naming** must be consistent and traceable across lessons (non-English names are valid; cross-check with [data-contracts.md#variable-table](data-contracts.md#variable-table)).
+- **Variable naming** must be consistent and traceable across lessons (non-English letters are valid; use letters, numbers, and underscores; cross-check with [data-contracts.md#variable-table](data-contracts.md#variable-table)).
 - **Source information density** must be preserved through optimization — do not trade substance for fluency.
 - **Carryover statements** are allowed only when cross-lesson dependency is explicitly permitted; otherwise remove them along with any unbound carryover variables.
 
@@ -142,7 +142,7 @@ These are the *teaching* rules around variables — when to collect, how often, 
 - Max five interactions per lesson (recommended three to four).
 - No more than three consecutive variable collections before learner-visible feedback.
 - Reuse global variables when possible; add new named variables only when a learner answer must leave the current lesson.
-- Variable names may use non-English characters.
+- Variable names may use non-English letters; use only letters, numbers, and underscores.
 - Create a variable only when the learner's answer must be used outside the current lesson: referenced by `course-prompt.md`, reused in another lesson, or used for cross-lesson personalization, depth control, examples, summaries, or deliverable variation.
 - Use no-variable `?[...]` for lesson-local interactions, including current-lesson branching, examples, feedback, summaries, and free-text inputs.
 - Treat every variable reference as a substituted value. If the learner has not set it, the value is `UNKNOWN`; if fallback behavior is needed, describe what to do when the substituted value is `UNKNOWN`.
