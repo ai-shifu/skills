@@ -16,9 +16,9 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 ## User-Visible Language
 
-- User-visible prose follows the resolved target language from `data-contracts.md#language-resolution`.
+- User-visible prose follows the resolved target language from `data-contracts.md#language-resolution`, except where bilingual output or original-plus-translation quote policy intentionally requires another language.
 - Phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations are localized to the user's language.
-- Human-facing labels for canonical concepts are localized: for Chinese, use “授课提示词” instead of “Teaching Prompt” and “课程提示词” instead of “Course Prompt”.
+- Human-facing labels for canonical concepts are localized with the canonical terms for the resolved target language.
 - Machine-facing identifiers and verbatim source material remain unchanged: JSON keys, file names, CLI flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and required verbatim source quotes.
 
 ## Lesson Loop
