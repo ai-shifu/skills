@@ -71,23 +71,6 @@ skill 以 `SKILL.md` 作为行为定义。
 python3 scripts/validate_skill_quality.py
 ```
 
-## 语言策略（面向使用者）
-
-这些 skills 支持多语言课程生成，语言决策规则如下：
-
-- 你明确指定输出语言时，优先使用该语言。
-- 你提供 `target_language` 时，在没有更强显式指令的情况下按其输出。
-- 若未提供上述信息，系统会参考会话偏好和提问语言信号。
-- 若仍无法判定，回退到 `en-US`。
-- 需要双语输出时，设置 `bilingual_output: true`。
-
-建议使用以下控制项提升可预期性：
-
-- `target_language`（例如 `zh-CN`、`fr-FR`、`ja-JP`）
-- `bilingual_output`（`true|false`）
-- `term_policy`（`preserve|translate|mixed`）
-- `quote_policy`（`translate_only|original_plus_translation`）
-
 ## AI 师傅
 
-本技能套件是 AI 师傅课程创作工作流的一部分：<https://ai-shifu.com>
+本技能套件是 AI 师傅课程创作工作流的一部分：<https://ai-shifu.cn>

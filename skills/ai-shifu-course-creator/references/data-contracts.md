@@ -7,6 +7,7 @@ Authoritative source for all schemas crossing the skill boundary: what comes in 
 ### Required
 
 Provide one of:
+
 - A single long transcript or course document.
 - A set of topic-aligned documents with intended order.
 
@@ -14,14 +15,11 @@ Provide one of:
 
 - Learner persona.
 - Lesson granularity preference (`short`, `medium`, `long`).
-- Terminology and tone constraints.
+- Tone constraints.
 - Non-negotiable source fragments.
 - `course_profile` object.
 - `delivery_constraints` object.
 - `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`).
-- `bilingual_output` (`true|false`).
-- `term_policy` (`preserve|translate|mixed`).
-- `quote_policy` (`translate_only|original_plus_translation`).
 
 ### Recommended Object Shapes
 
@@ -45,7 +43,7 @@ Provide one of:
   "platform_limits": ["no_iframe", "markdown_only"],
   "must_cover_topics": ["topic-a", "topic-b"],
   "avoid_topics": ["topic-x"],
-  "non_negotiable_fragments": ["exact quote or code block id"]
+  "non_negotiable_fragments": ["required source fragment or code block id"]
 }
 ```
 
@@ -85,12 +83,13 @@ Provide one of:
 1. `lesson_teaching_prompts` — one Teaching Prompt per lesson (written in MarkdownFlow). Instructional/directive language only (model-guiding), not a final learner manuscript. See [Lesson Schema](#lesson-schema).
 2. `course_index` — `lesson_id`, `lesson_title`, `core_question`, `source_span_map`.
 3. `global_variable_table` — see [Variable Table](#variable-table).
-4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required canonical sections: Role, Task, Teaching Techniques, Writing Style, Format, and Slides, rendered as Markdown headings in the resolved output language. Conditional canonical section: Translation Rules, also rendered in the resolved output language when required.
+4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required canonical sections: Role, Task, Teaching Techniques, Writing Style, Format, and Slides, rendered as Markdown headings in the resolved output language.
 5. `course_description` — SEO/listing description written to `course-description.md`; describe the course topic, target learners, and learning outcomes in learner-facing language. Do not include author-side workflow notes.
 
 ### `course_index` Schema (array, required)
 
 Each item:
+
 - `lesson_id` (string, required)
 - `lesson_title` (string, required)
 - `core_question` (string, required)
@@ -100,7 +99,6 @@ Each item:
 
 - Markdown string starting with the rendered Role section heading in the resolved output language.
 - Six required Markdown section blocks in the canonical order from [course-prompt.md](course-prompt.md): Role, Task, Teaching Techniques, Writing Style, Format, and Slides. Render section headings and body text in the resolved output language.
-- Conditional Translation Rules section per [course-prompt.md](course-prompt.md) `## Conditional Sections`, rendered in the resolved output language when required.
 - Single source of truth at the course level; do not embed per-lesson interaction logic.
 
 ### `course_description` (string, required)
@@ -145,8 +143,8 @@ Each item:
 
 ### Artifacts
 
-6. `deployed_course_url` — Platform URL of the deployed course.
-7. `shifu_bid` — Course BID on the AI-Shifu platform.
+1. `deployed_course_url` — Platform URL of the deployed course.
+2. `shifu_bid` — Course BID on the AI-Shifu platform.
 
 #### `deployment_result` (object, optional)
 
@@ -223,15 +221,12 @@ Resolve target language with this strict priority:
 ### Control Fields
 
 - `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`)
-- `bilingual_output` (`true|false`)
-- `term_policy` (`preserve|translate|mixed`)
-- `quote_policy` (`translate_only|original_plus_translation`)
 
 ### Rules
 
 - Do not restrict supported languages to a fixed list.
 - If output language is explicit, source-language distribution must not override it.
-- Learner-facing script text must follow resolved target language unless `bilingual_output` is true. When `quote_policy` is `original_plus_translation`, only the quote or source-material passage itself may keep the original language alongside the resolved-language translation.
+- Learner-facing script text must follow resolved target language.
 - Newly authored MarkdownFlow variable names must follow the resolved output language within the valid variable-character set. Preserve existing or source-provided variable names when renaming would break an existing variable contract.
 - User-visible agent output must follow the resolved target language: chat replies, phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations.
 - Human-facing labels for skill concepts must follow the canonical terms in [SKILL.md#canonical-term-translation-table](../SKILL.md#canonical-term-translation-table) when the resolved target language is listed there; do not keep English labels merely because the skill docs and examples are written in English.
