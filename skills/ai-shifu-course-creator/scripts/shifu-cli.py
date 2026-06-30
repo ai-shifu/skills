@@ -2716,7 +2716,7 @@ def build_parser():
                         "(1201 debug / 1202 preview / 1203 production)")
     p.add_argument("--usage-type", dest="usage_type",
                    help="Comma-separated usage_type codes, e.g. 1101,1102 "
-                        "(1101 slide-and-text / 1102 audio)")
+                        "(1101 LLM / 1102 TTS)")
     p.add_argument("--limit", type=int, default=None,
                    help="Row count cap, 1..1000 (default 100 server-side)")
     p.add_argument("--offset", type=int, default=None,

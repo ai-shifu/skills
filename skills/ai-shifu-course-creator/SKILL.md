@@ -65,9 +65,9 @@ Use this table for human-facing skill concept labels in user-visible prose, repo
 | `Lesson` | Lesson | 节 / 课节 | Leçon | Course lesson unit in human-facing prose. |
 | `Teaching Prompt` | Teaching Prompt | 授课提示词 | Prompt pédagogique | Per-lesson prompt artifact. Use plural naturally when needed. |
 | `Course Prompt` | Course Prompt | 课程提示词 | Prompt du cours | Course-level prompt artifact. |
-| `Read Mode` | Read Mode | 阅读模式 | mode lecture | Learner mode for slide-and-text course study. |
-| `Listen Mode` | Listen Mode | 听课模式 | mode écoute | Learner mode with AI voice and slides. |
-| `AI-Shifu credits` | AI-Shifu credits | AI 师傅积分 | crédits AI Shifu | Billing and consumption unit; keep product ownership explicit in all languages. |
+| `Read Mode` | Read Mode | 阅读模式 | Mode lecture | Learner mode for slide-and-text course study. |
+| `Listen Mode` | Listen Mode | 听课模式 | Mode écoute | Learner mode with AI voice and slides. |
+| `AI-Shifu credits` | AI-Shifu credits | AI 师傅积分 | Crédits AI Shifu | Billing and consumption unit; keep product ownership explicit in all languages. |
 
 ## Data & Statistics Routing (read this before answering any "numbers" question)
 
