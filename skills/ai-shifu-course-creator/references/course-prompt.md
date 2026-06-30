@@ -9,7 +9,7 @@ The course prompt defines the AI engine's **course-level persona and operating r
 **Both Teaching Prompt and Course Prompt are written in MarkdownFlow**, but they serve different roles:
 
 - **Teaching Prompt** (per-lesson) carries **single-lesson teaching instructions**: what to explain, what variable to collect, what to branch on. There is one per lesson. Design rules: see [pedagogy.md](pedagogy.md).
-- **Course Prompt** (course-level) carries **cross-lesson constants**: identity, voice, format, and slide policy. There is one per course. Design rules: this file.
+- **Course Prompt** (course-level) carries **cross-lesson constants**: identity, voice, format, terminology, and slide policy. There is one per course. Design rules: this file.
 
 Do not duplicate per-lesson interaction logic, variable collection, or branching here. If a rule only applies to one lesson, it belongs in that lesson's Teaching Prompt, not in the Course Prompt.
 
