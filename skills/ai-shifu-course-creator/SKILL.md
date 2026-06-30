@@ -194,8 +194,8 @@ flow is complete.
    learner context for adaptive teaching; ask before teaching to trigger
    thinking or break old assumptions; self-check learning effect at the end of
    each lesson. Choosing none means no interactions.
-3. If the course is not slide-only, should listening mode be enabled so AI voice
-   teaches the course? When asking, also state that listening mode consumes more
+3. If the course is not slide-only, should Listen Mode be enabled so AI voice
+   teaches the course? When asking, also state that Listen Mode consumes more
    AI-Shifu credits. If the user does not answer, default to disabled.
 4. How many chapters and lessons should the course have?
 

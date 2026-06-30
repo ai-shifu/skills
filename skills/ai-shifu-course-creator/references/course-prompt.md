@@ -178,7 +178,7 @@ Must specify:
 - When a visual is requested, create a presentation-style slide page rather than a standalone illustration.
 - Selectable options must never appear only inside the slide. Choice options live in the MarkdownFlow `?[%{{var}} A | B | C]` line outside the slide; in-slide option labels are not interactive on the platform.
 - In-slide text is concise and prompt-like.
-- After creating a slide for a self-study or listening-mode course, explain the slide in text.
+- After creating a slide for a self-study or Listen Mode course, explain the slide in text.
 - Element layout rules (fully visible, no overlap, simple hierarchy).
 
 ### Rule 11 — Slide-Text Relationship
@@ -187,7 +187,7 @@ Maps to: Slides section (required, last bullets).
 
 Must state:
 
-- Slide gives structural prompt; text carries the full explanation in self-study or listening-mode courses.
+- Slide gives structural prompt; text carries the full explanation in self-study or Listen Mode courses.
 - Text must assume the user has not seen the slide.
 - Text must add background, causality, examples, usage — not mechanically repeat the slide.
 - For pure classroom-slide courses, keep the slide self-contained and avoid extra AI narration unless the Teaching Prompt explicitly asks for presenter notes.
