@@ -30,7 +30,7 @@ The Slides section is required even for courses that do not use slides. Without 
 
 ## Authoring Rules
 
-The 11 conceptual rules below map to the canonical sections in the template. Each rule lists the must-include points and a Bad/Good contrast.
+The conceptual rules below map to the canonical sections in the template. Each rule lists the must-include points and a Bad/Good contrast.
 
 ### Rule 1 — Define the Teacher Role
 
