@@ -165,7 +165,7 @@ content never resets model/price/TTS/Ask. The course **name** lives in
 `README.md`, the SEO **description** in `course-description.md`, and the
 **system prompt** in `course-prompt.md`.
 
-The exception is an explicit listening-mode update: `set-tts --course-dir`
+The exception is an explicit Listen Mode update: `set-tts --course-dir`
 refreshes this snapshot after changing `tts_enabled`. It still does not make
 `build` or `import` push course-level attributes.
 
