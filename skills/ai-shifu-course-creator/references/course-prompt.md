@@ -1,19 +1,19 @@
 # Course Prompt
 
-Authoritative source for the course-level prompt artifact: what it is, the 12 authoring rules with Bad/Good contrasts, the fillable template, the substitution map, and a filled example.
+Authoritative source for the course-level prompt artifact: what it is, the authoring rules, the fillable template, the substitution map.
 
 ## Purpose
 
-The course prompt defines the AI engine's **course-level persona and operating rules** — the role it plays, how it teaches, how it writes, how it formats output, and how it creates slides and translates. It is loaded once per course and applied to every lesson.
+The course prompt defines the AI engine's **course-level persona and operating rules** — the role it plays, how it teaches, how it writes, how it formats output, and how it creates slides. It is loaded once per course and applied to every lesson.
 
 **Both Teaching Prompt and Course Prompt are written in MarkdownFlow**, but they serve different roles:
 
 - **Teaching Prompt** (per-lesson) carries **single-lesson teaching instructions**: what to explain, what variable to collect, what to branch on. There is one per lesson. Design rules: see [pedagogy.md](pedagogy.md).
-- **Course Prompt** (course-level) carries **cross-lesson constants**: identity, voice, format, terminology, slide policy. There is one per course. Design rules: this file.
+- **Course Prompt** (course-level) carries **cross-lesson constants**: identity, voice, format, and slide policy. There is one per course. Design rules: this file.
 
 Do not duplicate per-lesson interaction logic, variable collection, or branching here. If a rule only applies to one lesson, it belongs in that lesson's Teaching Prompt, not in the Course Prompt.
 
-The Course Prompt may reference a named variable only when that variable is intentionally used for course-wide personalization. Like Teaching Prompts, every `{{var}}` marker in `course-prompt.md` is replaced with the variable's system value before generation: the learner's stored value when set, or `UNKNOWN` when unset or empty. Write course-level personalization rules against that substituted value, not against whether the variable is "available".
+The Course Prompt may reference a named variable only when that variable is intentionally used for course-wide personalization. Like Teaching Prompts, every `{{var}}` marker in `course-prompt.md` is replaced with the variable's value before generation. The value could be the learner's stored value when set, or `UNKNOWN` when unset or empty. Write course-level personalization rules against that substituted value, not against whether the variable is "available".
 
 ## Required Sections
 
@@ -28,20 +28,9 @@ The fillable template has six required canonical sections. Every course prompt m
 
 The Slides section is required even for courses that do not use slides. Without it, the AI has zero guardrails on its visual output and may spontaneously render uncontrolled images instead of useful presentation pages. Always include the full block; the rules cost nothing when the AI never creates slides and become essential the moment it does.
 
-## Conditional Sections
-
-One additional section is added only when the course needs it:
-
-- Translation Rules — required when **any** of the following is true:
-  - Course is multilingual (`bilingual_output: true`, or target language differs from source-material dominant language).
-  - Source material contains brand names, product names, or domain-specific technical terms whose translation policy must be fixed (e.g., AI, Token, vibe coding, ChatGPT, Gemini, DeepSeek).
-  - `term_policy` is `preserve` or `mixed`.
-
-When the condition is not met, omit the section entirely. Do not insert an empty placeholder section.
-
 ## Authoring Rules
 
-The 12 conceptual rules below map to the canonical sections in the template. Each rule lists the must-include points and a Bad/Good contrast.
+The conceptual rules below map to the canonical sections in the template. Each rule lists the must-include points and a Bad/Good contrast.
 
 ### Rule 1 — Define the Teacher Role
 
@@ -52,10 +41,6 @@ Must include:
 - Name (real or course-specific persona name).
 - Professional identity (domain expertise).
 - Teaching identity (the angle from which they teach this topic).
-
-Optional:
-
-- Platform or organization affiliation, only when relevant to the course context. Do not hard-code any specific platform name by default; the same course prompt may run on different deployments.
 
 Bad: `You are a helpful assistant.`
 Good: `You are Hebi. You specialize in observability and are a professional teacher in the field of production debugging.`
@@ -68,8 +53,11 @@ Must clarify:
 
 - Course name.
 - Course topic and goal.
-- Target learner.
 - Learning boundary (what is in scope, what is not).
+
+Optional:
+
+- Target learner.
 
 Bad: `The current course will teach you something useful.`
 Good: `The current course is *Metric Drift Diagnosis*. Your goal is to help the user master a four-step loop for diagnosing metric drift in production. The course is designed for beginner SREs and focuses on helping them solve metric drift problems within ten minutes of detection.`
@@ -196,18 +184,6 @@ Rules 10 and 11 share the same Slides section in the actual template; treat them
 
 For *runtime image syntax* — how to actually embed an author-provided image URL into MarkdownFlow (fixed-display via `===![alt](url)===` vs HTML-view instruction-style directives) — see `markdownflow.md#images`. Rules 10/11 govern *generated slides* (when the AI engine produces visual pages at runtime); the syntax in `markdownflow.md#images` governs *pre-uploaded image assets* (when the author supplies a file or URL via `shifu-cli.py upload-image`).
 
-### Rule 12 — Translation and Terminology Rules
-
-Maps to: Translation Rules section (conditional).
-
-Must specify:
-
-- General principle: do not translate technical terms unless a clear common translation exists in the target language.
-- Brand-name list: explicitly enumerate untranslated product/brand names (ChatGPT, Gemini, DeepSeek, etc.).
-- Course-name policy: state how the course's own brand or product name is rendered in the target language (provide an explicit mapping when an authoritative translation exists).
-
-When a course is single-language and contains no brand-name decisions, this section is omitted entirely (see [Conditional Sections](#conditional-sections)).
-
 ## Inputs to Pull From
 
 When generating the course prompt, consume already-collected artifacts instead of asking the user again:
@@ -215,8 +191,7 @@ When generating the course prompt, consume already-collected artifacts instead o
 - `course_profile.audience_level` (`beginner|intermediate|advanced`) → fills the Task section target-learner bullet. See [data-contracts.md#input-contract](data-contracts.md#input-contract).
 - `course_profile.prerequisite_level` → informs the Task section boundary bullet.
 - `delivery_constraints.must_cover_topics` / `avoid_topics` → informs the Task section boundary bullet.
-- Resolved target language (per [data-contracts.md#language-resolution](data-contracts.md#language-resolution)) → drives Writing Style section language and any Translation Rules decisions.
-- `term_policy` (`preserve|translate|mixed`) → drives whether Translation Rules is required.
+- Resolved target language (per [data-contracts.md#language-resolution](data-contracts.md#language-resolution)) → drives generated section headings and body text.
 - Segmentation `visual_cue` / `visual_text_pair_cue` presence → informs how detailed the Slides guidance should be (the Slides section itself is always required).
 - Course title from `README.md` → fills the Task section course-name bullet.
 
@@ -224,7 +199,7 @@ The [Substitution Map](#substitution-map) below provides a one-to-one mapping be
 
 ## Fillable Template
 
-Use the block below as the template for `course-prompt.md` (the file in the course directory), render it including section headings in the resolved output language, and replace every `XXX` with course-specific content. Keep the section order. Drop the Translation Rules section if the trigger condition is not met.
+Use the block below as the template for `course-prompt.md` (the file in the course directory), render it including section headings in the resolved output language, and replace every `XXX` with course-specific content. Keep the section order.
 
 ```markdown
 # Role
@@ -281,15 +256,11 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 - All elements must be fully visible and must not overlap.
 - Do not generate too many fragmented elements. Keep the slide hierarchy simple.
 
-# Translation Rules
-- Do not translate technical terms such as AI, Token, and vibe coding unless there is a clear commonly accepted translation in the target language.
-- Render any course-specific brand or product name exactly as defined in the course glossary; do not invent a translation.
-- Product names such as ChatGPT, Gemini, and DeepSeek should not be translated.
 ```
 
 ## Filled Example
 
-A minimal example based on the "Metric Drift Diagnosis" course used in `examples/end-to-end-deploy.md`. The course is single-language, so the Translation Rules section is omitted.
+A minimal example based on the "Metric Drift Diagnosis" course used in `examples/end-to-end-deploy.md`.
 
 ```markdown
 # Role
@@ -372,6 +343,6 @@ You specialize in production observability and are a professional teacher in the
 
 - [data-contracts.md#output-contract](data-contracts.md#output-contract) — `course_prompt` as an Optimization-stage artifact.
 - [data-contracts.md#language-resolution](data-contracts.md#language-resolution) — target-language resolution priority.
-- [data-contracts.md#input-contract](data-contracts.md#input-contract) — `course_profile`, `delivery_constraints`, `term_policy` shapes.
+- [data-contracts.md#input-contract](data-contracts.md#input-contract) — `course_profile` and `delivery_constraints` shapes.
 - [cli/course-directory-spec.md](cli/course-directory-spec.md) — where `course-prompt.md` lives in the course directory and how `build` consumes it (already in `cli/` subdir).
 - SKILL.md `## Optimization` (Course Prompt subsection) and `## Deployment` (deployment workflow step 1).

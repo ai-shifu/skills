@@ -41,18 +41,6 @@ inputs:
     type: "text"
     required: false
     description: "Requested output language tag (BCP-47 recommended)."
-  - name: "bilingual_output"
-    type: "boolean"
-    required: false
-    description: "Whether to output bilingual learner-facing content."
-  - name: "term_policy"
-    type: "text"
-    required: false
-    description: "Terminology policy: preserve|translate|mixed."
-  - name: "quote_policy"
-    type: "text"
-    required: false
-    description: "Quote policy: translate_only|original_plus_translation."
 outputs:
   - name: "output_name"
     type: "text|markdown|json|bundle"
