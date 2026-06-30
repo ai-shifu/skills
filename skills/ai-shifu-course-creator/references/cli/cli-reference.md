@@ -191,7 +191,7 @@ resets the lesson's learning permission.
 lesson's other fields untouched. With `--course-dir` it also writes the value
 into the `structure.json` reference.
 
-`set-tts` enables or disables course listening mode without re-importing; it
+`set-tts` enables or disables course Listen Mode without re-importing; it
 sends only `tts_enabled` and leaves provider/model/voice/speed/pitch/emotion
 unchanged. With `--course-dir` it refreshes `course-config.json` and records the
 new course revision in `.shifu-sync.json`.
@@ -253,7 +253,7 @@ touch attributes.
 `pull` still writes the attributes into `structure.json` (`access`/`hidden`) and
 `course-config.json` as a **read-only reference** for the agent. To change an
 attribute, do it explicitly: `set-access` for a lesson's permission, `set-tts`
-for course listening mode, or the platform editor for other course-level
+for course Listen Mode, or the platform editor for other course-level
 settings.
 
 > **Iterating an existing course:** prefer the non-destructive granular commands

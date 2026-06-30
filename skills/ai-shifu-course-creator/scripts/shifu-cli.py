@@ -1399,9 +1399,9 @@ def cmd_update_meta(args):
             })
 
 
-# ── Set TTS ───────────────────────────────────────────────────────────────────
+# ── Set Listen Mode ────────────────────────────────────────────────────────────
 def cmd_set_tts(args):
-    """Enable or disable course listening mode without changing other attributes."""
+    """Enable or disable course Listen Mode without changing other attributes."""
     base_url, token = resolve_auth(args)
     shifu_bid = args.shifu_bid
     enabled = args.enabled == "true"
@@ -1412,11 +1412,11 @@ def cmd_set_tts(args):
     _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
                                 intended)
 
-    # Send only the TTS switch. Provider/model/voice/speed/pitch/emotion remain
+    # Send only the Listen Mode switch. Provider/model/voice/speed/pitch/emotion remain
     # whatever the platform currently stores.
     api(base_url, token, "post", f"/shifus/{shifu_bid}/detail",
         json={"tts_enabled": enabled})
-    print(f"Set course {shifu_bid} TTS -> "
+    print(f"Set course {shifu_bid} Listen Mode -> "
           f"{'enabled' if enabled else 'disabled'}")
 
     if manifest and manifest.get("shifu_bid") == shifu_bid:
@@ -2611,10 +2611,10 @@ def build_parser():
 
     # ── set-tts ──
     p = sub.add_parser("set-tts", parents=[parent_parser],
-                       help="Enable or disable course listening mode (TTS)")
+                       help="Enable or disable course Listen Mode")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("--enabled", required=True, choices=["true", "false"],
-                   help="true=enable listening mode, false=disable it")
+                   help="true=enable Listen Mode, false=disable it")
     p.add_argument("--course-dir", default=None,
                    help=f"Also refresh local {COURSE_CONFIG_NAME} and sync manifest")
 
