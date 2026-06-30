@@ -8,7 +8,7 @@ The 10 tables you can query, the fields each carries, the code/enum tables to tr
 |---|---|---|
 | `learn_progress_records` | Learner count / completion rate / stuck lesson / recent activity / **lessons completed per learner** | `user_bid`, `outline_item_bid`, `status` (601-608, see code table), `created_at` |
 | `learn_generated_blocks` | Content interaction count / likes / type popularity / **interactions per learner** / **follow-up Q&A replay** | `user_bid`, `progress_record_bid`, `outline_item_bid`, `type` (see code table), `role` (1 teacher/AI · 2 learner · 3 UI, **integer**), `status` (1 active / 0 history — **API auto-filters to 1**), `position` (block ordering within a `progress_record_bid`), `liked` (-1/0/1), `generated_content` (raw text, restricted — see `dsl.md`) |
-| `learn_lesson_feedbacks` | Lesson ratings / read-vs-listen mode preference / **avg rating per learner** | `user_bid`, `progress_record_bid`, `mode` (read/listen), `score` (1-5) |
+| `learn_lesson_feedbacks` | Lesson ratings / Read Mode vs Listen Mode preference / **avg rating per learner** | `user_bid`, `progress_record_bid`, `mode` (read/listen), `score` (1-5) |
 | `order_orders` | Enrolments / revenue / channel distribution / refund rate / **total spend per learner** | `user_bid`, `status` (501-505, see code table; **paid** = `502`), `payment_channel` (pingxx/stripe/alipay/wechatpay/…), `paid_price` |
 | `var_variable_values` | Learner profile distribution (goals / level / preferences) | `user_bid`, `variable_bid`, `value` (aggregate only — **do not select raw value**; see `privacy-and-presentation.md`) |
 | `shifu_user_archives` | Active learner count / archive rate | `user_bid`, `archived` (0 active / 1 archived) |
@@ -140,7 +140,7 @@ Completion rate counts `status = 603` only. "Participating learners" = `status >
 | `1102` | TTS speech synthesis |
 
 > **Common misclassification**: `usage_type = 1102` (TTS) has nothing to do with learner follow-up questions.
-> Follow-ups trigger LLM calls (`usage_type = 1101`); TTS is for AI-narrated audio (triggered when learners switch to listen mode). They are independent paths.
+> Follow-ups trigger LLM calls (`usage_type = 1101`); TTS records Listen Mode audio generation. They are independent paths.
 > To measure follow-up question volume, query `learn_generated_blocks(type = 321)`.
 
 ## `bill_daily_usage_metrics.usage_scene`

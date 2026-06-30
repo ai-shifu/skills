@@ -59,12 +59,15 @@ Field-level schemas with example JSON in `references/data-contracts.md#recommend
 
 Use this table for human-facing skill concept labels in user-visible prose, reports, artifact labels, and handoff instructions. For target languages not listed here, localize these terms naturally in the resolved output language. Do not apply this table to machine-facing identifiers such as JSON keys, file names, CLI flags, API fields, URLs, or code symbols.
 
-| Canonical term | en-US | zh-CN | Usage |
-|---|---|---|---|
-| `AI-Shifu` | AI-Shifu | AI 师傅 | Product name in human-facing prose. |
-| `Lesson` | Lesson | 节 / 课节 | Course lesson unit in human-facing prose. |
-| `Teaching Prompt` | Teaching Prompt | 授课提示词 | Per-lesson prompt artifact. |
-| `Course Prompt` | Course Prompt | 课程提示词 | Course-level prompt artifact. |
+| Canonical term | en-US | zh-CN | fr-FR | Usage |
+|---|---|---|---|---|
+| `AI-Shifu` | AI-Shifu | AI 师傅 | AI Shifu | Product name in human-facing prose. |
+| `Lesson` | Lesson | 节 / 课节 | Leçon | Course lesson unit in human-facing prose. |
+| `Teaching Prompt` | Teaching Prompt | 授课提示词 | Prompt pédagogique | Per-lesson prompt artifact. Use plural naturally when needed. |
+| `Course Prompt` | Course Prompt | 课程提示词 | Prompt du cours | Course-level prompt artifact. |
+| `Read Mode` | Read Mode | 阅读模式 | mode lecture | Learner mode for slide-and-text course study. |
+| `Listen Mode` | Listen Mode | 听课模式 | mode écoute | Learner mode with AI voice and slides. |
+| `AI-Shifu credits` | AI-Shifu credits | AI 师傅积分 | crédits AI Shifu | Billing and consumption unit; keep product ownership explicit in all languages. |
 
 ## Data & Statistics Routing (read this before answering any "numbers" question)
 
@@ -167,12 +170,12 @@ items; do not repeat questions whose answers are already clear.
 
 When any item is missing, ask only the corresponding questions for the missing
 items in the user's language. Resolve the usage scenario first; ask the
-listening-mode question only after the usage scenario or inferred format shows
+Listen Mode question only after the usage scenario or inferred format shows
 the course is not slide-only.
 
 Do not bypass this intake by inventing "conservative defaults" from a sparse
 topic or short brief. In particular, do not assume personalized AI self-study,
-thinking/self-check interactions, disabled listening mode, or a fixed chapter /
+thinking/self-check interactions, disabled Listen Mode, or a fixed chapter /
 lesson count before asking the relevant missing questions. Defaults below apply
 only after the user explicitly skips a question or asks you to continue without
 answering it.
@@ -223,11 +226,11 @@ Use the answers as course-design constraints:
   do not proactively design interaction blocks; during Orchestration, bypass
   interaction-specific pedagogical gates that require an interaction step or a
   deepening interaction.
-- If the resolved format is pure slides, disable listening mode and do not ask
-  the listening-mode question. Otherwise, the listening-mode question must
-  mention the extra AI-Shifu credit consumption, and listening mode is disabled
-  when unanswered; when explicitly enabled or disabled, carry that decision into
-  the deployment handoff.
+- If the resolved format is pure slides, disable Listen Mode and do not ask
+  the Listen Mode question. Otherwise, the Listen Mode question must mention the
+  extra AI-Shifu credit consumption, and Listen Mode is disabled when unanswered;
+  when explicitly enabled or disabled, carry that decision into the deployment
+  handoff.
 - Chapter and lesson counts constrain the outline. If the user explicitly skips
   this question, infer structure from source volume and existing
   lesson-granularity rules instead of inventing a fixed default.
@@ -248,7 +251,7 @@ Raw material
    │
    ▼
 Course Design Intake                     ← ask only for missing design constraints
-   │   (usage scenario, interaction purpose, listening mode, chapter/lesson count)
+   │   (usage scenario, interaction purpose, Listen Mode, chapter/lesson count)
    ▼
 Orchestration                            ← end-to-end driver
    ├── calls Segmentation                 (cleanup + semantic segmentation)
@@ -535,7 +538,7 @@ never resets attributes. `pull` writes the current attributes into
 reference** for you. Change attributes only when the user explicitly asks:
 `set-access <shifu_bid> <outline_bid> --access guest|trial|normal [--course-dir <dir>]`
 for a lesson's permission; `set-tts <shifu_bid> --enabled true|false [--course-dir <dir>]`
-for course listening mode. Other course-level settings are changed in the
+for course Listen Mode. Other course-level settings are changed in the
 platform editor.
 
 **Editing an existing course → use granular non-destructive commands**

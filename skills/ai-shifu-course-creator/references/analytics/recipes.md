@@ -239,13 +239,13 @@ python3 scripts/shifu-cli.py credit-detail <bid> --scene 1203
 
 `--scene` accepts a comma-separated subset of `{1201, 1202, 1203}` (debug / preview / production). Combine with `--start` / `--end` to scope a window.
 
-### Recipe 11 — LLM-only vs TTS-only
+### Recipe 11 — Slide-and-text only vs audio only
 
 ```bash
-# LLM only
+# Slide-and-text only
 python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1101
 
-# TTS only
+# Audio only
 python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1102
 ```
 
