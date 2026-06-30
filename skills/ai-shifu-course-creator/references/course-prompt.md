@@ -53,11 +53,8 @@ Must clarify:
 
 - Course name.
 - Course topic and goal.
-- Learning boundary (what is in scope, what is not).
-
-Optional:
-
 - Target learner.
+- Learning boundary (what is in scope, what is not).
 
 Bad: `The current course will teach you something useful.`
 Good: `The current course is *Metric Drift Diagnosis*. Your goal is to help the user master a four-step loop for diagnosing metric drift in production. The course is designed for beginner SREs and focuses on helping them solve metric drift problems within ten minutes of detection.`
