@@ -1,6 +1,6 @@
 # Course Prompt
 
-Authoritative source for the course-level prompt artifact: what it is, the authoring rules, the fillable template, the substitution map.
+Authoritative source for the course-level prompt artifact: what it is, the authoring rules with Bad/Good contrasts, the fillable template, the substitution map, and a filled example.
 
 ## Purpose
 
@@ -30,7 +30,7 @@ The Slides section is required even for courses that do not use slides. Without 
 
 ## Authoring Rules
 
-The conceptual rules below map to the canonical sections in the template. Each rule lists the must-include points and a Bad/Good contrast.
+The 11 conceptual rules below map to the canonical sections in the template. Each rule lists the must-include points and a Bad/Good contrast.
 
 ### Rule 1 — Define the Teacher Role
 
