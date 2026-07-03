@@ -93,7 +93,7 @@ Keep author-side scaffolding out of Teaching Prompt and Course Prompt outputs:
 - Avoid author-side meta labels such as “Knowledge Block 1/2/3”, “Lesson Objective”, or “Deliverable”. Keep those as implicit structure, not visible narration.
 - Authoring rules, pipeline notes, and process instructions stay in skill docs and references, not in lesson outputs.
 - Internal design notes may appear only in HTML comments when needed.
-- Treat course and lesson structure as metadata, not Teaching Prompt prose: chapter titles, lesson titles, numbering, and ordering belong in `structure.json` / `course_index`, while `lesson-*.md` starts with teaching action. Do not copy source headings into lesson bodies merely because the source used Markdown headings.
+- Treat course and lesson structure as metadata, not Teaching Prompt prose: chapter titles, lesson titles, numbering, and ordering belong in `structure.json` / `course_index`, while `lesson-*.md` starts with a teaching-start function. Do not copy source headings into lesson bodies merely because the source used Markdown headings.
 
 ## Teaching Prompt and Course Prompt Authoring Hard Rules (Must Follow)
 
@@ -395,12 +395,12 @@ When generating interactions, explicitly choose the interaction type before writ
 
 Required anchors per lesson:
 
-0. Opening paragraph with a teaching-start function: establish a scenario, ask a guiding question, activate prior experience, state the task, or start a practice. It must not be a copied chapter / lesson title or directory label.
-1. Opening objective plus slide-style visual cover.
-2. Evidence-chain explanation.
-3. At least one effective interaction with visible downstream effect.
-4. At least one reusable deliverable.
-5. Lesson close with summary or decision checkpoint.
+1. Opening paragraph with a teaching-start function: establish a scenario, ask a guiding question, activate prior experience, state the task, or start a practice. It must not be a copied chapter / lesson title or directory label.
+2. Opening objective plus slide-style visual cover.
+3. Evidence-chain explanation.
+4. At least one effective interaction with visible downstream effect.
+5. At least one reusable deliverable.
+6. Lesson close with summary or decision checkpoint.
 
 Optional modules: viewpoint calibration, misconception correction, dual deliverables (understanding + action), cross-lesson bridge sentence, additional visual-text reinforcement blocks.
 
@@ -429,7 +429,7 @@ Per-lesson schema in `references/data-contracts.md#lesson-schema`.
 ### Validation
 
 - Each `teaching_prompt` is valid runnable MarkdownFlow.
-- The first non-empty line of each Teaching Prompt is teaching action, not a duplicated `structure.json` chapter / lesson title or a copied source heading such as `# 第2章 ...`.
+- The first non-empty line of each Teaching Prompt performs a teaching-start function, not a duplicated `structure.json` chapter / lesson title or a copied source heading such as `# 第2章 ...`.
 - Per-lesson schema populated per `references/data-contracts.md#lesson-schema`.
 - Pedagogical and syntax constraints pass per `references/pedagogy.md` and `references/markdownflow.md`.
 
