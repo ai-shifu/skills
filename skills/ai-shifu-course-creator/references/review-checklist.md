@@ -22,6 +22,13 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - Human-facing labels for canonical concepts follow [SKILL.md#canonical-term-translation-table](../SKILL.md#canonical-term-translation-table) when the resolved target language is listed there.
 - Machine-facing identifiers and verbatim source material remain unchanged: JSON keys, file names, CLI flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and required verbatim source quotes.
 
+## Structure Separation
+
+- Chapter titles, lesson titles, numbering, and hierarchy labels live in `structure.json` / `course_index`, not in Teaching Prompt body text.
+- Each lesson file's first non-empty line performs a teaching-start function: scenario, guiding question, prior-experience activation, task setup, or practice start.
+- High-confidence structure pollution is absent: the first line is not a Markdown heading copied from `structure.json`, not a `第X章` / `Chapter X` directory label, and not an exact repeat of the chapter or lesson title.
+- Medium-confidence cases are flagged for review instead of auto-deleted: headings used to teach Markdown syntax, code comments beginning with `#`, or courses with an explicit `allow_headings` / heading-supported rendering decision.
+
 ## Lesson Loop
 
 - Minimum teaching loop satisfied: setup → explanation → interaction → close.

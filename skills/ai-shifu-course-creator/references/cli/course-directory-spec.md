@@ -130,6 +130,8 @@ Note: MarkdownFlow files do not support HTML comments (`<!-- -->`). The parser d
 
 Defines multi-chapter course structure. If this file exists, `build` uses it to organize lessons into chapters; otherwise all lessons are placed under a single auto-generated chapter.
 
+Use `structure.json` as the metadata outlet for chapter and lesson titles. Do not duplicate these titles as opening Markdown headings inside the lesson files unless the course explicitly needs visible headings and rendering support has been confirmed.
+
 Schema:
 
 ```json

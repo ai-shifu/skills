@@ -93,10 +93,11 @@ Keep author-side scaffolding out of Teaching Prompt and Course Prompt outputs:
 - Avoid author-side meta labels such as “Knowledge Block 1/2/3”, “Lesson Objective”, or “Deliverable”. Keep those as implicit structure, not visible narration.
 - Authoring rules, pipeline notes, and process instructions stay in skill docs and references, not in lesson outputs.
 - Internal design notes may appear only in HTML comments when needed.
+- Treat course and lesson structure as metadata, not Teaching Prompt prose: chapter titles, lesson titles, numbering, and ordering belong in `structure.json` / `course_index`, while `lesson-*.md` starts with teaching action. Do not copy source headings into lesson bodies merely because the source used Markdown headings.
 
 ## Teaching Prompt and Course Prompt Authoring Hard Rules (Must Follow)
 
-These are the six red-line rules every Teaching Prompt and Course Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
+These are the seven red-line rules every Teaching Prompt and Course Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
 
 1. **Script style: directive, not manuscript.** Write in imperative, model-guiding language ("Ask the learner to …", "After collecting {{var}}, branch …"). Do not produce polished learner-facing prose or author/lesson-plan meta narration. See `references/pedagogy.md#script-style`.
 
@@ -110,7 +111,9 @@ These are the six red-line rules every Teaching Prompt and Course Prompt must sa
   - When the author has **not** provided any image asset (only the topic / a description): continue to use natural-language slide or visual-page instructions ("Create a slide that …") paired with text explanation. Do not inline SVG/HTML/Mermaid/PlantUML/Graphviz markup. See `references/pedagogy.md#visual-text-coordination`.
   - When the author **has** provided image assets (local files or remote URLs): you must first upload them via `shifu-cli.py upload-image` to obtain `res.ai-shifu.cn` URLs, then embed each image into the Teaching Prompt using one of the two forms defined in `references/markdownflow.md#images` (3.1 deterministic-wrapped standard markdown, or 3.2 instruction-style HTML view). See the sub-section **Working with Author-Provided Images** below for the full workflow including the path you must take when you cannot actually see the image contents.
 
-6. **Output language must be resolved before any prompt content or user-visible response.**
+6. **Structural metadata stays out of Teaching Prompt bodies.** Chapter titles, lesson titles, hierarchy labels, and ordering markers must be stored in `structure.json` / `course_index`, not repeated as Markdown headings or opening title lines inside `lesson-*.md`. The first paragraph of every Teaching Prompt must perform a teaching-start function — establish a scenario, ask a guiding question, activate prior experience, state the task, or start a practice — rather than displaying directory structure. Allow visible headings inside a lesson only when the course explicitly needs headings and the platform rendering has been confirmed to support them.
+
+7. **Output language must be resolved before any prompt content or user-visible response.**
   - Run Language Resolution per `references/data-contracts.md#language-resolution` before producing Teaching Prompt or Course Prompt content, reports, phase summaries, status notes, artifact headings, or handoff instructions. The user's invocation language counts as `prompt_language_detection` (priority 4) and must be used when no higher-priority directive exists.
   - Examples and templates in this skill and in `references/` are written in English for canonical illustration only — do NOT let example or template language override the resolved output language.
   - Before finalizing or deploying a generated course directory, audit all build-consumed user-visible artifacts and effective build metadata — including the resolved course title (`--title`, `README.md` first heading, or directory-name fallback), resolved course description (`--description` or `course-description.md`), resolved chapter titles (`structure.json`, `--chapter-name`, or course-title fallback), learner-facing lesson title fields in `structure.json`, `course-prompt.md`, and every lesson file referenced by `structure.json` (or every auto-discovered `lessons/lesson-*.md` file when `structure.json` is absent) — so template headings or directive phrases from a different language do not remain after target-language rendering.
@@ -392,6 +395,7 @@ When generating interactions, explicitly choose the interaction type before writ
 
 Required anchors per lesson:
 
+0. Opening paragraph with a teaching-start function: establish a scenario, ask a guiding question, activate prior experience, state the task, or start a practice. It must not be a copied chapter / lesson title or directory label.
 1. Opening objective plus slide-style visual cover.
 2. Evidence-chain explanation.
 3. At least one effective interaction with visible downstream effect.
@@ -425,6 +429,7 @@ Per-lesson schema in `references/data-contracts.md#lesson-schema`.
 ### Validation
 
 - Each `teaching_prompt` is valid runnable MarkdownFlow.
+- The first non-empty line of each Teaching Prompt is teaching action, not a duplicated `structure.json` chapter / lesson title or a copied source heading such as `# 第2章 ...`.
 - Per-lesson schema populated per `references/data-contracts.md#lesson-schema`.
 - Pedagogical and syntax constraints pass per `references/pedagogy.md` and `references/markdownflow.md`.
 
