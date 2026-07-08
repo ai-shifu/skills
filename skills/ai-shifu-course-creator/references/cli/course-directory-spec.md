@@ -154,22 +154,18 @@ Field reference:
 - `chapters[].lessons[]` (required): Array of lesson objects
 - `chapters[].lessons[].file` (required): Filename in the `lessons/` directory (must exist)
 - `chapters[].lessons[].title` (required): Lesson display name.
-- `chapters[].lessons[].access` (read-only reference): learning permission — `guest` = 无需登录 (anyone), `trial` = 试看 (needs login), `normal` = 需付费 (paid). Written by `pull` so the agent can see each lesson's permission. **`build`/`import` do NOT push it** — the skill does not manage attributes by default; the platform keeps each lesson's permission (the backend preserves any field a write omits). To change a permission, use `set-access` (below).
-- `chapters[].lessons[].hidden` (read-only reference, bool): whether the lesson is hidden. Same as `access`: written by `pull`, not pushed by build/import.
+- `chapters[].lessons[].access` (read-only reference): learning permission — `guest` = 无需登录 (anyone), `trial` = 试看 (needs login), `normal` = 需付费 (paid). Written by `pull`; **not pushed by `build`/`import`** (attributes policy: `cli-reference.md#bulk-import`). To change it, use `set-access` (`cli-reference.md#update-commands`).
+- `chapters[].lessons[].hidden` (read-only reference, bool): whether the lesson is hidden. Same policy as `access`.
 
 ## course-config.json
 
 A **read-only snapshot** of the course-level attributes (model / price / TTS /
 Ask / keywords / …), written by `pull` so the agent can see the current settings.
-**`build`/`import` do NOT send it.** The skill does not push course attributes by
-default — the backend preserves any attribute a write leaves out, so iterating
-content never resets model/price/TTS/Ask. The course **name** lives in
-`README.md`, the SEO **description** in `course-description.md`, and the
-**system prompt** in `course-prompt.md`.
-
-The exception is an explicit Listen Mode update: `set-tts --course-dir`
-refreshes this snapshot after changing `tts_enabled`. It still does not make
-`build` or `import` push course-level attributes.
+**`build`/`import` do NOT send it** (attributes policy: `cli-reference.md#bulk-import`).
+The course **name** lives in `README.md`, the SEO **description** in
+`course-description.md`, and the **system prompt** in `course-prompt.md`.
+The one exception: `set-tts --course-dir` refreshes this snapshot after changing
+`tts_enabled`.
 
 ```json
 {
@@ -182,9 +178,6 @@ refreshes this snapshot after changing `tts_enabled`. It still does not make
 }
 ```
 
-To change a single lesson's permission, use
-`shifu-cli.py set-access <shifu_bid> <outline_bid> --access guest|trial|normal [--hidden true|false] [--course-dir <dir>]`
-(passing `--course-dir` also updates the `structure.json` reference). To change
-course Listen Mode, use
-`shifu-cli.py set-tts <shifu_bid> --enabled true|false [--course-dir <dir>]`.
-Other course-level attributes are changed in the platform editor.
+To change a lesson's permission (`set-access`) or course Listen Mode (`set-tts`),
+see `cli-reference.md#update-commands`. Other course-level attributes are changed
+in the platform editor.

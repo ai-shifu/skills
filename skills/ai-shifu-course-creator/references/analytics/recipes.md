@@ -1,19 +1,14 @@
 # Analytics Recipes
 
-Ready-to-run templates, grouped by scenario. Most examples run through `shifu-cli.py analytics-query <bid> --dsl '…'` (the DSL path); the **Credit Consumption** section is the exception — it uses `shifu-cli.py credit-detail <bid> …` because `bill_daily_usage_metrics` is empty in production until the daily aggregation cron is enabled, so the DSL recipes there are deprecated. Substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Read `dsl.md` and `tables.md` first for grammar and field meanings.
+Ready-to-run templates, grouped by scenario. Most examples run through `shifu-cli.py analytics-query <bid> --dsl '…'` (the DSL path); the **Credit Consumption** section is the exception — it uses `shifu-cli.py credit-detail <bid> …` (why the DSL path is unavailable: `tables.md`). Substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Read `dsl.md` and `tables.md` first for grammar and field meanings.
 
 For DSL recipes, the bodies omit `shifu_bid` — the CLI injects it from the positional argument. For `credit-detail`, all parameters are flags on the command line; see the Credit Consumption section below for the full reference.
 
 ## Course Metadata (resolve `shifu_bid ↔ current title`)
 
-> Whenever the user mentions a course by **title**, resolve the current `shifu_bid → title` mapping via the metadata tables **before** issuing any downstream analytics query. The CLI's `shifu-cli.py list` is a one-shot draft snapshot — it does not detect rename history, does not distinguish current vs historical titles, and (most importantly) does not show whether the draft title has diverged from the live published title. The 2026-05-15 query handbook PDF documents the exact failure this prevents: reporting a historical title as the course's "current name" because it once appeared in the rename history.
+> Whenever the user mentions a course by **title**, resolve the current `shifu_bid → title` mapping via the metadata tables **before** issuing any downstream analytics query — `shifu-cli.py list` is a draft snapshot and is not a substitute. Which row is authoritative, the draft fallback, and the historical-title phrasing rule: `tables.md` → "Course title is 'current published', not 'history'".
 >
-> **Rules (read these before any title lookup):**
->
-> 1. The current published title is the row in `shifu_published_shifus` with `deleted = 0`. Treat that title as authoritative for any answer the user sees.
-> 2. If the published table has no `deleted = 0` row for the `shifu_bid`, fall back to `shifu_draft_shifus.deleted = 0` and tell the user the course is currently a draft (not live).
-> 3. Historical titles (`deleted = 1` rows in either table) are **never** the answer to "this course is currently called …". When a user-supplied title only matches historical rows, say so explicitly: "this course used to be called X; it is currently called Y."
-> 4. When matching by user-supplied keyword, normalize whitespace client-side (`replace(title, ' ', '')`) before comparing — the DB stores titles with whatever spacing the author used.
+> When matching by user-supplied keyword, normalize whitespace client-side (`replace(title, ' ', '')`) before comparing — the DB stores titles with whatever spacing the author used.
 
 ### Recipe 0a — Find my courses by current published title
 
@@ -213,7 +208,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ## Credit Consumption (use `shifu-cli.py credit-detail`)
 
-> **The DSL `bill_daily_usage_metrics` recipes that lived here previously are deprecated.** That table is currently empty in production because the daily aggregation Celery beat job is not registered. Use the `credit-detail` CLI command below — it joins `bill_usage` × `credit_ledger_entries` server-side and returns the real credit deduction for the requested shifu. When the daily aggregation job is eventually enabled, the DSL recipes can be reinstated for "by-day trend" queries; until then `credit-detail` is the only path.
+> The DSL `bill_daily_usage_metrics` recipes that lived here previously are deprecated — that table is empty in production until the daily aggregation job is enabled (details: `tables.md`). Until then `credit-detail` is the only working path for credit data.
 
 ### Recipe 8 — Today's credit consumption
 
@@ -349,7 +344,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ## Follow-up Q&A
 
-> **All Recipe 17–22 templates below**: the API auto-filters `status = 1` on `learn_generated_blocks`. Rerolled-history blocks (`status = 0`) never appear in your counts. Do not add a `status = 1` clause yourself — it is redundant. Conversely, to count follow-up questions, always anchor on `type = 321`; **do not** key off `role = 2` (which also marks input / phone / checkcode widgets — see the trap in `tables.md`).
+> **All Recipe 17–22 templates below**: the API auto-filters `status = 1` on `learn_generated_blocks` (do not add it yourself — redundant), and follow-up counts always anchor on `type = 321`, never `role = 2`. Both traps explained in `tables.md`.
 
 ### Recipe 17 — Total follow-up questions + unique questioners
 

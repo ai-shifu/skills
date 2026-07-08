@@ -115,7 +115,7 @@ Each item:
     {
       "lesson_id": "L01",
       "lesson_title": "Core Loop Setup",
-      "teaching_prompt": "## Objective\nCollect the goal that should shape course-wide examples.\n---\n?[%{{learner_goal}} ...One-sentence goal]\n---\nThe learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, continue with the default production example; otherwise use a first example that matches it.",
+      "teaching_prompt": "Ask the learner for the one goal that should shape course-wide examples.\n---\n?[%{{learner_goal}} ...One-sentence goal]\n---\nThe learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, continue with the default production example; otherwise use a first example that matches it.",
       "used_variables": ["learner_goal"],
       "depends_on_lessons": []
     }
@@ -181,7 +181,7 @@ For segmentation rules and methodology see [pedagogy.md#segmentation-methodology
 - `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when `course-prompt.md` references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
 - `effect_scope` (string enum: `local|cross_lesson`, required).
 
-Only named variables belong in `global_variable_table`. No-variable `?[...]` interactions do not create table entries. Use named variables only when the learner's answer must be used outside the current lesson; lesson-local branching, examples, feedback, summaries, and inputs stay no-variable. A variable referenced from `course-prompt.md` has `effect_scope: "cross_lesson"` because the Course Prompt can influence more than one lesson. Every reference is substituted with the variable's current system value before generation; before the learner sets a value, or when the stored value is empty, the substituted value is `UNKNOWN`. Still list `course_prompt` in `used_in` whenever `course-prompt.md` references the variable. For variable *syntax* see [markdownflow.md#variables](markdownflow.md#variables); for variable *strategy and pacing* see [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy).
+Only named variables belong in `global_variable_table`. No-variable `?[...]` interactions do not create table entries. Use named variables only when the learner's answer must be used outside the current lesson; lesson-local branching, examples, feedback, summaries, and inputs stay no-variable. A variable referenced from `course-prompt.md` has `effect_scope: "cross_lesson"` because the Course Prompt can influence more than one lesson; still list `course_prompt` in `used_in` whenever `course-prompt.md` references the variable. For variable *syntax and runtime substitution semantics* (`{{var}}` → stored value or `UNKNOWN`) see [markdownflow.md#variables](markdownflow.md#variables); for variable *strategy and pacing* see [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy).
 
 ## Lesson Schema
 
@@ -199,7 +199,7 @@ Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 {
   "lesson_id": "L03",
   "lesson_title": "Diagnose the Bottleneck",
-  "teaching_prompt": "## Objective\nFind the bottleneck and test one fix.\n---\n?[CPU bound | IO bound | Lock contention]\n---\nAfter the learner answers, run the matching test first.",
+  "teaching_prompt": "Ask the learner where the system feels slow before naming any cause: CPU, IO, or locks.\n---\n?[CPU bound | IO bound | Lock contention]\n---\nAfter the learner answers, run the matching test first.",
   "used_variables": [],
   "depends_on_lessons": ["L02"]
 }
@@ -231,6 +231,17 @@ Resolve target language with this strict priority:
 - User-visible agent output must follow the resolved target language: chat replies, phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations.
 - Human-facing labels for skill concepts must follow the canonical terms in [SKILL.md#canonical-term-translation-table](../SKILL.md#canonical-term-translation-table) when the resolved target language is listed there; do not keep English labels merely because the skill docs and examples are written in English.
 - Stable machine-facing identifiers and verbatim source material remain unchanged even when the surrounding prose is localized: JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `lesson_teaching_prompts`, `teaching_prompt`, `course_prompt`, `course_description`), file names (`course-description.md`, `course-prompt.md`, `structure.json`), CLI commands and flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and quoted source text or direct quotations that must be preserved verbatim.
+
+### Pre-Deploy Language Audit
+
+Before finalizing or deploying a generated course directory, audit all build-consumed user-visible artifacts and effective build metadata, so template headings or directive phrases from a different language do not remain after target-language rendering:
+
+- Resolved course title (`--title`, `README.md` first heading, or directory-name fallback).
+- Resolved course description (`--description` or `course-description.md`).
+- Resolved chapter titles (`structure.json`, `--chapter-name`, or course-title fallback).
+- Learner-facing lesson title fields in `structure.json`.
+- `course-prompt.md`.
+- Every lesson file referenced by `structure.json` (or every auto-discovered `lessons/lesson-*.md` file when `structure.json` is absent).
 
 ## Fallback Output Extensions
 

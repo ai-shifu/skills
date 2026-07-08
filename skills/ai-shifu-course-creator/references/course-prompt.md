@@ -257,7 +257,7 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 
 ## Filled Example
 
-A minimal example based on the "Metric Drift Diagnosis" course used in `examples/end-to-end-deploy.md`.
+A minimal example based on the "Metric Drift Diagnosis" course used in `examples/pipeline-full.md`.
 
 ```markdown
 # Role
