@@ -6,8 +6,7 @@
   `type: summary`; do not use `type(scope): summary`.
 - Body: include exactly two sections, `Changed:` and `Benefit:`.
 - Classification: use `chore` for repository-maintenance-only instructions,
-  generated guidance updates like this file, or non-behavioral skill
-  maintenance.
+  guidance updates like this file, or non-behavioral skill maintenance.
 - Skill content changes affect skill behavior and capability: inside a skill
   directory, only changes limited to existing `README*` files count as
   documentation-only. Changes to `SKILL.md` (including its frontmatter),
