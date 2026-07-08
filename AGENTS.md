@@ -2,16 +2,6 @@
 
 ## Git Commit Message Requirements
 
-All git commit message requirements live in this section. Other docs and
-agent-specific rule files may point here for title, body, and classification
-rules, but must not duplicate or redefine them.
-
-- Human-authored and coding-agent-authored commit messages must follow the
-  policy below. Existing workflow-generated bot commits are exempt unless the
-  workflow is being updated for this policy.
-- The local `commit-msg` hook is only a baseline Conventional Commits syntax
-  check. It does not enforce the `Changed:` / `Benefit:` body or the
-  classification rules below.
 - Subject: use English Conventional Commits without scope parentheses, such as
   `type: summary`; do not use `type(scope): summary`.
 - Body: include exactly two sections, `Changed:` and `Benefit:`.
