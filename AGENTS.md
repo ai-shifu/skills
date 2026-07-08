@@ -8,11 +8,11 @@
 - Classification: use `chore` for repository-maintenance-only instructions,
   guidance updates like this file, or non-behavioral skill maintenance.
 - Skill content changes affect skill behavior and capability: inside a skill
-  directory, only changes limited to existing `README*` files count as
-  documentation-only. Changes to `SKILL.md` (including its frontmatter),
-  references, prompts, templates, examples, scripts, or other skill assets must
-  use `feat` when adding capability and `fix` when correcting behavior; do not
-  use `docs`.
+  directory, only changes limited to intentionally present `README*` files
+  count as documentation-only. Changes to `SKILL.md` (including its
+  frontmatter), references, prompts, templates, examples, scripts, or other
+  skill assets must use `feat` when adding capability and `fix` when correcting
+  behavior; do not use `docs`.
 
 Example:
 
