@@ -5,11 +5,11 @@
 - Subject: use English Conventional Commits without scope parentheses, such as
   `type: summary`; do not use `type(scope): summary`.
 - Body: include exactly two sections, `Changed:` and `Benefit:`.
-- Classification: use `chore` for repository-maintenance-only instruction or
+- Classification: use `chore` for repository-maintenance-only instructions or
   generated guidance updates like this file.
 - Skill content changes affect skill behavior and capability: inside a skill
   directory, only `README*` files count as documentation-only surfaces. Changes
-  to `SKILL.md`, frontmatter other than README metadata, references, prompts,
+  to `SKILL.md` (including its frontmatter), references, prompts,
   templates, examples, scripts, or other skill assets must use `feat` when
   adding capability and `fix` when correcting behavior; do not use `docs`.
 
