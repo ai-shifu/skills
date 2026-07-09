@@ -31,7 +31,13 @@ A single `shifu_bid` can carry many rows across the two metadata tables — ever
 - **Current draft title** = the row in `shifu_draft_shifus` with `deleted = 0`. After a rename in the editor this title leads the published one until the author republishes.
 - **Historical / renamed titles** = rows with `deleted = 1` in either table. These are **never** the answer to "this course is currently called …". If a user mentions a title from memory and only the historical rows match, tell them so explicitly — do not silently report a historical title as the current one.
 
-PDF §0 + §7 of the 2026-05-15 query handbook describes the failure mode this rule prevents: the same `shifu_bid` was incorrectly reported as `跟 AI 学 AI 通识` because that title appeared in its history, even though the row with `deleted = 0` had since been renamed to `李卓:K12 AI 教育产品的一线实践`. Always anchor the title from the `deleted = 0` row of the published table; fall back to the draft only when published has no matching row.
+PDF §0 + §7 of the 2026-05-15 query handbook describes the failure mode this rule prevents: the same `shifu_bid` was incorrectly reported as `跟 AI 学 AI 通识` because that title appeared in its history, even though the row with `deleted = 0` had since been renamed to `李卓:K12 AI 教育产品的一线实践`. Always anchor the title from the `deleted = 0` row of the published table; fall back to the draft only when published has no matching row (and flag the course as "currently in draft" to the user).
+
+Operational corollaries:
+
+- A title you saw in an earlier turn of this same conversation does not count as the current title — the author may have renamed the course mid-conversation. Re-resolve via Recipe 0b whenever you take a destructive or final action on a title-named course.
+- Do not bypass this with `shifu-cli.py list` — that command lists drafts only, so a course whose draft title leads its published title appears under the wrong name in the listing.
+- When the only matches are historical, state it explicitly: "This course was previously called X. It is currently called Y. Are you asking about Y, or do you mean a different course?" Never silently substitute one for the other.
 
 ## `learn_generated_blocks` type codes
 

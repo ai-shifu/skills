@@ -15,7 +15,18 @@ RE_KEBAB_CASE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 RE_HUMAN_READABLE_NAME = re.compile(r"^\S[^\r\n<>]*$")
 RE_XML_TAG = re.compile(r"[<>]")
 RE_REF_PATH = re.compile(r"references/[A-Za-z0-9_./-]+\.md")
+RE_MD_ANCHOR_REF = re.compile(
+    r"(?<![\w/.])"
+    r"(?P<path>(?:\.\./)*(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.md)"
+    r"#(?P<anchor>[A-Za-z0-9][A-Za-z0-9-]*)"
+)
+RE_HEADING = re.compile(r"^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
+RE_SLUG_STRIP = re.compile(r"[^\w\- ]")
 FORBIDDEN_WORDS = {"claude", "anthropic"}
+
+# Doc surface scanned for cross-file anchor links. Local-only dirs
+# (design/, evals/, scripts/) are intentionally excluded.
+ANCHOR_SCAN_GLOBS = ("SKILL.md", "references/**/*.md", "examples/**/*.md")
 
 MAX_DESCRIPTION_LEN = 1024
 MIN_DESCRIPTION_LEN_RECOMMENDED = 50
@@ -163,6 +174,68 @@ def validate_skill(skill_dir: Path, issues: IssueBag) -> None:
             issues.add_warning(
                 f"{skill_md}: referenced file not found -> {ref}"
             )
+
+    validate_anchors(skill_dir, issues)
+
+
+def github_heading_slugs(md_file: Path) -> set[str]:
+    """Collect the GitHub anchor slugs of every heading in a markdown file.
+
+    GitHub's algorithm: lowercase, drop punctuation, convert each space to
+    one hyphen (no collapsing — "A & B" yields "a--b"), and suffix -1/-2/…
+    on duplicate headings. Headings inside fenced code blocks are ignored.
+    """
+    slug_counts: dict[str, int] = {}
+    slugs: set[str] = set()
+    in_fence = False
+    fence_marker = ""
+    for line in md_file.read_text(encoding="utf-8").splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            marker = stripped[:3]
+            if not in_fence:
+                in_fence, fence_marker = True, marker
+            elif marker == fence_marker:
+                in_fence = False
+            continue
+        if in_fence:
+            continue
+        m = RE_HEADING.match(line)
+        if not m:
+            continue
+        title = m.group(2).lower()
+        base = RE_SLUG_STRIP.sub("", title).replace(" ", "-")
+        n = slug_counts.get(base, 0)
+        slug_counts[base] = n + 1
+        slugs.add(base if n == 0 else f"{base}-{n}")
+    return slugs
+
+
+def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
+    """Every `<path>.md#<anchor>` reference in the skill's doc surface must
+    resolve to a real heading in the target file (broken anchors are silent
+    at runtime: the pointed-to rule text becomes unreachable)."""
+    slug_cache: dict[Path, set[str]] = {}
+    for pattern in ANCHOR_SCAN_GLOBS:
+        for md_file in sorted(skill_dir.glob(pattern)):
+            content = md_file.read_text(encoding="utf-8")
+            seen: set[tuple[str, str]] = set()
+            for m in RE_MD_ANCHOR_REF.finditer(content):
+                ref = (m.group("path"), m.group("anchor"))
+                if ref in seen:
+                    continue
+                seen.add(ref)
+                target = (md_file.parent / ref[0]).resolve()
+                if not target.is_file():
+                    # Missing files are reported by the RE_REF_PATH check.
+                    continue
+                if target not in slug_cache:
+                    slug_cache[target] = github_heading_slugs(target)
+                if ref[1] not in slug_cache[target]:
+                    issues.add_error(
+                        f"{md_file}: broken anchor -> {ref[0]}#{ref[1]} "
+                        f"(no matching heading in {target.name})"
+                    )
 
 
 def main() -> int:

@@ -1,5 +1,5 @@
 ---
-name: AI-Shifu Course Creator（AI 师傅课程创作器）
+name: AI-Shifu Course Creator
 description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Also covers post-deployment analytics on those courses — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profiles, and individual learner tracking. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, Course Prompt authoring, course analytics, creator analytics, 学习人数, 完成率, 卡课节, 订单收入, 积分消耗, or learner progress.
 ---
 
@@ -71,55 +71,25 @@ Use this table for human-facing skill concept labels in user-visible prose, repo
 
 ## Data & Statistics Routing (read this before answering any "numbers" question)
 
-This skill is mostly about *authoring* and *deploying* courses, but it **also answers post-deployment data questions** about a live course — and that capability already lives here, locally. Whenever the user asks for any kind of data, metric, or statistic about a course — regardless of how they phrase it — do **not** look for the answer in the creation/deployment commands, do **not** guess a REST endpoint, and do **not** open the admin dashboard in a browser. Route to the Analytics path (Path E / the `## Analytics` section below); the local CLI is the authoritative source and the references tell you exactly what is queryable.
-
-**How to get the numbers** — all course data comes from `scripts/shifu-cli.py`; the platform exposes no per-course statistics REST endpoint, so this CLI is the single, complete source. Standard flow:
-1. `shifu-cli.py list` → resolve `shifu_bid` (and current title; if the user named a course by title, confirm via Course Metadata recipes 0a–0c first).
-2. `shifu-cli.py show <shifu_bid>` → resolve outline (only for lesson-level dimensions).
-3. `shifu-cli.py analytics-query <shifu_bid> --dsl '<json>'` for table queries, or `shifu-cli.py credit-detail <shifu_bid> …` for credit/spend.
-
-Run `shifu-cli.py --help` to see the available subcommands (`analytics-query` and `credit-detail` are both there).
-
-**Decide what to query yourself** — there is no fixed phrase→query mapping to match against; translate the user's actual question into the right table + DSL using the references:
-- `references/analytics/overview.md` — entry point, the question→table quick-lookup, error codes.
-- `references/analytics/recipes.md` — ready-to-run DSL by scenario (e.g. Recipe 0d bundles learners + orders + revenue + recent activity for a one-glance course overview).
-- `references/analytics/tables.md` — the 10 tables, their fields, and all code/enum translations.
-- `references/analytics/dsl.md` — DSL grammar.
-
-## Authoring Leakage Rules
-
-Keep author-side scaffolding out of Teaching Prompt and Course Prompt outputs:
-
-- Avoid author-side meta labels such as “Knowledge Block 1/2/3”, “Lesson Objective”, or “Deliverable”. Keep those as implicit structure, not visible narration.
-- Authoring rules, pipeline notes, and process instructions stay in skill docs and references, not in lesson outputs.
-- Internal design notes may appear only in HTML comments when needed.
-- Treat course and lesson structure as metadata, not Teaching Prompt prose: chapter titles, lesson titles, numbering, and ordering belong in `structure.json` / `course_index`, while `lesson-*.md` starts with a teaching-start function. Do not copy source headings into lesson bodies merely because the source used Markdown headings.
+This skill is mostly about *authoring* and *deploying* courses, but it **also answers post-deployment data questions** about a live course. Whenever the user asks for any kind of data, metric, or statistic about a course — regardless of phrasing — route to **Path E / the `## Analytics` section below**. Do **not** look for the answer in the creation/deployment commands, do **not** guess a REST endpoint, and do **not** open the admin dashboard in a browser: the platform exposes no per-course statistics REST endpoint, so the local CLI (`shifu-cli.py`) is the single, complete source. There is no fixed phrase→query mapping to match against — translate the user's actual question into the right table + DSL using the workflow and references in `## Analytics`.
 
 ## Teaching Prompt and Course Prompt Authoring Hard Rules (Must Follow)
 
 These are the seven red-line rules every Teaching Prompt and Course Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
 
-1. **Script style: directive, not manuscript.** Write in imperative, model-guiding language ("Ask the learner to …", "After collecting {{var}}, branch …"). Do not produce polished learner-facing prose or author/lesson-plan meta narration. See `references/pedagogy.md#script-style`.
+1. **Script style: directive, not manuscript — and no author-side scaffolding.** Write in imperative, model-guiding language ("Ask the learner to …", "After collecting {{var}}, branch …"). Do not produce polished learner-facing prose, author/lesson-plan meta narration, or author-side meta labels such as "Knowledge Block 1/2/3", "Lesson Objective", or "Deliverable" — keep those as implicit structure. Authoring rules, pipeline notes, and process instructions stay in skill docs and references, never in lesson outputs; internal design notes may appear only in HTML comments when needed. See `references/pedagogy.md#script-style`.
 
-2. **Interaction syntax: prompt outside, options inside.** Keep the learner-facing question on the line **before** the interaction; put only option labels, flow buttons, or a short `...` input placeholder inside the `?[]` line. Use `?[%{{var}} ...]` only when the learner's answer must be used outside the current lesson; use no-variable `?[Continue]`, `?[Option A | Option B]`, or `?[...Short answer]` for lesson-local buttons, choices, or inputs, including current-lesson branching and feedback. Each `?[]` is on its own line. See `references/markdownflow.md#interactions` for full Bad/Good examples and the `...` input-marker rules.
+2. **Interaction syntax: prompt outside, options inside.** Keep the learner-facing question on the line **before** the interaction; put only option labels, flow buttons, or a short `...` input placeholder inside the `?[]` line, and give each `?[]` its own standalone line. Full syntax inventory, `...` input-marker rules, and Bad/Good examples: `references/markdownflow.md#interactions` and `references/markdownflow.md#input-marker-rules`.
 
-3. **Interaction type selection: match the learner decision.** Use single-select when options are mutually exclusive or when one selected path drives a branch. Use multi-select when collecting non-exclusive learner context, goals, interests, modules, blockers, scenarios, experience, or practice needs. Multi-select results should drive combined feedback, prioritization, or tailored examples; do not avoid multi-select merely because it is harder to enumerate every possible combination. See `references/pedagogy.md#interaction-design`.
+3. **Interaction type selection: match the learner decision.** Use single-select when options are mutually exclusive or one selected path drives a branch. Use multi-select for non-exclusive learner context — goals, interests, modules, blockers, scenarios, experience, practice needs — and do not avoid multi-select merely because combinations are hard to enumerate. See `references/pedagogy.md#interaction-design`.
 
-4. **Variables only for cross-lesson or course-level learner input.** Add a named variable only when the learner's answer must leave the current lesson: referenced by `course-prompt.md`, reused in another lesson, or used for cross-lesson personalization, difficulty control, examples, summaries, or deliverables. New variable names should use the resolved output language and may use Unicode letters, numbers, and underscores; do not use spaces or punctuation. Current-lesson branching, examples, feedback, summaries, and free-text inputs use no-variable `?[...]` plus natural-language instructions; do not create `{{var}}` just to branch inside the same lesson. At runtime, every `{{var}}` marker in a Teaching Prompt or Course Prompt is replaced with that variable's system value: the learner's stored value when set, or `UNKNOWN` when unset or empty. Write prompt logic against the substituted value, not against variable availability (for example: `The learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, use the default examples; otherwise adapt examples to it.`). For variable-based branches, state the substituted value in a natural sentence first (for example: `The learner level is {{level}}.`), then use natural-language branch phrasing such as `For beginner learners, ...` or `If the learner level is UNKNOWN, ...`. If the answer stays inside the current lesson, use no-variable `?[...]` and do not add it to `used_variables` or `global_variable_table`. See `references/pedagogy.md#interaction-design`.
+4. **Variables only for cross-lesson or course-level learner input.** Create a named variable (`?[%{{var}} ...]`) only when the learner's answer must leave the current lesson (referenced by `course-prompt.md`, reused in another lesson, or used for cross-lesson personalization). Current-lesson branching, examples, feedback, summaries, and free-text inputs use no-variable `?[...]` and never enter `used_variables` / `global_variable_table`. At runtime every `{{var}}` is replaced with the learner's stored value or `UNKNOWN` — write prompt logic against the substituted value, not against variable availability. Substitution semantics, naming rules, and wording examples: `references/markdownflow.md#variables`; when to create a variable: `references/pedagogy.md#variable-strategy`.
 
-5. **Visuals: two regimes — "no asset" vs "asset uploaded".**
-  - When the author has **not** provided any image asset (only the topic / a description): continue to use natural-language slide or visual-page instructions ("Create a slide that …") paired with text explanation. Do not inline SVG/HTML/Mermaid/PlantUML/Graphviz markup. See `references/pedagogy.md#visual-text-coordination`.
-  - When the author **has** provided image assets (local files or remote URLs): you must first upload them via `shifu-cli.py upload-image` to obtain `res.ai-shifu.cn` URLs, then embed each image into the Teaching Prompt using one of the two forms defined in `references/markdownflow.md#images` (3.1 deterministic-wrapped standard markdown, or 3.2 instruction-style HTML view). See the sub-section **Working with Author-Provided Images** below for the full workflow including the path you must take when you cannot actually see the image contents.
+5. **Visuals: two regimes — "no asset" vs "asset uploaded".** When the author has not provided an image asset: use natural-language slide or visual-page instructions paired with text explanation; never inline SVG/HTML/Mermaid/PlantUML/Graphviz markup (`references/pedagogy.md#visual-text-coordination`). When the author has provided assets: upload via `shifu-cli.py upload-image` first, then embed per `references/markdownflow.md#images` — full workflow, including the cannot-see-the-image gate, in **Working with Author-Provided Images** below.
 
-6. **Structural metadata stays out of Teaching Prompt bodies.** Chapter titles, lesson titles, hierarchy labels, and ordering markers must be stored in `structure.json` / `course_index`, not repeated as Markdown headings or opening title lines inside `lesson-*.md`. The first paragraph of every Teaching Prompt must perform a teaching-start function — establish a scenario, ask a guiding question, activate prior experience, state the task, or start a practice — rather than displaying directory structure. Allow visible headings inside a lesson only when the course explicitly needs headings and the platform rendering has been confirmed to support them.
+6. **Structural metadata stays out of Teaching Prompt bodies.** Chapter titles, lesson titles, hierarchy labels, and ordering markers belong in `structure.json` / `course_index`, not repeated as Markdown headings or opening title lines inside `lesson-*.md`. The first paragraph of every Teaching Prompt must perform a teaching-start function — establish a scenario, ask a guiding question, activate prior experience, state the task, or start a practice — never display directory structure or copy source headings. Allow visible headings inside a lesson only when the course explicitly needs them and platform rendering support is confirmed.
 
-7. **Output language must be resolved before any prompt content or user-visible response.**
-  - Run Language Resolution per `references/data-contracts.md#language-resolution` before producing Teaching Prompt or Course Prompt content, reports, phase summaries, status notes, artifact headings, or handoff instructions. The user's invocation language counts as `prompt_language_detection` (priority 4) and must be used when no higher-priority directive exists.
-  - Examples and templates in this skill and in `references/` are written in English for canonical illustration only — do NOT let example or template language override the resolved output language.
-  - Before finalizing or deploying a generated course directory, audit all build-consumed user-visible artifacts and effective build metadata — including the resolved course title (`--title`, `README.md` first heading, or directory-name fallback), resolved course description (`--description` or `course-description.md`), resolved chapter titles (`structure.json`, `--chapter-name`, or course-title fallback), learner-facing lesson title fields in `structure.json`, `course-prompt.md`, and every lesson file referenced by `structure.json` (or every auto-discovered `lessons/lesson-*.md` file when `structure.json` is absent) — so template headings or directive phrases from a different language do not remain after target-language rendering.
-  - User-visible agent output outside generated course content — reports, phase summaries, status notes, artifact labels, handoff instructions, and error explanations — must follow the resolved output language.
-  - Generated course artifacts and learner-facing Teaching Prompt/Course Prompt passages must also use the resolved output language, except where stable machine-facing identifiers are required or required verbatim source text intentionally requires another language.
-  - Preserve stable machine-facing identifiers such as JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `teaching_prompt`, `course_prompt`), file names (`course-prompt.md`, `structure.json`), CLI flags, API fields, MarkdownFlow syntax, code symbols, URLs, code samples, and quoted source text or direct quotations that must remain verbatim. Human-facing skill concept labels must follow the [Canonical Term Translation Table](#canonical-term-translation-table); terms not listed there should be localized naturally in the resolved output language.
+7. **Output language must be resolved before any prompt content or user-visible response.** Run Language Resolution per `references/data-contracts.md#language-resolution` first; the user's invocation language counts as `prompt_language_detection` (priority 4). Examples and templates in this skill are written in English for canonical illustration only — they never override the resolved language. All user-visible output (reports, phase summaries, status notes, artifact labels, handoff instructions, error explanations) and all learner-facing course content follow the resolved language; stable machine-facing identifiers (JSON keys, file names, CLI flags, API fields, MarkdownFlow syntax, code, URLs, verbatim quotes) stay unchanged, and human-facing concept labels follow the [Canonical Term Translation Table](#canonical-term-translation-table). Before finalizing or deploying a course directory, run the Pre-Deploy Language Audit in `references/data-contracts.md#language-resolution`.
 
 ## Step 0 — Resolve the Course Target (MANDATORY before any authoring)
 
@@ -129,25 +99,20 @@ single lesson.** The AI-Shifu platform DB is the single source of truth; you mus
 know whether you are creating a brand-new course or editing an existing one
 *before* you invest in authoring. **Do NOT jump straight to a course outline or
 "架构方案".** Even when the user clearly says "make a new course", first check the
-cloud for an existing one — this is the explicit front guard from the editing
-flowchart.
+cloud for an existing one.
 
 1. **Recognize intent** — new course, or edit an existing one?
 2. **Ensure login — verify first, do NOT re-login blindly.** Run
-   `shifu-cli.py verify`. It returns exit code `0` when the stored token is
-   still valid — skip login entirely and continue to step 3. Only when it
-   returns `1` (expired/invalid) do you guide the user through a **single**
-   SMS login session (below). Exit code `2` (network issue) means retry
-   later — still do NOT trigger a new login.
-   - **Token checks are cheap; SMS is expensive** — each phone number only
-     gets 5 SMS codes per day. Never re-login just because you're unsure —
-     `verify` answers the question.
-   - When a login is needed, follow the agent login flow in
-     `references/cli/cli-reference.md#agent-login-flow`.
+   `shifu-cli.py verify`: exit `0` → token valid, skip login entirely; exit `1`
+   → guide the user through a **single** SMS login session per
+   `references/cli/cli-reference.md#agent-login-flow`; exit `2` → network issue,
+   retry later — still do NOT trigger a new login. Token checks are cheap, SMS is
+   expensive — each phone number gets only **5 SMS codes per day**, so never
+   re-login just because you're unsure; `verify` answers the question.
 3. **Check whether a related course already exists** — run
    `shifu-cli.py find-title <keyword>` (targeted title search; do **not** dump the
    whole `list`).
-4. **Branch — exactly as the editing flowchart:**
+4. **Branch:**
    - **New intent + a match exists** → **ASK the user**: edit that existing course,
      or create a separate new one? *Edit it* → `pull <bid> --course-dir <dir>` then
      edit locally; *Create new* → author from scratch, then `import --new`.
@@ -157,44 +122,29 @@ flowchart.
    - **Edit intent + no match** → author from scratch, then `import --new`.
 
 Only **after** the target is resolved do you enter the authoring pipeline below.
-When the target is an existing course, you author **on top of the pulled copy**,
-then push via the converging loop in **Deployment → Version Sync Workflow**. Full
-branch/loop details live there; the gate itself is here because it must fire first.
+When the target is an existing course, author **on top of the pulled copy**,
+then push via the converging loop in **Deployment → Version Sync Workflow**.
 
 ## Course Design Intake (before Orchestration)
 
-Run this intake after **Step 0** and before Orchestration for:
-
-- Path A end-to-end course creation.
-- Path B author-only generation.
-- Existing-course edits that change the course structure, lesson design, or
-  interaction strategy.
-
-Do **not** run this intake for deploy-only, analytics, login, publish,
-management, or pure statistics requests.
+Run this intake after **Step 0** and before Orchestration for: Path A end-to-end
+course creation, Path B author-only generation, and existing-course edits that
+change the course structure, lesson design, or interaction strategy. Do **not**
+run it for deploy-only, analytics, login, publish, management, or pure
+statistics requests.
 
 Before asking anything, extract answers already present in the user's current
 instruction, source material, or pulled course directory. Ask only for missing
-items; do not repeat questions whose answers are already clear.
-
-When any item is missing, ask only the corresponding questions for the missing
-items in the user's language. Resolve the usage scenario first; ask the
-Listen Mode question only after the usage scenario or inferred format shows
-the course is not slide-only.
-
-Do not bypass this intake by inventing "conservative defaults" from a sparse
-topic or short brief. In particular, do not assume personalized AI self-study,
+items, in the user's language, as a step-by-step choice flow — ask the
+usage-scenario question first, show its options, wait for the answer, then ask
+only the next still-missing applicable question. Do not offer "you can let me
+decide" or similar bypass wording before the required choice flow is complete.
+Do not bypass the intake by inventing "conservative defaults" from a sparse
+topic or short brief — in particular, do not assume personalized AI self-study,
 thinking/self-check interactions, disabled Listen Mode, or a fixed chapter /
 lesson count before asking the relevant missing questions. Defaults below apply
 only after the user explicitly skips a question or asks you to continue without
 answering it.
-
-Ask this intake as a step-by-step choice flow, not as one flat numbered
-checklist. Ask the usage-scenario question first, show its options, then wait
-for the user's answer before asking the next applicable question. After each
-answer, ask only the next still-missing applicable question. Do not offer
-"you can let me decide" or similar bypass wording before the required choice
-flow is complete.
 
 1. What usage scenarios should this course support? Multiple choices are
    allowed: students follow AI one-on-one for personalized self-study;
@@ -210,43 +160,29 @@ flow is complete.
 
 Use the answers as course-design constraints:
 
-- Usage scenario determines content format. If personalized AI self-study is
-  selected, generate illustrated text with fuller explanations and visual-text
-  pairing. If only interactive classroom slides are selected, generate pure
-  slides with concise slide-style Teaching Prompts for human delivery.
-- Pure slides are for classroom projection, not AI narration. For this format,
-  override the default one-on-one explanation style: Teaching Prompts should
-  produce slide-facing content and interaction blocks only. Do not write
-  lecture-script directives such as "explain to the learner", "walk through",
-  "use text to explain the diagram", or long narration paragraphs. Keep content
-  as slide titles, short bullets, visual layout instructions, prompts, options,
-  and concise feedback states that a human instructor can present.
-- For pure slides, the Course Prompt must describe the runtime role as producing
-  classroom interactive slides, not as conducting one-on-one tutoring. Do not
-  include course-level instructions that ask the AI to verbally explain the
-  lesson to a single learner.
-- If the usage-scenario question is still unanswered after the user explicitly
-  skips it, infer the format from the source material structure instead of
-  inventing a fixed default.
-- Interaction choices determine where interactions appear: early learner
-  context collection for adaptive teaching, pre-content prompts for thinking or
-  misconception correction, and lesson-end self-checks for assessment.
-- If the user selects no interaction purpose or explicitly skips the question,
-  do not proactively design interaction blocks; during Orchestration, bypass
-  interaction-specific pedagogical gates that require an interaction step or a
-  deepening interaction.
-- If the resolved format is pure slides, disable Listen Mode and do not ask
-  the Listen Mode question. Otherwise, the Listen Mode question must mention the
-  extra AI-Shifu credit consumption, and Listen Mode is disabled when unanswered;
-  when explicitly enabled or disabled, carry that decision into the deployment
-  handoff.
-- Chapter and lesson counts constrain the outline. If the user explicitly skips
-  this question, infer structure from source volume and existing
-  lesson-granularity rules instead of inventing a fixed default.
+- **Usage scenario → content format.** Personalized AI self-study → illustrated
+  text with fuller explanations and visual-text pairing. Only interactive
+  classroom slides → apply the **Slide-Only Generation Override** (under
+  `## Generation`) to lesson content, the Course Prompt, and Listen Mode.
+  Question explicitly skipped → infer the format from the source material
+  structure instead of inventing a fixed default.
+- **Interaction choices → interaction placement**: early learner-context
+  collection for adaptive teaching, pre-content prompts for thinking or
+  misconception correction, lesson-end self-checks for assessment. No purpose
+  selected or question skipped → do not proactively design interaction blocks;
+  during Orchestration, bypass only the interaction-specific pedagogical gates
+  (keep all non-interaction gates active).
+- **Listen Mode**: pure slides → disable it and do not ask the question.
+  Otherwise the question must mention the extra AI-Shifu credit consumption;
+  unanswered → disabled; an explicit enable/disable decision carries into the
+  deployment handoff.
+- **Chapter and lesson counts** constrain the outline. Question explicitly
+  skipped → infer structure from source volume and existing lesson-granularity
+  rules instead of inventing a fixed default.
 
 ## Pipeline Overview
 
-The stages are **not** a flat linear pipeline. **Step 0 (above) gates the whole
+The phases are **not** a flat linear pipeline. **Step 0 (above) gates the whole
 pipeline.** **Orchestration is an end-to-end driver** that internally calls Segmentation and Generation. Only Optimization and Deployment actually run in linear sequence after Orchestration completes.
 
 ```
@@ -285,7 +221,7 @@ Segmentation, Generation, and Optimization can each be invoked standalone — se
 
 Run the full pipeline from raw material to a live deployed course.
 
-0. **Step 0 front guard (first, always)** — resolve new-vs-edit via `login` + `find-title`; if editing an existing course, `pull` it before authoring. See **## Step 0**.
+0. **Step 0 front guard (first, always)** — resolve new-vs-edit via `verify` + `find-title`; if editing an existing course, `pull` it before authoring. See **## Step 0**.
 1. **Orchestration** drives Segmentation and Generation end-to-end, then runs cross-lesson gating to produce Teaching Prompts + course_index + variable table.
 2. **Optimization** audits and improves Orchestration's output, plus produces the Course Prompt and SEO course description.
 3. **Deployment** writes the course directory, builds, imports, and publishes to the AI-Shifu platform.
@@ -307,7 +243,7 @@ Use Deployment management commands (list, show, update, rename, reorder, delete,
 
 ### Path E: Course Analytics
 
-Triggered by any question about a live course's data / metrics / statistics (see **`## Data & Statistics Routing`** above for how to route and where the references live). Query post-deployment data — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profile, individual learner tracking. Reuses the Deployment authentication (token in `.env`); resolves `shifu_bid` via CLI `list` and outline via CLI `show`; runs DSL queries via CLI `analytics-query` (credit/spend via `credit-detail`). Always go through the CLI — never raw HTTP, never browser-scrape the admin dashboard. See the `## Analytics` section below and `references/analytics/overview.md`.
+Triggered by any question about a live course's data / metrics / statistics (routing rule: **`## Data & Statistics Routing`** above). Reuses the Deployment authentication (token in `.env`). Always go through the CLI — never raw HTTP, never browser-scrape the admin dashboard. Workflow, references, and validation: `## Analytics` below.
 
 ---
 
@@ -333,7 +269,7 @@ Segment list per `references/data-contracts.md#segment-schema` (each segment car
 
 ## Orchestration
 
-**Role**: end-to-end orchestrator for Path A. Orchestration calls Segmentation (segmentation) and Generation (generation) internally, then performs the cross-lesson work that those atomic phases cannot — course index, global variable table, and mandatory gating.
+**Role**: end-to-end orchestrator for Path A. Orchestration calls Segmentation and Generation internally, then performs the cross-lesson work that those phases cannot — course index, global variable table, and mandatory gating.
 
 ### Workflow
 
@@ -389,13 +325,13 @@ Generate a runnable Teaching Prompt for each lesson.
 
 Apply the patterns and constraints in `references/pedagogy.md#teaching-patterns`, `#cognitive-techniques`, `#variable-strategy`, `#interaction-design`, and `#visual-text-coordination` unless content requires a justified variation.
 
-When generating interactions, explicitly choose the interaction type before writing the `?[]` line: mutually exclusive route decisions use single-select; non-exclusive learner context, goals, interests, modules, blockers, scenarios, experience, or practice needs use multi-select. If a lesson naturally asks "which of these apply?", default to multi-select unless the source or user says only one answer is allowed.
+When generating interactions, explicitly choose the interaction type before writing the `?[]` line per Hard Rule 3. If a lesson naturally asks "which of these apply?", default to multi-select unless the source or user says only one answer is allowed.
 
 ### Single-Lesson Generation Strategy
 
 Required anchors per lesson:
 
-1. Opening paragraph with a teaching-start function: establish a scenario, ask a guiding question, activate prior experience, state the task, or start a practice. It must not be a copied chapter / lesson title or directory label.
+1. Opening paragraph with a teaching-start function (Hard Rule 6) — not a copied chapter / lesson title or directory label.
 2. Opening objective plus slide-style visual cover.
 3. Evidence-chain explanation.
 4. At least one effective interaction with visible downstream effect.
@@ -408,19 +344,25 @@ Optional modules: viewpoint calibration, misconception correction, dual delivera
 
 When Course Design Intake resolves to pure slides / classroom interactive
 slides, replace the default explanation-heavy lesson pattern with a projection
-pattern:
+pattern. Pure slides are for classroom projection by a human instructor, not AI
+narration:
 
 - Treat each lesson as a small slide deck controlled by a human instructor.
-- Generate slide-facing blocks: slide title, 2-4 short bullets, visual/layout
-  instruction, interaction prompt, options, and concise feedback states.
+- Generate slide-facing blocks only: slide title, 2-4 short bullets,
+  visual/layout instruction, interaction prompt, options, and concise feedback
+  states.
 - Keep interactions runnable with the normal MarkdownFlow syntax, but keep the
   surrounding content presentation-oriented.
 - Do not include AI narration directives or learner-facing lecture prose such as
-  "向学习者说明", "讲解", "用文字解释", "讲清", or long paragraphs intended for the AI
-  to speak.
-- Do not require the normal visual-text explanation pair. In slide-only mode,
-  the visual itself and the short on-slide labels carry the projection content;
-  any explanation belongs to the human instructor, not the Teaching Prompt.
+  "explain to the learner", "walk through", "向学习者说明", "讲解", "用文字解释",
+  "讲清", or long paragraphs intended for the AI to speak.
+- Do not require the normal visual-text explanation pair. The visual itself and
+  the short on-slide labels carry the projection content; any explanation
+  belongs to the human instructor, not the Teaching Prompt.
+- The Course Prompt must describe the runtime role as producing classroom
+  interactive slides, not as conducting one-on-one tutoring. Do not include
+  course-level instructions that ask the AI to verbally explain the lesson to a
+  single learner.
 
 ### Outputs
 
@@ -429,41 +371,19 @@ Per-lesson schema in `references/data-contracts.md#lesson-schema`.
 ### Validation
 
 - Each `teaching_prompt` is valid runnable MarkdownFlow.
-- The first non-empty line of each Teaching Prompt performs a teaching-start function, not a duplicated `structure.json` chapter / lesson title or a copied source heading such as `# 第2章 ...`.
+- The first non-empty line of each Teaching Prompt performs a teaching-start function (Hard Rule 6), not a duplicated `structure.json` chapter / lesson title or a copied source heading such as `# 第2章 ...`.
 - Per-lesson schema populated per `references/data-contracts.md#lesson-schema`.
 - Pedagogical and syntax constraints pass per `references/pedagogy.md` and `references/markdownflow.md`.
 
 ### Working with Author-Provided Images
 
-When the author supplies image assets — local files (any format incl. heic/heif), or remote URLs — three steps apply *within* Generation (and any later phase that touches the same lessons):
+When the author supplies image assets — local files (any format incl. heic/heif) or remote URLs — three steps apply *within* Generation (and any later phase that touches the same lessons):
 
-**1. Understand each image before placing it.**
-
-You cannot decide which lesson a picture belongs to, or what alt text to write, without knowing what the image actually shows. Two regimes:
-
-- **You can see the image** (the user attached it in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position by `references/pedagogy.md#visual-text-coordination` and `references/course-prompt.md` Rule 10/11.
-- **You cannot see the image** (the user only gave you a file path / URL, or your model is text-only): **stop and ask the user**. Do not guess from the filename. Offer two options: (a) the user provides a one-sentence description per image (you will pass it as `--alt`), or (b) the user renames each file to a semantically meaningful name so you can infer the topic. Proceed only after one of these is in place.
-
-**2. Upload via `shifu-cli.py upload-image` and capture the URL.**
-
-```bash
-# Local file (preprocessed: max side 2048 px, ≤2 MB, JPEG q=85 / PNG for alpha):
-python3 {skillDir}/scripts/shifu-cli.py upload-image \
-  --file /path/to/photo.heic --course-dir ./my-course/ --alt "梯度下降三步示意"
-
-# Remote URL (backend downloads + re-hosts):
-python3 {skillDir}/scripts/shifu-cli.py upload-image \
-  --url https://example.com/diagram.png --course-dir ./my-course/ --alt "Transformer 单层结构"
-```
-
-The command prints one line — the `https://res.ai-shifu.cn/<uuid32>` URL — to stdout; the manifest at `<course-dir>/assets/image-manifest.json` is updated automatically. See `references/cli/cli-reference.md` for full flag reference.
-
-**3. Embed in MarkdownFlow per `references/markdownflow.md#images`.**
-
-- Default to **3.1** (deterministic-wrapped standard markdown) — the image just displays as-is.
-- Use **3.2** (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout. Express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`); never mix deterministic blocks into the instruction.
-
-Either way, the explanatory paragraph immediately after the image is mandatory (cf. `course-prompt.md` Rule 11).
+1. **Understand each image before placing it.** You cannot choose the lesson, position, or alt text without knowing what the image shows. Two regimes:
+   - **You can see the image** (attached in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position per `references/pedagogy.md#visual-text-coordination` and `references/course-prompt.md` Rules 10/11.
+   - **You cannot see the image** (only a file path / URL, or your model is text-only): **stop and ask the user**. Do not guess from the filename. Offer two options: (a) the user provides a one-sentence description per image (you will pass it as `--alt`), or (b) the user renames each file to a semantically meaningful name so you can infer the topic. Proceed only after one of these is in place.
+2. **Upload via `shifu-cli.py upload-image`** (`--file` for local files — auto-preprocessed, or `--url` for remote; always pass `--course-dir` and `--alt`) and capture the printed `https://res.ai-shifu.cn/<uuid32>` URL. Full flags, preprocessing, and manifest behavior: `references/cli/cli-reference.md#image-upload`.
+3. **Embed per `references/markdownflow.md#images`.** Default to 3.1 (deterministic-wrapped standard markdown); use 3.2 (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout — express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`), never mix deterministic blocks into the instruction. The explanatory paragraph immediately after the image is mandatory (`references/course-prompt.md` Rule 11).
 
 ---
 
@@ -506,11 +426,11 @@ Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_cons
 
 ## Deployment
 
-Ship optimized Teaching Prompts to the AI-Shifu platform as live courses. Two distinct actions are involved and should not be conflated:
+Ship optimized Teaching Prompts to the AI-Shifu platform as live courses. Three distinct actions are involved and should not be conflated:
 
 - **Deploy** — upload local course files to the platform via `build` + `import`. After this the course exists on the platform but is not yet visible to learners on a public URL.
 - **Publish** — run `publish` on the platform, which pushes the current draft to the public student-facing URL. Only after this step does `<base>/c/<bid>` (no `preview=true`) work.
-- **Sync** — keep a local course directory and the platform draft version-consistent. The platform draft is the single source of truth (it carries an auto-incrementing `revision`); `pull` brings the cloud copy down and records its version in `.shifu-sync.json`, and the version-aware write commands (`update-lesson` / `update-meta` / `import` with `--course-dir`) refuse to overwrite a change another editor pushed — they auto-pull and back up your edit instead. Think `git pull` before `git push`.
+- **Sync** — keep a local course directory and the platform draft version-consistent; the platform draft is the single source of truth. Think `git pull` before `git push`. Mechanics: `references/cli/cli-reference.md#version-sync-pull--status`.
 
 The standard end-to-end flow chains deploy + publish: build → import (deploy) → publish. When **editing an existing course**, use the sync loop instead: **`pull` → edit locally → `status` → `update-lesson` / `import` (push) → `publish`.**
 
@@ -521,36 +441,23 @@ The standard end-to-end flow chains deploy + publish: build → import (deploy) 
 
 ### Authentication
 
-**Verify first — never re-login blindly.** Before any operation that needs a
-token, run `shifu-cli.py verify`:
-- exit `0` → token is valid, continue.  **Do NOT trigger the login flow.**
-- exit `1` → token is expired/invalid, guide the user through a **single**
-  SMS login session (see `references/cli/cli-reference.md#agent-login-flow`).
-- exit `2` → network issue, retry later — still do NOT trigger a new login.
-
-Each phone number only gets **5 SMS verification codes per day**.  Re-logging
-when the token is still valid wastes one of those slots and can lock the user
-out.  `verify` answers the question cheaply (one lightweight API call, no SMS).
-
-Always use CLI commands. Never make raw HTTP/API calls directly.
+**Verify first — never re-login blindly.** The verify / exit-code / 5-SMS-per-day rules live in **Step 0**; the full login flow is in `references/cli/cli-reference.md#agent-login-flow`. Always use CLI commands. Never make raw HTTP/API calls directly.
 
 ### Course Directory
 
 Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `references/cli/course-directory-spec.md` for the full specification. When continuing from Optimization (Path A), write the optimized Teaching Prompts and Course Prompt into this structure automatically.
 
 **Content vs attributes — the skill changes content, not attributes, by default.**
-A course has two parts: **content** (lesson MarkdownFlow + course name/prompt)
-and **attributes** (each lesson's learning permission `access` = 无需登录/试看/付费
-and `hidden`; course-level model/price/TTS/Ask/keywords/…). The skill pushes only
-content; **it never sends attributes by default**, and the platform backend uses
-PATCH semantics (any field a write omits is left unchanged), so iterating content
-never resets attributes. `pull` writes the current attributes into
-`structure.json` (`access`/`hidden`) and `course-config.json` as a **read-only
-reference** for you. Change attributes only when the user explicitly asks:
-`set-access <shifu_bid> <outline_bid> --access guest|trial|normal [--course-dir <dir>]`
-for a lesson's permission; `set-tts <shifu_bid> --enabled true|false [--course-dir <dir>]`
-for course Listen Mode. Other course-level settings are changed in the
-platform editor.
+Content = lesson MarkdownFlow + course name/description/prompt; attributes = each
+lesson's learning permission (`access` = 无需登录/试看/付费) and `hidden`, plus
+course-level model/price/TTS/Ask/keywords/…. The skill pushes only content, and
+the platform backend uses PATCH semantics (any field a write omits is left
+unchanged), so iterating content never resets attributes. `pull` writes the
+current attributes into `structure.json` and `course-config.json` as a
+**read-only reference**. Change attributes only when the user explicitly asks —
+`set-access` for a lesson's permission, `set-tts` for course Listen Mode (flags:
+`references/cli/cli-reference.md#update-commands`); other course-level settings
+are changed in the platform editor.
 
 **Editing an existing course → use granular non-destructive commands**
 (`pull → update-lesson / add-lesson / delete-lesson / reorder / set-access / set-tts`).
@@ -560,67 +467,50 @@ courses — do not use it to iterate an existing one.
 
 ### CLI Commands
 
-All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; version sync: `pull` / `status`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `set-access` / `set-tts` / `reorder` / `delete-lesson` / `archive`). JSON schema in `references/cli/import-json-format.md`.
+All commands documented in `references/cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; version sync: `pull` / `status`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `set-access` / `set-tts` / `reorder` / `delete-lesson` / `archive`). Import JSON schema: `references/cli/cli-reference.md#import-json-schema`.
 
 ### Deployment Workflow
 
 **From pipeline (Path A continuation):**
-1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-description.md` (the generated SEO description, based on the course topic, target learners, and learning outcomes; no author-side process notes), `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), and required `structure.json`.
+1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-description.md` (the generated SEO description; no author-side process notes), `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), and required `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
 3. **Deploy**: Run `import --new --json-file <dir>/shifu-import.json` to upload the course onto the platform.
 4. **Publish**: Run `publish <shifu_bid>` to push the course to its public student-facing URL.
 5. Verify via platform URL.
 
 **Standalone deployment (Path C):**
-1. Ensure course directory is ready with Teaching Prompt files (one MarkdownFlow file per lesson under `lessons/`), a `course-description.md` SEO summary, a `course-prompt.md`, and `structure.json`. If the Course Prompt is not yet authored, follow `references/course-prompt.md#fillable-template` (and `references/course-prompt.md#authoring-rules` for guidance) before running `build`. If `structure.json` is missing, create it before running `build`. Existing directories without `course-description.md` still build, but the platform description will be empty unless `--description` is provided.
+1. Ensure the course directory is ready: Teaching Prompt files under `lessons/`, a `course-description.md` SEO summary, a `course-prompt.md` (author per `references/course-prompt.md#fillable-template` first if missing), and `structure.json` (create it if missing). Directories without `course-description.md` still build, but the platform description will be empty unless `--description` is provided.
 2. Run `build` → `import` (deploy) → `publish` as above.
 
 ### Version Sync Workflow
 
-The platform DB is the single source of truth. The **front guard** that fixes the
-target (new-vs-edit, login + `find-title`, and pulling the existing course) is
-**Step 0 — run it first, see `## Step 0`**. This section covers what happens once
-the target is an existing course you have pulled: the **pull → edit → push** loop
-that converges like `git pull` before `git push`. Together they mirror the editing
-flowchart exactly.
+The **front guard** that fixes the target (new-vs-edit, login + `find-title`,
+pulling the existing course) is **Step 0 — run it first**. This section covers
+what happens once the target is an existing course you have pulled: the
+**pull → edit → push** loop that converges like `git pull` before `git push`.
 
-#### Pull → edit → push (converging loop)
-
-Once the target is a download of an existing course, treat the platform draft as
-the source of truth:
-
-1. **`pull <shifu_bid> --course-dir <dir>`** — download the cloud draft into the
-   local dir (writes `README.md` / `course-description.md` / `course-prompt.md` /
-   `lessons/lesson-NN.md` / `structure.json` and records each lesson + course
-   `revision` into `.shifu-sync.json`).
-2. **Edit locally** — change the lesson files / course description / course prompt in place.
-3. **`status --course-dir <dir>`** — see what diverged: `behind` (cloud changed,
-   pull again), `locally modified` (your pending edits), `new`/`deleted` on server.
-4. **Push** with `--course-dir` so the recorded baseline is used:
-   `update-lesson <bid> <ob> --teaching-prompt-file f.md --course-dir <dir>` for a
-   single lesson, or `import <bid> --course-dir <dir>` for the whole course.
+1. **`pull <shifu_bid> --course-dir <dir>`** — download the cloud draft into the local dir and record revisions.
+2. **Edit locally** — change lesson files / course description / course prompt in place.
+3. **`status --course-dir <dir>`** — see what diverged (`behind` / `locally modified` / `new` / `deleted` on server).
+4. **Push** with `--course-dir` so the recorded baseline is used: `update-lesson <bid> <ob> --teaching-prompt-file f.md --course-dir <dir>` for a single lesson, or `import <bid> --course-dir <dir>` for the whole course.
 5. **`publish <bid>`** when ready for learners.
 
-**Convergence loop on conflict — this IS the flowchart's "上传 → 线上是否有新版本 →
-是 → 下载 → 重新合并 → 上传" loop.** A push checks whether the cloud advanced since
-your last sync — that is the *"is there a newer version online?"* decision:
+**Convergence loop on conflict.** A push checks whether the cloud advanced since
+your last sync:
 
 - **No newer version → push succeeds (exit 0) → done.** Proceed to `publish`.
-- **Newer version → push reports a conflict (exit 2).** The CLI has **already**:
-  (a) backed up your un-pushed change — `<lesson>.conflict` for a lesson,
-  `.shifu-meta.conflict.json` for meta, `.conflict-backup-<ts>/` for a whole-course
-  import; (b) auto-pulled the latest cloud copy over local; (c) printed who changed
-  it and when. **Exit 2 means "retry", not "give up".** Then **loop**:
-  1. Re-read the freshly pulled lesson / files (the new baseline).
-  2. Re-apply your intended change on top of it (you, the agent, do the merge — the
-     CLI never auto-merges content).
-  3. Run the same push again.
-  4. **Repeat until the push succeeds (exit 0).** Never force the old content back —
-     the cloud is authoritative.
+- **Newer version → push reports a conflict (exit 2). Exit 2 means "retry", not
+  "give up".** The CLI has **already** backed up your un-pushed change,
+  auto-pulled the latest cloud copy over local, and printed who changed it and
+  when. Then **loop**: re-read the freshly pulled files (the new baseline) →
+  re-apply your intended change on top of it (you, the agent, do the merge — the
+  CLI never auto-merges content) → run the same push again → **repeat until the
+  push succeeds (exit 0)**. Never force the old content back — the cloud is
+  authoritative.
 
-> `.shifu-sync.json` is auto-maintained; never hand-edit it. Without
-> `--course-dir`, `update-lesson` still works but only compares against the
-> cloud head, so it cannot detect a concurrent edit — prefer the sync loop.
+Never hand-edit `.shifu-sync.json`, and always push with `--course-dir` —
+without it a concurrent edit cannot be detected. Backup file locations and full
+mechanics: `references/cli/cli-reference.md#version-sync-pull--status`.
 
 ### Verification
 
@@ -639,39 +529,39 @@ After any deployment or management operation, verify the result:
 
 ## Analytics
 
-Post-deployment data queries on live courses. Trigger this section whenever a course author or admin asks about learner count, completion rate, stuck lessons, orders, revenue, ratings, follow-up Q&A volume, credit consumption, audience profile distribution, or individual learner tracking. (If you arrived here from the top-level **`## Data & Statistics Routing`** block, the three-step flow is restated below; for a one-glance course overview use Recipe 0d in `references/analytics/recipes.md`.)
+Post-deployment data queries on live courses. Trigger this section whenever a course author or admin asks about learner count, completion rate, stuck lessons, orders, revenue, ratings, follow-up Q&A volume, credit consumption, audience profile distribution, or individual learner tracking. For a one-glance course overview use Recipe 0d in `references/analytics/recipes.md`.
 
 ### CLI-Only Rule
 
 **All analytics traffic goes through `scripts/shifu-cli.py`. Never write raw HTTP, never read tokens directly, never compose `Authorization` / `Token` headers by hand.** Two analytics commands cover the surface:
 
-- `shifu-cli.py analytics-query <bid> --dsl '<json-body>'` — DSL queries against the whitelisted tables (`learn_progress_records`, `learn_generated_blocks`, `learn_lesson_feedbacks`, `order_orders`, `var_variable_values`, `shifu_user_archives`, `user_users`, `shifu_published_shifus`, `shifu_draft_shifus`). The agent's job is to translate a user question into a DSL JSON body and pass it to the CLI.
-- `shifu-cli.py credit-detail <bid> [--start … --end … --scene 1203 --usage-type 1101 …]` — server-side join of `bill_usage` × `credit_ledger_entries` for credit consumption queries. Use this whenever the user asks about credits / spend, **not** a DSL query against `bill_daily_usage_metrics` (that table is empty in production until the daily aggregation cron is enabled). `--scene 1203` restricts to learner-driven spend (preview is `1202`, debug is `1201`).
+- `shifu-cli.py analytics-query <bid> --dsl '<json-body>'` — DSL queries against the 10 whitelisted tables listed in `references/analytics/tables.md`. The agent's job is to translate a user question into a DSL JSON body and pass it to the CLI.
+- `shifu-cli.py credit-detail <bid> [--start … --end … --scene 1203 --usage-type 1101 …]` — all credit / spend questions. Do **not** issue a DSL query against `bill_daily_usage_metrics` for credit data (that table is empty in production until the daily aggregation cron is enabled). `--scene 1203` restricts to learner-driven spend (preview is `1202`, debug is `1201`).
 
 ### Workflow
 
-1. **Resolve credentials** — run `shifu-cli.py verify`. If exit 0 the stored token is valid; if exit 1, guide the user through the SMS login flow per `references/cli/cli-reference.md#agent-login-flow`.
+1. **Resolve credentials** — run `shifu-cli.py verify`, per the verify-first rules in **Step 0**.
 2. **Resolve the course** — run `shifu-cli.py list` (or `shifu-cli.py find-title <keyword>`) to map `shifu_bid ↔ course name`. **If the user mentioned a course by title**, always resolve the *current* `shifu_bid → title` via Course Metadata recipes 0a / 0b in `references/analytics/recipes.md` before issuing downstream queries — `list` is a draft snapshot and can show stale or historical titles. Never report a historical title as the course's current name.
-3. **Resolve the outline** (only for course-level analysis) — run `shifu-cli.py show <shifu_bid>` to map `outline_item_bid → name / position`. Skipping this makes outline-dimension numbers unreadable.
+3. **Resolve the outline** (only for lesson-level dimensions) — run `shifu-cli.py show <shifu_bid>` to map `outline_item_bid → name / position`. Skipping this makes outline-dimension numbers unreadable.
 4. **Run DSL queries** — `shifu-cli.py analytics-query <shifu_bid> --dsl '<json-body>'` (or `--dsl-file query.json` for long bodies).
 5. **Translate before presenting** — pass every result through the Translation Gate in `references/analytics/privacy-and-presentation.md`. Never paste raw codes (`601`, `502`, `1101`), raw `*_bid` strings, or raw `user_bid` values in user-facing output.
 
 ### References
 
-- `references/analytics/overview.md` — entry point, full workflow, error codes
+- `references/analytics/overview.md` — entry point, full workflow, question→table quick-lookup, error codes
 - `references/analytics/dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)
-- `references/analytics/tables.md` — 10 tables, fields, all code/enum translation tables, ID translation rules, duplicate-row trap, role = 2 ≠ follow-up trap, "course title is not history" rule
-- `references/analytics/recipes.md` — Course Metadata 0a–0c + 23 numbered scenario recipes (including four-key follow-up pairing and follow-ups per lesson)
-- `references/analytics/privacy-and-presentation.md` — `user_users` restricted access, `generated_content` whitelist, `var_variable_values.value` aggregate-only rule, "course title is not history" hard rule, Translation Gate, refusal rules
+- `references/analytics/tables.md` — the 10 tables, fields, all code/enum translation tables, ID translation rules, data traps, "course title is not history" rule
+- `references/analytics/recipes.md` — Course Metadata 0a–0c, Course Overview 0d, + 23 numbered scenario recipes (including four-key follow-up pairing and follow-ups per lesson)
+- `references/analytics/privacy-and-presentation.md` — `user_users` restricted access, `generated_content` whitelist, `var_variable_values.value` aggregate-only rule, Translation Gate, refusal rules
 
 ### Validation
 
-- Token resolved through the Deployment Authentication path, not a hand-rolled lookup.
+- Token resolved through the Step 0 / Deployment authentication path, not a hand-rolled lookup.
 - When the user mentioned a course by title, the current `shifu_bid → title` was confirmed via Course Metadata Recipe 0a / 0b before the downstream query ran. Historical titles were never substituted for current ones.
 - `shifu_bid` and outline mappings established before any course-level query.
 - DSL body matches grammar in `dsl.md`; filters reflect the user's intent (e.g. `status = 502` for "paid", not `>= 502`).
-- Credit consumption queries use `shifu-cli.py credit-detail` (server-side join). Do **not** issue a DSL query against `bill_daily_usage_metrics` — it is empty in production pending the daily aggregation cron. To restrict to learner-driven spend pass `--scene 1203` (preview is `1202`, debug is `1201`).
-- Follow-up counts anchored on `type = 321` (not `role = 2`), and rely on the API's auto-injected `status = 1` rather than an explicit clause.
+- Credit consumption queries used `shifu-cli.py credit-detail` per the CLI-Only Rule above — never a DSL query against `bill_daily_usage_metrics`.
+- Follow-up counts anchored on `type = 321` (not `role = 2`), relying on the API's auto-injected `status = 1` rather than an explicit clause.
 - Translation Gate applied before the answer is shown.
 - Privacy refusals honoured for inaccessible fields (phone, email, real name, ID number, avatar, birthday).
 - When CLI output contains Chinese characters that appear garbled in the agent's Bash tool, write output to a UTF-8 file and read with the file-reading tool instead (see `references/cli/cli-reference.md#cli-output--encoding`).
@@ -698,5 +588,4 @@ Top-level formatting rules (Markdown links required for URLs, etc.) in `referenc
 - `examples/generation-only.md`
 - `examples/optimization-only.md`
 - `examples/fallback-mode.md`
-- `examples/end-to-end-deploy.md`
 - `examples/deploy-only.md`

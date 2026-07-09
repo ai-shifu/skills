@@ -387,13 +387,6 @@ def _sync_lesson_by_bid(manifest, outline_bid):
     return None
 
 
-def _sync_lesson_by_file(manifest, rel_file):
-    for item in manifest.get("lessons", []):
-        if item.get("file") == rel_file:
-            return item
-    return None
-
-
 def _set_lesson_revision(manifest, outline_bid, revision, name=None, content_sha256=None):
     """Upsert the revision (and optionally name / content hash) for an outline."""
     entry = _sync_lesson_by_bid(manifest, outline_bid)

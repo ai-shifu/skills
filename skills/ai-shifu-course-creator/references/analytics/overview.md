@@ -11,13 +11,13 @@ Enter the analytics path when a course author or admin asks about:
 - ratings, listen-vs-read preference
 - follow-up Q&A counts or specific learner conversations
 - follow-up Q&A volume by lesson
-- credit consumption (per-charge detail / by day / by model / by scene / by usage type) — use `shifu-cli.py credit-detail` (the DSL `bill_daily_usage_metrics` table is currently empty in production until the daily aggregation cron is registered)
+- credit consumption (per-charge detail / by day / by model / by scene / by usage type) — use `shifu-cli.py credit-detail`
 - which wallet absorbed the deduction for a given course
 - audience profile distribution (goals, level, preferences)
 - individual learner tracking — with the privacy rules in `privacy-and-presentation.md`
 - **course title resolution** — "what is my course `<title>` currently called", "did I rename it", "is the draft title diverging from the published title" (use the Course Metadata recipes 0a–0c in `recipes.md`)
 
-> Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits via `bill_daily_usage_metrics.consumed_credits`.
+> Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits — query via `shifu-cli.py credit-detail`.
 
 Do **not** enter the analytics path when the user asks only "how many courses do I have?" — that is a `shifu-cli.py list` call. **But** if the user names a course by title (e.g. "show me the data on 跟 AI 学 AI 通识"), resolve the current `shifu_bid → title` via Course Metadata recipes first, *then* run the downstream analytics — `shifu-cli.py list` is a draft snapshot and can leak historical / renamed titles.
 
@@ -79,7 +79,7 @@ Cross-course analysis: send one `analytics-query` per `shifu_bid` and merge resu
 
 ## Picking the Right DSL
 
-1. Translate the user's question into a DSL body using `dsl.md` (syntax), `tables.md` (which table answers which question + which fields exist), and `recipes.md` (Course Metadata 0a–0c + 23 numbered scenario recipes).
+1. Translate the user's question into a DSL body using `dsl.md` (syntax), `tables.md` (which table answers which question + which fields exist), and `recipes.md` (Course Metadata 0a–0c, Course Overview 0d, + 23 numbered scenario recipes).
 2. Apply the privacy rules in `privacy-and-presentation.md` if the query touches `user_users`, `generated_content`, or `var_variable_values.value`.
 3. Apply the Translation Gate in `privacy-and-presentation.md` before presenting any result.
 4. **If the user mentioned a course by title**, run Course Metadata Recipe 0a / 0b first to confirm the current `shifu_bid → title` mapping. Never report a historical title as the course's current name.
@@ -122,13 +122,11 @@ Before constructing any DSL, identify the correct table. Use this map:
 | Orders / revenue / payment channel | `order_orders` | `status = 502` (paid) | `paid_price`, `payment_channel` |
 | Audience profile distribution | `var_variable_values` | — | `variable_bid`, `value` (aggregate only!) |
 | Active learner count / archive rate | `shifu_user_archives` | `archived = 0` | `user_bid` |
-| Credit consumption (by day/model/scene) | `bill_daily_usage_metrics` | `usage_scene = 1203` (learner production) | `consumed_credits`, `stat_date` |
+| Credit consumption (by day/model/scene) | `bill_daily_usage_metrics` ⚠️ currently empty — use `credit-detail` | `usage_scene = 1203` (learner production) | `consumed_credits`, `stat_date` |
 | **Credit consumption (raw detail)** | **`shifu-cli.py credit-detail`** | `--scene 1203` | CLI command, NOT a DSL query |
 | Look up learner nickname | `user_users` | — | `nickname`, `user_identify` |
 | Current course title | `shifu_published_shifus` | `deleted = 0` (auto-injected) | `title` |
 | Draft course title | `shifu_draft_shifus` | `deleted = 0` (auto-injected) | `title` |
-
-> **Two credit paths**: `bill_daily_usage_metrics` for daily aggregated trends via DSL; `shifu-cli.py credit-detail` for raw per-usage detail (server-side join). They answer different questions — use the right one.
 
 ## Common Pitfalls (read this before your first query)
 
@@ -136,15 +134,7 @@ These are the mistakes that most commonly cause repeated failed queries and wast
 
 ### Pitfall 1 — Follow-up questions: use `type = 321`, NOT `role = 2`
 
-`role = 2` (learner) matches ALL learner input widgets — follow-up questions, form inputs, phone numbers, verification codes. To count follow-up questions specifically, filter `type = 321` (`mdask`). This is the single most common analytics mistake.
-
-```json
-// WRONG — includes form inputs, phone numbers, etc.
-{"where": [{"field": "role", "op": "=", "value": 2}]}
-
-// CORRECT — only actual follow-up questions
-{"where": [{"field": "type", "op": "=", "value": 321}]}
-```
+`role = 2` (learner) matches ALL learner input widgets — follow-up questions, form inputs, phone numbers, verification codes. To count follow-up questions specifically, filter `type = 321` (`mdask`). This is the single most common analytics mistake — full trap explanation in `tables.md`.
 
 ### Pitfall 2 — Credit queries: `credit-detail` vs `bill_daily_usage_metrics`
 
@@ -154,15 +144,7 @@ These are **different tools for different questions**:
 
 ### Pitfall 3 — `where` must be an array, not a single object
 
-The DSL requires `where` to be an array of filter objects:
-
-```json
-// WRONG — server rejects with 11002
-{"where": {"field": "type", "op": "=", "value": 321}}
-
-// CORRECT — always an array
-{"where": [{"field": "type", "op": "=", "value": 321}]}
-```
+The DSL requires `where` to be an array of filter objects, even for a single condition — a bare object is rejected with `11002`. WRONG/CORRECT examples in `dsl.md` → Syntax Gotchas.
 
 ### Pitfall 4 — Table name guessing
 
@@ -178,5 +160,5 @@ When querying lesson-level data (stuck lessons, follow-ups per lesson, ratings),
 
 - `dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)
 - `tables.md` — the 10 tables, their fields, all code/enum translation tables, ID translation rules, the duplicate-row trap, the `role = 2 ≠ follow-up` trap, and the "course title is not history" rule
-- `recipes.md` — ready-to-run DSL templates by scenario (Course Metadata 0a–0c, then 23 numbered scenario recipes including follow-up four-key pairing and follow-up per lesson)
+- `recipes.md` — ready-to-run DSL templates by scenario (Course Metadata 0a–0c, Course Overview 0d, then 23 numbered scenario recipes including follow-up four-key pairing and follow-up per lesson)
 - `privacy-and-presentation.md` — `user_users` / `generated_content` / `var_variable_values` privacy rules, plus the Translation Gate for user-facing output

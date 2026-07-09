@@ -80,12 +80,11 @@
 ```
 
 ```md
-## L01 Objective
-Identify the highest-signal diagnostic step.
+Ask the learner to identify the highest-signal diagnostic step for the drifting metric.
 ---
 ?[%{{diagnosis_choice}} check workload shape | check lock wait | check cache hit ratio]
 ---
-Based on {{diagnosis_choice}}, we run one focused verification next.
+The learner's diagnosis choice is {{diagnosis_choice}}. Based on it, run one focused verification next.
 ```
 
 ## Optimization Output

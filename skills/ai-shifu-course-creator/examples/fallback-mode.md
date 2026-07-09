@@ -2,20 +2,25 @@
 
 > Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
 
-Demonstrates degraded-input handling across phases.
+Demonstrates degraded-input handling across the four phases. This file is the single home for fallback scenarios; the phase-only examples cover standard mode and point here.
 
 ## Segmentation Fallback: Conflicting Sources
 
 ```json
 {
-  "course_material": "doc-a: retries should stop after 3 attempts...\ndoc-b: retries can continue until queue drains...",
+  "course_material": "doc-a: retries should stop after 3 attempts...\ndoc-b: retries can continue until queue drains...\ndoc-c: [image:failure-matrix.png]",
   "course_profile": {
-    "audience_level": "intermediate"
+    "audience_level": "intermediate",
+    "lesson_duration_minutes": 15
+  },
+  "delivery_constraints": {
+    "must_cover_topics": ["stop condition design"],
+    "non_negotiable_fragments": ["[image:failure-matrix.png]"]
   }
 }
 ```
 
-Output includes uncertainty markers and rerun hints:
+Output includes uncertainty markers and rerun hints; preserved blocks survive even under fallback:
 
 ```json
 {
@@ -26,10 +31,18 @@ Output includes uncertainty markers and rerun hints:
       "core_point": "Retry stop conditions differ across sources.",
       "source_span": {"start": 0, "end": 95},
       "uncertainty": "high"
+    },
+    {
+      "segment_id": "S11",
+      "segment_type": "image",
+      "core_point": "Failure matrix image preserved",
+      "preserve_block": true,
+      "source_span": {"start": 96, "end": 132}
     }
   ],
   "rerun_hints": [
-    "Provide authoritative policy for max retry attempts."
+    "Provide authoritative policy for max retry attempts.",
+    "Confirm whether queue-drain mode is allowed in this course."
   ]
 }
 ```
@@ -65,8 +78,7 @@ Pipeline produces partial but runnable output:
 ```
 
 ```md
-## L03 Objective
-Select a first-pass classification rule.
+Ask the learner to select a first-pass classification rule before comparing the two taxonomies.
 ---
 ?[latency first | contention first]
 ---
@@ -80,7 +92,11 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
   "course_material": "structured_lesson_segments",
   "teaching_constraints": {
     "max_interactions": 2,
+    "must_use_viewpoint_check": true,
     "allow_cross_lesson_dependency": false
+  },
+  "delivery_constraints": {
+    "platform_limits": ["markdown_only"]
   }
 }
 ```
@@ -88,9 +104,14 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 ```json
 {
   "lesson_id": "L07",
+  "lesson_title": "Pick a Rollback Trigger",
+  "teaching_prompt": "Pick a rollback trigger that minimizes blast radius.\n---\n?[latency spike threshold | error budget burn threshold]\n---\nAfter the learner answers, define one immediate rollback condition and one follow-up diagnostic for the selected trigger.",
+  "used_variables": [],
+  "depends_on_lessons": [],
   "fallback_mode": true,
   "assumptions": [
-    "No cross-lesson variable carryover is used."
+    "No cross-lesson variable carryover is used.",
+    "One viewpoint check is enough for this pass."
   ],
   "upgrade_notes": [
     "Add richer evidence chain after full source context is available."
@@ -98,15 +119,28 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 }
 ```
 
+Rendered `teaching_prompt` value:
+
+```md
+Pick a rollback trigger that minimizes blast radius.
+---
+?[latency spike threshold | error budget burn threshold]
+---
+After the learner answers, define one immediate rollback condition and one follow-up diagnostic for the selected trigger.
+```
+
 ## Optimization Fallback: No Source Material
 
 ```json
 {
-  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\nUse {{fix_context}} now.",
+  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\n?[%{{choose_fix}} option A | option B]\n---\nUse {{fix_context}} now.",
   "course_material": "",
   "optimization_constraints": {
     "fallback_mode": true,
     "minimize_scope": true
+  },
+  "delivery_constraints": {
+    "platform_limits": ["markdown_only"]
   }
 }
 ```
@@ -115,13 +149,32 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 {
   "risk_and_issue_report": {
     "overall_risk": "high",
-    "blocking_issues": ["variable_or_syntax_risk"],
+    "blocking_issues": [
+      "variable_or_syntax_risk",
+      "semantic_duplicate_interactions"
+    ],
     "coverage_status": "unknown_without_source"
   },
+  "change_list": [
+    {
+      "issue_class": "variable_or_syntax_risk",
+      "change": "remove the learner-answer reference with no collection contract and keep one canonical no-variable interaction"
+    }
+  ],
   "follow_up": [
-    "Provide source material for full coverage audit."
+    "Provide source material for full coverage and meaning audit."
   ]
 }
+```
+
+Corrected script (smallest safe edit):
+
+```md
+Pick one safe first fix.
+---
+?[option A | option B]
+---
+After the learner answers, apply one verification step before rollout.
 ```
 
 ## Acceptance Notes
@@ -130,3 +183,4 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 - Uncertainty is marked explicitly, never silently merged.
 - Rerun hints guide the user toward resolution.
 - Output schemas remain compatible across standard and fallback modes.
+- The `course_prompt` artifact is omitted when `course_material` is empty (per SKILL.md `## Optimization` → Validation).

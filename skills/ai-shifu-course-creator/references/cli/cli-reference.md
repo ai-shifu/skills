@@ -98,9 +98,12 @@ show <shifu_bid>                              # Show course details + outline tr
 show <shifu_bid> <outline_bid>                # Read a lesson's Teaching Prompt
 history <shifu_bid> <outline_bid>             # Teaching Prompt revision history
 export <shifu_bid> [-o file.json]             # Export course as JSON
+find-title <keyword>                          # Search courses by current title
 ```
 
-`show` (without `outline_bid`), `create`, `import`, and `publish` all print a `Verification URLs:` block. Lines included depend on the command: `publish` and `show` add a `Published URL:` line (the public student-facing address — `<base>/c/<bid>` without `preview=true`); `create` and `import` omit it because the course is not yet published. Each URL is followed by a one-line `# ...` Chinese hint that explains the click jumps to AI 师傅 and what the link is for; it mentions AI 师傅 credit consumption only when the linked action can consume credits. Per-lesson preview URLs are no longer printed — if you need one, use `show <shifu_bid>` to find the `outline_bid` and build `<base>/c/<bid>?preview=true&lessonid=<outline_bid>` on demand. Copy printed URLs as-is when reporting; never reconstruct them from a template.
+`find-title` matches the keyword case-insensitively (whitespace-normalized) against **current** published and draft titles only — never historical / renamed titles — and prints the matches grouped. Use it for targeted Step 0 target resolution instead of dumping the whole `list`.
+
+`show` (without `outline_bid`), `create`, `import`, `publish`, and `pull` all print a `Verification URLs:` block. Lines included depend on the command: `publish` and `show` add a `Published URL:` line (the public student-facing address — `<base>/c/<bid>` without `preview=true`); `create`, `import`, and `pull` omit it (`create` / `import` because the course is not yet published). Each URL is followed by a one-line `# ...` Chinese hint that explains the click jumps to AI 师傅 and what the link is for; it mentions AI 师傅 credit consumption only when the linked action can consume credits. Per-lesson preview URLs are no longer printed — if you need one, use `show <shifu_bid>` to find the `outline_bid` and build `<base>/c/<bid>?preview=true&lessonid=<outline_bid>` on demand. Copy printed URLs as-is when reporting; never reconstruct them from a template.
 
 ## Analytics Query
 
@@ -120,6 +123,23 @@ Exit codes:
 The full response is always printed to stdout regardless of exit code, so the agent can read the error code and either fix the DSL or guide the user to re-login. The CLI deliberately does not exit before printing analytics business errors.
 
 Use this command in conjunction with the analytics references in `references/analytics/` — never construct raw HTTP calls.
+
+### credit-detail
+
+```bash
+credit-detail <shifu_bid> [--start 2026-05-01] [--end 2026-05-15] [--scene 1202,1203] [--usage-type 1101,1102] [--limit 200] [--offset 200]
+```
+
+Server-side join of `bill_usage` × `credit_ledger_entries` — the authoritative command for all credit / spend questions. Do **not** issue DSL queries against `bill_daily_usage_metrics` for this (that table is empty in production until the daily aggregation job is enabled — see `references/analytics/tables.md`).
+
+Flags:
+
+- `--start` / `--end` — inclusive ISO date bounds (`end` must be on or after `start`).
+- `--scene` — comma-separated subset of `{1201, 1202, 1203}` (debug / preview / production). Use `--scene 1203` to restrict to learner-driven spend.
+- `--usage-type` — comma-separated subset of `{1101, 1102}` (LLM / TTS).
+- `--limit` — row count cap, 1..1000 (default 100 server-side). `--offset` — pagination offset (default 0). The `summary` block always reflects the full filtered set regardless of paging.
+
+Output is JSON: `summary` (total credits, distinct users / progress records, wallet creator, time range) plus `rows` (per-usage detail). Credit values are decimal strings — round to 2 decimal places when presenting. Ready-to-run scenarios and the response shape: `references/analytics/recipes.md` Recipes 8–13.
 
 ## Version Sync (pull / status)
 
@@ -281,6 +301,47 @@ Build behavior:
 - **Course description** resolution order: `--description` CLI arg -> `course-description.md` -> empty string
 - **Chapter structure**: if `structure.json` exists, generates multi-chapter structure per its definition; otherwise creates a single chapter (named via `--chapter-name` or defaults to course title) containing all `lesson-*.md` files in sorted order
 - **Lesson title** resolution order: `title` field in `structure.json` -> filename derived (e.g., `lesson-01.md` -> "Lesson 01")
+
+### Import JSON Schema
+
+The `build` command generates a `shifu-import.json` with this shape:
+
+```json
+{
+  "version": "1.0",
+  "shifu": {
+    "shifu_bid": "<UUID>",
+    "title": "Course Title",
+    "description": "Description",
+    "keywords": "keywords",
+    "llm": "",
+    "llm_temperature": 0,
+    "course_prompt": "<content from course-prompt.md>",
+    "ask_enabled_status": 5101,
+    "price": 0.0
+  },
+  "outline_items": [
+    {
+      "outline_item_bid": "<UUID>",
+      "title": "Lesson Title",
+      "type": 401,
+      "parent_bid": "",
+      "position": "0",
+      "content": "<MarkdownFlow content>"
+    }
+  ],
+  "structure": { "bid": "<shifu_bid>", "type": "shifu", "children": [] }
+}
+```
+
+Key fields:
+
+- `course_prompt`: Course-level AI role definition (from `course-prompt.md`). The CLI maps this to the platform API field `system_prompt` when calling `/shifus/<bid>/detail`.
+- `description`: Learner-facing SEO/listing description (resolution order above).
+- `type: 401`: Regular lesson node.
+- `parent_bid`: Empty string = chapter (top-level container); non-empty = lesson (child node with MarkdownFlow content). Use `add-chapter` to create chapters, then pass the chapter BID as `--parent-bid` when creating lessons.
+- `content`: The MarkdownFlow prompt content (this is the core teaching material).
+- `ask_enabled_status: 5101`: Enables learner questions.
 
 ## Image Upload
 
