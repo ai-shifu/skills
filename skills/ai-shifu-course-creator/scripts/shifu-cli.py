@@ -5,6 +5,7 @@ import argparse
 import base64
 import hashlib
 import json
+import math
 import os
 import shutil
 import sys
@@ -742,7 +743,7 @@ ACCESS_TYPES = ("guest", "trial", "normal")
 COURSE_CONFIG_DEFAULTS = {
     "model": "", "temperature": 0.3, "price": 0, "keywords": [], "avatar": "",
     "use_learner_language": False,
-    "tts_enabled": False, "tts_provider": "minimax", "tts_model": "",
+    "tts_enabled": False, "tts_provider": "", "tts_model": "",
     "tts_voice_id": "", "tts_speed": 1.0, "tts_pitch": 0, "tts_emotion": "",
     "ask_enabled_status": 5101, "ask_model": "", "ask_temperature": 0.0,
     "ask_system_prompt": "", "ask_provider_config": {},
@@ -1393,24 +1394,170 @@ def cmd_update_meta(args):
 
 
 # ── Set Listen Mode ────────────────────────────────────────────────────────────
+def _string_tts_value(value):
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _tts_provider_name(value):
+    return _string_tts_value(value).lower()
+
+
+def _tts_config_dict(tts_config):
+    return tts_config if isinstance(tts_config, dict) else {}
+
+
+def _tts_list(value):
+    return value if isinstance(value, list) else []
+
+
+def _tts_providers_by_name(tts_config):
+    providers = {}
+    for item in _tts_list(_tts_config_dict(tts_config).get("providers")):
+        if not isinstance(item, dict):
+            continue
+        name = _tts_provider_name(item.get("name"))
+        if name:
+            providers[name] = item
+    return providers
+
+
+def _tts_model_options(tts_config):
+    options = []
+    for item in _tts_list(_tts_config_dict(tts_config).get("model_options")):
+        if not isinstance(item, dict):
+            continue
+        provider = _tts_provider_name(item.get("provider"))
+        value = _string_tts_value(item.get("value"))
+        if provider and value:
+            options.append(item)
+    return options
+
+
+def _filter_tts_voices_for_model(provider, voices, model):
+    if _tts_provider_name(provider) != "volcengine":
+        return voices
+    model_key = _string_tts_value(model)
+    if not model_key:
+        return voices
+    return [
+        v for v in voices
+        if _string_tts_value(v.get("resource_id")) == model_key
+    ]
+
+
+def _first_tts_model(provider_config):
+    for item in _tts_list((provider_config or {}).get("models")):
+        if isinstance(item, dict):
+            model = _string_tts_value(item.get("value"))
+            if model:
+                return model
+    return ""
+
+
+def _select_platform_tts_defaults(speed, tts_config):
+    """Mirror the platform editor's default provider/model/voice selection."""
+    providers = _tts_providers_by_name(tts_config)
+    model_options = _tts_model_options(tts_config)
+    default_model_option = model_options[0] if model_options else None
+    provider = ""
+    model = ""
+
+    if default_model_option:
+        provider = _tts_provider_name(default_model_option.get("provider"))
+        # `value` is the UI select key; `model` is the API payload value.
+        model = _string_tts_value(default_model_option.get("model"))
+        if not model:
+            model = _first_tts_model(providers.get(provider) or {})
+    elif providers:
+        provider = next(iter(providers))
+        model = _first_tts_model(providers[provider])
+
+    provider_config = providers.get(provider) or {}
+    voices = [
+        v for v in _tts_list(provider_config.get("voices"))
+        if isinstance(v, dict) and _string_tts_value(v.get("value"))
+    ]
+    selectable_voices = _filter_tts_voices_for_model(provider, voices, model)
+    voice_id = (
+        _string_tts_value(selectable_voices[0].get("value"))
+        if selectable_voices else ""
+    )
+
+    if speed is None:
+        speed_config = provider_config.get("speed")
+        speed = (
+            speed_config.get("default")
+            if isinstance(speed_config, dict)
+            else speed_config
+        )
+
+    return provider, model, voice_id, speed
+
+
+def _build_set_tts_payload(args, tts_config=None):
+    enabled = args.enabled == "true"
+    payload = {"tts_enabled": enabled}
+    if not enabled:
+        return payload
+
+    provider, model, voice_id, speed = _select_platform_tts_defaults(
+        args.speed, tts_config or {})
+    if speed is None:
+        speed = 1.0
+    try:
+        speed = float(speed)
+        if not math.isfinite(speed):
+            raise ValueError
+    except (TypeError, ValueError):
+        print(f"Error: invalid TTS speed: {speed!r}")
+        sys.exit(1)
+
+    missing = []
+    if not provider:
+        missing.append("tts_provider")
+    provider_config = _tts_providers_by_name(tts_config or {}).get(provider) or {}
+    if _tts_list(provider_config.get("models")) and not model:
+        missing.append("tts_model")
+    if not voice_id:
+        missing.append("tts_voice_id")
+    if missing:
+        print("Error: platform defaults did not provide complete TTS settings.")
+        print(f"  Missing: {', '.join(missing)}")
+        print("  Retry after the platform TTS config endpoint is available.")
+        sys.exit(1)
+
+    payload.update({
+        "tts_provider": provider,
+        "tts_model": model,
+        "tts_voice_id": voice_id,
+        "tts_speed": speed,
+        "tts_pitch": 0,
+        "tts_emotion": "",
+    })
+    return payload
+
+
 def cmd_set_tts(args):
     """Enable or disable course Listen Mode without changing other attributes."""
     base_url, token = resolve_auth(args)
     shifu_bid = args.shifu_bid
-    enabled = args.enabled == "true"
     course_dir = getattr(args, "course_dir", None)
 
     manifest = _load_sync(course_dir) if course_dir else None
-    intended = {"tts_enabled": enabled}
+    tts_config = {}
+    if args.enabled == "true":
+        tts_config = api_safe(base_url, token, "get", "/tts/config") or {}
+    payload = _build_set_tts_payload(args, tts_config)
     _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
-                                intended)
+                                payload)
 
-    # Send only the Listen Mode switch. Provider/model/voice/speed/pitch/emotion remain
-    # whatever the platform currently stores.
-    api(base_url, token, "post", f"/shifus/{shifu_bid}/detail",
-        json={"tts_enabled": enabled})
+    # Disabling sends only the switch. Enabling sends the full TTS settings that
+    # the backend now validates strictly, matching the platform editor payload.
+    api(base_url, token, "post", f"/shifus/{shifu_bid}/detail", json=payload)
     print(f"Set course {shifu_bid} Listen Mode -> "
-          f"{'enabled' if enabled else 'disabled'}")
+          f"{'enabled' if payload['tts_enabled'] else 'disabled'}")
 
     if manifest and manifest.get("shifu_bid") == shifu_bid:
         fresh_detail = api_safe(base_url, token, "get",
@@ -2608,6 +2755,8 @@ def build_parser():
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("--enabled", required=True, choices=["true", "false"],
                    help="true=enable Listen Mode, false=disable it")
+    p.add_argument("--speed", type=float, default=None,
+                   help="Override the platform default TTS speed")
     p.add_argument("--course-dir", default=None,
                    help=f"Also refresh local {COURSE_CONFIG_NAME} and sync manifest")
 
