@@ -193,7 +193,7 @@ update-lesson <shifu_bid> <outline_bid> --teaching-prompt-file lesson.md [--cour
 rename-lesson <shifu_bid> <outline_bid> --name "New Name"
 reorder <shifu_bid> --order bid1,bid2,bid3
 set-access <shifu_bid> <outline_bid> --access guest|trial|normal [--hidden true|false] [--course-dir ./course-a/]
-set-tts <shifu_bid> --enabled true|false [--course-dir ./course-a/]
+set-tts <shifu_bid> --enabled true|false [--speed SPEED] [--course-dir ./course-a/]
 ```
 
 `update-meta` sends only the content fields you pass (`--name` / `--description`
@@ -211,10 +211,15 @@ resets the lesson's learning permission.
 lesson's other fields untouched. With `--course-dir` it also writes the value
 into the `structure.json` reference.
 
-`set-tts` enables or disables course Listen Mode without re-importing; it
-sends only `tts_enabled` and leaves provider/model/voice/speed/pitch/emotion
-unchanged. With `--course-dir` it refreshes `course-config.json` and records the
-new course revision in `.shifu-sync.json`.
+`set-tts` enables or disables course Listen Mode without re-importing. Disabling
+sends only `tts_enabled=false` and leaves the stored provider/model/voice/speed
+unchanged. Enabling sends the full TTS settings the backend validates:
+`tts_enabled=true`, `tts_provider`, `tts_model`, `tts_voice_id`, `tts_speed`,
+plus normalized `tts_pitch=0` and `tts_emotion=""`. Provider, model, voice, and
+default speed come from platform defaults at `/tts/config` (the same fallback
+used by the AI-Shifu settings page); `--speed` is the only optional override.
+With `--course-dir` it refreshes `course-config.json` and records the new course
+revision in `.shifu-sync.json`.
 
 `update-lesson`, `update-meta`, and `set-tts` are version-aware when given `--course-dir`
 (a directory with a `.shifu-sync.json` from `pull`):

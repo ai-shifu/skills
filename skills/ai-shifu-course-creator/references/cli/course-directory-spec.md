@@ -165,13 +165,13 @@ Ask / keywords / …), written by `pull` so the agent can see the current settin
 The course **name** lives in `README.md`, the SEO **description** in
 `course-description.md`, and the **system prompt** in `course-prompt.md`.
 The one exception: `set-tts --course-dir` refreshes this snapshot after changing
-`tts_enabled`.
+Listen Mode or its TTS provider/model/voice/speed settings.
 
 ```json
 {
   "model": "", "temperature": 0.3, "price": 0, "keywords": [], "avatar": "",
   "use_learner_language": false,
-  "tts_enabled": false, "tts_provider": "minimax", "tts_model": "", "tts_voice_id": "",
+  "tts_enabled": false, "tts_provider": "", "tts_model": "", "tts_voice_id": "",
   "tts_speed": 1.0, "tts_pitch": 0, "tts_emotion": "",
   "ask_enabled_status": 5101, "ask_model": "", "ask_temperature": 0.0,
   "ask_system_prompt": "", "ask_provider_config": {}
