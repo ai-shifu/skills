@@ -5,6 +5,7 @@ import argparse
 import base64
 import hashlib
 import json
+import math
 import os
 import shutil
 import sys
@@ -1446,6 +1447,15 @@ def _filter_tts_voices_for_model(provider, voices, model):
     ]
 
 
+def _first_tts_model(provider_config):
+    for item in _tts_list((provider_config or {}).get("models")):
+        if isinstance(item, dict):
+            model = _string_tts_value(item.get("value"))
+            if model:
+                return model
+    return ""
+
+
 def _select_platform_tts_defaults(speed, tts_config):
     """Mirror the platform editor's default provider/model/voice selection."""
     providers = _tts_providers_by_name(tts_config)
@@ -1458,13 +1468,11 @@ def _select_platform_tts_defaults(speed, tts_config):
         provider = _tts_provider_name(default_model_option.get("provider"))
         # `value` is the UI select key; `model` is the API payload value.
         model = _string_tts_value(default_model_option.get("model"))
+        if not model:
+            model = _first_tts_model(providers.get(provider) or {})
     elif providers:
         provider = next(iter(providers))
-        for item in _tts_list(providers[provider].get("models")):
-            if isinstance(item, dict):
-                model = _string_tts_value(item.get("value"))
-                if model:
-                    break
+        model = _first_tts_model(providers[provider])
 
     provider_config = providers.get(provider) or {}
     voices = [
@@ -1500,6 +1508,8 @@ def _build_set_tts_payload(args, tts_config=None):
         speed = 1.0
     try:
         speed = float(speed)
+        if not math.isfinite(speed):
+            raise ValueError
     except (TypeError, ValueError):
         print(f"Error: invalid TTS speed: {speed!r}")
         sys.exit(1)
@@ -1508,7 +1518,7 @@ def _build_set_tts_payload(args, tts_config=None):
     if not provider:
         missing.append("tts_provider")
     provider_config = _tts_providers_by_name(tts_config or {}).get(provider) or {}
-    if provider_config.get("models") and not model:
+    if _tts_list(provider_config.get("models")) and not model:
         missing.append("tts_model")
     if not voice_id:
         missing.append("tts_voice_id")
@@ -1536,7 +1546,9 @@ def cmd_set_tts(args):
     course_dir = getattr(args, "course_dir", None)
 
     manifest = _load_sync(course_dir) if course_dir else None
-    tts_config = api_safe(base_url, token, "get", "/tts/config") or {}
+    tts_config = {}
+    if args.enabled == "true":
+        tts_config = api_safe(base_url, token, "get", "/tts/config") or {}
     payload = _build_set_tts_payload(args, tts_config)
     _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
                                 payload)
