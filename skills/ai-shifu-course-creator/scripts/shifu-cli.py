@@ -1448,6 +1448,7 @@ def _select_platform_tts_defaults(speed, tts_config):
 
     if default_model_option:
         provider = _tts_provider_name(default_model_option.get("provider"))
+        # `value` is the UI select key; `model` is the API payload value.
         model = _string_tts_value(default_model_option.get("model"))
     elif providers:
         provider = next(iter(providers))
@@ -1467,7 +1468,12 @@ def _select_platform_tts_defaults(speed, tts_config):
     )
 
     if speed is None:
-        speed = (provider_config.get("speed") or {}).get("default")
+        speed_config = provider_config.get("speed")
+        speed = (
+            speed_config.get("default")
+            if isinstance(speed_config, dict)
+            else speed_config
+        )
 
     return provider, model, voice_id, speed
 
