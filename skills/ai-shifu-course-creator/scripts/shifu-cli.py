@@ -1403,9 +1403,13 @@ def _tts_provider_name(value):
     return _string_tts_value(value).lower()
 
 
+def _tts_config_dict(tts_config):
+    return tts_config if isinstance(tts_config, dict) else {}
+
+
 def _tts_providers_by_name(tts_config):
     providers = {}
-    for item in (tts_config or {}).get("providers") or []:
+    for item in _tts_config_dict(tts_config).get("providers") or []:
         if not isinstance(item, dict):
             continue
         name = _tts_provider_name(item.get("name"))
@@ -1416,7 +1420,7 @@ def _tts_providers_by_name(tts_config):
 
 def _tts_model_options(tts_config):
     options = []
-    for item in (tts_config or {}).get("model_options") or []:
+    for item in _tts_config_dict(tts_config).get("model_options") or []:
         if not isinstance(item, dict):
             continue
         provider = _tts_provider_name(item.get("provider"))
@@ -1452,13 +1456,18 @@ def _select_platform_tts_defaults(speed, tts_config):
         model = _string_tts_value(default_model_option.get("model"))
     elif providers:
         provider = next(iter(providers))
-        models = providers[provider].get("models") or []
-        if models:
-            model = _string_tts_value(models[0].get("value"))
+        models = providers[provider].get("models")
+        if isinstance(models, list):
+            for item in models:
+                if isinstance(item, dict):
+                    model = _string_tts_value(item.get("value"))
+                    if model:
+                        break
 
     provider_config = providers.get(provider) or {}
+    raw_voices = provider_config.get("voices")
     voices = [
-        v for v in (provider_config.get("voices") or [])
+        v for v in (raw_voices if isinstance(raw_voices, list) else [])
         if isinstance(v, dict) and _string_tts_value(v.get("value"))
     ]
     selectable_voices = _filter_tts_voices_for_model(provider, voices, model)
