@@ -25,8 +25,8 @@ Do not move lesson-specific mechanics into `course-prompt.md`.
 ```markdown
 # Role
 
-You are XXX.
-You specialize in XXX and are a professional teacher in the field of XXX.
+- You are XXX.
+- You specialize in XXX and are a professional teacher in the field of XXX.
 
 # Task
 
