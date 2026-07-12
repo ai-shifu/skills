@@ -78,12 +78,12 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 
 | Placeholder | Source |
 | --- | --- |
-| Teacher name | Author choice; default to a course-specific persona name. |
-| Specialty and teaching field | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
-| Course name | First heading in `README.md`. |
-| Mastery goal | Orchestration course-level goal aggregated from `course_index` core questions. |
-| Learner profile | `course_profile.audience_level` and `course_profile.prerequisite_level`. |
-| Problems in scope | `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage. |
+| `XXX` (teacher name) | Author choice; default to a course-specific persona name. |
+| `XXX` (specialty and teaching field) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
+| `*XXX*` (course name) | First heading in `README.md`. |
+| `XXX` (mastery goal) | Orchestration course-level goal aggregated from `course_index` core questions. |
+| `XXX` (learner profile) | `course_profile.audience_level` and `course_profile.prerequisite_level`. |
+| `XXX` (problems in scope) | `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage. |
 
 ## Boundaries
 
