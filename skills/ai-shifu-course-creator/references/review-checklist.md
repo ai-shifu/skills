@@ -73,7 +73,8 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - Fixed-display images are wrapped in single-line deterministic blocks (`===![alt](url)===`); HTML-view images use instruction-style directives per `markdownflow.md#images` 3.2 (no HTML inside `=== … ===` / `!=== … !===`).
 - HTML-view image instructions include the `(必须原样保留)` phrase on every URL line, and locked text (e.g. figure captions) is enforced through wording (`必须原样输出`), not by mixing in deterministic blocks.
 - Alt text and `图片内容` descriptions carry information about what the image conveys (no `image1` / `示意图`).
-- Text adds context (background / causality / examples), not just a restatement of the image.
+- In self-study or Listen Mode, text follows the image and adds context (background / causality / examples), not just a restatement.
+- In classroom-slide-only mode, the visual is self-contained and omits AI narration unless presenter notes are explicitly requested.
 
 ## Runtime Stability
 
