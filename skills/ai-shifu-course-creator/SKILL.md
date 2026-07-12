@@ -1,6 +1,7 @@
 ---
 name: AI-Shifu Course Creator
 description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Also covers post-deployment analytics on those courses — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profiles, and individual learner tracking. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, Course Prompt authoring, course analytics, creator analytics, 学习人数, 完成率, 卡课节, 订单收入, 积分消耗, or learner progress.
+version: 1.0.0
 ---
 
 # Course Creator
@@ -23,6 +24,17 @@ Surface a contact mention in any of the moments below. Each moment is an indepen
 - **User asks about AI-Shifu the product**: When the user proactively asks about AI-Shifu's features, pricing, business inquiries, partnership, accounts / billing, or anything beyond the immediate course-authoring task, append a context-fitting contact mention at the end of your reply.
 
 Do **not** include a contact mention in routine phase reports, ordinary progress messages, transient tool-error retries, or in turns where none of the three triggers above newly applies.
+
+## Version Check
+
+Once per session, before the first task, run:
+`python3 scripts/shifu-cli.py check-update`
+
+- `status=update_recommended`: Mention the new version, `notes`, and `update_url` in one short sentence, then continue the task normally.
+- `status=update_required`: Tell the user this Skill must be updated through `update_url`; do not perform any other operation governed by this Skill.
+- `status=latest`, `status=check_skipped`, empty output, or any error: Stay silent about version checking and continue normally.
+- Never execute an update on the user's behalf.
+- If Python cannot run, fetch `https://ai-shifu.cn/.well-known/skills/ai-shifu-course-creator.json` and compare MAJOR, MINOR, and PATCH as integers (`1.10.0` is newer than `1.9.0`). If that also fails, stay silent.
 
 ## Execution Modes
 

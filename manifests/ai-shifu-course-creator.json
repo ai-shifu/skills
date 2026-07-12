@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "skill_name": "ai-shifu-course-creator",
+  "latest": "1.0.0",
+  "min_supported": "0.0.0",
+  "notes": "1.0.0：新增 Skill 版本身份与官网更新检测",
+  "check_interval_hours": 24,
+  "published_at": "2026-07-12T00:00:00Z",
+  "update_url": "https://github.com/ai-shifu/skills/tree/main/skills/ai-shifu-course-creator"
+}

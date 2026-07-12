@@ -22,6 +22,7 @@ RE_MD_ANCHOR_REF = re.compile(
 )
 RE_HEADING = re.compile(r"^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
 RE_SLUG_STRIP = re.compile(r"[^\w\- ]")
+RE_SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 FORBIDDEN_WORDS = {"claude", "anthropic"}
 
 # Doc surface scanned for cross-file anchor links. Local-only dirs
@@ -158,6 +159,21 @@ def validate_skill(skill_dir: Path, issues: IssueBag) -> None:
             f"{skill_md}: compatibility field exceeds {MAX_COMPATIBILITY_LEN} chars "
             f"({len(compatibility)})"
         )
+
+    version = front.get("version", "").strip()
+    manifest_file = skill_dir.parents[1] / "manifests" / f"{slug}.json"
+    if manifest_file.is_file():
+        if not version:
+            issues.add_error(f"{skill_md}: frontmatter 'version' field is required")
+        elif not RE_SEMVER.fullmatch(version):
+            issues.add_error(
+                f"{skill_md}: version must use MAJOR.MINOR.PATCH, got '{version}'"
+            )
+    else:
+        if version and not RE_SEMVER.fullmatch(version):
+            issues.add_error(
+                f"{skill_md}: version must use MAJOR.MINOR.PATCH, got '{version}'"
+            )
 
     readme = skill_dir / "README.md"
     if readme.exists():

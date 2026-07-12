@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-shifu.cn/schemas/skill-update-manifest.schema.json",
+  "title": "AI-Shifu Skill update manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "skill_name",
+    "latest",
+    "min_supported",
+    "notes",
+    "check_interval_hours",
+    "published_at",
+    "update_url"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "skill_name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "latest": {"$ref": "#/$defs/semver"},
+    "min_supported": {"$ref": "#/$defs/semver"},
+    "notes": {"type": "string", "maxLength": 500},
+    "check_interval_hours": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 168
+    },
+    "published_at": {"type": "string", "format": "date-time"},
+    "update_url": {"type": "string", "format": "uri", "pattern": "^https://"}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    }
+  }
+}
