@@ -79,7 +79,8 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 | Placeholder | Source |
 | --- | --- |
 | `XXX` (teacher name) | Author choice; default to a course-specific persona name. |
-| `XXX` (specialty and teaching field) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
+| `XXX` (specialty) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
+| `XXX` (teaching field) | Specific course domain or sub-topic from Segmentation. |
 | `*XXX*` (course name) | First heading in `README.md`. |
 | `XXX` (mastery goal) | Orchestration course-level goal aggregated from `course_index` core questions. |
 | `XXX` (learner profile) | `course_profile.audience_level` and `course_profile.prerequisite_level`. |
