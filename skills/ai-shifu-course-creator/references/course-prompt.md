@@ -74,7 +74,7 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 
 | Placeholder | Source |
 | --- | --- |
-| Teacher name | Author choice; default to a course-specific persona name. |
+| Teacher name | Course author's real name. If unknown, ask the author. |
 | Specialty and teaching field | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
 | Course name | First heading in `README.md`. |
 | Mastery goal | Orchestration course-level goal aggregated from `course_index` core questions. |
