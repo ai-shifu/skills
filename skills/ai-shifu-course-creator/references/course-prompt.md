@@ -6,7 +6,7 @@ Authoritative template for the course-level prompt artifact.
 
 The Course Prompt defines the AI engine's course-wide role and operating rules. It is loaded once per course and applies to every lesson.
 
-- The Course Prompt owns cross-lesson constants: identity, audience, delivery mode, teaching approach, writing style, output format, and slide policy.
+- The Course Prompt owns cross-lesson constants: identity, audience, teaching approach, writing style, output format, and slide policy.
 - Teaching Prompts own per-lesson scripts: content, interactions, variable collection, branching, and lesson-specific instructions.
 
 Do not move lesson-specific mechanics into `course-prompt.md`.
@@ -78,7 +78,6 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 | Mastery goal | Orchestration course-level goal aggregated from `course_index` core questions. |
 | Learner profile | `course_profile.audience_level` and `course_profile.prerequisite_level`. |
 | Problems in scope | `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage. |
-| Delivery mode | Course Design Intake result: self-study, Listen Mode, classroom-slide-only, or an explicit combination. |
 
 ## Boundaries
 
