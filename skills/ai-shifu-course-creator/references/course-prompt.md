@@ -76,8 +76,6 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 | Specialty and teaching field | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
 | Course name | First heading in `README.md`. |
 | Mastery goal | Orchestration course-level goal aggregated from `course_index` core questions. |
-| Learner profile | `course_profile.audience_level` and `course_profile.prerequisite_level`. |
-| Problems in scope | `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage. |
 
 ## Boundaries
 
