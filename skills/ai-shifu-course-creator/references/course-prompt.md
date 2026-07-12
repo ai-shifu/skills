@@ -17,8 +17,8 @@ Do not move lesson-specific mechanics into `course-prompt.md`.
 2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
 3. Replace every `XXX` from the [Placeholder Sources](#placeholder-sources). Use already-collected artifacts instead of asking the author again.
 4. Render section headings and body text in the resolved output language. The English template is canonical structure, not a language default.
-5. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in the resolved language.
-6. Confirm that no `XXX` remains and that mode-specific instructions match the Course Design Intake.
+5. Keep every applicable non-placeholder instruction, localize it, and retain only the delivery-mode-specific instructions that match the Course Design Intake.
+6. Confirm that no `XXX` remains and that the final prompt is tailored to the active delivery mode.
 
 ## Fillable Template
 
@@ -94,6 +94,5 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 
 - The six template sections are present in order and localized to the resolved output language.
 - Every `XXX` is replaced with course-specific content.
-- Every non-placeholder template instruction remains represented.
-- Mode-specific Task and Slides instructions match the Course Design Intake.
+- Every applicable non-placeholder template instruction remains represented, with only the active delivery mode's Task and Slides instructions retained.
 - No lesson-specific mechanics or author-side process notes appear.
