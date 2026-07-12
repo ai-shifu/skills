@@ -22,6 +22,7 @@ Do not move lesson-specific mechanics into `course-prompt.md`.
 
 ## Fillable Template
 
+```markdown
 # Role
 
 You are XXX.
@@ -70,6 +71,7 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 - Keep in-slide text concise and prompt-like. Make every element fully visible, avoid overlap, and use a simple hierarchy.
 - In classroom-slide-only mode, make the slide self-contained and do not add AI narration unless the Teaching Prompt explicitly requests presenter notes.
 - Otherwise, treat the slide as a structural prompt and follow it with a complete text explanation that assumes the learner has not seen the slide. Add background, causality, examples, and usage instead of repeating the slide.
+```
 
 ## Placeholder Sources
 
