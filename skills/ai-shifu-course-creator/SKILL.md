@@ -383,7 +383,7 @@ When the author supplies image assets — local files (any format incl. heic/hei
    - **You can see the image** (attached in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position per `references/pedagogy.md#visual-text-coordination`.
    - **You cannot see the image** (only a file path / URL, or your model is text-only): **stop and ask the user**. Do not guess from the filename. Offer two options: (a) the user provides a one-sentence description per image (you will pass it as `--alt`), or (b) the user renames each file to a semantically meaningful name so you can infer the topic. Proceed only after one of these is in place.
 2. **Upload via `shifu-cli.py upload-image`** (`--file` for local files — auto-preprocessed, or `--url` for remote; always pass `--course-dir` and `--alt`) and capture the printed `https://res.ai-shifu.cn/<uuid32>` URL. Full flags, preprocessing, and manifest behavior: `references/cli/cli-reference.md#image-upload`.
-3. **Embed per `references/markdownflow.md#images`.** Default to 3.1 (deterministic-wrapped standard markdown); use 3.2 (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout — express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`), never mix deterministic blocks into the instruction. In self-study or Listen Mode, the explanatory paragraph immediately after the image is mandatory. In classroom-slide-only mode, keep the visual self-contained and omit AI narration unless presenter notes are explicitly requested.
+3. **Embed per `references/markdownflow.md#images`.** Default to 3.1 (deterministic-wrapped standard markdown); use 3.2 (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout — express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`), never mix deterministic blocks into the instruction. The explanatory paragraph immediately after the image is mandatory.
 
 ---
 
@@ -411,7 +411,7 @@ Apply Optimization audits against the full constraint set:
 
 ### Course Prompt
 
-Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **copying and filling `references/course-prompt.md#fillable-template`, not by free-form composition**. Preserve the six sections, their order, and every applicable non-placeholder instruction; for delivery-mode-specific branches, retain only the active mode's instructions. Replace every `XXX` with course-specific content and render the result in the resolved output language.
+Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **copying and filling `references/course-prompt.md#fillable-template`, not by free-form composition**. Preserve the six sections, their order, and every non-placeholder instruction; replace every `XXX` with course-specific content and render the result in the resolved output language.
 
 Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues) instead of re-asking the author. Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
 
@@ -420,7 +420,7 @@ Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_cons
 - Conclusion and overall risk level presented first (report structure per `references/report-template.md`).
 - Full review against `references/review-checklist.md` passes, or remaining gaps are explicitly listed as non-blocking suggestions.
 - A `course_prompt` artifact is produced when input includes course material, with all six required canonical sections present.
-- Generated `course_prompt` has no unresolved `XXX`, retains every applicable non-placeholder template instruction, and includes only the delivery-mode behavior selected by the Course Design Intake.
+- Generated `course_prompt` has no unresolved `XXX`, retains every non-placeholder template instruction, and applies delivery-mode behavior consistent with the Course Design Intake.
 
 ---
 

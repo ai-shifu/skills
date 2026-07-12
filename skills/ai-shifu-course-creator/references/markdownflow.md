@@ -156,7 +156,6 @@ In both forms the URL **must** come from the platform (`https://res.ai-shifu.cn/
 
 - The `===…===` wrapper is required. Without it the runtime model is free to rewrite, omit, or paraphrase the image (cf. *Preservation → Immutable Assets* below).
 - The alt text must describe **what information the image carries** (e.g. `gradient descent three-step diagram`), not `image1` / `figure`. The alt is also the fallback when the image fails to load.
-- In self-study or Listen Mode, follow the image with a paragraph that adds context, causality, examples, or usage instead of merely restating the image; assume the learner cannot see it. In classroom-slide-only mode, keep the visual self-contained and omit AI narration unless presenter notes are explicitly requested.
 
 ### 3.2 HTML view image (instruction-style, not fixed output)
 

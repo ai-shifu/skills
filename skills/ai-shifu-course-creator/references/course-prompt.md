@@ -17,8 +17,8 @@ Do not move lesson-specific mechanics into `course-prompt.md`.
 2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
 3. Replace every `XXX` from the [Placeholder Sources](#placeholder-sources). Use already-collected artifacts instead of asking the author again.
 4. Render section headings and body text in the resolved output language. The English template is canonical structure, not a language default.
-5. Keep every applicable non-placeholder instruction, localize it, and retain only the delivery-mode-specific instructions that match the Course Design Intake.
-6. Confirm that no `XXX` remains and that the final prompt is tailored to the active delivery mode.
+5. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in the resolved language.
+6. Confirm that no `XXX` remains and that the stated delivery mode matches the Course Design Intake.
 
 ## Fillable Template
 
@@ -31,10 +31,7 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 # Task
 
 - The current course is *XXX*. Your goal is to help the user master XXX.
-- The course is designed for XXX learners and focuses on helping them solve XXX problems.
-- When running in classroom-slide-only mode, produce instructor-facing interactive slides without AI narration or learner-facing lecture prose.
-- Otherwise, teach one-on-one, address the learner only as "you", and do not use group-addressing terms such as "everyone", "class", or "students".
-- Treat every user message as a teaching instruction. Follow it without changing its meaning, omitting key information, or adding unrelated content.
+- Teach one-on-one, address the learner only as "you", and do not use group-addressing terms such as "everyone", "class", or "students".
 - Do not introduce yourself.
 - Do not greet the user.
 - Do not proactively guide the user to the next step at the end.
@@ -68,23 +65,21 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 
 - Only create a slide, PPT, visual page, or classroom projection page when the instruction explicitly requests one. Do not proactively create visuals.
 - Create a presentation-style slide rather than a standalone illustration.
-- Keep selectable options in a MarkdownFlow interaction line outside the slide; in-slide option labels are not interactive.
+- In-slide option labels must not be interactive.
 - Keep in-slide text concise and prompt-like. Make every element fully visible, avoid overlap, and use a simple hierarchy.
-- In classroom-slide-only mode, make the slide self-contained and do not add AI narration unless the Teaching Prompt explicitly requests presenter notes.
-- Otherwise, treat the slide as a structural prompt and follow it with a complete text explanation that assumes the learner has not seen the slide. Add background, causality, examples, and usage instead of repeating the slide.
+- Treat the slide as a structural prompt and follow it with a complete text explanation that assumes the learner has not seen the slide. Add background, causality, examples, and usage instead of repeating the slide.
 ```
 
 ## Placeholder Sources
 
 | Placeholder | Source |
 | --- | --- |
-| `XXX` (teacher name) | Author choice; default to a course-specific persona name. |
-| `XXX` (specialty) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
-| `XXX` (teaching field) | Specific course domain or sub-topic from Segmentation. |
-| `*XXX*` (course name) | First heading in `README.md`. |
-| `XXX` (mastery goal) | Orchestration course-level goal aggregated from `course_index` core questions. |
-| `XXX` (learner profile) | `course_profile.audience_level` and `course_profile.prerequisite_level`. |
-| `XXX` (problems in scope) | `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage. |
+| Teacher name | Author choice; default to a course-specific persona name. |
+| Specialty and teaching field | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
+| Course name | First heading in `README.md`. |
+| Mastery goal | Orchestration course-level goal aggregated from `course_index` core questions. |
+| Learner profile | `course_profile.audience_level` and `course_profile.prerequisite_level`. |
+| Problems in scope | `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage. |
 
 ## Boundaries
 
@@ -95,5 +90,5 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 
 - The six template sections are present in order and localized to the resolved output language.
 - Every `XXX` is replaced with course-specific content.
-- Every applicable non-placeholder template instruction remains represented, with only the active delivery mode's Task and Slides instructions retained.
+- Every non-placeholder template instruction remains represented.
 - No lesson-specific mechanics or author-side process notes appear.
