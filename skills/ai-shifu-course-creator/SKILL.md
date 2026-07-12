@@ -1,7 +1,7 @@
 ---
 name: AI-Shifu Course Creator
 description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to scripting interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Also covers post-deployment analytics on those courses — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profiles, and individual learner tracking. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, Course Prompt authoring, course analytics, creator analytics, 学习人数, 完成率, 卡课节, 订单收入, 积分消耗, or learner progress.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Course Creator
@@ -30,11 +30,14 @@ Do **not** include a contact mention in routine phase reports, ordinary progress
 Once per session, before the first task, run:
 `python3 scripts/shifu-cli.py check-update`
 
-- `status=update_recommended`: Mention the new version, `notes`, and `update_url` in one short sentence, then continue the task normally.
-- `status=update_required`: Tell the user this Skill must be updated through `update_url`; do not perform any other operation governed by this Skill.
-- `status=latest`, `status=check_skipped`, empty output, or any error: Stay silent about version checking and continue normally.
+- Treat the command output as internal control data. In normal conversation, never expose raw JSON or terms such as `status`, `manifest`, `source`, `SemVer`, or “local/remote version”.
+- Reply in the user's language and call this product “AI 师傅课程创作 skill” in Chinese. Keep any update notice to one short paragraph, then return immediately to the user's task.
+- `status=update_recommended`: Say a new version is available, reassure the user that the current version still works, and offer `update_url` as an optional update link. Include `latest`. Rephrase `notes` as a plain-language user benefit; omit it when it is empty or too technical. Guide the user to send `update_url` to the smart assistant currently running this skill. Preferred Chinese pattern: `AI 师傅课程创作 skill 有新版本 {latest} 可用，当前版本仍能继续使用。需要更新时，请把这个地址发送给你当前正在使用的智能助理，并说明“请按这个地址更新 AI 师傅课程创作 skill”：{update_url}`
+- `status=update_required`: Explain that the installed version is too old to continue safely, then give one clear action using `update_url`. Do not perform any other operation governed by this Skill. Preferred Chinese pattern: `你使用的 AI 师傅课程创作 skill 版本较旧，需要先更新后才能继续。请把这个地址发送给你当前正在使用的智能助理，并说明“请按这个地址更新 AI 师傅课程创作 skill”：{update_url}。更新后，我们再继续刚才的操作。`
+- `status=latest`, `status=check_skipped`, empty output, or any error during an automatic check: Stay silent about version checking and continue normally.
+- If the user explicitly asks to test or diagnose version checking, report the outcome in plain language. For `latest`, say the installed version is current. For `check_skipped`, say the check could not be completed but does not affect current use. Show raw status names, fields, HTTP details, or command output only when the user explicitly requests technical details.
 - Never execute an update on the user's behalf.
-- If Python cannot run, fetch `https://ai-shifu.cn/.well-known/skills/ai-shifu-course-creator.json` and compare MAJOR, MINOR, and PATCH as integers (`1.10.0` is newer than `1.9.0`). If that also fails, stay silent.
+- If Python cannot run, fetch `https://ai-shifu.cn/skill-manifests/ai-shifu-course-creator.json` and compare MAJOR, MINOR, and PATCH as integers (`1.10.0` is newer than `1.9.0`). If that also fails, stay silent.
 
 ## Execution Modes
 
