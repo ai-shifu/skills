@@ -413,7 +413,7 @@ Apply Optimization audits against the full constraint set:
 
 Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **copying and filling `references/course-prompt.md#fillable-template`, not by free-form composition**. Preserve the six sections, their order, and every non-placeholder instruction; replace every `XXX` with course-specific content and render the result in the resolved output language.
 
-Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues) instead of re-asking the author. Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
+Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues). Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
 
 ### Validation
 

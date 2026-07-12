@@ -15,7 +15,7 @@ Do not move lesson-specific mechanics into `course-prompt.md`.
 
 1. Resolve the output language using [data-contracts.md#language-resolution](data-contracts.md#language-resolution).
 2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
-3. Replace every `XXX` from the [Placeholder Sources](#placeholder-sources). Use already-collected artifacts instead of asking the author again.
+3. Replace every `XXX` from the [Placeholder Sources](#placeholder-sources). Use already-collected artifacts.
 4. Render section headings and body text in the resolved output language. The English template is canonical structure, not a language default.
 5. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in the resolved language.
 6. Confirm that no `XXX` remains and that the stated delivery mode matches the Course Design Intake.
@@ -74,7 +74,7 @@ You specialize in XXX and are a professional teacher in the field of XXX.
 
 | Placeholder | Source |
 | --- | --- |
-| Teacher name | Author choice; default to a course-specific persona name. |
+| Teacher name | Course author's real name. If unknown, ask the author. |
 | Specialty and teaching field | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
 | Course name | First heading in `README.md`. |
 | Mastery goal | Orchestration course-level goal aggregated from `course_index` core questions. |
