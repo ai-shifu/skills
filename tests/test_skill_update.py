@@ -44,7 +44,7 @@ class SkillUpdateTests(unittest.TestCase):
             "latest": "1.10.0",
             "min_supported": "1.0.0",
             "notes": "A safe update note",
-            "check_interval_hours": 24,
+            "check_interval_hours": 2,
             "published_at": "2026-07-12T00:00:00Z",
             "update_url": "https://github.com/ai-shifu/skills",
         }
@@ -146,6 +146,30 @@ class SkillUpdateTests(unittest.TestCase):
             self.assertEqual(source, "revalidated")
             self.assertEqual(seen_headers[0]["If-None-Match"], '"manifest-v1"')
 
+    def test_cache_expires_after_manifest_interval(self):
+        body = json.dumps(self.manifest).encode("utf-8")
+        calls = 0
+
+        def fake_get(_url, **_kwargs):
+            nonlocal calls
+            calls += 1
+            return FakeResponse(status_code=200, body=body)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = Path(tmp) / ".update-check.json"
+            skill_update.fetch_manifest(
+                cache_file=cache,
+                http_get=fake_get,
+                now=self.now,
+            )
+            _manifest, source = skill_update.fetch_manifest(
+                cache_file=cache,
+                http_get=fake_get,
+                now=self.now + timedelta(hours=2, seconds=1),
+            )
+            self.assertEqual(source, "network")
+            self.assertEqual(calls, 2)
+
     def test_cache_write_failure_does_not_discard_network_result(self):
         body = json.dumps(self.manifest).encode("utf-8")
 
@@ -178,6 +202,41 @@ class SkillUpdateTests(unittest.TestCase):
                 skill_update.fetch_manifest(
                     cache_file=Path(tmp) / "cache.json",
                     http_get=fake_get,
+                    now=self.now,
+                )
+
+    def test_loopback_manifest_is_allowed_for_explicit_development(self):
+        body = json.dumps(self.manifest).encode("utf-8")
+        local_url = "http://127.0.0.1:8088/skill-manifests/test.json"
+        requested_urls: list[str] = []
+
+        def fake_get(url, **_kwargs):
+            requested_urls.append(url)
+            return FakeResponse(status_code=200, body=body, url=local_url)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest, source = skill_update.fetch_manifest(
+                cache_file=Path(tmp) / "cache.json",
+                manifest_url=local_url,
+                allow_loopback=True,
+                http_get=fake_get,
+                now=self.now,
+            )
+            self.assertEqual(source, "network")
+            self.assertEqual(manifest["latest"], "1.10.0")
+            self.assertEqual(requested_urls, [local_url])
+
+    def test_development_manifest_rejects_remote_hosts(self):
+        def unexpected_get(*_args, **_kwargs):
+            raise AssertionError("invalid development URL must not be requested")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(skill_update.ManifestError):
+                skill_update.fetch_manifest(
+                    cache_file=Path(tmp) / "cache.json",
+                    manifest_url="https://attacker.example/manifest.json",
+                    allow_loopback=True,
+                    http_get=unexpected_get,
                     now=self.now,
                 )
 

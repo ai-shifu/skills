@@ -17,7 +17,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv, set_key
 
-from skill_update import check_for_update
+from skill_update import DEV_CACHE_FILE, check_for_update
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
@@ -2622,7 +2622,16 @@ def cmd_upload_image(args):
 # ── CLI Entry Point ────────────────────────────────────────────────────────────
 def cmd_check_update(args):
     """Print one machine-readable update result and never fail the caller."""
-    result = check_for_update(force=args.force)
+    dev_manifest_url = args.dev_manifest_url
+    if dev_manifest_url:
+        result = check_for_update(
+            force=True,
+            cache_file=DEV_CACHE_FILE,
+            manifest_url=dev_manifest_url,
+            allow_loopback=True,
+        )
+    else:
+        result = check_for_update(force=args.force)
     print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
 
 
@@ -2649,6 +2658,14 @@ def build_parser():
         "--force",
         action="store_true",
         help="Revalidate the website manifest even when the local TTL is fresh",
+    )
+    p.add_argument(
+        "--dev-manifest-url",
+        metavar="URL",
+        help=(
+            "Use a localhost/loopback manifest for end-to-end development testing; "
+            "remote hosts are rejected"
+        ),
     )
 
     # ── login ──

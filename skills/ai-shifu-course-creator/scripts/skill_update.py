@@ -17,19 +17,37 @@ SKILL_NAME = "ai-shifu-course-creator"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 SKILL_MD = SKILL_ROOT / "SKILL.md"
 CACHE_FILE = SKILL_ROOT / ".update-check.json"
+DEV_CACHE_FILE = SKILL_ROOT / ".update-check.dev.json"
 MANIFEST_URL = (
-    "https://ai-shifu.cn/.well-known/skills/ai-shifu-course-creator.json"
+    "https://ai-shifu.cn/skill-manifests/ai-shifu-course-creator.json"
 )
 
 SCHEMA_VERSION = 1
 SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
 ALLOWED_MANIFEST_HOSTS = frozenset({"ai-shifu.cn", "www.ai-shifu.cn"})
+LOOPBACK_MANIFEST_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 MAX_MANIFEST_BYTES = 64 * 1024
 MAX_NOTES_CHARS = 500
 
 
 class ManifestError(ValueError):
     """The remote or cached manifest is not safe to consume."""
+
+
+def _validate_manifest_source_url(url: str, *, allow_loopback: bool) -> None:
+    """Allow the official HTTPS source, or an explicit loopback-only dev source."""
+    parsed = urlparse(url)
+    if parsed.username is not None or parsed.password is not None:
+        raise ManifestError("manifest URL must not contain credentials")
+    if allow_loopback:
+        if (
+            parsed.scheme not in {"http", "https"}
+            or parsed.hostname not in LOOPBACK_MANIFEST_HOSTS
+        ):
+            raise ManifestError("development manifest URL must use a loopback host")
+        return
+    if parsed.scheme != "https" or parsed.hostname not in ALLOWED_MANIFEST_HOSTS:
+        raise ManifestError("manifest URL must use the official HTTPS host")
 
 
 def _utc_now() -> datetime:
@@ -268,10 +286,13 @@ def fetch_manifest(
     *,
     cache_file: Path = CACHE_FILE,
     force: bool = False,
+    manifest_url: str = MANIFEST_URL,
+    allow_loopback: bool = False,
     http_get: Callable[..., Any] = requests.get,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], str]:
     """Return a validated manifest and its source (network/cache/revalidated)."""
+    _validate_manifest_source_url(manifest_url, allow_loopback=allow_loopback)
     current_time = (now or _utc_now()).astimezone(timezone.utc)
     cache = _read_cache(cache_file)
     if cache is not None and not force and _cache_is_fresh(cache, current_time):
@@ -282,16 +303,18 @@ def fetch_manifest(
         headers["If-None-Match"] = cache["etag"]
 
     response = http_get(
-        MANIFEST_URL,
+        manifest_url,
         headers=headers,
         timeout=(3, 5),
         allow_redirects=True,
         stream=True,
     )
-    final_url = getattr(response, "url", MANIFEST_URL) or MANIFEST_URL
-    if urlparse(final_url).hostname not in ALLOWED_MANIFEST_HOSTS:
+    final_url = getattr(response, "url", manifest_url) or manifest_url
+    try:
+        _validate_manifest_source_url(final_url, allow_loopback=allow_loopback)
+    except ManifestError:
         _close_response(response)
-        raise ManifestError("manifest redirected to an untrusted host")
+        raise
 
     if response.status_code == 304:
         _close_response(response)
@@ -333,6 +356,8 @@ def check_for_update(
     force: bool = False,
     skill_md: Path = SKILL_MD,
     cache_file: Path = CACHE_FILE,
+    manifest_url: str = MANIFEST_URL,
+    allow_loopback: bool = False,
     http_get: Callable[..., Any] = requests.get,
     now: datetime | None = None,
 ) -> dict[str, Any]:
@@ -347,6 +372,8 @@ def check_for_update(
         manifest, source = fetch_manifest(
             cache_file=cache_file,
             force=force,
+            manifest_url=manifest_url,
+            allow_loopback=allow_loopback,
             http_get=http_get,
             now=now,
         )

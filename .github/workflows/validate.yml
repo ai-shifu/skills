@@ -27,8 +27,5 @@ jobs:
       - name: Validate skill quality
         run: python3 scripts/validate_skill_quality.py
 
-      - name: Validate Skill update manifests
-        run: python3 scripts/validate_skill_manifest.py
-
       - name: Run update-check tests
         run: python3 -m unittest discover -s tests -p "test_*.py"

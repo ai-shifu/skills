@@ -161,8 +161,8 @@ def validate_skill(skill_dir: Path, issues: IssueBag) -> None:
         )
 
     version = front.get("version", "").strip()
-    manifest_file = skill_dir.parents[1] / "manifests" / f"{slug}.json"
-    if manifest_file.is_file():
+    update_checker = skill_dir / "scripts" / "skill_update.py"
+    if update_checker.is_file():
         if not version:
             issues.add_error(f"{skill_md}: frontmatter 'version' field is required")
         elif not RE_SEMVER.fullmatch(version):

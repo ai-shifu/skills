@@ -8,6 +8,7 @@ __pycache__/
 # Environment variables (may contain secrets)
 .env
 .update-check.json
+.update-check.dev.json
 
 # Generated release artifacts
 dist/
