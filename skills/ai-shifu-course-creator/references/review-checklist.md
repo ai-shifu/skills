@@ -86,3 +86,4 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 - A `course_prompt` artifact is produced when input includes course material.
 - All six required canonical sections are present in order, with headings rendered in the resolved output language: Role, Task, Teaching Techniques, Writing Style, Format, and Slides.
+- No `XXX` placeholder remains; every non-placeholder instruction from `course-prompt.md#fillable-template` is represented.

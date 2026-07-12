@@ -380,10 +380,10 @@ Per-lesson schema in `references/data-contracts.md#lesson-schema`.
 When the author supplies image assets — local files (any format incl. heic/heif) or remote URLs — three steps apply *within* Generation (and any later phase that touches the same lessons):
 
 1. **Understand each image before placing it.** You cannot choose the lesson, position, or alt text without knowing what the image shows. Two regimes:
-   - **You can see the image** (attached in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position per `references/pedagogy.md#visual-text-coordination` and `references/course-prompt.md` Rules 10/11.
+   - **You can see the image** (attached in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position per `references/pedagogy.md#visual-text-coordination`.
    - **You cannot see the image** (only a file path / URL, or your model is text-only): **stop and ask the user**. Do not guess from the filename. Offer two options: (a) the user provides a one-sentence description per image (you will pass it as `--alt`), or (b) the user renames each file to a semantically meaningful name so you can infer the topic. Proceed only after one of these is in place.
 2. **Upload via `shifu-cli.py upload-image`** (`--file` for local files — auto-preprocessed, or `--url` for remote; always pass `--course-dir` and `--alt`) and capture the printed `https://res.ai-shifu.cn/<uuid32>` URL. Full flags, preprocessing, and manifest behavior: `references/cli/cli-reference.md#image-upload`.
-3. **Embed per `references/markdownflow.md#images`.** Default to 3.1 (deterministic-wrapped standard markdown); use 3.2 (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout — express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`), never mix deterministic blocks into the instruction. The explanatory paragraph immediately after the image is mandatory (`references/course-prompt.md` Rule 11).
+3. **Embed per `references/markdownflow.md#images`.** Default to 3.1 (deterministic-wrapped standard markdown); use 3.2 (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout — express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`), never mix deterministic blocks into the instruction. The explanatory paragraph immediately after the image is mandatory.
 
 ---
 
@@ -411,7 +411,7 @@ Apply Optimization audits against the full constraint set:
 
 ### Course Prompt
 
-Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **filling the template at `references/course-prompt.md#fillable-template` section-by-section, not by free-form composition**. Each of the six required sections has a Must-Specify list in `references/course-prompt.md#authoring-rules` (Rules 1–11) — every listed bullet must appear in the generated `course_prompt`'s corresponding section (in the resolved output language). Do not omit a Must-Specify bullet just because the source material does not explicitly demand it; these bullets are platform-level constraints.
+Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **copying and filling `references/course-prompt.md#fillable-template`, not by free-form composition**. Preserve the six sections, their order, and every non-placeholder instruction; replace every `XXX` with course-specific content and render the result in the resolved output language.
 
 Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues) instead of re-asking the author. Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
 
@@ -420,7 +420,7 @@ Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_cons
 - Conclusion and overall risk level presented first (report structure per `references/report-template.md`).
 - Full review against `references/review-checklist.md` passes, or remaining gaps are explicitly listed as non-blocking suggestions.
 - A `course_prompt` artifact is produced when input includes course material, with all six required canonical sections present.
-- Generated `course_prompt` covers every Must-Specify bullet in `references/course-prompt.md` Rules 1–11 (audit each canonical section against its rule list — especially the Slides section, which is the most commonly under-filled section).
+- Generated `course_prompt` has no unresolved `XXX`, retains every non-placeholder template instruction, and applies delivery-mode behavior consistent with the Course Design Intake.
 
 ---
 
