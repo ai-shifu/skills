@@ -2,13 +2,6 @@
 
 Optimization 全面审计清单 — Optimization Optimization 必须把每条都过一遍。其他 Phase 的阶段交付检查见 SKILL.md 各 Phase 内的 Validation 段。
 
-## Pipeline Handoff
-
-- Each stage consumes the declared upstream handoff and appends only its owned result.
-- Downstream validation checks only the declared input contract; completed upstream procedures and decisions are not replayed, reopened, or cited.
-- A standalone path fills only missing required handoff fields and does not restart completed stages.
-- Cloud-version conflicts and expired authentication are recovered inside the active operational stage without returning to authoring stages.
-
 ## Coverage
 
 - All critical source points are present.
