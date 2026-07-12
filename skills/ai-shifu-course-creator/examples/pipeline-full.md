@@ -1,4 +1,4 @@
-# Full Pipeline Example (Segmentation → Orchestration → Generation → Optimization)
+# Full Pipeline Example (Course Target Resolution → Deployment)
 
 > Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
 
@@ -24,6 +24,36 @@
   "target_language": "en-US"
 }
 ```
+
+## Course Target Resolution Output
+
+```json
+{
+  "target_mode": "new",
+  "auth_verified": true,
+  "shifu_bid": null,
+  "course_dir": "./metric-drift-course",
+  "sync_baseline": "not_applicable"
+}
+```
+
+The next stage consumes this object directly. It does not repeat login or title
+search.
+
+## Course Design Intake Output
+
+```json
+{
+  "usage_scenarios": ["personalized_self_study"],
+  "interaction_purposes": ["adaptive_context", "lesson_end_self_check"],
+  "listen_mode": "disabled",
+  "chapter_count": 2,
+  "lesson_count": 3
+}
+```
+
+Orchestration consumes this resolved design instead of replaying the intake
+conversation.
 
 ## Segmentation Output
 
@@ -106,8 +136,24 @@ The learner's diagnosis choice is {{diagnosis_choice}}. Based on it, run one foc
 }
 ```
 
+## Deployment Output
+
+```json
+{
+  "shifu_bid": "xyz789",
+  "deployed_course_url": "https://example.invalid/c/xyz789",
+  "lesson_count": 3,
+  "status": "published",
+  "auth_verified": true
+}
+```
+
+The URL above is illustrative only. A real run reports the exact URL printed by
+the CLI.
+
 ## Acceptance Notes
 
-- All four phases executed end-to-end.
+- Every stage consumed declared handoff fields and passed its result forward.
+- No completed upstream stage was rerun by a downstream stage.
 - One core question per lesson, every learner-answer variable has a corresponding variable-backed interaction and metadata entry.
 - Optimization pass found no blockers, only enhancement suggestions.

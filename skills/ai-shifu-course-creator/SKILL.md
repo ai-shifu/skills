@@ -91,15 +91,11 @@ These are the seven red-line rules every Teaching Prompt and Course Prompt must 
 
 7. **Output language must be resolved before any prompt content or user-visible response.** Run Language Resolution per `references/data-contracts.md#language-resolution` first; the user's invocation language counts as `prompt_language_detection` (priority 4). Examples and templates in this skill are written in English for canonical illustration only — they never override the resolved language. All user-visible output (reports, phase summaries, status notes, artifact labels, handoff instructions, error explanations) and all learner-facing course content follow the resolved language; stable machine-facing identifiers (JSON keys, file names, CLI flags, API fields, MarkdownFlow syntax, code, URLs, verbatim quotes) stay unchanged, and human-facing concept labels follow the [Canonical Term Translation Table](#canonical-term-translation-table). Before finalizing or deploying a course directory, run the Pre-Deploy Language Audit in `references/data-contracts.md#language-resolution`.
 
-## Step 0 — Resolve the Course Target (MANDATORY before any authoring)
+## Course Target Resolution
 
-**This runs first for every course-creation or editing request — before
-Orchestration, before proposing any course architecture/outline, before writing a
-single lesson.** The AI-Shifu platform DB is the single source of truth; you must
-know whether you are creating a brand-new course or editing an existing one
-*before* you invest in authoring. **Do NOT jump straight to a course outline or
-"架构方案".** Even when the user clearly says "make a new course", first check the
-cloud for an existing one.
+This is the first stage for every course-creation or editing request. The
+AI-Shifu platform DB is the single source of truth; determine whether the run
+will create a brand-new course or edit an existing one before authoring.
 
 1. **Recognize intent** — new course, or edit an existing one?
 2. **Ensure login — verify first, do NOT re-login blindly.** Run
@@ -121,17 +117,24 @@ cloud for an existing one.
      locally. **Do NOT ask** new-vs-edit; if several match, only resolve *which* one.
    - **Edit intent + no match** → author from scratch, then `import --new`.
 
-Only **after** the target is resolved do you enter the authoring pipeline below.
-When the target is an existing course, author **on top of the pulled copy**,
-then push via the converging loop in **Deployment → Version Sync Workflow**.
+### Output
+
+Emit one `course_target` object per
+`references/data-contracts.md#pipeline-handoff-contract`. This object is the
+complete handoff to the next stage. When the target is an existing course, the
+object points to the pulled directory and its recorded sync baseline.
+
+After emitting `course_target`, do not run or cite this stage again during the
+same pipeline run. Downstream stages consume the object; they do not reconstruct
+how it was produced.
 
 ## Course Design Intake (before Orchestration)
 
-Run this intake after **Step 0** and before Orchestration for: Path A end-to-end
-course creation, Path B author-only generation, and existing-course edits that
-change the course structure, lesson design, or interaction strategy. Do **not**
-run it for deploy-only, analytics, login, publish, management, or pure
-statistics requests.
+Input: a resolved `course_target`, plus the user's source material and current
+instruction. Run this intake for Path A end-to-end course creation, Path B
+author-only generation, and existing-course edits that change the course
+structure, lesson design, or interaction strategy. Do **not** run it for
+deploy-only, analytics, login, publish, management, or pure statistics requests.
 
 Before asking anything, extract answers already present in the user's current
 instruction, source material, or pulled course directory. Ask only for missing
@@ -180,37 +183,45 @@ Use the answers as course-design constraints:
   skipped → infer structure from source volume and existing lesson-granularity
   rules instead of inventing a fixed default.
 
+Output one `course_design` object per
+`references/data-contracts.md#pipeline-handoff-contract`. Orchestration consumes
+that object directly and does not revisit the intake conversation.
+
 ## Pipeline Overview
 
-The phases are **not** a flat linear pipeline. **Step 0 (above) gates the whole
-pipeline.** **Orchestration is an end-to-end driver** that internally calls Segmentation and Generation. Only Optimization and Deployment actually run in linear sequence after Orchestration completes.
+The pipeline is forward-only. Each stage consumes declared inputs, emits one
+declared handoff, and finishes. A downstream stage may validate its own input
+contract, but it must not re-run, reopen, or cite the procedure of a completed
+upstream stage. If a required handoff is missing in a standalone path, run only
+its producer, capture the result, and resume from the requesting stage; do not
+restart the pipeline.
+
+Orchestration remains an end-to-end authoring driver that internally calls
+Segmentation and Generation. Those internal calls pass artifacts forward in the
+same way.
 
 ```
 Course request
    │
    ▼
-Step 0: Resolve Course Target            ← MANDATORY front guard: login + find-title + branch
+Course Target Resolution                 → course_target
    │   (new vs edit existing; pull the existing course BEFORE authoring)
    ▼
 Raw material
    │
    ▼
-Course Design Intake                     ← ask only for missing design constraints
-   │   (usage scenario, interaction purpose, Listen Mode, chapter/lesson count)
+Course Design Intake                     → course_design
    ▼
-Orchestration                            ← end-to-end driver
-   ├── calls Segmentation                 (cleanup + semantic segmentation)
-   └── calls Generation                   (per-lesson Teaching Prompts)
-        │
-        │  Orchestration outputs: Teaching Prompts + course_index
-        │                 + global_variable_table
+Orchestration                            → orchestration_result
+   ├── Segmentation                     → structured segments
+   └── Generation                       → per-lesson Teaching Prompts
         ▼
-Optimization                              (audit + optimize)
+Optimization                             → optimization_result
         │
         ▼
-Deployment                                (build + import + publish to platform)
+Deployment                               → deployment_result
         │
-        ╰─ optional ─▶ Analytics          (post-deployment data queries on live courses)
+        ╰─ optional ─▶ Analytics          → analytics_result
 ```
 
 Segmentation, Generation, and Optimization can each be invoked standalone — see Usage Paths (Path B) for the sub-paths (Segment only / Generate only / Optimize only). Analytics is a separate post-deployment path — see Usage Paths (Path E).
@@ -221,21 +232,29 @@ Segmentation, Generation, and Optimization can each be invoked standalone — se
 
 Run the full pipeline from raw material to a live deployed course.
 
-0. **Step 0 front guard (first, always)** — resolve new-vs-edit via `verify` + `find-title`; if editing an existing course, `pull` it before authoring. See **## Step 0**.
-1. **Orchestration** drives Segmentation and Generation end-to-end, then runs cross-lesson gating to produce Teaching Prompts + course_index + variable table.
-2. **Optimization** audits and improves Orchestration's output, plus produces the Course Prompt and SEO course description.
-3. **Deployment** writes the course directory, builds, imports, and publishes to the AI-Shifu platform.
+1. **Course Target Resolution** emits `course_target`.
+2. **Course Design Intake** consumes `course_target` and emits `course_design`.
+3. **Orchestration** consumes the source material and `course_design`, drives Segmentation and Generation, then emits `orchestration_result`.
+4. **Optimization** consumes `orchestration_result` and emits `optimization_result`, including the Course Prompt and SEO course description.
+5. **Deployment** consumes `course_target` plus `optimization_result`, then emits `deployment_result`.
 
 ### Path B: Author Only
 
-Run Segmentation through Optimization to produce optimized Teaching Prompts, a Course Prompt, and an SEO course description without deploying. Sub-paths:
+Resolve the course target and course design once, then run Segmentation through
+Optimization to produce optimized Teaching Prompts, a Course Prompt, and an SEO
+course description without deploying. Stop after `optimization_result`.
+Sub-paths:
 - **Segment only**: Segmentation alone for structured segments and manual review.
 - **Generate only**: Generation alone on pre-existing segments to produce Teaching Prompts.
 - **Optimize only**: Optimization alone to audit and improve existing Teaching Prompts.
 
 ### Path C: Deploy Only
 
-Run Deployment alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform. **Run Step 0 first** (`## Step 0`) to resolve new-vs-existing — deploy as `import --new`, or `pull` + edit + push into an existing course.
+Run Deployment alone with two inputs: a `course_target` object and a prepared
+course directory containing the Teaching Prompts and Course Prompt. If
+`course_target` is absent, Course Target Resolution produces it once before
+Deployment starts. Deployment then chooses `import --new` for a new target or
+the granular sync workflow for an existing target.
 
 ### Path D: Manage Existing
 
@@ -243,7 +262,7 @@ Use Deployment management commands (list, show, update, rename, reorder, delete,
 
 ### Path E: Course Analytics
 
-Triggered by any question about a live course's data / metrics / statistics (routing rule: **`## Data & Statistics Routing`** above). Reuses the Deployment authentication (token in `.env`). Always go through the CLI — never raw HTTP, never browser-scrape the admin dashboard. Workflow, references, and validation: `## Analytics` below.
+Triggered by any question about a live course's data / metrics / statistics (routing rule: **`## Data & Statistics Routing`** above). Consume `deployment_result.shifu_bid` when continuing the pipeline; resolve authentication and the course identifier locally only for a standalone analytics request. Always go through the CLI — never raw HTTP, never browser-scrape the admin dashboard. Workflow, references, and validation: `## Analytics` below.
 
 ---
 
@@ -270,6 +289,14 @@ Segment list per `references/data-contracts.md#segment-schema` (each segment car
 ## Orchestration
 
 **Role**: end-to-end orchestrator for Path A. Orchestration calls Segmentation and Generation internally, then performs the cross-lesson work that those phases cannot — course index, global variable table, and mandatory gating.
+
+### Inputs
+
+- Ordered source material.
+- The completed `course_design` handoff.
+
+Do not inspect target-resolution history or replay intake questions. The inputs
+above are authoritative for this run.
 
 ### Workflow
 
@@ -307,7 +334,11 @@ Fallback field shapes per `references/data-contracts.md#fallback-output-extensio
 
 ### Outputs
 
-See `references/data-contracts.md#output-contract` for the Teaching Prompts, course index, and global variable table schemas; preservation rules per `references/markdownflow.md#preservation`.
+Emit `orchestration_result`. See
+`references/data-contracts.md#pipeline-handoff-contract` and
+`references/data-contracts.md#output-contract` for the Teaching Prompts, course
+index, and global variable table schemas; preservation rules per
+`references/markdownflow.md#preservation`.
 
 ### Validation
 
@@ -391,6 +422,12 @@ When the author supplies image assets — local files (any format incl. heic/hei
 
 Audit and improve existing Teaching Prompts (and the Course Prompt). This phase is not for writing from scratch.
 
+### Inputs
+
+Consume `orchestration_result` plus the source material needed for coverage
+checking. Treat the orchestration artifacts as the authoritative working set;
+do not rerun Orchestration as part of Optimization.
+
 ### When to Use
 
 Use Optimization when existing Teaching Prompts or a Course Prompt need audit and targeted improvement — gap analysis against source, quality upgrades without full rewrites, and lowering runtime failure risk. Not for from-scratch authoring.
@@ -422,6 +459,12 @@ Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_cons
 - A `course_prompt` artifact is produced when input includes course material, with all six required canonical sections present.
 - Generated `course_prompt` covers every Must-Specify bullet in `references/course-prompt.md` Rules 1–11 (audit each canonical section against its rule list — especially the Slides section, which is the most commonly under-filled section).
 
+### Output
+
+Emit `optimization_result` per
+`references/data-contracts.md#pipeline-handoff-contract`, containing the
+optimized course artifacts and the audit result needed by Deployment.
+
 ---
 
 ## Deployment
@@ -432,7 +475,7 @@ Ship optimized Teaching Prompts to the AI-Shifu platform as live courses. Three 
 - **Publish** — run `publish` on the platform, which pushes the current draft to the public student-facing URL. Only after this step does `<base>/c/<bid>` (no `preview=true`) work.
 - **Sync** — keep a local course directory and the platform draft version-consistent; the platform draft is the single source of truth. Think `git pull` before `git push`. Mechanics: `references/cli/cli-reference.md#version-sync-pull--status`.
 
-The standard end-to-end flow chains deploy + publish: build → import (deploy) → publish. When **editing an existing course**, use the sync loop instead: **`pull` → edit locally → `status` → `update-lesson` / `import` (push) → `publish`.**
+The standard new-course flow chains deploy + publish: build → import (deploy) → publish. When **editing an existing course**, continue from the pulled sync baseline supplied in `course_target`: **edit locally → `status` → `update-lesson` / `import` (push) → `publish`.**
 
 ### Prerequisites
 
@@ -441,7 +484,13 @@ The standard end-to-end flow chains deploy + publish: build → import (deploy) 
 
 ### Authentication
 
-**Verify first — never re-login blindly.** The verify / exit-code / 5-SMS-per-day rules live in **Step 0**; the full login flow is in `references/cli/cli-reference.md#agent-login-flow`. Always use CLI commands. Never make raw HTTP/API calls directly.
+Deployment receives `course_target.auth_verified = true`; consume that state and
+do not verify or log in again. A missing or unverified `course_target` is an
+input-contract failure, so Deployment must not start. The full login flow is in
+`references/cli/cli-reference.md#agent-login-flow`. Always use CLI commands.
+Never make raw HTTP/API calls directly. If a deployment command later reports
+that authentication expired, recover authentication inside Deployment and retry
+the current command; do not restart target resolution or authoring.
 
 ### Course Directory
 
@@ -472,28 +521,27 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 ### Deployment Workflow
 
 **From pipeline (Path A continuation):**
-1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-description.md` (the generated SEO description; no author-side process notes), `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), and required `structure.json`.
-2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
-3. **Deploy**: Run `import --new --json-file <dir>/shifu-import.json` to upload the course onto the platform.
-4. **Publish**: Run `publish <shifu_bid>` to push the course to its public student-facing URL.
-5. Verify via platform URL.
+1. Consume `course_target` and `optimization_result` without revisiting their producer stages.
+2. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-description.md` (the generated SEO description; no author-side process notes), `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `references/course-prompt.md#fillable-template`), and required `structure.json`.
+3. For `target_mode = new`, run `build` → `import --new` → `publish`.
+4. For `target_mode = existing`, use the recorded sync baseline and the Version Sync Workflow below, then `publish`.
+5. Verify via platform URL and emit `deployment_result`.
 
 **Standalone deployment (Path C):**
 1. Ensure the course directory is ready: Teaching Prompt files under `lessons/`, a `course-description.md` SEO summary, a `course-prompt.md` (author per `references/course-prompt.md#fillable-template` first if missing), and `structure.json` (create it if missing). Directories without `course-description.md` still build, but the platform description will be empty unless `--description` is provided.
-2. Run `build` → `import` (deploy) → `publish` as above.
+2. Consume `course_target` and follow the matching new-target or existing-target branch above.
 
 ### Version Sync Workflow
 
-The **front guard** that fixes the target (new-vs-edit, login + `find-title`,
-pulling the existing course) is **Step 0 — run it first**. This section covers
-what happens once the target is an existing course you have pulled: the
-**pull → edit → push** loop that converges like `git pull` before `git push`.
+Input: an existing `course_target` whose `course_dir` is a pulled cloud draft
+and whose `sync_baseline` is `ready`, plus the intended changes from
+`optimization_result`. Start from those inputs; do not repeat login, title
+search, or the initial pull.
 
-1. **`pull <shifu_bid> --course-dir <dir>`** — download the cloud draft into the local dir and record revisions.
-2. **Edit locally** — change lesson files / course description / course prompt in place.
-3. **`status --course-dir <dir>`** — see what diverged (`behind` / `locally modified` / `new` / `deleted` on server).
-4. **Push** with `--course-dir` so the recorded baseline is used: `update-lesson <bid> <ob> --teaching-prompt-file f.md --course-dir <dir>` for a single lesson, or `import <bid> --course-dir <dir>` for the whole course.
-5. **`publish <bid>`** when ready for learners.
+1. **Edit locally** — apply the intended lesson / course description / Course Prompt changes to `course_target.course_dir`.
+2. **`status --course-dir <dir>`** — see what diverged (`behind` / `locally modified` / `new` / `deleted` on server).
+3. **Push** with `--course-dir` so the recorded baseline is used: `update-lesson <bid> <ob> --teaching-prompt-file f.md --course-dir <dir>` for a single lesson, or `import <bid> --course-dir <dir>` for the whole course.
+4. **`publish <bid>`** when ready for learners.
 
 **Convergence loop on conflict.** A push checks whether the cloud advanced since
 your last sync:
@@ -540,8 +588,8 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 
 ### Workflow
 
-1. **Resolve credentials** — run `shifu-cli.py verify`, per the verify-first rules in **Step 0**.
-2. **Resolve the course** — run `shifu-cli.py list` (or `shifu-cli.py find-title <keyword>`) to map `shifu_bid ↔ course name`. **If the user mentioned a course by title**, always resolve the *current* `shifu_bid → title` via Course Metadata recipes 0a / 0b in `references/analytics/recipes.md` before issuing downstream queries — `list` is a draft snapshot and can show stale or historical titles. Never report a historical title as the course's current name.
+1. **Accept the upstream identifier** — when Analytics follows Deployment in the same run, consume `deployment_result.shifu_bid`; do not resolve the course again.
+2. **Resolve standalone input only when needed** — when Analytics is invoked independently, run `shifu-cli.py verify` once, then map the requested course to `shifu_bid` with `list` or `find-title`. If the user mentioned a course by title, confirm the current `shifu_bid → title` via Course Metadata recipes 0a / 0b before issuing downstream queries; `list` can show a stale or historical title.
 3. **Resolve the outline** (only for lesson-level dimensions) — run `shifu-cli.py show <shifu_bid>` to map `outline_item_bid → name / position`. Skipping this makes outline-dimension numbers unreadable.
 4. **Run DSL queries** — `shifu-cli.py analytics-query <shifu_bid> --dsl '<json-body>'` (or `--dsl-file query.json` for long bodies).
 5. **Translate before presenting** — pass every result through the Translation Gate in `references/analytics/privacy-and-presentation.md`. Never paste raw codes (`601`, `502`, `1101`), raw `*_bid` strings, or raw `user_bid` values in user-facing output.
@@ -556,7 +604,7 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 
 ### Validation
 
-- Token resolved through the Step 0 / Deployment authentication path, not a hand-rolled lookup.
+- Authentication state was consumed from `deployment_result` in a continuing pipeline, or verified once at Analytics entry for a standalone request; tokens were never read or assembled by hand.
 - When the user mentioned a course by title, the current `shifu_bid → title` was confirmed via Course Metadata Recipe 0a / 0b before the downstream query ran. Historical titles were never substituted for current ones.
 - `shifu_bid` and outline mappings established before any course-level query.
 - DSL body matches grammar in `dsl.md`; filters reflect the user's intent (e.g. `status = 502` for "paid", not `>= 502`).

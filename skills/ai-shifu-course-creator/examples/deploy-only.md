@@ -6,6 +6,21 @@ Deploy pre-existing Teaching Prompts (and a Course Prompt) without running the a
 
 ## Prerequisites
 
+A resolved target handoff:
+
+```json
+{
+  "target_mode": "new",
+  "auth_verified": true,
+  "shifu_bid": null,
+  "course_dir": "./my-course",
+  "sync_baseline": "not_applicable"
+}
+```
+
+Deployment consumes this object as-is and does not repeat authentication or
+course lookup.
+
 A course directory with Teaching Prompts (one MarkdownFlow file per lesson) already prepared:
 
 ```
@@ -54,5 +69,6 @@ python3 {skillDir}/scripts/shifu-cli.py archive xyz789
 ## Acceptance Notes
 
 - Deployment executed independently (Path C).
+- Deployment consumed the prepared `course_target` instead of replaying its producer stage.
 - Course deployed from pre-existing Teaching Prompts.
 - Management commands used for ongoing operations (Path D).

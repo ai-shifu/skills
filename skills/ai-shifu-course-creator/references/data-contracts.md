@@ -76,6 +76,96 @@ Provide one of:
 - Source language and expected output language should be specified when multilingual content exists.
 - Explicit output language requests must not be overridden by source-language mixes (see [Language Resolution](#language-resolution)).
 
+## Pipeline Handoff Contract
+
+The end-to-end workflow is a forward-only pipeline. Each stage appends its
+declared result to a `pipeline_handoff` and passes that handoff forward. A stage
+must consume upstream fields as authoritative. It may validate that its required
+fields are present and well-formed, but it must not reconstruct or rerun the
+procedures that produced them.
+
+If a standalone path lacks a required field, run only the stage that owns that
+field, append its output, and resume the standalone path. Do not restart stages
+whose outputs are already present. The only normal exception is a cloud-version
+conflict inside Deployment: handle that conflict within Deployment's convergence
+loop without returning to an authoring stage.
+
+### Stage Sequence and Ownership
+
+| Stage | Required input | Appended output |
+|---|---|---|
+| Course Target Resolution | User intent | `course_target` |
+| Course Design Intake | `course_target`, source material, user instruction | `course_design` |
+| Orchestration | `course_design`, ordered source material | `orchestration_result` |
+| Optimization | `orchestration_result` or an equivalent existing artifact set, plus source material | `optimization_result` |
+| Deployment | `course_target`, plus `optimization_result` or a prepared course directory | `deployment_result` |
+| Analytics (optional) | `deployment_result.shifu_bid`, or a standalone resolved `shifu_bid` | `analytics_result` |
+
+### `course_target`
+
+```json
+{
+  "target_mode": "new|existing",
+  "auth_verified": true,
+  "shifu_bid": null,
+  "course_dir": "./my-course",
+  "sync_baseline": "not_applicable|ready"
+}
+```
+
+- `target_mode` records the resolved new-vs-existing decision.
+- `auth_verified` must be `true`; never include a token in the handoff.
+- `shifu_bid` is required for `existing` and `null` for `new` until Deployment creates the course.
+- `course_dir` is the working course directory. For `existing`, it is the directory populated by `pull`.
+- `sync_baseline` is `ready` for `existing` and `not_applicable` for `new`.
+
+### `course_design`
+
+```json
+{
+  "usage_scenarios": ["personalized_self_study", "interactive_classroom_slides"],
+  "interaction_purposes": ["adaptive_context", "pre_teaching_thinking", "lesson_end_self_check"],
+  "listen_mode": "enabled|disabled",
+  "chapter_count": 3,
+  "lesson_count": 8
+}
+```
+
+Fields contain the resolved Course Design Intake answers or the documented
+inference used when the user explicitly skipped an item. Orchestration reads
+this object instead of replaying or interpreting the intake conversation.
+
+### `orchestration_result`
+
+Contains:
+
+- `lesson_teaching_prompts`
+- `course_index`
+- `global_variable_table`
+
+The field schemas are defined in [Output Contract](#output-contract). Optimization
+edits this authoritative working set; it does not regenerate it from earlier
+conversation history.
+
+### `optimization_result`
+
+Contains:
+
+- optimized `lesson_teaching_prompts`
+- final `course_index`
+- final `global_variable_table`
+- `course_prompt`
+- `course_description`
+- `risk_and_issue_report`
+
+Deployment writes and ships these artifacts without rerunning authoring phases.
+
+### `analytics_result`
+
+Contains the translated, privacy-safe result for the user's requested metric or
+report. Its query-specific shape may vary, but it must not expose raw codes,
+raw `*_bid` strings, or raw `user_bid` values in user-visible output.
+
 ## Output Contract
 
 ### Required Artifacts
@@ -152,6 +242,7 @@ Each item:
 - `deployed_course_url` (string, required)
 - `lesson_count` (number, required)
 - `status` (string enum: `published|draft`, required)
+- `auth_verified` (boolean, required) — `true` when Deployment completed with a valid authenticated CLI session; never include the token itself.
 
 ### Delivery Guarantees
 
