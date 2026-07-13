@@ -49,6 +49,7 @@ _TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
 # or list every course must page explicitly instead of silently using that
 # first-page default.
 COURSE_LIST_PAGE_SIZE = 50
+MAX_COURSE_PAGES = 200
 
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
@@ -532,6 +533,12 @@ def _fetch_all_courses(base_url, token):
     page_index = 1
 
     while True:
+        if page_index > MAX_COURSE_PAGES:
+            print(
+                "API error: GET /shifus exceeded the maximum page limit; "
+                "refusing to return incomplete course results"
+            )
+            sys.exit(1)
         result = api(
             base_url,
             token,

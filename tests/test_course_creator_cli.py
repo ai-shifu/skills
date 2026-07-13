@@ -147,6 +147,31 @@ class CourseCreatorCliPaginationTests(unittest.TestCase):
             ],
         )
 
+    def test_course_pagination_stops_at_the_safety_limit(self):
+        def full_page_api(_base_url, _token, method, path, **_kwargs):
+            self.assertEqual(method, "get")
+            self.requested_paths.append(path)
+            return {"items": list(self.first_page)}
+
+        with (
+            mock.patch.object(course_creator_cli, "COURSE_LIST_PAGE_SIZE", 2),
+            mock.patch.object(course_creator_cli, "MAX_COURSE_PAGES", 2),
+            mock.patch.object(course_creator_cli, "api", side_effect=full_page_api),
+            contextlib.redirect_stdout(io.StringIO()) as stdout,
+        ):
+            with self.assertRaises(SystemExit) as raised:
+                course_creator_cli._fetch_all_courses("base", "token")
+
+        self.assertEqual(raised.exception.code, 1)
+        self.assertIn("maximum page limit", stdout.getvalue())
+        self.assertEqual(
+            self.requested_paths,
+            [
+                "/shifus?page_index=1&page_size=2",
+                "/shifus?page_index=2&page_size=2",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
