@@ -184,6 +184,38 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                 any("interaction syntax" in error for error in issues.errors)
             )
 
+    def test_disabled_policy_validates_single_lesson_payload(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skill_dir = Path(tmp) / "ai-shifu-course-creator"
+            examples_dir = skill_dir / "examples"
+            references_dir = skill_dir / "references"
+            examples_dir.mkdir(parents=True)
+            references_dir.mkdir()
+            (references_dir / "course-prompt.md").write_text(
+                "## Fillable Template\n\n```markdown\n# Role\nFilled\n```\n",
+                encoding="utf-8",
+            )
+            (examples_dir / "single-lesson.md").write_text(
+                """# Single Lesson Example
+
+```json
+{"interaction_policy":{"mode":"disabled","purposes":[]}}
+```
+
+```json
+{"lesson_id":"L01","teaching_prompt":"?[A | B]","used_variables":[]}
+```
+""",
+                encoding="utf-8",
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_example_contracts(skill_dir, issues)
+
+            self.assertTrue(
+                any("interaction syntax" in error for error in issues.errors)
+            )
+
     def test_disabled_policy_rejects_global_variable_table(self):
         issues = validate_skill_quality.IssueBag()
 

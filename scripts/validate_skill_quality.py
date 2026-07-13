@@ -815,6 +815,17 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                 if preceding_interaction_modes
                 else None
             )
+            if (
+                interaction_mode == "disabled"
+                and isinstance(payload, dict)
+                and {"lesson_id", "teaching_prompt", "used_variables"}
+                <= payload.keys()
+            ):
+                validate_disabled_lesson_examples(
+                    [payload],
+                    md_file,
+                    issues,
+                )
             for value in walk_json(payload):
                 if not isinstance(value, dict):
                     continue
