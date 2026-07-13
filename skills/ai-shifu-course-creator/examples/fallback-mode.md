@@ -30,7 +30,7 @@ Output includes uncertainty markers and rerun hints; preserved blocks survive ev
       "segment_type": "concept",
       "core_point": "Retry stop conditions differ across sources.",
       "preserve_block": false,
-      "source_span": {"source_id": "course_material", "start": 0, "end": 95},
+      "source_span": {"source_id": "course_material", "start": 0, "end": 96},
       "transfer_signals": {
         "concept_conflict": "The sources disagree on whether retries stop at a fixed count or when the queue drains.",
         "boundary_cue": "Do not choose a stop condition until the authoritative policy is confirmed."
