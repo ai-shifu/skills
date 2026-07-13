@@ -34,6 +34,40 @@ RE_COURSE_PROMPT_ARTIFACT = re.compile(
     r"^```markdown[ \t]*\n(?P<body>.*?)^```[ \t]*$",
     re.MULTILINE | re.DOTALL,
 )
+RE_LEARNER_RESPONSE_DIRECTIVE = re.compile(
+    r"(?:"
+    r"\b(?:ask|have|prompt|invite)\s+(?:the\s+)?learner\s+"
+    r"(?:to\s+(?:answer|choose|select|respond|enter|write|name|describe|share|"
+    r"identify|decide|rank|reflect|recall|consider)|"
+    r"(?:where|what|which|how|why|whether)\b)"
+    r"|(?:请|让|要求)(?:学习者|学员|学生).{0,24}"
+    r"(?:回答|选择|输入|填写|作答|决定|排序|描述|分享|回忆|思考)"
+    r"|(?:demandez|invitez).{0,24}(?:apprenant|élève).{0,32}"
+    r"(?:répondre|choisir|sélectionner|saisir|écrire|décrire)"
+    r")",
+    re.IGNORECASE,
+)
+RE_ANSWER_DEPENDENT_BRANCH = re.compile(
+    r"(?:"
+    r"\b(?:after|when|once)\s+(?:the\s+)?learner\s+"
+    r"(?:answers|responds|chooses|selects|decides|enters|writes|names|"
+    r"describes|shares|identifies)\b"
+    r"|\bif\s+(?:the\s+)?learner\s+"
+    r"(?:answers|responds|chooses|selects|decides|enters|writes|names|"
+    r"describes|shares|identifies)\b"
+    r"|\bbased on (?:the )?learner(?:'s)? (?:answer|response|choice|input)\b"
+    r"|(?:学习者|学员|学生).{0,16}(?:回答|选择|输入|填写|作答|决定)后"
+    r"|如果.{0,8}(?:学习者|学员|学生).{0,16}"
+    r"(?:回答|选择|输入|填写|作答|决定)"
+    r"|(?:按|根据).{0,16}(?:回答|答案|选择|输入).{0,16}"
+    r"(?:分支|继续|调整|展示|解释|反馈)"
+    r"|après.{0,32}(?:réponse|choix|saisie).{0,32}"
+    r"(?:branche|adapter|continuer)"
+    r"|\bsi\s+(?:l['’])?(?:apprenant|élève).{0,24}"
+    r"(?:répond|choisit|sélectionne|saisit|écrit)\b"
+    r")",
+    re.IGNORECASE,
+)
 FORBIDDEN_WORDS = {"claude", "anthropic"}
 
 # Doc surface scanned for cross-file anchor links. Local-only dirs
@@ -66,6 +100,12 @@ TRANSFER_SIGNAL_KEYS = {
     "compare_cue",
 }
 SOURCE_TEXT_KEYS = {"course_material"}
+INTERACTION_POLICY_MODES = {"enabled", "disabled", "unspecified"}
+INTERACTION_PURPOSES = {
+    "learner_context",
+    "pre_content_thinking",
+    "lesson_end_self_check",
+}
 
 
 @dataclass
@@ -472,6 +512,105 @@ def validate_global_variable_example(
         )
 
 
+def validate_interaction_policy_example(
+    policy: object, md_file: Path, issues: IssueBag
+) -> str | None:
+    if not isinstance(policy, dict):
+        issues.add_error(f"{md_file}: interaction_policy must be an object")
+        return None
+
+    missing = sorted({"mode", "purposes"} - policy.keys())
+    if missing:
+        issues.add_error(
+            f"{md_file}: interaction_policy is missing required fields: "
+            f"{', '.join(missing)}"
+        )
+        return None
+
+    mode = policy["mode"]
+    if not isinstance(mode, str) or mode not in INTERACTION_POLICY_MODES:
+        issues.add_error(
+            f"{md_file}: interaction_policy mode must be one of "
+            f"{', '.join(sorted(INTERACTION_POLICY_MODES))}"
+        )
+        return None
+
+    purposes = policy["purposes"]
+    if not isinstance(purposes, list):
+        issues.add_error(
+            f"{md_file}: interaction_policy purposes must be an array"
+        )
+        return mode
+
+    if any(
+        not isinstance(purpose, str) or purpose not in INTERACTION_PURPOSES
+        for purpose in purposes
+    ):
+        issues.add_error(
+            f"{md_file}: interaction_policy purposes must use only "
+            f"{', '.join(sorted(INTERACTION_PURPOSES))}"
+        )
+    elif len(set(purposes)) != len(purposes):
+        issues.add_error(
+            f"{md_file}: interaction_policy purposes must not contain duplicates"
+        )
+
+    if mode == "enabled" and not purposes:
+        issues.add_error(
+            f"{md_file}: enabled interaction_policy requires at least one purpose"
+        )
+    elif mode != "enabled" and purposes:
+        issues.add_error(
+            f"{md_file}: {mode} interaction_policy requires an empty purposes array"
+        )
+    return mode
+
+
+def validate_disabled_lesson_examples(
+    lessons: object,
+    md_file: Path,
+    issues: IssueBag,
+) -> None:
+    if not isinstance(lessons, list):
+        issues.add_error(f"{md_file}: lesson_teaching_prompts must be an array")
+        return
+
+    for lesson_index, lesson in enumerate(lessons):
+        owner = f"disabled lesson_teaching_prompts[{lesson_index}]"
+        if not isinstance(lesson, dict):
+            issues.add_error(f"{md_file}: {owner} must be an object")
+            continue
+
+        teaching_prompt = lesson.get("teaching_prompt")
+        if not isinstance(teaching_prompt, str) or not teaching_prompt.strip():
+            issues.add_error(
+                f"{md_file}: {owner} teaching_prompt must be a non-empty string"
+            )
+        else:
+            if "?[" in teaching_prompt:
+                issues.add_error(
+                    f"{md_file}: {owner} must not contain interaction syntax"
+                )
+            if "{{" in teaching_prompt:
+                issues.add_error(
+                    f"{md_file}: {owner} must not reference learner-answer variables"
+                )
+            if RE_LEARNER_RESPONSE_DIRECTIVE.search(teaching_prompt):
+                issues.add_error(
+                    f"{md_file}: {owner} must not solicit a learner response"
+                )
+            if RE_ANSWER_DEPENDENT_BRANCH.search(teaching_prompt):
+                issues.add_error(
+                    f"{md_file}: {owner} must not branch on a learner response"
+                )
+
+        used_variables = lesson.get("used_variables")
+        if used_variables != []:
+            issues.add_error(
+                f"{md_file}: {owner} used_variables must be an empty array"
+            )
+
+
 def course_prompt_template_lines(
     skill_dir: Path, issues: IssueBag
 ) -> list[str]:
@@ -645,6 +784,19 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             for value in walk_json(payload):
                 if not isinstance(value, dict):
                     continue
+                if "interaction_policy" in value:
+                    interaction_mode = validate_interaction_policy_example(
+                        value["interaction_policy"], md_file, issues
+                    )
+                    if (
+                        interaction_mode == "disabled"
+                        and "lesson_teaching_prompts" in value
+                    ):
+                        validate_disabled_lesson_examples(
+                            value["lesson_teaching_prompts"],
+                            md_file,
+                            issues,
+                        )
                 if "structured_segments_json" in value:
                     segments = value["structured_segments_json"]
                     if not isinstance(segments, list):

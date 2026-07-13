@@ -7,6 +7,10 @@
 ```json
 {
   "course_material": "structured_lesson_segments",
+  "interaction_policy": {
+    "mode": "enabled",
+    "purposes": ["pre_content_thinking"]
+  },
   "teaching_constraints": {
     "max_interactions": 4,
     "require_visual_text_pair": true
@@ -63,12 +67,42 @@ After the learner answers, use the selected signal as the first verification che
 Have the learner write a one-sentence verification rule containing the signal, expected movement, observation window, and stop condition. Close by restating that a fix is not complete until its expected effect is observed.
 ```
 
+## No-Interaction Variant
+
+When Course Design Intake explicitly resolves to no interactions, the same
+lesson uses a worked application instead of forcing the default interaction:
+
+```json
+{
+  "interaction_policy": {
+    "mode": "disabled",
+    "purposes": []
+  },
+  "lesson_teaching_prompts": [
+    {
+      "lesson_id": "L02",
+      "lesson_title": "Verify the Fix",
+      "teaching_prompt": "Open with a failed-fix scenario in which latency briefly improves but the suspected bottleneck remains.\n\nCreate a comparison slide with three columns: p95 latency trend, error-rate slope, and lock-wait drop. For each column, show the expected movement after a successful fix and one misleading interpretation.\n\nExplain that a useful verification signal must respond to the changed mechanism, move within the observation window, and have a clear failure threshold.\n\nWalk through a worked verification decision for a lock-contention fix: use lock-wait drop as the primary checkpoint, then explain why p95 latency and error rate are secondary corroborating signals.\n\nPresent a reusable one-sentence verification rule containing the signal, expected movement, observation window, and stop condition. Close by restating that a fix is not complete until its expected effect is observed.",
+      "used_variables": [],
+      "depends_on_lessons": ["L01"]
+    }
+  ]
+}
+```
+
+This variant contains no `?[]` block, learner-answer request, answer-dependent
+branch, or learner-answer variable. Its loop is setup → explanation → worked
+application → close.
+
 ## Degraded Input
 
 Degraded-input handling for this phase (fallback lesson JSON with `fallback_mode` / `assumptions` / `upgrade_notes`): see `examples/fallback-mode.md` → Generation Fallback.
 
 ## Acceptance Notes
 
-- At least one interaction drives current-lesson text changes.
+- In the `enabled` snapshot, the selected interaction drives current-lesson text
+  changes.
 - Core idea includes visual-plus-text explanation in final script.
 - Interaction count stays within declared limits.
+- The no-interaction variant satisfies the alternative teaching loop without
+  adding interaction syntax or learner-answer variables.

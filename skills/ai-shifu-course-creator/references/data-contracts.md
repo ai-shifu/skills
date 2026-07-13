@@ -22,6 +22,8 @@ Provide one of:
   instead of inventing a persona name.
 - `course_profile` object.
 - `delivery_constraints` object.
+- `interaction_policy` object: normalized Course Design Intake result; see
+  [Interaction Policy](#interaction-policy).
 - `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`).
 
 ### Recommended Object Shapes
@@ -50,12 +52,44 @@ Provide one of:
 }
 ```
 
+#### Interaction Policy
+
+```json
+{
+  "mode": "enabled|disabled|unspecified",
+  "purposes": [
+    "learner_context",
+    "pre_content_thinking",
+    "lesson_end_self_check"
+  ]
+}
+```
+
+Course Design Intake resolves this control once and passes it unchanged to
+Generation and Optimization:
+
+- `enabled` requires a non-empty, duplicate-free `purposes` array containing
+  only the three canonical values above. Each purpose controls only its own
+  placement; enabling one does not implicitly enable the others.
+- `disabled` and `unspecified` require an empty `purposes` array.
+- `disabled` forbids interaction syntax and learner-answer variables.
+- `unspecified` does not authorize newly inferred interactions. Only an explicit
+  user instruction or literal MarkdownFlow interaction already present in
+  supplied/pulled source may be retained; transfer cues, ordinary exercises,
+  and default teaching patterns are insufficient.
+- `delivery_constraints.interaction_density` is applied only to interactions
+  permitted by this policy; it never overrides `disabled` or `unspecified`.
+
 ### Minimal Input Payload Example
 
 ```json
 {
   "course_material": "long transcript or merged markdown",
   "course_author_name": "Author-provided real name",
+  "interaction_policy": {
+    "mode": "enabled",
+    "purposes": ["pre_content_thinking", "lesson_end_self_check"]
+  },
   "generation_constraints": {
     "persona": "hands-on mentor",
     "lesson_granularity": "short"
@@ -79,6 +113,8 @@ Provide one of:
 - If multiple files are provided, ordering must be explicit.
 - Source language and expected output language should be specified when multilingual content exists.
 - Explicit output language requests must not be overridden by source-language mixes (see [Language Resolution](#language-resolution)).
+- `interaction_policy` must satisfy the mode/purpose invariants above before
+  Generation or Optimization applies pedagogical gates.
 
 ## Output Contract
 
