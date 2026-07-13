@@ -357,13 +357,22 @@ def validate_segment_example(
             )
 
 
-def course_prompt_template_lines(skill_dir: Path) -> list[str]:
+def course_prompt_template_lines(
+    skill_dir: Path, issues: IssueBag
+) -> list[str]:
     template_file = skill_dir / "references" / "course-prompt.md"
     if not template_file.is_file():
+        issues.add_error(
+            f"{skill_dir}: Course Prompt examples require "
+            "references/course-prompt.md"
+        )
         return []
     content = template_file.read_text(encoding="utf-8")
     marker = "## Fillable Template"
     if marker not in content:
+        issues.add_error(
+            f"{template_file}: missing required section '{marker}'"
+        )
         return []
     template_section = content.split(marker, 1)[1]
     match = re.search(
@@ -372,6 +381,9 @@ def course_prompt_template_lines(skill_dir: Path) -> list[str]:
         re.MULTILINE | re.DOTALL,
     )
     if not match:
+        issues.add_error(
+            f"{template_file}: missing markdown code block under '{marker}'"
+        )
         return []
     return [
         line.strip()
@@ -446,9 +458,20 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
     if not examples_dir.is_dir():
         return
 
-    prompt_template_lines = course_prompt_template_lines(skill_dir)
-    for md_file in sorted(examples_dir.glob("**/*.md")):
-        content = md_file.read_text(encoding="utf-8")
+    example_contents = [
+        (md_file, md_file.read_text(encoding="utf-8"))
+        for md_file in sorted(examples_dir.glob("**/*.md"))
+    ]
+    has_course_prompt_artifacts = any(
+        RE_COURSE_PROMPT_ARTIFACT.search(content)
+        for _, content in example_contents
+    )
+    prompt_template_lines = (
+        course_prompt_template_lines(skill_dir, issues)
+        if has_course_prompt_artifacts
+        else []
+    )
+    for md_file, content in example_contents:
         for match in RE_JSON_FENCE.finditer(content):
             try:
                 payload = json.loads(match.group("body"))
