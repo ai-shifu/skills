@@ -645,17 +645,36 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             for value in walk_json(payload):
                 if not isinstance(value, dict):
                     continue
-                segments = value.get("structured_segments_json")
-                if isinstance(segments, list):
-                    for segment in segments:
-                        if isinstance(segment, dict):
+                if "structured_segments_json" in value:
+                    segments = value["structured_segments_json"]
+                    if not isinstance(segments, list):
+                        issues.add_error(
+                            f"{md_file}: structured_segments_json must be an array"
+                        )
+                    else:
+                        for segment_index, segment in enumerate(segments):
+                            if not isinstance(segment, dict):
+                                issues.add_error(
+                                    f"{md_file}: structured_segments_json"
+                                    f"[{segment_index}] must be an object"
+                                )
+                                continue
                             validate_segment_example(
                                 segment, source_texts, md_file, issues
                             )
-                course_index = value.get("course_index")
-                if isinstance(course_index, list):
-                    for lesson in course_index:
+                if "course_index" in value:
+                    course_index = value["course_index"]
+                    if not isinstance(course_index, list):
+                        issues.add_error(
+                            f"{md_file}: course_index must be an array"
+                        )
+                        course_index = []
+                    for lesson_index, lesson in enumerate(course_index):
                         if not isinstance(lesson, dict):
+                            issues.add_error(
+                                f"{md_file}: course_index[{lesson_index}] "
+                                "must be an object"
+                            )
                             continue
                         span_map = lesson.get("source_span_map")
                         if not isinstance(span_map, list):
@@ -675,10 +694,20 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                                 md_file,
                                 issues,
                             )
-                variables = value.get("global_variable_table")
-                if isinstance(variables, list):
-                    for variable in variables:
-                        if isinstance(variable, dict):
+                if "global_variable_table" in value:
+                    variables = value["global_variable_table"]
+                    if not isinstance(variables, list):
+                        issues.add_error(
+                            f"{md_file}: global_variable_table must be an array"
+                        )
+                    else:
+                        for variable_index, variable in enumerate(variables):
+                            if not isinstance(variable, dict):
+                                issues.add_error(
+                                    f"{md_file}: global_variable_table"
+                                    f"[{variable_index}] must be an object"
+                                )
+                                continue
                             validate_global_variable_example(
                                 variable, md_file, issues
                             )
