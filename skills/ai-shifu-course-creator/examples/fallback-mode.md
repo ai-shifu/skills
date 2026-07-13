@@ -77,6 +77,10 @@ Pipeline produces partial but runnable output:
       "lesson_id": "L03",
       "lesson_title": "Choose a Classification Axis",
       "core_question": "When should you prefer latency tiers over contention classes?",
+      "source_span_map": [
+        {"source_id": "course_material", "start": 0, "end": 32},
+        {"source_id": "course_material", "start": 34, "end": 72}
+      ],
       "uncertainty": "medium"
     }
   ],

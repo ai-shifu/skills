@@ -659,6 +659,11 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                             continue
                         span_map = lesson.get("source_span_map")
                         if not isinstance(span_map, list):
+                            issues.add_error(
+                                f"{md_file}: course_index lesson "
+                                f"{lesson.get('lesson_id')!r} source_span_map "
+                                "must be an array"
+                            )
                             continue
                         lesson_id = lesson.get("lesson_id")
                         for map_index, source_span in enumerate(span_map):
