@@ -496,10 +496,17 @@ def validate_course_prompt_example(
         line for line in prompt_template_lines if line.startswith("# ")
     ]
     if headings != english_headings:
-        common_headings = set(headings) & set(english_headings)
-        if common_headings:
-            missing_headings = sorted(set(english_headings) - set(headings))
-            unexpected_headings = sorted(set(headings) - set(english_headings))
+        heading_set = set(headings)
+        english_heading_set = set(english_headings)
+        common_headings = heading_set & english_heading_set
+        if heading_set == english_heading_set:
+            issues.add_error(
+                f"{md_file}: Course Prompt example headings are out of order; "
+                f"expected: {', '.join(english_headings)}"
+            )
+        elif english_headings and len(common_headings) >= len(english_headings) - 1:
+            missing_headings = sorted(english_heading_set - heading_set)
+            unexpected_headings = sorted(heading_set - english_heading_set)
             issues.add_error(
                 f"{md_file}: Course Prompt example headings do not match "
                 f"the template; missing: {', '.join(missing_headings) or 'none'}; "
