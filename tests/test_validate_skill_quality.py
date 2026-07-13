@@ -289,6 +289,19 @@ class InteractionPolicyValidationTests(unittest.TestCase):
         self.assertEqual(len(issues.errors), 1)
         self.assertIn("empty global_variable_table", issues.errors[0])
 
+    def test_disabled_policy_rejects_course_prompt_variables(self):
+        issues = validate_skill_quality.IssueBag()
+
+        validate_skill_quality.validate_disabled_course_prompt_example(
+            "The learner goal is {{learner_goal}}.",
+            Path("example.md"),
+            issues,
+        )
+
+        self.assertEqual(len(issues.errors), 1)
+        self.assertIn("course_prompt", issues.errors[0])
+        self.assertIn("learner-answer variables", issues.errors[0])
+
 
 if __name__ == "__main__":
     unittest.main()

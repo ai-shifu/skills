@@ -628,6 +628,16 @@ def validate_disabled_global_variable_table_example(
         )
 
 
+def validate_disabled_course_prompt_example(
+    prompt: object, md_file: Path, issues: IssueBag
+) -> None:
+    if isinstance(prompt, str) and "{{" in prompt:
+        issues.add_error(
+            f"{md_file}: disabled interaction_policy course_prompt must not "
+            "reference learner-answer variables"
+        )
+
+
 def course_prompt_template_lines(
     skill_dir: Path, issues: IssueBag
 ) -> list[str]:
@@ -850,6 +860,13 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                 ):
                     validate_disabled_global_variable_table_example(
                         value["global_variable_table"], md_file, issues
+                    )
+                if (
+                    interaction_mode == "disabled"
+                    and "course_prompt" in value
+                ):
+                    validate_disabled_course_prompt_example(
+                        value["course_prompt"], md_file, issues
                     )
                 if "structured_segments_json" in value:
                     segments = value["structured_segments_json"]
