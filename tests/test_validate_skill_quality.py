@@ -270,6 +270,45 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                 any("interaction syntax" in error for error in issues.errors)
             )
 
+    def test_disabled_policy_validates_markdown_teaching_prompt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skill_dir = Path(tmp) / "ai-shifu-course-creator"
+            examples_dir = skill_dir / "examples"
+            references_dir = skill_dir / "references"
+            examples_dir.mkdir(parents=True)
+            references_dir.mkdir()
+            (references_dir / "course-prompt.md").write_text(
+                "## Fillable Template\n\n```markdown\n# Role\nFilled\n```\n",
+                encoding="utf-8",
+            )
+            (examples_dir / "markdown-prompt.md").write_text(
+                """# Markdown Teaching Prompt Example
+
+```json
+{"interaction_policy":{"mode":"disabled","purposes":[]}}
+```
+
+```markdown
+Ask the learner to choose a path.
+?[A | B]
+```
+""",
+                encoding="utf-8",
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_example_contracts(skill_dir, issues)
+
+            self.assertTrue(
+                any("interaction syntax" in error for error in issues.errors)
+            )
+            self.assertTrue(
+                any(
+                    "solicit a learner response" in error
+                    for error in issues.errors
+                )
+            )
+
     def test_disabled_policy_rejects_global_variable_table(self):
         issues = validate_skill_quality.IssueBag()
 

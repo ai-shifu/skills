@@ -29,6 +29,10 @@ RE_JSON_FENCE = re.compile(
     r"^```json[ \t]*\n(?P<body>.*?)^```[ \t]*$",
     re.MULTILINE | re.DOTALL,
 )
+RE_MARKDOWN_FENCE = re.compile(
+    r"^```markdown[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+    re.MULTILINE | re.DOTALL,
+)
 RE_COURSE_PROMPT_ARTIFACT = re.compile(
     r"^### Course Prompt Artifact[ \t]*$.*?"
     r"^```markdown[ \t]*\n(?P<body>.*?)^```[ \t]*$",
@@ -766,6 +770,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
     prompt_template_lines = course_prompt_template_lines(skill_dir, issues)
     for md_file, content in example_contents:
         parsed_payloads: list[object] = []
+        payload_offsets: list[int] = []
         for match in RE_JSON_FENCE.finditer(content):
             try:
                 payload = json.loads(match.group("body"))
@@ -780,10 +785,11 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                 )
                 continue
             parsed_payloads.append(payload)
+            payload_offsets.append(match.start())
 
         source_candidates: dict[str, list[tuple[int, str]]] = {}
         target_language_candidates: list[tuple[int, str]] = []
-        interaction_mode_candidates: list[tuple[int, str | None]] = []
+        interaction_mode_candidates: list[tuple[int, int, str | None]] = []
         for payload_index, payload in enumerate(parsed_payloads):
             if isinstance(payload, dict):
                 for key, value in payload.items():
@@ -797,6 +803,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                         interaction_mode_candidates.append(
                             (
                                 payload_index,
+                                payload_offsets[payload_index],
                                 validate_interaction_policy_example(
                                     value, md_file, issues
                                 ),
@@ -827,7 +834,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                 max(
                     preceding_interaction_modes,
                     key=lambda candidate: candidate[0],
-                )[1]
+                )[2]
                 if preceding_interaction_modes
                 else None
             )
@@ -948,6 +955,41 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                         issues.add_error(
                             f"{md_file}: course_prompt example must be a string"
                         )
+
+        course_prompt_artifact_spans = [
+            (match.start(), match.end())
+            for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content)
+        ]
+        for match in RE_MARKDOWN_FENCE.finditer(content):
+            if any(
+                start <= match.start() < end
+                for start, end in course_prompt_artifact_spans
+            ):
+                continue
+            preceding_interaction_modes = [
+                candidate
+                for candidate in interaction_mode_candidates
+                if candidate[1] <= match.start()
+            ]
+            interaction_mode = (
+                max(
+                    preceding_interaction_modes,
+                    key=lambda candidate: candidate[1],
+                )[2]
+                if preceding_interaction_modes
+                else None
+            )
+            if interaction_mode == "disabled":
+                validate_disabled_lesson_examples(
+                    [
+                        {
+                            "teaching_prompt": match.group("body"),
+                            "used_variables": [],
+                        }
+                    ],
+                    md_file,
+                    issues,
+                )
 
         artifact_is_localized = bool(target_language_candidates) and all(
             not language.lower().startswith("en")
