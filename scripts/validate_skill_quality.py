@@ -395,7 +395,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             except json.JSONDecodeError as exc:
                 issues.add_error(
                     f"{md_file}: invalid JSON example near line "
-                    f"{content.count(chr(10), 0, match.start()) + exc.lineno}: "
+                    f"{content.count(chr(10), 0, match.start('body')) + exc.lineno}: "
                     f"{exc.msg}"
                 )
                 continue
