@@ -384,6 +384,30 @@ Ask the learner to choose a path.
         self.assertIn("course_prompt", issues.errors[0])
         self.assertIn("learner-answer variables", issues.errors[0])
 
+    def test_disabled_policy_rejects_course_prompt_interactions(self):
+        issues = validate_skill_quality.IssueBag()
+
+        validate_skill_quality.validate_disabled_course_prompt_example(
+            (
+                "Ask the learner to choose a path.\n"
+                "?[A | B]\n"
+                "After the learner answers, branch to the matching guidance."
+            ),
+            Path("example.md"),
+            issues,
+        )
+
+        self.assertEqual(len(issues.errors), 3)
+        self.assertTrue(
+            any("interaction syntax" in error for error in issues.errors)
+        )
+        self.assertTrue(
+            any("solicit a learner response" in error for error in issues.errors)
+        )
+        self.assertTrue(
+            any("branch on a learner response" in error for error in issues.errors)
+        )
+
     def test_disabled_policy_rejects_course_prompt_artifact_variables(self):
         with tempfile.TemporaryDirectory() as tmp:
             skill_dir = Path(tmp) / "ai-shifu-course-creator"
@@ -407,6 +431,9 @@ Ask the learner to choose a path.
 ```markdown
 # Role
 Use {{learner_goal}} to personalize the course.
+Ask the learner to choose a path.
+?[A | B]
+After the learner answers, branch to the matching guidance.
 ```
 """,
                 encoding="utf-8",
@@ -419,6 +446,26 @@ Use {{learner_goal}} to personalize the course.
                 any(
                     "course_prompt" in error
                     and "learner-answer variables" in error
+                    for error in issues.errors
+                )
+            )
+            self.assertTrue(
+                any(
+                    "course_prompt" in error and "interaction syntax" in error
+                    for error in issues.errors
+                )
+            )
+            self.assertTrue(
+                any(
+                    "course_prompt" in error
+                    and "solicit a learner response" in error
+                    for error in issues.errors
+                )
+            )
+            self.assertTrue(
+                any(
+                    "course_prompt" in error
+                    and "branch on a learner response" in error
                     for error in issues.errors
                 )
             )

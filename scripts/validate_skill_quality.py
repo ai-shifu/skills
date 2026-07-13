@@ -589,6 +589,30 @@ def interaction_mode_at_offset(
     return max(preceding_candidates, key=lambda candidate: candidate[0])[1]
 
 
+def validate_disabled_prompt_text(
+    prompt: str,
+    owner: str,
+    md_file: Path,
+    issues: IssueBag,
+) -> None:
+    if "?[" in prompt:
+        issues.add_error(
+            f"{md_file}: {owner} must not contain interaction syntax"
+        )
+    if "{{" in prompt:
+        issues.add_error(
+            f"{md_file}: {owner} must not reference learner-answer variables"
+        )
+    if RE_LEARNER_RESPONSE_DIRECTIVE.search(prompt):
+        issues.add_error(
+            f"{md_file}: {owner} must not solicit a learner response"
+        )
+    if RE_ANSWER_DEPENDENT_BRANCH.search(prompt):
+        issues.add_error(
+            f"{md_file}: {owner} must not branch on a learner response"
+        )
+
+
 def validate_disabled_lesson_examples(
     lessons: object,
     md_file: Path,
@@ -610,22 +634,12 @@ def validate_disabled_lesson_examples(
                 f"{md_file}: {owner} teaching_prompt must be a non-empty string"
             )
         else:
-            if "?[" in teaching_prompt:
-                issues.add_error(
-                    f"{md_file}: {owner} must not contain interaction syntax"
-                )
-            if "{{" in teaching_prompt:
-                issues.add_error(
-                    f"{md_file}: {owner} must not reference learner-answer variables"
-                )
-            if RE_LEARNER_RESPONSE_DIRECTIVE.search(teaching_prompt):
-                issues.add_error(
-                    f"{md_file}: {owner} must not solicit a learner response"
-                )
-            if RE_ANSWER_DEPENDENT_BRANCH.search(teaching_prompt):
-                issues.add_error(
-                    f"{md_file}: {owner} must not branch on a learner response"
-                )
+            validate_disabled_prompt_text(
+                teaching_prompt,
+                owner,
+                md_file,
+                issues,
+            )
 
         used_variables = lesson.get("used_variables")
         if used_variables != []:
@@ -647,10 +661,12 @@ def validate_disabled_global_variable_table_example(
 def validate_disabled_course_prompt_example(
     prompt: object, md_file: Path, issues: IssueBag
 ) -> None:
-    if isinstance(prompt, str) and "{{" in prompt:
-        issues.add_error(
-            f"{md_file}: disabled interaction_policy course_prompt must not "
-            "reference learner-answer variables"
+    if isinstance(prompt, str):
+        validate_disabled_prompt_text(
+            prompt,
+            "disabled interaction_policy course_prompt",
+            md_file,
+            issues,
         )
 
 
