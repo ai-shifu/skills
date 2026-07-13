@@ -757,6 +757,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
 
         source_candidates: dict[str, list[tuple[int, str]]] = {}
         target_language_candidates: list[tuple[int, str]] = []
+        interaction_mode_candidates: list[tuple[int, str | None]] = []
         for payload_index, payload in enumerate(parsed_payloads):
             if isinstance(payload, dict):
                 for key, value in payload.items():
@@ -766,6 +767,15 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                         )
                     if key == "target_language" and isinstance(value, str):
                         target_language_candidates.append((payload_index, value))
+                    if key == "interaction_policy":
+                        interaction_mode_candidates.append(
+                            (
+                                payload_index,
+                                validate_interaction_policy_example(
+                                    value, md_file, issues
+                                ),
+                            )
+                        )
 
         for payload_index, payload in enumerate(parsed_payloads):
             source_texts = source_texts_for_payload(
@@ -782,22 +792,31 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             is_localized = bool(target_language) and not (
                 target_language.lower().startswith("en")
             )
+            preceding_interaction_modes = [
+                candidate
+                for candidate in interaction_mode_candidates
+                if candidate[0] <= payload_index
+            ]
+            interaction_mode = (
+                max(
+                    preceding_interaction_modes,
+                    key=lambda candidate: candidate[0],
+                )[1]
+                if preceding_interaction_modes
+                else None
+            )
             for value in walk_json(payload):
                 if not isinstance(value, dict):
                     continue
-                if "interaction_policy" in value:
-                    interaction_mode = validate_interaction_policy_example(
-                        value["interaction_policy"], md_file, issues
+                if (
+                    interaction_mode == "disabled"
+                    and "lesson_teaching_prompts" in value
+                ):
+                    validate_disabled_lesson_examples(
+                        value["lesson_teaching_prompts"],
+                        md_file,
+                        issues,
                     )
-                    if (
-                        interaction_mode == "disabled"
-                        and "lesson_teaching_prompts" in value
-                    ):
-                        validate_disabled_lesson_examples(
-                            value["lesson_teaching_prompts"],
-                            md_file,
-                            issues,
-                        )
                 if "structured_segments_json" in value:
                     segments = value["structured_segments_json"]
                     if not isinstance(segments, list):
