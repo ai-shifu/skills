@@ -525,9 +525,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             for value in walk_json(payload):
                 if not isinstance(value, dict):
                     continue
-                if "segment_id" in value and (
-                    "segment_type" in value or "core_point" in value
-                ):
+                if "segment_id" in value and "block_id" not in value:
                     validate_segment_example(value, md_file, issues)
                 if {"collected_in", "used_in", "effect_scope"} & value.keys():
                     validate_global_variable_example(
