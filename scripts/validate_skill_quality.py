@@ -300,7 +300,10 @@ def walk_json(value: object) -> Generator[object, None, None]:
 
 
 def validate_segment_example(
-    segment: dict[str, object], md_file: Path, issues: IssueBag
+    segment: dict[str, object],
+    source_texts: dict[str, str],
+    md_file: Path,
+    issues: IssueBag,
 ) -> None:
     missing = sorted(SEGMENT_REQUIRED_KEYS - segment.keys())
     if missing:
@@ -361,6 +364,18 @@ def validate_segment_example(
                 f"{md_file}: segment example {segment['segment_id']} source_span "
                 "must contain source_id and valid start/end offsets"
             )
+        else:
+            source_text = source_texts.get(source_id)
+            if source_text is None:
+                issues.add_error(
+                    f"{md_file}: segment example {segment_id} source_span "
+                    f"references unknown string source {source_id!r}"
+                )
+            elif end > len(source_text):
+                issues.add_error(
+                    f"{md_file}: segment example {segment_id} source_span end "
+                    f"{end} exceeds {source_id!r} length {len(source_text)}"
+                )
 
     transfer_signals = segment["transfer_signals"]
     if not isinstance(transfer_signals, dict) or not transfer_signals:
@@ -559,6 +574,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
         else []
     )
     for md_file, content in example_contents:
+        parsed_payloads: list[object] = []
         for match in RE_JSON_FENCE.finditer(content):
             try:
                 payload = json.loads(match.group("body"))
@@ -572,12 +588,23 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                     f"{exc.msg}"
                 )
                 continue
+            parsed_payloads.append(payload)
 
+        source_texts: dict[str, str] = {}
+        for payload in parsed_payloads:
+            if isinstance(payload, dict):
+                source_texts.update(
+                    {
+                        key: value
+                        for key, value in payload.items()
+                        if isinstance(value, str)
+                    }
+                )
             for value in walk_json(payload):
                 if not isinstance(value, dict):
                     continue
                 if SEGMENT_REQUIRED_KEYS & value.keys() and "block_id" not in value:
-                    validate_segment_example(value, md_file, issues)
+                    validate_segment_example(value, source_texts, md_file, issues)
                 if {"collected_in", "used_in", "effect_scope"} & value.keys():
                     validate_global_variable_example(
                         value, md_file, issues
