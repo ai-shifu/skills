@@ -67,8 +67,7 @@ Have the learner write a one-sentence verification rule containing the signal, e
 
 ## No-Interaction Variant
 
-When Course Design Intake explicitly resolves to no interactions, the same
-lesson uses a worked application instead of forcing the default interaction:
+When Course Design Intake explicitly resolves to no interactions, the same lesson uses a worked application instead of forcing the default interaction:
 
 ```json
 {
@@ -88,9 +87,7 @@ lesson uses a worked application instead of forcing the default interaction:
 }
 ```
 
-This variant contains no `?[]` block, learner-answer request, answer-dependent
-branch, or learner-answer variable. Its loop is setup → explanation → worked
-application → close.
+This variant contains no `?[]` block, learner-answer request, answer-dependent branch, or learner-answer variable. Its loop is setup → explanation → worked application → close.
 
 ## Degraded Input
 
@@ -98,9 +95,7 @@ Degraded-input handling for this phase (fallback lesson JSON with `fallback_mode
 
 ## Acceptance Notes
 
-- In the `enabled` snapshot, the selected interaction drives current-lesson text
-  changes.
+- In the `enabled` snapshot, the selected interaction drives current-lesson text changes.
 - Core idea includes visual-plus-text explanation in final script.
 - Interaction count stays within declared limits.
-- The no-interaction variant satisfies the alternative teaching loop without
-  adding interaction syntax or learner-answer variables.
+- The no-interaction variant satisfies the alternative teaching loop without adding interaction syntax or learner-answer variables.

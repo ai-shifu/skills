@@ -69,9 +69,7 @@ Use these optional controls across all phases:
 - `course_author_name` (string): course author's real name for the Course Prompt role.
 - `course_profile` (json): audience and pedagogical parameters.
 - `delivery_constraints` (json): platform limits, topic policy, and non-negotiable fragments.
-- `interaction_policy` (json): normalized Course Design Intake result with
-  `mode` and selected `purposes`; see
-  `references/data-contracts.md#interaction-policy`.
+- `interaction_policy` (json): normalized Course Design Intake result with `mode` and selected `purposes`; see `references/data-contracts.md#interaction-policy`.
 - `target_language` (BCP-47 string, e.g. `zh-CN` / `en-US` / `fr-FR`): explicit output language; takes priority over prompt-language detection. Full priority order in `references/data-contracts.md#language-resolution`.
 
 Field-level schemas with example JSON in `references/data-contracts.md#recommended-object-shapes`.
@@ -187,21 +185,7 @@ Use the answers as course-design constraints:
   `## Generation`) to lesson content, the Course Prompt, and Listen Mode.
   Question explicitly skipped → infer the format from the source material
   structure instead of inventing a fixed default.
-- **Interaction choices → interaction policy and placement.** Resolve one of
-  three policies before Orchestration: one or more purposes selected →
-  `enabled`; none selected → `disabled`; question explicitly skipped →
-  `unspecified`. Under `enabled`, place early learner-context collection for
-  adaptive teaching, pre-content prompts for thinking or misconception
-  correction, and lesson-end self-checks for assessment only as selected.
-  `learner_context` requires collection at an early course or module point,
-  `pre_content_thinking` requires a prompt before the relevant explanation, and
-  `lesson_end_self_check` requires a self-check at each lesson end. `enabled`
-  does not by itself require an interaction in every lesson beyond those
-  selected-purpose placements. Under `disabled`, emit no `?[]` blocks, solicit
-  no learner answer, and collect no learner-answer variables. `unspecified`
-  adds no interaction-policy constraint or override; keep the existing
-  authoring behavior as-is. Pass the normalized `interaction_policy` unchanged
-  to Generation and Optimization.
+- **Interaction choices → interaction policy and placement.** Resolve one of three policies before Orchestration: one or more purposes selected → `enabled`; none selected → `disabled`; question explicitly skipped → `unspecified`. Under `enabled`, place early learner-context collection for adaptive teaching, pre-content prompts for thinking or misconception correction, and lesson-end self-checks for assessment only as selected. `learner_context` requires collection at an early course or module point, `pre_content_thinking` requires a prompt before the relevant explanation, and `lesson_end_self_check` requires a self-check at each lesson end. `enabled` does not by itself require an interaction in every lesson beyond those selected-purpose placements. Under `disabled`, emit no `?[]` blocks, solicit no learner answer, and collect no learner-answer variables. `unspecified` adds no interaction-policy constraint or override; keep the existing authoring behavior as-is. Pass the normalized `interaction_policy` unchanged to Generation and Optimization.
 - **Listen Mode**: pure slides → disable it and do not ask the question.
   Otherwise the question must mention the extra AI-Shifu credit consumption;
   unanswered → disabled; an explicit enable/disable decision carries into the
@@ -355,14 +339,7 @@ Generate a runnable Teaching Prompt for each lesson.
 
 Apply the patterns and constraints in `references/pedagogy.md#teaching-patterns`, `#cognitive-techniques`, `#variable-strategy`, `#interaction-design`, and `#visual-text-coordination` unless content requires a justified variation.
 
-Resolve the Course Design Intake interaction policy before applying those
-patterns. Under `enabled`, explicitly choose the interaction type before writing
-the `?[]` line per Hard Rule 3, but add it only where a selected purpose applies;
-if a lesson naturally asks "which of these apply?", default to multi-select
-unless the source or user says only one answer is allowed. Under `disabled`,
-convert learner-response steps into worked examples, model-led application, or
-consolidation; emit no `?[]` blocks or learner-answer variables. Under
-`unspecified`, apply the baseline as-is without an interaction-policy override.
+Resolve the Course Design Intake interaction policy before applying those patterns. Under `enabled`, explicitly choose the interaction type before writing the `?[]` line per Hard Rule 3, but add it only where a selected purpose applies; if a lesson naturally asks "which of these apply?", default to multi-select unless the source or user says only one answer is allowed. Under `disabled`, convert learner-response steps into worked examples, model-led application, or consolidation; emit no `?[]` blocks or learner-answer variables. Under `unspecified`, apply the baseline as-is without an interaction-policy override.
 
 ### Single-Lesson Generation Strategy
 
@@ -371,9 +348,7 @@ Required anchors per lesson:
 1. Opening paragraph with a teaching-start function (Hard Rule 6) — not a copied chapter / lesson title or directory label.
 2. Opening objective plus slide-style visual cover.
 3. Evidence-chain explanation.
-4. When a selected interaction purpose applies to this lesson, an effective
-   interaction with visible downstream effect. Otherwise, a worked application
-   or consolidation step with visible instructional value and no learner input.
+4. When a selected interaction purpose applies to this lesson, an effective interaction with visible downstream effect. Otherwise, a worked application or consolidation step with visible instructional value and no learner input.
 5. At least one reusable deliverable.
 6. Lesson close with summary or decision checkpoint.
 
@@ -381,30 +356,18 @@ Optional modules: viewpoint calibration, misconception correction, dual delivera
 
 ### Slide-Only Generation Override
 
-When Course Design Intake resolves to pure slides / classroom interactive
-slides, replace the default explanation-heavy lesson pattern with a projection
-pattern. Pure slides are for classroom projection by a human instructor, not AI
-narration:
+When Course Design Intake resolves to pure slides / classroom interactive slides, replace the default explanation-heavy lesson pattern with a projection pattern. Pure slides are for classroom projection by a human instructor, not AI narration:
 
 - Treat each lesson as a small slide deck controlled by a human instructor.
-- Generate slide-facing blocks only: slide title, 2-4 short bullets, and a
-  visual/layout instruction. When the interaction policy permits an
-  interaction, also include its prompt, options, and concise feedback states.
-- Keep permitted interactions runnable with the normal MarkdownFlow syntax,
-  but keep the surrounding content presentation-oriented. Under `disabled`,
-  omit interaction prompts, options, feedback branches, and learner-answer
-  variables entirely.
+- Generate slide-facing blocks only: slide title, 2-4 short bullets, and a visual/layout instruction. When the interaction policy permits an interaction, also include its prompt, options, and concise feedback states.
+- Keep permitted interactions runnable with the normal MarkdownFlow syntax, but keep the surrounding content presentation-oriented. Under `disabled`, omit interaction prompts, options, feedback branches, and learner-answer variables entirely.
 - Do not include AI narration directives or learner-facing lecture prose such as
   "explain to the learner", "walk through", "向学习者说明", "讲解", "用文字解释",
   "讲清", or long paragraphs intended for the AI to speak.
 - Do not require the normal visual-text explanation pair. The visual itself and
   the short on-slide labels carry the projection content; any explanation
   belongs to the human instructor, not the Teaching Prompt.
-- The Course Prompt must describe the runtime role as producing classroom
-  slides, using "interactive slides" only when the interaction policy permits
-  interactions, not as conducting one-on-one tutoring. Do not include
-  course-level instructions that ask the AI to verbally explain the lesson to a
-  single learner.
+- The Course Prompt must describe the runtime role as producing classroom slides, using "interactive slides" only when the interaction policy permits interactions, not as conducting one-on-one tutoring. Do not include course-level instructions that ask the AI to verbally explain the lesson to a single learner.
 
 ### Outputs
 
