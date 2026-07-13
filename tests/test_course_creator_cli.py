@@ -185,7 +185,7 @@ class CourseCreatorCliPaginationTests(unittest.TestCase):
                 "page_size": 2,
                 "total": 1,
                 "page_count": 2,
-                "items": list(self.second_page),
+                "items": list(self.first_page),
             }
 
         with (
@@ -196,7 +196,7 @@ class CourseCreatorCliPaginationTests(unittest.TestCase):
         ):
             courses = course_creator_cli._fetch_all_courses("base", "token")
 
-        self.assertEqual(courses, self.second_page)
+        self.assertEqual(courses, self.first_page)
         self.assertEqual(
             self.requested_paths,
             ["/shifus?page_index=1&page_size=2"],
