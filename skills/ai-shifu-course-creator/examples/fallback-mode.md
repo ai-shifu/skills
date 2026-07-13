@@ -104,6 +104,10 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 ```json
 {
   "course_material": "structured_lesson_segments",
+  "interaction_policy": {
+    "mode": "enabled",
+    "purposes": ["pre_content_thinking"]
+  },
   "teaching_constraints": {
     "max_interactions": 2,
     "must_use_viewpoint_check": true,

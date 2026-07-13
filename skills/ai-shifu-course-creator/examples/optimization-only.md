@@ -10,6 +10,10 @@
   "course_material": "Learner must differentiate transient vs permanent failure and choose a matching retry stop rule.",
   "course_author_name": "Priya Shah",
   "target_language": "en-US",
+  "interaction_policy": {
+    "mode": "enabled",
+    "purposes": ["pre_content_thinking"]
+  },
   "optimization_constraints": {
     "max_interactions": 4,
     "require_branching_feedback": true

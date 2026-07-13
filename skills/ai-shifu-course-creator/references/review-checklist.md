@@ -31,7 +31,13 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 ## Lesson Loop
 
-- Minimum teaching loop satisfied: setup → explanation → interaction → close.
+- The interaction policy used for this audit resolves to `enabled`, `disabled`,
+  or `unspecified` and matches the Course Design Intake answer.
+- By default, the minimum loop is setup → explanation → interaction → close.
+- Under `enabled`, require the default interaction loop only when a selected
+  purpose applies; otherwise use setup → explanation → worked application or
+  consolidation → close.
+- Under `disabled`, use the non-interactive loop for every lesson.
 - One core question per lesson; resolved by lesson close.
 - Action tasks executable now or explicitly linked to a downstream lesson.
 - Variable naming consistent and traceable across lessons; new variable names follow the resolved output language and are composed of letters, numbers, and underscores.
@@ -40,13 +46,19 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 ## Interaction Quality
 
-- Interactions are concrete and answerable.
+- Under `disabled`, no `?[]` block, learner-answer request, learner-answer
+  variable, or answer-dependent branch is present.
+- Interactions that are present are concrete and answerable.
 - Interaction type matches the decision: single-select for mutually exclusive path choices, multi-select for non-exclusive learner context, goals, interests, modules, blockers, scenarios, experience, or practice needs. For multi-select, downstream content is driven through combined feedback, prioritization, or tailored examples rather than exhaustive branching for every combination.
 - Learner-facing questions appear before interaction syntax, not after `%{{var}}` inside `?[%{{var}} ...]`.
 - Each `?[]` interaction appears on its own line.
 - If the pre-interaction text enumerates or describes choices, the `?[]` option labels match those choices exactly — same set, order, and wording.
 - Input interactions include a specific pre-interaction question plus a shorter `...` placeholder.
-- At least one deepening interaction per lesson (calibration, boundary check, or misconception correction).
+- Unless `enabled` or `disabled` overrides the default, at least one deepening
+  interaction appears per lesson.
+- Every selected-purpose placement appears at its defined scope. Interactions
+  serving `pre_content_thinking` or `lesson_end_self_check` include a deepening
+  move; `learner_context` collection is not forced into another purpose.
 - Branching paths are distinct where required; `*_viewpoint_check` interactions branch by option.
 - Instructional interaction results affect later content through immediate feedback or a visible downstream effect.
 - Repeated interaction semantics avoided across lessons unless comparison intent is explicit.
@@ -55,6 +67,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 ## Variable Safety
 
+- `disabled` lessons contain no learner-answer variables.
 - Every referenced learner-answer variable has a corresponding variable-backed interaction and metadata entry.
 - Any learner answer used outside the current lesson, including `course-prompt.md`, later lessons, or cross-lesson personalization, difficulty control, examples, summaries, or deliverables, has a named variable.
 - No duplicate semantic collection unless comparison intent is explicit.

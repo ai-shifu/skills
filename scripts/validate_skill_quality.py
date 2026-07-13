@@ -29,10 +29,55 @@ RE_JSON_FENCE = re.compile(
     r"^```json[ \t]*\n(?P<body>.*?)^```[ \t]*$",
     re.MULTILINE | re.DOTALL,
 )
+RE_MARKDOWN_FENCE = re.compile(
+    r"^```(?:markdown|md)[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+    re.MULTILINE | re.DOTALL,
+)
 RE_COURSE_PROMPT_ARTIFACT = re.compile(
     r"^### Course Prompt Artifact[ \t]*$.*?"
-    r"^```markdown[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+    r"^```(?:markdown|md)[ \t]*\n(?P<body>.*?)^```[ \t]*$",
     re.MULTILINE | re.DOTALL,
+)
+RE_LEARNER_RESPONSE_DIRECTIVE = re.compile(
+    r"(?:"
+    r"\b(?:ask|have|prompt|invite)\s+(?:the\s+)?"
+    r"(?:learner|learners|student|students)(?:"
+    r"\s+(?:(?:to\s+)?(?:answer|choose|select|respond|enter|write|name|describe|"
+    r"share|identify|decide|rank|reflect|recall|consider)|"
+    r"(?:where|what|which|how|why|whether)\b|"
+    r"for\s+(?:an?\s+|the\s+)?"
+    r"(?:answer|response|choice|goal|input|example|description|reflection|"
+    r"decision|ranking|name)\b)|[ \t]*[:：])"
+    r"|(?:请|让|要求)(?:学习者|学员|学生).{0,24}"
+    r"(?:回答|选择|输入|填写|作答|决定|排序|描述|分享|回忆|思考)"
+    r"|(?:demandez|invitez).{0,24}(?:apprenant|élève).{0,32}"
+    r"(?:répondre|choisir|sélectionner|saisir|écrire|décrire)"
+    r")",
+    re.IGNORECASE,
+)
+RE_ANSWER_DEPENDENT_BRANCH = re.compile(
+    r"(?:"
+    r"\b(?:after|when|once)\s+(?:the\s+)?"
+    r"(?:learner|learners|student|students)\s+"
+    r"(?:answers?|responds?|chooses?|selects?|decides?|enters?|writes?|names?|"
+    r"describes?|shares?|identif(?:y|ies))\b"
+    r"|\bif\s+(?:the\s+)?(?:learner|learners|student|students)\s+"
+    r"(?:answers?|responds?|chooses?|selects?|decides?|enters?|writes?|names?|"
+    r"describes?|shares?|identif(?:y|ies))\b"
+    r"|\bbased on (?:the )?"
+    r"(?:learner's|learners'|student's|students'|learner|learners|student|students) "
+    r"(?:answer|response|choice|input)\b"
+    r"|(?:学习者|学员|学生).{0,16}(?:回答|选择|输入|填写|作答|决定)后"
+    r"|如果.{0,8}(?:学习者|学员|学生).{0,16}"
+    r"(?:回答|选择|输入|填写|作答|决定)"
+    r"|(?:按|根据).{0,16}(?:回答|答案|选择|输入).{0,16}"
+    r"(?:分支|继续|调整|展示|解释|反馈)"
+    r"|après.{0,32}(?:réponse|choix|saisie).{0,32}"
+    r"(?:branche|adapter|continuer)"
+    r"|\bsi\s+(?:l['’])?(?:apprenant|élève).{0,24}"
+    r"(?:répond|choisit|sélectionne|saisit|écrit)\b"
+    r")",
+    re.IGNORECASE,
 )
 FORBIDDEN_WORDS = {"claude", "anthropic"}
 
@@ -66,6 +111,12 @@ TRANSFER_SIGNAL_KEYS = {
     "compare_cue",
 }
 SOURCE_TEXT_KEYS = {"course_material"}
+INTERACTION_POLICY_MODES = {"enabled", "disabled", "unspecified"}
+INTERACTION_PURPOSES = {
+    "learner_context",
+    "pre_content_thinking",
+    "lesson_end_self_check",
+}
 
 
 @dataclass
@@ -472,6 +523,153 @@ def validate_global_variable_example(
         )
 
 
+def validate_interaction_policy_example(
+    policy: object, md_file: Path, issues: IssueBag
+) -> str | None:
+    if not isinstance(policy, dict):
+        issues.add_error(f"{md_file}: interaction_policy must be an object")
+        return None
+
+    missing = sorted({"mode", "purposes"} - policy.keys())
+    if missing:
+        issues.add_error(
+            f"{md_file}: interaction_policy is missing required fields: "
+            f"{', '.join(missing)}"
+        )
+        return None
+
+    mode = policy["mode"]
+    if not isinstance(mode, str) or mode not in INTERACTION_POLICY_MODES:
+        issues.add_error(
+            f"{md_file}: interaction_policy mode must be one of "
+            f"{', '.join(sorted(INTERACTION_POLICY_MODES))}"
+        )
+        return None
+
+    purposes = policy["purposes"]
+    if not isinstance(purposes, list):
+        issues.add_error(
+            f"{md_file}: interaction_policy purposes must be an array"
+        )
+        return mode
+
+    if any(
+        not isinstance(purpose, str) or purpose not in INTERACTION_PURPOSES
+        for purpose in purposes
+    ):
+        issues.add_error(
+            f"{md_file}: interaction_policy purposes must use only "
+            f"{', '.join(sorted(INTERACTION_PURPOSES))}"
+        )
+    elif len(set(purposes)) != len(purposes):
+        issues.add_error(
+            f"{md_file}: interaction_policy purposes must not contain duplicates"
+        )
+
+    if mode == "enabled" and not purposes:
+        issues.add_error(
+            f"{md_file}: enabled interaction_policy requires at least one purpose"
+        )
+    elif mode != "enabled" and purposes:
+        issues.add_error(
+            f"{md_file}: {mode} interaction_policy requires an empty purposes array"
+        )
+    return mode
+
+
+def interaction_mode_at_offset(
+    candidates: list[tuple[int, str | None]],
+    offset: int,
+) -> str | None:
+    preceding_candidates = [
+        candidate for candidate in candidates if candidate[0] <= offset
+    ]
+    if not preceding_candidates:
+        return None
+    return max(preceding_candidates, key=lambda candidate: candidate[0])[1]
+
+
+def validate_disabled_prompt_text(
+    prompt: str,
+    owner: str,
+    md_file: Path,
+    issues: IssueBag,
+) -> None:
+    if "?[" in prompt:
+        issues.add_error(
+            f"{md_file}: {owner} must not contain interaction syntax"
+        )
+    if "{{" in prompt:
+        issues.add_error(
+            f"{md_file}: {owner} must not reference learner-answer variables"
+        )
+    if RE_LEARNER_RESPONSE_DIRECTIVE.search(prompt):
+        issues.add_error(
+            f"{md_file}: {owner} must not solicit a learner response"
+        )
+    if RE_ANSWER_DEPENDENT_BRANCH.search(prompt):
+        issues.add_error(
+            f"{md_file}: {owner} must not branch on a learner response"
+        )
+
+
+def validate_disabled_lesson_examples(
+    lessons: object,
+    md_file: Path,
+    issues: IssueBag,
+) -> None:
+    if not isinstance(lessons, list):
+        issues.add_error(f"{md_file}: lesson_teaching_prompts must be an array")
+        return
+
+    for lesson_index, lesson in enumerate(lessons):
+        owner = f"disabled lesson_teaching_prompts[{lesson_index}]"
+        if not isinstance(lesson, dict):
+            issues.add_error(f"{md_file}: {owner} must be an object")
+            continue
+
+        teaching_prompt = lesson.get("teaching_prompt")
+        if not isinstance(teaching_prompt, str) or not teaching_prompt.strip():
+            issues.add_error(
+                f"{md_file}: {owner} teaching_prompt must be a non-empty string"
+            )
+        else:
+            validate_disabled_prompt_text(
+                teaching_prompt,
+                owner,
+                md_file,
+                issues,
+            )
+
+        used_variables = lesson.get("used_variables")
+        if used_variables != []:
+            issues.add_error(
+                f"{md_file}: {owner} used_variables must be an empty array"
+            )
+
+
+def validate_disabled_global_variable_table_example(
+    variables: object, md_file: Path, issues: IssueBag
+) -> None:
+    if variables != []:
+        issues.add_error(
+            f"{md_file}: disabled interaction_policy requires an empty "
+            "global_variable_table"
+        )
+
+
+def validate_disabled_course_prompt_example(
+    prompt: object, md_file: Path, issues: IssueBag
+) -> None:
+    if isinstance(prompt, str):
+        validate_disabled_prompt_text(
+            prompt,
+            "disabled interaction_policy course_prompt",
+            md_file,
+            issues,
+        )
+
+
 def course_prompt_template_lines(
     skill_dir: Path, issues: IssueBag
 ) -> list[str]:
@@ -600,6 +798,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
     prompt_template_lines = course_prompt_template_lines(skill_dir, issues)
     for md_file, content in example_contents:
         parsed_payloads: list[object] = []
+        payload_offsets: list[int] = []
         for match in RE_JSON_FENCE.finditer(content):
             try:
                 payload = json.loads(match.group("body"))
@@ -614,9 +813,11 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                 )
                 continue
             parsed_payloads.append(payload)
+            payload_offsets.append(match.start())
 
         source_candidates: dict[str, list[tuple[int, str]]] = {}
         target_language_candidates: list[tuple[int, str]] = []
+        interaction_mode_candidates: list[tuple[int, str | None]] = []
         for payload_index, payload in enumerate(parsed_payloads):
             if isinstance(payload, dict):
                 for key, value in payload.items():
@@ -626,6 +827,15 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                         )
                     if key == "target_language" and isinstance(value, str):
                         target_language_candidates.append((payload_index, value))
+                    if key == "interaction_policy":
+                        interaction_mode_candidates.append(
+                            (
+                                payload_offsets[payload_index],
+                                validate_interaction_policy_example(
+                                    value, md_file, issues
+                                ),
+                            )
+                        )
 
         for payload_index, payload in enumerate(parsed_payloads):
             source_texts = source_texts_for_payload(
@@ -642,9 +852,47 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             is_localized = bool(target_language) and not (
                 target_language.lower().startswith("en")
             )
+            interaction_mode = interaction_mode_at_offset(
+                interaction_mode_candidates,
+                payload_offsets[payload_index],
+            )
+            if (
+                interaction_mode == "disabled"
+                and isinstance(payload, dict)
+                and {"lesson_id", "teaching_prompt", "used_variables"}
+                <= payload.keys()
+            ):
+                validate_disabled_lesson_examples(
+                    [payload],
+                    md_file,
+                    issues,
+                )
             for value in walk_json(payload):
                 if not isinstance(value, dict):
                     continue
+                if (
+                    interaction_mode == "disabled"
+                    and "lesson_teaching_prompts" in value
+                ):
+                    validate_disabled_lesson_examples(
+                        value["lesson_teaching_prompts"],
+                        md_file,
+                        issues,
+                    )
+                if (
+                    interaction_mode == "disabled"
+                    and "global_variable_table" in value
+                ):
+                    validate_disabled_global_variable_table_example(
+                        value["global_variable_table"], md_file, issues
+                    )
+                if (
+                    interaction_mode == "disabled"
+                    and "course_prompt" in value
+                ):
+                    validate_disabled_course_prompt_example(
+                        value["course_prompt"], md_file, issues
+                    )
                 if "structured_segments_json" in value:
                     segments = value["structured_segments_json"]
                     if not isinstance(segments, list):
@@ -726,11 +974,48 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                             f"{md_file}: course_prompt example must be a string"
                         )
 
+        course_prompt_artifact_matches = list(
+            RE_COURSE_PROMPT_ARTIFACT.finditer(content)
+        )
+        course_prompt_artifact_spans = [
+            (match.start(), match.end())
+            for match in course_prompt_artifact_matches
+        ]
+        for match in RE_MARKDOWN_FENCE.finditer(content):
+            if any(
+                start <= match.start() < end
+                for start, end in course_prompt_artifact_spans
+            ):
+                continue
+            interaction_mode = interaction_mode_at_offset(
+                interaction_mode_candidates,
+                match.start(),
+            )
+            if interaction_mode == "disabled":
+                validate_disabled_lesson_examples(
+                    [
+                        {
+                            "teaching_prompt": match.group("body"),
+                            "used_variables": [],
+                        }
+                    ],
+                    md_file,
+                    issues,
+                )
+
         artifact_is_localized = bool(target_language_candidates) and all(
             not language.lower().startswith("en")
             for _, language in target_language_candidates
         )
-        for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content):
+        for match in course_prompt_artifact_matches:
+            interaction_mode = interaction_mode_at_offset(
+                interaction_mode_candidates,
+                match.start(),
+            )
+            if interaction_mode == "disabled":
+                validate_disabled_course_prompt_example(
+                    match.group("body"), md_file, issues
+                )
             validate_course_prompt_example(
                 match.group("body"),
                 prompt_template_lines,
