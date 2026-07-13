@@ -299,6 +299,21 @@ def walk_json(value: object) -> Generator[object, None, None]:
             yield from walk_json(child)
 
 
+def source_texts_for_payload(
+    payload_index: int,
+    source_candidates: dict[str, list[tuple[int, str]]],
+) -> dict[str, str]:
+    """Select the closest source value for one example output payload."""
+    source_texts: dict[str, str] = {}
+    for source_id, candidates in source_candidates.items():
+        preceding = [item for item in candidates if item[0] <= payload_index]
+        if preceding:
+            source_texts[source_id] = max(preceding, key=lambda item: item[0])[1]
+        else:
+            source_texts[source_id] = min(candidates, key=lambda item: item[0])[1]
+    return source_texts
+
+
 def validate_segment_example(
     segment: dict[str, object],
     source_texts: dict[str, str],
@@ -597,25 +612,36 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                 continue
             parsed_payloads.append(payload)
 
-        source_texts: dict[str, str] = {}
-        for payload in parsed_payloads:
+        source_candidates: dict[str, list[tuple[int, str]]] = {}
+        for payload_index, payload in enumerate(parsed_payloads):
             if isinstance(payload, dict):
-                source_texts.update(
-                    {
-                        key: value
-                        for key, value in payload.items()
-                        if isinstance(value, str)
-                    }
-                )
+                for key, value in payload.items():
+                    if isinstance(value, str):
+                        source_candidates.setdefault(key, []).append(
+                            (payload_index, value)
+                        )
+
+        for payload_index, payload in enumerate(parsed_payloads):
+            source_texts = source_texts_for_payload(
+                payload_index, source_candidates
+            )
             for value in walk_json(payload):
                 if not isinstance(value, dict):
                     continue
-                if SEGMENT_REQUIRED_KEYS & value.keys() and "block_id" not in value:
-                    validate_segment_example(value, source_texts, md_file, issues)
-                if {"collected_in", "used_in", "effect_scope"} & value.keys():
-                    validate_global_variable_example(
-                        value, md_file, issues
-                    )
+                segments = value.get("structured_segments_json")
+                if isinstance(segments, list):
+                    for segment in segments:
+                        if isinstance(segment, dict):
+                            validate_segment_example(
+                                segment, source_texts, md_file, issues
+                            )
+                variables = value.get("global_variable_table")
+                if isinstance(variables, list):
+                    for variable in variables:
+                        if isinstance(variable, dict):
+                            validate_global_variable_example(
+                                variable, md_file, issues
+                            )
 
         for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content):
             validate_course_prompt_example(
