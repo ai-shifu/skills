@@ -29,7 +29,12 @@ Output includes uncertainty markers and rerun hints; preserved blocks survive ev
       "segment_id": "S10",
       "segment_type": "concept",
       "core_point": "Retry stop conditions differ across sources.",
-      "source_span": {"start": 0, "end": 95},
+      "preserve_block": false,
+      "source_span": {"source_id": "course_material", "start": 0, "end": 95},
+      "transfer_signals": {
+        "concept_conflict": "The sources disagree on whether retries stop at a fixed count or when the queue drains.",
+        "boundary_cue": "Do not choose a stop condition until the authoritative policy is confirmed."
+      },
       "uncertainty": "high"
     },
     {
@@ -37,7 +42,12 @@ Output includes uncertainty markers and rerun hints; preserved blocks survive ev
       "segment_type": "image",
       "core_point": "Failure matrix image preserved",
       "preserve_block": true,
-      "source_span": {"start": 96, "end": 132}
+      "source_span": {"source_id": "course_material", "start": 96, "end": 132},
+      "transfer_signals": {
+        "visual_cue": "Preserve the failure matrix as the visual comparison surface.",
+        "visual_text_pair_cue": "Explain which cells support each proposed retry boundary."
+      },
+      "uncertainty": "low"
     }
   ],
   "rerun_hints": [

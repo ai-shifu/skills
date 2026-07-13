@@ -39,7 +39,7 @@ Structured segments provided:
 {
   "lesson_id": "L02",
   "lesson_title": "Verify the Fix",
-  "teaching_prompt": "Choose the fastest signal that proves the fix works.\n---\n?[p95 latency trend | error-rate slope | lock-wait drop]\n---\nAfter the learner answers, use the selected signal as the first verification checkpoint.",
+  "teaching_prompt": "Ask the learner to recall a recent fix and name the first signal they checked afterward.\n\nCreate a comparison slide with three columns: p95 latency trend, error-rate slope, and lock-wait drop. For each column, show the expected movement after a successful fix and one misleading interpretation.\n\nExplain that a useful verification signal must respond to the changed mechanism, move within the observation window, and have a clear failure threshold.\n\nAsk the learner to choose the fastest signal that proves the fix works.\n---\n?[p95 latency trend | error-rate slope | lock-wait drop]\n---\nAfter the learner answers, use the selected signal as the first verification checkpoint and explain why the other two signals are secondary for that case.\n\nHave the learner write a one-sentence verification rule containing the signal, expected movement, observation window, and stop condition. Close by restating that a fix is not complete until its expected effect is observed.",
   "used_variables": [],
   "depends_on_lessons": ["L01"]
 }
@@ -48,11 +48,19 @@ Structured segments provided:
 Rendered `teaching_prompt` value:
 
 ```md
-Choose the fastest signal that proves the fix works.
+Ask the learner to recall a recent fix and name the first signal they checked afterward.
+
+Create a comparison slide with three columns: p95 latency trend, error-rate slope, and lock-wait drop. For each column, show the expected movement after a successful fix and one misleading interpretation.
+
+Explain that a useful verification signal must respond to the changed mechanism, move within the observation window, and have a clear failure threshold.
+
+Ask the learner to choose the fastest signal that proves the fix works.
 ---
 ?[p95 latency trend | error-rate slope | lock-wait drop]
 ---
-After the learner answers, use the selected signal as the first verification checkpoint.
+After the learner answers, use the selected signal as the first verification checkpoint and explain why the other two signals are secondary for that case.
+
+Have the learner write a one-sentence verification rule containing the signal, expected movement, observation window, and stop condition. Close by restating that a fix is not complete until its expected effect is observed.
 ```
 
 ## Degraded Input

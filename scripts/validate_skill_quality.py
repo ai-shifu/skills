@@ -6,6 +6,7 @@ Only uses Python standard library — no pyyaml dependency required.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from dataclasses import dataclass, field
@@ -23,6 +24,15 @@ RE_MD_ANCHOR_REF = re.compile(
 RE_HEADING = re.compile(r"^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
 RE_SLUG_STRIP = re.compile(r"[^\w\- ]")
 RE_SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
+RE_JSON_FENCE = re.compile(
+    r"^```json[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+    re.MULTILINE | re.DOTALL,
+)
+RE_COURSE_PROMPT_ARTIFACT = re.compile(
+    r"^### Course Prompt Artifact[ \t]*$.*?"
+    r"^```markdown[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+    re.MULTILINE | re.DOTALL,
+)
 FORBIDDEN_WORDS = {"claude", "anthropic"}
 
 # Doc surface scanned for cross-file anchor links. Local-only dirs
@@ -32,6 +42,19 @@ ANCHOR_SCAN_GLOBS = ("SKILL.md", "references/**/*.md", "examples/**/*.md")
 MAX_DESCRIPTION_LEN = 1024
 MIN_DESCRIPTION_LEN_RECOMMENDED = 50
 MAX_COMPATIBILITY_LEN = 500
+TRANSFER_SIGNAL_KEYS = {
+    "learner_hook",
+    "evidence_type",
+    "visual_cue",
+    "concept_conflict",
+    "boundary_cue",
+    "action_cue",
+    "density_cue",
+    "quote_cue",
+    "visual_text_pair_cue",
+    "interaction_intent_cue",
+    "compare_cue",
+}
 
 
 @dataclass
@@ -192,6 +215,7 @@ def validate_skill(skill_dir: Path, issues: IssueBag) -> None:
             )
 
     validate_anchors(skill_dir, issues)
+    validate_example_contracts(skill_dir, issues)
 
 
 def github_heading_slugs(md_file: Path) -> set[str]:
@@ -251,6 +275,165 @@ def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
                     issues.add_error(
                         f"{md_file}: broken anchor -> {ref[0]}#{ref[1]} "
                         f"(no matching heading in {target.name})"
+                    )
+
+
+def walk_json(value: object):
+    """Yield every nested JSON value, including the root."""
+    yield value
+    if isinstance(value, dict):
+        for child in value.values():
+            yield from walk_json(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from walk_json(child)
+
+
+def validate_segment_example(
+    segment: dict[str, object], md_file: Path, issues: IssueBag
+) -> None:
+    required = {
+        "segment_id",
+        "segment_type",
+        "core_point",
+        "preserve_block",
+        "source_span",
+        "transfer_signals",
+    }
+    missing = sorted(required - segment.keys())
+    if missing:
+        issues.add_error(
+            f"{md_file}: segment example {segment.get('segment_id')} "
+            f"is missing required fields: {', '.join(missing)}"
+        )
+        return
+
+    source_span = segment["source_span"]
+    if not isinstance(source_span, dict):
+        issues.add_error(
+            f"{md_file}: segment example {segment['segment_id']} source_span "
+            "must be an object"
+        )
+    else:
+        source_id = source_span.get("source_id")
+        start = source_span.get("start")
+        end = source_span.get("end")
+        valid_offsets = (
+            isinstance(source_id, str)
+            and bool(source_id)
+            and isinstance(start, int)
+            and not isinstance(start, bool)
+            and start >= 0
+            and isinstance(end, int)
+            and not isinstance(end, bool)
+            and end > start
+        )
+        if not valid_offsets:
+            issues.add_error(
+                f"{md_file}: segment example {segment['segment_id']} source_span "
+                "must contain source_id and valid start/end offsets"
+            )
+
+    transfer_signals = segment["transfer_signals"]
+    if not isinstance(transfer_signals, dict) or not transfer_signals:
+        issues.add_error(
+            f"{md_file}: segment example {segment['segment_id']} "
+            "transfer_signals must be a non-empty object"
+        )
+    else:
+        unknown_keys = sorted(transfer_signals.keys() - TRANSFER_SIGNAL_KEYS)
+        if unknown_keys:
+            issues.add_error(
+                f"{md_file}: segment example {segment['segment_id']} uses "
+                f"unknown transfer signal keys: {', '.join(unknown_keys)}"
+            )
+        if any(
+            not isinstance(value, str) or not value.strip()
+            for value in transfer_signals.values()
+        ):
+            issues.add_error(
+                f"{md_file}: segment example {segment['segment_id']} transfer "
+                "signal values must be non-empty strings"
+            )
+
+
+def course_prompt_template_lines(skill_dir: Path) -> list[str]:
+    template_file = skill_dir / "references" / "course-prompt.md"
+    if not template_file.is_file():
+        return []
+    content = template_file.read_text(encoding="utf-8")
+    marker = "## Fillable Template"
+    if marker not in content:
+        return []
+    template_section = content.split(marker, 1)[1]
+    match = re.search(
+        r"^```markdown[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+        template_section,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not match:
+        return []
+    return [
+        line.strip()
+        for line in match.group("body").splitlines()
+        if line.strip() and "XXX" not in line
+    ]
+
+
+def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
+    """Keep executable examples aligned with their documented contracts."""
+    examples_dir = skill_dir / "examples"
+    if not examples_dir.is_dir():
+        return
+
+    prompt_template_lines = course_prompt_template_lines(skill_dir)
+    for md_file in sorted(examples_dir.glob("**/*.md")):
+        content = md_file.read_text(encoding="utf-8")
+        for match in RE_JSON_FENCE.finditer(content):
+            try:
+                payload = json.loads(match.group("body"))
+            except json.JSONDecodeError as exc:
+                issues.add_error(
+                    f"{md_file}: invalid JSON example near line "
+                    f"{content.count(chr(10), 0, match.start()) + exc.lineno}: "
+                    f"{exc.msg}"
+                )
+                continue
+
+            for value in walk_json(payload):
+                if not isinstance(value, dict):
+                    continue
+                if "segment_id" in value and (
+                    "segment_type" in value or "core_point" in value
+                ):
+                    validate_segment_example(value, md_file, issues)
+                if "effect_scope" in value and value["effect_scope"] != "cross_lesson":
+                    issues.add_error(
+                        f"{md_file}: global variable examples must use "
+                        "effect_scope 'cross_lesson'"
+                    )
+
+        for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content):
+            prompt = match.group("body")
+            if "XXX" in prompt:
+                issues.add_error(
+                    f"{md_file}: Course Prompt example contains unresolved XXX"
+                )
+            for required_prefix in (
+                "- You are ",
+                "- You specialize in ",
+                "- The current course is ",
+            ):
+                if required_prefix not in prompt:
+                    issues.add_error(
+                        f"{md_file}: Course Prompt example is missing filled "
+                        f"placeholder line beginning with: {required_prefix}"
+                    )
+            for required_line in prompt_template_lines:
+                if required_line not in prompt:
+                    issues.add_error(
+                        f"{md_file}: Course Prompt example is missing template "
+                        f"instruction: {required_line}"
                     )
 
 

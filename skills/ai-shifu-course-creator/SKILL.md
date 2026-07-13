@@ -66,6 +66,7 @@ Some concepts span multiple references files. Use this table to locate the autho
 
 Use these optional controls across all phases:
 
+- `course_author_name` (string): course author's real name for the Course Prompt role.
 - `course_profile` (json): audience and pedagogical parameters.
 - `delivery_constraints` (json): platform limits, topic policy, and non-negotiable fragments.
 - `target_language` (BCP-47 string, e.g. `zh-CN` / `en-US` / `fr-FR`): explicit output language; takes priority over prompt-language detection. Full priority order in `references/data-contracts.md#language-resolution`.
@@ -430,7 +431,7 @@ Apply Optimization audits against the full constraint set:
 
 Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **copying and filling `references/course-prompt.md#fillable-template`, not by free-form composition**. Preserve the six sections, their order, and every non-placeholder instruction; replace every `XXX` with course-specific content and render the result in the resolved output language.
 
-Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues). Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
+Auto-fill placeholders from existing artifacts (`course_author_name`, `course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues). The Role must use the course author's real name; if `course_author_name` is missing, ask the author instead of inventing a persona. Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
 
 ### Validation
 

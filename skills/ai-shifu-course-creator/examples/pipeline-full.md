@@ -7,6 +7,7 @@
 ```json
 {
   "course_material": "Module transcript: observe metric drift, classify causes, apply one fix, review impact.",
+  "course_author_name": "Maya Chen",
   "generation_constraints": {
     "persona": "practical coach",
     "lesson_granularity": "short"
@@ -35,14 +36,24 @@
       "segment_type": "concept",
       "core_point": "Metric drift signals a systemic shift, not just noise.",
       "preserve_block": false,
-      "source_span": {"start": 0, "end": 42}
+      "source_span": {"source_id": "course_material", "start": 0, "end": 42},
+      "transfer_signals": {
+        "learner_hook": "Start from a metric that changed unexpectedly.",
+        "visual_cue": "Show a baseline metric line followed by a sustained shift.",
+        "visual_text_pair_cue": "Explain how persistence separates drift from random noise."
+      }
     },
     {
       "segment_id": "S02",
       "segment_type": "concept",
       "core_point": "Classify causes before applying fixes.",
       "preserve_block": false,
-      "source_span": {"start": 43, "end": 78}
+      "source_span": {"source_id": "course_material", "start": 43, "end": 78},
+      "transfer_signals": {
+        "concept_conflict": "Jumping to a fix before classifying the cause can hide the real bottleneck.",
+        "interaction_intent_cue": "Ask the learner to choose the highest-signal diagnostic check.",
+        "action_cue": "Run one focused verification before applying a fix."
+      }
     }
   ],
   "preserve_block_index": [],
@@ -79,12 +90,20 @@
 }
 ```
 
-```md
+```markdown
+Ask the learner to recall a production metric that changed unexpectedly and state what made the change look meaningful rather than random.
+
+Create a slide that shows a stable baseline followed by a sustained metric shift, with three diagnostic branches: workload shape, lock wait, and cache hit ratio.
+
+Explain that persistence separates drift from noise, while classification prevents the learner from applying a plausible fix to the wrong cause.
+
 Ask the learner to identify the highest-signal diagnostic step for the drifting metric.
 ---
 ?[%{{diagnosis_choice}} check workload shape | check lock wait | check cache hit ratio]
 ---
-The learner's diagnosis choice is {{diagnosis_choice}}. Based on it, run one focused verification next.
+The learner's diagnosis choice is {{diagnosis_choice}}. Based on it, run one focused verification before suggesting a fix, and carry the choice into the next lesson's worked example.
+
+Have the learner write a one-sentence verification plan naming the signal, expected movement, and stop condition. Close by summarizing the sequence: observe, classify, verify, then fix.
 ```
 
 ## Optimization Output
@@ -101,13 +120,66 @@ The learner's diagnosis choice is {{diagnosis_choice}}. Based on it, run one foc
       "issue_class": "explanation_clarity",
       "change": "add brief boundary note after diagnosis selection"
     }
-  ],
-  "course_prompt": "# Role\nYou are a practical coach helping beginners diagnose bottlenecks.\n\n# Task\nGuide the learner through observation → classification → one focused verification.\n\n# Teaching Techniques\nEvidence chain; one core question per lesson; viewpoint branching on diagnosis choice.\n\n# Writing Style\nDirective, concise, action-oriented; English (en-US).\n\n# Format\nMarkdownFlow; `?[]` interactions on standalone lines.\n\n# Slides\nCreate diagnostic-flow slides in natural language; do not inline SVG/Mermaid."
+  ]
 }
+```
+
+### Course Prompt Artifact
+
+The `course_prompt` string is the complete content below; no template instruction
+is summarized or replaced by an ellipsis.
+
+```markdown
+# Role
+
+- You are Maya Chen.
+- You specialize in production observability and are a professional teacher in the field of metric drift diagnosis.
+
+# Task
+
+- The current course is *Metric Drift Diagnosis*. Your goal is to help the user master an observe, classify, verify, and fix workflow for production metric drift.
+- Teach one-on-one, address the learner only as "you", and do not use group-addressing terms such as "everyone", "class", or "students".
+- Do not introduce yourself.
+- Do not greet the user.
+- Do not proactively guide the user to the next step at the end.
+
+# Teaching Techniques
+
+- Design the explanation path according to cognitive learning patterns, following the rhythm of "build interest → lower the barrier → understand the structure → form application".
+- Do not simply pile up knowledge points. First explain "why it matters, why it works, and how to use it".
+- When dealing with complex content, break it down before expanding.
+- Prefer clear structures, such as binary distinctions, three-layer structures, step-by-step paths, and comparison relationships.
+- Use concrete scenarios, real examples, analogies, and before-and-after comparisons.
+- When the user may misunderstand something, correct the misconception first, then continue the explanation.
+- Each paragraph should serve a clear function: defining the problem, breaking down the structure, explaining the mechanism, or providing application.
+- If a summary is needed, prefer giving a clear judgment, an application scenario, or an actionable understanding.
+
+# Writing Style
+
+- Use a conversational, natural, and engaging tone, like a clear-minded person explaining something face to face.
+- Keep the language restrained, clear, and warm.
+- You may use analogies, contrasts, and comparisons, but do not sacrifice accuracy for catchy phrasing.
+
+# Format
+
+- Output in Markdown format.
+- Do not output headings of any level, such as #, ##, or ###.
+- Use bold formatting for key steps, cognitive turning points, core conclusions, and common misconceptions.
+- Only bold truly important information. Do not bold an entire paragraph.
+- Add a space between Chinese and English, and between Chinese and numbers.
+
+# Slides
+
+- Only create a slide, PPT, visual page, or classroom projection page when the instruction explicitly requests one. Do not proactively create visuals.
+- Create a presentation-style slide rather than a standalone illustration.
+- In-slide option labels must not be interactive.
+- Keep in-slide text concise and prompt-like. Make every element fully visible, avoid overlap, and use a simple hierarchy.
+- Treat the slide as a structural prompt and follow it with a complete text explanation that assumes the learner has not seen the slide. Add background, causality, examples, and usage instead of repeating the slide.
 ```
 
 ## Acceptance Notes
 
 - All four phases executed end-to-end.
 - One core question per lesson, every learner-answer variable has a corresponding variable-backed interaction and metadata entry.
+- The Course Prompt preserves all six sections and every non-placeholder template instruction.
 - Optimization pass found no blockers, only enhancement suggestions.
