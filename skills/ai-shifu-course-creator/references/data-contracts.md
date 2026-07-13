@@ -88,7 +88,7 @@ Generation and Optimization:
   "course_author_name": "Author-provided real name",
   "interaction_policy": {
     "mode": "enabled",
-    "purposes": ["pre_content_thinking", "lesson_end_self_check"]
+    "purposes": ["learner_context"]
   },
   "generation_constraints": {
     "persona": "hands-on mentor",
