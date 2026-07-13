@@ -495,6 +495,15 @@ def validate_course_prompt_example(
         line for line in prompt_template_lines if line.startswith("# ")
     ]
     if headings != english_headings:
+        common_headings = set(headings) & set(english_headings)
+        if common_headings:
+            missing_headings = sorted(set(english_headings) - set(headings))
+            unexpected_headings = sorted(set(headings) - set(english_headings))
+            issues.add_error(
+                f"{md_file}: Course Prompt example headings do not match "
+                f"the template; missing: {', '.join(missing_headings) or 'none'}; "
+                f"unexpected: {', '.join(unexpected_headings) or 'none'}"
+            )
         # Localized examples cannot be compared to English instructions by exact
         # text. Their six-section shape and resolved placeholders are still
         # validated above; semantic localization remains a human review concern.
