@@ -17,6 +17,8 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv, set_key
 
+from skill_update import DEV_CACHE_FILE, check_for_update
+
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
@@ -2618,6 +2620,21 @@ def cmd_upload_image(args):
 
 
 # ── CLI Entry Point ────────────────────────────────────────────────────────────
+def cmd_check_update(args):
+    """Print one machine-readable update result and never fail the caller."""
+    dev_manifest_url = args.dev_manifest_url
+    if dev_manifest_url:
+        result = check_for_update(
+            force=True,
+            cache_file=DEV_CACHE_FILE,
+            manifest_url=dev_manifest_url,
+            allow_loopback=True,
+        )
+    else:
+        result = check_for_update(force=args.force)
+    print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+
+
 def build_parser():
     """Build and return the argument parser with all subcommands."""
     # Shared parent parser for --token on every subcommand
@@ -2631,6 +2648,25 @@ def build_parser():
     )
 
     sub = parser.add_subparsers(dest="command", help="Available commands")
+
+    # ── check-update (public, no login required) ──
+    p = sub.add_parser(
+        "check-update",
+        help="Check the public AI-Shifu website manifest for a newer Skill version",
+    )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="Revalidate the website manifest even when the local TTL is fresh",
+    )
+    p.add_argument(
+        "--dev-manifest-url",
+        metavar="URL",
+        help=(
+            "Use a localhost/loopback manifest for end-to-end development testing; "
+            "remote hosts are rejected"
+        ),
+    )
 
     # ── login ──
     p = sub.add_parser("login", parents=[parent_parser],
@@ -2878,6 +2914,7 @@ def main():
         sys.exit(1)
 
     commands = {
+        "check-update": cmd_check_update,
         "login": cmd_login,
         "verify": cmd_verify,
         "list": cmd_list,
