@@ -559,13 +559,11 @@ def _fetch_all_courses(base_url, token):
 
         page_count = result.get("page_count")
         total = result.get("total")
-        if isinstance(page_count, int):
-            if page_index >= page_count:
-                break
-        elif isinstance(total, int):
-            if len(courses) >= total:
-                break
-        elif len(items) < COURSE_LIST_PAGE_SIZE:
+        if isinstance(page_count, int) and page_index >= page_count:
+            break
+        if isinstance(total, int) and len(courses) >= total:
+            break
+        if len(items) < COURSE_LIST_PAGE_SIZE:
             break
 
         if not items:

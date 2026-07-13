@@ -172,6 +172,36 @@ class CourseCreatorCliPaginationTests(unittest.TestCase):
             ],
         )
 
+    def test_course_pagination_stops_when_total_is_reached_early(self):
+        def oversized_page_count_api(
+            _base_url, _token, method, path, **_kwargs
+        ):
+            self.assertEqual(method, "get")
+            self.requested_paths.append(path)
+            if path != "/shifus?page_index=1&page_size=2":
+                self.fail(f"Unexpected redundant API path: {path}")
+            return {
+                "page": 1,
+                "page_size": 2,
+                "total": 1,
+                "page_count": 2,
+                "items": list(self.second_page),
+            }
+
+        with (
+            mock.patch.object(course_creator_cli, "COURSE_LIST_PAGE_SIZE", 2),
+            mock.patch.object(
+                course_creator_cli, "api", side_effect=oversized_page_count_api
+            ),
+        ):
+            courses = course_creator_cli._fetch_all_courses("base", "token")
+
+        self.assertEqual(courses, self.second_page)
+        self.assertEqual(
+            self.requested_paths,
+            ["/shifus?page_index=1&page_size=2"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
