@@ -258,6 +258,60 @@ class SkillUpdateTests(unittest.TestCase):
             )
             self.assertEqual(result, {"status": "check_skipped", "source": "none"})
 
+    def test_plugin_managed_skill_skips_without_network(self):
+        def unexpected_get(*_args, **_kwargs):
+            raise AssertionError("plugin-managed skill must not request manifest")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            skill_md = Path(tmp) / "SKILL.md"
+            skill_md.write_text(
+                (
+                    "---\n"
+                    "name: Test\n"
+                    "version: 1.0.0\n"
+                    "version_management: plugin\n"
+                    "---\n"
+                ),
+                encoding="utf-8",
+            )
+            result = skill_update.check_for_update(
+                skill_md=skill_md,
+                cache_file=Path(tmp) / "cache.json",
+                http_get=unexpected_get,
+                now=self.now,
+            )
+            self.assertEqual(
+                result,
+                {"status": "check_skipped", "source": "plugin_managed"},
+            )
+
+    def test_invalid_version_management_skips_without_network(self):
+        def unexpected_get(*_args, **_kwargs):
+            raise AssertionError("invalid version management must not request manifest")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            skill_md = Path(tmp) / "SKILL.md"
+            skill_md.write_text(
+                (
+                    "---\n"
+                    "name: Test\n"
+                    "version: 1.0.0\n"
+                    "version_management: mystery\n"
+                    "---\n"
+                ),
+                encoding="utf-8",
+            )
+            result = skill_update.check_for_update(
+                skill_md=skill_md,
+                cache_file=Path(tmp) / "cache.json",
+                http_get=unexpected_get,
+                now=self.now,
+            )
+            self.assertEqual(
+                result,
+                {"status": "check_skipped", "source": "invalid_version_management"},
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

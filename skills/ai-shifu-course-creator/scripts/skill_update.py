@@ -28,6 +28,8 @@ ALLOWED_MANIFEST_HOSTS = frozenset({"ai-shifu.cn", "www.ai-shifu.cn"})
 LOOPBACK_MANIFEST_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 MAX_MANIFEST_BYTES = 64 * 1024
 MAX_NOTES_CHARS = 500
+VERSION_MANAGEMENT_STANDALONE = "standalone"
+VERSION_MANAGEMENT_PLUGIN = "plugin"
 
 
 class ManifestError(ValueError):
@@ -366,6 +368,16 @@ def check_for_update(
         metadata = read_skill_metadata(skill_md)
         if metadata is None:
             raise ManifestError("missing local metadata")
+        version_management = metadata.get(
+            "version_management", VERSION_MANAGEMENT_STANDALONE
+        )
+        if version_management == VERSION_MANAGEMENT_PLUGIN:
+            return {"status": "check_skipped", "source": "plugin_managed"}
+        if version_management != VERSION_MANAGEMENT_STANDALONE:
+            return {
+                "status": "check_skipped",
+                "source": "invalid_version_management",
+            }
         local_version = metadata.get("version", "")
         if parse_semver(local_version) is None:
             raise ManifestError("invalid local version")
