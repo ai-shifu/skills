@@ -566,8 +566,6 @@ def _fetch_all_courses(base_url, token):
         if len(items) < COURSE_LIST_PAGE_SIZE:
             break
 
-        if not items:
-            break
         page_index += 1
 
     return courses
