@@ -43,6 +43,14 @@ MAX_DESCRIPTION_LEN = 1024
 MIN_DESCRIPTION_LEN_RECOMMENDED = 50
 MAX_COMPATIBILITY_LEN = 500
 SEGMENT_TYPES = {"concept", "example", "code", "image", "exercise", "transition"}
+SEGMENT_REQUIRED_KEYS = {
+    "segment_id",
+    "segment_type",
+    "core_point",
+    "preserve_block",
+    "source_span",
+    "transfer_signals",
+}
 TRANSFER_SIGNAL_KEYS = {
     "learner_hook",
     "evidence_type",
@@ -293,15 +301,7 @@ def walk_json(value: object):
 def validate_segment_example(
     segment: dict[str, object], md_file: Path, issues: IssueBag
 ) -> None:
-    required = {
-        "segment_id",
-        "segment_type",
-        "core_point",
-        "preserve_block",
-        "source_span",
-        "transfer_signals",
-    }
-    missing = sorted(required - segment.keys())
+    missing = sorted(SEGMENT_REQUIRED_KEYS - segment.keys())
     if missing:
         issues.add_error(
             f"{md_file}: segment example {segment.get('segment_id')} "
@@ -561,7 +561,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             for value in walk_json(payload):
                 if not isinstance(value, dict):
                     continue
-                if "segment_id" in value and "block_id" not in value:
+                if SEGMENT_REQUIRED_KEYS & value.keys() and "block_id" not in value:
                     validate_segment_example(value, md_file, issues)
                 if {"collected_in", "used_in", "effect_scope"} & value.keys():
                     validate_global_variable_example(
