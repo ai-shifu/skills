@@ -384,6 +384,45 @@ Ask the learner to choose a path.
         self.assertIn("course_prompt", issues.errors[0])
         self.assertIn("learner-answer variables", issues.errors[0])
 
+    def test_disabled_policy_rejects_course_prompt_artifact_variables(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skill_dir = Path(tmp) / "ai-shifu-course-creator"
+            examples_dir = skill_dir / "examples"
+            references_dir = skill_dir / "references"
+            examples_dir.mkdir(parents=True)
+            references_dir.mkdir()
+            (references_dir / "course-prompt.md").write_text(
+                "## Fillable Template\n\n```markdown\n# Role\nFilled\n```\n",
+                encoding="utf-8",
+            )
+            (examples_dir / "course-prompt-artifact.md").write_text(
+                """# Course Prompt Artifact Example
+
+```json
+{"interaction_policy":{"mode":"disabled","purposes":[]}}
+```
+
+### Course Prompt Artifact
+
+```markdown
+# Role
+Use {{learner_goal}} to personalize the course.
+```
+""",
+                encoding="utf-8",
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_example_contracts(skill_dir, issues)
+
+            self.assertTrue(
+                any(
+                    "course_prompt" in error
+                    and "learner-answer variables" in error
+                    for error in issues.errors
+                )
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

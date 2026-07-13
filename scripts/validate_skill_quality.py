@@ -35,7 +35,7 @@ RE_MARKDOWN_FENCE = re.compile(
 )
 RE_COURSE_PROMPT_ARTIFACT = re.compile(
     r"^### Course Prompt Artifact[ \t]*$.*?"
-    r"^```markdown[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+    r"^```(?:markdown|md)[ \t]*\n(?P<body>.*?)^```[ \t]*$",
     re.MULTILINE | re.DOTALL,
 )
 RE_LEARNER_RESPONSE_DIRECTIVE = re.compile(
@@ -577,6 +577,18 @@ def validate_interaction_policy_example(
     return mode
 
 
+def interaction_mode_at_offset(
+    candidates: list[tuple[int, str | None]],
+    offset: int,
+) -> str | None:
+    preceding_candidates = [
+        candidate for candidate in candidates if candidate[0] <= offset
+    ]
+    if not preceding_candidates:
+        return None
+    return max(preceding_candidates, key=lambda candidate: candidate[0])[1]
+
+
 def validate_disabled_lesson_examples(
     lessons: object,
     md_file: Path,
@@ -789,7 +801,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
 
         source_candidates: dict[str, list[tuple[int, str]]] = {}
         target_language_candidates: list[tuple[int, str]] = []
-        interaction_mode_candidates: list[tuple[int, int, str | None]] = []
+        interaction_mode_candidates: list[tuple[int, str | None]] = []
         for payload_index, payload in enumerate(parsed_payloads):
             if isinstance(payload, dict):
                 for key, value in payload.items():
@@ -802,7 +814,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                     if key == "interaction_policy":
                         interaction_mode_candidates.append(
                             (
-                                payload_index,
                                 payload_offsets[payload_index],
                                 validate_interaction_policy_example(
                                     value, md_file, issues
@@ -825,18 +836,9 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             is_localized = bool(target_language) and not (
                 target_language.lower().startswith("en")
             )
-            preceding_interaction_modes = [
-                candidate
-                for candidate in interaction_mode_candidates
-                if candidate[0] <= payload_index
-            ]
-            interaction_mode = (
-                max(
-                    preceding_interaction_modes,
-                    key=lambda candidate: candidate[0],
-                )[2]
-                if preceding_interaction_modes
-                else None
+            interaction_mode = interaction_mode_at_offset(
+                interaction_mode_candidates,
+                payload_offsets[payload_index],
             )
             if (
                 interaction_mode == "disabled"
@@ -956,9 +958,12 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                             f"{md_file}: course_prompt example must be a string"
                         )
 
+        course_prompt_artifact_matches = list(
+            RE_COURSE_PROMPT_ARTIFACT.finditer(content)
+        )
         course_prompt_artifact_spans = [
             (match.start(), match.end())
-            for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content)
+            for match in course_prompt_artifact_matches
         ]
         for match in RE_MARKDOWN_FENCE.finditer(content):
             if any(
@@ -966,18 +971,9 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                 for start, end in course_prompt_artifact_spans
             ):
                 continue
-            preceding_interaction_modes = [
-                candidate
-                for candidate in interaction_mode_candidates
-                if candidate[1] <= match.start()
-            ]
-            interaction_mode = (
-                max(
-                    preceding_interaction_modes,
-                    key=lambda candidate: candidate[1],
-                )[2]
-                if preceding_interaction_modes
-                else None
+            interaction_mode = interaction_mode_at_offset(
+                interaction_mode_candidates,
+                match.start(),
             )
             if interaction_mode == "disabled":
                 validate_disabled_lesson_examples(
@@ -995,7 +991,15 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             not language.lower().startswith("en")
             for _, language in target_language_candidates
         )
-        for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content):
+        for match in course_prompt_artifact_matches:
+            interaction_mode = interaction_mode_at_offset(
+                interaction_mode_candidates,
+                match.start(),
+            )
+            if interaction_mode == "disabled":
+                validate_disabled_course_prompt_example(
+                    match.group("body"), md_file, issues
+                )
             validate_course_prompt_example(
                 match.group("body"),
                 prompt_template_lines,
