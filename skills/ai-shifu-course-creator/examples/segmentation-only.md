@@ -45,7 +45,7 @@
       "segment_type": "code",
       "core_point": "Retry call example",
       "preserve_block": true,
-      "source_span": {"source_id": "course_material", "start": 119, "end": 156},
+      "source_span": {"source_id": "course_material", "start": 68, "end": 97},
       "transfer_signals": {
         "evidence_type": "Executable retry example that must remain unchanged.",
         "action_cue": "Use the preserved call to test whether repeated execution is safe."
