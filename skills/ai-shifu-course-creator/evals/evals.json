@@ -1,0 +1,72 @@
+{
+  "skill_name": "AI-Shifu Course Creator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我有一份约 1.2 万字的产品经理培训材料，目标读者是刚转岗的新人。先帮我判断适合拆成多少章、多少节，并解释依据；这一步不要查询任何线上课程数据。",
+      "expected_output": "Treats lesson-count estimation as authoring, completes the authoring prerequisites, and does not route to analytics.",
+      "files": [],
+      "expectations": [
+        "The response treats the requested chapter and lesson count as a course-design question, not as live-course analytics.",
+        "The workflow follows authentication and course-target resolution before proposing an outline.",
+        "No analytics DSL query or credit-detail command is attempted."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我看一下已经发布的《销售新人训练营》最近 30 天有多少学习者、完成率是多少，以及最容易卡住的是哪一节。",
+      "expected_output": "Routes to live-course analytics, resolves credentials and current course identity, and translates results before presentation.",
+      "files": [],
+      "expectations": [
+        "The workflow uses authentication.md and the analytics workflow.",
+        "The current course title and shifu_bid are resolved before metric queries.",
+        "Lesson-level results resolve outline IDs and do not expose raw IDs or codes."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "课程内容不用改。请把我现有的 AI 师傅课程发布出去，并给我预览和正式访问地址。",
+      "expected_output": "Routes only to authentication and deployment/publishing instructions without loading authoring phases.",
+      "files": [],
+      "expectations": [
+        "The workflow verifies authentication before publish operations.",
+        "It does not run Course Design Intake, Segmentation, Generation, or Optimization.",
+        "Verification URLs are copied from CLI output and formatted with the deployment report rules."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "只审查我贴出来的这节 MarkdownFlow，不重做课程结构。重点检查互动语法、变量是否滥用，以及开头有没有重复课节标题。",
+      "expected_output": "Routes to the focused optimization path with prompt contracts, without loading unrelated generation or segmentation workflows.",
+      "files": [],
+      "expectations": [
+        "The workflow loads prompt-contracts.md and optimization-workflow.md.",
+        "The workflow does not authenticate or resolve a platform course for this pasted-snippet-only audit.",
+        "It does not run Segmentation or the Course Design Intake.",
+        "The audit covers interaction syntax, variable scope, and structural metadata."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "把线上课程第 4 节的授课提示词更新成我提供的新版本，其他课节、价格、权限和 TTS 设置都不要动。",
+      "expected_output": "Treats this as an existing-course content update, applies prompt contracts, and uses the non-destructive sync workflow.",
+      "files": [],
+      "expectations": [
+        "The workflow loads authentication, course-target, prompt-contracts, and deployment instructions.",
+        "It pulls the existing course and uses a granular content update rather than import --new.",
+        "It preserves unrelated course attributes and handles revision conflicts with the convergence loop."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "把这份内部培训文档做成一门新的 AI 师傅互动课，完成脚本优化后直接部署并发布；发布完成后再告诉我学习人数。",
+      "expected_output": "Combines the full authoring, deployment, and analytics routes in dependency order.",
+      "files": [],
+      "expectations": [
+        "The workflow resolves authentication and the course target before authoring.",
+        "It runs intake, authoring phases, prompt validation, and safe new-course deployment in order.",
+        "Analytics runs only after the live course target exists."
+      ]
+    }
+  ]
+}

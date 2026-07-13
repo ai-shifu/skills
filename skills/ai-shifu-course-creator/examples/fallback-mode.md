@@ -201,4 +201,4 @@ After the learner answers, apply one verification step before rollout.
 - Uncertainty is marked explicitly, never silently merged.
 - Rerun hints guide the user toward resolution.
 - Output schemas remain compatible across standard and fallback modes.
-- The `course_prompt` artifact is omitted when `course_material` is empty (per SKILL.md `## Optimization` → Validation).
+- The `course_prompt` artifact is omitted when `course_material` is empty (per `../references/optimization-workflow.md#validation`).

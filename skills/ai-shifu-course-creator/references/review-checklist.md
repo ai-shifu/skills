@@ -1,6 +1,6 @@
 # Review Checklist
 
-Optimization 全面审计清单 — Optimization Optimization 必须把每条都过一遍。其他 Phase 的阶段交付检查见 SKILL.md 各 Phase 内的 Validation 段。
+Optimization 全面审计清单 — Optimization Optimization 必须把每条都过一遍。其他阶段的交付检查见 `segmentation-orchestration.md`、`generation-workflow.md` 和 `deployment-workflow.md` 内的 Validation 段。
 
 ## Coverage
 
@@ -19,7 +19,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - User-visible agent output outside generated course content follows the resolved target language from `data-contracts.md#language-resolution`.
 - Generated course artifacts and learner-facing passages follow the resolved target language.
 - Effective build metadata follows the resolved target language after precedence is applied: course title (`--title`, `README.md`, or directory-name fallback), course description (`--description` or `course-description.md`), chapter titles (`structure.json`, `--chapter-name`, or course-title fallback), and lesson titles.
-- Human-facing labels for canonical concepts follow [SKILL.md#canonical-term-translation-table](../SKILL.md#canonical-term-translation-table) when the resolved target language is listed there.
+- Human-facing labels for canonical concepts follow [session-controls.md#canonical-term-translation-table](session-controls.md#canonical-term-translation-table) when the resolved target language is listed there.
 - Machine-facing identifiers and verbatim source material remain unchanged: JSON keys, file names, CLI flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and required verbatim source quotes.
 
 ## Structure Separation

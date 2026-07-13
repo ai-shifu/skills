@@ -2,6 +2,16 @@
 
 Authoritative source for all schemas crossing the skill boundary: what comes in (input), what goes out (output), how output target language is resolved, and the per-lesson and per-variable shapes.
 
+## Contents
+
+- [Input Contract](#input-contract)
+- [Output Contract](#output-contract)
+- [Segment Schema](#segment-schema)
+- [Variable Table](#variable-table)
+- [Lesson Schema](#lesson-schema)
+- [Language Resolution](#language-resolution)
+- [Fallback Output Extensions](#fallback-output-extensions)
+
 ## Input Contract
 
 ### Required
@@ -285,7 +295,7 @@ Resolve target language with this strict priority:
 - Learner-facing script text must follow resolved target language.
 - Newly authored MarkdownFlow variable names must follow the resolved output language within the valid variable-character set. Preserve existing or source-provided variable names when renaming would break an existing variable contract.
 - User-visible agent output must follow the resolved target language: chat replies, phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations.
-- Human-facing labels for skill concepts must follow the canonical terms in [SKILL.md#canonical-term-translation-table](../SKILL.md#canonical-term-translation-table) when the resolved target language is listed there; do not keep English labels merely because the skill docs and examples are written in English.
+- Human-facing labels for skill concepts must follow the canonical terms in [session-controls.md#canonical-term-translation-table](session-controls.md#canonical-term-translation-table) when the resolved target language is listed there; do not keep English labels merely because the skill docs and examples are written in English.
 - Stable machine-facing identifiers and verbatim source material remain unchanged even when the surrounding prose is localized: JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `lesson_teaching_prompts`, `teaching_prompt`, `course_prompt`, `course_description`), file names (`course-description.md`, `course-prompt.md`, `structure.json`), CLI commands and flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and quoted source text or direct quotations that must be preserved verbatim.
 
 ### Pre-Deploy Language Audit
@@ -301,7 +311,7 @@ Before finalizing or deploying a generated course directory, audit all build-con
 
 ## Fallback Output Extensions
 
-When a phase runs under fallback mode (see SKILL.md `## Execution Modes`), its standard output is augmented with the following fields. Standard-mode output omits these fields entirely; fallback-mode output adds them on top of the standard schema.
+When a phase runs under fallback mode (see `authoring-controls.md#execution-modes`), its standard output is augmented with the following fields. Standard-mode output omits these fields entirely; fallback-mode output adds them on top of the standard schema.
 
 ### Segmentation fallback fields
 

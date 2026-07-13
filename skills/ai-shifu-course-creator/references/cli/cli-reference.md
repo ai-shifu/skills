@@ -6,6 +6,20 @@ All commands use `{skillDir}/scripts/shifu-cli.py`. Prefix every call with:
 python3 {skillDir}/scripts/shifu-cli.py <command>
 ```
 
+## Contents
+
+- [Authentication](#authentication)
+- [Query Commands](#query-commands)
+- [Analytics Query](#analytics-query)
+- [Version Sync](#version-sync-pull--status)
+- [Create Commands](#create-commands)
+- [Update Commands](#update-commands)
+- [Delete Commands](#delete-commands)
+- [Bulk Import](#bulk-import)
+- [Image Upload](#image-upload)
+- [State Management](#state-management)
+- [CLI Output & Encoding](#cli-output--encoding)
+
 ## Authentication
 
 The token persists in `{skillDir}/.env` and is valid for **7 days**, with each
