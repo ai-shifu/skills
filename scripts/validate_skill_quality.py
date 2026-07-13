@@ -520,9 +520,9 @@ def validate_course_prompt_example(
     for required_line in prompt_template_lines:
         if "XXX" in required_line:
             filled_line_pattern = (
-                "^"
+                r"^[ \t]*"
                 + re.escape(required_line).replace("XXX", r"[^\n]+")
-                + "$"
+                + r"[ \t]*$"
             )
             if not re.search(filled_line_pattern, prompt, re.MULTILINE):
                 issues.add_error(
