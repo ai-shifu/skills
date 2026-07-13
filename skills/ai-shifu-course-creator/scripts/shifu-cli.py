@@ -45,6 +45,12 @@ TOKEN_EXPIRE_SECONDS = 604800
 _TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
 # 1001 = userNotFound, 1004 = userNotLogin, 1005 = userTokenExpired
 
+# The course-list endpoint defaults to 10 rows. Commands that promise to search
+# or list every course must page explicitly instead of silently using that
+# first-page default.
+COURSE_LIST_PAGE_SIZE = 50
+MAX_COURSE_PAGES = 10
+
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
 def load_env():
@@ -515,6 +521,56 @@ def cmd_verify(args):
 
 
 # ── List ───────────────────────────────────────────────────────────────────────
+def _fetch_all_courses(base_url, token):
+    """Return every active course visible to the current creator.
+
+    The backend returns a ``PageNationDTO`` and defaults to 10 rows when the
+    caller omits pagination. Keep the legacy list response fallback for older
+    deployments, while following ``page_count`` on the current API.
+    """
+
+    courses = []
+    page_index = 1
+
+    while True:
+        if page_index > MAX_COURSE_PAGES:
+            print(
+                "API error: GET /shifus exceeded the maximum page limit; "
+                "refusing to return incomplete course results"
+            )
+            sys.exit(1)
+        result = api(
+            base_url,
+            token,
+            "get",
+            f"/shifus?page_index={page_index}&page_size={COURSE_LIST_PAGE_SIZE}",
+        )
+        if isinstance(result, list):
+            courses.extend(result)
+            break
+        if not isinstance(result, dict):
+            break
+
+        items = result.get("items") or []
+        if not isinstance(items, list):
+            print("API error: GET /shifus returned invalid pagination data")
+            sys.exit(1)
+        courses.extend(items)
+
+        page_count = result.get("page_count")
+        total = result.get("total")
+        if isinstance(page_count, int) and page_index >= page_count:
+            break
+        if isinstance(total, int) and len(courses) >= total:
+            break
+        if len(items) < COURSE_LIST_PAGE_SIZE:
+            break
+
+        page_index += 1
+
+    return courses
+
+
 def _fetch_shifu_title(base_url, token, shifu_bid, *, table_key, session=None):
     """Fetch the current title from one of the shifu metadata tables.
 
@@ -560,13 +616,7 @@ def cmd_list(args):
     the draft title for the live learner-facing title.
     """
     base_url, token = resolve_auth(args)
-    result = api(base_url, token, "get", "/shifus")
-
-    if not result:
-        print("No courses found.")
-        return
-
-    courses = result if isinstance(result, list) else result.get("items", [])
+    courses = _fetch_all_courses(base_url, token)
     if not courses:
         print("No courses found.")
         return
@@ -2325,8 +2375,7 @@ def cmd_find_title(args):
         )
         sys.exit(1)
 
-    result = api(base_url, token, "get", "/shifus")
-    courses = result if isinstance(result, list) else (result or {}).get("items", [])
+    courses = _fetch_all_courses(base_url, token)
     if not courses:
         print("No courses found for this account.")
         return
