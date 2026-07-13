@@ -95,17 +95,13 @@
 ```
 
 ```markdown
-Ask the learner to recall a production metric that changed unexpectedly and state what made the change look meaningful rather than random.
-
-Create a slide that shows a stable baseline followed by a sustained metric shift, with three diagnostic branches: workload shape, lock wait, and cache hit ratio.
-
-Explain that persistence separates drift from noise, while classification prevents the learner from applying a plausible fix to the wrong cause.
-
-Ask the learner to identify the highest-signal diagnostic step for the drifting metric.
+Open with a production metric that changed unexpectedly and ask the learner to identify the highest-signal diagnostic step before explaining how to classify the drift.
 ---
 ?[%{{diagnosis_choice}} check workload shape | check lock wait | check cache hit ratio]
 ---
-The learner's diagnosis choice is {{diagnosis_choice}}. Based on it, run one focused verification before suggesting a fix, and carry the choice into the next lesson's worked example.
+The learner's diagnosis choice is {{diagnosis_choice}}. Create a slide that shows a stable baseline followed by a sustained metric shift, with the selected diagnostic branch first and visually emphasized among workload shape, lock wait, and cache hit ratio.
+
+Explain that persistence separates drift from noise, while classification prevents the learner from applying a plausible fix to the wrong cause. Based on the learner's choice, run one focused verification before suggesting a fix, and carry the choice into the next lesson's worked example.
 
 Have the learner write a one-sentence verification plan naming the signal, expected movement, and stop condition. Close by summarizing the sequence: observe, classify, verify, then fix.
 ```
