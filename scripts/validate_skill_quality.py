@@ -42,6 +42,7 @@ ANCHOR_SCAN_GLOBS = ("SKILL.md", "references/**/*.md", "examples/**/*.md")
 MAX_DESCRIPTION_LEN = 1024
 MIN_DESCRIPTION_LEN_RECOMMENDED = 50
 MAX_COMPATIBILITY_LEN = 500
+SEGMENT_TYPES = {"concept", "example", "code", "image", "exercise", "transition"}
 TRANSFER_SIGNAL_KEYS = {
     "learner_hook",
     "evidence_type",
@@ -307,6 +308,32 @@ def validate_segment_example(
             f"is missing required fields: {', '.join(missing)}"
         )
         return
+
+    segment_id = segment["segment_id"]
+    if not isinstance(segment_id, str) or not segment_id.strip():
+        issues.add_error(
+            f"{md_file}: segment example segment_id must be a non-empty string"
+        )
+
+    segment_type = segment["segment_type"]
+    if not isinstance(segment_type, str) or segment_type not in SEGMENT_TYPES:
+        issues.add_error(
+            f"{md_file}: segment example {segment_id} has invalid segment_type "
+            f"{segment_type!r}; expected one of {', '.join(sorted(SEGMENT_TYPES))}"
+        )
+
+    core_point = segment["core_point"]
+    if not isinstance(core_point, str) or not core_point.strip():
+        issues.add_error(
+            f"{md_file}: segment example {segment_id} core_point must be a "
+            "non-empty string"
+        )
+
+    if not isinstance(segment["preserve_block"], bool):
+        issues.add_error(
+            f"{md_file}: segment example {segment_id} preserve_block must be "
+            "a boolean"
+        )
 
     source_span = segment["source_span"]
     if not isinstance(source_span, dict):
