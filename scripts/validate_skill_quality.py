@@ -603,15 +603,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
         (md_file, md_file.read_text(encoding="utf-8"))
         for md_file in sorted(examples_dir.glob("**/*.md"))
     ]
-    has_course_prompt_artifacts = any(
-        RE_COURSE_PROMPT_ARTIFACT.search(content)
-        for _, content in example_contents
-    )
-    prompt_template_lines = (
-        course_prompt_template_lines(skill_dir, issues)
-        if has_course_prompt_artifacts
-        else []
-    )
+    prompt_template_lines = course_prompt_template_lines(skill_dir, issues)
     for md_file, content in example_contents:
         parsed_payloads: list[object] = []
         for match in RE_JSON_FENCE.finditer(content):
@@ -682,6 +674,19 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                             validate_global_variable_example(
                                 variable, md_file, issues
                             )
+                if "course_prompt" in value:
+                    course_prompt = value["course_prompt"]
+                    if isinstance(course_prompt, str):
+                        validate_course_prompt_example(
+                            course_prompt,
+                            prompt_template_lines,
+                            md_file,
+                            issues,
+                        )
+                    else:
+                        issues.add_error(
+                            f"{md_file}: course_prompt example must be a string"
+                        )
 
         for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content):
             validate_course_prompt_example(
