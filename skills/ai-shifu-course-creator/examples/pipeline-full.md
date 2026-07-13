@@ -10,7 +10,7 @@
   "course_author_name": "Maya Chen",
   "interaction_policy": {
     "mode": "enabled",
-    "purposes": ["pre_content_thinking", "lesson_end_self_check"]
+    "purposes": ["pre_content_thinking"]
   },
   "generation_constraints": {
     "persona": "practical coach",
