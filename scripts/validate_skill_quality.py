@@ -612,6 +612,16 @@ def validate_disabled_lesson_examples(
             )
 
 
+def validate_disabled_global_variable_table_example(
+    variables: object, md_file: Path, issues: IssueBag
+) -> None:
+    if variables != []:
+        issues.add_error(
+            f"{md_file}: disabled interaction_policy requires an empty "
+            "global_variable_table"
+        )
+
+
 def course_prompt_template_lines(
     skill_dir: Path, issues: IssueBag
 ) -> list[str]:
@@ -816,6 +826,13 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                         value["lesson_teaching_prompts"],
                         md_file,
                         issues,
+                    )
+                if (
+                    interaction_mode == "disabled"
+                    and "global_variable_table" in value
+                ):
+                    validate_disabled_global_variable_table_example(
+                        value["global_variable_table"], md_file, issues
                     )
                 if "structured_segments_json" in value:
                     segments = value["structured_segments_json"]

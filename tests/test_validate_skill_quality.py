@@ -184,6 +184,25 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                 any("interaction syntax" in error for error in issues.errors)
             )
 
+    def test_disabled_policy_rejects_global_variable_table(self):
+        issues = validate_skill_quality.IssueBag()
+
+        validate_skill_quality.validate_disabled_global_variable_table_example(
+            [
+                {
+                    "name": "learner_goal",
+                    "collected_in": "L01",
+                    "used_in": ["L02"],
+                    "effect_scope": "cross_lesson",
+                }
+            ],
+            Path("example.md"),
+            issues,
+        )
+
+        self.assertEqual(len(issues.errors), 1)
+        self.assertIn("empty global_variable_table", issues.errors[0])
+
 
 if __name__ == "__main__":
     unittest.main()
