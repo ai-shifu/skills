@@ -455,7 +455,7 @@ def course_prompt_template_lines(
     return [
         line.strip()
         for line in match.group("body").splitlines()
-        if line.strip() and "XXX" not in line
+        if line.strip()
     ]
 
 
@@ -517,18 +517,19 @@ def validate_course_prompt_example(
         # validated above; semantic localization remains a human review concern.
         return
 
-    for required_prefix in (
-        "- You are ",
-        "- You specialize in ",
-        "- The current course is ",
-    ):
-        if required_prefix not in prompt:
-            issues.add_error(
-                f"{md_file}: Course Prompt example is missing filled "
-                f"placeholder line beginning with: {required_prefix}"
-            )
     for required_line in prompt_template_lines:
-        if required_line not in prompt:
+        if "XXX" in required_line:
+            filled_line_pattern = (
+                "^"
+                + re.escape(required_line).replace("XXX", r"[^\n]+")
+                + "$"
+            )
+            if not re.search(filled_line_pattern, prompt, re.MULTILINE):
+                issues.add_error(
+                    f"{md_file}: Course Prompt example is missing filled "
+                    f"placeholder line matching template: {required_line}"
+                )
+        elif required_line not in prompt:
             issues.add_error(
                 f"{md_file}: Course Prompt example is missing template "
                 f"instruction: {required_line}"
