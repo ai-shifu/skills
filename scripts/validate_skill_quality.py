@@ -380,6 +380,66 @@ def course_prompt_template_lines(skill_dir: Path) -> list[str]:
     ]
 
 
+def validate_course_prompt_example(
+    prompt: str,
+    prompt_template_lines: list[str],
+    md_file: Path,
+    issues: IssueBag,
+) -> None:
+    if "XXX" in prompt:
+        issues.add_error(
+            f"{md_file}: Course Prompt example contains unresolved XXX"
+        )
+
+    heading_matches = list(re.finditer(r"^# [^#\n].*$", prompt, re.MULTILINE))
+    if len(heading_matches) != 6:
+        issues.add_error(
+            f"{md_file}: Course Prompt example must contain exactly six "
+            f"top-level sections, found {len(heading_matches)}"
+        )
+        return
+
+    for index, heading in enumerate(heading_matches):
+        body_start = heading.end()
+        body_end = (
+            heading_matches[index + 1].start()
+            if index + 1 < len(heading_matches)
+            else len(prompt)
+        )
+        if not prompt[body_start:body_end].strip():
+            issues.add_error(
+                f"{md_file}: Course Prompt example section "
+                f"{heading.group(0)} must not be empty"
+            )
+
+    headings = [match.group(0).strip() for match in heading_matches]
+    english_headings = [
+        line for line in prompt_template_lines if line.startswith("# ")
+    ]
+    if headings != english_headings:
+        # Localized examples cannot be compared to English instructions by exact
+        # text. Their six-section shape and resolved placeholders are still
+        # validated above; semantic localization remains a human review concern.
+        return
+
+    for required_prefix in (
+        "- You are ",
+        "- You specialize in ",
+        "- The current course is ",
+    ):
+        if required_prefix not in prompt:
+            issues.add_error(
+                f"{md_file}: Course Prompt example is missing filled "
+                f"placeholder line beginning with: {required_prefix}"
+            )
+    for required_line in prompt_template_lines:
+        if required_line not in prompt:
+            issues.add_error(
+                f"{md_file}: Course Prompt example is missing template "
+                f"instruction: {required_line}"
+            )
+
+
 def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
     """Keep executable examples aligned with their documented contracts."""
     examples_dir = skill_dir / "examples"
@@ -414,27 +474,9 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                     )
 
         for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content):
-            prompt = match.group("body")
-            if "XXX" in prompt:
-                issues.add_error(
-                    f"{md_file}: Course Prompt example contains unresolved XXX"
-                )
-            for required_prefix in (
-                "- You are ",
-                "- You specialize in ",
-                "- The current course is ",
-            ):
-                if required_prefix not in prompt:
-                    issues.add_error(
-                        f"{md_file}: Course Prompt example is missing filled "
-                        f"placeholder line beginning with: {required_prefix}"
-                    )
-            for required_line in prompt_template_lines:
-                if required_line not in prompt:
-                    issues.add_error(
-                        f"{md_file}: Course Prompt example is missing template "
-                        f"instruction: {required_line}"
-                    )
+            validate_course_prompt_example(
+                match.group("body"), prompt_template_lines, md_file, issues
+            )
 
 
 def main() -> int:
