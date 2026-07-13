@@ -42,7 +42,7 @@ Output includes uncertainty markers and rerun hints; preserved blocks survive ev
       "segment_type": "image",
       "core_point": "Failure matrix image preserved",
       "preserve_block": true,
-      "source_span": {"source_id": "course_material", "start": 96, "end": 132},
+      "source_span": {"source_id": "course_material", "start": 104, "end": 130},
       "transfer_signals": {
         "visual_cue": "Preserve the failure matrix as the visual comparison surface.",
         "visual_text_pair_cue": "Explain which cells support each proposed retry boundary."
