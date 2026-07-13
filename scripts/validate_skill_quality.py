@@ -563,9 +563,12 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             try:
                 payload = json.loads(match.group("body"))
             except json.JSONDecodeError as exc:
+                error_line = (
+                    content.count("\n", 0, match.start("body")) + exc.lineno
+                )
                 issues.add_error(
                     f"{md_file}: invalid JSON example near line "
-                    f"{content.count(chr(10), 0, match.start('body')) + exc.lineno}: "
+                    f"{error_line}: "
                     f"{exc.msg}"
                 )
                 continue
