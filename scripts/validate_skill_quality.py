@@ -6,8 +6,10 @@ Only uses Python standard library — no pyyaml dependency required.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
+from collections.abc import Generator
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -23,6 +25,15 @@ RE_MD_ANCHOR_REF = re.compile(
 RE_HEADING = re.compile(r"^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
 RE_SLUG_STRIP = re.compile(r"[^\w\- ]")
 RE_SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
+RE_JSON_FENCE = re.compile(
+    r"^```json[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+    re.MULTILINE | re.DOTALL,
+)
+RE_COURSE_PROMPT_ARTIFACT = re.compile(
+    r"^### Course Prompt Artifact[ \t]*$.*?"
+    r"^```markdown[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+    re.MULTILINE | re.DOTALL,
+)
 FORBIDDEN_WORDS = {"claude", "anthropic"}
 
 # Doc surface scanned for cross-file anchor links. Local-only dirs
@@ -32,6 +43,29 @@ ANCHOR_SCAN_GLOBS = ("SKILL.md", "references/**/*.md", "examples/**/*.md")
 MAX_DESCRIPTION_LEN = 1024
 MIN_DESCRIPTION_LEN_RECOMMENDED = 50
 MAX_COMPATIBILITY_LEN = 500
+SEGMENT_TYPES = {"concept", "example", "code", "image", "exercise", "transition"}
+SEGMENT_REQUIRED_KEYS = {
+    "segment_id",
+    "segment_type",
+    "core_point",
+    "preserve_block",
+    "source_span",
+    "transfer_signals",
+}
+TRANSFER_SIGNAL_KEYS = {
+    "learner_hook",
+    "evidence_type",
+    "visual_cue",
+    "concept_conflict",
+    "boundary_cue",
+    "action_cue",
+    "density_cue",
+    "quote_cue",
+    "visual_text_pair_cue",
+    "interaction_intent_cue",
+    "compare_cue",
+}
+SOURCE_TEXT_KEYS = {"course_material"}
 
 
 @dataclass
@@ -192,6 +226,7 @@ def validate_skill(skill_dir: Path, issues: IssueBag) -> None:
             )
 
     validate_anchors(skill_dir, issues)
+    validate_example_contracts(skill_dir, issues)
 
 
 def github_heading_slugs(md_file: Path) -> set[str]:
@@ -252,6 +287,457 @@ def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
                         f"{md_file}: broken anchor -> {ref[0]}#{ref[1]} "
                         f"(no matching heading in {target.name})"
                     )
+
+
+def walk_json(value: object) -> Generator[object, None, None]:
+    """Yield every nested JSON value, including the root."""
+    yield value
+    if isinstance(value, dict):
+        for child in value.values():
+            yield from walk_json(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from walk_json(child)
+
+
+def source_texts_for_payload(
+    payload_index: int,
+    source_candidates: dict[str, list[tuple[int, str]]],
+) -> dict[str, str]:
+    """Select the closest source value for one example output payload."""
+    source_texts: dict[str, str] = {}
+    for source_id, candidates in source_candidates.items():
+        preceding = [item for item in candidates if item[0] <= payload_index]
+        if preceding:
+            source_texts[source_id] = max(preceding, key=lambda item: item[0])[1]
+        else:
+            source_texts[source_id] = min(candidates, key=lambda item: item[0])[1]
+    return source_texts
+
+
+def validate_source_span_example(
+    source_span: object,
+    owner: str,
+    source_texts: dict[str, str],
+    md_file: Path,
+    issues: IssueBag,
+) -> None:
+    if not isinstance(source_span, dict):
+        issues.add_error(f"{md_file}: {owner} must be an object")
+        return
+
+    source_id = source_span.get("source_id")
+    start = source_span.get("start")
+    end = source_span.get("end")
+    valid_offsets = (
+        isinstance(source_id, str)
+        and bool(source_id)
+        and isinstance(start, int)
+        and not isinstance(start, bool)
+        and start >= 0
+        and isinstance(end, int)
+        and not isinstance(end, bool)
+        and end > start
+    )
+    if not valid_offsets:
+        issues.add_error(
+            f"{md_file}: {owner} must contain source_id and valid "
+            "start/end offsets"
+        )
+        return
+
+    source_text = source_texts.get(source_id)
+    if source_text is None:
+        issues.add_error(
+            f"{md_file}: {owner} references unknown string source {source_id!r}"
+        )
+    elif end > len(source_text):
+        issues.add_error(
+            f"{md_file}: {owner} end {end} exceeds {source_id!r} length "
+            f"{len(source_text)}"
+        )
+
+
+def validate_segment_example(
+    segment: dict[str, object],
+    source_texts: dict[str, str],
+    md_file: Path,
+    issues: IssueBag,
+) -> None:
+    missing = sorted(SEGMENT_REQUIRED_KEYS - segment.keys())
+    if missing:
+        issues.add_error(
+            f"{md_file}: segment example {segment.get('segment_id')} "
+            f"is missing required fields: {', '.join(missing)}"
+        )
+        return
+
+    segment_id = segment["segment_id"]
+    if not isinstance(segment_id, str) or not segment_id.strip():
+        issues.add_error(
+            f"{md_file}: segment example segment_id must be a non-empty string"
+        )
+
+    segment_type = segment["segment_type"]
+    if not isinstance(segment_type, str) or segment_type not in SEGMENT_TYPES:
+        issues.add_error(
+            f"{md_file}: segment example {segment_id} has invalid segment_type "
+            f"{segment_type!r}; expected one of {', '.join(sorted(SEGMENT_TYPES))}"
+        )
+
+    core_point = segment["core_point"]
+    if not isinstance(core_point, str) or not core_point.strip():
+        issues.add_error(
+            f"{md_file}: segment example {segment_id} core_point must be a "
+            "non-empty string"
+        )
+
+    if not isinstance(segment["preserve_block"], bool):
+        issues.add_error(
+            f"{md_file}: segment example {segment_id} preserve_block must be "
+            "a boolean"
+        )
+
+    validate_source_span_example(
+        segment["source_span"],
+        f"segment example {segment_id} source_span",
+        source_texts,
+        md_file,
+        issues,
+    )
+
+    transfer_signals = segment["transfer_signals"]
+    if not isinstance(transfer_signals, dict) or not transfer_signals:
+        issues.add_error(
+            f"{md_file}: segment example {segment['segment_id']} "
+            "transfer_signals must be a non-empty object"
+        )
+    else:
+        unknown_keys = sorted(transfer_signals.keys() - TRANSFER_SIGNAL_KEYS)
+        if unknown_keys:
+            issues.add_error(
+                f"{md_file}: segment example {segment['segment_id']} uses "
+                f"unknown transfer signal keys: {', '.join(unknown_keys)}"
+            )
+        if any(
+            not isinstance(value, str) or not value.strip()
+            for value in transfer_signals.values()
+        ):
+            issues.add_error(
+                f"{md_file}: segment example {segment['segment_id']} transfer "
+                "signal values must be non-empty strings"
+            )
+
+
+def validate_global_variable_example(
+    variable: dict[str, object], md_file: Path, issues: IssueBag
+) -> None:
+    required = {"name", "collected_in", "used_in", "effect_scope"}
+    missing = sorted(required - variable.keys())
+    if missing:
+        issues.add_error(
+            f"{md_file}: global variable example {variable.get('name')} "
+            f"is missing required fields: {', '.join(missing)}"
+        )
+        return
+
+    variable_name = variable["name"]
+    if not isinstance(variable_name, str) or not re.fullmatch(
+        r"\w+", variable_name
+    ):
+        issues.add_error(
+            f"{md_file}: global variable example name must contain only "
+            "letters, numbers, and underscores"
+        )
+    if (
+        not isinstance(variable["collected_in"], str)
+        or not variable["collected_in"].strip()
+    ):
+        issues.add_error(
+            f"{md_file}: global variable example collected_in must be a "
+            "non-empty string"
+        )
+    used_in = variable["used_in"]
+    if not isinstance(used_in, list) or any(
+        not isinstance(item, str) or not item.strip() for item in used_in
+    ):
+        issues.add_error(
+            f"{md_file}: global variable example used_in must be an array "
+            "of non-empty strings"
+        )
+    if variable["effect_scope"] != "cross_lesson":
+        issues.add_error(
+            f"{md_file}: global variable examples must use "
+            "effect_scope 'cross_lesson'"
+        )
+
+
+def course_prompt_template_lines(
+    skill_dir: Path, issues: IssueBag
+) -> list[str]:
+    template_file = skill_dir / "references" / "course-prompt.md"
+    if not template_file.is_file():
+        issues.add_error(
+            f"{skill_dir}: Course Prompt examples require "
+            "references/course-prompt.md"
+        )
+        return []
+    content = template_file.read_text(encoding="utf-8")
+    marker = "## Fillable Template"
+    if marker not in content:
+        issues.add_error(
+            f"{template_file}: missing required section '{marker}'"
+        )
+        return []
+    template_section = content.split(marker, 1)[1]
+    match = re.search(
+        r"^```markdown[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+        template_section,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not match:
+        issues.add_error(
+            f"{template_file}: missing markdown code block under '{marker}'"
+        )
+        return []
+    return [
+        line.strip()
+        for line in match.group("body").splitlines()
+        if line.strip()
+    ]
+
+
+def validate_course_prompt_example(
+    prompt: str,
+    prompt_template_lines: list[str],
+    md_file: Path,
+    issues: IssueBag,
+    is_localized: bool = False,
+) -> None:
+    if "XXX" in prompt:
+        issues.add_error(
+            f"{md_file}: Course Prompt example contains unresolved XXX"
+        )
+
+    heading_matches = list(re.finditer(r"^# [^#\n].*$", prompt, re.MULTILINE))
+    if len(heading_matches) != 6:
+        issues.add_error(
+            f"{md_file}: Course Prompt example must contain exactly six "
+            f"top-level sections, found {len(heading_matches)}"
+        )
+        return
+
+    for index, heading in enumerate(heading_matches):
+        body_start = heading.end()
+        body_end = (
+            heading_matches[index + 1].start()
+            if index + 1 < len(heading_matches)
+            else len(prompt)
+        )
+        if not prompt[body_start:body_end].strip():
+            issues.add_error(
+                f"{md_file}: Course Prompt example section "
+                f"{heading.group(0)} must not be empty"
+            )
+
+    headings = [match.group(0).strip() for match in heading_matches]
+    english_headings = [
+        line for line in prompt_template_lines if line.startswith("# ")
+    ]
+    if headings != english_headings:
+        heading_set = set(headings)
+        english_heading_set = set(english_headings)
+        if heading_set == english_heading_set:
+            issues.add_error(
+                f"{md_file}: Course Prompt example headings are out of order; "
+                f"expected: {', '.join(english_headings)}"
+            )
+        elif english_headings and not is_localized:
+            missing_headings = sorted(english_heading_set - heading_set)
+            unexpected_headings = sorted(heading_set - english_heading_set)
+            issues.add_error(
+                f"{md_file}: Course Prompt example headings do not match "
+                f"the template; missing: {', '.join(missing_headings) or 'none'}; "
+                f"unexpected: {', '.join(unexpected_headings) or 'none'}"
+            )
+        # Localized examples cannot be compared to English instructions by exact
+        # text. Their six-section shape and resolved placeholders are still
+        # validated above; semantic localization remains a human review concern.
+        return
+
+    for required_line in prompt_template_lines:
+        if "XXX" in required_line:
+            filled_line_pattern = (
+                r"^[ \t]*"
+                + re.escape(required_line).replace("XXX", r"[^\n]+")
+                + r"[ \t]*$"
+            )
+            if not re.search(filled_line_pattern, prompt, re.MULTILINE):
+                issues.add_error(
+                    f"{md_file}: Course Prompt example is missing filled "
+                    f"placeholder line matching template: {required_line}"
+                )
+        elif required_line not in prompt:
+            issues.add_error(
+                f"{md_file}: Course Prompt example is missing template "
+                f"instruction: {required_line}"
+            )
+
+
+def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
+    """Keep executable examples aligned with their documented contracts."""
+    if skill_dir.name != "ai-shifu-course-creator":
+        return
+
+    examples_dir = skill_dir / "examples"
+    if not examples_dir.is_dir():
+        return
+
+    example_contents = [
+        (md_file, md_file.read_text(encoding="utf-8"))
+        for md_file in sorted(examples_dir.glob("**/*.md"))
+    ]
+    prompt_template_lines = course_prompt_template_lines(skill_dir, issues)
+    for md_file, content in example_contents:
+        parsed_payloads: list[object] = []
+        for match in RE_JSON_FENCE.finditer(content):
+            try:
+                payload = json.loads(match.group("body"))
+            except json.JSONDecodeError as exc:
+                error_line = (
+                    content.count("\n", 0, match.start("body")) + exc.lineno
+                )
+                issues.add_error(
+                    f"{md_file}: invalid JSON example near line "
+                    f"{error_line}: "
+                    f"{exc.msg}"
+                )
+                continue
+            parsed_payloads.append(payload)
+
+        source_candidates: dict[str, list[tuple[int, str]]] = {}
+        target_language_candidates: list[tuple[int, str]] = []
+        for payload_index, payload in enumerate(parsed_payloads):
+            if isinstance(payload, dict):
+                for key, value in payload.items():
+                    if key in SOURCE_TEXT_KEYS and isinstance(value, str):
+                        source_candidates.setdefault(key, []).append(
+                            (payload_index, value)
+                        )
+                    if key == "target_language" and isinstance(value, str):
+                        target_language_candidates.append((payload_index, value))
+
+        for payload_index, payload in enumerate(parsed_payloads):
+            source_texts = source_texts_for_payload(
+                payload_index, source_candidates
+            )
+            target_language = source_texts_for_payload(
+                payload_index,
+                (
+                    {"target_language": target_language_candidates}
+                    if target_language_candidates
+                    else {}
+                ),
+            ).get("target_language")
+            is_localized = bool(target_language) and not (
+                target_language.lower().startswith("en")
+            )
+            for value in walk_json(payload):
+                if not isinstance(value, dict):
+                    continue
+                if "structured_segments_json" in value:
+                    segments = value["structured_segments_json"]
+                    if not isinstance(segments, list):
+                        issues.add_error(
+                            f"{md_file}: structured_segments_json must be an array"
+                        )
+                    else:
+                        for segment_index, segment in enumerate(segments):
+                            if not isinstance(segment, dict):
+                                issues.add_error(
+                                    f"{md_file}: structured_segments_json"
+                                    f"[{segment_index}] must be an object"
+                                )
+                                continue
+                            validate_segment_example(
+                                segment, source_texts, md_file, issues
+                            )
+                if "course_index" in value:
+                    course_index = value["course_index"]
+                    if not isinstance(course_index, list):
+                        issues.add_error(
+                            f"{md_file}: course_index must be an array"
+                        )
+                        course_index = []
+                    for lesson_index, lesson in enumerate(course_index):
+                        if not isinstance(lesson, dict):
+                            issues.add_error(
+                                f"{md_file}: course_index[{lesson_index}] "
+                                "must be an object"
+                            )
+                            continue
+                        span_map = lesson.get("source_span_map")
+                        if not isinstance(span_map, list):
+                            issues.add_error(
+                                f"{md_file}: course_index lesson "
+                                f"{lesson.get('lesson_id')!r} source_span_map "
+                                "must be an array"
+                            )
+                            continue
+                        lesson_id = lesson.get("lesson_id")
+                        for map_index, source_span in enumerate(span_map):
+                            validate_source_span_example(
+                                source_span,
+                                f"course_index lesson {lesson_id!r} "
+                                f"source_span_map[{map_index}]",
+                                source_texts,
+                                md_file,
+                                issues,
+                            )
+                if "global_variable_table" in value:
+                    variables = value["global_variable_table"]
+                    if not isinstance(variables, list):
+                        issues.add_error(
+                            f"{md_file}: global_variable_table must be an array"
+                        )
+                    else:
+                        for variable_index, variable in enumerate(variables):
+                            if not isinstance(variable, dict):
+                                issues.add_error(
+                                    f"{md_file}: global_variable_table"
+                                    f"[{variable_index}] must be an object"
+                                )
+                                continue
+                            validate_global_variable_example(
+                                variable, md_file, issues
+                            )
+                if "course_prompt" in value:
+                    course_prompt = value["course_prompt"]
+                    if isinstance(course_prompt, str):
+                        validate_course_prompt_example(
+                            course_prompt,
+                            prompt_template_lines,
+                            md_file,
+                            issues,
+                            is_localized=is_localized,
+                        )
+                    else:
+                        issues.add_error(
+                            f"{md_file}: course_prompt example must be a string"
+                        )
+
+        artifact_is_localized = bool(target_language_candidates) and all(
+            not language.lower().startswith("en")
+            for _, language in target_language_candidates
+        )
+        for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content):
+            validate_course_prompt_example(
+                match.group("body"),
+                prompt_template_lines,
+                md_file,
+                issues,
+                is_localized=artifact_is_localized,
+            )
 
 
 def main() -> int:

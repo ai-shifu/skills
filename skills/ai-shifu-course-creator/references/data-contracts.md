@@ -17,6 +17,9 @@ Provide one of:
 - Lesson granularity preference (`short`, `medium`, `long`).
 - Tone constraints.
 - Non-negotiable source fragments.
+- `course_author_name` (string): the course author's real name for the Course
+  Prompt role. If absent when a Course Prompt must be generated, ask the author
+  instead of inventing a persona name.
 - `course_profile` object.
 - `delivery_constraints` object.
 - `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`).
@@ -52,6 +55,7 @@ Provide one of:
 ```json
 {
   "course_material": "long transcript or merged markdown",
+  "course_author_name": "Author-provided real name",
   "generation_constraints": {
     "persona": "hands-on mentor",
     "lesson_granularity": "short"
@@ -107,7 +111,13 @@ Each item:
 - Base it on the course topic, target learners, and concrete learning outcomes.
 - Write it to `course-description.md`; the CLI maps it to the platform `description` field during build/import.
 
-### Minimal Output Example
+### Minimal Structured Artifact Excerpt
+
+This excerpt shows the JSON-shaped artifacts without abbreviating the required
+Course Prompt into an invalid pseudo-prompt. The complete `course_prompt` string
+must be a fully filled six-section artifact with no ellipsis standing in for
+template instructions; see the runnable example in
+[`examples/pipeline-full.md#course-prompt-artifact`](../examples/pipeline-full.md#course-prompt-artifact).
 
 ```json
 {
@@ -136,7 +146,6 @@ Each item:
       "effect_scope": "cross_lesson"
     }
   ],
-  "course_prompt": "# Role\nYou are ...\n\n# Task\n- The learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, use the course default examples; otherwise adapt course-wide examples to it. ...\n\n# Teaching Techniques\n- ...\n\n# Writing Style\n- ...\n\n# Format\n- ...\n\n# Slides\n- ...",
   "course_description": "A practical course that helps beginner operators diagnose metric drift, identify likely causes, and choose one concrete fix."
 }
 ```
@@ -167,8 +176,28 @@ Each item in the Segmentation output (consumed by Orchestration and Generation):
 - `segment_type` (string enum, required) — one of `concept`, `example`, `code`, `image`, `exercise`, `transition`; semantics in [pedagogy.md#segment-types](pedagogy.md#segment-types).
 - `core_point` (string, required) — the single teachable point this segment carries.
 - `preserve_block` (boolean, required) — `true` for code/image/table/required-quote blocks that must reach the lesson verbatim per [markdownflow.md#preservation](markdownflow.md#preservation).
-- `source_span` (string, required) — traceable reference back to the source material.
-- `transfer_signals` (object, required) — downstream teaching-quality cues; field names and meanings defined in [pedagogy.md#transfer-signals](pedagogy.md#transfer-signals).
+- `source_span` (object, required) — traceable source location with `source_id`
+  (string), `start` (non-negative integer, inclusive character offset), and `end`
+  (integer greater than `start`, exclusive character offset). Use the same object
+  shape as entries in `course_index.source_span_map`.
+- `transfer_signals` (object, required) — downstream teaching-quality cues. Use
+  only the canonical keys below, include every cue that applies to the segment,
+  and omit inapplicable keys rather than inventing content. Each included value
+  is a concise string:
+  - `learner_hook`
+  - `evidence_type`
+  - `visual_cue`
+  - `concept_conflict`
+  - `boundary_cue`
+  - `action_cue`
+  - `density_cue`
+  - `quote_cue`
+  - `visual_text_pair_cue`
+  - `interaction_intent_cue`
+  - `compare_cue`
+
+  The teaching meaning of these cues is defined in
+  [pedagogy.md#transfer-signals](pedagogy.md#transfer-signals).
 
 For segmentation rules and methodology see [pedagogy.md#segmentation-methodology](pedagogy.md#segmentation-methodology).
 
@@ -179,9 +208,9 @@ For segmentation rules and methodology see [pedagogy.md#segmentation-methodology
 - `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; new variable names should use the resolved output language and be composed of letters, numbers, and underscores.
 - `collected_in` (string, required) — `lesson_id` where the variable is first collected.
 - `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when `course-prompt.md` references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
-- `effect_scope` (string enum: `local|cross_lesson`, required).
+- `effect_scope` (string constant: `cross_lesson`, required).
 
-Only named variables belong in `global_variable_table`. No-variable `?[...]` interactions do not create table entries. Use named variables only when the learner's answer must be used outside the current lesson; lesson-local branching, examples, feedback, summaries, and inputs stay no-variable. A variable referenced from `course-prompt.md` has `effect_scope: "cross_lesson"` because the Course Prompt can influence more than one lesson; still list `course_prompt` in `used_in` whenever `course-prompt.md` references the variable. For variable *syntax and runtime substitution semantics* (`{{var}}` → stored value or `UNKNOWN`) see [markdownflow.md#variables](markdownflow.md#variables); for variable *strategy and pacing* see [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy).
+Only named variables belong in `global_variable_table`. No-variable `?[...]` interactions do not create table entries. Use named variables only when the learner's answer must be used outside the current lesson; lesson-local branching, examples, feedback, summaries, and inputs stay no-variable. Therefore every table entry has `effect_scope: "cross_lesson"`; a local scope is invalid and should be represented by a no-variable interaction instead. Still list `course_prompt` in `used_in` whenever `course-prompt.md` references the variable. For variable *syntax and runtime substitution semantics* (`{{var}}` → stored value or `UNKNOWN`) see [markdownflow.md#variables](markdownflow.md#variables); for variable *strategy and pacing* see [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy).
 
 ## Lesson Schema
 
