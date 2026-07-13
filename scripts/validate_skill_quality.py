@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from collections.abc import Generator
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -287,7 +288,7 @@ def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
                     )
 
 
-def walk_json(value: object):
+def walk_json(value: object) -> Generator[object, None, None]:
     """Yield every nested JSON value, including the root."""
     yield value
     if isinstance(value, dict):
