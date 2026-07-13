@@ -34,7 +34,7 @@
       "segment_type": "concept",
       "core_point": "Idempotency is the precondition for safe retries.",
       "preserve_block": false,
-      "source_span": {"source_id": "course_material", "start": 0, "end": 118},
+      "source_span": {"source_id": "course_material", "start": 0, "end": 67},
       "transfer_signals": {
         "concept_conflict": "Retries are unsafe unless repeated execution is idempotent.",
         "interaction_intent_cue": "Ask the learner to identify the failure caused by retrying a non-idempotent operation."
