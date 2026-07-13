@@ -65,6 +65,7 @@ TRANSFER_SIGNAL_KEYS = {
     "interaction_intent_cue",
     "compare_cue",
 }
+SOURCE_TEXT_KEYS = {"course_material"}
 
 
 @dataclass
@@ -625,7 +626,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
         for payload_index, payload in enumerate(parsed_payloads):
             if isinstance(payload, dict):
                 for key, value in payload.items():
-                    if isinstance(value, str):
+                    if key in SOURCE_TEXT_KEYS and isinstance(value, str):
                         source_candidates.setdefault(key, []).append(
                             (payload_index, value)
                         )
