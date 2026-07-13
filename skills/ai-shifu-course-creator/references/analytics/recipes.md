@@ -4,6 +4,19 @@ Ready-to-run templates, grouped by scenario. Most examples run through `shifu-cl
 
 For DSL recipes, the bodies omit `shifu_bid` — the CLI injects it from the positional argument. For `credit-detail`, all parameters are flags on the command line; see the Credit Consumption section below for the full reference.
 
+## Contents
+
+- [Course Metadata](#course-metadata-resolve-shifu_bid--current-title)
+- [Course Overview](#course-overview-one-stop-popularity-dashboard)
+- [Progress](#progress)
+- [Orders](#orders)
+- [Ratings](#ratings)
+- [Credit Consumption](#credit-consumption-use-shifu-clipy-credit-detail)
+- [Active Learners](#active-learners)
+- [Audience Profile](#audience-profile)
+- [Per-Learner Top-N](#per-learner-top-n)
+- [Follow-up Q&A](#follow-up-qa)
+
 ## Course Metadata (resolve `shifu_bid ↔ current title`)
 
 > Whenever the user mentions a course by **title**, resolve the current `shifu_bid → title` mapping via the metadata tables **before** issuing any downstream analytics query — `shifu-cli.py list` is a draft snapshot and is not a substitute. Which row is authoritative, the draft fallback, and the historical-title phrasing rule: `tables.md` → "Course title is 'current published', not 'history'".
