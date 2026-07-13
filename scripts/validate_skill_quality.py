@@ -36,8 +36,9 @@ RE_COURSE_PROMPT_ARTIFACT = re.compile(
 )
 RE_LEARNER_RESPONSE_DIRECTIVE = re.compile(
     r"(?:"
-    r"\b(?:ask|have|prompt|invite)\s+(?:the\s+)?learner\s+"
-    r"(?:to\s+(?:answer|choose|select|respond|enter|write|name|describe|share|"
+    r"\b(?:ask|have|prompt|invite)\s+(?:the\s+)?"
+    r"(?:learner|learners|student|students)\s+"
+    r"(?:(?:to\s+)?(?:answer|choose|select|respond|enter|write|name|describe|share|"
     r"identify|decide|rank|reflect|recall|consider)|"
     r"(?:where|what|which|how|why|whether)\b)"
     r"|(?:请|让|要求)(?:学习者|学员|学生).{0,24}"

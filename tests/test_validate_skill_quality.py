@@ -76,6 +76,33 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             any("branch on a learner response" in error for error in issues.errors)
         )
 
+    def test_disabled_policy_rejects_plural_learner_directives(self):
+        prompts = [
+            "Ask learners to choose an option.",
+            "Have students write a short answer.",
+        ]
+
+        for teaching_prompt in prompts:
+            with self.subTest(teaching_prompt=teaching_prompt):
+                issues = validate_skill_quality.IssueBag()
+                validate_skill_quality.validate_disabled_lesson_examples(
+                    [
+                        {
+                            "teaching_prompt": teaching_prompt,
+                            "used_variables": [],
+                        }
+                    ],
+                    Path("example.md"),
+                    issues,
+                )
+
+                self.assertTrue(
+                    any(
+                        "solicit a learner response" in error
+                        for error in issues.errors
+                    )
+                )
+
     def test_disabled_policy_rejects_conditional_response_branches(self):
         prompts = [
             "If the learner chooses A, show the matching explanation.",
