@@ -131,6 +131,24 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     )
                 )
 
+    def test_disabled_policy_rejects_colon_directives(self):
+        issues = validate_skill_quality.IssueBag()
+
+        validate_skill_quality.validate_disabled_lesson_examples(
+            [
+                {
+                    "teaching_prompt": "Ask the learner: Which option fits best?",
+                    "used_variables": [],
+                }
+            ],
+            Path("example.md"),
+            issues,
+        )
+
+        self.assertTrue(
+            any("solicit a learner response" in error for error in issues.errors)
+        )
+
     def test_disabled_policy_rejects_conditional_response_branches(self):
         prompts = [
             "If the learner chooses A, show the matching explanation.",
