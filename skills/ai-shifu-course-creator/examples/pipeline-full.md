@@ -48,7 +48,7 @@
       "segment_type": "concept",
       "core_point": "Classify causes before applying fixes.",
       "preserve_block": false,
-      "source_span": {"source_id": "course_material", "start": 43, "end": 78},
+      "source_span": {"source_id": "course_material", "start": 41, "end": 71},
       "transfer_signals": {
         "concept_conflict": "Jumping to a fix before classifying the cause can hide the real bottleneck.",
         "interaction_intent_cue": "Ask the learner to choose the highest-signal diagnostic check.",
