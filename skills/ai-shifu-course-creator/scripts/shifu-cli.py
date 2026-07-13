@@ -49,7 +49,7 @@ _TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
 # or list every course must page explicitly instead of silently using that
 # first-page default.
 COURSE_LIST_PAGE_SIZE = 50
-MAX_COURSE_PAGES = 200
+MAX_COURSE_PAGES = 10
 
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
