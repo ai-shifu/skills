@@ -530,6 +530,9 @@ def validate_course_prompt_example(
 
 def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
     """Keep executable examples aligned with their documented contracts."""
+    if skill_dir.name != "ai-shifu-course-creator":
+        return
+
     examples_dir = skill_dir / "examples"
     if not examples_dir.is_dir():
         return
