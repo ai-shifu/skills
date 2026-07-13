@@ -73,12 +73,11 @@ Generation and Optimization:
   placement; enabling one does not implicitly enable the others.
 - `disabled` and `unspecified` require an empty `purposes` array.
 - `disabled` forbids interaction syntax and learner-answer variables.
-- `unspecified` does not authorize newly inferred interactions. Only an explicit
-  user instruction or literal MarkdownFlow interaction already present in
-  supplied/pulled source may be retained; transfer cues, ordinary exercises,
-  and default teaching patterns are insufficient.
-- `delivery_constraints.interaction_density` is applied only to interactions
-  permitted by this policy; it never overrides `disabled` or `unspecified`.
+- `unspecified` adds no downstream behavior constraint or override; existing
+  authoring logic, including `delivery_constraints.interaction_density`,
+  applies as-is.
+- `delivery_constraints.interaction_density` never overrides `disabled` or the
+  selected-purpose placements under `enabled`.
 
 ### Minimal Input Payload Example
 

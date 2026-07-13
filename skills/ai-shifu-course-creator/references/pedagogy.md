@@ -22,8 +22,9 @@ Disallowed patterns:
 
 ## Interaction Policy Precedence
 
-The interaction policy resolved by Course Design Intake overrides every default
-teaching pattern and gate in this file:
+The `enabled` and `disabled` interaction policies resolved by Course Design
+Intake override the applicable default teaching patterns and gates in this file;
+`unspecified` leaves them unchanged:
 
 - `enabled`: one or more interaction purposes were selected. Require only the
   selected-purpose placements: `learner_context` at an early course or module
@@ -34,15 +35,11 @@ teaching pattern and gate in this file:
   blocks, solicit no learner answer, collect no learner-answer variables, and
   create no answer-dependent branch. Replace interactive steps with worked
   examples, model-led application, or consolidation.
-- `unspecified`: the author explicitly skipped the interaction question. Do not
-  add an interaction merely to satisfy a default pattern or gate. Only an
-  explicit user instruction or literal MarkdownFlow interaction already present
-  in supplied/pulled source may remain and must follow every applicable rule
-  below; inferred transfer cues, ordinary exercises, and default patterns do not
-  count as source requirements.
+- `unspecified`: add no interaction-policy requirement or override. Apply the
+  teaching patterns and gates in this file as-is.
 
-A `disabled` or non-interactive `unspecified` lesson is not incomplete merely
-because it has no interaction. All non-interaction pedagogy rules remain active.
+A `disabled` lesson is not incomplete merely because it has no interaction. All
+non-interaction pedagogy rules remain active.
 
 ## Teaching Patterns
 
@@ -51,8 +48,9 @@ because it has no interaction. All non-interaction pedagogy rules remain active.
 1. Observable phenomenon
 2. Mechanism explanation
 3. Practical implication
-4. Interactive application when a selected purpose applies to this lesson;
-   otherwise worked application
+4. Learner interaction; under `enabled`, include it only when a selected purpose
+   applies to this lesson, and under `disabled`, replace it with worked
+   application
 5. Summary and action
 
 ### Pattern B: Misconception Repair
@@ -60,14 +58,16 @@ because it has no interaction. All non-interaction pedagogy rules remain active.
 1. Surface common misconception
 2. Explain why it sounds plausible
 3. Correct with mechanism and boundary
-4. Run an interaction check when a selected purpose applies to this lesson;
-   otherwise show a worked boundary check
+4. Run an interaction check; under `enabled`, include it only when a selected
+   purpose applies to this lesson, and under `disabled`, show a worked boundary
+   check instead
 5. Apply corrected model to a real case
 
 ### Pattern C: Comparison-Driven Learning
 
-1. Baseline response capture when a selected purpose applies to this lesson;
-   otherwise establish a worked baseline
+1. Baseline response capture; under `enabled`, include it only when a selected
+   purpose applies to this lesson, and under `disabled`, establish a worked
+   baseline instead
 2. Alternate scenario or constraint
 3. Side-by-side interpretation
 4. Updated decision path
@@ -75,11 +75,12 @@ because it has no interaction. All non-interaction pedagogy rules remain active.
 ## Cognitive Techniques
 
 Increase learner understanding through targeted cognitive moves rather than
-information dumping. Each lesson should include at least one of these moves.
-When `pre_content_thinking` or `lesson_end_self_check` requires an interaction in
-a lesson, use at least one move as a deepening interaction. Otherwise express
-the move as a model-led demonstration, contrast, worked decision, or action
-synthesis without soliciting learner input.
+information dumping. By default, each lesson should include at least one of
+these moves as a deepening interaction. Under `enabled`, require an interaction
+only where a selected purpose applies; when `pre_content_thinking` or
+`lesson_end_self_check` applies, use at least one move as that interaction.
+Under `disabled`, express the move as a model-led demonstration, contrast,
+worked decision, or action synthesis without soliciting learner input.
 
 1. **Calibration prompt** — Ask learners to make a concrete judgment before explanation.
 2. **Boundary framing** — Clarify where the concept works and where it breaks.
@@ -91,10 +92,11 @@ synthesis without soliciting learner input.
 
 Every lesson must satisfy a minimum teaching loop and a few cross-cutting constraints:
 
-- **Minimum teaching loop**: when a selected purpose requires an interaction in
-  the current lesson, setup → explanation → interaction → close; otherwise,
-  setup → explanation → worked application or consolidation → close. A lesson
-  missing a phase required by its resolved interaction policy is incomplete.
+- **Minimum teaching loop**: by default, setup → explanation → interaction →
+  close. Under `enabled`, use that loop only when a selected purpose applies to
+  the current lesson; otherwise use setup → explanation → worked application or
+  consolidation → close. Under `disabled`, use the non-interactive loop for
+  every lesson. A lesson missing a required phase is incomplete.
 - **One core question per lesson**: each lesson resolves exactly one teachable question.
 - **Action tasks** must be either immediately executable by the learner or explicitly linked to a downstream lesson — no orphan actions.
 - **Variable naming** must be consistent and traceable across lessons (new variables should use the resolved output language; use letters, numbers, and underscores; cross-check with [data-contracts.md#variable-table](data-contracts.md#variable-table)).
@@ -173,9 +175,7 @@ If structure is weak, output a fallback segmentation and mark uncertain spans fo
 
 These are the *teaching* rules around variables — when to collect, how often, how to ensure they matter. For variable *syntax* see [markdownflow.md#variables](markdownflow.md#variables); for variable *schema* see [data-contracts.md#variable-table](data-contracts.md#variable-table).
 
-- Under `disabled`, collect no learner-answer variables. Under `unspecified`,
-  collect one only for an explicitly retained interaction whose answer must
-  leave the current lesson.
+- Under `disabled`, collect no learner-answer variables.
 - Prefer at most one variable collection per module; distribute, don't front-load.
 - Max five interactions per lesson (recommended three to four).
 - No more than three consecutive variable collections before learner-visible feedback.
@@ -194,9 +194,9 @@ These are the *teaching* rules around variables — when to collect, how often, 
 
 These are the *teaching* rules around interactions. For interaction *syntax* see [markdownflow.md#interactions](markdownflow.md#interactions).
 
-- These rules apply to `enabled` lessons and to interactions explicitly retained
-  under `unspecified`. They do not require an interaction under `disabled` or
-  `unspecified`.
+- These rules are the default interaction design. Under `enabled`, selected
+  purposes replace the blanket per-lesson interaction requirement. Under
+  `disabled`, they require no interaction.
 - Every selected-purpose placement is present at its defined scope. An
   interaction serving `pre_content_thinking` or `lesson_end_self_check` includes
   a deepening move (calibration, boundary check, or misconception correction —

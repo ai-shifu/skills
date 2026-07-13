@@ -198,15 +198,10 @@ Use the answers as course-design constraints:
   `lesson_end_self_check` requires a self-check at each lesson end. `enabled`
   does not by itself require an interaction in every lesson beyond those
   selected-purpose placements. Under `disabled`, emit no `?[]` blocks, solicit
-  no learner answer, and collect no learner-answer variables. Under
-  `unspecified`, do not add an interaction only to satisfy a default pattern or
-  gate. Only an explicit user instruction or an existing literal MarkdownFlow
-  interaction in supplied/pulled source counts as a source requirement; an
-  inferred `interaction_intent_cue`, ordinary exercise, or default teaching
-  pattern does not. Keep all non-interaction gates active in all three policies;
-  any interaction retained under `unspecified` must still pass the
-  interaction-specific gates. Pass the normalized `interaction_policy`
-  unchanged to Generation and Optimization.
+  no learner answer, and collect no learner-answer variables. `unspecified`
+  adds no interaction-policy constraint or override; keep the existing
+  authoring behavior as-is. Pass the normalized `interaction_policy` unchanged
+  to Generation and Optimization.
 - **Listen Mode**: pure slides → disable it and do not ask the question.
   Otherwise the question must mention the extra AI-Shifu credit consumption;
   unanswered → disabled; an explicit enable/disable decision carries into the
@@ -320,7 +315,7 @@ Segment list per `references/data-contracts.md#segment-schema` (each segment car
 All gates must pass before Orchestration declares lessons complete:
 
 - **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `references/markdownflow.md#preservation`; no unresolved placeholders and no learner-answer variable references without a variable-backed interaction and metadata contract; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `references/markdownflow.md#deterministic-blocks`; every image URL must be on the `res.ai-shifu.cn` domain — fixed images wrapped in a single-line deterministic block, HTML-view images expressed as instruction-style directives with the `(必须原样保留)` URL phrase per `references/markdownflow.md#images`.
-- **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, the interaction-policy-specific minimum teaching loop, and visual-text pairing — all per `references/pedagogy.md#interaction-policy-precedence`, `#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`. Under `enabled`, require only the placements implied by the selected purposes, then enforce max five interactions per lesson, variable-collection pacing, viewpoint branching where applicable, and a visible instructional effect for every interaction. Under `disabled`, `unspecified`, or an `enabled` lesson to which no selected purpose applies, use the non-interactive loop and do not fail the lesson for missing interactions. Any interaction retained under `unspecified` must pass every applicable interaction gate.
+- **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, the interaction-policy-specific minimum teaching loop, and visual-text pairing — all per `references/pedagogy.md#interaction-policy-precedence`, `#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`. Under `enabled`, require only the placements implied by the selected purposes, then enforce max five interactions per lesson, variable-collection pacing, viewpoint branching where applicable, and a visible instructional effect for every interaction. Under `disabled`, or an `enabled` lesson to which no selected purpose applies, use the non-interactive loop and do not fail the lesson for missing interactions. Under `unspecified`, apply the existing pedagogical gates unchanged.
 
 Recompute lessons that fail any gate; do not partially-pass.
 
@@ -367,10 +362,7 @@ if a lesson naturally asks "which of these apply?", default to multi-select
 unless the source or user says only one answer is allowed. Under `disabled`,
 convert learner-response steps into worked examples, model-led application, or
 consolidation; emit no `?[]` blocks or learner-answer variables. Under
-`unspecified`, do not add an interaction solely because a baseline pattern
-contains one; preserve one only when the user explicitly requests it or the
-supplied/pulled source already contains literal MarkdownFlow interaction syntax,
-then apply the normal interaction rules.
+`unspecified`, apply the baseline as-is without an interaction-policy override.
 
 ### Single-Lesson Generation Strategy
 
