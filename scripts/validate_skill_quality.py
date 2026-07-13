@@ -357,6 +357,45 @@ def validate_segment_example(
             )
 
 
+def validate_global_variable_example(
+    variable: dict[str, object], md_file: Path, issues: IssueBag
+) -> None:
+    required = {"name", "collected_in", "used_in", "effect_scope"}
+    missing = sorted(required - variable.keys())
+    if missing:
+        issues.add_error(
+            f"{md_file}: global variable example {variable.get('name')} "
+            f"is missing required fields: {', '.join(missing)}"
+        )
+        return
+
+    if not isinstance(variable["name"], str) or not variable["name"].strip():
+        issues.add_error(
+            f"{md_file}: global variable example name must be a non-empty string"
+        )
+    if (
+        not isinstance(variable["collected_in"], str)
+        or not variable["collected_in"].strip()
+    ):
+        issues.add_error(
+            f"{md_file}: global variable example collected_in must be a "
+            "non-empty string"
+        )
+    used_in = variable["used_in"]
+    if not isinstance(used_in, list) or any(
+        not isinstance(item, str) or not item.strip() for item in used_in
+    ):
+        issues.add_error(
+            f"{md_file}: global variable example used_in must be an array "
+            "of non-empty strings"
+        )
+    if variable["effect_scope"] != "cross_lesson":
+        issues.add_error(
+            f"{md_file}: global variable examples must use "
+            "effect_scope 'cross_lesson'"
+        )
+
+
 def course_prompt_template_lines(
     skill_dir: Path, issues: IssueBag
 ) -> list[str]:
@@ -490,10 +529,9 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                     "segment_type" in value or "core_point" in value
                 ):
                     validate_segment_example(value, md_file, issues)
-                if "effect_scope" in value and value["effect_scope"] != "cross_lesson":
-                    issues.add_error(
-                        f"{md_file}: global variable examples must use "
-                        "effect_scope 'cross_lesson'"
+                if {"collected_in", "used_in", "effect_scope"} & value.keys():
+                    validate_global_variable_example(
+                        value, md_file, issues
                     )
 
         for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content):
