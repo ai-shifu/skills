@@ -314,6 +314,49 @@ def source_texts_for_payload(
     return source_texts
 
 
+def validate_source_span_example(
+    source_span: object,
+    owner: str,
+    source_texts: dict[str, str],
+    md_file: Path,
+    issues: IssueBag,
+) -> None:
+    if not isinstance(source_span, dict):
+        issues.add_error(f"{md_file}: {owner} must be an object")
+        return
+
+    source_id = source_span.get("source_id")
+    start = source_span.get("start")
+    end = source_span.get("end")
+    valid_offsets = (
+        isinstance(source_id, str)
+        and bool(source_id)
+        and isinstance(start, int)
+        and not isinstance(start, bool)
+        and start >= 0
+        and isinstance(end, int)
+        and not isinstance(end, bool)
+        and end > start
+    )
+    if not valid_offsets:
+        issues.add_error(
+            f"{md_file}: {owner} must contain source_id and valid "
+            "start/end offsets"
+        )
+        return
+
+    source_text = source_texts.get(source_id)
+    if source_text is None:
+        issues.add_error(
+            f"{md_file}: {owner} references unknown string source {source_id!r}"
+        )
+    elif end > len(source_text):
+        issues.add_error(
+            f"{md_file}: {owner} end {end} exceeds {source_id!r} length "
+            f"{len(source_text)}"
+        )
+
+
 def validate_segment_example(
     segment: dict[str, object],
     source_texts: dict[str, str],
@@ -354,43 +397,13 @@ def validate_segment_example(
             "a boolean"
         )
 
-    source_span = segment["source_span"]
-    if not isinstance(source_span, dict):
-        issues.add_error(
-            f"{md_file}: segment example {segment['segment_id']} source_span "
-            "must be an object"
-        )
-    else:
-        source_id = source_span.get("source_id")
-        start = source_span.get("start")
-        end = source_span.get("end")
-        valid_offsets = (
-            isinstance(source_id, str)
-            and bool(source_id)
-            and isinstance(start, int)
-            and not isinstance(start, bool)
-            and start >= 0
-            and isinstance(end, int)
-            and not isinstance(end, bool)
-            and end > start
-        )
-        if not valid_offsets:
-            issues.add_error(
-                f"{md_file}: segment example {segment['segment_id']} source_span "
-                "must contain source_id and valid start/end offsets"
-            )
-        else:
-            source_text = source_texts.get(source_id)
-            if source_text is None:
-                issues.add_error(
-                    f"{md_file}: segment example {segment_id} source_span "
-                    f"references unknown string source {source_id!r}"
-                )
-            elif end > len(source_text):
-                issues.add_error(
-                    f"{md_file}: segment example {segment_id} source_span end "
-                    f"{end} exceeds {source_id!r} length {len(source_text)}"
-                )
+    validate_source_span_example(
+        segment["source_span"],
+        f"segment example {segment_id} source_span",
+        source_texts,
+        md_file,
+        issues,
+    )
 
     transfer_signals = segment["transfer_signals"]
     if not isinstance(transfer_signals, dict) or not transfer_signals:
@@ -634,6 +647,24 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                         if isinstance(segment, dict):
                             validate_segment_example(
                                 segment, source_texts, md_file, issues
+                            )
+                course_index = value.get("course_index")
+                if isinstance(course_index, list):
+                    for lesson in course_index:
+                        if not isinstance(lesson, dict):
+                            continue
+                        span_map = lesson.get("source_span_map")
+                        if not isinstance(span_map, list):
+                            continue
+                        lesson_id = lesson.get("lesson_id")
+                        for map_index, source_span in enumerate(span_map):
+                            validate_source_span_example(
+                                source_span,
+                                f"course_index lesson {lesson_id!r} "
+                                f"source_span_map[{map_index}]",
+                                source_texts,
+                                md_file,
+                                issues,
                             )
                 variables = value.get("global_variable_table")
                 if isinstance(variables, list):

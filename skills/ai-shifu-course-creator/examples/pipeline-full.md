@@ -76,7 +76,7 @@
       "lesson_id": "L01",
       "lesson_title": "Observe and Classify",
       "core_question": "Which signal separates symptom from root cause?",
-      "source_span_map": [{"source_id": "course_material", "start": 0, "end": 78}]
+      "source_span_map": [{"source_id": "course_material", "start": 0, "end": 71}]
     }
   ],
   "global_variable_table": [
