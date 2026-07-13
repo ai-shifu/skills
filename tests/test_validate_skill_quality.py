@@ -299,8 +299,8 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                 "## Fillable Template\n\n```markdown\n# Role\nFilled\n```\n",
                 encoding="utf-8",
             )
-            (examples_dir / "markdown-prompt.md").write_text(
-                """# Markdown Teaching Prompt Example
+            example_file = examples_dir / "markdown-prompt.md"
+            example_content = """# Markdown Teaching Prompt Example
 
 ```json
 {"interaction_policy":{"mode":"disabled","purposes":[]}}
@@ -310,7 +310,9 @@ class InteractionPolicyValidationTests(unittest.TestCase):
 Ask the learner to choose a path.
 ?[A | B]
 ```
-""",
+"""
+            example_file.write_text(
+                example_content,
                 encoding="utf-8",
             )
             issues = validate_skill_quality.IssueBag()
@@ -324,6 +326,29 @@ Ask the learner to choose a path.
                 any(
                     "solicit a learner response" in error
                     for error in issues.errors
+                )
+            )
+
+            example_file.write_text(
+                example_content.replace("```markdown", "```md"),
+                encoding="utf-8",
+            )
+            alias_issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_example_contracts(
+                skill_dir, alias_issues
+            )
+
+            self.assertTrue(
+                any(
+                    "interaction syntax" in error
+                    for error in alias_issues.errors
+                )
+            )
+            self.assertTrue(
+                any(
+                    "solicit a learner response" in error
+                    for error in alias_issues.errors
                 )
             )
 

@@ -30,7 +30,7 @@ RE_JSON_FENCE = re.compile(
     re.MULTILINE | re.DOTALL,
 )
 RE_MARKDOWN_FENCE = re.compile(
-    r"^```markdown[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+    r"^```(?:markdown|md)[ \t]*\n(?P<body>.*?)^```[ \t]*$",
     re.MULTILINE | re.DOTALL,
 )
 RE_COURSE_PROMPT_ARTIFACT = re.compile(
