@@ -513,13 +513,20 @@ def validate_course_prompt_example(
     if headings != english_headings:
         heading_set = set(headings)
         english_heading_set = set(english_headings)
-        common_headings = heading_set & english_heading_set
+        english_instruction_lines = [
+            line
+            for line in prompt_template_lines
+            if not line.startswith("# ") and "XXX" not in line
+        ]
+        has_english_instructions = any(
+            line in prompt for line in english_instruction_lines
+        )
         if heading_set == english_heading_set:
             issues.add_error(
                 f"{md_file}: Course Prompt example headings are out of order; "
                 f"expected: {', '.join(english_headings)}"
             )
-        elif english_headings and len(common_headings) >= len(english_headings) - 2:
+        elif english_headings and has_english_instructions:
             missing_headings = sorted(english_heading_set - heading_set)
             unexpected_headings = sorted(heading_set - english_heading_set)
             issues.add_error(
