@@ -14,11 +14,10 @@ class CourseCreatorRouterTests(unittest.TestCase):
         cls.router = SKILL_MD.read_text(encoding="utf-8")
 
     def route_line(self, intent_prefix: str) -> str:
-        return next(
-            line
-            for line in self.router.splitlines()
-            if line.startswith(f"| {intent_prefix}")
-        )
+        for line in self.router.splitlines():
+            if line.startswith(f"| {intent_prefix}"):
+                return line
+        self.fail(f"Intent prefix {intent_prefix!r} not found in router table")
 
     def test_main_file_is_a_small_router(self):
         self.assertLess(len(self.router.splitlines()), 150)
@@ -117,6 +116,11 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("before the first user-visible response", self.router)
         self.assertIn("## Reporting", self.router)
         self.assertIn("#deployment-report", self.router)
+        self.assertIn("references/report-template.md", self.router)
+        self.assertIn(
+            "When fallback mode applies, also read",
+            self.router,
+        )
 
     def test_safe_deployment_branches_new_and_existing_targets(self):
         deployment = (

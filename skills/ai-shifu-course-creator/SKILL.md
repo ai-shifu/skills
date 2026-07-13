@@ -70,6 +70,7 @@ Apply `references/report-template.md#formatting-rules` to every user-facing phas
 - `references/optimization-workflow.md` — prompt audit, repair, Course Prompt, and validation.
 - `references/deployment-workflow.md` — deploy, publish, sync, management, and verification.
 - `references/analytics/workflow.md` — analytics CLI, privacy gate, and validation.
+- `references/report-template.md` — shared phase-report structures and the `#formatting-rules` contract.
 
 ### Detailed foundations
 
@@ -79,7 +80,7 @@ Apply `references/report-template.md#formatting-rules` to every user-facing phas
 
 ## Examples
 
-Read only the example matching the active route:
+Read the example matching the active route. When fallback mode applies, also read `examples/fallback-mode.md` in addition to the route example.
 
 - End to end: `examples/pipeline-full.md`
 - Segmentation: `examples/segmentation-only.md`

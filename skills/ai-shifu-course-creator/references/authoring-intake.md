@@ -55,7 +55,7 @@ Use the answers as course-design constraints:
 The phases are **not** a flat linear pipeline. **`course-target.md#resolve-the-course-target` gates the whole
 pipeline.** **Orchestration is an end-to-end driver** that internally calls Segmentation and Generation. Only Optimization and Deployment actually run in linear sequence after Orchestration completes. Load `optimization-workflow.md` and `deployment-workflow.md` only when the selected path needs them.
 
-```
+```text
 Course request
    │
    ▼
@@ -91,7 +91,7 @@ Segmentation, Generation, and Optimization can each be invoked standalone. The m
 
 Run the full pipeline from raw material to a live deployed course.
 
-0. **Resolve the course target (first, always)** — resolve new-vs-edit via `verify` + `find-title`; if editing an existing course, `pull` it before authoring. See **`course-target.md#resolve-the-course-target`**.
+0. **Resolve the course target (first, always)** — follow **`course-target.md#resolve-the-course-target`**; if editing an existing course, `pull` it before authoring.
 1. **Orchestration** drives Segmentation and Generation end-to-end, then runs cross-lesson gating to produce Teaching Prompts + course_index + variable table.
 2. **Optimization** audits and improves Orchestration's output, plus produces the Course Prompt and SEO course description.
 3. **Deployment** writes the course directory, builds, imports, and publishes to the AI-Shifu platform.
