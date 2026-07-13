@@ -10,12 +10,12 @@ See `pedagogy.md#segmentation-methodology` for the full methodology (cleanup, im
 
 ### Outputs
 
-Segment list per `data-contracts.md#segment-schema` (each segment carries id, type, core point, preservation flag, source span, and transfer signals), plus lesson boundary candidates with one core question each.
+Segment list per `data-contracts.md#segment-schema` (each segment carries id, type, core point, preservation flag, source span, and transfer signals), plus lesson boundary candidates with one core question each. The schema owns the canonical transfer-signal keys and value constraints; their teaching meanings come from `pedagogy.md#transfer-signals`.
 
 ### Validation
 
 - Segment output covers all valid source spans in traceable order.
-- `transfer_signals` object populated and usable downstream (schema per `data-contracts.md#segment-schema`).
+- `transfer_signals` object is non-empty, schema-valid, includes every applicable canonical cue from `pedagogy.md#transfer-signals`, and omits inapplicable cues.
 - Preservation, one-core-question, and information-fidelity constraints pass — see `markdownflow.md#preservation` and `pedagogy.md#lesson-loop`.
 
 ---
@@ -38,7 +38,7 @@ Segment list per `data-contracts.md#segment-schema` (each segment carries id, ty
 All gates must pass before Orchestration declares lessons complete:
 
 - **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `markdownflow.md#preservation`; no unresolved placeholders and no learner-answer variable references without a variable-backed interaction and metadata contract; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `markdownflow.md#deterministic-blocks`; every image URL must be on the `res.ai-shifu.cn` domain — fixed images wrapped in a single-line deterministic block, HTML-view images expressed as instruction-style directives with the `(必须原样保留)` URL phrase per `markdownflow.md#images`.
-- **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, the interaction-policy-specific minimum teaching loop, and visual-text pairing — all per `pedagogy.md#interaction-policy-precedence`, `#lesson-loop`, `#interaction-design`, `#variable-strategy`, and `#visual-text-coordination`. Under `enabled`, require only the placements implied by the selected purposes, then enforce max five interactions per lesson, variable-collection pacing, viewpoint branching where applicable, and a visible instructional effect for every interaction. Under `disabled`, or an `enabled` lesson to which no selected purpose applies, use the non-interactive loop and do not fail the lesson for missing interactions. Under `unspecified`, apply the existing pedagogical gates unchanged.
+- **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, the policy-resolved teaching loop, and delivery-mode visual-text behavior — all per `pedagogy.md#interaction-policy-precedence`, `pedagogy.md#lesson-loop`, `pedagogy.md#interaction-design`, `pedagogy.md#variable-strategy`, and `pedagogy.md#visual-text-coordination`. At this phase, verify the resulting placements and substitutions rather than redefining policy semantics. Also enforce the five-interaction maximum, variable-collection pacing, distinct branching for viewpoint/path interactions or explicit `require_branching_feedback`, and an immediate feedback or visible instructional effect for every other interaction.
 
 Recompute lessons that fail any gate; do not partially-pass.
 

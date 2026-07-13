@@ -35,13 +35,8 @@ answering it.
 
 Use the answers as course-design constraints:
 
-- **Usage scenario → content format.** Personalized AI self-study → illustrated
-  text with fuller explanations and visual-text pairing. Only interactive
-  classroom slides → apply the **Slide-Only Generation Override** (under
-  `generation-workflow.md#generation`) to lesson content, the Course Prompt, and Listen Mode.
-  Question explicitly skipped → infer the format from the source material
-  structure instead of inventing a fixed default.
-- **Interaction choices → interaction policy and placement.** Resolve one of three policies before Orchestration: one or more purposes selected → `enabled`; none selected → `disabled`; question explicitly skipped → `unspecified`. Under `enabled`, place early learner-context collection for adaptive teaching, pre-content prompts for thinking or misconception correction, and lesson-end self-checks for assessment only as selected. `learner_context` requires collection at an early course or module point, `pre_content_thinking` requires a prompt before the relevant explanation, and `lesson_end_self_check` requires a self-check at each lesson end. `enabled` does not by itself require an interaction in every lesson beyond those selected-purpose placements. Under `disabled`, emit no `?[]` blocks, solicit no learner answer, and collect no learner-answer variables. `unspecified` adds no interaction-policy constraint or override; keep the existing authoring behavior as-is. Pass the normalized `interaction_policy` unchanged to Generation and Optimization.
+- **Usage scenario → content format.** Personalized AI self-study → illustrated text with fuller explanations and visual-text pairing. Only interactive classroom slides → apply the **Slide-Only Generation Override** (under `generation-workflow.md#slide-only-generation-override`) to lesson content, the Course Prompt, and Listen Mode. Question explicitly skipped → infer the format from the source material structure instead of inventing a fixed default.
+- **Interaction choices → normalized interaction policy.** Resolve one policy before Orchestration: one or more purposes selected → `enabled` with exactly those selected purposes; none selected → `disabled` with an empty `purposes` array; question explicitly skipped → `unspecified` with an empty `purposes` array. Validate the shape and enums against `data-contracts.md#interaction-policy`, then pass the normalized object unchanged to Generation and Optimization. Placement, teaching effect, and non-interactive substitutions are defined only by `pedagogy.md#interaction-policy-precedence`.
 - **Listen Mode**: pure slides → disable it and do not ask the question.
   Otherwise the question must mention the extra AI-Shifu credit consumption;
   unanswered → disabled; an explicit enable/disable decision carries into the

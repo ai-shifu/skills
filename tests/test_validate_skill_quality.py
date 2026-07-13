@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sys
 import tempfile
 import unittest
@@ -9,6 +10,47 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import validate_skill_quality  # noqa: E402
+
+
+COURSE_CREATOR_REFERENCES = (
+    REPO_ROOT / "skills" / "ai-shifu-course-creator" / "references"
+)
+
+
+def markdown_section(markdown: str, title: str) -> str:
+    """Return one Markdown section, including any lower-level subsections."""
+    heading = re.search(
+        rf"(?m)^(?P<marks>#{{1,6}})[ \t]+{re.escape(title)}[ \t]*$",
+        markdown,
+    )
+    if heading is None:
+        raise AssertionError(f"missing Markdown section: {title}")
+
+    level = len(heading.group("marks"))
+    remainder = markdown[heading.end() :]
+    next_heading = re.search(rf"(?m)^#{{1,{level}}}[ \t]+", remainder)
+    return remainder[: next_heading.start()] if next_heading else remainder
+
+
+def markdown_table_first_column(section: str, header: str) -> list[str]:
+    """Read canonical values from a Markdown table identified by its header."""
+    lines = section.splitlines()
+    for index, line in enumerate(lines):
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if not cells or cells[0].strip("`").casefold() != header.casefold():
+            continue
+
+        values: list[str] = []
+        for row in lines[index + 2 :]:
+            if not row.lstrip().startswith("|"):
+                break
+            first_cell = row.strip().strip("|").split("|", 1)[0].strip()
+            values.append(first_cell.strip("`"))
+        return values
+
+    raise AssertionError(f"missing Markdown table with first header: {header}")
 
 
 class InteractionPolicyValidationTests(unittest.TestCase):
@@ -469,6 +511,105 @@ After the learner answers, branch to the matching guidance.
                     for error in issues.errors
                 )
             )
+
+
+class PedagogyContractTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.pedagogy_path = COURSE_CREATOR_REFERENCES / "pedagogy.md"
+        cls.pedagogy = cls.pedagogy_path.read_text(encoding="utf-8")
+        cls.data_contracts = (
+            COURSE_CREATOR_REFERENCES / "data-contracts.md"
+        ).read_text(encoding="utf-8")
+
+    def test_public_pedagogy_anchors_stay_stable(self):
+        expected_anchors = {
+            "pedagogy",
+            "script-style",
+            "interaction-policy-precedence",
+            "lesson-loop",
+            "teaching-patterns",
+            "pattern-a-evidence-chain",
+            "pattern-b-misconception-repair",
+            "pattern-c-comparison-driven-learning",
+            "cognitive-techniques",
+            "interaction-design",
+            "variable-strategy",
+            "visual-text-coordination",
+            "segmentation-methodology",
+            "objective",
+            "core-rules",
+            "segment-types",
+            "transfer-signals",
+            "failure-handling",
+            "optimization-methodology",
+            "principles",
+            "issue-taxonomy",
+            "execution-sequence",
+        }
+
+        actual_anchors = validate_skill_quality.github_heading_slugs(
+            self.pedagogy_path
+        )
+
+        self.assertTrue(
+            expected_anchors.issubset(actual_anchors),
+            f"missing public pedagogy anchors: "
+            f"{sorted(expected_anchors - actual_anchors)}",
+        )
+
+    def test_transfer_signal_keys_match_pedagogy_data_and_validator(self):
+        transfer_section = markdown_section(self.pedagogy, "Transfer Signals")
+        pedagogy_keys = markdown_table_first_column(transfer_section, "Key")
+
+        segment_section = markdown_section(self.data_contracts, "Segment Schema")
+        data_contract_block = re.search(
+            r"(?ms)^- `transfer_signals`.*?"
+            r"^[ \t]+The teaching meaning of these cues is defined in",
+            segment_section,
+        )
+        self.assertIsNotNone(data_contract_block)
+        data_contract_keys = re.findall(
+            r"(?m)^[ \t]+- `([a-z_]+)`[ \t]*$",
+            data_contract_block.group(0),
+        )
+
+        validator_keys = validate_skill_quality.TRANSFER_SIGNAL_KEYS
+        self.assertEqual(len(pedagogy_keys), len(set(pedagogy_keys)))
+        self.assertEqual(len(data_contract_keys), len(set(data_contract_keys)))
+        self.assertEqual(set(pedagogy_keys), validator_keys)
+        self.assertEqual(set(data_contract_keys), validator_keys)
+
+    def test_interaction_matrix_has_only_canonical_modes_and_purposes(self):
+        policy_section = markdown_section(
+            self.pedagogy, "Interaction Policy Precedence"
+        )
+        modes = markdown_table_first_column(policy_section, "Mode")
+        purposes = markdown_table_first_column(policy_section, "Purpose")
+
+        self.assertEqual(len(modes), len(set(modes)))
+        self.assertEqual(len(purposes), len(set(purposes)))
+        self.assertEqual(
+            set(modes), validate_skill_quality.INTERACTION_POLICY_MODES
+        )
+        self.assertEqual(
+            set(purposes), validate_skill_quality.INTERACTION_PURPOSES
+        )
+
+    def test_authority_links_cover_prompt_and_delivery_boundaries(self):
+        scope = markdown_section(self.pedagogy, "Scope and Authority Boundaries")
+        interaction = markdown_section(self.pedagogy, "Interaction Design")
+        variables = markdown_section(self.pedagogy, "Variable Strategy")
+        visuals = markdown_section(self.pedagogy, "Visual-Text Coordination")
+
+        self.assertIn("(course-prompt.md)", scope)
+        self.assertIn("(markdownflow.md#interactions)", interaction)
+        self.assertIn("(markdownflow.md#variables)", variables)
+        self.assertIn("(data-contracts.md#variable-table)", variables)
+        self.assertIn(
+            "(generation-workflow.md#slide-only-generation-override)",
+            visuals,
+        )
 
 
 if __name__ == "__main__":

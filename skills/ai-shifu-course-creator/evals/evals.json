@@ -67,6 +67,51 @@
         "It runs intake, authoring phases, prompt validation, and safe new-course deployment in order.",
         "Analytics runs only after the live course target exists."
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "材料只有两课时：第一课“识别风险信号”，第二课“选择处置动作”。Course Design Intake 已完成，我只选择在课程开头收集 learner_context。请直接给出两课时的 Teaching Prompt 设计概要，标明各课的教学循环和交互安排；不要因此给每节课都加互动，也不要增加课前思考或课末自检。",
+      "expected_output": "Applies the single enabled purpose only at its canonical placement without expanding interaction coverage.",
+      "files": [],
+      "expectations": [
+        "The interaction policy is enabled with exactly learner_context selected; pre_content_thinking and lesson_end_self_check remain unselected.",
+        "Learner context is collected at an early course or module point without making every lesson interactive.",
+        "Lessons without the selected-purpose placement use a worked application or consolidation in the lesson loop instead of an added interaction.",
+        "The response contains exactly two lesson outlines and explicitly identifies the teaching loop and interaction arrangement for each lesson."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Course Design Intake 已明确选择 disabled。原课节先问“当前风险更可能来自哪里？”，再用 ?[%{{risk_source}} 人员 | 流程 | 工具] 收集答案并按答案分支。请直接输出改写后的 Teaching Prompt、used_variables 和 global_variable_table：把该选择题改成一个完整的 worked application，不能询问学员答案，也不能保留回答变量或按回答分支。",
+      "expected_output": "Converts disabled interaction slots into model-led worked application while removing all answer-dependent behavior.",
+      "files": [],
+      "expectations": [
+        "The disabled policy is applied with no learner-answer variables: used_variables and global_variable_table are both empty.",
+        "The result contains no ?[] interaction, learner-answer request, learner-answer variable, or answer-dependent branch.",
+        "The former interaction becomes a worked application, model-led example, or consolidation that preserves the teaching function."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "设计两节课：第一节先让学员选 A 或 B，并立刻给出对应解释，这个答案后面不再使用；另问一个学习目标，第二节和 Course Prompt 都要用到，而且 Course Prompt 可能在目标采集前先运行。请展示两种交互写法、global_variable_table，以及目标尚未填写时的处理。",
+      "expected_output": "Separates lesson-local answers from cross-lesson state and preserves the UNKNOWN substitution fallback.",
+      "files": [],
+      "expectations": [
+        "The lesson-local A/B interaction uses no-variable ?[...] syntax and creates no global_variable_table entry.",
+        "The learning goal uses one named variable whose global_variable_table entry is collected_in L01, has cross_lesson scope, and lists the later lesson and course_prompt in used_in.",
+        "Any pre-collection reference binds the substituted value and branches on the literal UNKNOWN fallback rather than testing variable availability or readiness."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。请直接给出两种结构化生成结果：标准 AI 授课与纯课堂幻灯片，并说明已提供图片的理解、上传和嵌入处理（无需真实上传）。两种结果都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
+      "expected_output": "Applies the standard and slide-only visual contracts separately while keeping raw graphics code out of both prompts.",
+      "files": [],
+      "expectations": [
+        "The standard non-slide-only Teaching Prompt pairs the core visual with a complete textual explanation and handles the provided image through the existing understand-upload-embed workflow.",
+        "The pure classroom-slide result follows the Slide-Only Generation Override with concise projected content and does not require AI narration or a full explanatory paragraph after the image.",
+        "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
+      ]
     }
   ]
 }

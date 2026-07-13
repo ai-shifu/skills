@@ -112,6 +112,8 @@ Changes applied:
 - File references:
 - Minimal-edit rationale:
 
+For the existing `Interaction branching check` below, require distinct branching only for viewpoint/path interactions or when `require_branching_feedback` is explicit. In all other cases, absence of branching is not an issue; mark the check as passing when every interaction that is present provides immediate feedback or another visible instructional effect.
+
 Validation:
 
 - Syntax check: `pass|fail`

@@ -6,9 +6,9 @@ Generate a runnable Teaching Prompt for each lesson.
 
 ### Teaching Pattern Baseline
 
-Apply the patterns and constraints in `pedagogy.md#teaching-patterns`, `#cognitive-techniques`, `#variable-strategy`, `#interaction-design`, and `#visual-text-coordination` unless content requires a justified variation.
+Apply the patterns and constraints in `pedagogy.md#teaching-patterns`, `pedagogy.md#cognitive-techniques`, `pedagogy.md#variable-strategy`, `pedagogy.md#interaction-design`, and `pedagogy.md#visual-text-coordination` unless content requires a justified variation.
 
-Resolve the Course Design Intake interaction policy before applying those patterns. Under `enabled`, explicitly choose the interaction type before writing the `?[]` line per `prompt-contracts.md#prompt-contracts` Hard Rule 3, but add it only where a selected purpose applies; if a lesson naturally asks "which of these apply?", default to multi-select unless the source or user says only one answer is allowed. Under `disabled`, convert learner-response steps into worked examples, model-led application, or consolidation; emit no `?[]` blocks or learner-answer variables. Under `unspecified`, apply the baseline as-is without an interaction-policy override.
+Consume the normalized Course Design Intake interaction policy only after it passes `data-contracts.md#interaction-policy`. Apply its teaching effect and substitution from `pedagogy.md#interaction-policy-precedence`; Generation does not reinterpret the modes or purposes. Whenever that policy calls for an interaction, choose its type before writing the `?[]` line per `prompt-contracts.md#prompt-contracts` Hard Rule 3. If a lesson naturally asks "which of these apply?", default to multi-select unless the source or user says only one answer is allowed.
 
 ### Single-Lesson Generation Strategy
 
@@ -17,7 +17,7 @@ Required anchors per lesson:
 1. Opening paragraph with a teaching-start function (`prompt-contracts.md#prompt-contracts` Hard Rule 6) — not a copied chapter / lesson title or directory label.
 2. Opening objective plus slide-style visual cover.
 3. Evidence-chain explanation.
-4. When a selected interaction purpose applies to this lesson, an effective interaction with visible downstream effect. Otherwise, a worked application or consolidation step with visible instructional value and no learner input.
+4. The interaction slot or non-interactive substitute required by `pedagogy.md#interaction-policy-precedence`, with visible instructional value.
 5. At least one reusable deliverable.
 6. Lesson close with summary or decision checkpoint.
 
@@ -29,7 +29,7 @@ When Course Design Intake resolves to pure slides / classroom interactive slides
 
 - Treat each lesson as a small slide deck controlled by a human instructor.
 - Generate slide-facing blocks only: slide title, 2-4 short bullets, and a visual/layout instruction. When the interaction policy permits an interaction, also include its prompt, options, and concise feedback states.
-- Keep permitted interactions runnable with the normal MarkdownFlow syntax, but keep the surrounding content presentation-oriented. Under `disabled`, omit interaction prompts, options, feedback branches, and learner-answer variables entirely.
+- Keep policy-permitted interactions runnable with the normal MarkdownFlow syntax, but keep the surrounding content presentation-oriented. When the policy calls for the non-interactive substitute, render only the slide-facing content defined by `pedagogy.md#interaction-policy-precedence`.
 - Do not include AI narration directives or learner-facing lecture prose such as
   "explain to the learner", "walk through", "向学习者说明", "讲解", "用文字解释",
   "讲清", or long paragraphs intended for the AI to speak.
@@ -57,4 +57,4 @@ When the author supplies image assets — local files (any format incl. heic/hei
    - **You can see the image** (attached in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position per `pedagogy.md#visual-text-coordination`.
    - **You cannot see the image** (only a file path / URL, or your model is text-only): **stop and ask the user**. Do not guess from the filename. Offer two options: (a) the user provides a one-sentence description per image (you will pass it as `--alt`), or (b) the user renames each file to a semantically meaningful name so you can infer the topic. Proceed only after one of these is in place.
 2. **Upload via `shifu-cli.py upload-image`** (`--file` for local files — auto-preprocessed, or `--url` for remote; always pass `--course-dir` and `--alt`) and capture the printed `https://res.ai-shifu.cn/<uuid32>` URL. Full flags, preprocessing, and manifest behavior: `cli/cli-reference.md#image-upload`.
-3. **Embed per `markdownflow.md#images`.** Default to 3.1 (deterministic-wrapped standard markdown); use 3.2 (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout — express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`), never mix deterministic blocks into the instruction. The explanatory paragraph immediately after the image is mandatory.
+3. **Embed per `markdownflow.md#images`.** Default to 3.1 (deterministic-wrapped standard markdown); use 3.2 (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout — express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`), never mix deterministic blocks into the instruction. The explanatory paragraph immediately after the image is mandatory in standard, non-slide-only lessons. Pure classroom slides follow the Slide-Only Generation Override instead and use concise slide labels without an AI explanation paragraph.
