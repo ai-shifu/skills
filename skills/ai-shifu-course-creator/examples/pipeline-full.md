@@ -36,7 +36,7 @@
       "segment_type": "concept",
       "core_point": "Metric drift signals a systemic shift, not just noise.",
       "preserve_block": false,
-      "source_span": {"source_id": "course_material", "start": 0, "end": 42},
+      "source_span": {"source_id": "course_material", "start": 0, "end": 39},
       "transfer_signals": {
         "learner_hook": "Start from a metric that changed unexpectedly.",
         "visual_cue": "Show a baseline metric line followed by a sustained shift.",
