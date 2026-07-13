@@ -440,9 +440,13 @@ def validate_global_variable_example(
         )
         return
 
-    if not isinstance(variable["name"], str) or not variable["name"].strip():
+    variable_name = variable["name"]
+    if not isinstance(variable_name, str) or not re.fullmatch(
+        r"\w+", variable_name
+    ):
         issues.add_error(
-            f"{md_file}: global variable example name must be a non-empty string"
+            f"{md_file}: global variable example name must contain only "
+            "letters, numbers, and underscores"
         )
     if (
         not isinstance(variable["collected_in"], str)
