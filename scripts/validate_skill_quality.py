@@ -504,7 +504,7 @@ def validate_course_prompt_example(
                 f"{md_file}: Course Prompt example headings are out of order; "
                 f"expected: {', '.join(english_headings)}"
             )
-        elif english_headings and len(common_headings) >= len(english_headings) - 1:
+        elif english_headings and len(common_headings) >= len(english_headings) - 2:
             missing_headings = sorted(english_heading_set - heading_set)
             unexpected_headings = sorted(heading_set - english_heading_set)
             issues.add_error(
