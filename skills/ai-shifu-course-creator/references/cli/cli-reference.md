@@ -101,7 +101,7 @@ export <shifu_bid> [-o file.json]             # Export course as JSON
 find-title <keyword>                          # Search courses by current title
 ```
 
-`find-title` matches the keyword case-insensitively (whitespace-normalized) against **current** published and draft titles only — never historical / renamed titles — and prints the matches grouped. Use it for targeted Step 0 target resolution instead of dumping the whole `list`.
+`find-title` matches the keyword case-insensitively (whitespace-normalized) against **current** published and draft titles only — never historical / renamed titles — and prints the matches grouped. Use it for targeted course-target resolution instead of dumping the whole `list`.
 
 `show` (without `outline_bid`), `create`, `import`, `publish`, and `pull` all print a `Verification URLs:` block. Lines included depend on the command: `publish` and `show` add a `Published URL:` line (the public student-facing address — `<base>/c/<bid>` without `preview=true`); `create`, `import`, and `pull` omit it (`create` / `import` because the course is not yet published). Each URL is followed by a one-line `# ...` Chinese hint that explains the click jumps to AI 师傅 and what the link is for; it mentions AI 师傅 credit consumption only when the linked action can consume credits. Per-lesson preview URLs are no longer printed — if you need one, use `show <shifu_bid>` to find the `outline_bid` and build `<base>/c/<bid>?preview=true&lessonid=<outline_bid>` on demand. Copy printed URLs as-is when reporting; never reconstruct them from a template.
 

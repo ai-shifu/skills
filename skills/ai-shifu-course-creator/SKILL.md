@@ -108,7 +108,7 @@ These are the seven red-line rules every Teaching Prompt and Course Prompt must 
 
 7. **Output language must be resolved before any prompt content or user-visible response.** Run Language Resolution per `references/data-contracts.md#language-resolution` first; the user's invocation language counts as `prompt_language_detection` (priority 4). Examples and templates in this skill are written in English for canonical illustration only — they never override the resolved language. All user-visible output (reports, phase summaries, status notes, artifact labels, handoff instructions, error explanations) and all learner-facing course content follow the resolved language; stable machine-facing identifiers (JSON keys, file names, CLI flags, API fields, MarkdownFlow syntax, code, URLs, verbatim quotes) stay unchanged, and human-facing concept labels follow the [Canonical Term Translation Table](#canonical-term-translation-table). Before finalizing or deploying a course directory, run the Pre-Deploy Language Audit in `references/data-contracts.md#language-resolution`.
 
-## Step 0 — Resolve the Course Target (MANDATORY before any authoring)
+## Resolve the Course Target (MANDATORY before any authoring)
 
 **This runs first for every course-creation or editing request — before
 Orchestration, before proposing any course architecture/outline, before writing a
@@ -144,7 +144,7 @@ then push via the converging loop in **Deployment → Version Sync Workflow**.
 
 ## Course Design Intake (before Orchestration)
 
-Run this intake after **Step 0** and before Orchestration for: Path A end-to-end
+Run this intake after **Resolve the Course Target** and before Orchestration for: Path A end-to-end
 course creation, Path B author-only generation, and existing-course edits that
 change the course structure, lesson design, or interaction strategy. Do **not**
 run it for deploy-only, analytics, login, publish, management, or pure
@@ -199,14 +199,14 @@ Use the answers as course-design constraints:
 
 ## Pipeline Overview
 
-The phases are **not** a flat linear pipeline. **Step 0 (above) gates the whole
+The phases are **not** a flat linear pipeline. **Resolve the Course Target (above) gates the whole
 pipeline.** **Orchestration is an end-to-end driver** that internally calls Segmentation and Generation. Only Optimization and Deployment actually run in linear sequence after Orchestration completes.
 
 ```
 Course request
    │
    ▼
-Step 0: Resolve Course Target            ← MANDATORY front guard: login + find-title + branch
+Resolve Course Target                    ← MANDATORY front guard: login + find-title + branch
    │   (new vs edit existing; pull the existing course BEFORE authoring)
    ▼
 Raw material
@@ -238,7 +238,7 @@ Segmentation, Generation, and Optimization can each be invoked standalone — se
 
 Run the full pipeline from raw material to a live deployed course.
 
-0. **Step 0 front guard (first, always)** — resolve new-vs-edit via `verify` + `find-title`; if editing an existing course, `pull` it before authoring. See **## Step 0**.
+0. **Resolve the course target (first, always)** — resolve new-vs-edit via `verify` + `find-title`; if editing an existing course, `pull` it before authoring. See **## Resolve the Course Target**.
 1. **Orchestration** drives Segmentation and Generation end-to-end, then runs cross-lesson gating to produce Teaching Prompts + course_index + variable table.
 2. **Optimization** audits and improves Orchestration's output, plus produces the Course Prompt and SEO course description.
 3. **Deployment** writes the course directory, builds, imports, and publishes to the AI-Shifu platform.
@@ -252,7 +252,7 @@ Run Segmentation through Optimization to produce optimized Teaching Prompts, a C
 
 ### Path C: Deploy Only
 
-Run Deployment alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform. **Run Step 0 first** (`## Step 0`) to resolve new-vs-existing — deploy as `import --new`, or `pull` + edit + push into an existing course.
+Run Deployment alone to deploy pre-existing Teaching Prompts and a Course Prompt to the AI-Shifu platform. **Resolve the course target first** (`## Resolve the Course Target`) to resolve new-vs-existing — deploy as `import --new`, or `pull` + edit + push into an existing course.
 
 ### Path D: Manage Existing
 
@@ -397,10 +397,10 @@ Per-lesson schema in `references/data-contracts.md#lesson-schema`.
 When the author supplies image assets — local files (any format incl. heic/heif) or remote URLs — three steps apply *within* Generation (and any later phase that touches the same lessons):
 
 1. **Understand each image before placing it.** You cannot choose the lesson, position, or alt text without knowing what the image shows. Two regimes:
-   - **You can see the image** (attached in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position per `references/pedagogy.md#visual-text-coordination` and `references/course-prompt.md` Rules 10/11.
+   - **You can see the image** (attached in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position per `references/pedagogy.md#visual-text-coordination`.
    - **You cannot see the image** (only a file path / URL, or your model is text-only): **stop and ask the user**. Do not guess from the filename. Offer two options: (a) the user provides a one-sentence description per image (you will pass it as `--alt`), or (b) the user renames each file to a semantically meaningful name so you can infer the topic. Proceed only after one of these is in place.
 2. **Upload via `shifu-cli.py upload-image`** (`--file` for local files — auto-preprocessed, or `--url` for remote; always pass `--course-dir` and `--alt`) and capture the printed `https://res.ai-shifu.cn/<uuid32>` URL. Full flags, preprocessing, and manifest behavior: `references/cli/cli-reference.md#image-upload`.
-3. **Embed per `references/markdownflow.md#images`.** Default to 3.1 (deterministic-wrapped standard markdown); use 3.2 (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout — express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`), never mix deterministic blocks into the instruction. The explanatory paragraph immediately after the image is mandatory (`references/course-prompt.md` Rule 11).
+3. **Embed per `references/markdownflow.md#images`.** Default to 3.1 (deterministic-wrapped standard markdown); use 3.2 (instruction-style HTML) only when the lesson genuinely needs width control, alignment, a figure caption, or side-by-side layout — express every lock through wording (`必须原样保留` / `必须原样输出` / `不要改写`), never mix deterministic blocks into the instruction. The explanatory paragraph immediately after the image is mandatory.
 
 ---
 
@@ -428,16 +428,16 @@ Apply Optimization audits against the full constraint set:
 
 ### Course Prompt
 
-Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **filling the template at `references/course-prompt.md#fillable-template` section-by-section, not by free-form composition**. Each of the six required sections has a Must-Specify list in `references/course-prompt.md#authoring-rules` (Rules 1–11) — every listed bullet must appear in the generated `course_prompt`'s corresponding section (in the resolved output language). Do not omit a Must-Specify bullet just because the source material does not explicitly demand it; these bullets are platform-level constraints.
+Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **copying and filling `references/course-prompt.md#fillable-template`, not by free-form composition**. Preserve the six sections, their order, and every non-placeholder instruction; replace every `XXX` with course-specific content and render the result in the resolved output language.
 
-Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues) instead of re-asking the author. Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
+Auto-fill placeholders from existing artifacts (`course_profile`, `delivery_constraints`, resolved target language per `references/data-contracts.md#language-resolution`, Segmentation visual cues). Do not duplicate per-lesson interaction logic or variable collection there — those belong in Teaching Prompts.
 
 ### Validation
 
 - Conclusion and overall risk level presented first (report structure per `references/report-template.md`).
 - Full review against `references/review-checklist.md` passes, or remaining gaps are explicitly listed as non-blocking suggestions.
 - A `course_prompt` artifact is produced when input includes course material, with all six required canonical sections present.
-- Generated `course_prompt` covers every Must-Specify bullet in `references/course-prompt.md` Rules 1–11 (audit each canonical section against its rule list — especially the Slides section, which is the most commonly under-filled section).
+- Generated `course_prompt` has no unresolved `XXX`, retains every non-placeholder template instruction, and applies delivery-mode behavior consistent with the Course Design Intake.
 
 ---
 
@@ -458,7 +458,7 @@ The standard end-to-end flow chains deploy + publish: build → import (deploy) 
 
 ### Authentication
 
-**Verify first — never re-login blindly.** The verify / exit-code / 5-SMS-per-day rules live in **Step 0**; the full login flow is in `references/cli/cli-reference.md#agent-login-flow`. Always use CLI commands. Never make raw HTTP/API calls directly.
+**Verify first — never re-login blindly.** The verify / exit-code / 5-SMS-per-day rules live in **Resolve the Course Target**; the full login flow is in `references/cli/cli-reference.md#agent-login-flow`. Always use CLI commands. Never make raw HTTP/API calls directly.
 
 ### Course Directory
 
@@ -502,7 +502,7 @@ All commands documented in `references/cli/cli-reference.md` (deployment: `build
 ### Version Sync Workflow
 
 The **front guard** that fixes the target (new-vs-edit, login + `find-title`,
-pulling the existing course) is **Step 0 — run it first**. This section covers
+pulling the existing course) is **Resolve the Course Target — run it first**. This section covers
 what happens once the target is an existing course you have pulled: the
 **pull → edit → push** loop that converges like `git pull` before `git push`.
 
@@ -557,7 +557,7 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 
 ### Workflow
 
-1. **Resolve credentials** — run `shifu-cli.py verify`, per the verify-first rules in **Step 0**.
+1. **Resolve credentials** — run `shifu-cli.py verify`, per the verify-first rules in **Resolve the Course Target**.
 2. **Resolve the course** — run `shifu-cli.py list` (or `shifu-cli.py find-title <keyword>`) to map `shifu_bid ↔ course name`. **If the user mentioned a course by title**, always resolve the *current* `shifu_bid → title` via Course Metadata recipes 0a / 0b in `references/analytics/recipes.md` before issuing downstream queries — `list` is a draft snapshot and can show stale or historical titles. Never report a historical title as the course's current name.
 3. **Resolve the outline** (only for lesson-level dimensions) — run `shifu-cli.py show <shifu_bid>` to map `outline_item_bid → name / position`. Skipping this makes outline-dimension numbers unreadable.
 4. **Run DSL queries** — `shifu-cli.py analytics-query <shifu_bid> --dsl '<json-body>'` (or `--dsl-file query.json` for long bodies).
@@ -573,7 +573,7 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 
 ### Validation
 
-- Token resolved through the Step 0 / Deployment authentication path, not a hand-rolled lookup.
+- Token resolved through the course-target resolution / Deployment authentication path, not a hand-rolled lookup.
 - When the user mentioned a course by title, the current `shifu_bid → title` was confirmed via Course Metadata Recipe 0a / 0b before the downstream query ran. Historical titles were never substituted for current ones.
 - `shifu_bid` and outline mappings established before any course-level query.
 - DSL body matches grammar in `dsl.md`; filters reflect the user's intent (e.g. `status = 502` for "paid", not `>= 502`).
