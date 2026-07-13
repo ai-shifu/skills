@@ -9,6 +9,7 @@
   "existing_teaching_prompt": "## Objective\nUnderstand retry policy.\n---\n?[%{{answer}} yes | no]\n---\nGreat job.",
   "course_material": "Learner must differentiate transient vs permanent failure and choose a matching retry stop rule.",
   "course_author_name": "Priya Shah",
+  "target_language": "en-US",
   "optimization_constraints": {
     "max_interactions": 4,
     "require_branching_feedback": true

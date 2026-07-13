@@ -512,6 +512,7 @@ def validate_course_prompt_example(
     prompt_template_lines: list[str],
     md_file: Path,
     issues: IssueBag,
+    is_localized: bool = False,
 ) -> None:
     if "XXX" in prompt:
         issues.add_error(
@@ -546,20 +547,12 @@ def validate_course_prompt_example(
     if headings != english_headings:
         heading_set = set(headings)
         english_heading_set = set(english_headings)
-        english_instruction_lines = [
-            line
-            for line in prompt_template_lines
-            if not line.startswith("# ") and "XXX" not in line
-        ]
-        has_english_instructions = any(
-            line in prompt for line in english_instruction_lines
-        )
         if heading_set == english_heading_set:
             issues.add_error(
                 f"{md_file}: Course Prompt example headings are out of order; "
                 f"expected: {', '.join(english_headings)}"
             )
-        elif english_headings and has_english_instructions:
+        elif english_headings and not is_localized:
             missing_headings = sorted(english_heading_set - heading_set)
             unexpected_headings = sorted(heading_set - english_heading_set)
             issues.add_error(
@@ -623,6 +616,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             parsed_payloads.append(payload)
 
         source_candidates: dict[str, list[tuple[int, str]]] = {}
+        target_language_candidates: list[tuple[int, str]] = []
         for payload_index, payload in enumerate(parsed_payloads):
             if isinstance(payload, dict):
                 for key, value in payload.items():
@@ -630,10 +624,23 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                         source_candidates.setdefault(key, []).append(
                             (payload_index, value)
                         )
+                    if key == "target_language" and isinstance(value, str):
+                        target_language_candidates.append((payload_index, value))
 
         for payload_index, payload in enumerate(parsed_payloads):
             source_texts = source_texts_for_payload(
                 payload_index, source_candidates
+            )
+            target_language = source_texts_for_payload(
+                payload_index,
+                (
+                    {"target_language": target_language_candidates}
+                    if target_language_candidates
+                    else {}
+                ),
+            ).get("target_language")
+            is_localized = bool(target_language) and not (
+                target_language.lower().startswith("en")
             )
             for value in walk_json(payload):
                 if not isinstance(value, dict):
@@ -683,15 +690,24 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                             prompt_template_lines,
                             md_file,
                             issues,
+                            is_localized=is_localized,
                         )
                     else:
                         issues.add_error(
                             f"{md_file}: course_prompt example must be a string"
                         )
 
+        artifact_is_localized = bool(target_language_candidates) and all(
+            not language.lower().startswith("en")
+            for _, language in target_language_candidates
+        )
         for match in RE_COURSE_PROMPT_ARTIFACT.finditer(content):
             validate_course_prompt_example(
-                match.group("body"), prompt_template_lines, md_file, issues
+                match.group("body"),
+                prompt_template_lines,
+                md_file,
+                issues,
+                is_localized=artifact_is_localized,
             )
 
 
