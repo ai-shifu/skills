@@ -7,7 +7,7 @@ Authoritative source for **Teaching Prompt** design constraints: script style, l
 Use each concept's authoritative source instead of restating its contract in multiple workflow files:
 
 | Concept | Authoritative source | Boundary |
-|---|---|---|
+| --- | --- | --- |
 | Teaching behavior and instructional alternatives | This file | Defines what the Teaching Prompt should teach and how non-interactive alternatives preserve that intent. |
 | Course-level AI persona, style, and cross-lesson use | [course-prompt.md](course-prompt.md) | Defines Course Prompt design; this file only decides when lesson behavior depends on it. |
 | MarkdownFlow syntax and runtime semantics | [markdownflow.md](markdownflow.md) | Defines parsing, variables, `UNKNOWN`, interactions, branching, image-file embedding, and deterministic blocks. |
@@ -22,12 +22,9 @@ A Teaching Prompt is the per-lesson MarkdownFlow document the AI engine reads at
 
 Reference patterns:
 
-Use these examples as models for imperative, model-guiding language. Follow their structure and intent, but adapt the wording to the lesson rather than treating the phrases as required templates.
-
 - "Explain to the learner …"
 - "Ask the learner to …"
 - "Have the learner choose …"
-- "After collecting {{var}}, carry the learner's answer into the later lesson or Course Prompt that needs it …"
 
 Disallowed patterns:
 
@@ -40,7 +37,7 @@ Disallowed patterns:
 Course Design Intake resolves the author's selection into one of the three modes below. This matrix is the authoritative definition of each mode's instructional effect and replacement behavior.
 
 | Mode | Selection state | Instructional effect | Non-interactive alternative |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `enabled` | One or more purposes selected | Execute interactions only at the selected-purpose placements. Selecting one purpose does not make other purposes or a blanket per-lesson interaction mandatory. | At unselected-purpose slots, use the relevant worked application, model-led demonstration, or consolidation. |
 | `disabled` | The author explicitly selected no interactions | Emit no MarkdownFlow interaction blocks (`?[]`), solicit no learner answer, collect no learner-answer variables, and create no answer-dependent branch. | Use worked examples, model-led application, or consolidation wherever an interaction slot would otherwise appear. |
 | `unspecified` | No explicit interaction choice | Add no interaction-policy requirement or override; apply the default teaching rules in this file as-is. | Use an alternative only when the applicable default teaching rule already calls for it. |
@@ -48,7 +45,7 @@ Course Design Intake resolves the author's selection into one of the three modes
 When the mode is `enabled`, selected purposes map to exactly these placements:
 
 | Purpose | Placement | Instructional role |
-|---|---|---|
+| --- | --- | --- |
 | `learner_context` | An early course or module point | Collect context that improves later teaching. |
 | `pre_content_thinking` | Before the relevant explanation | Elicit an initial judgment that the explanation can refine. |
 | `lesson_end_self_check` | At each lesson end | Let the learner check or consolidate the lesson's core understanding. |
@@ -135,8 +132,7 @@ These are the teaching rules for permitted interactions. For interaction syntax 
 - A viewpoint or path-choice interaction whose answer is meant to drive distinct next steps must branch by option. Use no more than one `viewpoint_check` per lesson unless justified.
 - Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.
 - For input interactions, the pre-interaction question must be more specific than the short `...` placeholder.
-- Use no more than five interactions per lesson; three to four are recommended.
-
+- Use no more than five interactions per lesson.
 ### Variable Strategy
 
 These are the teaching decisions for whether to collect an answer, how often to collect it, and how to ensure it matters. Variable syntax, substitution, and `UNKNOWN` runtime behavior are authoritative in [markdownflow.md#variables](markdownflow.md#variables); variable fields and naming constraints are authoritative in [data-contracts.md#variable-table](data-contracts.md#variable-table).
@@ -148,13 +144,15 @@ These are the teaching decisions for whether to collect an answer, how often to 
 
 ### Visual-Text Coordination
 
-The Teaching Prompt hard rules in [prompt-contracts.md](prompt-contracts.md) govern every slide and image-file scenario. Within a Teaching Prompt, call every generated or described screen-facing teaching unit a slide. Use `image` only for an actual image file or uploaded image asset. Diagrams, charts, and other graphics are slide content rather than images unless they are supplied as image files. Do not embed raw SVG, HTML, Mermaid, PlantUML, or Graphviz markup in a Teaching Prompt by default. When the author explicitly requests one of these raw formats, follow that request; the explicit author instruction overrides the default. Otherwise, express generated slide instructions as natural-language slide directions.
+The Teaching Prompt hard rules in [prompt-contracts.md](prompt-contracts.md) govern every slide and image-file scenario. Within a Teaching Prompt, call every generated or described screen-facing teaching unit a slide. Use `image` only for an actual image file or uploaded image asset. Diagrams, charts, and other graphics are slide content rather than images unless they are supplied as image files.
+
+Do not embed raw SVG, HTML, Mermaid, PlantUML, or Graphviz markup in a Teaching Prompt by default. When the author explicitly requests one of these raw formats, follow that request; the explicit author instruction overrides the default. Otherwise, express generated slide instructions as natural-language slide directions.
 
 | Scenario | Authority and requirements |
 |---|---|
 | Standard non-slide-only teaching | Keep every core concept paired with a slide and textual explanation. The slide carries structural prompting; the text carries the complete explanation and remains understandable when the learner has not seen the slide. Pair each slide instruction with a brief explanation of what it should convey, and use natural-language slide placeholders when no image file is supplied. |
 | Author-provided image file | Follow the existing image-file understanding, upload, and embed process in [generation-workflow.md#working-with-author-provided-images](generation-workflow.md#working-with-author-provided-images) and the image-file syntax in [markdownflow.md#images](markdownflow.md#images). In standard teaching, follow the embedded image file with the complete explanatory paragraph. If the course is slide-only, the next row overrides that paragraph requirement. |
-| Pure classroom slides | Follow the [Slide-Only Generation Override](generation-workflow.md#slide-only-generation-override). Produce concise, projection-ready slide content; do not require AI narration or a full standalone explanatory paragraph paired with every slide. |
+| Pure slides | Follow the [Slide-Only Generation Override](generation-workflow.md#slide-only-generation-override). Produce concise, projection-ready slide content; do not require AI narration or a full standalone explanatory paragraph paired with every slide. |
 
 ## Pipeline Methodologies
 
