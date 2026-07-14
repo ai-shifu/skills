@@ -204,6 +204,7 @@ Apply these rules deterministically:
 5. When any legacy value conflicts with an explicitly supplied canonical value, keep the canonical value and record every ignored legacy path and value in the phase report.
 6. Reject an unrecognized member inside `chapter_hint`, `generation_constraints`, `teaching_constraints`, or `optimization_constraints` with a targeted unsupported-field explanation instead of silently discarding it.
 7. Compatibility normalization changes input shape only; it does not widen a phase's output scope or reintroduce legacy keys into output.
+8. After processing recognized members, remove every empty legacy wrapper. If any legacy wrapper remains non-empty, stop with a targeted explanation that lists each remaining path; a successful handoff contains no legacy wrapper.
 
 ## Output Contract
 

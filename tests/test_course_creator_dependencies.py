@@ -1108,6 +1108,27 @@ class AuthoringResponsibilityTests(unittest.TestCase):
         self.assertNotIn("keep the canonical field", authoring_controls)
         self.assertNotIn("unrecognized member", authoring_controls)
 
+    def test_compatibility_normalization_removes_all_legacy_wrappers(self):
+        compatibility = markdown_heading_section(
+            self.data_contracts, "Input Compatibility Normalization"
+        )
+
+        for wrapper in (
+            "chapter_hint",
+            "generation_constraints",
+            "teaching_constraints",
+            "optimization_constraints",
+        ):
+            with self.subTest(wrapper=wrapper):
+                self.assertIn(f"`{wrapper}`", compatibility)
+        self.assertIn("remove every empty legacy wrapper", compatibility)
+        self.assertIn("any legacy wrapper remains non-empty", compatibility)
+        self.assertIn("lists each remaining path", compatibility)
+        self.assertIn(
+            "a successful handoff contains no legacy wrapper",
+            compatibility,
+        )
+
     def test_authoring_constraints_preserve_canonical_limits_and_output_shape(self):
         constraints = markdown_heading_section(
             self.data_contracts, "Authoring Constraints"
