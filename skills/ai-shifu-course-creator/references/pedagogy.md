@@ -117,7 +117,7 @@ When `pre_content_thinking` or `lesson_end_self_check` is selected and applies, 
 
 ### Interaction Design
 
-These are the teaching rules for permitted interactions. For interaction syntax and branching runtime behavior, see [markdownflow.md#interactions](markdownflow.md#interactions).
+These are the teaching rules for permitted interactions. For interaction syntax, see [markdownflow.md#interactions](markdownflow.md#interactions); for branching runtime behavior, see [markdownflow.md#branching-on-user-input](markdownflow.md#branching-on-user-input).
 
 - Include every selected-purpose placement at its defined scope.
 - Interaction prompts must be concrete and directly answerable.

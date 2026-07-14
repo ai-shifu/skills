@@ -604,6 +604,7 @@ class PedagogyContractTests(unittest.TestCase):
 
         self.assertIn("(course-prompt.md)", scope)
         self.assertIn("(markdownflow.md#interactions)", interaction)
+        self.assertIn("(markdownflow.md#branching-on-user-input)", interaction)
         self.assertIn("(markdownflow.md#variables)", variables)
         self.assertIn("(data-contracts.md#variable-table)", variables)
         self.assertIn(
