@@ -131,7 +131,7 @@ These are the teaching rules for permitted interactions. For interaction syntax 
   - When the prompt means "which of these apply?", prefer multi-select unless the source or author explicitly limits the learner to one answer.
   - For multi-select, use combined feedback, prioritization, tailored examples, or coverage of selected items; do not require an exhaustive branch for every option combination.
 - Before writing an interaction, decide whether its answer leaves the current lesson and apply [Variable Strategy](#variable-strategy).
-- Every instructional interaction must trigger immediate feedback or a visible current-lesson effect, such as a branching explanation, tailored example, practice difficulty, feedback, summary, deliverable, or reflection.
+- Every instructional interaction must be followed immediately by feedback tailored to the learner's response.
 - A viewpoint or path-choice interaction whose answer is meant to drive distinct next steps must branch by option. Use no more than one `viewpoint_check` per lesson unless justified.
 - Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.
 - For input interactions, the pre-interaction question must be more specific than the short `...` placeholder.
@@ -144,7 +144,6 @@ These are the teaching decisions for whether to collect an answer, how often to 
 - Collection eligibility follows the interaction policy; `disabled` collects no learner-answer variables.
 - Create a named variable only when the learner's answer must leave the current lesson: it is referenced by the [Course Prompt](course-prompt.md), reused in another lesson, or used for cross-lesson personalization, depth control, examples, summaries, or deliverable variation. Every named variable must have that course-level or cross-lesson utility; do not create throwaway variables for continue buttons, confirmations, or lesson-local choices.
 - Use a no-variable interaction for lesson-local answers, including current-lesson branching, examples, feedback, summaries, deliverables, reflection, and free-text input.
-- Prefer at most one variable collection per module. Distribute global collection across lessons rather than front-loading it, and allow no more than three consecutive variable collections before learner-visible feedback.
 - Reuse a global variable when possible. Do not recollect the same variable unless it is explicitly marked as a staged comparison, and prevent semantic duplicates even when names differ.
 
 ### Visual-Text Coordination
@@ -222,7 +221,7 @@ If structure is weak, output a fallback segmentation and mark uncertain spans fo
 - Visual requirement missing
 - Variable or syntax risk
 
-Other instructional interactions satisfy their effect requirement through immediate feedback or another visible current-lesson effect; they do not require option-by-option branching.
+Other instructional interactions satisfy their effect requirement through the immediate, response-specific feedback required by [Interaction Design](#interaction-design); they do not require option-by-option branching.
 
 #### Execution Sequence
 

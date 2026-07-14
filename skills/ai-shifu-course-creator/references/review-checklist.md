@@ -51,7 +51,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - Input interactions include a specific pre-interaction question plus a shorter `...` placeholder.
 - Interaction presence, placement, and deepening match the resolved policy in `pedagogy.md#interaction-policy-precedence`.
 - Branching paths are distinct for viewpoint/path interactions and whenever `require_branching_feedback` is explicit.
-- Instructional interaction results affect later content through immediate feedback or a visible downstream effect.
+- Every instructional interaction is followed immediately by feedback tailored to the learner's response.
 - Repeated interaction semantics avoided across lessons unless comparison intent is explicit.
 - Variable-backed interactions are used only when the answer must leave the current lesson.
 - Lesson-local branching, examples, feedback, summaries, and inputs use no-variable `?[...]` and do not introduce `{{var}}`.
@@ -65,7 +65,6 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - No unresolved placeholders in learner-facing content.
 - Variable references in Teaching Prompt and Course Prompt content are written as substituted values; references that may run before the learner assigns a value handle the literal `UNKNOWN` fallback.
 - Variable-based branches state the substituted value in a natural sentence first, then use natural-language condition phrasing.
-- No more than three consecutive variable collections before feedback.
 - Every variable has cross-lesson or Course Prompt utility.
 - No throwaway named variables for continue buttons, confirmations, choices, or inputs used only inside the current lesson.
 
