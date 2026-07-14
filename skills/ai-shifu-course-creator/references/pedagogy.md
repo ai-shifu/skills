@@ -16,8 +16,6 @@ Use each concept's authoritative source instead of restating its contract in mul
 | Phase execution | [generation-workflow.md](generation-workflow.md), [segmentation-orchestration.md](segmentation-orchestration.md), and [optimization-workflow.md](optimization-workflow.md) | Applies the authoritative rules at each pipeline stage without changing them. |
 | Teaching Prompt and Course Prompt red lines | [prompt-contracts.md](prompt-contracts.md) | Defines hard output boundaries that this file cannot override. |
 
-`interaction_density` remains a structured authoring control; this file does not assign it numeric thresholds or a new placement mapping. It never overrides `disabled` or the selected-purpose placements under `enabled`. Under `unspecified`, it continues to participate in the existing default authoring behavior without adding a policy override.
-
 ## Script Style
 
 A Teaching Prompt is the per-lesson MarkdownFlow document the AI engine reads at runtime. It is a *script that guides teaching*, not a polished learner-facing lecture. Write in imperative, model-guiding language.

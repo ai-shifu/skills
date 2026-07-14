@@ -53,7 +53,6 @@ Provide one of:
 
 ```json
 {
-  "interaction_density": "low|medium|high",
   "platform_limits": ["no_iframe", "markdown_only"],
   "must_cover_topics": ["topic-a", "topic-b"],
   "avoid_topics": ["topic-x"],
@@ -80,7 +79,7 @@ This section owns only the normalized data shape and enum constraints. Course De
 - `purposes` is required, duplicate-free, and may contain only `learner_context`, `pre_content_thinking`, and `lesson_end_self_check`.
 - `enabled` requires a non-empty `purposes` array; `disabled` and `unspecified` require an empty `purposes` array.
 
-The teaching effects, purpose placements, non-interactive substitutions, and precedence over `delivery_constraints.interaction_density` are defined in [pedagogy.md#interaction-policy-precedence](pedagogy.md#interaction-policy-precedence).
+The teaching effects, purpose placements, and non-interactive substitutions are defined in [pedagogy.md#interaction-policy-precedence](pedagogy.md#interaction-policy-precedence).
 
 ### Minimal Input Payload Example
 
@@ -103,7 +102,6 @@ The teaching effects, purpose placements, non-interactive substitutions, and pre
     "assessment_mode": "project"
   },
   "delivery_constraints": {
-    "interaction_density": "medium",
     "must_cover_topics": ["core workflow", "failure handling"]
   }
 }

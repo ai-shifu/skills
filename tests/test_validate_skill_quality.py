@@ -611,6 +611,40 @@ class PedagogyContractTests(unittest.TestCase):
             visuals,
         )
 
+    def test_removed_authoring_controls_do_not_reappear(self):
+        scan_roots = [
+            COURSE_CREATOR_REFERENCES.parent,
+            REPO_ROOT / "scripts",
+            REPO_ROOT / "tests",
+        ]
+        removed_terms = {
+            "interaction_" + "density",
+            "interaction " + "density",
+            "interaction-" + "density",
+            "互动" + "密度",
+            "交互" + "密度",
+        }
+        matches = []
+
+        for root in scan_roots:
+            for path in root.rglob("*"):
+                if not path.is_file() or path.suffix not in {
+                    ".json",
+                    ".md",
+                    ".py",
+                    ".yaml",
+                    ".yml",
+                }:
+                    continue
+                content = path.read_text(encoding="utf-8")
+                for term in removed_terms:
+                    if term.casefold() in content.casefold():
+                        matches.append(
+                            (str(path.relative_to(REPO_ROOT)), term)
+                        )
+
+        self.assertEqual(matches, [])
+
 
 if __name__ == "__main__":
     unittest.main()
