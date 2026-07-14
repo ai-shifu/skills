@@ -965,6 +965,31 @@ class AuthoringResponsibilityTests(unittest.TestCase):
             authoring_controls,
         )
 
+    def test_normalization_errors_stop_before_fallback_selection(self):
+        authoring_controls = self.references[
+            Path("references/authoring-controls.md")
+        ]
+
+        self.assertIn(
+            "only after normalization succeeds",
+            authoring_controls,
+        )
+        self.assertIn("non-conflicting input", authoring_controls)
+        self.assertIn(
+            "Unresolved normalization conflicts and unsupported legacy members "
+            "stop before execution-mode selection",
+            authoring_controls,
+        )
+        self.assertIn(
+            "compatibility normalization explicitly produces "
+            "`execution_mode: fallback`",
+            authoring_controls,
+        )
+        self.assertNotIn(
+            "input is incomplete, conflicting, or low quality",
+            authoring_controls,
+        )
+
     def test_phase_handoffs_have_distinct_schemas(self):
         expected_fields = {
             "Segmentation Output": {

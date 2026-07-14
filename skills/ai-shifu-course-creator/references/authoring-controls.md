@@ -10,8 +10,10 @@ Consume the normalization result and any reported conflict or unsupported-field 
 
 ## Execution Modes
 
-- **Standard mode** is the default when input quality supports the complete phase contract and normalization did not explicitly produce `execution_mode: fallback`.
-- **Fallback mode** applies when input is incomplete, conflicting, or low quality, or when compatibility normalization explicitly produces `execution_mode: fallback`; produce coarse but schema-valid output, mark uncertainty, and provide focused rerun hints.
+- **Standard mode** is the default when input quality supports the complete phase contract and successful normalization did not explicitly produce `execution_mode: fallback`.
+- **Fallback mode** applies only after normalization succeeds, when non-conflicting input is incomplete or low quality, or when compatibility normalization explicitly produces `execution_mode: fallback`; produce coarse but schema-valid output, mark uncertainty, and provide focused rerun hints.
+
+Unresolved normalization conflicts and unsupported legacy members stop before execution-mode selection with the targeted outcome returned by Data Contracts; they never select fallback mode.
 
 Record the selection as `execution_mode: standard|fallback`. A Segmentation-only route consumes that field directly. A route that runs Course Design Intake merges it with the intake result into the canonical `authoring_run_controls` object defined by `data-contracts.md#course-design-controls`. Fallback output adds only the fields in `data-contracts.md#fallback-output-extensions`.
 
