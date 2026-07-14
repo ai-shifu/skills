@@ -947,6 +947,24 @@ class AuthoringResponsibilityTests(unittest.TestCase):
             optimization,
         )
 
+    def test_segmentation_normalization_handoff_does_not_require_intake_controls(self):
+        authoring_controls = self.references[
+            Path("references/authoring-controls.md")
+        ]
+
+        self.assertIn(
+            "A Segmentation-only route receives canonical `execution_mode`",
+            authoring_controls,
+        )
+        self.assertIn(
+            "it does not require or synthesize `authoring_run_controls`",
+            authoring_controls,
+        )
+        self.assertIn(
+            "No downstream route receives legacy wrappers",
+            authoring_controls,
+        )
+
     def test_phase_handoffs_have_distinct_schemas(self):
         expected_fields = {
             "Segmentation Output": {

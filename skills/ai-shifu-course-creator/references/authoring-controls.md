@@ -4,7 +4,7 @@ Read this file for every Segmentation, Orchestration, Generation, or Optimizatio
 
 ## Input Compatibility Normalization
 
-Before selecting an execution mode or running Course Design Intake, normalize legacy authoring inputs exactly once through `data-contracts.md#input-compatibility-normalization`. Downstream phases receive only `authoring_run_controls`, `authoring_constraints`, and the other canonical context fields; do not pass legacy wrappers onward.
+Before selecting an execution mode or running Course Design Intake, normalize legacy authoring inputs exactly once through `data-contracts.md#input-compatibility-normalization`. After normalization, a route that runs Course Design Intake receives `authoring_run_controls`, `authoring_constraints`, and other canonical context fields. A Segmentation-only route receives canonical `execution_mode`, the applicable structure target, `authoring_constraints`, and other canonical context fields directly; it does not require or synthesize `authoring_run_controls`. No downstream route receives legacy wrappers.
 
 Consume the normalization result and any reported conflict or unsupported-field outcome exactly as returned by that owner; do not reinterpret it here.
 
