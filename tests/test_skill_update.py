@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 import tempfile
 import unittest
@@ -12,6 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_DIR = (
     REPO_ROOT / "skills" / "ai-shifu-course-creator" / "scripts"
 )
+SKILL_ROOT = SCRIPT_DIR.parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
 import skill_update  # noqa: E402
@@ -240,6 +242,143 @@ class SkillUpdateTests(unittest.TestCase):
                     now=self.now,
                 )
 
+    def test_deprecated_read_skill_metadata_uses_sibling_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skill_md = Path(tmp) / "SKILL.md"
+            metadata_file = Path(tmp) / "version-metadata.json"
+            metadata_file.write_text(
+                json.dumps(
+                    {"version": "1.2.3", "version_management": "plugin"}
+                ),
+                encoding="utf-8",
+            )
+            self.assertFalse(skill_md.exists())
+            self.assertEqual(
+                skill_update.read_skill_metadata(skill_md),
+                {"version": "1.2.3", "version_management": "plugin"},
+            )
+
+    def test_standalone_and_plugin_package_copies_include_sibling_json(self):
+        for management in ("standalone", "plugin"):
+            with (
+                self.subTest(management=management),
+                tempfile.TemporaryDirectory() as tmp,
+            ):
+                package = Path(tmp) / management / "ai-shifu-course-creator"
+                shutil.copytree(SKILL_ROOT, package)
+                skill_md = package / "SKILL.md"
+                metadata_file = package / "version-metadata.json"
+                self.assertTrue(metadata_file.is_file())
+                metadata = json.loads(metadata_file.read_text(encoding="utf-8"))
+
+                if management == "plugin":
+                    metadata["version_management"] = "plugin"
+                    metadata_file.write_text(
+                        json.dumps(metadata), encoding="utf-8"
+                    )
+                    source = skill_md.read_text(encoding="utf-8")
+                    skill_md.write_text(
+                        source.replace(
+                            "version_management: standalone",
+                            "version_management: plugin",
+                            1,
+                        ),
+                        encoding="utf-8",
+                    )
+
+                self.assertEqual(
+                    skill_update.read_skill_metadata(skill_md),
+                    {
+                        "version": metadata["version"],
+                        "version_management": management,
+                    },
+                )
+                frontmatter = skill_md.read_text(encoding="utf-8").split("---", 2)[1]
+                self.assertIn(f"version: {metadata['version']}", frontmatter)
+                self.assertIn(
+                    f"version_management: {management}", frontmatter
+                )
+
+    def test_deprecated_read_skill_metadata_without_path_uses_runtime_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            metadata_file = Path(tmp) / "version-metadata.json"
+            metadata_file.write_text(
+                json.dumps({"version": "1.2.3"}),
+                encoding="utf-8",
+            )
+            with mock.patch.object(
+                skill_update,
+                "VERSION_METADATA_FILE",
+                metadata_file,
+            ):
+                self.assertEqual(
+                    skill_update.read_skill_metadata(),
+                    {
+                        "version": "1.2.3",
+                        "version_management": "standalone",
+                    },
+                )
+
+    def test_deprecated_skill_md_keyword_uses_sibling_json(self):
+        def unexpected_get(*_args, **_kwargs):
+            raise AssertionError("plugin-managed skill must not request manifest")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            skill_md = Path(tmp) / "SKILL.md"
+            metadata_file = Path(tmp) / "version-metadata.json"
+            metadata_file.write_text(
+                json.dumps(
+                    {"version": "1.0.0", "version_management": "plugin"}
+                ),
+                encoding="utf-8",
+            )
+            result = skill_update.check_for_update(
+                skill_md=skill_md,
+                cache_file=Path(tmp) / "cache.json",
+                http_get=unexpected_get,
+                now=self.now,
+            )
+            self.assertEqual(
+                result,
+                {"status": "check_skipped", "source": "plugin_managed"},
+            )
+
+    def test_metadata_file_takes_priority_over_deprecated_skill_md(self):
+        def unexpected_get(*_args, **_kwargs):
+            raise AssertionError("invalid metadata must not request manifest")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            legacy_dir = root / "legacy"
+            legacy_dir.mkdir()
+            (legacy_dir / "version-metadata.json").write_text(
+                json.dumps(
+                    {"version": "1.0.0", "version_management": "plugin"}
+                ),
+                encoding="utf-8",
+            )
+            explicit_metadata = root / "explicit-version-metadata.json"
+            explicit_metadata.write_text(
+                json.dumps(
+                    {"version": "1.0.0", "version_management": "mystery"}
+                ),
+                encoding="utf-8",
+            )
+            result = skill_update.check_for_update(
+                metadata_file=explicit_metadata,
+                skill_md=legacy_dir / "SKILL.md",
+                cache_file=root / "cache.json",
+                http_get=unexpected_get,
+                now=self.now,
+            )
+            self.assertEqual(
+                result,
+                {
+                    "status": "check_skipped",
+                    "source": "invalid_version_management",
+                },
+            )
+
     def test_check_is_fail_open_on_network_error(self):
         def failing_get(*_args, **_kwargs):
             raise RuntimeError("offline")
@@ -254,6 +393,19 @@ class SkillUpdateTests(unittest.TestCase):
                 metadata_file=metadata_file,
                 cache_file=Path(tmp) / "cache.json",
                 http_get=failing_get,
+                now=self.now,
+            )
+            self.assertEqual(result, {"status": "check_skipped", "source": "none"})
+
+    def test_check_is_fail_open_when_sibling_json_is_missing(self):
+        def unexpected_get(*_args, **_kwargs):
+            raise AssertionError("missing metadata must not request manifest")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            result = skill_update.check_for_update(
+                skill_md=Path(tmp) / "SKILL.md",
+                cache_file=Path(tmp) / "cache.json",
+                http_get=unexpected_get,
                 now=self.now,
             )
             self.assertEqual(result, {"status": "check_skipped", "source": "none"})

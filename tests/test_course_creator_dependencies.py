@@ -50,6 +50,7 @@ AUTHORING_RANKS = {
     Path("references/delivery-modes.md"): 4,
     Path("references/prompt-contracts.md"): 5,
     Path("references/authoring-intake.md"): 5,
+    Path("references/image-assets.md"): 5,
     Path("references/review-checklist.md"): 6,
     Path("references/generation-workflow.md"): 7,
     Path("references/optimization-workflow.md"): 7,
@@ -79,6 +80,7 @@ PLATFORM_RANKS = {
     Path("references/cli/cli-reference.md"): 1,
     Path("references/authentication.md"): 2,
     Path("references/course-target.md"): 3,
+    Path("references/image-assets.md"): 3,
     Path("references/deployment-workflow.md"): 4,
     Path("examples/deploy-only.md"): 5,
     Path("SKILL.md"): 6,
@@ -129,16 +131,16 @@ REQUIRED_EDGES = {
         Path("references/course-prompt.md"),
         Path("references/data-contracts.md"),
         Path("references/delivery-modes.md"),
+        Path("references/image-assets.md"),
         Path("references/markdownflow.md"),
         Path("references/pedagogy.md"),
         Path("references/prompt-contracts.md"),
         Path("references/session-controls.md"),
     },
     Path("references/generation-workflow.md"): {
-        Path("references/cli/cli-reference.md"),
         Path("references/data-contracts.md"),
         Path("references/delivery-modes.md"),
-        Path("references/markdownflow.md"),
+        Path("references/image-assets.md"),
         Path("references/pedagogy.md"),
         Path("references/prompt-contracts.md"),
         Path("references/review-checklist.md"),
@@ -164,7 +166,7 @@ REQUIRED_EDGES = {
         Path("references/course-prompt.md"),
         Path("references/data-contracts.md"),
         Path("references/delivery-modes.md"),
-        Path("references/generation-workflow.md"),
+        Path("references/image-assets.md"),
         Path("references/markdownflow.md"),
         Path("references/pedagogy.md"),
         Path("references/prompt-contracts.md"),
@@ -199,6 +201,13 @@ REQUIRED_EDGES = {
     Path("references/authentication.md"): {
         Path("references/cli/cli-reference.md"),
     },
+    Path("references/image-assets.md"): {
+        Path("references/authentication.md"),
+        Path("references/cli/cli-reference.md"),
+        Path("references/delivery-modes.md"),
+        Path("references/markdownflow.md"),
+        Path("references/pedagogy.md"),
+    },
     Path("references/deployment-workflow.md"): {
         Path("references/authentication.md"),
         Path("references/cli/cli-reference.md"),
@@ -206,6 +215,7 @@ REQUIRED_EDGES = {
         Path("references/course-prompt.md"),
         Path("references/course-target.md"),
         Path("references/delivery-modes.md"),
+        Path("references/image-assets.md"),
         Path("references/report-template.md"),
         Path("references/review-checklist.md"),
     },
@@ -214,6 +224,7 @@ REQUIRED_EDGES = {
 EXAMPLE_AUTHORITIES = {
     Path("examples/deploy-only.md"): {
         Path("references/deployment-workflow.md"),
+        Path("references/image-assets.md"),
     },
     Path("examples/fallback-mode.md"): {
         Path("references/authoring-controls.md"),
@@ -803,6 +814,7 @@ class AuthoringResponsibilityTests(unittest.TestCase):
         cls.generation = cls.references[
             Path("references/generation-workflow.md")
         ]
+        cls.image_assets = cls.references[Path("references/image-assets.md")]
         cls.review = cls.references[
             Path("references/review-checklist.md")
         ]
@@ -914,7 +926,11 @@ class AuthoringResponsibilityTests(unittest.TestCase):
         ]
 
         self.assertIn("replace only those six raw fields", self.data_contracts)
-        self.assertIn("control normalization must not discard them", self.data_contracts)
+        self.assertIn(
+            "control normalization must not discard that remaining context",
+            self.data_contracts,
+        )
+        self.assertIn("remaining normalized `course_profile` members", self.data_contracts)
         for context_field in (
             "course_material",
             "course_author_name",
@@ -988,42 +1004,126 @@ class AuthoringResponsibilityTests(unittest.TestCase):
         self.assertNotIn("third consecutive wrong code", cli_authentication)
         self.assertNotIn("five SMS codes per day", cli_authentication)
 
-    def test_retired_ad_hoc_authoring_keys_do_not_reappear(self):
-        retired_keys = {
+    def test_sms_rate_limit_waits_for_existing_code_without_resending(self):
+        authentication_section = markdown_heading_section(
+            self.authentication, "Agent Login Flow"
+        )
+
+        self.assertIn("smsSendTooFrequent", authentication_section)
+        self.assertIn("Wait up to 60 seconds for the original code", authentication_section)
+        self.assertIn("end the current login attempt without resending", authentication_section)
+        self.assertIn("tell the user to retry later", authentication_section)
+        self.assertIn("only permitted automatic resend", authentication_section)
+        self.assertIn("Third consecutive code error", authentication_section)
+
+    def test_legacy_authoring_keys_have_one_normalization_owner(self):
+        legacy_keys = {
             "chapter_hint",
             "generation_constraints",
             "teaching_constraints",
             "optimization_constraints",
         }
-        matches = []
-        for path in sorted(skill_files(), key=str):
-            if path.suffix not in {".md", ".json", ".py", ".txt"}:
-                continue
-            content = (SKILL_ROOT / path).read_text(
-                encoding="utf-8", errors="replace"
-            )
-            for key in retired_keys:
-                if re.search(rf"\b{re.escape(key)}\b", content):
-                    matches.append(f"{path}: {key}")
+        for key in legacy_keys:
+            with self.subTest(key=key):
+                self.assertEqual(
+                    self.files_containing(rf"\b{re.escape(key)}\b"),
+                    [Path("references/data-contracts.md")],
+                )
 
-        self.assertEqual(
-            matches,
-            [],
-            "retired ad-hoc authoring keys found:\n" + "\n".join(matches),
+        examples = "\n".join(self.examples.values())
+        outputs = self.data_contracts.split("## Output Contract", 1)[1]
+        for key in legacy_keys:
+            self.assertNotRegex(examples, rf"\b{re.escape(key)}\b")
+            self.assertNotRegex(outputs, rf"\b{re.escape(key)}\b")
+
+        compatibility = markdown_heading_section(
+            self.data_contracts, "Input Compatibility Normalization"
+        )
+        for canonical_field in (
+            "lesson_count_target",
+            "lesson_granularity",
+            "teaching_persona",
+            "max_interactions",
+            "require_visual_text_pair",
+            "must_use_viewpoint_check",
+            "allow_cross_lesson_dependency",
+            "require_branching_feedback",
+            "minimize_optimization_scope",
+            "execution_mode",
+        ):
+            with self.subTest(canonical_field=canonical_field):
+                self.assertIn(canonical_field, compatibility)
+        self.assertIn("course_profile.lesson_count_target", compatibility)
+        self.assertIn("keep the canonical field", compatibility)
+        self.assertIn("record every ignored legacy path and value", compatibility)
+        self.assertIn("never choose an alias by incidental input order", compatibility)
+        self.assertIn("unrecognized member", compatibility)
+        authoring_controls = self.references[
+            Path("references/authoring-controls.md")
+        ]
+        self.assertIn("Consume the normalization result", authoring_controls)
+        self.assertNotIn("keep the canonical field", authoring_controls)
+        self.assertNotIn("unrecognized member", authoring_controls)
+
+    def test_authoring_constraints_preserve_canonical_limits_and_output_shape(self):
+        constraints = markdown_heading_section(
+            self.data_contracts, "Authoring Constraints"
+        )
+        generation_output = markdown_heading_section(
+            self.data_contracts, "Generation Output"
+        )
+        interaction_policy = markdown_heading_section(
+            self.pedagogy, "Interaction Policy Precedence"
         )
 
-    def test_generation_owns_image_inspect_upload_embed_workflow(self):
-        image_workflow = markdown_heading_section(
+        self.assertIn("integer from `0` through `5`", constraints)
+        self.assertIn("per-lesson maximum remains `5`", constraints)
+        self.assertIn("`disabled`", interaction_policy)
+        self.assertIn("Emit no MarkdownFlow interaction blocks", interaction_policy)
+        self.assertIn("disabled` forces zero interactions", self.pedagogy)
+        self.assertIn("pure_slides` overrides `require_visual_text_pair`", self.pedagogy)
+        self.assertIn("lesson_teaching_prompts` (array, required)", generation_output)
+        self.assertIn("exactly one lesson", self.generation)
+
+    def test_focused_optimization_does_not_synthesize_course_artifacts(self):
+        optimization = self.references[
+            Path("references/optimization-workflow.md")
+        ]
+        course_prompt = markdown_heading_section(optimization, "Course Prompt")
+        course_description = markdown_heading_section(
+            optimization, "Course Description"
+        )
+
+        self.assertIn("focused audit", course_prompt)
+        self.assertIn("does not synthesize a new course-level artifact", course_prompt)
+        self.assertIn("lesson-only source material", course_prompt)
+        self.assertIn("focused prompt audit does not create", course_description)
+
+    def test_image_assets_owns_inspect_upload_embed_workflow(self):
+        generation_pointer = markdown_heading_section(
             self.generation, "Working with Author-Provided Images"
         )
+        deployment = self.references[Path("references/deployment-workflow.md")]
 
-        self.assertIn("Understand each image before placing it", image_workflow)
-        self.assertIn("upload-image", image_workflow)
-        self.assertIn("Embed per `markdownflow.md#images`", image_workflow)
-        self.assertEqual(
-            self.files_containing(r"^### Working with Author-Provided Images$"),
-            [Path("references/generation-workflow.md")],
-        )
+        for heading in ("Inspect", "Upload", "Embed", "Validate", "Handoff"):
+            with self.subTest(heading=heading):
+                self.assertEqual(
+                    self.files_containing(rf"^## {heading}$"),
+                    [Path("references/image-assets.md")],
+                )
+        self.assertIn("Understand each image", self.image_assets)
+        self.assertIn("upload-image", self.image_assets)
+        self.assertIn("markdownflow.md#images", self.image_assets)
+        self.assertIn("image-assets.md", generation_pointer)
+        self.assertLess(len(generation_pointer.split()), 40)
+        self.assertIn("image-assets.md", deployment)
+        self.assertIn("local image", deployment)
+        self.assertIn("external image URL", deployment)
+        self.assertIn("invalid platform resource URL", deployment)
+        self.assertIn("already-valid platform resource", deployment)
+        self.assertIn("needs no upload or new manifest entry", self.image_assets)
+        self.assertIn("whether the resource was preserved or uploaded", self.image_assets)
+        self.assertIn("preserves an already-valid platform resource", self.generation)
 
     def test_review_checklist_owns_observable_validation(self):
         for heading in (
@@ -1039,6 +1139,13 @@ class AuthoringResponsibilityTests(unittest.TestCase):
         self.assertNotIn("## Validation", self.course_prompt)
         self.assertIn(
             "review-checklist.md#generation-validation", self.generation
+        )
+        self.assertIn("image-assets.md#validate", self.review)
+        self.assertNotIn("res.ai-shifu.cn", self.review)
+        self.assertNotIn("image-manifest.json", self.review)
+        self.assertIn(
+            "does not exceed the normalized `authoring_constraints.max_interactions`",
+            self.review,
         )
 
 
@@ -1167,6 +1274,82 @@ class AnalyticsAndPlatformResponsibilityTests(unittest.TestCase):
         ):
             with self.subTest(required_signal=required_signal):
                 self.assertIn(required_signal, learner_dimension)
+
+    def test_order_recipes_keep_metric_grains_distinct(self):
+        ordering_users = markdown_heading_section(
+            self.recipes, "Recipe 3 — Ordering users (下单人数)"
+        )
+        successful_users = markdown_heading_section(
+            self.recipes, "Recipe 4 — Successful ordering users (成功下单)"
+        )
+        paid_users = markdown_heading_section(
+            self.recipes, "Recipe 5 — Paid users (付费人数) and revenue"
+        )
+        order_count = markdown_heading_section(
+            self.recipes, "Recipe 6 — Successful order count (订单数) and revenue"
+        )
+        refunds = markdown_heading_section(
+            self.recipes,
+            "Recipe 6a — Refunded users (退款人数) and refunded order count",
+        )
+        funnel = markdown_heading_section(
+            self.recipes, "Recipe 6c — Order status distribution (funnel view)"
+        )
+
+        self.assertIn('"op":"in","value":[501,502,504]', ordering_users)
+        self.assertIn('"fn":"count_distinct","field":"user_bid"', ordering_users)
+        self.assertIn('"value":502', successful_users)
+        self.assertIn('"fn":"count_distinct","field":"user_bid"', successful_users)
+        self.assertIn('"field":"paid_price","op":">","value":0', paid_users)
+        self.assertIn('"field":"status","op":"=","value":502', paid_users)
+        self.assertIn('"fn":"count_distinct","field":"user_bid"', paid_users)
+        self.assertIn('"value":502', order_count)
+        self.assertIn('{"fn":"count","alias":"orders"}', order_count)
+        self.assertIn('"value":503', refunds)
+        self.assertIn(
+            '"fn":"count_distinct","field":"user_bid","alias":"refunded_users"',
+            refunds,
+        )
+        self.assertNotIn('"where"', funnel)
+        self.assertIn('"group_by":["status"]', funnel)
+
+    def test_title_resolution_rejects_unsupported_history(self):
+        metadata = markdown_heading_section(
+            self.recipes, "Course Metadata (resolve `shifu_bid ↔ current title`)"
+        )
+        title_visibility = markdown_heading_section(
+            self.tables, "Current Title Visibility"
+        )
+
+        self.assertIn("find-title <keyword>", metadata)
+        self.assertIn("only when the `shifu_bid` is already known", metadata)
+        self.assertIn("Historical title lookup is unsupported", metadata)
+        self.assertIn("not exposed", title_visibility)
+        self.assertNotIn('"op":"replace"', metadata)
+
+    def test_identity_lookup_and_follow_up_presentation_have_one_safe_path(self):
+        identity = markdown_heading_section(self.recipes, "Identity Lookup")
+        follow_ups = markdown_heading_section(self.recipes, "Follow-up Q&A")
+        restricted_access = markdown_heading_section(
+            self.privacy, "`user_users` — Restricted Access"
+        )
+
+        self.assertEqual(self.recipes.count('"table":"user_users"'), 2)
+        self.assertIn("Recipe 24A", identity)
+        self.assertIn("already obtained", identity)
+        self.assertIn("Recipe 24B", identity)
+        self.assertIn("exact phone number or email", identity)
+        self.assertIn("Never filter by nickname", identity)
+        self.assertIn("Learner A (安全昵称 · 脱敏身份)", restricted_access)
+        self.assertIn("ordinal labels", restricted_access)
+        self.assertIn("aggregate questions", follow_ups)
+        self.assertIn("do not execute an identity lookup", follow_ups)
+        self.assertIn("omit the identity lookup", follow_ups)
+        self.assertIn(
+            "Never expose a raw `user_bid` in user-facing output",
+            restricted_access,
+        )
+        self.assertIn("Never expose a raw `user_bid`; other raw", self.privacy)
 
     def test_import_payload_schema_has_one_owner(self):
         cli_pointer = markdown_heading_section(self.cli, "Import JSON Schema")

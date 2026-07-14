@@ -15,7 +15,7 @@ Apply Optimization audits against the full constraint set:
 - Cross-artifact red lines shared by Teaching Prompts and the Course Prompt: `prompt-contracts.md`.
 - Pedagogical constraints and issue taxonomy (interaction-policy effects, variable strategy, interaction design, visual-text coordination, lesson loop, information density): `pedagogy.md#interaction-policy-precedence`, `pedagogy.md#variable-strategy`, `pedagogy.md#interaction-design`, `pedagogy.md#visual-text-coordination`, `pedagogy.md#lesson-loop`, and `pedagogy.md#optimization-methodology`.
 - Interaction-policy shape and enums: `data-contracts.md#interaction-policy`.
-- Delivery-mode behavior across Teaching Prompt, Course Prompt, and Listen Mode: `delivery-modes.md`.
+- Delivery-mode behavior across Teaching Prompt and Course Prompt: consume an existing authoring handoff through `delivery-modes.md`; for a focused audit or narrow edit without that handoff, preserve the supplied artifact's mode-dependent structure as defined there.
 - Syntax / runtime constraints (preservation, deterministic blocks, variable references): `markdownflow.md`.
 - Observable audit checks: `review-checklist.md`.
 

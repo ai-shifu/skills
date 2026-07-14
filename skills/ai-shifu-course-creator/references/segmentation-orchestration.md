@@ -6,7 +6,7 @@ Turn messy course source material into a reliable intermediate structure for dow
 
 ### Workflow
 
-See `pedagogy.md#segmentation-methodology` for the full methodology (cleanup, immutable-block marking, semantic segmentation, lesson-boundary proposal, source linking).
+See `pedagogy.md#segmentation-methodology` for the full methodology (cleanup, immutable-block marking, semantic segmentation, lesson-boundary proposal, source linking). Apply a normalized `authoring_constraints.lesson_granularity` value when proposing lesson boundaries; explicit chapter and lesson targets remain authoritative.
 
 ### Outputs
 
@@ -25,7 +25,7 @@ Run `review-checklist.md#segmentation-validation`. Do not advance to lesson cuts
 ### Workflow
 
 1. Normalize source ordering and merge input material.
-2. Run Segmentation for cleanup and semantic segmentation.
+2. Run Segmentation for cleanup and semantic segmentation, applying normalized authoring constraints through `pedagogy.md#authoring-constraints`.
 3. Finalize lesson cuts from Segmentation's boundary candidates (one core question each).
 4. Run `generation-workflow.md` to generate per-lesson Teaching Prompts.
 5. Build course index and global variable table.

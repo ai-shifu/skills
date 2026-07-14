@@ -2,6 +2,8 @@
 
 Use the section matching the executed phase. Omit sections for phases not run.
 
+For every authoring phase report, add `Input normalization notes:` to the opening summary. List each ignored legacy input path and value reported by normalization, or write `none` when no legacy conflict was ignored.
+
 ## Formatting Rules
 
 These rules apply to every report produced from this template, and to any other user-visible chat output that includes URLs.

@@ -83,6 +83,9 @@ Output includes uncertainty markers and rerun hints; preserved blocks survive ev
     "chapter_count_target": 1,
     "lesson_count_target": 1,
     "interaction_policy": {"mode": "unspecified", "purposes": []}
+  },
+  "authoring_constraints": {
+    "lesson_granularity": "medium"
   }
 }
 ```
@@ -147,6 +150,11 @@ Pipeline produces partial but runnable output:
       "purposes": ["pre_content_thinking"]
     }
   },
+  "authoring_constraints": {
+    "max_interactions": 2,
+    "must_use_viewpoint_check": true,
+    "allow_cross_lesson_dependency": false
+  },
   "delivery_constraints": {
     "platform_limits": ["markdown_only"]
   }
@@ -188,6 +196,9 @@ Pipeline produces partial but runnable output:
     "chapter_count_target": null,
     "lesson_count_target": 1,
     "interaction_policy": {"mode": "unspecified", "purposes": []}
+  },
+  "authoring_constraints": {
+    "minimize_optimization_scope": true
   },
   "delivery_constraints": {
     "platform_limits": ["markdown_only"]

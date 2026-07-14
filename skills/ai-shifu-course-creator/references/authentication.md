@@ -23,9 +23,11 @@ The command syntax, exit codes, and token-write side effects are defined in `cli
 Use one login session per phone number. Each number is capped at five SMS codes per day, so a duplicate send wastes quota and can lock the user out.
 
 - Collect the phone number, then send `login --phone <phone>` exactly once.
-- If the user says the code has not arrived, tell them it normally arrives within 60 seconds; do not resend.
+- If the user says the code has not arrived, tell them it normally arrives within 60 seconds; do not resend merely because it has not arrived, and end the current login attempt with a prompt to retry later if it is still absent after that wait.
 - After the first or second wrong code, ask the user to re-enter it without sending another SMS.
 - Only after the third consecutive wrong code, send `login --phone <phone>` one final time for that session.
+
+The third-consecutive-wrong-code branch is the only permitted automatic resend in a login session; non-arrival and rate limiting never trigger another SMS.
 
 Run this fixed sequence without readiness questions, status checks, acknowledgment pauses, or unrelated intake:
 
@@ -43,7 +45,7 @@ Handle outcomes as follows:
 | `verify` exit 1 | Run this SMS flow once. |
 | `verify` exit 2 | Retry verification later; do not trigger login. |
 | Login reports `SMS sent` | Wait for the user-provided code; do not resend. |
-| Login reports `smsSendTooFrequent` | Wait 60 seconds; do not submit the phone again. |
+| Login reports `smsSendTooFrequent` | Wait up to 60 seconds for the original code. If it arrives, continue with that code; if it does not, end the current login attempt without resending and tell the user to retry later. |
 | First or second code error | Ask for the code again without resending. |
 | Third consecutive code error | Send one final SMS, then ask for the new code. |
 | An API call reports expired-token codes `1001`, `1004`, or `1005` | Return to `verify`, then follow its result. |

@@ -20,6 +20,10 @@ Apply the [Generation Workflow](../references/generation-workflow.md); this exam
       "purposes": ["pre_content_thinking"]
     }
   },
+  "authoring_constraints": {
+    "max_interactions": 4,
+    "require_visual_text_pair": true
+  },
   "course_profile": {
     "audience_level": "beginner",
     "lesson_duration_minutes": 10

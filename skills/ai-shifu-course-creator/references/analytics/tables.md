@@ -36,15 +36,15 @@ This matrix is the authority for which fields may appear in `select`, `where`, `
 | `shifu_published_shifus` | `title`, `created_user_bid`, `created_at`, `updated_at` | `title`, `created_user_bid`, `created_at`, `updated_at` | none | none |
 | `shifu_draft_shifus` | `title`, `created_user_bid`, `created_at`, `updated_at` | `title`, `created_user_bid`, `created_at`, `updated_at` | none | none |
 
-## Course title is "current published", not "history"
+## Current Title Visibility
 
-A single `shifu_bid` can have multiple saved snapshots over time. Interpret the rows by state rather than by whichever title happens to match a remembered string:
+Creator analytics exposes only active course-title rows selected by the platform lifecycle filters:
 
-- **Current published title**: the active row in `shifu_published_shifus`; at most one active row exists for a course.
-- **Current draft title**: the active row in `shifu_draft_shifus`; it may lead the published title after an editor rename.
-- **Historical title**: a superseded snapshot; it is not the current course name.
+- **Current published title**: the active row in `shifu_published_shifus`; at most one active published row exists for a course.
+- **Current draft title**: the active row in `shifu_draft_shifus`; it may differ after an editor rename that has not been republished.
+- **Historical or superseded title**: not exposed by creator analytics and therefore unavailable for lookup or rename-history reconstruction.
 
-The published title is the authority for a live course. A draft title is the authority only when no published row exists or when explicitly describing an unpublished editor state. A title that appeared in an earlier conversation turn is not evidence that it is still current.
+The current published title is authoritative for a live course. Use the current draft title only when no published row exists or when explicitly describing the editor state. A remembered title is only a lookup key and is not evidence of the current name; if it is superseded, creator analytics cannot resolve it.
 
 ## `learn_generated_blocks` type codes
 
@@ -88,7 +88,9 @@ This section owns the relationship fact. Scenario recipes own the queries and cl
 | `607` | 分支跳过 | Branch-skipped |
 | `608` | 已重置 | Reset |
 
-## `order_orders.status`
+## Order Status
+
+The `order_orders.status` field uses these codes:
 
 | Code | Chinese | English |
 |---|---|---|

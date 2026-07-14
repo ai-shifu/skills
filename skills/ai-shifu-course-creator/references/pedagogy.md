@@ -13,6 +13,21 @@ Use each concept's authoritative source instead of restating its contract in mul
 | MarkdownFlow syntax and runtime semantics | [markdownflow.md](markdownflow.md) | Defines parsing, variables, `UNKNOWN`, interactions, branching, image-file embedding, and deterministic blocks. |
 | Structured fields and allowed values | [data-contracts.md](data-contracts.md) | Defines schemas, enums, required objects, and table shapes. |
 
+## Authoring Constraints
+
+Consume the schema-valid `authoring_constraints` object from `data-contracts.md#authoring-constraints` without re-reading legacy wrappers. Omitted fields add no override, and the per-lesson interaction maximum remains five unless the author supplies a lower valid cap.
+
+- `teaching_persona` guides the Teaching Prompt's instructional tone and stance; it never replaces the real `course_author_name` or invents a Course Prompt identity.
+- `lesson_granularity` guides Segmentation boundary size and expected lesson depth without overriding explicit chapter or lesson counts.
+- `max_interactions` limits each lesson to the supplied value from zero through five; it never creates an interaction that the normalized interaction policy does not permit.
+- `require_visual_text_pair: true` reinforces the standard visual-text relationship; `false` does not disable the applicable delivery profile's baseline.
+- `must_use_viewpoint_check: true` requires one viewpoint check only where the interaction policy permits an interaction; it cannot override `disabled`.
+- `allow_cross_lesson_dependency: false` forbids carryover instructions and named learner-answer variables whose value leaves the current lesson; `true` permits justified dependencies but does not create them.
+- `require_branching_feedback: true` requires distinct branches for interactions that are present; `false` retains the normal immediate-feedback or visible-effect rule.
+- `minimize_optimization_scope: true` reinforces the smallest runtime-safe edit strategy; it does not change which artifacts the selected Optimization scope returns.
+
+The normalized `interaction_policy` and `delivery_mode` remain authoritative when any authoring constraint conflicts with them. `interaction_policy.mode: disabled` forces zero interactions regardless of `max_interactions`, `must_use_viewpoint_check`, or `require_branching_feedback`; `delivery_mode: pure_slides` overrides `require_visual_text_pair`. Record an ignored compatibility-derived constraint in the phase report; if two explicitly supplied canonical controls cannot both be satisfied, ask the author to resolve the conflict before generating content.
+
 ## Script Style
 
 A Teaching Prompt is the per-lesson MarkdownFlow document the AI engine reads at runtime. It is a *script that guides teaching*, not a polished learner-facing lecture. Write in imperative, model-guiding language.
@@ -28,6 +43,8 @@ Disallowed patterns:
 - Long, polished prose written as if it is the final learner-facing lecture.
 - Author or lesson-plan meta narration, including visible labels such as "Knowledge Block 1/2/3", "Lesson Objective", "In this lesson you will …", or "Deliverable".
 - Exposing internal authoring terms in learner-facing text.
+
+Keep internal design notes in the author-side phase report rather than a Teaching Prompt or Course Prompt. Do not hide them in HTML comments because MarkdownFlow preprocessing removes those comments before runtime, as defined by `markdownflow.md#parsing`.
 
 ## Interaction Policy Precedence
 
@@ -129,7 +146,8 @@ These are the teaching rules for permitted interactions. For interaction syntax,
 - A viewpoint or path-choice interaction whose answer is meant to drive distinct next steps must branch by option. Use no more than one `viewpoint_check` per lesson unless justified.
 - Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.
 - For input interactions, the pre-interaction question must be more specific than the short `...` placeholder.
-- Use no more than five interactions per lesson.
+- Use no more than the normalized `authoring_constraints.max_interactions` value per lesson; when that field is omitted, use no more than five interactions per lesson.
+
 ### Variable Strategy
 
 These are the teaching decisions for whether to collect an answer, how often to collect it, and how to ensure it matters. Variable syntax, substitution, and `UNKNOWN` runtime behavior are authoritative in [markdownflow.md#variables](markdownflow.md#variables); variable fields and naming constraints are authoritative in [data-contracts.md#variable-table](data-contracts.md#variable-table).

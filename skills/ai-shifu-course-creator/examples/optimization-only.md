@@ -23,6 +23,10 @@ Apply the [Optimization Workflow](../references/optimization-workflow.md); this 
       "purposes": ["pre_content_thinking"]
     }
   },
+  "authoring_constraints": {
+    "max_interactions": 4,
+    "require_branching_feedback": true
+  },
   "course_profile": {
     "audience_level": "beginner"
   }

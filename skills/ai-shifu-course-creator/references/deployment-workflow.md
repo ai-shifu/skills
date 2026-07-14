@@ -23,7 +23,7 @@ Complete `authentication.md` first. Always use CLI commands; never make raw HTTP
 
 Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `cli/course-directory-spec.md` for the full specification. When continuing from Optimization (Path A), write the optimized Teaching Prompts, Course Prompt, and course description into this structure automatically.
 
-**Content vs attributes policy.** For routine authoring and deployment, choose content operations only. Change lesson access, visibility, Listen Mode, or another platform attribute only when the user explicitly asks; then choose the corresponding explicit management command. Exact request fields, PATCH behavior, and command side effects are owned by `cli/cli-reference.md`; snapshot file roles and schemas are owned by `cli/course-directory-spec.md`.
+**Content vs attributes policy.** A platform-attribute change is authorized only by a direct management instruction from the user or by a normalized authoring handoff produced in the same request that also asks for deployment. Standalone deployment and narrow existing-course content updates preserve lesson access, visibility, Listen Mode, and every other unrelated platform attribute. Exact request fields, PATCH behavior, and command side effects are owned by `cli/cli-reference.md`; snapshot file roles and schemas are owned by `cli/course-directory-spec.md`.
 
 **Editing an existing course → use granular non-destructive commands**
 (`pull → update-lesson / add-lesson / delete-lesson / reorder / set-access / set-tts`).
@@ -33,7 +33,14 @@ courses — do not use it to iterate an existing one.
 
 ### Delivery Mode Handoff
 
-Obtain `delivery_mode` and `listen_mode_enabled` through `delivery-modes.md#resolution-and-handoff`, then consume the resolved values without redefining their source or profile behavior here. Deployment only selects the explicit management command requested by the user; its flags, request fields, PATCH behavior, and side effects remain in `cli/cli-reference.md`.
+Consume `authoring_run_controls.listen_mode_enabled` only when it was produced earlier in the same request and that request includes deployment. Treat this handoff as the authorized desired platform state, apply it with `set-tts` after the content write succeeds and before publication, and do not reinterpret the authoring profile here. If no such handoff exists, do not infer or confirm a delivery mode from local or cloud artifacts and do not change Listen Mode unless the user directly requests that management operation.
+
+### Listen Mode Management
+
+- For an independent inspection request, read the effective course TTS setting through CLI-backed course data and report it without calling `set-tts` or changing any platform state.
+- For an independent enable or disable request, run `set-tts` with the user-requested value. A course that appears slide-oriented may receive a concise non-blocking warning about sparse AI narration, but inferred content style never overrides or delays the explicit platform operation.
+- Do not run Course Design Intake, infer `delivery_mode`, or ask the user to confirm a mode for standalone Listen Mode management.
+- A same-request authoring conflict between Pure Slides and enabled Listen Mode must already be resolved through `delivery-modes.md#resolution-and-handoff` before this workflow receives a handoff.
 
 ### CLI Commands
 
@@ -41,18 +48,21 @@ All commands documented in `cli/cli-reference.md` (deployment: `build` / `import
 
 ### Deployment Workflow
 
+Before the language audit, inspect every image resource. When preflight finds a local image, an external image URL, or an invalid platform resource URL, complete [Image Assets](image-assets.md) and use its returned asset handoff; an already-valid platform resource needs no additional operation.
+
 Before any `build` or `import`, run the [Pre-Deploy Language Audit](review-checklist.md#pre-deploy-language-audit) against the effective course directory and metadata.
 
 **From pipeline (Path A continuation):**
 1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-description.md` (the generated SEO description; no author-side process notes), `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `course-prompt.md#fillable-template`), and required `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
 3. **Deploy a new target**: Run `import --new --json-file <dir>/shifu-import.json`. If `course-target.md` resolved an existing target, do not run this command; use the Version Sync Workflow below.
-4. **Publish**: Run `publish <shifu_bid>` to push the course to its public student-facing URL.
-5. Verify via platform URL.
+4. **Apply the authoring handoff**: When this same request produced `authoring_run_controls.listen_mode_enabled`, run `set-tts` with that boolean after the successful content write; use its version-aware `--course-dir` form when an existing sync directory is available. Without that handoff, preserve the platform setting.
+5. **Publish**: Run `publish <shifu_bid>` to push the course to its public student-facing URL.
+6. Verify via platform URL.
 
 **Standalone deployment (Path C):**
-1. Ensure the course directory is ready: Teaching Prompt files under `lessons/`, a `course-description.md` SEO summary, a `course-prompt.md` (author per `course-prompt.md#fillable-template` first if missing), and `structure.json` (create it if missing). Directories without `course-description.md` still build, but the platform description will be empty unless `--description` is provided.
-2. New target: run `build` → `import --new` → `publish`. Existing target: use the Version Sync Workflow.
+1. Ensure the course directory is ready: Teaching Prompt files under `lessons/`, a `course-description.md` SEO summary, an existing `course-prompt.md`, and `structure.json` (create it if missing). If `course-prompt.md` is absent, stop standalone deployment and ask whether to start a scoped authoring request that resolves the profile before creating it; do not silently assume the standard profile. Directories without `course-description.md` still build, but the platform description will be empty unless `--description` is provided.
+2. New target: run `build` → `import --new` → `publish`. Existing target: use the Version Sync Workflow. Do not infer or ask for a delivery mode, and do not change Listen Mode unless the same request explicitly includes that management operation.
 
 ### Version Sync Workflow
 
@@ -65,7 +75,8 @@ what happens once the target is an existing course you have pulled: the
 2. **Edit locally** — change lesson files / course description / course prompt in place.
 3. **`status --course-dir <dir>`** — see what diverged (`behind` / `locally modified` / `new` / `deleted` on server).
 4. **Push** with `--course-dir` so the recorded baseline is used: `update-lesson <bid> <ob> --teaching-prompt-file f.md --course-dir <dir>` for a single lesson, or `import <bid> --course-dir <dir>` for the whole course.
-5. **`publish <bid>`** when ready for learners.
+5. **Apply an in-scope Listen Mode change** only when the user directly requested it or the same authoring-and-deployment request supplied `authoring_run_controls.listen_mode_enabled`; otherwise preserve the current TTS setting. Use `set-tts ... --course-dir <dir>` for a version-aware existing-course write and handle exit `2` through the convergence loop below.
+6. **`publish <bid>`** when ready for learners.
 
 **Convergence loop on conflict.** A push checks whether the cloud advanced since
 your last sync:

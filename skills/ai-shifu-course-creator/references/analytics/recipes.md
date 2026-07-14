@@ -16,31 +16,25 @@ Most recipes use `analytics-query`; Credit Recipes 8–13 use `credit-detail`. S
 - [Audience Profile](#audience-profile)
 - [Per-Learner Top-N](#per-learner-top-n)
 - [Follow-up Q&A](#follow-up-qa)
+- [Identity Lookup](#identity-lookup)
 
 ## Course Metadata (resolve `shifu_bid ↔ current title`)
 
-> Whenever the user mentions a course by **title**, resolve the current `shifu_bid → title` mapping via the metadata tables **before** issuing any downstream analytics query — `shifu-cli.py list` is a draft snapshot and is not a substitute. Which row is authoritative, the draft fallback, and the historical-title phrasing rule: `tables.md` → "Course title is 'current published', not 'history'".
->
-> When matching by user-supplied keyword, normalize whitespace client-side (`replace(title, ' ', '')`) before comparing — the DB stores titles with whatever spacing the author used.
+> Whenever the user mentions a course by title, resolve the current `shifu_bid → title` mapping before issuing a downstream analytics query. Use Recipe 0a for a title keyword and Recipes 0b–0c only when the `shifu_bid` is already known. Current-row availability is defined by [Current Title Visibility](tables.md#current-title-visibility), and user-facing wording is defined by [Course Title Presentation](privacy-and-presentation.md#course-title-presentation).
 
-### Recipe 0a — Find my courses by current published title
+### Recipe 0a — Resolve a title keyword across owned courses
 
-The most common case: the user names a course you have not previously resolved this session.
+Use the dedicated command when the user supplies a current title keyword but the course identifier is unknown:
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
- "table":"shifu_published_shifus",
- "where":[{"field":"title","op":"like","value":"<keyword>%"}],
- "select":["title","created_user_bid","updated_at"],
- "limit":50
-}'
+python3 scripts/shifu-cli.py find-title <keyword>
 ```
 
-> The keyword must be ≥ 2 non-wildcard characters (anti-enumeration guard); trailing `%` only. Returns titles for the **caller's own published courses** whose name starts with the keyword. The `<bid>` positional value is required by the CLI; pick any one of your `shifu_bid` values from `shifu-cli.py list` — the metadata query is still constrained to the caller's own rows by the auto-injected `created_user_bid` filter, but the CLI's positional argument also clamps `shifu_bid`, so for cross-course lookups you fan out one call per known `shifu_bid` and merge client-side. (Path: when the user has many courses, run Recipe 0a once per known `shifu_bid` from `list`, then aggregate.)
+The command searches every owned course, normalizes whitespace and case for matching, and groups current published and current draft matches. It never searches historical or superseded titles. If it returns no match, ask for a current title keyword or known `shifu_bid`; do not claim that an old title can be recovered through analytics.
 
 ### Recipe 0b — Confirm the current title of a known `shifu_bid`
 
-When you already have a `shifu_bid` (from a prior list / show call) and want to verify the live name:
+Use this only when the `shifu_bid` is already known and the current published title must be verified:
 
 ```bash
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
@@ -54,7 +48,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ### Recipe 0c — Check the draft title when no published row exists
 
-If Recipe 0b returns empty, the course is in draft (not yet published or unpublished). Look at the editor copy instead:
+Use this only when the `shifu_bid` is already known and Recipe 0b returned no published row, or when the current editor title is explicitly requested:
 
 ```bash
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
@@ -64,9 +58,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-> When the published title and the draft title disagree, surface both to the user — the discrepancy usually means a recent rename that has not been republished yet.
-
-**CLI shortcut**: `shifu-cli.py find-title <keyword>` applies the current-title lookup across every owned course and prints grouped current published and draft matches; historical titles remain excluded.
+> When the published title and the draft title disagree, surface both according to [Course Title Presentation](privacy-and-presentation.md#course-title-presentation). Historical title lookup is unsupported.
 
 ## Course Overview (one-stop popularity dashboard)
 
@@ -90,7 +82,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "limit":1
 }'
 
-# 2) Paid order count + revenue (status = 502 paid; never use >=, it leaks refunds/pending)
+# 2) Successful order count + revenue (status = 502; never use >=, which mixes distinct states)
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "table":"order_orders",
  "where":[{"field":"status","op":"=","value":502}],
@@ -112,12 +104,12 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 口径说明（present these definitions alongside the numbers so they are unambiguous):
 
 - **学员数 (learners)** = `count_distinct(user_bid)` on `learn_progress_records` — everyone who entered the course. This is the dashboard's "学员数".
-- **订单数 (orders)** = `count` of `order_orders` rows with `status = 502` — paid orders (includes ¥0 free enrolments). For *strictly paid* (`paid_price > 0`) use Recipe 3; for the full funnel use Recipe 5.
+- **订单数 (orders)** = `count` of `order_orders` rows with `status = 502` — successful order rows, including ¥0 free enrolments. For strictly paid users (`paid_price > 0`) use Recipe 5; for the full funnel use Recipe 6c.
 - **营收 (revenue)** = `sum(paid_price)` over the same `status = 502` rows. Round to 2 decimals (`¥5,870.70`).
 - **最近活跃 (last_active)** = the `created_at` of the latest `learn_progress_records` row (query 1b). Convert to local time before presenting.
 - **活跃学员 (active_learners)** = non-archived learners (`shifu_user_archives.archived = 0`); usually ≤ 学员数 because some learners archived the course.
 
-> Want only one of these? Use the focused recipe instead: learners → Recipe 1, orders/revenue → Recipe 3 / 5 / 6, active learners → Recipe 14. Recipe 0d is the bundle for "just show me everything at a glance".
+> Want only one of these? Use the focused recipe instead: learners → Recipe 1, orders/revenue → Recipes 3–6d, active learners → Recipe 14. Recipe 0d is the bundle for "just show me everything at a glance".
 
 ## Progress
 
@@ -153,7 +145,39 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ## Orders
 
-### Recipe 3 — Paid buyers (price > ¥0) and revenue
+Use these definitions exactly; similar-sounding order metrics have different status sets and row grains:
+
+| Metric | Filter | Aggregation |
+|---|---|---|
+| 下单人数 | `status in [501, 502, 504]` | `count_distinct(user_bid)` |
+| 成功下单 | `status = 502` | `count_distinct(user_bid)` |
+| 付费人数 | `status = 502` and `paid_price > 0` | `count_distinct(user_bid)` |
+| 订单数 | `status = 502` | Row count |
+| 退款人数 | `status = 503` | `count_distinct(user_bid)` |
+
+### Recipe 3 — Ordering users (下单人数)
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"order_orders",
+ "where":[{"field":"status","op":"in","value":[501,502,504]}],
+ "aggregate":[{"fn":"count_distinct","field":"user_bid","alias":"ordering_users"}],
+ "limit":1
+}'
+```
+
+### Recipe 4 — Successful ordering users (成功下单)
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"order_orders",
+ "where":[{"field":"status","op":"=","value":502}],
+ "aggregate":[{"fn":"count_distinct","field":"user_bid","alias":"successful_ordering_users"}],
+ "limit":1
+}'
+```
+
+### Recipe 5 — Paid users (付费人数) and revenue
 
 ```bash
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
@@ -162,13 +186,37 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
    {"field":"status","op":"=","value":502},
    {"field":"paid_price","op":">","value":0}],
  "aggregate":[
-   {"fn":"count_distinct","field":"user_bid","alias":"buyers"},
+   {"fn":"count_distinct","field":"user_bid","alias":"paid_users"},
    {"fn":"sum","field":"paid_price","alias":"revenue"}],
  "limit":1
 }'
 ```
 
-### Recipe 4 — Free-enrolment count (paid but ¥0)
+### Recipe 6 — Successful order count (订单数) and revenue
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"order_orders",
+ "where":[{"field":"status","op":"=","value":502}],
+ "aggregate":[{"fn":"count","alias":"orders"},{"fn":"sum","field":"paid_price","alias":"revenue"}],
+ "limit":1
+}'
+```
+
+### Recipe 6a — Refunded users (退款人数) and refunded order count
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"order_orders",
+ "where":[{"field":"status","op":"=","value":503}],
+ "aggregate":[
+   {"fn":"count","alias":"refunded_orders"},
+   {"fn":"count_distinct","field":"user_bid","alias":"refunded_users"}],
+ "limit":1
+}'
+```
+
+### Recipe 6b — Free-enrolment users (successful but ¥0)
 
 ```bash
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
@@ -181,7 +229,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-### Recipe 5 — Order status distribution (funnel view)
+### Recipe 6c — Order status distribution (funnel view)
 
 ```bash
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
@@ -193,7 +241,9 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-### Recipe 6 — Payment channel breakdown (paid orders only)
+Translate each returned state with the [order status table](tables.md#order-status). Do not add the grouped values to produce 下单人数 because one learner may have rows in more than one state; use Recipe 3 for that distinct union.
+
+### Recipe 6d — Payment channel breakdown (successful orders only)
 
 ```bash
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
@@ -356,7 +406,9 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ## Follow-up Q&A
 
-> **All Recipe 17–22 templates below**: the auto-applied live-row filter is defined in `dsl.md#auto-applied-filters`, while the distinction between learner role and follow-up type is defined by the generated-block type codes in `tables.md`.
+> **All Recipe 17–23 templates below**: the auto-applied live-row filter is defined in `dsl.md#auto-applied-filters`, while the distinction between learner role and follow-up type is defined by the generated-block type codes in `tables.md`.
+
+Use Recipes 17, 18, and 23 for aggregate questions; do not execute an identity lookup for these aggregate results, and replace any internal learner grouping key with an ordinal label. For row-level follow-up text from Recipes 19, 20, and 22, execute Recipe 24A for already known `user_bid` values and present each learner with a privacy-safe nickname and masked identity by default; if the user explicitly requests anonymous output, omit the identity lookup and present ordinal learner labels only. Use Recipe 22 for the common latest-follow-up list.
 
 ### Recipe 17 — Total follow-up questions + unique questioners
 
@@ -468,35 +520,15 @@ Page answer candidates with offsets `100`, `200`, and so on until a page returns
 
 **Step 3 — fetch permitted identity fields for the askers**
 
-Collect the distinct `user_bid` values from Step 1 (dedup, max 50):
-
-```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
- "table":"user_users",
- "where":[{"field":"user_bid","op":"in","value":["<u-bid-1>","<u-bid-2>","..."]}],
- "select":["user_bid","nickname","user_identify"],
- "limit":50
-}'
-```
+Collect the distinct `user_bid` values from Step 1 (dedup, max 50) and execute Recipe 24A.
 
 Join these rows to Step 1 by `user_bid`. The protocol behavior for returned identity fields is defined by `dsl.md`; disclosure and presentation decisions are defined only by `privacy-and-presentation.md`.
 
 **Step 4 — assemble and present (client-side)**
 
-Assemble the question, matched answer, asker lookup row, lesson context, and timestamps. Pass that internal result to `privacy-and-presentation.md`; that file alone decides masking, identifier replacement, timestamp formatting, and the final answer shape.
+Assemble the question, matched answer, asker lookup row, lesson context, and timestamps. Pass that internal result to `privacy-and-presentation.md`; that file alone decides masking, identifier replacement, timestamp formatting, and the final answer shape. The default row-level label includes the returned privacy-safe nickname and masked identity. If the user explicitly requests anonymous output, skip Step 3 and use ordinal labels only.
 
-If Use B in `privacy-and-presentation.md` permits an exact reverse lookup, run this execution template before Step 1:
-
-```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
- "table":"user_users",
- "select":["user_bid","nickname","user_identify"],
- "where":[{"field":"user_identify","op":"=","value":"<exact-phone-or-email>"}],
- "limit":1
-}'
-```
-
-Use the resulting `user_bid` as the Step-1 filter. Query validation remains governed by the restricted identity-table grammar in `dsl.md`, and disclosure remains governed by `privacy-and-presentation.md`.
+If Use B in `privacy-and-presentation.md` permits an exact reverse lookup, execute Recipe 24B before Step 1 and use the resulting `user_bid` as the Step-1 filter. Query validation remains governed by the restricted identity-table grammar in `dsl.md`, and disclosure remains governed by `privacy-and-presentation.md`.
 
 ### Recipe 23 — Follow-up questions per lesson
 
@@ -517,3 +549,33 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ```
 
 > Translate each `outline_item_bid` to "Lesson X.Y: \<title\>" via the `shifu-cli.py show <bid>` outline cache before presenting. High-ask lessons are usually candidates for content reinforcement (more concrete examples / explicit interaction). Low-ask lessons are often either very clear *or* skipped — cross-reference with `learn_progress_records` to tell which.
+
+## Identity Lookup
+
+These are the only identity-query recipes. Use Recipe 24A only for learner IDs already obtained from a legitimate course-scoped query, and use Recipe 24B only for an exact phone number or email supplied by the user. The restricted grammar and server masking remain authoritative in `dsl.md`; apply `privacy-and-presentation.md` before displaying any result.
+
+Never filter by nickname, run a fuzzy identity search, or enumerate users to discover a target. If neither an already known `user_bid` nor an exact user-supplied phone number or email is available, do not run an identity query.
+
+### Recipe 24A — Resolve permitted identity for known learner IDs
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"user_users",
+ "where":[{"field":"user_bid","op":"in","value":["<u-bid-1>","<u-bid-2>","..."]}],
+ "select":["user_bid","nickname","user_identify"],
+ "limit":50
+}'
+```
+
+### Recipe 24B — Resolve one learner from an exact phone number or email
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"user_users",
+ "select":["user_bid","nickname","user_identify"],
+ "where":[{"field":"user_identify","op":"=","value":"<exact-phone-or-email>"}],
+ "limit":1
+}'
+```
+
+Keep the resolved `user_bid` internal and use it only to anchor the requested course analysis.

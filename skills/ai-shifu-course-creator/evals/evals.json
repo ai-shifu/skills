@@ -112,6 +112,94 @@
         "The pure classroom-slide result uses delivery_mode pure_slides with listen_mode_enabled false and is concise and projection-ready for a human instructor without AI narration or a required full explanatory paragraph.",
         "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; without a real upload, the provided-image plan uses upload-image, valid deterministic MarkdownFlow image syntax, and only the real returned platform URL rather than an invented illustrative URL."
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "只审查这节课并给修改建议：我同时贴了课程材料和现有 Teaching Prompt。不要扩展成整门课，也不要生成 Course Prompt。",
+      "expected_output": "Keeps a focused Optimization audit scoped to the supplied lesson and does not synthesize a course_prompt.",
+      "files": [],
+      "expectations": [
+        "The response returns the focused audit artifacts for the supplied lesson.",
+        "It does not generate or return a new course_prompt merely because course_material is present.",
+        "It does not expand the request into full-course authoring."
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "继续兼容这份旧请求：chapter_hint.target_lessons=2，chapter_hint.granularity=short，course_profile.lesson_count_target=2，generation_constraints.lesson_granularity=short，generation_constraints.persona=严谨教练，teaching_constraints.max_interactions=3。请生成单课结果，并把归一化结果和冲突报告一起给我。",
+      "expected_output": "Normalizes legacy aliases once into authoring_constraints and keeps the canonical array-shaped Generation output.",
+      "files": [],
+      "expectations": [
+        "Equivalent legacy aliases normalize once to lesson_count_target and authoring_constraints fields before phase execution.",
+        "Canonical fields would win over conflicting aliases, and ignored conflicts are recorded in the phase report rather than silently discarded.",
+        "Even for one lesson, Generation returns lesson_teaching_prompts as an array and no legacy wrapper keys remain in the handoff."
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "只部署我现有的课程目录，不改课程内容和 TTS。里面有一张本地图片、一张外链图片和一张已经是 AI 师傅平台资源的图片。",
+      "expected_output": "Preserves standalone deployment settings and routes only unresolved image resources through the shared image workflow.",
+      "files": [],
+      "expectations": [
+        "The deploy-only route does not ask for a delivery mode and does not modify TTS.",
+        "Local and external images are understood, uploaded, embedded with returned platform URLs, and validated through image-assets.md.",
+        "The already-valid platform resource is left unchanged, and no URL is invented."
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "这门线上课看起来全是课堂投屏页，但我现在明确要求开启 Listen Mode；内容和其他属性都不要动。",
+      "expected_output": "Treats explicit standalone Listen Mode management as a platform operation and enables it despite slide-like content.",
+      "files": [],
+      "expectations": [
+        "The workflow authenticates and enters Listen Mode management without running authoring intake or inferring a delivery mode.",
+        "It may provide a non-blocking warning about slide-like content but does not refuse the explicit enable request.",
+        "Only the requested TTS setting is changed; lesson content and unrelated attributes remain untouched."
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "登录时接口返回 smsSendTooFrequent。我已经收到刚才那条验证码 123456，请继续；如果这次没收到，就不要自动再发。",
+      "expected_output": "Uses the outstanding SMS code after a rate-limit response and never retries merely because delivery is delayed.",
+      "files": [],
+      "expectations": [
+        "The supplied code is submitted against the existing login attempt without requesting another SMS code.",
+        "If no code arrives, the current login attempt ends with advice to retry later instead of automatically resending.",
+        "The separate one-time final resend remains limited to the third consecutive wrong-code path."
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "查课程最近 30 天的下单人数、成功下单人数、付费人数、订单数、退款人数，并给完整状态漏斗。",
+      "expected_output": "Uses distinct backend status and aggregation contracts for each order metric.",
+      "files": [],
+      "expectations": [
+        "Placed-order users count distinct user_bid for statuses 501, 502, and 504; successful-order users count distinct user_bid at status 502.",
+        "Paid users require status 502 and paid_price greater than zero; order count counts status-502 rows; refund users count status-503 users.",
+        "The full funnel groups all statuses without applying a status filter."
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "查标题包含‘销售训练营’的课程过去一年改过哪些历史标题，再按旧标题查学习数据。",
+      "expected_output": "Uses find-title only for current titles and clearly refuses unsupported historical-title matching.",
+      "files": [],
+      "expectations": [
+        "Title keyword resolution uses find-title rather than published or draft analytics recipes.",
+        "Published and draft recipes are used only after an exact shifu_bid is known.",
+        "The response states that historical-title lookup is not currently supported and does not fabricate a historical match or dangling query."
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "逐条列出最近的学员追问并标出是谁问的；不要显示内部 ID。然后再给一个按课节聚合的追问数量。",
+      "expected_output": "Uses the unique safe identity lookup for row-level follow-ups and skips identity lookup for the aggregate.",
+      "files": [],
+      "expectations": [
+        "Row-level follow-ups resolve known user_bid values in a restricted batch lookup and display Learner A with safe nickname and masked identity.",
+        "Raw user_bid values, fuzzy nickname search, user enumeration, and unmasked identities are never shown.",
+        "The lesson-level aggregate does not query identities; an explicit anonymity request would replace labels with ordinals only."
+      ]
     }
   ]
 }

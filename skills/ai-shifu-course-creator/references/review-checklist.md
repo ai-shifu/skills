@@ -112,17 +112,14 @@ Before finalizing or deploying a generated course directory, verify that no temp
 - In standard non-slide-only lessons, every core concept that uses a visual has a visual-plus-text explanation.
 - Raw graphic source code (SVG, HTML drawings, Mermaid, PlantUML, or Graphviz) appears in a Teaching Prompt only when the author explicitly requests that raw format; approved HTML-view image instructions are checked separately below.
 - Pure classroom slides follow `delivery-modes.md#pure-slides` and are not failed for omitting AI narration or a full explanation paragraph.
-- When an image asset **is** embedded: its URL is on the `res.ai-shifu.cn` domain and has a corresponding entry in `<course-dir>/assets/image-manifest.json` (no orphan URLs, no externally hot-linked images).
-- Fixed-display images are wrapped in single-line deterministic blocks (`===![alt](url)===`); HTML-view images use instruction-style directives per `markdownflow.md#images` 3.2 (no HTML inside `=== … ===` / `!=== … !===`).
-- HTML-view image instructions include the `(必须原样保留)` phrase on every URL line, and locked text (e.g. figure captions) is enforced through wording (`必须原样输出`), not by mixing in deterministic blocks.
-- Alt text and `图片内容` descriptions carry information about what the image conveys (no `image1` / `示意图`).
+- Every author-provided image changed or uploaded in this run has passed the shared handoff checks in `image-assets.md#validate`; an unchanged valid platform resource does not fail solely because it has no local manifest entry.
 - In standard non-slide-only lessons, text adds context (background / causality / examples), not just a restatement of the image.
 
 ## Runtime Stability
 
 - MarkdownFlow syntax is valid.
 - Deterministic blocks used only where necessary; not wrapping full lessons.
-- Interaction count per lesson at most five (recommended three to four).
+- Interaction count per lesson does not exceed the normalized `authoring_constraints.max_interactions` value; when that field is omitted, the limit is five (recommended three to four).
 - Code, image, and required source spans preserved per `markdownflow.md#preservation`.
 
 ## Course Prompt

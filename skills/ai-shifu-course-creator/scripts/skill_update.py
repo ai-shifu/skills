@@ -106,6 +106,16 @@ def read_version_metadata(
     }
 
 
+def read_skill_metadata(skill_md: Path | None = None) -> dict[str, str] | None:
+    """Deprecated compatibility wrapper that reads sibling version metadata."""
+    metadata_file = (
+        VERSION_METADATA_FILE
+        if skill_md is None
+        else Path(skill_md).parent / "version-metadata.json"
+    )
+    return read_version_metadata(metadata_file)
+
+
 def validate_manifest(
     raw: object, expected_skill_name: str = SKILL_NAME
 ) -> dict[str, Any]:
@@ -359,7 +369,8 @@ def fetch_manifest(
 def check_for_update(
     *,
     force: bool = False,
-    metadata_file: Path = VERSION_METADATA_FILE,
+    metadata_file: Path | None = None,
+    skill_md: Path | None = None,
     cache_file: Path = CACHE_FILE,
     manifest_url: str = MANIFEST_URL,
     allow_loopback: bool = False,
@@ -368,7 +379,16 @@ def check_for_update(
 ) -> dict[str, Any]:
     """Run the complete fail-open check and always return a public result."""
     try:
-        metadata = read_version_metadata(metadata_file)
+        resolved_metadata_file = (
+            Path(metadata_file)
+            if metadata_file is not None
+            else (
+                Path(skill_md).parent / "version-metadata.json"
+                if skill_md is not None
+                else VERSION_METADATA_FILE
+            )
+        )
+        metadata = read_version_metadata(resolved_metadata_file)
         if metadata is None:
             raise ManifestError("missing local metadata")
         version_management = metadata.get(

@@ -1,19 +1,21 @@
 # Delivery Modes
 
-Authoritative source for cross-artifact behavior selected by `data-contracts.md#course-design-controls`. This file owns only the differences that a delivery mode applies to Teaching Prompts, the Course Prompt, and Listen Mode; general teaching design remains in `pedagogy.md`, the base Course Prompt remains in `course-prompt.md`, and MarkdownFlow syntax remains in `markdownflow.md`.
+Authoritative source for authoring behavior selected by `data-contracts.md#course-design-controls`. This file owns only the differences that a delivery mode applies to Teaching Prompts, the Course Prompt, and the desired Listen Mode state handed off by authoring; general teaching design remains in `pedagogy.md`, the base Course Prompt remains in `course-prompt.md`, MarkdownFlow syntax remains in `markdownflow.md`, and independent platform operations remain outside this contract.
 
 ## Resolution and Handoff
 
-- When authoring already produced `authoring_run_controls`, consume `delivery_mode` and `listen_mode_enabled` from the latest structured handoff without reinterpreting or asking for them again; after a full pipeline they come from `data-contracts.md#final-authoring-output`.
-- In an independent deployment, management, or existing-course optimization session, read the effective local artifacts, or pull the course before reading its Teaching Prompts and Course Prompt. Preserve the existing delivery mode when those artifacts identify it unambiguously; otherwise ask the user to confirm the mode.
-- Return the resolved fields through `authoring_run_controls` when an authoring phase continues. A standalone platform operation carries the same two values as operational context without inventing the other authoring controls.
-- Apply the selected section below once. Standard preserves the resolved Listen Mode decision; Pure Slides overrides it to `false`.
+- Course Design Intake resolves `delivery_mode` and `listen_mode_enabled`, then returns both through `authoring_run_controls`; downstream authoring phases consume the latest structured handoff without reinterpreting or asking for those fields again, and a full pipeline returns them through `data-contracts.md#final-authoring-output`.
+- When the same request includes authoring and deployment, pass the normalized `listen_mode_enabled` value to Deployment as the desired platform state. Authoring without deployment returns the value only as data and does not authorize a platform change.
+- A focused audit or narrow existing-course prompt edit without a same-request intake preserves the supplied artifact's existing mode-dependent structure and does not resolve, infer, or ask for `delivery_mode`. If the requested change would alter that structure or profile, run Course Design Intake before continuing.
+- Independent deployment and standalone platform management are outside this authoring contract; the selected platform workflow owns their attribute behavior.
+- Apply the selected authoring section below once. Standard preserves the resolved Listen Mode decision; Pure Slides requires `false` within the authoring handoff.
+- If one authoring request explicitly combines Pure Slides with Listen Mode enabled, do not silently override either instruction; ask the user to choose between Pure Slides with Listen Mode disabled and Standard with the requested Listen Mode setting.
 
 ## Standard
 
 - **Teaching Prompts**: apply the mode-independent lesson and visual-text rules in `pedagogy.md`.
 - **Course Prompt**: fill the standard `course-prompt.md#fillable-template` without a delivery-mode replacement.
-- **Listen Mode**: carry the schema-valid resolved `listen_mode_enabled` decision into Deployment unchanged.
+- **Listen Mode**: carry the schema-valid resolved `listen_mode_enabled` decision through the authoring handoff unchanged.
 
 ## Pure Slides
 
@@ -35,5 +37,5 @@ Use this mode only when Course Design Intake resolves the course to classroom sl
 
 ### Listen Mode Override
 
-- Listen Mode is unavailable for this profile.
-- Normalize `listen_mode_enabled` to `false` and carry that value into deployment.
+- Normalize `listen_mode_enabled` to `false` within Pure Slides authoring because this profile omits AI narration.
+- Carry `false` through the authoring handoff; an independent platform-management request remains governed by its explicit user instruction rather than by inferred course content.

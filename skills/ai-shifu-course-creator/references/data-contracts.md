@@ -5,7 +5,9 @@ Authoritative source for schemas crossing the skill boundary: input controls, no
 ## Contents
 
 - [Input Contract](#input-contract)
+- [Authoring Constraints](#authoring-constraints)
 - [Course Design Controls](#course-design-controls)
+- [Input Compatibility Normalization](#input-compatibility-normalization)
 - [Output Contract](#output-contract)
 - [Segmentation Output](#segmentation-output)
 - [Generation Output](#generation-output)
@@ -43,8 +45,9 @@ Authoritative source for schemas crossing the skill boundary: input controls, no
 - `lesson_count_target` (positive integer or `null`).
 - `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`).
 - `authoring_run_controls` (object): normalized phase input using [Course Design Controls](#course-design-controls); workflows consume this object instead of re-reading the six raw control fields it replaces.
+- `authoring_constraints` (object): normalized content and editing constraints using [Authoring Constraints](#authoring-constraints); workflows consume this object instead of legacy phase-specific constraint wrappers.
 
-Before Course Design Intake, callers may supply `execution_mode`, `delivery_mode`, `listen_mode_enabled`, `chapter_count_target`, `lesson_count_target`, and `interaction_policy` individually. After normalization, replace only those six raw fields with `authoring_run_controls` so consumers cannot observe conflicting control values. Continue carrying `course_material`, `course_author_name`, `course_profile`, `delivery_constraints`, `target_language`, tone constraints, and source constraints as unchanged authoring context alongside phase outputs; control normalization must not discard them.
+Before Course Design Intake, callers may supply `execution_mode`, `delivery_mode`, `listen_mode_enabled`, `chapter_count_target`, `lesson_count_target`, and `interaction_policy` individually. After normalization, replace only those six raw fields with `authoring_run_controls` so consumers cannot observe conflicting control values. Continue carrying the remaining normalized `course_profile` members alongside unchanged `course_material`, `course_author_name`, `delivery_constraints`, `authoring_constraints`, `target_language`, tone constraints, and source constraints; control normalization must not discard that remaining context.
 
 ### Recommended Object Shapes
 
@@ -69,6 +72,29 @@ Before Course Design Intake, callers may supply `execution_mode`, `delivery_mode
   "non_negotiable_fragments": ["required source fragment or code block id"]
 }
 ```
+
+#### Authoring Constraints
+
+`authoring_constraints` is the canonical object for optional content-generation and editing constraints. Omit fields the author did not supply; omission preserves the applicable pedagogy and delivery-mode defaults.
+
+```json
+{
+  "teaching_persona": "hands-on mentor",
+  "lesson_granularity": "short",
+  "max_interactions": 4,
+  "require_visual_text_pair": true,
+  "must_use_viewpoint_check": false,
+  "allow_cross_lesson_dependency": true,
+  "require_branching_feedback": false,
+  "minimize_optimization_scope": true
+}
+```
+
+- `teaching_persona` is a non-empty string that guides teaching tone without replacing `course_author_name`.
+- `lesson_granularity` is `short`, `medium`, or `long`.
+- `max_interactions` is an integer from `0` through `5`; when omitted, the per-lesson maximum remains `5`.
+- `require_visual_text_pair`, `must_use_viewpoint_check`, `allow_cross_lesson_dependency`, `require_branching_feedback`, and `minimize_optimization_scope` are booleans.
+- Pedagogical effects and conflict handling belong to the routed teaching owner; this section owns only the normalized shape.
 
 #### Course Design Controls
 
@@ -146,6 +172,38 @@ The schema ends at these invariants. Consumers pass the normalized object unchan
 - If multiple files are provided, ordering must be explicit.
 - When multilingual content exists, validate `target_language` against `session-controls.md#output-language` before creating artifacts.
 - `interaction_policy` must satisfy the mode/purpose invariants above before Generation or Optimization applies pedagogical gates.
+- `authoring_constraints` must satisfy [Authoring Constraints](#authoring-constraints) before any authoring phase consumes it.
+
+## Input Compatibility Normalization
+
+Normalize legacy authoring inputs once, before Course Design Intake or direct phase execution. Downstream workflows consume only the canonical fields; legacy wrapper names never appear in a phase handoff or output.
+
+| Legacy input | Canonical field |
+|---|---|
+| `chapter_hint.target_lessons` | `lesson_count_target` |
+| `chapter_hint.granularity` | `authoring_constraints.lesson_granularity` |
+| `course_profile.lesson_count_target` | `lesson_count_target`; retain the other `course_profile` members. |
+| `generation_constraints.persona` | `authoring_constraints.teaching_persona` |
+| `generation_constraints.lesson_granularity` | `authoring_constraints.lesson_granularity` |
+| `teaching_constraints.max_interactions` | `authoring_constraints.max_interactions` |
+| `teaching_constraints.require_visual_text_pair` | `authoring_constraints.require_visual_text_pair` |
+| `teaching_constraints.must_use_viewpoint_check` | `authoring_constraints.must_use_viewpoint_check` |
+| `teaching_constraints.allow_cross_lesson_dependency` | `authoring_constraints.allow_cross_lesson_dependency` |
+| `optimization_constraints.max_interactions` | `authoring_constraints.max_interactions` |
+| `optimization_constraints.require_branching_feedback` | `authoring_constraints.require_branching_feedback` |
+| `optimization_constraints.minimize_scope` | `authoring_constraints.minimize_optimization_scope` |
+| `optimization_constraints.fallback_mode: true` | `execution_mode: fallback` |
+| `optimization_constraints.fallback_mode: false` | `execution_mode: standard` |
+
+Apply these rules deterministically:
+
+1. Collect every legacy alias by its destination before choosing values.
+2. When only one legacy value exists for a destination, copy it to the canonical field and remove the legacy wrapper or nested legacy member before the handoff.
+3. When multiple legacy aliases for one destination have equivalent values, copy that value once. When their values conflict and no canonical value exists, stop with a targeted conflict that lists each legacy path and value and asks for the canonical field; never choose an alias by incidental input order.
+4. When equivalent legacy and canonical values coexist, keep the canonical field once and remove the legacy wrapper or nested legacy member.
+5. When any legacy value conflicts with an explicitly supplied canonical value, keep the canonical value and record every ignored legacy path and value in the phase report.
+6. Reject an unrecognized member inside `chapter_hint`, `generation_constraints`, `teaching_constraints`, or `optimization_constraints` with a targeted unsupported-field explanation instead of silently discarding it.
+7. Compatibility normalization changes input shape only; it does not widen a phase's output scope or reintroduce legacy keys into output.
 
 ## Output Contract
 

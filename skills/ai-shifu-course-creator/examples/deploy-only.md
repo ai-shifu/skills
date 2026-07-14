@@ -6,6 +6,8 @@ Apply the [Deployment and Course Management](../references/deployment-workflow.m
 
 Deploy pre-existing Teaching Prompts (and a Course Prompt) without running the authoring pipeline.
 
+This standalone route preserves the course's existing delivery mode and TTS setting. It does not ask for a delivery mode or infer one from lesson content.
+
 ## Prerequisites
 
 A course directory with Teaching Prompts (one MarkdownFlow file per lesson) already prepared:
@@ -19,6 +21,8 @@ my-course/
     lesson-01.md
     lesson-02.md
 ```
+
+Before building, inspect image references. If any resource is local, externally hosted, or not a valid AI-Shifu platform resource URL, complete the shared [Image Assets](../references/image-assets.md) workflow; already-valid platform resources need no extra operation.
 
 ## Deployment
 

@@ -21,6 +21,10 @@ Apply [Segmentation and Orchestration](../references/segmentation-orchestration.
       "purposes": ["pre_content_thinking"]
     }
   },
+  "authoring_constraints": {
+    "teaching_persona": "practical coach",
+    "lesson_granularity": "short"
+  },
   "course_profile": {
     "audience_level": "beginner",
     "lesson_duration_minutes": 10,
