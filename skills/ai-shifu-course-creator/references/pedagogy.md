@@ -66,6 +66,8 @@ Every lesson must satisfy one of these behavior-equivalent loops, as selected by
 
 The default loop applies when `unspecified` leaves the baseline active or when an `enabled` purpose applies to the current lesson. The non-interactive loop applies under `disabled` and to an `enabled` lesson with no selected-purpose placement.
 
+The final paragraph of every lesson must be non-interactive. It must follow the lesson's final interaction and close with a summary, synthesis, decision checkpoint, or action handoff; never end with a learner-response question, a `?[]` block, or an answer-dependent branch. For `lesson_end_self_check`, "at each lesson end" means immediately before this required closing paragraph, not as the final paragraph itself.
+
 A lesson missing a phase required by its selected loop is incomplete. The following constraints apply to both loops:
 
 - **One core question per lesson**: each lesson resolves exactly one teachable question.

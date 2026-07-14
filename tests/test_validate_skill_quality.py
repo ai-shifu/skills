@@ -596,6 +596,23 @@ class PedagogyContractTests(unittest.TestCase):
             set(purposes), validate_skill_quality.INTERACTION_PURPOSES
         )
 
+    def test_lesson_final_paragraph_is_non_interactive(self):
+        lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
+        generation = (
+            COURSE_CREATOR_REFERENCES / "generation-workflow.md"
+        ).read_text(encoding="utf-8")
+        review = (
+            COURSE_CREATOR_REFERENCES / "review-checklist.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            "The final paragraph of every lesson must be non-interactive.",
+            lesson_loop,
+        )
+        self.assertIn("lesson_end_self_check", lesson_loop)
+        self.assertIn("A non-interactive final paragraph", generation)
+        self.assertIn("The final paragraph is non-interactive", review)
+
     def test_authority_links_cover_prompt_and_delivery_boundaries(self):
         scope = markdown_section(self.pedagogy, "Scope and Authority Boundaries")
         interaction = markdown_section(self.pedagogy, "Interaction Design")
