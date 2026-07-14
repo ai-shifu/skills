@@ -33,7 +33,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 - The interaction policy used for this audit resolves to `enabled`, `disabled`, or `unspecified` and matches the Course Design Intake answer.
 - The observed lesson loop and any non-interactive substitute match `pedagogy.md#interaction-policy-precedence` and `pedagogy.md#lesson-loop` for that resolved policy.
-- The final paragraph is non-interactive, follows the lesson's last interaction, and closes with a summary, synthesis, decision checkpoint, or action handoff.
+- The final paragraph of each lesson is non-interactive.
 - One core question per lesson; resolved by lesson close.
 - Action tasks executable now or explicitly linked to a downstream lesson.
 - Variable naming consistent and traceable across lessons; new variable names follow the resolved output language and are composed of letters, numbers, and underscores.

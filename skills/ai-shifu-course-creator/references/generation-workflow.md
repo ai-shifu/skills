@@ -19,7 +19,7 @@ Required anchors per lesson:
 3. Evidence-chain explanation.
 4. The interaction slot or non-interactive substitute required by `pedagogy.md#interaction-policy-precedence`, with visible instructional value.
 5. At least one reusable deliverable.
-6. A non-interactive final paragraph that follows the lesson's last interaction and closes with a summary, synthesis, decision checkpoint, or action handoff.
+6. Lesson close with summary or decision checkpoint.
 
 Optional modules: viewpoint calibration, misconception correction, dual deliverables (understanding + action), cross-lesson bridge sentence, additional visual-text reinforcement blocks.
 
