@@ -131,7 +131,7 @@ These are the teaching rules for permitted interactions. For interaction syntax 
   - When the prompt means "which of these apply?", prefer multi-select unless the source or author explicitly limits the learner to one answer.
   - For multi-select, use combined feedback, prioritization, tailored examples, or coverage of selected items; do not require an exhaustive branch for every option combination.
 - Before writing an interaction, decide whether its answer leaves the current lesson and apply [Variable Strategy](#variable-strategy).
-- Every instructional interaction must be followed immediately by feedback tailored to the learner's response.
+- Every instructional interaction must trigger immediate feedback or a visible current-lesson effect, such as a branching explanation, tailored example, practice difficulty, feedback, summary, deliverable, or reflection.
 - A viewpoint or path-choice interaction whose answer is meant to drive distinct next steps must branch by option. Use no more than one `viewpoint_check` per lesson unless justified.
 - Avoid repetitive interaction semantics across lessons unless comparison intent is explicit.
 - For input interactions, the pre-interaction question must be more specific than the short `...` placeholder.
@@ -221,7 +221,7 @@ If structure is weak, output a fallback segmentation and mark uncertain spans fo
 - Visual requirement missing
 - Variable or syntax risk
 
-Other instructional interactions satisfy their effect requirement through the immediate, response-specific feedback required by [Interaction Design](#interaction-design); they do not require option-by-option branching.
+Other instructional interactions satisfy their effect requirement through immediate feedback or another visible current-lesson effect; they do not require option-by-option branching.
 
 #### Execution Sequence
 
