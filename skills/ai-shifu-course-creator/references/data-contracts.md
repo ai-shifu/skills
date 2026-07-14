@@ -142,6 +142,8 @@ The schema ends at these invariants. Consumers pass the normalized object unchan
 
 ### Minimal Input Payload Example
 
+This is a raw pre-Course-Design-Intake payload. Do not pass its six individual control fields directly to downstream workflows; after intake, replace them with the canonical `authoring_run_controls` shape in [Course Design Controls](#course-design-controls).
+
 ```json
 {
   "course_material": "long transcript or merged markdown",

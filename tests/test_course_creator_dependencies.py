@@ -947,6 +947,19 @@ class AuthoringResponsibilityTests(unittest.TestCase):
             optimization,
         )
 
+    def test_minimal_input_example_is_labeled_pre_intake(self):
+        example = markdown_heading_section(
+            self.data_contracts, "Minimal Input Payload Example"
+        )
+
+        self.assertIn("raw pre-Course-Design-Intake payload", example)
+        self.assertIn(
+            "Do not pass its six individual control fields directly to "
+            "downstream workflows",
+            example,
+        )
+        self.assertIn("canonical `authoring_run_controls` shape", example)
+
     def test_segmentation_normalization_handoff_does_not_require_intake_controls(self):
         authoring_controls = self.references[
             Path("references/authoring-controls.md")
