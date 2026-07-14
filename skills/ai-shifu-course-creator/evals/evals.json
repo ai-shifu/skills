@@ -109,8 +109,8 @@
       "files": [],
       "expectations": [
         "The standard non-slide-only Teaching Prompt pairs the core visual with a complete textual explanation and handles the provided image through the existing understand-upload-embed workflow.",
-        "The pure classroom-slide result follows the Slide-Only Generation Override with concise projected content and does not require AI narration or a full explanatory paragraph after the image.",
-        "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
+        "The pure classroom-slide result uses delivery_mode pure_slides with listen_mode_enabled false and is concise and projection-ready for a human instructor without AI narration or a required full explanatory paragraph.",
+        "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; without a real upload, the provided-image plan uses upload-image, valid deterministic MarkdownFlow image syntax, and only the real returned platform URL rather than an invented illustrative URL."
       ]
     }
   ]

@@ -21,19 +21,9 @@ Complete `authentication.md` first. Always use CLI commands; never make raw HTTP
 
 ### Course Directory
 
-Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `cli/course-directory-spec.md` for the full specification. When continuing from Optimization (Path A), write the optimized Teaching Prompts and Course Prompt into this structure automatically.
+Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `cli/course-directory-spec.md` for the full specification. When continuing from Optimization (Path A), write the optimized Teaching Prompts, Course Prompt, and course description into this structure automatically.
 
-**Content vs attributes — the skill changes content, not attributes, by default.**
-Content = lesson MarkdownFlow + course name/description/prompt; attributes = each
-lesson's learning permission (`access` = 无需登录/试看/付费) and `hidden`, plus
-course-level model/price/TTS/Ask/keywords/…. The skill pushes only content, and
-the platform backend uses PATCH semantics (any field a write omits is left
-unchanged), so iterating content never resets attributes. `pull` writes the
-current attributes into `structure.json` and `course-config.json` as a
-**read-only reference**. Change attributes only when the user explicitly asks —
-`set-access` for a lesson's permission, `set-tts` for course Listen Mode (flags:
-`cli/cli-reference.md#update-commands`); other course-level settings
-are changed in the platform editor.
+**Content vs attributes policy.** For routine authoring and deployment, choose content operations only. Change lesson access, visibility, Listen Mode, or another platform attribute only when the user explicitly asks; then choose the corresponding explicit management command. Exact request fields, PATCH behavior, and command side effects are owned by `cli/cli-reference.md`; snapshot file roles and schemas are owned by `cli/course-directory-spec.md`.
 
 **Editing an existing course → use granular non-destructive commands**
 (`pull → update-lesson / add-lesson / delete-lesson / reorder / set-access / set-tts`).
@@ -41,11 +31,17 @@ The destructive whole-course `import` recreates every outline (a recreated lesso
 gets the platform-default permission), so reserve `import --new` for brand-new
 courses — do not use it to iterate an existing one.
 
+### Delivery Mode Handoff
+
+Obtain `delivery_mode` and `listen_mode_enabled` through `delivery-modes.md#resolution-and-handoff`, then consume the resolved values without redefining their source or profile behavior here. Deployment only selects the explicit management command requested by the user; its flags, request fields, PATCH behavior, and side effects remain in `cli/cli-reference.md`.
+
 ### CLI Commands
 
 All commands documented in `cli/cli-reference.md` (deployment: `build` / `import` / `publish` / `show`; version sync: `pull` / `status`; management for Path D: `list` / `update-meta` / `update-lesson` / `rename-lesson` / `set-access` / `set-tts` / `reorder` / `delete-lesson` / `archive`). Import JSON schema: `cli/cli-reference.md#import-json-schema`.
 
 ### Deployment Workflow
+
+Before any `build` or `import`, run the [Pre-Deploy Language Audit](review-checklist.md#pre-deploy-language-audit) against the effective course directory and metadata.
 
 **From pipeline (Path A continuation):**
 1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-description.md` (the generated SEO description; no author-side process notes), `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `course-prompt.md#fillable-template`), and required `structure.json`.
@@ -96,7 +92,4 @@ After any deployment or management operation, verify the result:
 
 ### Validation
 
-- Import completes without errors.
-- Course is accessible via platform URL.
-- Lesson count and structure match the source directory.
-- Published course is reachable in preview mode.
+Run `review-checklist.md#deployment-validation` after the operational verification steps above.

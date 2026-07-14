@@ -30,8 +30,9 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "authentication.md",
             "course-target.md",
             "authoring-controls.md",
-            "prompt-contracts.md",
             "authoring-intake.md",
+            "delivery-modes.md",
+            "prompt-contracts.md",
             "segmentation-orchestration.md",
             "generation-workflow.md",
             "optimization-workflow.md",
@@ -65,6 +66,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
         ):
             route = self.route_line(prefix)
             self.assertIn("references/authentication.md", route)
+            self.assertIn("references/delivery-modes.md", route)
             self.assertIn("references/prompt-contracts.md", route)
 
     def test_platform_and_analytics_routes_require_authentication(self):
@@ -75,10 +77,64 @@ class CourseCreatorRouterTests(unittest.TestCase):
             route = self.route_line(prefix)
             self.assertIn("references/authentication.md", route)
 
+    def test_listen_mode_route_loads_only_its_required_boundaries(self):
+        route = self.route_line("Enable, disable, or inspect Listen Mode")
+        required = (
+            "references/authentication.md",
+            "references/delivery-modes.md",
+            "references/deployment-workflow.md#delivery-mode-handoff",
+        )
+
+        for earlier, later in zip(required, required[1:]):
+            self.assertLess(route.index(earlier), route.index(later))
+        self.assertEqual(route.count("references/"), len(required))
+        self.assertNotIn("authoring-intake.md", route)
+        self.assertNotIn("prompt-contracts.md", route)
+
+    def test_listen_mode_handoff_preserves_authoring_decisions(self):
+        deployment = (
+            SKILL_ROOT / "references" / "deployment-workflow.md"
+        ).read_text(encoding="utf-8")
+        delivery_modes = (
+            SKILL_ROOT / "references" / "delivery-modes.md"
+        ).read_text(encoding="utf-8")
+        handoff = deployment.split("### Delivery Mode Handoff", 1)[1].split(
+            "\n### ", 1
+        )[0]
+        resolution = delivery_modes.split("## Resolution and Handoff", 1)[1].split(
+            "\n## ", 1
+        )[0]
+
+        self.assertIn("delivery-modes.md#resolution-and-handoff", handoff)
+        self.assertIn("without redefining", handoff)
+        self.assertNotIn("independent deployment", handoff)
+        self.assertNotIn("confirm the delivery mode", handoff)
+
+        self.assertIn("authoring_run_controls", resolution)
+        self.assertIn("delivery_mode", resolution)
+        self.assertIn("listen_mode_enabled", resolution)
+        self.assertIn("data-contracts.md#final-authoring-output", resolution)
+        self.assertIn("without reinterpreting", resolution)
+        self.assertIn("independent deployment", resolution)
+        self.assertIn("confirm the mode", resolution)
+        self.assertIn("unambiguously", resolution)
+
+        standard = delivery_modes.split("## Standard", 1)[1].split(
+            "\n## ", 1
+        )[0]
+        pure_slides = delivery_modes.split("## Pure Slides", 1)[1]
+        self.assertIn("listen_mode_enabled", standard)
+        self.assertIn("unchanged", standard)
+        self.assertIn("Normalize `listen_mode_enabled` to `false`", pure_slides)
+
     def test_generation_runs_design_intake_before_prompt_contracts(self):
         route = self.route_line("Generate Teaching Prompts")
         self.assertLess(
             route.index("references/authoring-intake.md"),
+            route.index("references/delivery-modes.md"),
+        )
+        self.assertLess(
+            route.index("references/delivery-modes.md"),
             route.index("references/prompt-contracts.md"),
         )
 
@@ -123,9 +179,12 @@ class CourseCreatorRouterTests(unittest.TestCase):
         )
 
     def test_safe_deployment_branches_new_and_existing_targets(self):
+        route = self.route_line("Deploy a new course")
         deployment = (
             SKILL_ROOT / "references" / "deployment-workflow.md"
         ).read_text(encoding="utf-8")
+        self.assertIn("review-checklist.md#pre-deploy-language-audit", route)
+        self.assertIn("Pre-Deploy Language Audit", deployment)
         self.assertIn("Deploy a new target", deployment)
         self.assertIn("do not run this command", deployment)
         self.assertIn("Existing target: use the Version Sync Workflow", deployment)

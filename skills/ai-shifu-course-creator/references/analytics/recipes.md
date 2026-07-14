@@ -1,8 +1,8 @@
 # Analytics Recipes
 
-Ready-to-run templates, grouped by scenario. Most examples run through `shifu-cli.py analytics-query <bid> --dsl '…'` (the DSL path); the **Credit Consumption** section is the exception — it uses `shifu-cli.py credit-detail <bid> …` (why the DSL path is unavailable: `tables.md`). Substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Read `dsl.md` and `tables.md` first for grammar and field meanings.
+This page is the authoritative execution-template library: it owns complete scenario query bodies, command examples, client-side joins, and metric recipes. Command syntax comes from `../cli/cli-reference.md`, query grammar from `dsl.md`, row and field meaning from `tables.md`, and disclosure and presentation from `privacy-and-presentation.md`.
 
-For DSL recipes, the bodies omit `shifu_bid` — the CLI injects it from the positional argument. For `credit-detail`, all parameters are flags on the command line; see the Credit Consumption section below for the full reference.
+Most recipes use `analytics-query`; Credit Recipes 8–13 use `credit-detail`. Substitute `<bid>` with the resolved `shifu_bid`. Query bodies omit `shifu_bid` because the CLI supplies course scope from the positional argument; use the CLI reference as the authority for flags, output, and exit codes.
 
 ## Contents
 
@@ -66,7 +66,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 > When the published title and the draft title disagree, surface both to the user — the discrepancy usually means a recent rename that has not been republished yet.
 
-**CLI shortcut**: `shifu-cli.py find-title <keyword>` chains Recipes 0a → 0c on every course you own and prints a grouped Published / Draft-only / Historical table.
+**CLI shortcut**: `shifu-cli.py find-title <keyword>` applies the current-title lookup across every owned course and prints grouped current published and draft matches; historical titles remain excluded.
 
 ## Course Overview (one-stop popularity dashboard)
 
@@ -82,7 +82,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "limit":1
 }'
 
-# 1b) Most-recent activity time (latest progress record; row-query, not max() — min/max are numeric-only)
+# 1b) Most-recent activity time (latest progress record; a row query also preserves its lesson context)
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "table":"learn_progress_records",
  "select":["created_at"],
@@ -111,7 +111,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 口径说明（present these definitions alongside the numbers so they are unambiguous):
 
-- **学员数 (learners)** = `count_distinct(user_bid)` on `learn_progress_records` — everyone who entered the course (Method ① in `tables.md`). This is the dashboard's "学员数".
+- **学员数 (learners)** = `count_distinct(user_bid)` on `learn_progress_records` — everyone who entered the course. This is the dashboard's "学员数".
 - **订单数 (orders)** = `count` of `order_orders` rows with `status = 502` — paid orders (includes ¥0 free enrolments). For *strictly paid* (`paid_price > 0`) use Recipe 3; for the full funnel use Recipe 5.
 - **营收 (revenue)** = `sum(paid_price)` over the same `status = 502` rows. Round to 2 decimals (`¥5,870.70`).
 - **最近活跃 (last_active)** = the `created_at` of the latest `learn_progress_records` row (query 1b). Convert to local time before presenting.
@@ -132,6 +132,10 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "limit":10
 }'
 ```
+
+For a completion percentage, state the denominator explicitly. Use distinct learners in `learn_progress_records` when the question is "of learners who entered, how many completed"; use paid-order purchasers when the question is "of purchasers, how many completed", which requires a separate order query and client-side division. Attempt-grain rows are not a substitute for either learner-grain denominator.
+
+Use the distinct-learner count for `status = 603` as the completion numerator. Translate every returned status through the progress-status table in `tables.md` rather than treating the numeric codes as labels.
 
 ### Recipe 2 — Top 20 stuck lessons
 
@@ -204,24 +208,50 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ## Ratings
 
-### Recipe 7 — Lowest-rated lessons
+### Recipe 7 — Lowest-rated lessons and mode comparison
+
+Apply the feedback-to-lesson relationship in `tables.md#feedback-to-lesson-relationship` with two paginated row queries and a client-side join; do not rank `progress_record_bid` values as if they were lessons.
+
+**Step 1 — page every feedback row**
 
 ```bash
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "table":"learn_lesson_feedbacks",
- "select":["progress_record_bid"],
- "group_by":["progress_record_bid"],
- "aggregate":[{"fn":"avg","field":"score","alias":"avg_score"},{"fn":"count","alias":"n"}],
- "order_by":[{"field":"avg_score","dir":"asc"}],
- "limit":10
+ "select":["lesson_feedback_bid","progress_record_bid","mode","score","created_at"],
+ "order_by":[{"field":"created_at","dir":"asc"},{"field":"lesson_feedback_bid","dir":"asc"}],
+ "limit":1000,
+ "offset":0
 }'
 ```
 
-> Each row's `progress_record_bid` must be translated to a chapter/lesson name via the two-step lookup in `tables.md` (ID Field Translation Rules).
+Repeat with offsets `1000`, `2000`, and so on until a page returns fewer than 1000 rows.
+
+**Step 2 — page every progress-to-lesson mapping**
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"learn_progress_records",
+ "select":["progress_record_bid","outline_item_bid","created_at"],
+ "order_by":[{"field":"created_at","dir":"asc"},{"field":"progress_record_bid","dir":"asc"}],
+ "limit":1000,
+ "offset":0
+}'
+```
+
+Advance `offset` with the same rule. Build a `progress_record_bid → outline_item_bid` lookup, then attach each feedback row to its lesson. Report the count of feedback rows that have no matching progress row instead of silently assigning them to a lesson.
+
+**Step 3 — aggregate the joined raw rows**
+
+- For the lesson ranking, group by `outline_item_bid` and compute `sum(score) / count(feedback rows)`.
+- For the mode comparison, group by `(outline_item_bid, mode)` and compute the same weighted average and response count.
+- Never average already averaged read/listen or session results; each raw feedback row must retain equal weight.
+- Sort lesson results by average score ascending and include the response count so small samples remain visible.
+
+Resolve `outline_item_bid` values with the course outline, then pass the result through `privacy-and-presentation.md` for user-facing translation.
 
 ## Credit Consumption (use `shifu-cli.py credit-detail`)
 
-> The DSL `bill_daily_usage_metrics` recipes that lived here previously are deprecated — that table is empty in production until the daily aggregation job is enabled (details: `tables.md`). Until then `credit-detail` is the only working path for credit data.
+> The daily summary table is currently empty as recorded in `tables.md`, so these scenarios use the `credit-detail` command defined in `../cli/cli-reference.md#credit-detail`.
 
 ### Recipe 8 — Today's credit consumption
 
@@ -229,7 +259,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-16 --end 2026-05-16
 ```
 
-Returns `summary` (total credits, distinct users / progress records, wallet creator, time range) plus `rows` (per-usage detail: created_at, user_bid, progress_record_bid, outline_item_bid, usage_type, usage_scene, provider, model, credits).
+Use `data.summary.total_credits` for the requested day; use `data.rows` only when the user asks for a breakdown.
 
 ### Recipe 9 — Credits over an arbitrary date window
 
@@ -237,7 +267,7 @@ Returns `summary` (total credits, distinct users / progress records, wallet crea
 python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-01 --end 2026-05-15
 ```
 
-`start` / `end` are inclusive ISO dates; end must be on or after start.
+Use this form when the user supplies an inclusive reporting window.
 
 ### Recipe 10 — Production-only spend (exclude preview / debug)
 
@@ -245,7 +275,7 @@ python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-01 --end 2026-0
 python3 scripts/shifu-cli.py credit-detail <bid> --scene 1203
 ```
 
-`--scene` accepts a comma-separated subset of `{1201, 1202, 1203}` (debug / preview / production). Combine with `--start` / `--end` to scope a window.
+Use the learner-production scene when the question excludes author preview and debugging activity.
 
 ### Recipe 11 — LLM-only vs TTS-only
 
@@ -257,7 +287,7 @@ python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1101
 python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1102
 ```
 
-`--usage-type` accepts a comma-separated subset of `{1101, 1102}`.
+Run one or both forms according to whether the user wants LLM, TTS, or comparative consumption.
 
 ### Recipe 12 — Pagination for large windows
 
@@ -265,46 +295,15 @@ python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1102
 python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-01 --limit 200 --offset 200
 ```
 
-`--limit` caps at 1000; the `summary` block always reflects the full filtered set regardless of paging.
+Advance `offset` while retaining the same filters when the user needs row-level detail beyond one page.
 
 ### Recipe 13 — Reading the response
 
-Pseudo-shape:
+Read `data.summary` and `data.rows` according to the `credit-detail` output contract in `../cli/cli-reference.md#credit-detail`. `data.summary.unique_wallets` is a distinct-wallet count, not a wallet identifier; wallet identities exist only as `data.rows[].wallet_creator_bid`.
 
-```json
-{
-  "code": 0,
-  "data": {
-    "summary": {
-      "total_records":   52,
-      "total_credits":   "26.6900",
-      "unique_users":    1,
-      "unique_progress": 5,
-      "wallet_creator_bid": "029bacf0...",
-      "time_range": ["2026-05-15 16:05:18", "2026-05-15 23:45:17"]
-    },
-    "rows": [
-      {
-        "usage_bid": "...",
-        "created_at": "2026-05-15 23:45:17",
-        "user_bid": "...",
-        "progress_record_bid": "...",
-        "outline_item_bid": "...",
-        "usage_type":  1101,
-        "usage_scene": 1203,
-        "provider":    "deepseek",
-        "model":       "deepseek-v4-flash",
-        "credits":     "0.5100",
-        "wallet_creator_bid": "029bacf0..."
-      }
-    ],
-    "limit":  100,
-    "offset": 0
-  }
-}
-```
+For a breakdown, page through every detail row with a fixed filter set and merge the pages before grouping. Group client-side by one or more requested row dimensions: `model`, `provider`, `usage_scene`, `usage_type`, or `wallet_creator_bid`. For each group, sum the decimal `credits` values and count its rows. `usage_scene` and `usage_type` meanings come from `tables.md`.
 
-`total_credits` and per-row `credits` are decimal strings (preserved precisely from the ledger, no float rounding). Apply the standard translation rules before presenting: `outline_item_bid` → "Lesson X.Y: <title>"; `user_bid` → ordinal labels (Learner A / B / C) per `privacy-and-presentation.md`; round credits to 2 decimal places (e.g. `26.69 积分`).
+Most courses use one wallet, but subscription, sponsorship, or proxy-payment paths can produce multiple wallets for one course. When `data.summary.unique_wallets > 1`, never label one row's `wallet_creator_bid` as the course wallet; group by `wallet_creator_bid` or describe the result as multi-wallet usage. Preserve decimal credit values until presentation, then apply `privacy-and-presentation.md#translation-gate-mandatory-before-any-answer`.
 
 ## Active Learners
 
@@ -335,7 +334,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-> `value` may contain free-text PII — always aggregate, never `select` raw values without `group_by`. See `privacy-and-presentation.md`.
+This execution template returns a distribution rather than learner-level values. `privacy-and-presentation.md` owns whether and how the aggregate may be disclosed.
 
 ## Per-Learner Top-N
 
@@ -357,7 +356,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ## Follow-up Q&A
 
-> **All Recipe 17–22 templates below**: the API auto-filters `status = 1` on `learn_generated_blocks` (do not add it yourself — redundant), and follow-up counts always anchor on `type = 321`, never `role = 2`. Both traps explained in `tables.md`.
+> **All Recipe 17–22 templates below**: the auto-applied live-row filter is defined in `dsl.md#auto-applied-filters`, while the distinction between learner role and follow-up type is defined by the generated-block type codes in `tables.md`.
 
 ### Recipe 17 — Total follow-up questions + unique questioners
 
@@ -430,7 +429,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ### Recipe 22 — Latest follow-ups with asker identity (3-step combo)
 
-End-to-end view for "list the latest N follow-up questions with **who asked**, the answer, and timestamps". Uses three `analytics-query` calls — the second and third batch values pulled from the first — and is joined client-side by `user_bid` and the four-key tuple `(progress_record_bid, shifu_bid, outline_item_bid, position)`. `user_identify` always comes back masked (`138*****000`); a `nickname` containing a phone / email / ID number is redacted to `[REDACTED-XXX]`. Plain-text phone numbers are not retrievable through this API — see `privacy-and-presentation.md`.
+End-to-end view for "list the latest N follow-up questions with who asked, the answer, and timestamps". Uses three `analytics-query` calls, with the second and third batch values pulled from the first. The course is already fixed by `<bid>`; apply the relationship in `tables.md#follow-up-qa-relationship` when pairing questions and answers, and apply `privacy-and-presentation.md` before deciding which identity fields may be shown.
 
 Substitute `<N>` (default 10, ≤ 100) below; cap the user_users batch to 50 dedup'd `user_bid` values.
 
@@ -446,7 +445,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-Each row is one question: `(user_bid, question_text, progress_record_bid, outline_item_bid, position, asked_at)`. The 4-tuple `(progress_record_bid, outline_item_bid, position, asked_at)` is what you use to pair against the matching answer below.
+Each row is one question and supplies the asker key, thread keys, ordering fields, text, and timestamp needed by the remaining steps.
 
 **Step 2 — fetch the matching LLM answers**
 
@@ -459,14 +458,15 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
    {"field":"type","op":"=","value":322},
    {"field":"progress_record_bid","op":"in","value":["<prb-1>","<prb-2>","..."]}],
  "select":["generated_content","progress_record_bid","outline_item_bid","position","created_at"],
- "order_by":[{"field":"position","dir":"asc"}],
- "limit":100
+ "order_by":[{"field":"position","dir":"asc"},{"field":"created_at","dir":"asc"}],
+ "limit":100,
+ "offset":0
 }'
 ```
 
-> **Pairing rule (four-key, preferred)**: for each Step-1 question row with `(progress_record_bid = P, outline_item_bid = L, position = POS, asked_at = T)`, the matching answer is the Step-2 row with the same `(P, L)` and the smallest `position > POS`. The four-key tuple is what the platform stores deterministically — no time-of-day ambiguity, no race-condition surprises if two answers landed within the same second. Time-order is a **fallback** only used when `position` is missing on either side: pick the earliest Step-2 row with the same `(P, L)` and `created_at > T`. Each lesson can carry multiple Q&A turns under the same `progress_record_bid` — the `(L, POS)` pair is what distinguishes them.
+Page answer candidates with offsets `100`, `200`, and so on until a page returns fewer than 100 rows. Apply `tables.md#follow-up-qa-relationship` exactly: partition both result sets by its thread keys, then follow its position and generation-order precedence for each question. Do not replace the owned relationship with a stricter positional predicate.
 
-**Step 3 — resolve the askers' nicknames and (masked) phones**
+**Step 3 — fetch permitted identity fields for the askers**
 
 Collect the distinct `user_bid` values from Step 1 (dedup, max 50):
 
@@ -479,22 +479,24 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-Returns `(user_bid, nickname, user_identify)` rows. `nickname` is auto-redacted when it embeds a phone / email / ID; `user_identify` is always masked (phone → `138*****000`, email → `te*****@example.com`).
+Join these rows to Step 1 by `user_bid`. The protocol behavior for returned identity fields is defined by `dsl.md`; disclosure and presentation decisions are defined only by `privacy-and-presentation.md`.
 
 **Step 4 — assemble and present (client-side)**
 
-Apply the Translation Gate in `privacy-and-presentation.md`:
+Assemble the question, matched answer, asker lookup row, lesson context, and timestamps. Pass that internal result to `privacy-and-presentation.md`; that file alone decides masking, identifier replacement, timestamp formatting, and the final answer shape.
 
-- Never paste the raw `user_bid`; replace with ordinal labels (`Learner A / B / C`).
-- Translate `progress_record_bid` to a chapter/lesson name via the two-step lookup in `tables.md`.
-- Convert `created_at` to local-timezone (`2026-05-13 21:42`).
-- Display the masked `user_identify` as-is — do not strip the `*****`.
+If Use B in `privacy-and-presentation.md` permits an exact reverse lookup, run this execution template before Step 1:
 
-Final shape per row:
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"user_users",
+ "select":["user_bid","nickname","user_identify"],
+ "where":[{"field":"user_identify","op":"=","value":"<exact-phone-or-email>"}],
+ "limit":1
+}'
+```
 
-> **Learner A (Python 学徒 · 138\*\*\*\*\*000)** asked in **Lesson 3.1 装饰器与闭包** at `2026-05-13 21:42`: "闭包和装饰器啥区别?" → AI answer: "闭包是…"
-
-If the user starts from a phone number and wants to know which learner asked, run `privacy-and-presentation.md` Use B (`user_identify = "13800138000"` exact match) to get the `user_bid` first, then filter Step 1 by that `user_bid` (`{"field":"user_bid","op":"=","value":"<u-bid>"}`) — `in` / `like` / range on `user_identify` are rejected to prevent enumeration.
+Use the resulting `user_bid` as the Step-1 filter. Query validation remains governed by the restricted identity-table grammar in `dsl.md`, and disclosure remains governed by `privacy-and-presentation.md`.
 
 ### Recipe 23 — Follow-up questions per lesson
 

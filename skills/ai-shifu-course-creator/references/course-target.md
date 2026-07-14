@@ -17,14 +17,18 @@ cloud for an existing one.
    `shifu-cli.py find-title <keyword>` (targeted title search; do **not** dump the
    whole `list`).
 3. **Branch:**
-   - **New intent + a match exists** → **ASK the user**: edit that existing course,
-     or create a separate new one? *Edit it* → `pull <bid> --course-dir <dir>` then
-     edit locally; *Create new* → author from scratch, then `import --new`.
-   - **New intent + no match** → author from scratch, then `import --new`.
-   - **Edit intent + a match exists** → `pull <bid> --course-dir <dir>`, then edit
-     locally. **Do NOT ask** new-vs-edit; if several match, only resolve *which* one.
-   - **Edit intent + no match** → author from scratch, then `import --new`.
+   - **New intent + a match exists** → **ASK the user**: edit that existing course, or create a separate new one? *Edit it* → `pull <bid> --course-dir <dir>` and resolve an existing target; *Create new* → resolve a new local target.
+   - **New intent + no match** → resolve a new local target.
+   - **Edit intent + a match exists** → `pull <bid> --course-dir <dir>`, then edit locally. **Do NOT ask** new-vs-edit; if several match, only resolve *which* one.
+   - **Edit intent + no match** → resolve a new local target and record that no existing BID was found.
 
-Only **after** the target is resolved do you enter `authoring-intake.md` or the selected standalone authoring phase.
-When the target is an existing course, author **on top of the pulled copy**,
-then push via the converging loop in `deployment-workflow.md#version-sync-workflow`.
+## Resolved Target State
+
+Only after the branch above is complete, record the state that downstream work consumes:
+
+- `target_kind`: `new` or `existing`.
+- `matched_bid`: the selected BID for an existing course, otherwise `null`.
+- `course_dir`: the pulled directory for an existing course or the planned local directory for a new course.
+- `source_state`: `pulled_cloud_copy` for an existing course or `new_local_course` for a new course.
+
+Hand this resolved state to the selected downstream route. Existing-course authoring must build on the pulled cloud copy; new-course authoring starts from the planned local directory.

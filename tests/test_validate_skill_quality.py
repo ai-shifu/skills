@@ -580,6 +580,12 @@ class PedagogyContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.pedagogy_path = COURSE_CREATOR_REFERENCES / "pedagogy.md"
         cls.pedagogy = cls.pedagogy_path.read_text(encoding="utf-8")
+        cls.generation = (
+            COURSE_CREATOR_REFERENCES / "generation-workflow.md"
+        ).read_text(encoding="utf-8")
+        cls.delivery_modes = (
+            COURSE_CREATOR_REFERENCES / "delivery-modes.md"
+        ).read_text(encoding="utf-8")
         cls.data_contracts = (
             COURSE_CREATOR_REFERENCES / "data-contracts.md"
         ).read_text(encoding="utf-8")
@@ -619,27 +625,22 @@ class PedagogyContractTests(unittest.TestCase):
             f"missing public pedagogy anchors: "
             f"{sorted(expected_anchors - actual_anchors)}",
         )
+        self.assertNotIn(
+            "pure-slides",
+            actual_anchors,
+            "delivery-modes.md, not pedagogy.md, owns Pure Slides",
+        )
 
-    def test_transfer_signal_keys_match_pedagogy_data_and_validator(self):
+    def test_transfer_signal_keys_have_one_document_owner(self):
         transfer_section = markdown_section(self.pedagogy, "Transfer Signals")
-        pedagogy_keys = markdown_table_first_column(transfer_section, "Key")
-
         segment_section = markdown_section(self.data_contracts, "Segment Schema")
-        data_contract_block = re.search(
-            r"(?ms)^- `transfer_signals`.*?(?=\n\n|\n[^ \t\n]|\Z)",
-            segment_section,
-        )
-        self.assertIsNotNone(data_contract_block)
-        data_contract_keys = re.findall(
-            r"(?m)^[ \t]+- `([a-z_]+)`[ \t]*$",
-            data_contract_block.group(0),
-        )
+        data_contract_keys = markdown_table_first_column(segment_section, "Key")
 
         validator_keys = validate_skill_quality.TRANSFER_SIGNAL_KEYS
-        self.assertEqual(len(pedagogy_keys), len(set(pedagogy_keys)))
         self.assertEqual(len(data_contract_keys), len(set(data_contract_keys)))
-        self.assertEqual(set(pedagogy_keys), validator_keys)
         self.assertEqual(set(data_contract_keys), validator_keys)
+        self.assertIn("data-contracts.md#segment-schema", transfer_section)
+        self.assertNotIn("| Key |", transfer_section)
 
     def test_interaction_matrix_has_only_canonical_modes_and_purposes(self):
         policy_section = markdown_section(
@@ -668,10 +669,44 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertIn("(markdownflow.md#branching-on-user-input)", interaction)
         self.assertIn("(markdownflow.md#variables)", variables)
         self.assertIn("(data-contracts.md#variable-table)", variables)
-        self.assertIn(
-            "(generation-workflow.md#slide-only-generation-override)",
-            visuals,
+        self.assertNotIn(
+            "generation-workflow.md#slide-only-generation-override", visuals
         )
+        self.assertIn("standard delivery mode", visuals)
+
+        self.assertNotRegex(
+            self.pedagogy,
+            r"(?m)^#{1,6}[ \t]+Pure Slides[ \t]*$",
+        )
+        self.assertNotIn("Compatibility anchor", self.pedagogy)
+        self.assertNotIn("projection deck", self.pedagogy)
+        self.assertNotIn("AI narration directives", self.pedagogy)
+
+        pure_slides_owner = markdown_section(
+            self.delivery_modes, "Pure Slides"
+        )
+        self.assertIn(
+            "projection deck controlled by a human instructor",
+            pure_slides_owner,
+        )
+        self.assertIn(
+            "Do not include AI narration directives", pure_slides_owner
+        )
+        self.assertIn(
+            "Do not require the standard visual-text explanation pair",
+            pure_slides_owner,
+        )
+        self.assertIn(
+            "Normalize `listen_mode_enabled` to `false`", pure_slides_owner
+        )
+
+        slide_only_generation = markdown_section(
+            self.generation, "Slide-Only Generation Override"
+        )
+        self.assertIn(
+            "delivery-modes.md#pure-slides", slide_only_generation
+        )
+        self.assertNotIn("AI narration directives", slide_only_generation)
 
     def test_removed_authoring_controls_do_not_reappear(self):
         scan_roots = [

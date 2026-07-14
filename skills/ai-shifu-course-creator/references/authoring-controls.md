@@ -1,37 +1,33 @@
 # Authoring Controls
 
-Read this file for every Segmentation, Orchestration, Generation, or Optimization task.
+Read this file for every Segmentation, Orchestration, Generation, or Optimization task. It selects cross-phase controls and routes each concern to its single owner; it does not redefine those owners' rules.
 
 ## Execution Modes
 
-Two modes apply uniformly across all authoring phases:
+- **Standard mode** is the default when input quality supports the complete phase contract.
+- **Fallback mode** applies when input is incomplete, conflicting, or low quality; produce coarse but schema-valid output, mark uncertainty, and provide focused rerun hints.
 
-- **Standard mode** (default): Input quality is sufficient; run phases in full with standard schemas.
-- **Fallback mode**: When input is incomplete, conflicting, or low-quality, produce coarse outputs, mark uncertainty explicitly, and provide focused rerun hints. Extend output schemas with the phase-specific fields in `data-contracts.md#fallback-output-extensions`.
-
-See `../examples/fallback-mode.md` for the four phase scenarios.
+Record the selection as `execution_mode: standard|fallback`. A Segmentation-only route consumes that field directly. A route that runs Course Design Intake merges it with the intake result into the canonical `authoring_run_controls` object defined by `data-contracts.md#course-design-controls`. Fallback output adds only the fields in `data-contracts.md#fallback-output-extensions`.
 
 ## Cross-File Concept Routing
 
-Use the authoritative source for each aspect before authoring or auditing:
-
-| Concept | Syntax / Format | Strategy / Rules | Schema / Data |
-|---|---|---|---|
-| Variables | `markdownflow.md#variables` | `pedagogy.md#variable-strategy` | `data-contracts.md#variable-table` |
-| Interaction policy | `markdownflow.md#interactions` | `pedagogy.md#interaction-policy-precedence` and `pedagogy.md#interaction-design` | `data-contracts.md#interaction-policy` |
-| Transfer signals | — | `pedagogy.md#transfer-signals` | `data-contracts.md#segment-schema` |
-| Visual boundaries | `markdownflow.md#images` | `pedagogy.md#visual-text-coordination`, `generation-workflow.md#working-with-author-provided-images`, and `generation-workflow.md#slide-only-generation-override` | `data-contracts.md#segment-schema` |
-| Preservation | `markdownflow.md#preservation` | `pedagogy.md#lesson-loop` | — |
-| Output language | — | — | `data-contracts.md#language-resolution` |
+| Concern | Single owner or owner split |
+|---|---|
+| Output language and canonical human-facing terms | [Output Language](session-controls.md#output-language) and [Canonical Term Translation Table](session-controls.md#canonical-term-translation-table) |
+| Input, handoff, and output shapes | [Data Contracts](data-contracts.md) |
+| MarkdownFlow syntax and runtime behavior | [MarkdownFlow Spec](markdownflow.md) |
+| Mode-independent teaching design | [Pedagogy](pedagogy.md) |
+| Standard versus pure-slide cross-artifact behavior | [Delivery Modes](delivery-modes.md) |
+| Course Prompt base template | [Course Prompt](course-prompt.md) |
+| Author-provided asset inspection and upload | [Working with Author-Provided Images](generation-workflow.md#working-with-author-provided-images) |
+| Cross-artifact red lines | [Prompt Contracts](prompt-contracts.md) |
+| Observable phase and finalization checks | [Review Checklist](review-checklist.md) |
 
 ## Authoring Control Inputs
 
-Use these optional controls across authoring phases:
+- `course_author_name`, `course_profile`, and `delivery_constraints` provide author and course context.
+- `interaction_policy`, `delivery_mode`, and `listen_mode_enabled` are normalized by Course Design Intake.
+- `execution_mode` is selected here before the active phase runs; it becomes part of `authoring_run_controls` only when the route also runs Course Design Intake.
+- `target_language` is resolved through `session-controls.md#output-language`.
 
-- `course_author_name` (string): course author's real name for the Course Prompt role.
-- `course_profile` (json): audience and pedagogical parameters.
-- `delivery_constraints` (json): platform limits, topic policy, and non-negotiable fragments.
-- `interaction_policy` (json): normalized Course Design Intake result with `mode` and selected `purposes`; see `data-contracts.md#interaction-policy`.
-- `target_language` (BCP-47 string): explicit output language; apply the global resolution rules in `session-controls.md#output-language`.
-
-Field-level schemas and example JSON: `data-contracts.md#recommended-object-shapes`.
+Field shapes and enums are authoritative in `data-contracts.md#course-design-controls` and `data-contracts.md#recommended-object-shapes`.

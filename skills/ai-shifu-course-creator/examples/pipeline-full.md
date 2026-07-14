@@ -1,6 +1,8 @@
 # Full Pipeline Example (Segmentation → Orchestration → Generation → Optimization)
 
-> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
+> Note: This example is illustrated in English; actual output follows [Output Language](../references/session-controls.md#output-language).
+
+Apply [Segmentation and Orchestration](../references/segmentation-orchestration.md); this example illustrates the handoffs without redefining the pipeline.
 
 ## Input Payload (example)
 
@@ -8,18 +10,20 @@
 {
   "course_material": "Module transcript: observe metric drift, classify causes, apply one fix, review impact.",
   "course_author_name": "Maya Chen",
-  "interaction_policy": {
-    "mode": "enabled",
-    "purposes": ["pre_content_thinking"]
-  },
-  "generation_constraints": {
-    "persona": "practical coach",
-    "lesson_granularity": "short"
+  "authoring_run_controls": {
+    "execution_mode": "standard",
+    "delivery_mode": "standard",
+    "listen_mode_enabled": false,
+    "chapter_count_target": 1,
+    "lesson_count_target": 1,
+    "interaction_policy": {
+      "mode": "enabled",
+      "purposes": ["pre_content_thinking"]
+    }
   },
   "course_profile": {
     "audience_level": "beginner",
     "lesson_duration_minutes": 10,
-    "lesson_count_target": 3,
     "assessment_mode": "project"
   },
   "delivery_constraints": {
@@ -72,8 +76,30 @@
 
 ## Orchestration + Generation Output
 
+The unchanged source material, author identity, course profile, delivery constraints, and target language remain in the handoff context; this snapshot shows only the phase-owned result fields rather than copying that context.
+
 ```json
 {
+  "authoring_run_controls": {
+    "execution_mode": "standard",
+    "delivery_mode": "standard",
+    "listen_mode_enabled": false,
+    "chapter_count_target": 1,
+    "lesson_count_target": 1,
+    "interaction_policy": {
+      "mode": "enabled",
+      "purposes": ["pre_content_thinking"]
+    }
+  },
+  "lesson_teaching_prompts": [
+    {
+      "lesson_id": "L01",
+      "lesson_title": "Observe and Classify",
+      "teaching_prompt": "Open with a production metric that changed unexpectedly and ask the learner to identify the highest-signal diagnostic step before explaining how to classify the drift.\n---\n?[check workload shape | check lock wait | check cache hit ratio]\n---\nAfter the learner answers, create a slide that shows a stable baseline followed by a sustained metric shift. Begin with the selected check, explain why it is or is not the highest-signal first step for this case, then compare it with workload shape, lock wait, and cache hit ratio.\n\nExplain that persistence separates drift from noise, while classification prevents a plausible fix from targeting the wrong cause. Walk through one focused verification before suggesting a fix.\n\nPresent a reusable one-sentence verification plan naming the signal, expected movement, and stop condition. Close by summarizing the sequence: observe, classify, verify, then fix.",
+      "used_variables": [],
+      "depends_on_lessons": []
+    }
+  ],
   "course_index": [
     {
       "lesson_id": "L01",
@@ -82,27 +108,8 @@
       "source_span_map": [{"source_id": "course_material", "start": 0, "end": 71}]
     }
   ],
-  "global_variable_table": [
-    {
-      "name": "diagnosis_choice",
-      "collected_in": "L01",
-      "used_in": ["L01", "L02"],
-      "effect_scope": "cross_lesson"
-    }
-  ]
+  "global_variable_table": []
 }
-```
-
-```markdown
-Open with a production metric that changed unexpectedly and ask the learner to identify the highest-signal diagnostic step before explaining how to classify the drift.
----
-?[%{{diagnosis_choice}} check workload shape | check lock wait | check cache hit ratio]
----
-The learner's diagnosis choice is {{diagnosis_choice}}. Create a slide that shows a stable baseline followed by a sustained metric shift, with the selected diagnostic branch first and visually emphasized among workload shape, lock wait, and cache hit ratio.
-
-Explain that persistence separates drift from noise, while classification prevents the learner from applying a plausible fix to the wrong cause. Based on the learner's choice, run one focused verification before suggesting a fix, and carry the choice into the next lesson's worked example.
-
-Have the learner write a one-sentence verification plan naming the signal, expected movement, and stop condition. Close by summarizing the sequence: observe, classify, verify, then fix.
 ```
 
 ## Optimization Output
@@ -125,60 +132,26 @@ Have the learner write a one-sentence verification plan naming the signal, expec
 
 ### Course Prompt Artifact
 
-The `course_prompt` string is the complete content below; no template instruction
-is summarized or replaced by an ellipsis.
+Optimization fills the canonical [Course Prompt template](../references/course-prompt.md#fillable-template) from these example-specific bindings. The example does not reproduce the template, so its wording remains owned by one file.
 
-```markdown
-# Role
+| Placeholder source | Example value |
+|---|---|
+| Teacher name | Maya Chen |
+| Specialty and teaching field | Production observability; metric drift diagnosis |
+| Course name | Metric Drift Diagnosis |
+| Mastery goal | Apply the observe, classify, verify, and fix workflow to production metric drift |
+| Learner profile | Beginner operators |
+| Problems in scope | Diagnosis and verification |
 
-- You are Maya Chen.
-- You specialize in production observability and are a professional teacher in the field of metric drift diagnosis.
+The resulting `course_prompt` string uses the standard delivery profile and must pass the canonical [Course Prompt validation](../references/review-checklist.md#course-prompt).
 
-# Task
+### Course Description Artifact
 
-- The current course is *Metric Drift Diagnosis*. Your goal is to help the user master an observe, classify, verify, and fix workflow for production metric drift.
-- Teach one-on-one, address the learner only as "you", and do not use group-addressing terms such as "everyone", "class", or "students".
-- Do not introduce yourself.
-- Do not greet the user.
-- Do not proactively guide the user to the next step at the end.
-
-# Teaching Techniques
-
-- Design the explanation path according to cognitive learning patterns, following the rhythm of "build interest → lower the barrier → understand the structure → form application".
-- Do not simply pile up knowledge points. First explain "why it matters, why it works, and how to use it".
-- When dealing with complex content, break it down before expanding.
-- Prefer clear structures, such as binary distinctions, three-layer structures, step-by-step paths, and comparison relationships.
-- Use concrete scenarios, real examples, analogies, and before-and-after comparisons.
-- When the user may misunderstand something, correct the misconception first, then continue the explanation.
-- Each paragraph should serve a clear function: defining the problem, breaking down the structure, explaining the mechanism, or providing application.
-- If a summary is needed, prefer giving a clear judgment, an application scenario, or an actionable understanding.
-
-# Writing Style
-
-- Use a conversational, natural, and engaging tone, like a clear-minded person explaining something face to face.
-- Keep the language restrained, clear, and warm.
-- You may use analogies, contrasts, and comparisons, but do not sacrifice accuracy for catchy phrasing.
-
-# Format
-
-- Output in Markdown format.
-- Do not output headings of any level, such as #, ##, or ###.
-- Use bold formatting for key steps, cognitive turning points, core conclusions, and common misconceptions.
-- Only bold truly important information. Do not bold an entire paragraph.
-- Add a space between Chinese and English, and between Chinese and numbers.
-
-# Slides
-
-- Only create a slide, PPT, visual page, or classroom projection page when the instruction explicitly requests one. Do not proactively create visuals.
-- Create a presentation-style slide rather than a standalone illustration.
-- In-slide option labels must not be interactive.
-- Keep in-slide text concise and prompt-like. Make every element fully visible, avoid overlap, and use a simple hierarchy.
-- Treat the slide as a structural prompt and follow it with a complete text explanation that assumes the learner has not seen the slide. Add background, causality, examples, and usage instead of repeating the slide.
-```
+The final `course_description` is: `A practical course for beginner operators who want to distinguish metric drift from noise, classify likely causes, verify one targeted fix, and confirm its production impact.`
 
 ## Acceptance Notes
 
 - All four phases executed end-to-end.
-- One core question per lesson, every learner-answer variable has a corresponding variable-backed interaction and metadata entry.
-- The Course Prompt preserves all six sections and every non-placeholder template instruction.
+- One core question per lesson; this single-lesson example uses a no-variable interaction because the answer does not leave the lesson.
+- The Course Prompt bindings fill the single canonical template and pass Course Prompt validation.
 - Optimization pass found no blockers, only enhancement suggestions.

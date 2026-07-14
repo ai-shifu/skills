@@ -1,6 +1,6 @@
 # Pedagogy
 
-Authoritative source for **Teaching Prompt** design constraints: script style, lesson design, segmentation methodology, optimization methodology, and the teaching-side decisions around interactions, variables, and coordination between slides and text. Violating these constraints can produce a Teaching Prompt that runs but teaches poorly.
+Authoritative source for mode-independent **Teaching Prompt** design: script style, lesson design, segmentation methodology, optimization methodology, interaction effects, variable strategy, and standard visual-text coordination. Cross-artifact delivery-mode overrides live outside this file.
 
 ## Scope and Authority Boundaries
 
@@ -12,9 +12,6 @@ Use each concept's authoritative source instead of restating its contract in mul
 | Course-level AI persona, style, and cross-lesson use | [course-prompt.md](course-prompt.md) | Defines Course Prompt design; this file only decides when lesson behavior depends on it. |
 | MarkdownFlow syntax and runtime semantics | [markdownflow.md](markdownflow.md) | Defines parsing, variables, `UNKNOWN`, interactions, branching, image-file embedding, and deterministic blocks. |
 | Structured fields and allowed values | [data-contracts.md](data-contracts.md) | Defines schemas, enums, required objects, and table shapes. |
-| Interaction-policy intake | [authoring-intake.md](authoring-intake.md) | Normalizes the author's selection into the policy consumed here; it does not redefine the policy's teaching effect. |
-| Phase execution | [generation-workflow.md](generation-workflow.md), [segmentation-orchestration.md](segmentation-orchestration.md), and [optimization-workflow.md](optimization-workflow.md) | Applies the authoritative rules at each pipeline stage without changing them. |
-| Teaching Prompt and Course Prompt red lines | [prompt-contracts.md](prompt-contracts.md) | Defines hard output boundaries that this file cannot override. |
 
 ## Script Style
 
@@ -34,13 +31,13 @@ Disallowed patterns:
 
 ## Interaction Policy Precedence
 
-Course Design Intake resolves the author's selection into one of the three modes below. This matrix is the authoritative definition of each mode's instructional effect and replacement behavior.
+Consume the schema-valid interaction-policy mode without re-resolving the author's selection. This matrix is the authoritative definition of each mode's instructional effect and replacement behavior.
 
-| Mode | Selection state | Instructional effect | Non-interactive alternative |
-| --- | --- | --- | --- |
-| `enabled` | One or more purposes selected | Execute interactions only at the selected-purpose placements. Selecting one purpose does not make other purposes or a blanket per-lesson interaction mandatory. | At unselected-purpose slots, use the relevant worked application, model-led demonstration, or consolidation. |
-| `disabled` | The author explicitly selected no interactions | Emit no MarkdownFlow interaction blocks (`?[]`), solicit no learner answer, collect no learner-answer variables, and create no answer-dependent branch. | Use worked examples, model-led application, or consolidation wherever an interaction slot would otherwise appear. |
-| `unspecified` | No explicit interaction choice | Add no interaction-policy requirement or override; apply the default teaching rules in this file as-is. | Use an alternative only when the applicable default teaching rule already calls for it. |
+| Mode | Instructional effect | Non-interactive alternative |
+|---|---|---|
+| `enabled` | Execute interactions only at the selected-purpose placements. Selecting one purpose does not make other purposes or a blanket per-lesson interaction mandatory. | At unselected-purpose slots, use the relevant worked application, model-led demonstration, or consolidation. |
+| `disabled` | Emit no MarkdownFlow interaction blocks (`?[]`), solicit no learner answer, collect no learner-answer variables, and create no answer-dependent branch. | Use worked examples, model-led application, or consolidation wherever an interaction slot would otherwise appear. |
+| `unspecified` | Add no interaction-policy requirement or override; apply the default teaching rules in this file as-is. | Use an alternative only when the applicable default teaching rule already calls for it. |
 
 When the mode is `enabled`, selected purposes map to exactly these placements:
 
@@ -144,15 +141,11 @@ These are the teaching decisions for whether to collect an answer, how often to 
 
 ### Visual-Text Coordination
 
-The Teaching Prompt hard rules in [prompt-contracts.md](prompt-contracts.md) govern every slide and image-file scenario. Within a Teaching Prompt, call every generated or described screen-facing teaching unit a slide. Use `image` only for an actual image file or uploaded image asset. Diagrams, charts, and other graphics are slide content rather than images unless they are supplied as image files.
+Within a Teaching Prompt, call every generated or described screen-facing teaching unit a slide. Use `image` only for an actual image file or uploaded image asset. Diagrams, charts, and other graphics are slide content rather than images unless they are supplied as image files.
 
-Do not embed raw SVG, HTML, Mermaid, PlantUML, or Graphviz markup in a Teaching Prompt by default. When the author explicitly requests one of these raw formats, follow that request; the explicit author instruction overrides the default. Otherwise, express generated slide instructions as natural-language slide directions.
+Under the standard delivery mode, keep every core concept paired with a slide and textual explanation. The slide carries structural prompting; the text carries the complete explanation and remains understandable when the learner has not seen the slide. Pair each slide instruction with a brief explanation of what it should convey, and use natural-language slide placeholders when no image file is supplied.
 
-| Scenario | Authority and requirements |
-|---|---|
-| Standard non-slide-only teaching | Keep every core concept paired with a slide and textual explanation. The slide carries structural prompting; the text carries the complete explanation and remains understandable when the learner has not seen the slide. Pair each slide instruction with a brief explanation of what it should convey, and use natural-language slide placeholders when no image file is supplied. |
-| Author-provided image file | Follow the existing image-file understanding, upload, and embed process in [generation-workflow.md#working-with-author-provided-images](generation-workflow.md#working-with-author-provided-images) and the image-file syntax in [markdownflow.md#images](markdownflow.md#images). In standard teaching, follow the embedded image file with the complete explanatory paragraph. If the course is slide-only, the next row overrides that paragraph requirement. |
-| Pure slides | Follow the [Slide-Only Generation Override](generation-workflow.md#slide-only-generation-override). Produce concise, projection-ready slide content; do not require AI narration or a full standalone explanatory paragraph paired with every slide. |
+For an author-provided asset that already has a reliable semantic description, choose its lesson position and alt text according to the concept, relation, or example it conveys. In standard delivery, follow the embedded asset with a complete explanatory paragraph; asset inspection and upload are execution concerns rather than teaching-method rules.
 
 ## Pipeline Methodologies
 
@@ -172,30 +165,11 @@ Produce stable lesson-oriented semantic segments from noisy source material whil
 
 #### Segment Types
 
-- `concept`: explanatory statements and definitions.
-- `example`: concrete demonstrations and walkthroughs.
-- `code`: executable or pseudo-code blocks.
-- `image`: image files and their source references.
-- `exercise`: learner action prompts.
-- `transition`: bridge text that links ideas.
+Use the enum and field meanings in `data-contracts.md#segment-schema`; Segmentation Methodology decides boundaries but does not redefine schema fields.
 
 #### Transfer Signals
 
-Every segment must contain a required, non-empty `transfer_signals` object. Include every applicable canonical key, omit inapplicable keys, and give every included key a non-empty, concise string value. The canonical meanings are:
-
-| Key | Meaning |
-|---|---|
-| `learner_hook` | Teaching entry point. |
-| `evidence_type` | Form of source evidence. |
-| `visual_cue` | Cue for expressing the segment as a slide. |
-| `concept_conflict` | Conceptual conflict or misconception. |
-| `boundary_cue` | Applicability boundary. |
-| `action_cue` | Executable application. |
-| `density_cue` | Information that must not be compressed away. |
-| `quote_cue` | Quotation that should be preserved or used. |
-| `visual_text_pair_cue` | Division of work between slide and text. |
-| `interaction_intent_cue` | Interaction purpose and expected instructional effect. |
-| `compare_cue` | Comparison objects or dimensions. |
+Use the canonical keys and meanings in `data-contracts.md#segment-schema`. Segmentation derives only source-supported signals, and later teaching stages use those signals without changing their field meanings.
 
 #### Failure Handling
 

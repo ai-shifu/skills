@@ -10,13 +10,11 @@ See `pedagogy.md#segmentation-methodology` for the full methodology (cleanup, im
 
 ### Outputs
 
-Segment list per `data-contracts.md#segment-schema` (each segment carries id, type, core point, preservation flag, source span, and transfer signals), plus lesson boundary candidates with one core question each. The schema owns the canonical transfer-signal keys and value constraints; their teaching meanings come from `pedagogy.md#transfer-signals`.
+Return `data-contracts.md#segmentation-output`. The schema owns every handoff field and signal meaning; `pedagogy.md#segmentation-methodology` owns how source material is divided and how source-supported signals are derived.
 
 ### Validation
 
-- Segment output covers all valid source spans in traceable order.
-- `transfer_signals` object is non-empty, schema-valid, includes every applicable canonical cue from `pedagogy.md#transfer-signals`, and omits inapplicable cues.
-- Preservation, one-core-question, and information-fidelity constraints pass — see `markdownflow.md#preservation` and `pedagogy.md#lesson-loop`.
+Run `review-checklist.md#segmentation-validation`. Do not advance to lesson cuts until every observable check passes or fallback output records the unresolved uncertainty.
 
 ---
 
@@ -29,18 +27,13 @@ Segment list per `data-contracts.md#segment-schema` (each segment carries id, ty
 1. Normalize source ordering and merge input material.
 2. Run Segmentation for cleanup and semantic segmentation.
 3. Finalize lesson cuts from Segmentation's boundary candidates (one core question each).
-4. Run Generation to generate per-lesson Teaching Prompts.
+4. Run `generation-workflow.md` to generate per-lesson Teaching Prompts.
 5. Build course index and global variable table.
 6. Recompute only failed lessons through strict gating.
 
 ### Mandatory Gates
 
-All gates must pass before Orchestration declares lessons complete:
-
-- **Syntax / runtime gates** (violation → script fails to run): preservation of code, images, and required source spans per `markdownflow.md#preservation`; no unresolved placeholders and no learner-answer variable references without a variable-backed interaction and metadata contract; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `markdownflow.md#deterministic-blocks`; every image URL must be on the `res.ai-shifu.cn` domain — fixed images wrapped in a single-line deterministic block, HTML-view images expressed as instruction-style directives with the `(必须原样保留)` URL phrase per `markdownflow.md#images`.
-- **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, the policy-resolved teaching loop, and delivery-mode visual-text behavior — all per `pedagogy.md#interaction-policy-precedence`, `pedagogy.md#lesson-loop`, `pedagogy.md#interaction-design`, `pedagogy.md#variable-strategy`, and `pedagogy.md#visual-text-coordination`. At this phase, verify the resulting placements and substitutions rather than redefining policy semantics. Also enforce the five-interaction maximum, distinct branching for viewpoint/path interactions or explicit `require_branching_feedback`, and an immediate feedback or visible instructional effect for every other interaction.
-
-Recompute lessons that fail any gate; do not partially-pass.
+Run `review-checklist.md#orchestration-validation`. Recompute lessons that fail any observable gate; do not partially pass.
 
 ### Rerun Rules
 
@@ -50,7 +43,7 @@ Recompute lessons that fail any gate; do not partially-pass.
 
 ### Failure Handling
 
-Under fallback mode (see `authoring-controls.md#execution-modes`), Orchestration:
+When `execution_mode` from `data-contracts.md#course-design-controls` is `fallback`, Orchestration:
 
 - Delivers coarse lesson drafts first; continues with best-effort generation instead of stopping.
 - Marks uncertain spans explicitly on `course_index` entries.
@@ -60,10 +53,8 @@ Fallback field shapes per `data-contracts.md#fallback-output-extensions`.
 
 ### Outputs
 
-See `data-contracts.md#output-contract` for the Teaching Prompts, course index, and global variable table schemas; preservation rules per `markdownflow.md#preservation`.
+Return `data-contracts.md#orchestration-output`; preservation rules remain in `markdownflow.md#preservation`.
 
 ### Validation
 
-- All artifacts present per `data-contracts.md#output-contract`.
-- Fallback outputs include explicit uncertainty markers and rerun hints.
-- All Mandatory Gates above pass.
+Run `review-checklist.md#orchestration-validation`; that checklist defines the observable completion gate.

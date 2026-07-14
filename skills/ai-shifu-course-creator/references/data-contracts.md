@@ -1,25 +1,30 @@
 # Data Contracts
 
-Authoritative source for all schemas crossing the skill boundary: what comes in (input), what goes out (output), how output target language is resolved, and the per-lesson and per-variable shapes.
+Authoritative source for schemas crossing the skill boundary: input controls, normalized authoring decisions, generated artifacts, intermediate records, and fallback extensions. This file defines shapes and field meanings only; it does not define teaching strategy, runtime syntax, delivery-mode behavior, or language policy.
 
 ## Contents
 
 - [Input Contract](#input-contract)
+- [Course Design Controls](#course-design-controls)
 - [Output Contract](#output-contract)
+- [Segmentation Output](#segmentation-output)
+- [Generation Output](#generation-output)
+- [Orchestration Output](#orchestration-output)
+- [Optimization Output](#optimization-output)
+- [Final Authoring Output](#final-authoring-output)
 - [Segment Schema](#segment-schema)
 - [Variable Table](#variable-table)
 - [Lesson Schema](#lesson-schema)
-- [Language Resolution](#language-resolution)
 - [Fallback Output Extensions](#fallback-output-extensions)
 
 ## Input Contract
 
-### Required
+### Required by Phase
 
-Provide one of:
-
-- A single long transcript or course document.
-- A set of topic-aligned documents with intended order.
+- Segmentation requires a single source document or an explicitly ordered set of topic-aligned documents.
+- Generation requires structured segments and lesson cuts from Segmentation, or an equivalent author-supplied lesson plan with traceable source material.
+- Orchestration requires the Segmentation and Generation inputs plus normalized Course Design Controls.
+- Optimization requires at least one existing Teaching Prompt or Course Prompt. Source material is optional for runtime/syntax review and required for claims about coverage, meaning preservation, or full-course finalization.
 
 ### Optional
 
@@ -27,13 +32,19 @@ Provide one of:
 - Lesson granularity preference (`short`, `medium`, `long`).
 - Tone constraints.
 - Non-negotiable source fragments.
-- `course_author_name` (string): the course author's real name for the Course
-  Prompt role. If absent when a Course Prompt must be generated, ask the author
-  instead of inventing a persona name.
+- `course_author_name` (string): the course author's real name for the Course Prompt role.
 - `course_profile` object.
 - `delivery_constraints` object.
 - `interaction_policy` object: normalized Course Design Intake result; see [Interaction Policy](#interaction-policy).
+- `execution_mode` (string enum: `standard|fallback`).
+- `delivery_mode` (string enum: `standard|pure_slides`).
+- `listen_mode_enabled` (boolean).
+- `chapter_count_target` (positive integer or `null`).
+- `lesson_count_target` (positive integer or `null`).
 - `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`).
+- `authoring_run_controls` (object): normalized phase input using [Course Design Controls](#course-design-controls); workflows consume this object instead of re-reading the six raw control fields it replaces.
+
+Before Course Design Intake, callers may supply `execution_mode`, `delivery_mode`, `listen_mode_enabled`, `chapter_count_target`, `lesson_count_target`, and `interaction_policy` individually. After normalization, replace only those six raw fields with `authoring_run_controls` so consumers cannot observe conflicting control values. Continue carrying `course_material`, `course_author_name`, `course_profile`, `delivery_constraints`, `target_language`, tone constraints, and source constraints as unchanged authoring context alongside phase outputs; control normalization must not discard them.
 
 ### Recommended Object Shapes
 
@@ -44,7 +55,6 @@ Provide one of:
   "audience_level": "beginner|intermediate|advanced",
   "prerequisite_level": "none|basic|strong",
   "lesson_duration_minutes": 12,
-  "lesson_count_target": 8,
   "assessment_mode": "quiz|project|discussion|mixed"
 }
 ```
@@ -60,6 +70,29 @@ Provide one of:
 }
 ```
 
+#### Course Design Controls
+
+`authoring_run_controls` is the canonical normalized object passed between phases on routes that run Course Design Intake. Course Design Intake resolves every field except `execution_mode`; Authoring Controls adds that field before Orchestration, Generation, or Optimization begins. A Segmentation-only route consumes its explicit `execution_mode` and structure target directly because delivery and interaction choices do not affect segmentation.
+
+```json
+{
+  "execution_mode": "standard|fallback",
+  "delivery_mode": "standard|pure_slides",
+  "listen_mode_enabled": false,
+  "chapter_count_target": null,
+  "lesson_count_target": null,
+  "interaction_policy": {
+    "mode": "enabled|disabled|unspecified",
+    "purposes": []
+  }
+}
+```
+
+- `execution_mode` is required for an authoring run and must be `standard` or `fallback`.
+- `delivery_mode` is required after Course Design Intake and must be `standard` or `pure_slides`.
+- `listen_mode_enabled` is required after Course Design Intake and must be `false` when `delivery_mode` is `pure_slides`.
+- `chapter_count_target` and `lesson_count_target` are positive integers when explicitly supplied or inferred, otherwise `null`.
+
 #### Interaction Policy
 
 ```json
@@ -73,13 +106,13 @@ Provide one of:
 }
 ```
 
-This section owns only the normalized data shape and enum constraints. Course Design Intake resolves the object once and passes it unchanged to Generation and Optimization:
+The normalized object is schema-valid only when all of these invariants hold:
 
 - `mode` is required and must be exactly `enabled`, `disabled`, or `unspecified`.
 - `purposes` is required, duplicate-free, and may contain only `learner_context`, `pre_content_thinking`, and `lesson_end_self_check`.
 - `enabled` requires a non-empty `purposes` array; `disabled` and `unspecified` require an empty `purposes` array.
 
-The teaching effects, purpose placements, and non-interactive substitutions are defined in [pedagogy.md#interaction-policy-precedence](pedagogy.md#interaction-policy-precedence).
+The schema ends at these invariants. Consumers pass the normalized object unchanged.
 
 ### Minimal Input Payload Example
 
@@ -91,14 +124,14 @@ The teaching effects, purpose placements, and non-interactive substitutions are 
     "mode": "enabled",
     "purposes": ["learner_context"]
   },
-  "generation_constraints": {
-    "persona": "hands-on mentor",
-    "lesson_granularity": "short"
-  },
+  "execution_mode": "standard",
+  "delivery_mode": "standard",
+  "listen_mode_enabled": false,
+  "chapter_count_target": 2,
+  "lesson_count_target": 6,
   "course_profile": {
     "audience_level": "beginner",
     "lesson_duration_minutes": 10,
-    "lesson_count_target": 6,
     "assessment_mode": "project"
   },
   "delivery_constraints": {
@@ -111,19 +144,47 @@ The teaching effects, purpose placements, and non-interactive substitutions are 
 
 - Input files must be readable text or markdown.
 - If multiple files are provided, ordering must be explicit.
-- Source language and expected output language should be specified when multilingual content exists.
-- Explicit output language requests must not be overridden by source-language mixes (see [Language Resolution](#language-resolution)).
+- When multilingual content exists, validate `target_language` against `session-controls.md#output-language` before creating artifacts.
 - `interaction_policy` must satisfy the mode/purpose invariants above before Generation or Optimization applies pedagogical gates.
 
 ## Output Contract
 
-### Required Artifacts
+Each phase owns execution; this file owns the exact result that phase adds to the handoff. The handoff retains the unchanged authoring context defined in the Input Contract alongside these phase-owned results. A later phase extends an earlier handoff instead of dropping context or making every earlier phase satisfy the final-course schema.
 
-1. `lesson_teaching_prompts` — one Teaching Prompt per lesson (written in MarkdownFlow). Instructional/directive language only (model-guiding), not a final learner manuscript. See [Lesson Schema](#lesson-schema).
-2. `course_index` — `lesson_id`, `lesson_title`, `core_question`, `source_span_map`.
-3. `global_variable_table` — see [Variable Table](#variable-table).
-4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required canonical sections: Role, Task, Teaching Techniques, Writing Style, Format, and Slides, rendered as Markdown headings in the resolved output language.
-5. `course_description` — SEO/listing description written to `course-description.md`; describe the course topic, target learners, and learning outcomes in learner-facing language. Do not include author-side workflow notes.
+### Segmentation Output
+
+- `structured_segments_json` (array, required) — non-empty ordered array whose items satisfy [Segment Schema](#segment-schema).
+- `preserve_block_index` (array, required) — entries shaped as `{block_id, segment_id, type}`; every entry points to a segment whose `preserve_block` is `true`, and every preserved segment appears once.
+- `lesson_cut_candidates` (array, required) — entries shaped as `{lesson_id, segment_ids, core_question}`; `segment_ids` is non-empty and references only known segments, while `core_question` is one concise teachable question.
+
+### Generation Output
+
+- `lesson_teaching_prompts` (array, required) — one item per requested lesson, each satisfying [Lesson Schema](#lesson-schema) and the syntax/runtime behavior in the [MarkdownFlow Spec](markdownflow.md).
+
+### Orchestration Output
+
+- `authoring_run_controls` (object, required) — the schema-valid [Course Design Controls](#course-design-controls) object, carried forward unchanged.
+- `lesson_teaching_prompts` (array, required) — complete course array from Generation.
+- `course_index` (array, required) — one item per lesson using the schema below.
+- `global_variable_table` (array, required) — complete cross-lesson table defined in [Variable Table](#variable-table).
+
+### Optimization Output
+
+- `risk_and_issue_report` (object, required) — `overall_risk` (`low|medium|high`), `blocking_issues` (duplicate-free array of issue-class strings), and `suggestions` (array of non-blocking improvement strings).
+- `change_list` (array, required) — zero or more `{issue_class, change}` entries; each records one applied correction, and an audit with no changes returns an empty array.
+- `lesson_teaching_prompts` (array, conditional) — required when Optimization rewrites lessons; omitted for report-only review.
+- Full-course finalization also returns every field in [Final Authoring Output](#final-authoring-output).
+
+### Final Authoring Output
+
+Required after end-to-end or full-course authoring:
+
+1. `authoring_run_controls` — unchanged normalized controls from Orchestration.
+2. `lesson_teaching_prompts` — optimized Teaching Prompts.
+3. `course_index` — lesson ordering, core questions, and source mapping.
+4. `global_variable_table` — final cross-lesson variable lifecycle.
+5. `course_prompt` — runnable course-level system prompt whose content and structure follow the [Course Prompt](course-prompt.md) owner.
+6. `course_description` — concise learner-facing SEO/listing description covering the course topic, target learners, and concrete outcomes without author-side workflow notes.
 
 ### `course_index` Schema (array, required)
 
@@ -136,26 +197,29 @@ Each item:
 
 ### `course_prompt` (string, required)
 
-- Markdown string starting with the rendered Role section heading in the resolved output language.
-- Six required Markdown section blocks in the canonical order from [course-prompt.md](course-prompt.md): Role, Task, Teaching Techniques, Writing Style, Format, and Slides. Render section headings and body text in the resolved output language.
-- Single source of truth at the course level; do not embed per-lesson interaction logic.
+- Non-empty Markdown string.
+- Must satisfy the applicable base-template and delivery-profile contract before handoff.
+- Stored as the single course-level prompt artifact; per-lesson content remains in `lesson_teaching_prompts`.
 
 ### `course_description` (string, required)
 
 - One concise learner-facing SEO/listing description.
 - Base it on the course topic, target learners, and concrete learning outcomes.
-- Write it to `course-description.md`; the CLI maps it to the platform `description` field during build/import.
 
 ### Minimal Structured Artifact Excerpt
 
-This excerpt shows the JSON-shaped artifacts without abbreviating the required
-Course Prompt into an invalid pseudo-prompt. The complete `course_prompt` string
-must be a fully filled six-section artifact with no ellipsis standing in for
-template instructions; see the runnable example in
-[`examples/pipeline-full.md#course-prompt-artifact`](../examples/pipeline-full.md#course-prompt-artifact).
+This excerpt shows the Final Authoring Output shape while leaving the independently validated `course_prompt` string out of the excerpt.
 
 ```json
 {
+  "authoring_run_controls": {
+    "execution_mode": "standard",
+    "delivery_mode": "standard",
+    "listen_mode_enabled": false,
+    "chapter_count_target": 1,
+    "lesson_count_target": 1,
+    "interaction_policy": {"mode": "enabled", "purposes": ["learner_context"]}
+  },
   "lesson_teaching_prompts": [
     {
       "lesson_id": "L01",
@@ -185,7 +249,7 @@ template instructions; see the runnable example in
 }
 ```
 
-### Artifacts
+### Deployment Output
 
 1. `deployed_course_url` — Platform URL of the deployed course.
 2. `shifu_bid` — Course BID on the AI-Shifu platform.
@@ -208,41 +272,36 @@ template instructions; see the runnable example in
 Each item in the Segmentation output (consumed by Orchestration and Generation):
 
 - `segment_id` (string, required) — stable identifier within the run.
-- `segment_type` (string enum, required) — one of `concept`, `example`, `code`, `image`, `exercise`, `transition`; semantics in [pedagogy.md#segment-types](pedagogy.md#segment-types).
+- `segment_type` (string enum, required) — one of `concept` (explanation or definition), `example` (demonstration or walkthrough), `code` (executable or pseudo-code), `image` (image file or source reference), `exercise` (learner action), or `transition` (bridge between ideas).
 - `core_point` (string, required) — the single teachable point this segment carries.
-- `preserve_block` (boolean, required) — `true` for code/image/table/required-quote blocks that must reach the lesson verbatim per [markdownflow.md#preservation](markdownflow.md#preservation).
-- `source_span` (object, required) — traceable source location with `source_id`
-  (string), `start` (non-negative integer, inclusive character offset), and `end`
-  (integer greater than `start`, exclusive character offset). Use the same object
-  shape as entries in `course_index.source_span_map`.
-- `transfer_signals` (object, required and non-empty) — downstream teaching-quality cues. Use only the canonical keys below, include every cue that applies to the segment, and omit inapplicable keys rather than inventing content. Every included value must be a non-empty concise string:
-  - `learner_hook`
-  - `evidence_type`
-  - `visual_cue`
-  - `concept_conflict`
-  - `boundary_cue`
-  - `action_cue`
-  - `density_cue`
-  - `quote_cue`
-  - `visual_text_pair_cue`
-  - `interaction_intent_cue`
-  - `compare_cue`
+- `preserve_block` (boolean, required) — `true` for code, image, table, or required-quote blocks that must reach the lesson verbatim.
+- `source_span` (object, required) — traceable source location with `source_id` (string), `start` (non-negative integer, inclusive character offset), and `end` (integer greater than `start`, exclusive character offset). Use the same object shape as entries in `course_index.source_span_map`.
+- `transfer_signals` (object, required and non-empty) — include every applicable canonical key below, omit inapplicable keys, and use a non-empty concise string for every included value.
 
-  The teaching meaning of these cues is defined in
-  [pedagogy.md#transfer-signals](pedagogy.md#transfer-signals).
-
-For segmentation rules and methodology see [pedagogy.md#segmentation-methodology](pedagogy.md#segmentation-methodology).
+| Key | Field meaning |
+|---|---|
+| `learner_hook` | Teaching entry point available in the source. |
+| `evidence_type` | Form of source evidence. |
+| `visual_cue` | Source cue suitable for a slide. |
+| `concept_conflict` | Misconception or contradiction to resolve. |
+| `boundary_cue` | Validity boundary or exception. |
+| `action_cue` | Action the learner can perform. |
+| `density_cue` | High-density information that must not be compressed away. |
+| `quote_cue` | Quotation that must remain exact. |
+| `visual_text_pair_cue` | Required relationship between a visual and explanatory text. |
+| `interaction_intent_cue` | Source-supported reason for an interaction. |
+| `compare_cue` | Items or states that should be compared. |
 
 ## Variable Table
 
 `global_variable_table` is an array. Each item:
 
-- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; new variable names should use the resolved output language and be composed of letters, numbers, and underscores.
+- `name` (string, required) — the variable identifier referenced in `{{var}}` / `?[%{{var}} ...]`; it contains only letters, numbers, and underscores, and its human language follows `session-controls.md#output-language`.
 - `collected_in` (string, required) — `lesson_id` where the variable is first collected.
-- `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when `course-prompt.md` references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
+- `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when the Course Prompt artifact references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
 - `effect_scope` (string constant: `cross_lesson`, required).
 
-Only named variables belong in `global_variable_table`; no-variable `?[...]` interactions do not create table entries. Every table entry has `effect_scope: "cross_lesson"`, and `used_in` includes `course_prompt` whenever `course-prompt.md` references the variable. Variable collection, reuse, and pacing decisions are defined in [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy); syntax and runtime substitution semantics (`{{var}}` → stored value or `UNKNOWN`) are defined in [markdownflow.md#variables](markdownflow.md#variables).
+Only named variables have entries in `global_variable_table`; no-variable interactions have no table entry. Every table entry has `effect_scope: "cross_lesson"`, and `used_in` includes `course_prompt` whenever that artifact references the variable.
 
 ## Lesson Schema
 
@@ -266,47 +325,9 @@ Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 }
 ```
 
-## Language Resolution
-
-### Priority Order
-
-Resolve target language with this strict priority:
-
-1. `explicit_output_language_request` — language explicitly stated in the current user prompt.
-2. `target_language_parameter` — `target_language` field supplied in the input payload (BCP-47 recommended).
-3. `prior_context_language_directive` — language requirement declared **outside** the current prompt but visible to the skill: project/system instructions (e.g. `CLAUDE.md`), earlier turns of the same conversation, or directives injected by the calling agent. The skill cannot read external platform/account locale settings, so only in-context directives count here.
-4. `prompt_language_detection` — language detected from the wording of the current user prompt itself.
-5. `source_material_dominant_language` — the dominant language of the supplied course material.
-6. `default_fallback_language` — `zh-CN`.
-
-### Control Fields
-
-- `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`)
-
-### Rules
-
-- Do not restrict supported languages to a fixed list.
-- If output language is explicit, source-language distribution must not override it.
-- Learner-facing script text must follow resolved target language.
-- Newly authored MarkdownFlow variable names must follow the resolved output language within the valid variable-character set. Preserve existing or source-provided variable names when renaming would break an existing variable contract.
-- User-visible agent output must follow the resolved target language: chat replies, phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations.
-- Human-facing labels for skill concepts must follow the canonical terms in [session-controls.md#canonical-term-translation-table](session-controls.md#canonical-term-translation-table) when the resolved target language is listed there; do not keep English labels merely because the skill docs and examples are written in English.
-- Stable machine-facing identifiers and verbatim source material remain unchanged even when the surrounding prose is localized: JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `lesson_teaching_prompts`, `teaching_prompt`, `course_prompt`, `course_description`), file names (`course-description.md`, `course-prompt.md`, `structure.json`), CLI commands and flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and quoted source text or direct quotations that must be preserved verbatim.
-
-### Pre-Deploy Language Audit
-
-Before finalizing or deploying a generated course directory, audit all build-consumed user-visible artifacts and effective build metadata, so template headings or directive phrases from a different language do not remain after target-language rendering:
-
-- Resolved course title (`--title`, `README.md` first heading, or directory-name fallback).
-- Resolved course description (`--description` or `course-description.md`).
-- Resolved chapter titles (`structure.json`, `--chapter-name`, or course-title fallback).
-- Learner-facing lesson title fields in `structure.json`.
-- `course-prompt.md`.
-- Every lesson file referenced by `structure.json` (or every auto-discovered `lessons/lesson-*.md` file when `structure.json` is absent).
-
 ## Fallback Output Extensions
 
-When a phase runs under fallback mode (see `authoring-controls.md#execution-modes`), its standard output is augmented with the following fields. Standard-mode output omits these fields entirely; fallback-mode output adds them on top of the standard schema.
+When a phase runs under fallback mode, its standard output is augmented with the following fields. Standard-mode output omits these fields entirely; fallback-mode output adds them on top of the standard schema.
 
 ### Segmentation fallback fields
 
@@ -347,5 +368,3 @@ Inside `risk_and_issue_report`:
 Top-level addition:
 
 - `follow_up` (array of strings) — required inputs to complete a full-coverage audit.
-
-For the four end-to-end fallback scenarios, see `examples/fallback-mode.md`.

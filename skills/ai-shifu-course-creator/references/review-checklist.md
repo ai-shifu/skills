@@ -1,6 +1,34 @@
 # Review Checklist
 
-Optimization 全面审计清单 — Optimization Optimization 必须把每条都过一遍。其他阶段的交付检查见 `segmentation-orchestration.md`、`generation-workflow.md` 和 `deployment-workflow.md` 内的 Validation 段。
+Authoritative observable validation for Segmentation, Orchestration, Generation, Optimization, course-level finalization, pre-deploy language review, and Deployment. Start with the cross-artifact [Prompt Contracts](prompt-contracts.md); other normative behavior remains in the linked owners below, while this file records what must be true before a phase passes.
+
+## Segmentation Validation
+
+- Segment output covers all valid source spans in traceable order.
+- The complete handoff satisfies `data-contracts.md#segmentation-output`; every segment satisfies `data-contracts.md#segment-schema`, including a non-empty `transfer_signals` object with every applicable canonical key and no invented signal.
+- Source order, semantic boundaries, one-core-question candidates, and immutable-block marking satisfy `pedagogy.md#segmentation-methodology` and `markdownflow.md#preservation`.
+
+## Orchestration Validation
+
+- All artifacts satisfy `data-contracts.md#orchestration-output`; fallback output also satisfies `data-contracts.md#fallback-output-extensions`.
+- Every lesson passes the applicable sections below for structure, lesson loop, interaction quality, variable safety, visual-text coordination, and runtime stability.
+- Cross-lesson dependencies, `course_index`, and `global_variable_table` agree; no unresolved placeholder or unbound learner-answer variable remains.
+- Failed lessons are recomputed before Orchestration reports completion; partial passage is invalid.
+
+## Generation Validation
+
+- The handoff satisfies `data-contracts.md#generation-output`; every `teaching_prompt` is runnable MarkdownFlow and satisfies `data-contracts.md#lesson-schema`.
+- The first non-empty line performs a teaching-start function instead of repeating a chapter, lesson, directory, or source heading.
+- The normalized interaction policy and delivery mode are applied without reinterpretation.
+- Every generated lesson passes the applicable detailed checks below.
+
+## Optimization Validation
+
+- Present the conclusion and overall risk first using `report-template.md`, then run every detailed section below against the selected lesson or full-course scope.
+- The result satisfies `data-contracts.md#optimization-output`; full-course finalization also satisfies `data-contracts.md#final-authoring-output`.
+- Apply the smallest runtime-safe correction first; list any remaining non-blocking gap explicitly.
+- When full-course finalization is in scope, validate the generated Course Prompt section below in addition to the Teaching Prompt checks.
+- For a focused audit, validate a Course Prompt only when the user supplies one; otherwise do not invent or emit a `course_prompt` artifact.
 
 ## Coverage
 
@@ -16,11 +44,22 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 ## User-Visible Language
 
-- User-visible agent output outside generated course content follows the resolved target language from `data-contracts.md#language-resolution`.
+- User-visible agent output outside generated course content follows `session-controls.md#output-language`.
 - Generated course artifacts and learner-facing passages follow the resolved target language.
 - Effective build metadata follows the resolved target language after precedence is applied: course title (`--title`, `README.md`, or directory-name fallback), course description (`--description` or `course-description.md`), chapter titles (`structure.json`, `--chapter-name`, or course-title fallback), and lesson titles.
-- Human-facing labels for canonical concepts follow [session-controls.md#canonical-term-translation-table](session-controls.md#canonical-term-translation-table) when the resolved target language is listed there.
+- Human-facing labels for canonical concepts follow `session-controls.md#canonical-term-translation-table` when the resolved target language is listed there.
 - Machine-facing identifiers and verbatim source material remain unchanged: JSON keys, file names, CLI flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and required verbatim source quotes.
+
+## Pre-Deploy Language Audit
+
+Before finalizing or deploying a generated course directory, verify that no template heading or directive phrase from another language remains in any build-consumed user-visible artifact or effective metadata field:
+
+- Resolved course title from `--title`, the first `README.md` heading, or the directory-name fallback.
+- Resolved course description from `--description` or `course-description.md`.
+- Resolved chapter titles from `structure.json`, `--chapter-name`, or the course-title fallback.
+- Learner-facing lesson title fields in `structure.json`.
+- The complete `course-prompt.md` artifact.
+- Every lesson referenced by `structure.json`, or every auto-discovered `lessons/lesson-*.md` file when `structure.json` is absent.
 
 ## Structure Separation
 
@@ -72,7 +111,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 - In standard non-slide-only lessons, every core concept that uses a visual has a visual-plus-text explanation.
 - Raw graphic source code (SVG, HTML drawings, Mermaid, PlantUML, or Graphviz) appears in a Teaching Prompt only when the author explicitly requests that raw format; approved HTML-view image instructions are checked separately below.
-- Pure classroom slides follow `generation-workflow.md#slide-only-generation-override` and are not failed for omitting AI narration or a full explanation paragraph.
+- Pure classroom slides follow `delivery-modes.md#pure-slides` and are not failed for omitting AI narration or a full explanation paragraph.
 - When an image asset **is** embedded: its URL is on the `res.ai-shifu.cn` domain and has a corresponding entry in `<course-dir>/assets/image-manifest.json` (no orphan URLs, no externally hot-linked images).
 - Fixed-display images are wrapped in single-line deterministic blocks (`===![alt](url)===`); HTML-view images use instruction-style directives per `markdownflow.md#images` 3.2 (no HTML inside `=== … ===` / `!=== … !===`).
 - HTML-view image instructions include the `(必须原样保留)` phrase on every URL line, and locked text (e.g. figure captions) is enforced through wording (`必须原样输出`), not by mixing in deterministic blocks.
@@ -88,6 +127,19 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 ## Course Prompt
 
-- A `course_prompt` artifact is produced when input includes course material.
-- All six required canonical sections are present in order, with headings rendered in the resolved output language: Role, Task, Teaching Techniques, Writing Style, Format, and Slides.
-- No `XXX` placeholder remains; every non-placeholder instruction from `course-prompt.md#fillable-template` is represented.
+- Full-course finalization includes one `course_prompt`; a focused audit checks this artifact only when it is part of the supplied scope.
+- The applicable sections from `course-prompt.md#fillable-template` are present in order, with headings rendered in the resolved output language.
+- No `XXX` placeholder remains; every non-placeholder base-template instruction is represented unless `delivery-modes.md` explicitly replaces it.
+- Teaching Prompt, Course Prompt, and Listen Mode behavior agree with the same normalized `delivery_mode`.
+
+## Course Description
+
+- Full-course finalization includes one non-empty `course_description` in the resolved output language.
+- The description names the topic, target learners, and concrete outcomes without exposing author-side workflow notes.
+
+## Deployment Validation
+
+- Build and import complete without errors.
+- The deployed course is accessible through the verification URL returned by the CLI.
+- Lesson count and structure match the source directory.
+- After publication, the public learner URL returned by the CLI is reachable.

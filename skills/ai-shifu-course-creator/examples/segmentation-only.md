@@ -1,21 +1,21 @@
 # Segmentation Only Example
 
-> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
+> Note: This example is illustrated in English; actual output follows [Output Language](../references/session-controls.md#output-language).
+
+Apply the Segmentation phase in [Segmentation and Orchestration](../references/segmentation-orchestration.md#segmentation); this example illustrates the output without redefining the phase contract.
 
 ## Minimal Input
 
 ```json
 {
   "course_material": "Today we explain retry strategy... um... first rule is idempotency.\n```python\nretry(order_id)\n```\nThen we map transient vs permanent failure...",
-  "chapter_hint": {
-    "target_lessons": 2,
-    "granularity": "medium"
-  },
   "course_profile": {
     "audience_level": "beginner",
     "lesson_duration_minutes": 12,
     "assessment_mode": "project"
   },
+  "execution_mode": "standard",
+  "lesson_count_target": 2,
   "delivery_constraints": {
     "must_cover_topics": ["idempotency", "failure taxonomy"]
   },
@@ -66,7 +66,7 @@
 
 ## Degraded Input
 
-Degraded-input handling for this phase (conflicting sources, uncertainty markers, rerun hints): see `examples/fallback-mode.md` → Segmentation Fallback.
+See [Segmentation Fallback: Conflicting Sources](fallback-mode.md#segmentation-fallback-conflicting-sources).
 
 ## Acceptance Notes
 

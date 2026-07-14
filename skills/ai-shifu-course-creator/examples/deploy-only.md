@@ -1,6 +1,8 @@
 # Deploy Only Example
 
-> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
+> Note: This example is illustrated in English; actual output follows [Output Language](../references/session-controls.md#output-language).
+
+Apply the [Deployment and Course Management](../references/deployment-workflow.md) workflow; this example supplies concrete commands without redefining deployment policy.
 
 Deploy pre-existing Teaching Prompts (and a Course Prompt) without running the authoring pipeline.
 

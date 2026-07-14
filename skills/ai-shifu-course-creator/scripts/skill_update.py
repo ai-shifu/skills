@@ -15,7 +15,7 @@ import requests
 
 SKILL_NAME = "ai-shifu-course-creator"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-SKILL_MD = SKILL_ROOT / "SKILL.md"
+VERSION_METADATA_FILE = SKILL_ROOT / "version-metadata.json"
 CACHE_FILE = SKILL_ROOT / ".update-check.json"
 DEV_CACHE_FILE = SKILL_ROOT / ".update-check.dev.json"
 MANIFEST_URL = (
@@ -83,24 +83,27 @@ def parse_semver(value: object) -> tuple[int, int, int] | None:
     return major, minor, patch
 
 
-def read_skill_metadata(skill_md: Path = SKILL_MD) -> dict[str, str] | None:
-    """Read simple top-level scalar fields from SKILL.md frontmatter."""
+def read_version_metadata(
+    metadata_file: Path = VERSION_METADATA_FILE,
+) -> dict[str, str] | None:
+    """Read the runtime-owned local version and update-management mode."""
     try:
-        lines = skill_md.read_text(encoding="utf-8").splitlines()
-    except OSError:
+        raw = json.loads(metadata_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
         return None
-    if not lines or lines[0].strip() != "---":
+    if not isinstance(raw, dict):
         return None
 
-    result: dict[str, str] = {}
-    for line in lines[1:]:
-        if line.strip() == "---":
-            return result
-        if not line or line[0].isspace() or ":" not in line:
-            continue
-        key, value = line.split(":", 1)
-        result[key.strip()] = value.strip().strip("\"'")
-    return None
+    version = raw.get("version")
+    version_management = raw.get(
+        "version_management", VERSION_MANAGEMENT_STANDALONE
+    )
+    if not isinstance(version, str) or not isinstance(version_management, str):
+        return None
+    return {
+        "version": version,
+        "version_management": version_management,
+    }
 
 
 def validate_manifest(
@@ -356,7 +359,7 @@ def fetch_manifest(
 def check_for_update(
     *,
     force: bool = False,
-    skill_md: Path = SKILL_MD,
+    metadata_file: Path = VERSION_METADATA_FILE,
     cache_file: Path = CACHE_FILE,
     manifest_url: str = MANIFEST_URL,
     allow_loopback: bool = False,
@@ -365,7 +368,7 @@ def check_for_update(
 ) -> dict[str, Any]:
     """Run the complete fail-open check and always return a public result."""
     try:
-        metadata = read_skill_metadata(skill_md)
+        metadata = read_version_metadata(metadata_file)
         if metadata is None:
             raise ManifestError("missing local metadata")
         version_management = metadata.get(

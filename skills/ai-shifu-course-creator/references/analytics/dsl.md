@@ -1,151 +1,185 @@
 # Analytics DSL Syntax
 
-All examples are CLI invocations. Read `overview.md` first if you have not already.
+This page is the authoritative query-body grammar and server-validation contract. It consumes field and enum definitions from `tables.md`; it does not choose business scenarios, define disclosure policy, prescribe presentation, or document CLI flags.
 
 ## Body Shape
 
 ```json
 {
   "table": "<one of the 10 tables>",
-  "select":    ["<field>", "..."],
-  "where":     [{ "field": "<f>", "op": "<op>", "value": <value> }],
-  "group_by":  ["<field>", "..."],
-  "aggregate": [{ "fn": "<fn>", "field": "<f>", "alias": "<name>" }],
-  "order_by":  [{ "field": "<f>", "dir": "asc" | "desc" }],
-  "limit":  <1..1000>,
-  "offset": <int>
+  "select": ["<field>", "..."],
+  "where": [{"field": "<field>", "op": "<operator>", "value": "<value>"}],
+  "group_by": ["<field>", "..."],
+  "aggregate": [{"fn": "<function>", "field": "<field>", "alias": "<name>"}],
+  "order_by": [{"field": "<field-or-alias>", "dir": "<asc|desc>"}],
+  "limit": 100,
+  "offset": 0
 }
 ```
 
-`shifu_bid` is **not** required in the body — the CLI injects it from the positional `<shifu_bid>` argument. If you write `shifu_bid` in the body, it must match the positional argument or the CLI errors out.
+The smallest legal body contains `table` and at least one of `select` or `aggregate`. Course scope is supplied by the transport adapter. If a body also carries `shifu_bid`, it must equal the outer course scope.
 
 ## Operators (`where[].op`)
 
-| Operator | Notes |
+| Operator | Value contract |
 |---|---|
-| `=`, `!=` | Equality |
-| `>`, `>=`, `<`, `<=` | Numeric / date comparison |
-| `in` | `value` is a list |
-| `not_in` | `value` is a list |
-| `between` | `value` is a two-element list `[lo, hi]` (inclusive) |
-| `like` | Trailing `%` only; leading-wildcard `like` is rejected |
-| `is_null`, `is_not_null` | `value` ignored |
+| `=`, `!=` | Scalar equality or inequality |
+| `>`, `>=`, `<`, `<=` | Numeric or date comparison |
+| `in`, `not_in` | List value |
+| `between` | Inclusive two-element list `[lo, hi]` |
+| `like` | Trailing `%` only; a leading wildcard is rejected |
+| `is_null`, `is_not_null` | Omit `value` (or pass JSON `null`); any non-null value is rejected |
 
 ## Aggregate Functions (`aggregate[].fn`)
 
-| Fn | Use |
+| Function | Result |
 |---|---|
 | `count` | Row count |
 | `count_distinct` | Distinct values of `field` |
-| `sum`, `avg`, `min`, `max` | Numeric aggregates |
+| `sum`, `avg` | Numeric aggregate |
+| `min`, `max` | Numeric or timestamp aggregate when the table capability matrix allows it |
 
-Every aggregate must carry an `alias` — the output column is named after it.
+`alias` is optional; the server derives one when omitted. Every explicit or derived alias must be a unique safe identifier and becomes the output column name.
 
 ## Constraints (enforced server-side; violations → `11002` / `11007`)
 
-- `limit ≤ 1000`
-- `select` cannot be `*`
-- When `aggregate` is present, every column in `select` **must** also appear in `group_by`
-- When `group_by` is present, explicitly add each grouping field to `select` (otherwise the response `columns` carry only the aggregate aliases)
-- `like` cannot start with `%` (anti-enumeration)
+- `limit` is between 1 and 1000; `offset` is non-negative.
+- `select` cannot be `*`.
+- When `aggregate` is present, every field in `select` must also appear in `group_by`.
+- When `group_by` is present, add each grouping field to `select` if it must appear in response columns.
+- `like` cannot start with `%`.
+- Table names and fields must exist in the data dictionary.
 
 ## Per-Learner (`user_bid`) Dimension
 
-6 of the 10 tables support per-learner grouping. Excluded: `user_users` (has its own rules in `privacy-and-presentation.md`), `bill_daily_usage_metrics` (no `user_bid` column — it is a daily summary), and the two `shifu_*_shifus` metadata tables (course-level, not learner-level — they describe the course itself).
+Six tables support per-learner grouping. The exclusions are `user_users`, which has a restricted row-lookup grammar; `bill_daily_usage_metrics`, which has no `user_bid`; and the two course-metadata tables, whose row grain is course snapshot.
 
-**Guard rail**: when `user_bid` appears in `select`, it **must** also appear in `group_by`.
+Raw learner-ID listing is blocked by default. `user_bid` may be used in exactly these ways:
 
-- Correct: `select=["user_bid"], group_by=["user_bid"], aggregate=[…]`
-- Rejected: `select=["user_bid", "status"]` (no aggregate)
-- Rejected: `select=["user_bid"], group_by=["status"]` (`user_bid` not in `group_by`)
+- As an aggregate target without selecting it, such as `count_distinct(user_bid)`.
+- In `select` and `group_by` together on an aggregate query, producing one aggregate row per learner.
+- In audited conversation-detail mode when `generated_content` is also selected and its hard rules pass.
+- In a restricted `user_users` lookup anchored by known identity values.
 
-`user_bid` is a 36-char pseudonymous ID. **Never paste it raw in user-facing output** — use ordinal labels (Learner A / B / C) per the Translation Gate in `privacy-and-presentation.md`.
+For every other row query, `select=["user_bid", ...]` without `group_by=["user_bid"]` is rejected. Grouping by another field does not satisfy the guard.
 
 ## Minimal DSL Example
 
-The smallest legal body is `table` plus either `select` or `aggregate`:
-
-```bash
-python3 scripts/shifu-cli.py analytics-query <shifu_bid> --dsl '{
+```json
+{
   "table": "learn_progress_records",
-  "aggregate": [{"fn":"count","alias":"n"}],
+  "aggregate": [{"fn": "count", "alias": "n"}],
   "limit": 1
-}'
+}
 ```
 
 ## `generated_content` Hard Rules
 
-When `select` includes `generated_content` (only meaningful on `learn_generated_blocks`), all three must hold or the API rejects with `11002`:
+When `select` includes `generated_content`, all of these protocol constraints apply:
 
-1. `where` carries a `type` clause with values **only from** `[301, 311, 312, 321, 322]` using `op = "="` or `op = "in"`
-2. `limit ≤ 100`
-3. Every access is audited server-side (the CLI does not show this — it happens in the backend)
+1. The table is `learn_generated_blocks`.
+2. `where` contains a `type` condition using `=` or `in` whose values are drawn only from `[301, 311, 312, 321, 322]`.
+3. `limit` is at most 100.
+4. The server audits the access.
 
-The remaining `type` values (`303` input, `309` phone, `310` checkcode, etc.) contain learner PII and are blocked at the protocol level. Full type-code table is in `tables.md`.
+Types such as `303`, `309`, and `310` are blocked because their widget payloads can contain learner personal information.
+
+## `user_users` Restricted Grammar
+
+`user_users` is a global identity table and accepts only anchored row lookups:
+
+1. `select` may contain only `user_bid`, `nickname`, and `user_identify`.
+2. `where` must contain either `user_bid` with `=` or `in`, or `user_identify` with exact `=`.
+3. `limit` is at most 50.
+4. `group_by` and `aggregate` are not allowed.
+5. The server audits the lookup.
+
+Unconditional listing, partial identity matching, ranges, and bulk enumeration are rejected. Returned `nickname` values are replaced with a redaction marker when they contain a phone number, email address, or ID number; returned `user_identify` values are masked.
 
 ## Auto-Applied Filters
 
-The endpoint automatically applies these filters — do **not** add them to your DSL:
+The endpoint injects scope and lifecycle filters; omit them from query bodies:
 
-- All 9 non-`user_users` tables are scoped to the CLI-supplied `shifu_bid`.
-- All tables except `shifu_user_archives` automatically filter `deleted = 0` (`shifu_user_archives` has no `deleted` column).
-- `learn_generated_blocks` auto-filters `status = 1`. Rerolled history rows (`status = 0`) never appear in your results — your follow-up counts reflect the live learner experience.
-- The two `shifu_*_shifus` metadata tables auto-filter `created_user_bid = <caller>` — you can only see metadata for courses you authored, not for courses a co-author shared with you (those still come through analytics, but the title/rename history stays owner-only).
-
-`user_users` is a global user table (no `shifu_bid` column) with its own restricted-access rules in `privacy-and-presentation.md`.
+- All tables except `user_users` are scoped to the outer `shifu_bid`.
+- All tables except `shifu_user_archives` filter `deleted = 0`.
+- `learn_generated_blocks` filters `status = 1` so rerolled history does not affect results.
+- `shifu_published_shifus` and `shifu_draft_shifus` filter `created_user_bid` to the caller.
 
 ## Creator-Scoped Tables (`shifu_published_shifus` / `shifu_draft_shifus`)
 
-These two tables are row-lookup only: no aggregates, no `group_by`, hard limit of 50, `title` `like` requires ≥ 2 non-wildcard characters (anti-enumeration). Use them via the Course Metadata recipes (0a–0c) in `recipes.md` to resolve "what is `shifu_bid` X currently called". The author-secret fields (`llm_system_prompt`, `ask_*`, `keywords`, `description`, etc.) are **not** selectable — even the owner cannot read them through this DSL.
+These tables support row lookup only: no aggregates, no `group_by`, limit at most 50, and `title like` only with at least two non-wildcard characters and a trailing wildcard. Selectable fields are limited to the metadata allowlist; author-secret fields such as system prompts, Ask configuration, keywords, and descriptions are not exposed.
+
+## Validation Error Codes
+
+| Code | Contract violation |
+|---|---|
+| `11002` | Invalid body shape, table-specific rule, alias, filter, or grouping combination |
+| `11003` | Table not in the whitelist |
+| `11004` | Field not allowed for the selected table |
+| `11005` | Operator not in the whitelist |
+| `11006` | Aggregate function not in the whitelist |
+| `11007` | `limit` or `offset` out of range |
 
 ## Syntax Gotchas (common DSL construction mistakes)
 
-These are the syntax errors that cause the most 11002 rejections. Double-check before sending.
-
 ### `aggregate` (singular), not `aggregates`
 
-The key is `aggregate` — a single array of aggregate objects. Plural `aggregates` is rejected.
+The key is the singular `aggregate`, whose value is an array of aggregate objects.
+
+Wrong:
 
 ```json
-// WRONG
-{"aggregates": [{"fn":"count","alias":"n"}]}
+{"aggregates": [{"fn": "count", "alias": "n"}]}
+```
 
-// CORRECT
-{"aggregate": [{"fn":"count","alias":"n"}]}
+Correct:
+
+```json
+{"aggregate": [{"fn": "count", "alias": "n"}]}
 ```
 
 ### `where` is always an array
 
-Even with a single filter, `where` must be an array of filter objects:
+Wrong:
 
 ```json
-// WRONG — server rejects
-{"where": {"field":"type", "op":"=", "value": 321}}
+{"where": {"field": "type", "op": "=", "value": 321}}
+```
 
-// CORRECT
-{"where": [{"field":"type", "op":"=", "value": 321}]}
+Correct:
+
+```json
+{"where": [{"field": "type", "op": "=", "value": 321}]}
 ```
 
 ### `order_by` uses `field` + `dir`, not `column` + `direction`
 
-```json
-// WRONG
-{"order_by": [{"column":"asks", "direction":"desc"}]}
+Wrong:
 
-// CORRECT
-{"order_by": [{"field":"asks", "dir":"desc"}]}
+```json
+{"order_by": [{"column": "asks", "direction": "desc"}]}
+```
+
+Correct:
+
+```json
+{"order_by": [{"field": "asks", "dir": "desc"}]}
 ```
 
 ### Every `select` field must appear in `group_by` when `aggregate` is present
 
-```json
-// WRONG — `outline_item_bid` in select but not in group_by
-{"select":["outline_item_bid"], "group_by":[], "aggregate":[{"fn":"count","alias":"n"}]}
+Wrong:
 
-// CORRECT
-{"select":["outline_item_bid"], "group_by":["outline_item_bid"], "aggregate":[{"fn":"count","alias":"n"}]}
+```json
+{"select": ["outline_item_bid"], "group_by": [], "aggregate": [{"fn": "count", "alias": "n"}]}
 ```
 
-### `shifu_bid` in body must match the CLI positional arg
+Correct:
 
-If you include `shifu_bid` in the JSON body, it must be identical to the `<shifu_bid>` CLI argument. Best practice: omit it from the body and let the CLI inject it.
+```json
+{"select": ["outline_item_bid"], "group_by": ["outline_item_bid"], "aggregate": [{"fn": "count", "alias": "n"}]}
+```
+
+### `shifu_bid` in body must match the outer scope
+
+Omit `shifu_bid` from the body unless a caller explicitly requires it. When present, it must equal the course scope supplied alongside the query.

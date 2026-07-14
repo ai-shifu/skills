@@ -23,7 +23,7 @@ Once per session, before the first task, run:
 `python3 scripts/shifu-cli.py check-update`
 
 - Treat the command output as internal control data. In normal conversation, never expose raw JSON or terms such as `status`, `manifest`, `source`, `SemVer`, or “local/remote version”.
-- If frontmatter sets `version_management: plugin`, the CLI returns a skipped result before contacting the remote manifest because the containing plugin owns versioning and updates. `version_management: standalone` or a missing field uses the normal skill-level check.
+- `../version-metadata.json` is the runtime authority for the installed version and update-management mode. When it sets `version_management` to `plugin`, the CLI returns a skipped result before contacting the remote manifest because the containing plugin owns versioning and updates. `standalone` or a missing field uses the normal skill-level check.
 - Reply in the user's language and call this product “AI 师傅课程创作 skill” in Chinese. Keep any update notice to one short paragraph, then return immediately to the user's task.
 - `status=update_recommended`: Say a new version is available, reassure the user that the current version still works, and offer `update_url` as an optional update link. Include `latest`. Rephrase `notes` as a plain-language user benefit; omit it when it is empty or too technical. Guide the user to send `update_url` to the smart assistant currently running this skill. Preferred Chinese pattern: `AI 师傅课程创作 skill 有新版本 {latest} 可用，当前版本仍能继续使用。需要更新时，请把这个地址发送给你当前正在使用的智能助理，并说明“请按这个地址更新 AI 师傅课程创作 skill”：{update_url}`
 - `status=update_required`: Explain that the installed version is too old to continue safely, then give one clear action using `update_url`. Do not perform any other operation governed by this Skill. Preferred Chinese pattern: `你使用的 AI 师傅课程创作 skill 版本较旧，需要先更新后才能继续。请把这个地址发送给你当前正在使用的智能助理，并说明“请按这个地址更新 AI 师傅课程创作 skill”：{update_url}。更新后，我们再继续刚才的操作。`
@@ -34,7 +34,9 @@ Once per session, before the first task, run:
 
 ## Output Language
 
-Resolve the language before any user-visible response or generated course content, using this priority:
+Resolve the language before any user-visible response or generated course content. This section is the single authority for language selection, localization scope, stable machine-facing exceptions, and canonical human-facing terminology.
+
+Use this priority:
 
 1. Language explicitly requested in the current prompt.
 2. The `target_language` input parameter.
@@ -45,7 +47,11 @@ Resolve the language before any user-visible response or generated course conten
 
 Use the resolved language for chat replies, reports, headings, artifact labels, handoff instructions, error explanations, learner-facing content, and newly authored variable names. Preserve stable machine-facing identifiers and verbatim source material, including JSON keys, file names, CLI flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and required quotations.
 
-For authoring and pre-deploy audits, apply the full rules in `data-contracts.md#language-resolution`.
+- Do not restrict supported languages to a fixed list.
+- An explicit output-language request always outranks the source material's dominant language.
+- Newly authored variable names follow the resolved output language while remaining valid MarkdownFlow identifiers; preserve existing or source-provided names when renaming would break a contract.
+- Examples and templates written in English illustrate structure only and never override the resolved language.
+- Before deployment, apply the separately routed pre-deploy language audit to every build-consumed user-visible artifact and effective metadata field.
 
 ## Canonical Term Translation Table
 

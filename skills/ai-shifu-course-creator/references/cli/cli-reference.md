@@ -1,5 +1,7 @@
 # CLI Reference
 
+This page is the authoritative command interface: it owns invocations, flags, stdout, exit codes, and filesystem or platform side effects. Course-directory and generated-payload schemas live in `course-directory-spec.md`; analytics query-body grammar lives in `../analytics/dsl.md`; scenario selection and authoring semantics are outside this command contract.
+
 All commands use `{skillDir}/scripts/shifu-cli.py`. Prefix every call with:
 
 ```bash
@@ -22,87 +24,17 @@ python3 {skillDir}/scripts/shifu-cli.py <command>
 
 ## Authentication
 
-The token persists in `{skillDir}/.env` and is valid for **7 days**, with each
-successful API call refreshing the expiry (sliding window — an active user never
-expires).  Before every operation that needs a token, run the one-shot check:
+The token persists in `{skillDir}/.env`, is valid for seven days, and uses a sliding expiry refreshed by successful API calls.
 
 ```bash
-verify                         # exit 0 = valid, 1 = expired, 2 = unknown
+verify
+login --phone <phone>
+login --phone <phone> --sms-code <4-digit-code>
 ```
 
-When `verify` returns 1, run the SMS login once:
+`verify` writes a human-readable status to stdout and exits `0` for a valid token, `1` for an expired or missing token, and `2` when validity cannot be determined. `login --phone` requests an SMS and reports the platform response; adding `--sms-code` exchanges the code for a token and writes `SHIFU_TOKEN=<jwt>` to `{skillDir}/.env`.
 
-```bash
-# Step 1: Send SMS verification code (once per session — see below)
-login --phone 13800138000
-
-# Step 2: Complete login with the 4-digit code
-login --phone 13800138000 --sms-code 1234
-```
-
-The CLI always talks to `https://app.ai-shifu.cn`. To skip the SMS login, set
-`--token` / `SHIFU_TOKEN` directly.
-
-### Agent Login Flow
-
-**Gate: run `shifu-cli.py verify` first.** Exit 0 → skip login entirely; exit 1
-→ run the flow below **once**; exit 2 → retry later, do NOT trigger a new login.
-
-**Hard constraint — one phone number = one SMS send per login session.**  Each
-phone number is capped at **5 SMS codes per day**.  Sending a second SMS when the
-first is still in transit wastes a slot and risks locking the user out.  The
-agent MUST:
-- Collect the phone number → send `login --phone <phone>` **exactly once**.
-- If the user asks "didn't receive / resend", reply "验证码在 60 秒内到达，请稍等" —
-  do NOT resend unless **3 consecutive wrong codes** have been entered.
-- After the 3rd consecutive wrong code, send `login --phone <phone>` one more
-  time (this is the final SMS for this session).
-
-Fixed flow: verify → (only if needed) ask for phone → send code → ask for SMS
-code → complete. Run the steps in order. Do not ask anything else.
-
-Do not ask anything else. No status checks ("have you signed up / logged in
-before?"), no readiness or intent confirmations ("ready to start?", "I'll
-provide my phone"), no acknowledgment pauses, no recaps between steps. Each turn
-collects exactly the next value (phone, then SMS code), nothing else. The
-Step 1 flow preview is a one-shot heads-up, not a confirmation prompt — do not
-wait for the user to acknowledge it before asking for the phone.
-
-Steps:
-
-1. In a single turn, give the user a one-line preview of the full flow and then
-   immediately ask for the phone number. Cover all of these in the preview:
-   (a) SMS login, no password; (b) a 4-digit code will be sent to the phone;
-   (c) the user replies with the code in the next turn; (d) on success the token
-   is saved locally and login is complete; (e) new phone numbers auto-create an
-   account on first use. Keep it brief — one or two sentences total — then ask
-   for the phone in the same reply.
-2. Send SMS code **once**:
-   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone>`
-3. Ask the user for the 4-digit verification code they received.
-4. Complete login:
-   `python3 {skillDir}/scripts/shifu-cli.py login --phone <phone> --sms-code <4-digit-code>`
-5. Token is automatically saved — proceed with the requested operation.
-
-**Error → agent behavior quick reference:**
-
-| What happened | Agent response |
-|---|---|
-| `verify` exit 0 | Token valid — continue, no login |
-| `verify` exit 1 | Run the SMS flow above **once** |
-| `verify` exit 2 | Network issue — retry `verify` later |
-| login returned "SMS sent" | Wait for user to provide code; do NOT resend |
-| login returned "smsSendTooFrequent" | Wait 60 s then retry; do NOT send the phone again |
-| login returned sms code error (1st or 2nd time) | Ask user to re-enter code; do NOT resend SMS |
-| login returned sms code error (**3rd** consecutive time) | Re-send `login --phone <phone>` to get a new code |
-| Any API call returned code 1005 (token expired) | Run `verify` → login flow |
-
-**Token persistence.** The login step writes `SHIFU_TOKEN=<jwt>` into
-`{skillDir}/.env`. Once saved, `verify` is the gate — the token stays valid for
-7 days with sliding refresh. If the token expires (error codes `1001` / `1004`
-/ `1005`), re-run the login flow — the `.env` is overwritten in place.
-
-Always use CLI commands. Never make raw HTTP/API calls directly.
+The CLI always talks to `https://app.ai-shifu.cn`. A caller may bypass SMS by supplying `--token` or `SHIFU_TOKEN`. Conversation sequencing, retry decisions, and SMS-quota protection are outside this command contract.
 
 ## Query Commands
 
@@ -115,9 +47,9 @@ export <shifu_bid> [-o file.json]             # Export course as JSON
 find-title <keyword>                          # Search courses by current title
 ```
 
-`find-title` matches the keyword case-insensitively (whitespace-normalized) against **current** published and draft titles only — never historical / renamed titles — and prints the matches grouped. Use it for targeted course-target resolution instead of dumping the whole `list`.
+`find-title` matches the keyword case-insensitively after whitespace normalization against current published and draft titles only, excludes historical titles, and prints matches grouped by state.
 
-`show` (without `outline_bid`), `create`, `import`, `publish`, and `pull` all print a `Verification URLs:` block. Lines included depend on the command: `publish` and `show` add a `Published URL:` line (the public student-facing address — `<base>/c/<bid>` without `preview=true`); `create`, `import`, and `pull` omit it (`create` / `import` because the course is not yet published). Each URL is followed by a one-line `# ...` Chinese hint that explains the click jumps to AI 师傅 and what the link is for; it mentions AI 师傅 credit consumption only when the linked action can consume credits. Per-lesson preview URLs are no longer printed — if you need one, use `show <shifu_bid>` to find the `outline_bid` and build `<base>/c/<bid>?preview=true&lessonid=<outline_bid>` on demand. Copy printed URLs as-is when reporting; never reconstruct them from a template.
+`show` without `outline_bid`, `create`, `import`, `publish`, and `pull` print a `Verification URLs:` block. `publish` and `show` include a `Published URL:` line; `create`, `import`, and `pull` omit it. Each URL is followed by a one-line Chinese `# ...` hint, and per-lesson preview URLs are not printed.
 
 ## Analytics Query
 
@@ -126,7 +58,7 @@ analytics-query <shifu_bid> --dsl '<json>'        # Inline DSL body
 analytics-query <shifu_bid> --dsl-file query.json # DSL body from a JSON file
 ```
 
-Runs a DSL query against the creator-analytics endpoint and prints the full JSON response (success rows or business error code) to stdout. The CLI handles authentication headers automatically — never call the endpoint directly.
+Runs a DSL query against the creator-analytics endpoint and prints the full JSON response, including success rows or a business error code, to stdout. The CLI supplies authentication headers.
 
 The `shifu_bid` positional argument is injected into the body; if the DSL JSON already carries a `shifu_bid`, it must match the positional argument.
 
@@ -136,7 +68,7 @@ Exit codes:
 
 The full response is always printed to stdout regardless of exit code, so the agent can read the error code and either fix the DSL or guide the user to re-login. The CLI deliberately does not exit before printing analytics business errors.
 
-Use this command in conjunction with the analytics references in `references/analytics/` — never construct raw HTTP calls.
+The body supplied through `--dsl` or `--dsl-file` must conform to `../analytics/dsl.md`. This command transports a body; it does not choose the business scenario or presentation policy.
 
 ### credit-detail
 
@@ -144,7 +76,7 @@ Use this command in conjunction with the analytics references in `references/ana
 credit-detail <shifu_bid> [--start 2026-05-01] [--end 2026-05-15] [--scene 1202,1203] [--usage-type 1101,1102] [--limit 200] [--offset 200]
 ```
 
-Server-side join of `bill_usage` × `credit_ledger_entries` — the authoritative command for all credit / spend questions. Do **not** issue DSL queries against `bill_daily_usage_metrics` for this (that table is empty in production until the daily aggregation job is enabled — see `references/analytics/tables.md`).
+Returns course-scoped per-usage credit ledger detail from the server-side `bill_usage` × `credit_ledger_entries` join.
 
 Flags:
 
@@ -153,14 +85,11 @@ Flags:
 - `--usage-type` — comma-separated subset of `{1101, 1102}` (LLM / TTS).
 - `--limit` — row count cap, 1..1000 (default 100 server-side). `--offset` — pagination offset (default 0). The `summary` block always reflects the full filtered set regardless of paging.
 
-Output is JSON: `summary` (total credits, distinct users / progress records, wallet creator, time range) plus `rows` (per-usage detail). Credit values are decimal strings — round to 2 decimal places when presenting. Ready-to-run scenarios and the response shape: `references/analytics/recipes.md` Recipes 8–13.
+The command prints the full API envelope. On success, read the total from `data.summary.total_credits`; `data.summary` contains `total_records`, `total_credits`, `unique_users`, `unique_progress`, `unique_wallets`, and `time_range`. It intentionally contains no wallet identifier. Read the wallet that paid each usage from `data.rows[].wallet_creator_bid`; `data.summary.unique_wallets` can exceed one, so do not infer a single course wallet from one row. Each row also contains `usage_bid`, `created_at`, `user_bid`, `progress_record_bid`, `outline_item_bid`, `usage_type`, `usage_scene`, `provider`, `model`, and `credits`. Credit values are positive decimal strings derived from the absolute ledger amount, and the summary covers the full filtered set regardless of pagination.
 
 ## Version Sync (pull / status)
 
-The platform draft is the single source of truth — both draft and published
-versions carry an auto-incrementing `revision`. These commands keep a local
-course directory and the cloud draft version-consistent, like `git pull` /
-`git status`, so edits never silently overwrite a change another editor pushed.
+`pull` and `status` compare the local revision baseline with the cloud draft's auto-incrementing course and lesson revisions.
 
 ```bash
 pull <shifu_bid> --course-dir ./course-a/ [--force]   # Cloud -> local, writes .shifu-sync.json
@@ -183,9 +112,6 @@ status --course-dir ./course-a/ [--exit-code]         # Compare local vs cloud r
 
 `.shifu-sync.json` is **auto-maintained — do not hand-edit.** It is the local↔cloud
 version link (shifu_bid + per-lesson outline_bid + revision + course revision).
-
-**Canonical workflow:** `pull` → edit locally → `status` → `update-lesson` /
-`import` (push) → `publish`.
 
 **Exit-code convention** for the version-guarded write commands
 (`update-lesson`, `update-meta`, `import` when given `--course-dir`):
@@ -248,13 +174,7 @@ revision in `.shifu-sync.json`.
   course-level revision against the manifest baseline before writing; any cloud
   advance is treated conservatively as a conflict.
 
-**On conflict** these commands auto-pull the cloud copy over local (backing up
-your un-pushed change to `<file>.conflict` for a lesson, or
-`.shifu-meta.conflict.json` for meta — your work is never lost), print who
-changed it and when, and exit `2`. Re-apply your edit on the freshly pulled
-baseline and run the command again. Without `--course-dir`, `update-lesson`
-still sends the cloud-head `base_revision` and the server may reject the save
-with a raw conflict response (no auto-recovery).
+**On conflict** these commands auto-pull the cloud copy over local, back up the un-pushed change to `<file>.conflict` for a lesson or `.shifu-meta.conflict.json` for metadata, print who changed it and when, and exit `2`. Without `--course-dir`, `update-lesson` still sends the cloud-head `base_revision`, and the server may reject the save with a raw conflict response without auto-recovery.
 
 ## Delete Commands
 
@@ -270,11 +190,11 @@ import <shifu_bid> --json-file course.json
 import --new --json-file course.json
 
 # One-step build + import from course directory
-import <shifu_bid> --course-dir ./course-a/ [--title "..."] [--description "..."] [--chapter-name "..."]
-import --new --course-dir ./course-a/ [--title "..."] [--description "..."] [--chapter-name "..."]
+import <shifu_bid> --course-dir ./course-a/ [--title "..."] [--description "..."] [--keywords "..."] [--chapter-name "..."]
+import --new --course-dir ./course-a/ [--title "..."] [--description "..."] [--keywords "..."] [--chapter-name "..."]
 
 # Local build only (offline, generates shifu-import.json)
-build --course-dir ./course-a/ [-o shifu-import.json] [--title "..."] [--description "..."] [--chapter-name "..."]
+build --course-dir ./course-a/ [-o shifu-import.json] [--title "..."] [--description "..."] [--keywords "..."] [--chapter-name "..."]
 ```
 
 The `build` command works entirely offline — it reads the course directory's Teaching Prompts (one MarkdownFlow file per lesson under `lessons/`), the Course Prompt, and the SEO course description, then produces `shifu-import.json` without any network calls. The `import --course-dir` option combines build + import in one step. Description resolution order is `--description` -> `<course-dir>/course-description.md` -> empty string.
@@ -295,24 +215,9 @@ attribute, do it explicitly: `set-access` for a lesson's permission, `set-tts`
 for course Listen Mode, or the platform editor for other course-level
 settings.
 
-> **Iterating an existing course:** prefer the non-destructive granular commands
-> — `pull → update-lesson / add-lesson / delete-lesson / reorder / set-access / set-tts`.
-> The destructive whole-course `import` recreates every outline, so a recreated
-> lesson gets the platform default permission; use `import --new` for brand-new
-> courses, not to iterate an existing one.
+**Version-aware import.** When re-importing into an existing course with a `.shifu-sync.json` (`import <shifu_bid> --course-dir ...`), the CLI first checks the cloud course-level revision against the manifest baseline. If another editor advanced it, the whole local tree is backed up to `.conflict-backup-<ts>/`, the cloud copy is pulled over local, and the command exits `2`. After a successful import, the manifest is re-seeded through an automatic `pull` so subsequent edits stay version-tracked.
 
-**Version-aware import.** When re-importing into an existing course with a
-`.shifu-sync.json` (`import <shifu_bid> --course-dir ...`), the CLI first checks
-the cloud course-level revision against the manifest baseline; if another editor
-advanced it, the whole local tree is backed up to `.conflict-backup-<ts>/`, the
-cloud copy is pulled over local, and the command exits `2` (re-apply, then
-re-run). After a successful import the manifest is re-seeded via an automatic
-`pull` so subsequent edits stay version-tracked.
-
-> **Note (Phase 1):** `import` is still destructive — it deletes and recreates
-> every outline, so all `outline_bid`s are regenerated on each import (per-lesson
-> server history does not carry over). For incremental, bid-stable edits prefer
-> `pull` → `update-lesson`. A non-destructive diff import (`--sync`) is planned.
+> **Note (Phase 1):** `import` is destructive: it deletes and recreates every outline, so all `outline_bid` values are regenerated and per-lesson server history does not carry over.
 
 Build behavior:
 
@@ -323,44 +228,7 @@ Build behavior:
 
 ### Import JSON Schema
 
-The `build` command generates a `shifu-import.json` with this shape:
-
-```json
-{
-  "version": "1.0",
-  "shifu": {
-    "shifu_bid": "<UUID>",
-    "title": "Course Title",
-    "description": "Description",
-    "keywords": "keywords",
-    "llm": "",
-    "llm_temperature": 0,
-    "course_prompt": "<content from course-prompt.md>",
-    "ask_enabled_status": 5101,
-    "price": 0.0
-  },
-  "outline_items": [
-    {
-      "outline_item_bid": "<UUID>",
-      "title": "Lesson Title",
-      "type": 401,
-      "parent_bid": "",
-      "position": "0",
-      "content": "<MarkdownFlow content>"
-    }
-  ],
-  "structure": { "bid": "<shifu_bid>", "type": "shifu", "children": [] }
-}
-```
-
-Key fields:
-
-- `course_prompt`: Course-level AI role definition (from `course-prompt.md`). The CLI maps this to the platform API field `system_prompt` when calling `/shifus/<bid>/detail`.
-- `description`: Learner-facing SEO/listing description (resolution order above).
-- `type: 401`: Regular lesson node.
-- `parent_bid`: Empty string = chapter (top-level container); non-empty = lesson (child node with MarkdownFlow content). Use `add-chapter` to create chapters, then pass the chapter BID as `--parent-bid` when creating lessons.
-- `content`: The MarkdownFlow prompt content (this is the core teaching material).
-- `ask_enabled_status: 5101`: Enables learner questions.
+The generated payload shape and field mappings are defined in `course-directory-spec.md#shifu-importjson`. The `build` command writes that schema; `import` accepts it.
 
 ## Image Upload
 
@@ -383,12 +251,12 @@ Behavior:
 - `--file`: opens with Pillow (HEIC/HEIF via `pillow-heif`), corrects EXIF orientation, downscales to longest-side 2048 px, recompresses JPEG until ≤ 2 MB; transparent images output PNG. Non-image inputs (e.g. `.pdf`, `.txt`) raise an error in the preprocessing stage and exit with code 1.
 - `--url`: posts directly to `/api/shifu/url-upfile`; the backend validates the response is `image/*` and re-hosts the file.
 - `--course-dir`: when provided, an entry is upserted into `<course-dir>/assets/image-manifest.json` keyed by `local` (for file uploads) or `source_url` (for URL uploads). Re-uploading the same path updates the entry rather than appending.
-- `--alt`: short description of what the image conveys; stored in the manifest for review and for later authoring of MarkdownFlow alt text. The LLM should still write a context-appropriate alt when embedding the image — `--alt` is the source of truth, not the final rendered text.
+- `--alt`: short source description stored in the manifest; it is not automatically rendered into a Teaching Prompt.
 - `--no-process` (debug only): skip preprocessing and upload bytes as-is. Use only when investigating a backend issue; will fail for HEIC and oversize files.
 
 Dependencies: `Pillow`, `pillow-heif`. First-run failures suggest `pip install -r scripts/requirements.txt`.
 
-For the embedding rules once you have a URL, see `references/markdownflow.md#images`.
+This command ends after returning the platform URL and updating the optional manifest. It does not edit a Teaching Prompt or choose image placement.
 
 ## State Management
 
@@ -431,4 +299,4 @@ These already output JSON via `json.dumps(ensure_ascii=False)`, so they work cor
 
 ### Token persistence
 
-The token is saved to `{skillDir}/.env` after a successful login. Subsequent commands automatically read it. If the token expires (error codes `1001` / `1004` / `1005`), re-run the login flow — the token file is overwritten in place.
+The token is saved to `{skillDir}/.env` after a successful login, subsequent commands read it automatically, and a later successful login overwrites it in place. Commands surface expired-token codes `1001`, `1004`, or `1005`; conversation recovery remains outside this command contract.

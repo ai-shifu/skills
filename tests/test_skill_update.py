@@ -245,13 +245,13 @@ class SkillUpdateTests(unittest.TestCase):
             raise RuntimeError("offline")
 
         with tempfile.TemporaryDirectory() as tmp:
-            skill_md = Path(tmp) / "SKILL.md"
-            skill_md.write_text(
-                "---\nname: Test\nversion: 1.0.0\n---\n",
+            metadata_file = Path(tmp) / "version-metadata.json"
+            metadata_file.write_text(
+                json.dumps({"version": "1.0.0"}),
                 encoding="utf-8",
             )
             result = skill_update.check_for_update(
-                skill_md=skill_md,
+                metadata_file=metadata_file,
                 cache_file=Path(tmp) / "cache.json",
                 http_get=failing_get,
                 now=self.now,
@@ -263,19 +263,15 @@ class SkillUpdateTests(unittest.TestCase):
             raise AssertionError("plugin-managed skill must not request manifest")
 
         with tempfile.TemporaryDirectory() as tmp:
-            skill_md = Path(tmp) / "SKILL.md"
-            skill_md.write_text(
-                (
-                    "---\n"
-                    "name: Test\n"
-                    "version: 1.0.0\n"
-                    "version_management: plugin\n"
-                    "---\n"
+            metadata_file = Path(tmp) / "version-metadata.json"
+            metadata_file.write_text(
+                json.dumps(
+                    {"version": "1.0.0", "version_management": "plugin"}
                 ),
                 encoding="utf-8",
             )
             result = skill_update.check_for_update(
-                skill_md=skill_md,
+                metadata_file=metadata_file,
                 cache_file=Path(tmp) / "cache.json",
                 http_get=unexpected_get,
                 now=self.now,
@@ -290,19 +286,15 @@ class SkillUpdateTests(unittest.TestCase):
             raise AssertionError("invalid version management must not request manifest")
 
         with tempfile.TemporaryDirectory() as tmp:
-            skill_md = Path(tmp) / "SKILL.md"
-            skill_md.write_text(
-                (
-                    "---\n"
-                    "name: Test\n"
-                    "version: 1.0.0\n"
-                    "version_management: mystery\n"
-                    "---\n"
+            metadata_file = Path(tmp) / "version-metadata.json"
+            metadata_file.write_text(
+                json.dumps(
+                    {"version": "1.0.0", "version_management": "mystery"}
                 ),
                 encoding="utf-8",
             )
             result = skill_update.check_for_update(
-                skill_md=skill_md,
+                metadata_file=metadata_file,
                 cache_file=Path(tmp) / "cache.json",
                 http_get=unexpected_get,
                 now=self.now,

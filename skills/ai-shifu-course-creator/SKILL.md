@@ -9,6 +9,8 @@ version_management: standalone
 
 Route each request to the smallest complete instruction set needed to create, edit, optimize, deploy, manage, or analyze an AI-Shifu course. Teaching Prompts and Course Prompts use MarkdownFlow.
 
+The frontmatter version fields mirror `version-metadata.json` for package discovery; that leaf file is the runtime authority used by update checks.
+
 ## Startup Sequence
 
 On the first invocation in a session:
@@ -23,14 +25,15 @@ On the first invocation in a session:
 
 | User intent | Required files, in order |
 |---|---|
-| Create a full course, make a structural course edit, or run authoring end to end | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/prompt-contracts.md` → `references/authoring-intake.md` → `references/segmentation-orchestration.md` → `references/generation-workflow.md` → `references/optimization-workflow.md`; add `references/deployment-workflow.md` only when deployment or publication is requested |
-| Plan course structure or decide chapter and lesson counts from supplied material | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/authoring-intake.md` → `references/segmentation-orchestration.md#segmentation` |
+| Create a full course, make a structural course edit, or run authoring end to end | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/authoring-intake.md` → `references/delivery-modes.md` → `references/prompt-contracts.md` → `references/segmentation-orchestration.md` → `references/generation-workflow.md` → `references/optimization-workflow.md`; add `references/deployment-workflow.md` only when deployment or publication is requested |
+| Plan course structure or decide chapter and lesson counts from supplied material | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/authoring-intake.md` → `references/delivery-modes.md` → `references/segmentation-orchestration.md#segmentation` |
 | Segment supplied material only | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/segmentation-orchestration.md#segmentation` |
-| Generate Teaching Prompts from existing segments | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/authoring-intake.md` → `references/prompt-contracts.md` → `references/generation-workflow.md` |
-| Review or audit pasted Teaching Prompt or Course Prompt content without accessing a platform course | `references/authoring-controls.md` → `references/prompt-contracts.md` → `references/optimization-workflow.md` |
-| Optimize content in an existing platform course | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/prompt-contracts.md` → `references/optimization-workflow.md`; insert `references/authoring-intake.md` before `prompt-contracts.md` when changing course structure, lesson design, or interaction strategy |
-| Deploy a new course or deploy edited course content | `references/authentication.md` → `references/course-target.md` → `references/prompt-contracts.md` → `references/deployment-workflow.md` |
-| Publish, preview, sync, authenticate, list, archive, reorder, or manage metadata, access, or Listen Mode without changing prompt content | `references/authentication.md` → `references/deployment-workflow.md` |
+| Generate Teaching Prompts from existing segments | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/authoring-intake.md` → `references/delivery-modes.md` → `references/prompt-contracts.md` → `references/generation-workflow.md` |
+| Review or audit pasted Teaching Prompt or Course Prompt content without accessing a platform course | `references/authoring-controls.md` → `references/delivery-modes.md` → `references/prompt-contracts.md` → `references/optimization-workflow.md` |
+| Optimize content in an existing platform course | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/delivery-modes.md` → `references/prompt-contracts.md` → `references/optimization-workflow.md`; insert `references/authoring-intake.md` before `delivery-modes.md` when changing course structure, lesson design, delivery mode, or interaction strategy |
+| Deploy a new course or deploy edited course content | `references/authentication.md` → `references/course-target.md` → `references/delivery-modes.md` → `references/prompt-contracts.md` → `references/review-checklist.md#pre-deploy-language-audit` → `references/deployment-workflow.md` |
+| Publish, preview, sync, authenticate, list, archive, reorder, or manage metadata or access without changing prompt content | `references/authentication.md` → `references/deployment-workflow.md` |
+| Enable, disable, or inspect Listen Mode | `references/authentication.md` → `references/delivery-modes.md` → `references/deployment-workflow.md#delivery-mode-handoff` |
 | Query observed data about a live course: learners, completion, stuck lessons, orders, revenue, ratings, follow-ups, audience profiles, progress, or credit use | `references/authentication.md` → `references/analytics/workflow.md` |
 | Author or deploy, then query live-course data | Complete the relevant authoring/deployment route first, then `references/analytics/workflow.md` |
 
@@ -41,6 +44,7 @@ On the first invocation in a session:
 - Do not propose an outline or write lesson content until the course-target workflow allows authoring to begin.
 - For an existing course, build on the pulled cloud copy and use the converging sync loop. The platform draft is authoritative.
 - Load `prompt-contracts.md` whenever a route writes, rewrites, or audits Teaching Prompt or Course Prompt content.
+- Load `delivery-modes.md` whenever a route creates, changes, audits, or deploys prompt content so every artifact consumes the same normalized delivery decision.
 - When a selected guide points to a syntax, pedagogy, schema, CLI, or analytics reference, read the named section before applying it.
 
 ## Reporting
@@ -64,7 +68,8 @@ Apply `references/report-template.md#formatting-rules` to every user-facing phas
 - `references/course-target.md` — mandatory new-vs-existing resolution.
 - `references/authoring-controls.md` — execution modes, control inputs, and concept routing.
 - `references/prompt-contracts.md` — non-negotiable Teaching Prompt and Course Prompt rules.
-- `references/authoring-intake.md` — design intake and end-to-end authoring pipeline.
+- `references/authoring-intake.md` — design-question flow and normalized authoring decisions.
+- `references/delivery-modes.md` — cross-artifact standard and pure-slide behavior.
 - `references/segmentation-orchestration.md` — source segmentation and cross-lesson orchestration.
 - `references/generation-workflow.md` — lesson generation and author-provided images.
 - `references/optimization-workflow.md` — prompt audit, repair, Course Prompt, and validation.
@@ -74,7 +79,7 @@ Apply `references/report-template.md#formatting-rules` to every user-facing phas
 
 ### Detailed foundations
 
-- Authoring: `references/markdownflow.md`, `references/pedagogy.md`, `references/data-contracts.md`, `references/course-prompt.md`, `references/review-checklist.md`
+- Authoring: `references/session-controls.md`, `references/markdownflow.md`, `references/data-contracts.md`, `references/pedagogy.md`, `references/course-prompt.md`, `references/delivery-modes.md`, `references/prompt-contracts.md`, `references/review-checklist.md`
 - Platform: `references/cli/cli-reference.md`, `references/cli/course-directory-spec.md`
 - Analytics: `references/analytics/overview.md`, `references/analytics/dsl.md`, `references/analytics/tables.md`, `references/analytics/recipes.md`, `references/analytics/privacy-and-presentation.md`
 

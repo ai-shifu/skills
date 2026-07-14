@@ -1,6 +1,6 @@
 # Course Prompt
 
-Authoritative template for the course-level prompt artifact.
+Authoritative base template for the course-level prompt artifact.
 
 ## Purpose
 
@@ -13,12 +13,12 @@ Do not move lesson-specific mechanics into `course-prompt.md`.
 
 ## Authoring Workflow
 
-1. Resolve the output language using [data-contracts.md#language-resolution](data-contracts.md#language-resolution).
+1. Resolve the output language using [session-controls.md#output-language](session-controls.md#output-language).
 2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
 3. Replace every `XXX` from the [Placeholder Sources](#placeholder-sources). Use already-collected artifacts.
 4. Render section headings and body text in the resolved output language. The English template is canonical structure, not a language default.
-5. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in the resolved language.
-6. Confirm that no `XXX` remains and that the stated delivery mode matches the Course Design Intake.
+5. Keep every non-placeholder instruction except a line explicitly replaced by the selected cross-artifact delivery profile; adapt wording only when needed to preserve the applicable rule in the resolved language.
+6. Confirm that no `XXX` remains and that the resulting prompt matches the normalized delivery mode.
 
 ## Fillable Template
 
@@ -83,12 +83,5 @@ Do not move lesson-specific mechanics into `course-prompt.md`.
 
 ## Boundaries
 
-- A named `{{var}}` may appear only for intentional course-wide personalization. It is replaced before generation with the learner's stored value or `UNKNOWN`; write instructions against that substituted value.
+- A named `{{var}}` may appear only for intentional course-wide personalization. Apply the substitution behavior in `markdownflow.md#variables` without introducing lesson-specific collection logic.
 - Lesson-specific variable collection, branching, lesson titles, ordering, source excerpts, and learner-facing scripts stay in Teaching Prompts, `course_index`, or `structure.json`.
-
-## Validation
-
-- The six template sections are present in order and localized to the resolved output language.
-- Every `XXX` is replaced with course-specific content.
-- Every non-placeholder template instruction remains represented.
-- No lesson-specific mechanics or author-side process notes appear.
