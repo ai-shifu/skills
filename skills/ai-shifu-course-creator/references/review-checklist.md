@@ -71,7 +71,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 ## Visual-Text Coordination
 
 - In standard non-slide-only lessons, every core concept that uses a visual has a visual-plus-text explanation.
-- No Teaching Prompt in any delivery mode contains raw graphic source code (SVG, HTML drawings, Mermaid, PlantUML, or Graphviz); approved HTML-view image instructions are checked separately below.
+- Raw graphic source code (SVG, HTML drawings, Mermaid, PlantUML, or Graphviz) appears in a Teaching Prompt only when the author explicitly requests that raw format; approved HTML-view image instructions are checked separately below.
 - Pure classroom slides follow `generation-workflow.md#slide-only-generation-override` and are not failed for omitting AI narration or a full explanation paragraph.
 - When an image asset **is** embedded: its URL is on the `res.ai-shifu.cn` domain and has a corresponding entry in `<course-dir>/assets/image-manifest.json` (no orphan URLs, no externally hot-linked images).
 - Fixed-display images are wrapped in single-line deterministic blocks (`===![alt](url)===`); HTML-view images use instruction-style directives per `markdownflow.md#images` 3.2 (no HTML inside `=== … ===` / `!=== … !===`).

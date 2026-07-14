@@ -148,7 +148,7 @@ These are the teaching decisions for whether to collect an answer, how often to 
 
 ### Visual-Text Coordination
 
-The Teaching Prompt hard rules in [prompt-contracts.md](prompt-contracts.md) govern every slide and image-file scenario. Within a Teaching Prompt, call every generated or described screen-facing teaching unit a slide. Use `image` only for an actual image file or uploaded image asset. Diagrams, charts, and other graphics are slide content rather than images unless they are supplied as image files. Never embed raw SVG, HTML, Mermaid, PlantUML, or Graphviz markup in a Teaching Prompt, including when an author asks for the raw format. Express generated slide instructions as natural-language slide directions.
+The Teaching Prompt hard rules in [prompt-contracts.md](prompt-contracts.md) govern every slide and image-file scenario. Within a Teaching Prompt, call every generated or described screen-facing teaching unit a slide. Use `image` only for an actual image file or uploaded image asset. Diagrams, charts, and other graphics are slide content rather than images unless they are supplied as image files. Do not embed raw SVG, HTML, Mermaid, PlantUML, or Graphviz markup in a Teaching Prompt by default. When the author explicitly requests one of these raw formats, follow that request; the explicit author instruction overrides the default. Otherwise, express generated slide instructions as natural-language slide directions.
 
 | Scenario | Authority and requirements |
 |---|---|
