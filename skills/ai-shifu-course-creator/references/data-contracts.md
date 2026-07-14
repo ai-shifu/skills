@@ -53,7 +53,6 @@ Provide one of:
 
 ```json
 {
-  "interaction_density": "low|medium|high",
   "platform_limits": ["no_iframe", "markdown_only"],
   "must_cover_topics": ["topic-a", "topic-b"],
   "avoid_topics": ["topic-x"],
@@ -74,13 +73,13 @@ Provide one of:
 }
 ```
 
-Course Design Intake resolves this control once and passes it unchanged to Generation and Optimization:
+This section owns only the normalized data shape and enum constraints. Course Design Intake resolves the object once and passes it unchanged to Generation and Optimization:
 
-- `enabled` requires a non-empty, duplicate-free `purposes` array containing only the three canonical values above. Each purpose controls only its own placement; enabling one does not implicitly enable the others.
-- `disabled` and `unspecified` require an empty `purposes` array.
-- `disabled` forbids interaction syntax and learner-answer variables.
-- `unspecified` adds no downstream behavior constraint or override; existing authoring logic, including `delivery_constraints.interaction_density`, applies as-is.
-- `delivery_constraints.interaction_density` never overrides `disabled` or the selected-purpose placements under `enabled`.
+- `mode` is required and must be exactly `enabled`, `disabled`, or `unspecified`.
+- `purposes` is required, duplicate-free, and may contain only `learner_context`, `pre_content_thinking`, and `lesson_end_self_check`.
+- `enabled` requires a non-empty `purposes` array; `disabled` and `unspecified` require an empty `purposes` array.
+
+The teaching effects, purpose placements, and non-interactive substitutions are defined in [pedagogy.md#interaction-policy-precedence](pedagogy.md#interaction-policy-precedence).
 
 ### Minimal Input Payload Example
 
@@ -103,7 +102,6 @@ Course Design Intake resolves this control once and passes it unchanged to Gener
     "assessment_mode": "project"
   },
   "delivery_constraints": {
-    "interaction_density": "medium",
     "must_cover_topics": ["core workflow", "failure handling"]
   }
 }
@@ -217,10 +215,7 @@ Each item in the Segmentation output (consumed by Orchestration and Generation):
   (string), `start` (non-negative integer, inclusive character offset), and `end`
   (integer greater than `start`, exclusive character offset). Use the same object
   shape as entries in `course_index.source_span_map`.
-- `transfer_signals` (object, required) — downstream teaching-quality cues. Use
-  only the canonical keys below, include every cue that applies to the segment,
-  and omit inapplicable keys rather than inventing content. Each included value
-  is a concise string:
+- `transfer_signals` (object, required and non-empty) — downstream teaching-quality cues. Use only the canonical keys below, include every cue that applies to the segment, and omit inapplicable keys rather than inventing content. Every included value must be a non-empty concise string:
   - `learner_hook`
   - `evidence_type`
   - `visual_cue`
@@ -247,7 +242,7 @@ For segmentation rules and methodology see [pedagogy.md#segmentation-methodology
 - `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when `course-prompt.md` references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
 - `effect_scope` (string constant: `cross_lesson`, required).
 
-Only named variables belong in `global_variable_table`. No-variable `?[...]` interactions do not create table entries. Use named variables only when the learner's answer must be used outside the current lesson; lesson-local branching, examples, feedback, summaries, and inputs stay no-variable. Therefore every table entry has `effect_scope: "cross_lesson"`; a local scope is invalid and should be represented by a no-variable interaction instead. Still list `course_prompt` in `used_in` whenever `course-prompt.md` references the variable. For variable *syntax and runtime substitution semantics* (`{{var}}` → stored value or `UNKNOWN`) see [markdownflow.md#variables](markdownflow.md#variables); for variable *strategy and pacing* see [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy).
+Only named variables belong in `global_variable_table`; no-variable `?[...]` interactions do not create table entries. Every table entry has `effect_scope: "cross_lesson"`, and `used_in` includes `course_prompt` whenever `course-prompt.md` references the variable. Variable collection, reuse, and pacing decisions are defined in [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy); syntax and runtime substitution semantics (`{{var}}` → stored value or `UNKNOWN`) are defined in [markdownflow.md#variables](markdownflow.md#variables).
 
 ## Lesson Schema
 

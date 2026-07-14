@@ -17,7 +17,6 @@
     "assessment_mode": "project"
   },
   "delivery_constraints": {
-    "interaction_density": "medium",
     "must_cover_topics": ["idempotency", "failure taxonomy"]
   },
   "target_language": "en-US"

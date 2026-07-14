@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sys
 import tempfile
 import unittest
@@ -9,6 +10,109 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import validate_skill_quality  # noqa: E402
+
+
+COURSE_CREATOR_REFERENCES = (
+    REPO_ROOT / "skills" / "ai-shifu-course-creator" / "references"
+)
+
+
+def markdown_section(markdown: str, title: str) -> str:
+    """Return one Markdown section, including any lower-level subsections."""
+    heading_pattern = re.compile(
+        rf"^(?P<marks>#{{1,6}})[ \t]+{re.escape(title)}[ \t]*$"
+    )
+    heading_end = None
+    heading_level = None
+    in_fence = False
+    fence_marker = ""
+    offset = 0
+
+    for line in markdown.splitlines(keepends=True):
+        stripped = line.lstrip()
+        if stripped.startswith(("```", "~~~")):
+            marker = stripped[:3]
+            if not in_fence:
+                in_fence, fence_marker = True, marker
+            elif marker == fence_marker:
+                in_fence = False
+            offset += len(line)
+            continue
+        if not in_fence:
+            heading = heading_pattern.match(line.rstrip("\r\n"))
+            if heading:
+                heading_end = offset + len(line.rstrip("\r\n"))
+                heading_level = len(heading.group("marks"))
+                break
+        offset += len(line)
+
+    if heading_end is None or heading_level is None:
+        raise AssertionError(f"missing Markdown section: {title}")
+
+    section_end = heading_end
+    in_fence = False
+    fence_marker = ""
+    for line in markdown[heading_end:].splitlines(keepends=True):
+        stripped = line.lstrip()
+        if stripped.startswith(("```", "~~~")):
+            marker = stripped[:3]
+            if not in_fence:
+                in_fence, fence_marker = True, marker
+            elif marker == fence_marker:
+                in_fence = False
+            section_end += len(line)
+            continue
+        if not in_fence:
+            next_heading = re.match(r"^(#{1,6})[ \t]+", line)
+            if next_heading and len(next_heading.group(1)) <= heading_level:
+                return markdown[heading_end:section_end]
+        section_end += len(line)
+    return markdown[heading_end:]
+
+
+def markdown_table_first_column(section: str, header: str) -> list[str]:
+    """Read canonical values from a Markdown table identified by its header."""
+    lines = section.splitlines()
+    for index, line in enumerate(lines):
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if not cells or cells[0].strip("`").casefold() != header.casefold():
+            continue
+
+        values: list[str] = []
+        for row in lines[index + 2 :]:
+            if not row.lstrip().startswith("|"):
+                break
+            first_cell = row.strip().strip("|").split("|", 1)[0].strip()
+            values.append(first_cell.strip("`"))
+        return values
+
+    raise AssertionError(f"missing Markdown table with first header: {header}")
+
+
+class MarkdownSectionHelperTests(unittest.TestCase):
+    def test_ignores_fenced_headings_for_target_and_boundary(self):
+        markdown = (
+            "```markdown\n"
+            "## Target\n"
+            "```\n"
+            "## Target\n"
+            "Body before the fence.\n"
+            "```python\n"
+            "# Not a boundary\n"
+            "```\n"
+            "Body after the fence.\n"
+            "## Next\n"
+            "Outside the target section.\n"
+        )
+
+        section = markdown_section(markdown, "Target")
+
+        self.assertIn("Body before the fence.", section)
+        self.assertIn("# Not a boundary", section)
+        self.assertIn("Body after the fence.", section)
+        self.assertNotIn("Outside the target section.", section)
 
 
 class InteractionPolicyValidationTests(unittest.TestCase):
@@ -469,6 +573,139 @@ After the learner answers, branch to the matching guidance.
                     for error in issues.errors
                 )
             )
+
+
+class PedagogyContractTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.pedagogy_path = COURSE_CREATOR_REFERENCES / "pedagogy.md"
+        cls.pedagogy = cls.pedagogy_path.read_text(encoding="utf-8")
+        cls.data_contracts = (
+            COURSE_CREATOR_REFERENCES / "data-contracts.md"
+        ).read_text(encoding="utf-8")
+
+    def test_public_pedagogy_anchors_stay_stable(self):
+        expected_anchors = {
+            "pedagogy",
+            "script-style",
+            "interaction-policy-precedence",
+            "lesson-loop",
+            "teaching-patterns",
+            "pattern-a-evidence-chain",
+            "pattern-b-misconception-repair",
+            "pattern-c-comparison-driven-learning",
+            "cognitive-techniques",
+            "interaction-design",
+            "variable-strategy",
+            "visual-text-coordination",
+            "segmentation-methodology",
+            "objective",
+            "core-rules",
+            "segment-types",
+            "transfer-signals",
+            "failure-handling",
+            "optimization-methodology",
+            "principles",
+            "issue-taxonomy",
+            "execution-sequence",
+        }
+
+        actual_anchors = validate_skill_quality.github_heading_slugs(
+            self.pedagogy_path
+        )
+
+        self.assertTrue(
+            expected_anchors.issubset(actual_anchors),
+            f"missing public pedagogy anchors: "
+            f"{sorted(expected_anchors - actual_anchors)}",
+        )
+
+    def test_transfer_signal_keys_match_pedagogy_data_and_validator(self):
+        transfer_section = markdown_section(self.pedagogy, "Transfer Signals")
+        pedagogy_keys = markdown_table_first_column(transfer_section, "Key")
+
+        segment_section = markdown_section(self.data_contracts, "Segment Schema")
+        data_contract_block = re.search(
+            r"(?ms)^- `transfer_signals`.*?(?=\n\n|\n[^ \t\n]|\Z)",
+            segment_section,
+        )
+        self.assertIsNotNone(data_contract_block)
+        data_contract_keys = re.findall(
+            r"(?m)^[ \t]+- `([a-z_]+)`[ \t]*$",
+            data_contract_block.group(0),
+        )
+
+        validator_keys = validate_skill_quality.TRANSFER_SIGNAL_KEYS
+        self.assertEqual(len(pedagogy_keys), len(set(pedagogy_keys)))
+        self.assertEqual(len(data_contract_keys), len(set(data_contract_keys)))
+        self.assertEqual(set(pedagogy_keys), validator_keys)
+        self.assertEqual(set(data_contract_keys), validator_keys)
+
+    def test_interaction_matrix_has_only_canonical_modes_and_purposes(self):
+        policy_section = markdown_section(
+            self.pedagogy, "Interaction Policy Precedence"
+        )
+        modes = markdown_table_first_column(policy_section, "Mode")
+        purposes = markdown_table_first_column(policy_section, "Purpose")
+
+        self.assertEqual(len(modes), len(set(modes)))
+        self.assertEqual(len(purposes), len(set(purposes)))
+        self.assertEqual(
+            set(modes), validate_skill_quality.INTERACTION_POLICY_MODES
+        )
+        self.assertEqual(
+            set(purposes), validate_skill_quality.INTERACTION_PURPOSES
+        )
+
+    def test_authority_links_cover_prompt_and_delivery_boundaries(self):
+        scope = markdown_section(self.pedagogy, "Scope and Authority Boundaries")
+        interaction = markdown_section(self.pedagogy, "Interaction Design")
+        variables = markdown_section(self.pedagogy, "Variable Strategy")
+        visuals = markdown_section(self.pedagogy, "Visual-Text Coordination")
+
+        self.assertIn("(course-prompt.md)", scope)
+        self.assertIn("(markdownflow.md#interactions)", interaction)
+        self.assertIn("(markdownflow.md#branching-on-user-input)", interaction)
+        self.assertIn("(markdownflow.md#variables)", variables)
+        self.assertIn("(data-contracts.md#variable-table)", variables)
+        self.assertIn(
+            "(generation-workflow.md#slide-only-generation-override)",
+            visuals,
+        )
+
+    def test_removed_authoring_controls_do_not_reappear(self):
+        scan_roots = [
+            COURSE_CREATOR_REFERENCES.parent,
+            REPO_ROOT / "scripts",
+            REPO_ROOT / "tests",
+        ]
+        removed_terms = {
+            "interaction_" + "density",
+            "interaction " + "density",
+            "interaction-" + "density",
+            "互动" + "密度",
+            "交互" + "密度",
+        }
+        matches = []
+
+        for root in scan_roots:
+            for path in root.rglob("*"):
+                if not path.is_file() or path.suffix not in {
+                    ".json",
+                    ".md",
+                    ".py",
+                    ".yaml",
+                    ".yml",
+                }:
+                    continue
+                content = path.read_text(encoding="utf-8", errors="replace")
+                for term in removed_terms:
+                    if term.casefold() in content.casefold():
+                        matches.append(
+                            (str(path.relative_to(REPO_ROOT)), term)
+                        )
+
+        self.assertEqual(matches, [])
 
 
 if __name__ == "__main__":

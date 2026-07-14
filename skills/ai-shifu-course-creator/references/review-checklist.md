@@ -32,9 +32,8 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 ## Lesson Loop
 
 - The interaction policy used for this audit resolves to `enabled`, `disabled`, or `unspecified` and matches the Course Design Intake answer.
-- By default, the minimum loop is setup → explanation → interaction → close.
-- Under `enabled`, require the default interaction loop only when a selected purpose applies; otherwise use setup → explanation → worked application or consolidation → close.
-- Under `disabled`, use the non-interactive loop for every lesson.
+- The observed lesson loop and any non-interactive substitute match `pedagogy.md#interaction-policy-precedence` and `pedagogy.md#lesson-loop` for that resolved policy.
+- The final paragraph of each lesson is non-interactive.
 - One core question per lesson; resolved by lesson close.
 - Action tasks executable now or explicitly linked to a downstream lesson.
 - Variable naming consistent and traceable across lessons; new variable names follow the resolved output language and are composed of letters, numbers, and underscores.
@@ -50,9 +49,8 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - Each `?[]` interaction appears on its own line.
 - If the pre-interaction text enumerates or describes choices, the `?[]` option labels match those choices exactly — same set, order, and wording.
 - Input interactions include a specific pre-interaction question plus a shorter `...` placeholder.
-- Unless `enabled` or `disabled` overrides the default, at least one deepening interaction appears per lesson.
-- Every selected-purpose placement appears at its defined scope. Interactions serving `pre_content_thinking` or `lesson_end_self_check` include a deepening move; `learner_context` collection is not forced into another purpose.
-- Branching paths are distinct where required; `*_viewpoint_check` interactions branch by option.
+- Interaction presence, placement, and deepening match the resolved policy in `pedagogy.md#interaction-policy-precedence`.
+- Branching paths are distinct for viewpoint/path interactions and whenever `require_branching_feedback` is explicit.
 - Instructional interaction results affect later content through immediate feedback or a visible downstream effect.
 - Repeated interaction semantics avoided across lessons unless comparison intent is explicit.
 - Variable-backed interactions are used only when the answer must leave the current lesson.
@@ -67,19 +65,19 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - No unresolved placeholders in learner-facing content.
 - Variable references in Teaching Prompt and Course Prompt content are written as substituted values; references that may run before the learner assigns a value handle the literal `UNKNOWN` fallback.
 - Variable-based branches state the substituted value in a natural sentence first, then use natural-language condition phrasing.
-- No more than three consecutive variable collections before feedback.
 - Every variable has cross-lesson or Course Prompt utility.
 - No throwaway named variables for continue buttons, confirmations, choices, or inputs used only inside the current lesson.
 
 ## Visual-Text Coordination
 
-- Every core concept has visual-plus-text explanation when a visual is used.
-- When **no** image asset exists: visuals are described in natural language, not inlined as SVG/HTML/Mermaid markup.
+- In standard non-slide-only lessons, every core concept that uses a visual has a visual-plus-text explanation.
+- Raw graphic source code (SVG, HTML drawings, Mermaid, PlantUML, or Graphviz) appears in a Teaching Prompt only when the author explicitly requests that raw format; approved HTML-view image instructions are checked separately below.
+- Pure classroom slides follow `generation-workflow.md#slide-only-generation-override` and are not failed for omitting AI narration or a full explanation paragraph.
 - When an image asset **is** embedded: its URL is on the `res.ai-shifu.cn` domain and has a corresponding entry in `<course-dir>/assets/image-manifest.json` (no orphan URLs, no externally hot-linked images).
 - Fixed-display images are wrapped in single-line deterministic blocks (`===![alt](url)===`); HTML-view images use instruction-style directives per `markdownflow.md#images` 3.2 (no HTML inside `=== … ===` / `!=== … !===`).
 - HTML-view image instructions include the `(必须原样保留)` phrase on every URL line, and locked text (e.g. figure captions) is enforced through wording (`必须原样输出`), not by mixing in deterministic blocks.
 - Alt text and `图片内容` descriptions carry information about what the image conveys (no `image1` / `示意图`).
-- Text adds context (background / causality / examples), not just a restatement of the image.
+- In standard non-slide-only lessons, text adds context (background / causality / examples), not just a restatement of the image.
 
 ## Runtime Stability
 

@@ -18,8 +18,9 @@ Use the authoritative source for each aspect before authoring or auditing:
 | Concept | Syntax / Format | Strategy / Rules | Schema / Data |
 |---|---|---|---|
 | Variables | `markdownflow.md#variables` | `pedagogy.md#variable-strategy` | `data-contracts.md#variable-table` |
-| Interactions | `markdownflow.md#interactions` | `pedagogy.md#interaction-design` | — |
-| Visuals | — | `pedagogy.md#visual-text-coordination` | `data-contracts.md#segment-schema` |
+| Interaction policy | `markdownflow.md#interactions` | `pedagogy.md#interaction-policy-precedence` and `pedagogy.md#interaction-design` | `data-contracts.md#interaction-policy` |
+| Transfer signals | — | `pedagogy.md#transfer-signals` | `data-contracts.md#segment-schema` |
+| Visual boundaries | `markdownflow.md#images` | `pedagogy.md#visual-text-coordination`, `generation-workflow.md#working-with-author-provided-images`, and `generation-workflow.md#slide-only-generation-override` | `data-contracts.md#segment-schema` |
 | Preservation | `markdownflow.md#preservation` | `pedagogy.md#lesson-loop` | — |
 | Output language | — | — | `data-contracts.md#language-resolution` |
 

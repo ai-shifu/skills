@@ -12,9 +12,10 @@ Use Optimization when existing Teaching Prompts or a Course Prompt need audit an
 
 Apply Optimization audits against the full constraint set:
 
-- Pedagogical constraints (variable strategy, interaction design, visual-text coordination, lesson loop, information density): `pedagogy.md`.
+- Pedagogical constraints and issue taxonomy (interaction-policy effects, variable strategy, interaction design, visual-text coordination, lesson loop, information density): `pedagogy.md#interaction-policy-precedence`, `pedagogy.md#variable-strategy`, `pedagogy.md#interaction-design`, `pedagogy.md#visual-text-coordination`, `pedagogy.md#lesson-loop`, and `pedagogy.md#optimization-methodology`.
+- Interaction-policy shape and enums: `data-contracts.md#interaction-policy`.
 - Syntax / runtime constraints (preservation, deterministic blocks, variable references): `markdownflow.md`.
-- Exhaustive audit checklist (failure modes are these constraints negated): `review-checklist.md`.
+- Observable audit checks: `review-checklist.md`.
 
 ### Optimization Workflow
 

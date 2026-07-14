@@ -18,9 +18,6 @@
   "course_profile": {
     "audience_level": "beginner",
     "lesson_duration_minutes": 10
-  },
-  "delivery_constraints": {
-    "interaction_density": "medium"
   }
 }
 ```
