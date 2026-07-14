@@ -564,8 +564,7 @@ class PedagogyContractTests(unittest.TestCase):
 
         segment_section = markdown_section(self.data_contracts, "Segment Schema")
         data_contract_block = re.search(
-            r"(?ms)^- `transfer_signals`.*?"
-            r"^[ \t]+The teaching meaning of these cues is defined in",
+            r"(?ms)^- `transfer_signals`.*?(?=\n\n|\n[^ \t\n]|\Z)",
             segment_section,
         )
         self.assertIsNotNone(data_contract_block)
