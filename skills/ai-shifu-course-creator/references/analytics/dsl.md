@@ -41,7 +41,7 @@ The smallest legal body contains `table` and at least one of `select` or `aggreg
 
 `alias` is optional; the server derives one when omitted. Every explicit or derived alias must be a unique safe identifier and becomes the output column name.
 
-## Constraints (enforced server-side; violations → `11002` / `11007`)
+## Constraints (enforced server-side; see [Validation Error Codes](#validation-error-codes))
 
 - `limit` is between 1 and 1000; `offset` is non-negative.
 - `select` cannot be `*`.

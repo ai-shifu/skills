@@ -1264,6 +1264,11 @@ class AnalyticsAndPlatformResponsibilityTests(unittest.TestCase):
             aggregates,
             r"(?s)`alias` is optional.*server derives.*unique safe identifier",
         )
+        self.assertIn(
+            "## Constraints (enforced server-side; see "
+            "[Validation Error Codes](#validation-error-codes))",
+            self.dsl,
+        )
 
         self.assertIn("exactly these ways", learner_dimension)
         for required_signal in (
