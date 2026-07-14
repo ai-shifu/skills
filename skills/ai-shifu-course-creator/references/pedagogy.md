@@ -1,6 +1,6 @@
 # Pedagogy
 
-Authoritative source for **Teaching Prompt** design constraints: script style, lesson design, segmentation methodology, optimization methodology, and the teaching-side decisions around interactions, variables, and visual-text coordination. Violating these constraints can produce a Teaching Prompt that runs but teaches poorly.
+Authoritative source for **Teaching Prompt** design constraints: script style, lesson design, segmentation methodology, optimization methodology, and the teaching-side decisions around interactions, variables, and coordination between slides and text. Violating these constraints can produce a Teaching Prompt that runs but teaches poorly.
 
 ## Scope and Authority Boundaries
 
@@ -10,7 +10,7 @@ Use each concept's authoritative source instead of restating its contract in mul
 |---|---|---|
 | Teaching behavior and instructional alternatives | This file | Defines what the Teaching Prompt should teach and how non-interactive alternatives preserve that intent. |
 | Course-level AI persona, style, and cross-lesson use | [course-prompt.md](course-prompt.md) | Defines Course Prompt design; this file only decides when lesson behavior depends on it. |
-| MarkdownFlow syntax and runtime semantics | [markdownflow.md](markdownflow.md) | Defines parsing, variables, `UNKNOWN`, interactions, branching, images, and deterministic blocks. |
+| MarkdownFlow syntax and runtime semantics | [markdownflow.md](markdownflow.md) | Defines parsing, variables, `UNKNOWN`, interactions, branching, image-file embedding, and deterministic blocks. |
 | Structured fields and allowed values | [data-contracts.md](data-contracts.md) | Defines schemas, enums, required objects, and table shapes. |
 | Interaction-policy intake | [authoring-intake.md](authoring-intake.md) | Normalizes the author's selection into the policy consumed here; it does not redefine the policy's teaching effect. |
 | Phase execution | [generation-workflow.md](generation-workflow.md), [segmentation-orchestration.md](segmentation-orchestration.md), and [optimization-workflow.md](optimization-workflow.md) | Applies the authoritative rules at each pipeline stage without changing them. |
@@ -149,13 +149,13 @@ These are the teaching decisions for whether to collect an answer, how often to 
 
 ### Visual-Text Coordination
 
-The Teaching Prompt hard rules in [prompt-contracts.md](prompt-contracts.md) govern every visual regime. Never embed raw SVG, HTML, Mermaid, PlantUML, or Graphviz markup in a Teaching Prompt, including when an author asks for the raw format. Express generated visual instructions as natural-language slide or diagram directions.
+The Teaching Prompt hard rules in [prompt-contracts.md](prompt-contracts.md) govern every slide and image-file scenario. Within a Teaching Prompt, call every generated or described screen-facing teaching unit a slide. Use `image` only for an actual image file or uploaded image asset. Diagrams, charts, and other graphics are slide content rather than images unless they are supplied as image files. Never embed raw SVG, HTML, Mermaid, PlantUML, or Graphviz markup in a Teaching Prompt, including when an author asks for the raw format. Express generated slide instructions as natural-language slide directions.
 
 | Scenario | Authority and requirements |
 |---|---|
-| Standard non-slide-only teaching | Keep every core concept paired with visual and textual explanation. The visual carries structural prompting; the text carries the complete explanation and remains understandable when the learner has not seen the visual. Pair each visual instruction with a brief explanation of what it should convey, and use natural-language placeholders when no asset is supplied. |
-| Author-provided image | Follow the existing understanding, upload, and embed process in [generation-workflow.md#working-with-author-provided-images](generation-workflow.md#working-with-author-provided-images) and the image syntax in [markdownflow.md#images](markdownflow.md#images). In standard teaching, follow the image with the complete explanatory paragraph. If the course is slide-only, the next row overrides that paragraph requirement. |
-| Pure classroom slides | Follow the [Slide-Only Generation Override](generation-workflow.md#slide-only-generation-override). Produce concise, projection-ready slide content; do not require AI narration or a full standalone explanatory paragraph paired with every visual. |
+| Standard non-slide-only teaching | Keep every core concept paired with a slide and textual explanation. The slide carries structural prompting; the text carries the complete explanation and remains understandable when the learner has not seen the slide. Pair each slide instruction with a brief explanation of what it should convey, and use natural-language slide placeholders when no image file is supplied. |
+| Author-provided image file | Follow the existing image-file understanding, upload, and embed process in [generation-workflow.md#working-with-author-provided-images](generation-workflow.md#working-with-author-provided-images) and the image-file syntax in [markdownflow.md#images](markdownflow.md#images). In standard teaching, follow the embedded image file with the complete explanatory paragraph. If the course is slide-only, the next row overrides that paragraph requirement. |
+| Pure classroom slides | Follow the [Slide-Only Generation Override](generation-workflow.md#slide-only-generation-override). Produce concise, projection-ready slide content; do not require AI narration or a full standalone explanatory paragraph paired with every slide. |
 
 ## Pipeline Methodologies
 
@@ -168,7 +168,7 @@ Produce stable lesson-oriented semantic segments from noisy source material whil
 #### Core Rules
 
 1. Preserve source order unless explicit ordering hints are provided.
-2. Keep code, image, and table blocks immutable.
+2. Keep code blocks, image files, and table blocks immutable.
 3. Segment by semantic shift, not heading depth alone.
 4. Keep each lesson candidate centered on one teachable question.
 5. Attach source spans to every segment.
@@ -178,7 +178,7 @@ Produce stable lesson-oriented semantic segments from noisy source material whil
 - `concept`: explanatory statements and definitions.
 - `example`: concrete demonstrations and walkthroughs.
 - `code`: executable or pseudo-code blocks.
-- `image`: visual references and diagrams.
+- `image`: image files and their source references.
 - `exercise`: learner action prompts.
 - `transition`: bridge text that links ideas.
 
@@ -190,13 +190,13 @@ Every segment must contain a required, non-empty `transfer_signals` object. Incl
 |---|---|
 | `learner_hook` | Teaching entry point. |
 | `evidence_type` | Form of source evidence. |
-| `visual_cue` | Prompt for visual expression. |
+| `visual_cue` | Cue for expressing the segment as a slide. |
 | `concept_conflict` | Conceptual conflict or misconception. |
 | `boundary_cue` | Applicability boundary. |
 | `action_cue` | Executable application. |
 | `density_cue` | Information that must not be compressed away. |
 | `quote_cue` | Quotation that should be preserved or used. |
-| `visual_text_pair_cue` | Division of work between visual and text. |
+| `visual_text_pair_cue` | Division of work between slide and text. |
 | `interaction_intent_cue` | Interaction purpose and expected instructional effect. |
 | `compare_cue` | Comparison objects or dimensions. |
 
