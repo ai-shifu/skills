@@ -698,7 +698,7 @@ class PedagogyContractTests(unittest.TestCase):
                     ".yml",
                 }:
                     continue
-                content = path.read_text(encoding="utf-8")
+                content = path.read_text(encoding="utf-8", errors="replace")
                 for term in removed_terms:
                     if term.casefold() in content.casefold():
                         matches.append(
