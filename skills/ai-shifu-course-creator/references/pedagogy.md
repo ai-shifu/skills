@@ -20,7 +20,9 @@ Use each concept's authoritative source instead of restating its contract in mul
 
 A Teaching Prompt is the per-lesson MarkdownFlow document the AI engine reads at runtime. It is a *script that guides teaching*, not a polished learner-facing lecture. Write in imperative, model-guiding language.
 
-Preferred patterns:
+Reference patterns:
+
+Use these examples as models for imperative, model-guiding language. Follow their structure and intent, but adapt the wording to the lesson rather than treating the phrases as required templates.
 
 - "Explain to the learner …"
 - "Ask the learner to …"
