@@ -19,17 +19,55 @@ COURSE_CREATOR_REFERENCES = (
 
 def markdown_section(markdown: str, title: str) -> str:
     """Return one Markdown section, including any lower-level subsections."""
-    heading = re.search(
-        rf"(?m)^(?P<marks>#{{1,6}})[ \t]+{re.escape(title)}[ \t]*$",
-        markdown,
+    heading_pattern = re.compile(
+        rf"^(?P<marks>#{{1,6}})[ \t]+{re.escape(title)}[ \t]*$"
     )
-    if heading is None:
+    heading_end = None
+    heading_level = None
+    in_fence = False
+    fence_marker = ""
+    offset = 0
+
+    for line in markdown.splitlines(keepends=True):
+        stripped = line.lstrip()
+        if stripped.startswith(("```", "~~~")):
+            marker = stripped[:3]
+            if not in_fence:
+                in_fence, fence_marker = True, marker
+            elif marker == fence_marker:
+                in_fence = False
+            offset += len(line)
+            continue
+        if not in_fence:
+            heading = heading_pattern.match(line.rstrip("\r\n"))
+            if heading:
+                heading_end = offset + len(line.rstrip("\r\n"))
+                heading_level = len(heading.group("marks"))
+                break
+        offset += len(line)
+
+    if heading_end is None or heading_level is None:
         raise AssertionError(f"missing Markdown section: {title}")
 
-    level = len(heading.group("marks"))
-    remainder = markdown[heading.end() :]
-    next_heading = re.search(rf"(?m)^#{{1,{level}}}[ \t]+", remainder)
-    return remainder[: next_heading.start()] if next_heading else remainder
+    section_end = heading_end
+    in_fence = False
+    fence_marker = ""
+    for line in markdown[heading_end:].splitlines(keepends=True):
+        stripped = line.lstrip()
+        if stripped.startswith(("```", "~~~")):
+            marker = stripped[:3]
+            if not in_fence:
+                in_fence, fence_marker = True, marker
+            elif marker == fence_marker:
+                in_fence = False
+            section_end += len(line)
+            continue
+        if not in_fence:
+            next_heading = re.match(r"^(#{1,6})[ \t]+", line)
+            if next_heading and len(next_heading.group(1)) <= heading_level:
+                return markdown[heading_end:section_end]
+        section_end += len(line)
+    return markdown[heading_end:]
 
 
 def markdown_table_first_column(section: str, header: str) -> list[str]:
@@ -51,6 +89,30 @@ def markdown_table_first_column(section: str, header: str) -> list[str]:
         return values
 
     raise AssertionError(f"missing Markdown table with first header: {header}")
+
+
+class MarkdownSectionHelperTests(unittest.TestCase):
+    def test_ignores_fenced_headings_for_target_and_boundary(self):
+        markdown = (
+            "```markdown\n"
+            "## Target\n"
+            "```\n"
+            "## Target\n"
+            "Body before the fence.\n"
+            "```python\n"
+            "# Not a boundary\n"
+            "```\n"
+            "Body after the fence.\n"
+            "## Next\n"
+            "Outside the target section.\n"
+        )
+
+        section = markdown_section(markdown, "Target")
+
+        self.assertIn("Body before the fence.", section)
+        self.assertIn("# Not a boundary", section)
+        self.assertIn("Body after the fence.", section)
+        self.assertNotIn("Outside the target section.", section)
 
 
 class InteractionPolicyValidationTests(unittest.TestCase):
