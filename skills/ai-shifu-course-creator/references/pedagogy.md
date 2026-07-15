@@ -1,7 +1,5 @@
 # Pedagogy
 
-<a id="script-style"></a>
-
 Authoritative source for **Teaching Prompt** pedagogy: lesson design, segmentation methodology, optimization methodology, and the teaching-side decisions around interactions, variables, and coordination between slides and text. Prompt audience, instruction voice, and second-person meaning are defined only in [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics). Violating the constraints in this file can produce a Teaching Prompt that runs but teaches poorly.
 
 ## Scope and Authority Boundaries
