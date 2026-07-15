@@ -580,6 +580,15 @@ class PedagogyContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.pedagogy_path = COURSE_CREATOR_REFERENCES / "pedagogy.md"
         cls.pedagogy = cls.pedagogy_path.read_text(encoding="utf-8")
+        cls.course_prompt = (
+            COURSE_CREATOR_REFERENCES / "course-prompt.md"
+        ).read_text(encoding="utf-8")
+        cls.generation_workflow = (
+            COURSE_CREATOR_REFERENCES / "generation-workflow.md"
+        ).read_text(encoding="utf-8")
+        cls.prompt_contracts = (
+            COURSE_CREATOR_REFERENCES / "prompt-contracts.md"
+        ).read_text(encoding="utf-8")
         cls.data_contracts = (
             COURSE_CREATOR_REFERENCES / "data-contracts.md"
         ).read_text(encoding="utf-8")
@@ -671,6 +680,55 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertIn(
             "(generation-workflow.md#slide-only-generation-override)",
             visuals,
+        )
+
+    def test_course_prompt_template_uses_runtime_user_message_context(self):
+        scope = markdown_section(self.pedagogy, "Scope and Authority Boundaries")
+        purpose = markdown_section(self.course_prompt, "Purpose")
+        template = markdown_section(self.course_prompt, "Fillable Template")
+
+        self.assertIn(
+            "follow, rather than define or replace, the Teaching Prompt's pedagogy",
+            scope,
+        )
+        self.assertIn(
+            "current Teaching Prompt is the source of truth",
+            purpose,
+        )
+        self.assertIn(
+            "Course Prompt's teaching contribution to the presentation layer",
+            template,
+        )
+        self.assertNotIn(
+            "build interest → lower the barrier → understand the structure",
+            template,
+        )
+        self.assertIn(
+            "proactively guide the user to the next step at the end",
+            template,
+        )
+        self.assertIn("Teach one-on-one", template)
+        self.assertIn("Do not greet the user", template)
+        self.assertNotIn("You may use analogies", template)
+        self.assertNotIn("current Teaching Prompt", template)
+        self.assertIn("current user message", template)
+        self.assertIn(
+            "Follow the current user message's delivery mode and "
+            "slide-text relationship",
+            template,
+        )
+        self.assertIn(
+            "When the current user message requests text alongside a slide",
+            template,
+        )
+        self.assertIn("follow it with a complete text explanation", template)
+        self.assertIn(
+            "do not rely on the Course Prompt to supply, repair, or override",
+            self.generation_workflow,
+        )
+        self.assertIn(
+            "Teaching Prompts lead; the Course Prompt follows and styles",
+            self.prompt_contracts,
         )
 
     def test_removed_authoring_controls_do_not_reappear(self):

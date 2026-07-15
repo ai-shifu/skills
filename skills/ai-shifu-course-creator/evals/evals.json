@@ -112,6 +112,18 @@
         "The pure classroom-slide result follows the Slide-Only Generation Override with concise projected content and does not require AI narration or a full explanatory paragraph after the image.",
         "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "为同一课节生成授课提示词和完整课程提示词。授课提示词采用‘先暴露常见误区，再解释误区为什么看似合理，然后纠正并做案例练习’的教学法；课程提示词只把表达风格调整为克制、清晰、温暖。不要让课程提示词另起一套教学法。",
+      "expected_output": "Places the requested pedagogy in the Teaching Prompt while the complete Course Prompt defers to it and changes only course-wide presentation style.",
+      "files": [],
+      "expectations": [
+        "The Teaching Prompt itself encodes the misconception-repair sequence, including the explanation and case practice.",
+        "The Course Prompt keeps all six canonical sections, and its Teaching Techniques section explicitly follows the current Teaching Prompt without adding, replacing, or reordering pedagogy.",
+        "The restrained, clear, and warm tone appears as a course-wide style adjustment without changing the Teaching Prompt's lesson flow.",
+        "The Course Prompt preserves the canonical course-level behavior rules while letting the Teaching Prompt determine whether a slide requires accompanying text."
+      ]
     }
   ]
 }
