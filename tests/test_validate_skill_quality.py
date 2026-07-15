@@ -671,9 +671,13 @@ class PedagogyContractTests(unittest.TestCase):
         )
         self.assertIn('"the learner" or "the student"', semantics)
         self.assertIn(
-            "Learner-visible text inside a MarkdownFlow `?[]` interaction "
-            "is the exception",
+            "Learner-visible text inside a MarkdownFlow `?[]` interaction or "
+            "[deterministic block](markdownflow.md#deterministic-blocks) is "
+            "the exception",
             semantics,
+        )
+        self.assertIn(
+            "Outside `?[]` and deterministic blocks", semantics
         )
         self.assertNotIn("Within Course Prompt content", semantics)
         for block in semantics_section.strip().split("\n\n"):

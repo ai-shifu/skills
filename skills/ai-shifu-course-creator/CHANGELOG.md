@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Centralize Prompt audience and addressee semantics so Teaching Prompts and Course Prompts are written to the runtime LLM, Course Prompts call the lesson input the current user message, and learner-visible `?[]` content is the explicit exception where second-person references may mean the learner.
+- Centralize Prompt audience and addressee semantics so Teaching Prompts and Course Prompts are written to the runtime LLM, Course Prompts call the lesson input the current user message, and learner-visible `?[]` or deterministic-block content is the explicit exception where second-person references may mean the learner.
 - Keep lesson pedagogy in Teaching Prompts and limit Course Prompts to following that pedagogy while adjusting course-wide presentation style.
 - Disambiguate pedagogy contracts by centralizing teaching effects, transfer-signal meanings, variable strategy, and visual delivery boundaries while preserving existing behavior.
 - Fix `list` and `find-title` to include courses beyond the first API page.
