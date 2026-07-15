@@ -685,6 +685,7 @@ class PedagogyContractTests(unittest.TestCase):
                 self.assertTrue(all(line.startswith("- ") for line in lines))
             else:
                 self.assertEqual(1, len(lines))
+        self.assertIn('<a id="script-style"></a>', self.pedagogy)
         self.assertNotIn("## Script " + "Style", self.pedagogy)
         self.assertIn(
             "prompt-semantics",
