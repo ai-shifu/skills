@@ -586,8 +586,31 @@ class PedagogyContractTests(unittest.TestCase):
         cls.generation_workflow = (
             COURSE_CREATOR_REFERENCES / "generation-workflow.md"
         ).read_text(encoding="utf-8")
-        cls.prompt_contracts = (
+        cls.optimization_workflow = (
+            COURSE_CREATOR_REFERENCES / "optimization-workflow.md"
+        ).read_text(encoding="utf-8")
+        cls.markdownflow = (
+            COURSE_CREATOR_REFERENCES / "markdownflow.md"
+        ).read_text(encoding="utf-8")
+        cls.prompt_contracts_path = (
             COURSE_CREATOR_REFERENCES / "prompt-contracts.md"
+        )
+        cls.prompt_contracts = cls.prompt_contracts_path.read_text(
+            encoding="utf-8"
+        )
+        cls.review_checklist = (
+            COURSE_CREATOR_REFERENCES / "review-checklist.md"
+        ).read_text(encoding="utf-8")
+        cls.report_template = (
+            COURSE_CREATOR_REFERENCES / "report-template.md"
+        ).read_text(encoding="utf-8")
+        cls.pipeline_example = (
+            COURSE_CREATOR_REFERENCES.parent / "examples" / "pipeline-full.md"
+        ).read_text(encoding="utf-8")
+        cls.optimization_example = (
+            COURSE_CREATOR_REFERENCES.parent
+            / "examples"
+            / "optimization-only.md"
         ).read_text(encoding="utf-8")
         cls.data_contracts = (
             COURSE_CREATOR_REFERENCES / "data-contracts.md"
@@ -596,7 +619,6 @@ class PedagogyContractTests(unittest.TestCase):
     def test_public_pedagogy_anchors_stay_stable(self):
         expected_anchors = {
             "pedagogy",
-            "script-style",
             "interaction-policy-precedence",
             "lesson-loop",
             "teaching-patterns",
@@ -628,6 +650,138 @@ class PedagogyContractTests(unittest.TestCase):
             f"missing public pedagogy anchors: "
             f"{sorted(expected_anchors - actual_anchors)}",
         )
+
+    def test_prompt_semantics_are_centralized(self):
+        semantics_section = markdown_section(
+            self.prompt_contracts, "Prompt Semantics"
+        )
+        semantics = " ".join(semantics_section.split())
+        review_semantics = markdown_section(
+            self.review_checklist, "Prompt Semantics"
+        )
+
+        self.assertIn("Prompts, not Scripts", semantics)
+        self.assertIn("runtime LLM", semantics)
+        self.assertIn("tell the LLM how to teach the learner", semantics)
+        self.assertIn(
+            "Within Prompt instructions, every occurrence of `you`, `your`, "
+            "`yours`, or `yourself`, "
+            "in any capitalization, refers only to the runtime LLM",
+            semantics,
+        )
+        self.assertIn('"the learner" or "the student"', semantics)
+        self.assertIn(
+            "Learner-visible text inside a MarkdownFlow `?[]` interaction or "
+            "[deterministic block](markdownflow.md#deterministic-blocks) is "
+            "the exception",
+            semantics,
+        )
+        self.assertIn(
+            "Outside `?[]` and deterministic blocks", semantics
+        )
+        self.assertNotIn("Within Course Prompt content", semantics)
+        for block in semantics_section.strip().split("\n\n"):
+            block = block.strip()
+            if not block:
+                continue
+            lines = block.splitlines()
+            if lines[0].startswith("- "):
+                self.assertTrue(all(line.startswith("- ") for line in lines))
+            else:
+                self.assertEqual(1, len(lines))
+        self.assertNotIn("## Script " + "Style", self.pedagogy)
+        self.assertIn(
+            "prompt-semantics",
+            validate_skill_quality.github_heading_slugs(
+                self.prompt_contracts_path
+            ),
+        )
+        self.assertIn(
+            "(prompt-contracts.md#prompt-semantics)", review_semantics
+        )
+
+    def test_deprecated_script_style_phrasing_stays_out_of_other_docs(self):
+        deprecated_fragments = {
+            "## script style",
+            "script that guides teaching",
+            "model-guiding language",
+            "instructional/directive language only",
+            "final learner manuscript",
+            'address the learner only as "you"',
+        }
+        matches = []
+
+        for path in COURSE_CREATOR_REFERENCES.parent.rglob("*.md"):
+            if path == self.prompt_contracts_path:
+                continue
+            content = path.read_text(encoding="utf-8").casefold()
+            for fragment in deprecated_fragments:
+                if fragment in content:
+                    matches.append(
+                        f"{path.relative_to(REPO_ROOT)}: {fragment}"
+                    )
+
+        self.assertEqual([], matches)
+
+    def test_markdownflow_preserves_learner_visible_interaction_copy(self):
+        interactions = markdown_section(self.markdownflow, "Interactions")
+        no_program_syntax = markdown_section(
+            self.markdownflow, "No program syntax around `{{var}}`"
+        )
+        html_view = markdown_section(
+            self.markdownflow,
+            "3.2 HTML view image (instruction-style, not fixed output)",
+        )
+
+        self.assertIn("?[%{{var}} ...Enter your answer]", interactions)
+        self.assertIn("?[...Enter your answer]", interactions)
+        self.assertIn("Which option best matches your situation?", interactions)
+        self.assertIn("...Describe your situation", interactions)
+        self.assertIn("Describe your goal in one sentence...", interactions)
+        self.assertNotIn("Teaching Prompt", no_program_syntax)
+        self.assertNotIn("prompt-contracts.md", no_program_syntax)
+        self.assertNotIn("Teaching Prompt", html_view)
+
+    def test_reviewed_author_side_course_prompt_terms_stay_explicit(self):
+        boundaries = markdown_section(self.course_prompt, "Boundaries")
+        validation = markdown_section(self.course_prompt, "Validation")
+        review = markdown_section(self.review_checklist, "Course Prompt")
+
+        self.assertIn("follows the current Teaching Prompt", boundaries)
+        self.assertIn("defers to the current Teaching Prompt", validation)
+        self.assertIn(
+            "treats the current Teaching Prompt as authoritative", review
+        )
+        self.assertIn("lets the Teaching Prompt determine", review)
+        self.assertNotIn("current user message", review)
+        self.assertIn("multiple script versions", self.optimization_workflow)
+        self.assertIn(
+            "source points to script coverage", self.optimization_workflow
+        )
+        self.assertIn(
+            "defers to the current Teaching Prompt",
+            self.optimization_workflow,
+        )
+
+    def test_optimization_report_names_each_prompt_type(self):
+        report = markdown_section(self.report_template, "Optimization Report")
+
+        self.assertIn("- Target Teaching Prompt(s):", report)
+        self.assertIn("- Target Course Prompt:", report)
+        self.assertNotIn("- Target Prompt(s):", report)
+
+    def test_reviewed_prompt_prose_has_no_soft_line_wraps(self):
+        slide_override = markdown_section(
+            self.generation_workflow, "Slide-Only Generation Override"
+        )
+        narration_rule = (
+            "- Do not instruct the runtime LLM to narrate or verbally explain "
+            "the slides. Omit long spoken paragraphs and instructions such as "
+            '"explain to the learner", "walk through", "向学习者说明", "讲解", '
+            '"用文字解释", or "讲清".'
+        )
+
+        self.assertIn(narration_rule, slide_override.splitlines())
 
     def test_transfer_signal_keys_match_pedagogy_data_and_validator(self):
         transfer_section = markdown_section(self.pedagogy, "Transfer Signals")
@@ -692,7 +846,12 @@ class PedagogyContractTests(unittest.TestCase):
             scope,
         )
         self.assertIn(
-            "current Teaching Prompt is the source of truth",
+            "current user message is the source of truth",
+            purpose,
+        )
+        self.assertIn(
+            'Within Course Prompt content, refer to that lesson input only as '
+            '"the current user message" or "that user message"',
             purpose,
         )
         self.assertIn(
@@ -704,14 +863,19 @@ class PedagogyContractTests(unittest.TestCase):
             template,
         )
         self.assertIn(
-            "proactively guide the user to the next step at the end",
+            "proactively guide the learner to the next step at the end",
             template,
         )
         self.assertIn("Teach one-on-one", template)
-        self.assertIn("Do not greet the user", template)
+        self.assertIn(
+            "address the learner directly in the second person", template
+        )
+        self.assertNotIn('address the learner only as "you"', template)
+        self.assertIn("Do not greet the learner", template)
         self.assertNotIn("You may use analogies", template)
-        self.assertNotIn("current Teaching Prompt", template)
+        self.assertNotIn("Teaching Prompt", template)
         self.assertIn("current user message", template)
+        self.assertNotIn("the user message", template)
         self.assertIn(
             "Follow the current user message's delivery mode and "
             "slide-text relationship",
@@ -722,6 +886,11 @@ class PedagogyContractTests(unittest.TestCase):
             template,
         )
         self.assertIn("follow it with a complete text explanation", template)
+        for example in (self.pipeline_example, self.optimization_example):
+            artifact = markdown_section(example, "Course Prompt Artifact")
+            self.assertNotIn("Teaching Prompt", artifact)
+            self.assertIn("current user message", artifact)
+            self.assertNotIn("the user message", artifact)
         self.assertIn(
             "do not rely on the Course Prompt to supply, repair, or override",
             self.generation_workflow,

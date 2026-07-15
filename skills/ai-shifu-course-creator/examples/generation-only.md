@@ -93,6 +93,6 @@ Degraded-input handling for this phase (fallback lesson JSON with `fallback_mode
 ## Acceptance Notes
 
 - In the `enabled` snapshot, the selected interaction drives current-lesson text changes.
-- Core idea includes visual-plus-text explanation in final script.
+- Core idea includes visual-plus-text explanation in the final Teaching Prompt.
 - Interaction count stays within declared limits.
 - The no-interaction variant satisfies the alternative teaching loop without adding interaction syntax or learner-answer variables.

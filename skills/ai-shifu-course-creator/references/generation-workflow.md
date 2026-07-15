@@ -32,9 +32,7 @@ When Course Design Intake resolves to pure slides / classroom interactive slides
 - Treat each lesson as a small slide deck controlled by a human instructor.
 - Generate slide-facing blocks only: slide title, 2-4 short bullets, and a visual/layout instruction. When the interaction policy permits an interaction, also include its prompt, options, and concise feedback states.
 - Keep policy-permitted interactions runnable with the normal MarkdownFlow syntax, but keep the surrounding content presentation-oriented. When the policy calls for the non-interactive substitute, render only the slide-facing content defined by `pedagogy.md#interaction-policy-precedence`.
-- Do not include AI narration directives or learner-facing lecture prose such as
-  "explain to the learner", "walk through", "向学习者说明", "讲解", "用文字解释",
-  "讲清", or long paragraphs intended for the AI to speak.
+- Do not instruct the runtime LLM to narrate or verbally explain the slides. Omit long spoken paragraphs and instructions such as "explain to the learner", "walk through", "向学习者说明", "讲解", "用文字解释", or "讲清".
 - Do not require the normal visual-text explanation pair. The visual itself and
   the short on-slide labels carry the projection content; any explanation
   belongs to the human instructor, not the Teaching Prompt.

@@ -122,7 +122,9 @@
         "The Teaching Prompt itself encodes the misconception-repair sequence, including the explanation and case practice.",
         "The Course Prompt keeps all six canonical sections, and its Teaching Techniques section explicitly follows the current Teaching Prompt without adding, replacing, or reordering pedagogy.",
         "The restrained, clear, and warm tone appears as a course-wide style adjustment without changing the Teaching Prompt's lesson flow.",
-        "The Course Prompt preserves the canonical course-level behavior rules while letting the Teaching Prompt determine whether a slide requires accompanying text."
+        "The Course Prompt preserves the canonical course-level behavior rules while letting the Teaching Prompt determine whether a slide requires accompanying text.",
+        "Both artifacts are Prompts addressed to the runtime LLM rather than scripts or finished learner-facing lectures.",
+        "Every occurrence of you, your, yours, or yourself in Prompt instructions refers only to the runtime LLM; learner-visible text inside a MarkdownFlow ?[] interaction or deterministic block may use second-person forms to address the learner."
       ]
     }
   ]
