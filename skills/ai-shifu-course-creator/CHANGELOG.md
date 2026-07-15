@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Keep lesson pedagogy in Teaching Prompts and limit Course Prompts to following that pedagogy while adjusting course-wide presentation style.
 - Disambiguate pedagogy contracts by centralizing teaching effects, transfer-signal meanings, variable strategy, and visual delivery boundaries while preserving existing behavior.
 - Fix `list` and `find-title` to include courses beyond the first API page.
 - Turn `SKILL.md` into a task router with explicit shared dependencies.

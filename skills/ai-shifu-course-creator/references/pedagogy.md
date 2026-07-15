@@ -8,8 +8,8 @@ Use each concept's authoritative source instead of restating its contract in mul
 
 | Concept | Authoritative source | Boundary |
 | --- | --- | --- |
-| Teaching behavior and instructional alternatives | This file | Defines what the Teaching Prompt should teach and how non-interactive alternatives preserve that intent. |
-| Course-level AI persona, style, and cross-lesson use | [course-prompt.md](course-prompt.md) | Defines Course Prompt design; this file only decides when lesson behavior depends on it. |
+| Teaching behavior and instructional alternatives | This file | Defines what the Teaching Prompt should teach, how it should teach it, and how non-interactive alternatives preserve that intent. |
+| Course-level AI persona, presentation style, and cross-lesson use | [course-prompt.md](course-prompt.md) | Defines a presentation overlay and cross-lesson constants that follow, rather than define or replace, the Teaching Prompt's pedagogy. |
 | MarkdownFlow syntax and runtime semantics | [markdownflow.md](markdownflow.md) | Defines parsing, variables, `UNKNOWN`, interactions, branching, image-file embedding, and deterministic blocks. |
 | Structured fields and allowed values | [data-contracts.md](data-contracts.md) | Defines schemas, enums, required objects, and table shapes. |
 | Interaction-policy intake | [authoring-intake.md](authoring-intake.md) | Normalizes the author's selection into the policy consumed here; it does not redefine the policy's teaching effect. |

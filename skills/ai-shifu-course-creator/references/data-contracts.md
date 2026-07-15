@@ -138,7 +138,7 @@ Each item:
 
 - Markdown string starting with the rendered Role section heading in the resolved output language.
 - Six required Markdown section blocks in the canonical order from [course-prompt.md](course-prompt.md): Role, Task, Teaching Techniques, Writing Style, Format, and Slides. Render section headings and body text in the resolved output language.
-- Single source of truth at the course level; do not embed per-lesson interaction logic.
+- Single source of truth for course-wide role and presentation constants; defer lesson pedagogy to Teaching Prompts and do not embed per-lesson method or interaction logic.
 
 ### `course_description` (string, required)
 

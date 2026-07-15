@@ -13,6 +13,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - Directive / model-guiding language; no polished learner-facing manuscript prose.
 - No author-side meta labels ("Knowledge Block", "Lesson Objective", "Deliverable").
 - No internal authoring terms exposed in learner-facing text.
+- Each Teaching Prompt contains the lesson's teaching method and flow.
 
 ## User-Visible Language
 
@@ -91,3 +92,6 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - A `course_prompt` artifact is produced when input includes course material.
 - All six required canonical sections are present in order, with headings rendered in the resolved output language: Role, Task, Teaching Techniques, Writing Style, Format, and Slides.
 - No `XXX` placeholder remains; every non-placeholder instruction from `course-prompt.md#fillable-template` is represented.
+- The Teaching Techniques section treats the current Teaching Prompt as authoritative and limits the Course Prompt to presentation-layer adjustments.
+- The Course Prompt introduces no generic lesson loop, cognitive rhythm, explanation structure, practice design, or interaction-feedback method that competes with a Teaching Prompt.
+- The Slides section lets the Teaching Prompt determine whether accompanying text is required and preserves the template's writing-direction rules when it is.

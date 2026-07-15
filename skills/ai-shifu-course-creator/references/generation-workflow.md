@@ -8,6 +8,8 @@ Generate a runnable Teaching Prompt for each lesson.
 
 Apply the patterns and constraints in `pedagogy.md#teaching-patterns`, `pedagogy.md#cognitive-techniques`, `pedagogy.md#variable-strategy`, `pedagogy.md#interaction-design`, and `pedagogy.md#visual-text-coordination` unless content requires a justified variation.
 
+Encode the selected teaching method in each Teaching Prompt itself. Every lesson must carry enough pedagogical direction to run with the Course Prompt contributing only course-wide role and presentation style; do not rely on the Course Prompt to supply, repair, or override the lesson's pedagogy.
+
 Consume the normalized Course Design Intake interaction policy only after it passes `data-contracts.md#interaction-policy`. Apply its teaching effect and substitution from `pedagogy.md#interaction-policy-precedence`; Generation does not reinterpret the modes or purposes. Whenever that policy calls for an interaction, choose its type before writing the `?[]` line per `prompt-contracts.md#prompt-contracts` Hard Rule 3. If a lesson naturally asks "which of these apply?", default to multi-select unless the source or user says only one answer is allowed.
 
 ### Single-Lesson Generation Strategy
@@ -48,6 +50,7 @@ Per-lesson schema in `data-contracts.md#lesson-schema`.
 - The first non-empty line of each Teaching Prompt performs a teaching-start function (`prompt-contracts.md#prompt-contracts` Hard Rule 6), not a duplicated `structure.json` chapter / lesson title or a copied source heading such as `# 第2章 ...`.
 - Per-lesson schema populated per `data-contracts.md#lesson-schema`.
 - Pedagogical and syntax constraints pass per `pedagogy.md` and `markdownflow.md`.
+- The Teaching Prompt contains the lesson's teaching method and does not outsource pedagogical decisions to the Course Prompt.
 
 ### Working with Author-Provided Images
 

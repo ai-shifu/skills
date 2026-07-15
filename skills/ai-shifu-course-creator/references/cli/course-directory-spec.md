@@ -6,7 +6,7 @@
 <course>/
   README.md            # Course metadata (title from first heading)
   course-description.md # SEO/listing description mapped to the platform description field
-  course-prompt.md     # Course-level prompt (AI role and teaching style)
+  course-prompt.md     # Course-level prompt (AI role and presentation style)
   course-config.json   # Course-level attributes (model/price/TTS/Ask/…) — round-tripped so import doesn't reset them
   shifu-import.json    # Generated import file (output of build)
   structure.json       # Chapter structure + per-lesson access/hidden (optional, for multi-chapter courses)
@@ -120,7 +120,7 @@ successful platform update.
 
 ## course-prompt.md
 
-Defines the AI engine's role, teaching style, and interaction rules at the course level. The `build` command reads this file and populates `shifu.course_prompt` in the import JSON automatically (which the CLI maps to the platform API field `system_prompt` on import).
+Defines the AI engine's course-wide role and presentation style. Teaching methods and interaction rules remain in the per-lesson Teaching Prompts; the Course Prompt follows them without replacing their pedagogy. The `build` command reads this file and populates `shifu.course_prompt` in the import JSON automatically (which the CLI maps to the platform API field `system_prompt` on import).
 
 Authoring rules and a fillable template live in `../course-prompt.md`.
 
