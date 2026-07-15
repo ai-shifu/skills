@@ -2,16 +2,6 @@
 
 Authoritative source for all schemas crossing the skill boundary: what comes in (input), what goes out (output), how output target language is resolved, and the per-lesson and per-variable shapes.
 
-## Contents
-
-- [Input Contract](#input-contract)
-- [Output Contract](#output-contract)
-- [Segment Schema](#segment-schema)
-- [Variable Table](#variable-table)
-- [Lesson Schema](#lesson-schema)
-- [Language Resolution](#language-resolution)
-- [Fallback Output Extensions](#fallback-output-extensions)
-
 ## Input Contract
 
 ### Required
@@ -81,32 +71,6 @@ This section owns only the normalized data shape and enum constraints. Course De
 
 The teaching effects, purpose placements, and non-interactive substitutions are defined in [pedagogy.md#interaction-policy-precedence](pedagogy.md#interaction-policy-precedence).
 
-### Minimal Input Payload Example
-
-```json
-{
-  "course_material": "long transcript or merged markdown",
-  "course_author_name": "Author-provided real name",
-  "interaction_policy": {
-    "mode": "enabled",
-    "purposes": ["learner_context"]
-  },
-  "generation_constraints": {
-    "persona": "hands-on mentor",
-    "lesson_granularity": "short"
-  },
-  "course_profile": {
-    "audience_level": "beginner",
-    "lesson_duration_minutes": 10,
-    "lesson_count_target": 6,
-    "assessment_mode": "project"
-  },
-  "delivery_constraints": {
-    "must_cover_topics": ["core workflow", "failure handling"]
-  }
-}
-```
-
 ### Validation Rules
 
 - Input files must be readable text or markdown.
@@ -122,8 +86,8 @@ The teaching effects, purpose placements, and non-interactive substitutions are 
 1. `lesson_teaching_prompts` — one Teaching Prompt per lesson (written in MarkdownFlow). Instructional/directive language only (model-guiding), not a final learner manuscript. See [Lesson Schema](#lesson-schema).
 2. `course_index` — `lesson_id`, `lesson_title`, `core_question`, `source_span_map`.
 3. `global_variable_table` — see [Variable Table](#variable-table).
-4. `course_prompt` — markdown string (runnable AI-Shifu course-level system prompt) following [course-prompt.md](course-prompt.md). Required canonical sections: Role, Task, Teaching Techniques, Writing Style, Format, and Slides, rendered as Markdown headings in the resolved output language.
-5. `course_description` — SEO/listing description written to `course-description.md`; describe the course topic, target learners, and learning outcomes in learner-facing language. Do not include author-side workflow notes.
+4. `course_prompt` — course-level Markdown string; see [course-prompt.md](course-prompt.md) for its artifact contract and authoring rules.
+5. `course_description` — learner-facing SEO/listing description written to `course-description.md`.
 
 ### `course_index` Schema (array, required)
 
@@ -136,72 +100,11 @@ Each item:
 
 ### `course_prompt` (string, required)
 
-- Markdown string starting with the rendered Role section heading in the resolved output language.
-- Six required Markdown section blocks in the canonical order from [course-prompt.md](course-prompt.md): Role, Task, Teaching Techniques, Writing Style, Format, and Slides. Render section headings and body text in the resolved output language.
-- Single source of truth for course-wide role and presentation constants; defer lesson pedagogy to Teaching Prompts and do not embed per-lesson method or interaction logic.
+Required for full-course authoring.
 
 ### `course_description` (string, required)
 
-- One concise learner-facing SEO/listing description.
-- Base it on the course topic, target learners, and concrete learning outcomes.
-- Write it to `course-description.md`; the CLI maps it to the platform `description` field during build/import.
-
-### Minimal Structured Artifact Excerpt
-
-This excerpt shows the JSON-shaped artifacts without abbreviating the required
-Course Prompt into an invalid pseudo-prompt. The complete `course_prompt` string
-must be a fully filled six-section artifact with no ellipsis standing in for
-template instructions; see the runnable example in
-[`examples/pipeline-full.md#course-prompt-artifact`](../examples/pipeline-full.md#course-prompt-artifact).
-
-```json
-{
-  "lesson_teaching_prompts": [
-    {
-      "lesson_id": "L01",
-      "lesson_title": "Core Loop Setup",
-      "teaching_prompt": "Ask the learner for the one goal that should shape course-wide examples.\n---\n?[%{{learner_goal}} ...One-sentence goal]\n---\nThe learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, continue with the default production example; otherwise use a first example that matches it.",
-      "used_variables": ["learner_goal"],
-      "depends_on_lessons": []
-    }
-  ],
-  "course_index": [
-    {
-      "lesson_id": "L01",
-      "lesson_title": "Core Loop Setup",
-      "core_question": "What makes this loop stable in production?",
-      "source_span_map": [{"source_id": "doc-1", "start": 120, "end": 286}]
-    }
-  ],
-  "global_variable_table": [
-    {
-      "name": "learner_goal",
-      "collected_in": "L01",
-      "used_in": ["L01", "course_prompt"],
-      "effect_scope": "cross_lesson"
-    }
-  ],
-  "course_description": "A practical course that helps beginner operators diagnose metric drift, identify likely causes, and choose one concrete fix."
-}
-```
-
-### Artifacts
-
-1. `deployed_course_url` — Platform URL of the deployed course.
-2. `shifu_bid` — Course BID on the AI-Shifu platform.
-
-#### `deployment_result` (object, optional)
-
-- `shifu_bid` (string, required)
-- `deployed_course_url` (string, required)
-- `lesson_count` (number, required)
-- `status` (string enum: `published|draft`, required)
-
-### Delivery Guarantees
-
-- Stable schema across reruns.
-- Deterministic references for lesson ids and source spans.
-- Partial rerun support for changed lessons.
+Required for full-course authoring. Write it to `course-description.md`; its directory contract and build mapping are defined in [course-directory-spec.md](cli/course-directory-spec.md#course-descriptionmd).
 
 ## Segment Schema
 
@@ -253,18 +156,6 @@ Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 - `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content (written in MarkdownFlow); instructional/directive language only.
 - `used_variables` (array of strings, required) — every named variable referenced or collected in this lesson; no-variable interactions are excluded. Cross-check with [Variable Table](#variable-table): each item here must have a matching `global_variable_table` entry, and that entry's `used_in` list must include this lesson when the variable is referenced outside the interaction line. If the Course Prompt references the same variable, `used_in` must also include `course_prompt`.
 - `depends_on_lessons` (array of lesson ids, required) — explicit list; empty list if none.
-
-### Minimal Example
-
-```json
-{
-  "lesson_id": "L03",
-  "lesson_title": "Diagnose the Bottleneck",
-  "teaching_prompt": "Ask the learner where the system feels slow before naming any cause: CPU, IO, or locks.\n---\n?[CPU bound | IO bound | Lock contention]\n---\nAfter the learner answers, run the matching test first.",
-  "used_variables": [],
-  "depends_on_lessons": ["L02"]
-}
-```
 
 ## Language Resolution
 
