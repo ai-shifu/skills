@@ -8,12 +8,9 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - No unsupported additions alter meaning.
 - Source information density preserved (no substance traded for fluency).
 
-## Script Style
+## Prompt Semantics
 
-- Directive / model-guiding language; no polished learner-facing manuscript prose.
-- No author-side meta labels ("Knowledge Block", "Lesson Objective", "Deliverable").
-- No internal authoring terms exposed in learner-facing text.
-- Each Teaching Prompt contains the lesson's teaching method and flow.
+- Teaching Prompt and Course Prompt content passes [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics).
 
 ## User-Visible Language
 
@@ -32,6 +29,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 ## Lesson Loop
 
+- Each Teaching Prompt contains the lesson's teaching method and flow.
 - The interaction policy used for this audit resolves to `enabled`, `disabled`, or `unspecified` and matches the Course Design Intake answer.
 - The observed lesson loop and any non-interactive substitute match `pedagogy.md#interaction-policy-precedence` and `pedagogy.md#lesson-loop` for that resolved policy.
 - The final paragraph of each lesson is non-interactive.

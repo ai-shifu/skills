@@ -123,7 +123,7 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 {
   "lesson_id": "L07",
   "lesson_title": "Pick a Rollback Trigger",
-  "teaching_prompt": "Pick a rollback trigger that minimizes blast radius.\n---\n?[latency spike threshold | error budget burn threshold]\n---\nAfter the learner answers, define one immediate rollback condition and one follow-up diagnostic for the selected trigger.",
+  "teaching_prompt": "Ask the learner to pick a rollback trigger that minimizes blast radius.\n---\n?[latency spike threshold | error budget burn threshold]\n---\nAfter the learner answers, define one immediate rollback condition and one follow-up diagnostic for the selected trigger.",
   "used_variables": [],
   "depends_on_lessons": [],
   "fallback_mode": true,
@@ -140,7 +140,7 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 Rendered `teaching_prompt` value:
 
 ```md
-Pick a rollback trigger that minimizes blast radius.
+Ask the learner to pick a rollback trigger that minimizes blast radius.
 ---
 ?[latency spike threshold | error budget burn threshold]
 ---
@@ -185,10 +185,10 @@ After the learner answers, define one immediate rollback condition and one follo
 }
 ```
 
-Corrected script (smallest safe edit):
+Corrected Teaching Prompt (smallest safe edit):
 
 ```md
-Pick one safe first fix.
+Ask the learner to pick one safe first fix.
 ---
 ?[option A | option B]
 ---

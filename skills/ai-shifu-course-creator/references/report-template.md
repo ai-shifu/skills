@@ -71,7 +71,7 @@ Rerun plan:
 - Lesson id:
 - Execution mode: `standard|fallback`
 - Constraints:
-- Script generated: `yes|no`
+- Teaching Prompt generated: `yes|no`
 - Interaction count:
 - Variables used:
 
@@ -94,7 +94,7 @@ Follow-up:
 
 ## Optimization Report
 
-- Target script(s):
+- Target Prompt(s):
 - Source material set:
 - Execution mode: `standard|fallback`
 - Overall risk: `low|medium|high`

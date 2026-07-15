@@ -1,10 +1,23 @@
 # Prompt Contracts
 
+## Prompt Semantics
+
+Teaching Prompts and Course Prompts are Prompts, not Scripts. The runtime LLM consumes them. Their purpose is to tell the LLM how to teach the learner: what to explain, ask, show, adapt, and how to respond. They are not text for a person to read aloud or finished lesson prose addressed directly to the learner.
+
+Address imperative instructions to the LLM. When an instruction refers to a learner action or experience, name that person explicitly as "the learner" or "the student", for example:
+
+- "Explain ... to the learner."
+- "Ask the student to ..."
+
+Within Prompt instructions, every occurrence of `you`, `your`, `yours`, or `yourself`, in any capitalization, refers only to the runtime LLM. Learner-visible text inside a MarkdownFlow `?[]` interaction is the exception: it may use second-person forms to address the learner because the platform displays that interaction content directly. Outside `?[]`, do not use a second-person form to mean the learner.
+
+Do not write a transcript, lesson-plan narration, or polished learner-facing lecture. Keep author-side structure implicit: do not emit labels such as "Knowledge Block 1/2/3", "Lesson Objective", or "Deliverable", and do not expose internal authoring terms in learner-facing output. Authoring rules, pipeline notes, and process instructions stay in skill docs and references, never in Prompt content; internal design notes may appear only in HTML comments when needed.
+
 ## Teaching Prompt and Course Prompt Authoring Hard Rules (Must Follow)
 
-These are the eight red-line rules every Teaching Prompt and Course Prompt must satisfy. Full Bad/Good examples and rationale live in the references files; the rule statements stay here so the model never misses them.
+These are the eight red-line rules every Teaching Prompt and Course Prompt must satisfy. Supporting syntax, pedagogy, and rationale live in the referenced files; Prompt semantics are defined only here.
 
-1. **Script style: directive, not manuscript — and no author-side scaffolding.** Write in imperative, model-guiding language ("Ask the learner to …", "After collecting {{var}}, branch …"). Do not produce polished learner-facing prose, author/lesson-plan meta narration, or author-side meta labels such as "Knowledge Block 1/2/3", "Lesson Objective", or "Deliverable" — keep those as implicit structure. Authoring rules, pipeline notes, and process instructions stay in skill docs and references, never in lesson outputs; internal design notes may appear only in HTML comments when needed. See `pedagogy.md#script-style`.
+1. **Prompt semantics and addressee.** Apply every requirement in [Prompt Semantics](#prompt-semantics). No other file redefines the Prompt audience, instruction voice, or second-person meaning.
 
 2. **Interaction syntax: prompt outside, options inside.** Keep the learner-facing question on the line **before** the interaction; put only option labels, flow buttons, or a short `...` input placeholder inside the `?[]` line, and give each `?[]` its own standalone line. Full syntax inventory, `...` input-marker rules, and Bad/Good examples: `markdownflow.md#interactions` and `markdownflow.md#input-marker-rules`.
 

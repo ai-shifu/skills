@@ -117,13 +117,11 @@ The bullet phrasing reads like `if`, but it is not `if` — it is an instruction
 
 ### No program syntax around `{{var}}`
 
-A Teaching Prompt looks like code (variables, interaction markers, branched outcomes), but it is read by a language model, not executed by an interpreter. Wrapping `{{var}}` in `if`-`else` blocks, ternary expressions, `switch` / `case`, or fenced pseudo-code blocks makes the script look like a program and pushes the AI toward executing-not-interpreting behavior, which degrades teaching quality.
+MarkdownFlow does not support `if`-`else` blocks, ternary expressions, `switch` / `case`, or fenced pseudo-code blocks around `{{var}}`.
 
 Express every branch as a plain instruction sentence. For variables, state the substituted value naturally first, then branch with natural-language conditions:
 
 `The learner level is {{level}}. If the learner level is UNKNOWN, start with the default beginner-friendly example; for beginner learners, use simple analogies; for intermediate learners, introduce technical terms; for expert learners, go deep into edge cases.`
-
-> The point of MarkdownFlow is not to write the lesson content directly, but to use natural language to precisely instruct the AI on how to generate content under each possible learner input.
 
 ## Deterministic Blocks
 
@@ -137,7 +135,7 @@ Line 2
 !===
 ```
 
-Use deterministic blocks only for truly fixed content (legally or operationally locked statements, fixed images). Do not lock entire lessons in fixed syntax — that defeats the model-guiding purpose of MarkdownFlow.
+Use deterministic blocks only for truly fixed content (legally or operationally locked statements, fixed images). Do not lock entire lessons in fixed syntax — that defeats MarkdownFlow's adaptive-generation purpose.
 
 ## Images
 
@@ -167,7 +165,7 @@ Three things must be enforced **through wording**, not through deterministic blo
 - The alt / image description **must not be dropped**.
 - The image **must appear** at this position; the runtime cannot decide to omit it for length or flow.
 
-Each sample below is an instruction the LLM can drop directly into a Teaching Prompt. The runtime model reads it and emits the appropriate HTML.
+Each sample below is an instruction the runtime model reads to emit the appropriate HTML.
 
 **Width control** — image takes only half the column:
 

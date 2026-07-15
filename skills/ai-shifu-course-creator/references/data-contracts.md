@@ -83,7 +83,7 @@ The teaching effects, purpose placements, and non-interactive substitutions are 
 
 ### Required Artifacts
 
-1. `lesson_teaching_prompts` — one Teaching Prompt per lesson (written in MarkdownFlow). Instructional/directive language only (model-guiding), not a final learner manuscript. See [Lesson Schema](#lesson-schema).
+1. `lesson_teaching_prompts` — one Teaching Prompt per lesson (written in MarkdownFlow). Each Prompt follows [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics) and the [Lesson Schema](#lesson-schema).
 2. `course_index` — `lesson_id`, `lesson_title`, `core_question`, `source_span_map`.
 3. `global_variable_table` — see [Variable Table](#variable-table).
 4. `course_prompt` — course-level Markdown string; see [course-prompt.md](course-prompt.md) for its artifact contract and authoring rules.
@@ -153,7 +153,7 @@ Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 
 - `lesson_id` (string, required) — stable, deterministic identifier.
 - `lesson_title` (string, required) — concise learner-facing title.
-- `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content (written in MarkdownFlow); instructional/directive language only.
+- `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content (written in MarkdownFlow); apply [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics).
 - `used_variables` (array of strings, required) — every named variable referenced or collected in this lesson; no-variable interactions are excluded. Cross-check with [Variable Table](#variable-table): each item here must have a matching `global_variable_table` entry, and that entry's `used_in` list must include this lesson when the variable is referenced outside the interaction line. If the Course Prompt references the same variable, `used_in` must also include `course_prompt`.
 - `depends_on_lessons` (array of lesson ids, required) — explicit list; empty list if none.
 
@@ -178,7 +178,7 @@ Resolve target language with this strict priority:
 
 - Do not restrict supported languages to a fixed list.
 - If output language is explicit, source-language distribution must not override it.
-- Learner-facing script text must follow resolved target language.
+- Learner-facing course content generated from Teaching Prompts must follow the resolved target language.
 - Newly authored MarkdownFlow variable names must follow the resolved output language within the valid variable-character set. Preserve existing or source-provided variable names when renaming would break an existing variable contract.
 - User-visible agent output must follow the resolved target language: chat replies, phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations.
 - Human-facing labels for skill concepts must follow the canonical terms in [session-controls.md#canonical-term-translation-table](session-controls.md#canonical-term-translation-table) when the resolved target language is listed there; do not keep English labels merely because the skill docs and examples are written in English.

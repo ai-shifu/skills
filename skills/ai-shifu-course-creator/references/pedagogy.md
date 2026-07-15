@@ -1,6 +1,6 @@
 # Pedagogy
 
-Authoritative source for **Teaching Prompt** design constraints: script style, lesson design, segmentation methodology, optimization methodology, and the teaching-side decisions around interactions, variables, and coordination between slides and text. Violating these constraints can produce a Teaching Prompt that runs but teaches poorly.
+Authoritative source for **Teaching Prompt** pedagogy: lesson design, segmentation methodology, optimization methodology, and the teaching-side decisions around interactions, variables, and coordination between slides and text. Prompt audience, instruction voice, and second-person meaning are defined only in [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics). Violating the constraints in this file can produce a Teaching Prompt that runs but teaches poorly.
 
 ## Scope and Authority Boundaries
 
@@ -15,22 +15,6 @@ Use each concept's authoritative source instead of restating its contract in mul
 | Interaction-policy intake | [authoring-intake.md](authoring-intake.md) | Normalizes the author's selection into the policy consumed here; it does not redefine the policy's teaching effect. |
 | Phase execution | [generation-workflow.md](generation-workflow.md), [segmentation-orchestration.md](segmentation-orchestration.md), and [optimization-workflow.md](optimization-workflow.md) | Applies the authoritative rules at each pipeline stage without changing them. |
 | Teaching Prompt and Course Prompt red lines | [prompt-contracts.md](prompt-contracts.md) | Defines hard output boundaries that this file cannot override. |
-
-## Script Style
-
-A Teaching Prompt is the per-lesson MarkdownFlow document the AI engine reads at runtime. It is a *script that guides teaching*, not a polished learner-facing lecture. Write in imperative, model-guiding language.
-
-Reference patterns:
-
-- "Explain to the learner …"
-- "Ask the learner to …"
-- "Have the learner choose …"
-
-Disallowed patterns:
-
-- Long, polished prose written as if it is the final learner-facing lecture.
-- Author or lesson-plan meta narration, including visible labels such as "Knowledge Block 1/2/3", "Lesson Objective", "In this lesson you will …", or "Deliverable".
-- Exposing internal authoring terms in learner-facing text.
 
 ## Interaction Policy Precedence
 
@@ -223,7 +207,7 @@ Other instructional interactions satisfy their effect requirement through immedi
 
 #### Execution Sequence
 
-1. Build source-to-script coverage matrix.
+1. Build a source-to-Prompt coverage matrix.
 2. Rank issues by learner risk and runtime risk.
 3. Fix blockers first.
 4. Revalidate variable lifecycle and any interaction effects that are present.
