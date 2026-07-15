@@ -94,7 +94,8 @@ Follow-up:
 
 ## Optimization Report
 
-- Target Prompt(s):
+- Target Teaching Prompt(s):
+- Target Course Prompt:
 - Source material set:
 - Execution mode: `standard|fallback`
 - Overall risk: `low|medium|high`

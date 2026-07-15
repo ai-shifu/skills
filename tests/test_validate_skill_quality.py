@@ -601,6 +601,9 @@ class PedagogyContractTests(unittest.TestCase):
         cls.review_checklist = (
             COURSE_CREATOR_REFERENCES / "review-checklist.md"
         ).read_text(encoding="utf-8")
+        cls.report_template = (
+            COURSE_CREATOR_REFERENCES / "report-template.md"
+        ).read_text(encoding="utf-8")
         cls.pipeline_example = (
             COURSE_CREATOR_REFERENCES.parent / "examples" / "pipeline-full.md"
         ).read_text(encoding="utf-8")
@@ -755,6 +758,13 @@ class PedagogyContractTests(unittest.TestCase):
             "defers to the current Teaching Prompt",
             self.optimization_workflow,
         )
+
+    def test_optimization_report_names_each_prompt_type(self):
+        report = markdown_section(self.report_template, "Optimization Report")
+
+        self.assertIn("- Target Teaching Prompt(s):", report)
+        self.assertIn("- Target Course Prompt:", report)
+        self.assertNotIn("- Target Prompt(s):", report)
 
     def test_reviewed_prompt_prose_has_no_soft_line_wraps(self):
         slide_override = markdown_section(
