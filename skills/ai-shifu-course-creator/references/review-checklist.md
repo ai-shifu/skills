@@ -94,4 +94,4 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - No `XXX` placeholder remains; every non-placeholder instruction from `course-prompt.md#fillable-template` is represented.
 - The Teaching Techniques section treats the current Teaching Prompt as authoritative and limits the Course Prompt to presentation-layer adjustments.
 - The Course Prompt introduces no generic lesson loop, cognitive rhythm, explanation structure, practice design, or interaction-feedback method that competes with a Teaching Prompt.
-- The Slides section lets the Teaching Prompt determine whether accompanying text is required and preserves the template's writing-direction rules when it is.
+- The Slides section lets the Teaching Prompt determine whether accompanying text is required and preserves the template's writing guidelines when it is.
