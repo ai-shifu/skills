@@ -674,6 +674,9 @@ class PedagogyContractTests(unittest.TestCase):
         )
         self.assertNotIn("Within Course Prompt content", semantics)
         for block in semantics_section.strip().split("\n\n"):
+            block = block.strip()
+            if not block:
+                continue
             lines = block.splitlines()
             if lines[0].startswith("- "):
                 self.assertTrue(all(line.startswith("- ") for line in lines))
