@@ -33,6 +33,8 @@ When `delivery_mode` is `pure_slides`, Generation applies `delivery-modes.md#pur
 
 Return `data-contracts.md#generation-output`; `lesson_teaching_prompts` remains an array even when the route generates exactly one lesson, and each item follows `data-contracts.md#lesson-schema`.
 
+Generation output is terminal only for an explicitly artifact-only route. When the selected route creates or changes a platform course, continue through any required course-level finalization and the routed platform write; do not report the Generation handoff as a completed course mutation.
+
 ### Validation
 
 Run `review-checklist.md#generation-validation` before returning any lesson.

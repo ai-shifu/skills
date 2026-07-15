@@ -4,8 +4,8 @@ Authoritative source for authoring behavior selected by `data-contracts.md#cours
 
 ## Resolution and Handoff
 
-- Course Design Intake resolves `delivery_mode` and `listen_mode_enabled`, then returns both through `authoring_run_controls`; downstream authoring phases consume the latest structured handoff without reinterpreting or asking for those fields again, and a full pipeline returns them through `data-contracts.md#final-authoring-output`.
-- When the same request includes authoring and deployment, pass the normalized `listen_mode_enabled` value to Deployment as the desired platform state. Authoring without deployment returns the value only as data and does not authorize a platform change.
+- Course Design Intake resolves `delivery_mode` and `listen_mode_enabled`, then returns both through `authoring_run_controls`; downstream authoring phases consume the latest structured handoff without reinterpreting or asking for those fields again, and a full authoring pipeline returns them through `data-contracts.md#final-authoring-output`.
+- When the selected route continues from authoring into a platform mutation, pass the normalized `listen_mode_enabled` value to Deployment as the desired platform state. Explicitly artifact-only authoring returns the value only as data and does not authorize a platform change.
 - A focused audit or narrow existing-course prompt edit without a same-request intake preserves the supplied artifact's existing mode-dependent structure and does not resolve, infer, or ask for `delivery_mode`. If the requested change would alter that structure or profile, run Course Design Intake before continuing.
 - Independent deployment and standalone platform management are outside this authoring contract; the selected platform workflow owns their attribute behavior.
 - Apply the selected authoring section below once. Standard preserves the resolved Listen Mode decision; Pure Slides requires `false` within the authoring handoff.

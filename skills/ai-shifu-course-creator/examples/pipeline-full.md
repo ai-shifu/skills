@@ -1,8 +1,8 @@
-# Full Pipeline Example (Segmentation → Orchestration → Generation → Optimization)
+# Full Pipeline Example (Segmentation → Orchestration → Generation → Optimization → Deployment)
 
 > Note: This example is illustrated in English; actual output follows [Output Language](../references/session-controls.md#output-language).
 
-Apply [Segmentation and Orchestration](../references/segmentation-orchestration.md); this example illustrates the handoffs without redefining the pipeline.
+Apply [Segmentation and Orchestration](../references/segmentation-orchestration.md), then continue through [Deployment and Course Management](../references/deployment-workflow.md); this example illustrates the handoffs without redefining either owner.
 
 ## Input Payload (example)
 
@@ -153,9 +153,16 @@ The resulting `course_prompt` string uses the standard delivery profile and must
 
 The final `course_description` is: `A practical course for beginner operators who want to distinguish metric drift from noise, classify likely causes, verify one targeted fix, and confirm its production impact.`
 
+## Deployment Continuation
+
+This example assumes Course Target Resolution selected a new platform target. After the Course Prompt, course description, lesson files, structure, images, and effective language pass their routed checks, continue into Deployment without asking for another upload or publication confirmation. An existing target uses the same validated authoring handoff but follows the non-destructive sync path owned by Deployment.
+
+The terminal result adds the required `deployment_result` with the CLI-returned `shifu_bid`, deployed course URL, lesson count, and `status: published`. Do not invent example URLs or reconstruct them from templates.
+
 ## Acceptance Notes
 
-- All four phases executed end-to-end.
+- All four authoring phases and the Deployment continuation executed end-to-end.
 - One core question per lesson; this single-lesson example uses a no-variable interaction because the answer does not leave the lesson.
 - The Course Prompt bindings fill the single canonical template and pass Course Prompt validation.
 - Optimization pass found no blockers, only enhancement suggestions.
+- The route ends with a published `deployment_result`, not a local authoring handoff.

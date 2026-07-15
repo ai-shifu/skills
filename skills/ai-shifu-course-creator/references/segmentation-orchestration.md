@@ -20,7 +20,7 @@ Run `review-checklist.md#segmentation-validation`. Do not advance to lesson cuts
 
 ## Orchestration
 
-**Role**: end-to-end orchestrator for Path A. Orchestration calls Segmentation and Generation internally, then performs the cross-lesson work that those phases cannot — course index, global variable table, and mandatory gating.
+**Role**: end-to-end authoring orchestrator for Path A. Orchestration calls Segmentation and Generation internally, then performs the cross-lesson work that those phases cannot — course index, global variable table, and mandatory gating. On a platform-bound course mutation, this authoring result remains an intermediate handoff rather than the terminal course result.
 
 ### Workflow
 

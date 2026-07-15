@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Make platform-bound course creation and content edits continue through deployment and publication by default, while keeping planning and artifact-only work non-mutating.
 - Give authoring, platform, and analytics concepts a single file owner, route consumers through one-way authority layers, and guard against cycles, missing authority links, and duplicated contracts.
 - Make `version-metadata.json` the leaf authority for update checks so runtime code no longer reads the task router and closes the metadata dependency cycle.
 - Preserve legacy authoring inputs through a single normalization boundary, restore shared image handling and platform route semantics, and retain canonical phase outputs.

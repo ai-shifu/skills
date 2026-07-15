@@ -6,6 +6,8 @@ Select fallback through [Authoring Controls](../references/authoring-controls.md
 
 Demonstrates degraded-input handling across the four phases. This file is the single home for complete fallback scenarios; phase-only examples point to the matching section instead of restating fallback behavior.
 
+These are internal phase snapshots rather than completed platform mutations. A platform-bound route continues only after its blocking validation issues are resolved, then performs the required platform write and publication instead of stopping at fallback authoring output.
+
 ## Segmentation Fallback: Conflicting Sources
 
 ```json

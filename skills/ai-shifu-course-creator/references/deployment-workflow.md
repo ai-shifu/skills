@@ -10,6 +10,8 @@ Ship optimized Teaching Prompts to the AI-Shifu platform as live courses. Three 
 
 The standard end-to-end flow chains deploy + publish: build → import (deploy) → publish. When **editing an existing course**, use the sync loop instead: **`pull` → edit locally → `status` → `update-lesson` / `import` (push) → `publish`.**
 
+When the selected route reaches this workflow from platform-bound authoring, the original create or edit instruction already authorizes the in-scope content write. Start the applicable new-target or existing-target flow after all routed gates pass; do not ask a second time whether to upload, deploy, or publish. An explicit draft-only or no-publish instruction still stops after the successful content write and verification.
+
 ### Prerequisites
 
 - Python 3 with `requests` and `python-dotenv` packages installed.
@@ -23,7 +25,7 @@ Complete `authentication.md` first. Always use CLI commands; never make raw HTTP
 
 Teaching Prompts must be organized in a course directory (one MarkdownFlow file per lesson under `lessons/`) before deployment. See `cli/course-directory-spec.md` for the full specification. When continuing from Optimization (Path A), write the optimized Teaching Prompts, Course Prompt, and course description into this structure automatically.
 
-**Content vs attributes policy.** A platform-attribute change is authorized only by a direct management instruction from the user or by a normalized authoring handoff produced in the same request that also asks for deployment. Standalone deployment and narrow existing-course content updates preserve lesson access, visibility, Listen Mode, and every other unrelated platform attribute. Exact request fields, PATCH behavior, and command side effects are owned by `cli/cli-reference.md`; snapshot file roles and schemas are owned by `cli/course-directory-spec.md`.
+**Content vs attributes policy.** A platform-attribute change is authorized only by a direct management instruction from the user or by a normalized authoring handoff produced by the same routed platform-bound mutation. Standalone deployment and narrow existing-course content updates preserve lesson access, visibility, Listen Mode, and every other unrelated platform attribute. Exact request fields, PATCH behavior, and command side effects are owned by `cli/cli-reference.md`; snapshot file roles and schemas are owned by `cli/course-directory-spec.md`.
 
 **Editing an existing course → use granular non-destructive commands**
 (`pull → update-lesson / add-lesson / delete-lesson / reorder / set-access / set-tts`).
@@ -33,7 +35,7 @@ courses — do not use it to iterate an existing one.
 
 ### Delivery Mode Handoff
 
-Consume `authoring_run_controls.listen_mode_enabled` only when it was produced earlier in the same request and that request includes deployment. Treat this handoff as the authorized desired platform state, apply it with `set-tts` after the content write succeeds and before publication, and do not reinterpret the authoring profile here. If no such handoff exists, do not infer or confirm a delivery mode from local or cloud artifacts and do not change Listen Mode unless the user directly requests that management operation.
+Consume `authoring_run_controls.listen_mode_enabled` when it was produced by preceding authoring phases of the same routed platform-bound mutation. Treat this handoff as the authorized desired platform state, apply it with `set-tts` after the content write succeeds and before publication, and do not reinterpret the authoring profile here. If no such handoff exists, do not infer or confirm a delivery mode from local or cloud artifacts and do not change Listen Mode unless the user directly requests that management operation.
 
 ### Listen Mode Management
 
@@ -56,7 +58,7 @@ Before any `build` or `import`, run the [Pre-Deploy Language Audit](review-check
 1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-description.md` (the generated SEO description; no author-side process notes), `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `course-prompt.md#fillable-template`), and required `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.
 3. **Deploy a new target**: Run `import --new --json-file <dir>/shifu-import.json`. If `course-target.md` resolved an existing target, do not run this command; use the Version Sync Workflow below.
-4. **Apply the authoring handoff**: When this same request produced `authoring_run_controls.listen_mode_enabled`, run `set-tts` with that boolean after the successful content write; use its version-aware `--course-dir` form when an existing sync directory is available. Without that handoff, preserve the platform setting.
+4. **Apply the authoring handoff**: When preceding authoring phases produced `authoring_run_controls.listen_mode_enabled`, run `set-tts` with that boolean after the successful content write; use its version-aware `--course-dir` form when an existing sync directory is available. Without that handoff, preserve the platform setting.
 5. **Publish**: Run `publish <shifu_bid>` to push the course to its public student-facing URL.
 6. Verify via platform URL.
 
@@ -75,7 +77,7 @@ what happens once the target is an existing course you have pulled: the
 2. **Edit locally** — change lesson files / course description / course prompt in place.
 3. **`status --course-dir <dir>`** — see what diverged (`behind` / `locally modified` / `new` / `deleted` on server).
 4. **Push** with `--course-dir` so the recorded baseline is used: `update-lesson <bid> <ob> --teaching-prompt-file f.md --course-dir <dir>` for a single lesson, or `import <bid> --course-dir <dir>` for the whole course.
-5. **Apply an in-scope Listen Mode change** only when the user directly requested it or the same authoring-and-deployment request supplied `authoring_run_controls.listen_mode_enabled`; otherwise preserve the current TTS setting. Use `set-tts ... --course-dir <dir>` for a version-aware existing-course write and handle exit `2` through the convergence loop below.
+5. **Apply an in-scope Listen Mode change** only when the user directly requested it or preceding authoring phases in the same platform-bound mutation supplied `authoring_run_controls.listen_mode_enabled`; otherwise preserve the current TTS setting. Use `set-tts ... --course-dir <dir>` for a version-aware existing-course write and handle exit `2` through the convergence loop below.
 6. **`publish <bid>`** when ready for learners.
 
 **Convergence loop on conflict.** A push checks whether the cloud advanced since

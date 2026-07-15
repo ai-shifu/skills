@@ -61,13 +61,91 @@ class CourseCreatorRouterTests(unittest.TestCase):
     def test_authoring_routes_declare_shared_dependencies(self):
         for prefix in (
             "Create a full course",
-            "Generate Teaching Prompts",
-            "Optimize content in an existing platform course",
+            "Generate Teaching Prompts from approved segments",
+            "Optimize or change content in an existing platform course",
         ):
             route = self.route_line(prefix)
             self.assertIn("references/authentication.md", route)
             self.assertIn("references/delivery-modes.md", route)
             self.assertIn("references/prompt-contracts.md", route)
+            self.assertIn("references/deployment-workflow.md", route)
+
+    def test_platform_bound_course_mutations_continue_to_deployment(self):
+        route_writers = {
+            "Create a full course": "references/optimization-workflow.md",
+            "Generate Teaching Prompts from approved segments": "references/generation-workflow.md",
+            "Optimize or change content in an existing platform course": "references/optimization-workflow.md",
+        }
+
+        for prefix, writer in route_writers.items():
+            with self.subTest(prefix=prefix):
+                route = self.route_line(prefix)
+                self.assertIn(
+                    "references/review-checklist.md#pre-deploy-language-audit",
+                    route,
+                )
+                self.assertLess(
+                    route.index(writer),
+                    route.index("references/deployment-workflow.md"),
+                )
+        self.assertIn(
+            "continue directly through deployment and publication without asking",
+            self.router,
+        )
+        self.assertIn(
+            "creates a course as platform-bound by default",
+            self.router,
+        )
+        self.assertIn(
+            "draft-only or no-publish instruction still deploys the content",
+            self.router,
+        )
+        self.assertNotIn(
+            "only when deployment or publication is requested",
+            self.router,
+        )
+
+    def test_new_course_creation_builds_the_complete_deployable_handoff(self):
+        route = self.route_line("Create a full course")
+
+        self.assertLess(
+            route.index("references/segmentation-orchestration.md"),
+            route.index("references/optimization-workflow.md"),
+        )
+        self.assertLess(
+            route.index("references/optimization-workflow.md"),
+            route.index("references/deployment-workflow.md"),
+        )
+        self.assertIn(
+            "A new-course request never terminates at phase-only Generation",
+            self.router,
+        )
+        for artifact in (
+            "course index",
+            "global variable table",
+            "Course Prompt",
+            "course description",
+            "structure",
+        ):
+            with self.subTest(artifact=artifact):
+                self.assertIn(artifact, self.router)
+
+    def test_non_platform_artifact_routes_do_not_auto_deploy(self):
+        for prefix in (
+            "Plan course structure",
+            "Segment supplied material only",
+            "Generate or rewrite Teaching Prompt artifacts",
+            "Review, audit, or rewrite pasted",
+        ):
+            with self.subTest(prefix=prefix):
+                route = self.route_line(prefix)
+                self.assertNotIn("references/deployment-workflow.md", route)
+
+        artifact_generation = self.route_line(
+            "Generate or rewrite Teaching Prompt artifacts"
+        )
+        self.assertNotIn("references/authentication.md", artifact_generation)
+        self.assertNotIn("references/course-target.md", artifact_generation)
 
     def test_deploy_route_preserves_platform_mode_and_routes_images_conditionally(self):
         route = self.route_line("Deploy a new course")
@@ -115,15 +193,18 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "\n## ", 1
         )[0]
 
-        self.assertIn("produced earlier in the same request", handoff)
+        self.assertIn("produced by preceding authoring phases", handoff)
         self.assertIn("do not reinterpret", handoff)
         self.assertIn("do not infer or confirm a delivery mode", handoff)
+        self.assertNotIn("request includes deployment", handoff)
 
         self.assertIn("authoring_run_controls", resolution)
         self.assertIn("delivery_mode", resolution)
         self.assertIn("listen_mode_enabled", resolution)
         self.assertIn("data-contracts.md#final-authoring-output", resolution)
         self.assertIn("without reinterpreting", resolution)
+        self.assertIn("Explicitly artifact-only authoring", resolution)
+        self.assertIn("does not authorize a platform change", resolution)
         self.assertIn("Independent deployment", resolution)
         self.assertIn("does not resolve, infer, or ask for `delivery_mode`", resolution)
         self.assertIn("outside this authoring contract", resolution)
@@ -150,7 +231,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("non-blocking warning", listen_management)
 
     def test_generation_runs_design_intake_before_prompt_contracts(self):
-        route = self.route_line("Generate Teaching Prompts")
+        route = self.route_line("Generate Teaching Prompts from approved segments")
         self.assertLess(
             route.index("references/authoring-intake.md"),
             route.index("references/delivery-modes.md"),
@@ -161,7 +242,9 @@ class CourseCreatorRouterTests(unittest.TestCase):
         )
 
     def test_full_course_optimization_requires_design_intake(self):
-        route = self.route_line("Optimize content in an existing platform course")
+        route = self.route_line(
+            "Optimize or change content in an existing platform course"
+        )
 
         self.assertIn("performing full-course finalization", route)
         self.assertIn("creates or replaces the Course Prompt", route)
@@ -174,7 +257,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertNotIn("optimization-workflow.md", route)
 
     def test_offline_prompt_audit_does_not_require_platform_access(self):
-        route = self.route_line("Review or audit pasted")
+        route = self.route_line("Review, audit, or rewrite pasted")
         self.assertNotIn("authentication.md", route)
         self.assertNotIn("course-target.md", route)
         self.assertIn("prompt-contracts.md", route)
@@ -236,9 +319,11 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("preserve lesson access, visibility, Listen Mode", deployment)
         self.assertIn("Do not infer or ask for a delivery mode", deployment)
         self.assertIn("do not change Listen Mode", deployment)
-        self.assertIn("same request that also asks for deployment", deployment)
-        self.assertIn("Authoring without deployment", delivery_modes)
+        self.assertIn("same routed platform-bound mutation", deployment)
+        self.assertIn("Explicitly artifact-only authoring", delivery_modes)
         self.assertIn("does not authorize a platform change", delivery_modes)
+        self.assertNotIn("same request that also asks for deployment", deployment)
+        self.assertNotIn("Authoring without deployment", delivery_modes)
         self.assertIn("stop standalone deployment", deployment)
         self.assertIn("do not silently assume the standard profile", deployment)
 

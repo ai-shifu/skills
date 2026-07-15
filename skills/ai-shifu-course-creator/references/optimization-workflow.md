@@ -39,6 +39,8 @@ For end-to-end or full-course authoring, Optimization also produces `course_desc
 
 Return `data-contracts.md#optimization-output`. End-to-end or full-course authoring additionally returns `data-contracts.md#final-authoring-output`, including the Course Prompt and course description.
 
+Optimization output is terminal only for a report-only or explicitly artifact-only route. When the selected route changes a platform course, treat this output as the validated content handoff and continue to the routed platform write without asking for a separate deployment instruction.
+
 ### Validation
 
 Run `review-checklist.md#optimization-validation` and `review-checklist.md#course-prompt`; present any remaining non-blocking gap explicitly.

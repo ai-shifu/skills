@@ -4,6 +4,8 @@
 
 Apply the [Optimization Workflow](../references/optimization-workflow.md); this example illustrates a repair without redefining Optimization rules.
 
+This is an internal phase snapshot. It is terminal only for report-only or explicitly artifact-only work; when the selected route applies this repair to a platform course, the validated change continues to the platform write and publication.
+
 ## Minimal Input
 
 ```json

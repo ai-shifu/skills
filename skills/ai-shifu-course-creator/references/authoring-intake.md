@@ -2,7 +2,7 @@
 
 ## Course Design Intake (before Orchestration)
 
-Run this intake after `course-target.md#resolve-the-course-target` and before Orchestration for end-to-end course creation, author-only generation, and existing-course edits that change structure, lesson design, delivery mode, or interaction strategy. Do not run it for deploy-only, analytics, login, publish, management, or statistics requests.
+Run this intake after `course-target.md#resolve-the-course-target` for platform-bound authoring, or after Authoring Controls for explicitly artifact-only Generation. Complete it before Orchestration, end-to-end course creation, lesson generation, and existing-course edits that change structure, lesson design, delivery mode, or interaction strategy. Do not run it for deploy-only, analytics, login, publish, management, statistics, or focused pasted-content audit requests.
 
 Before asking anything, extract answers already present in the user's instruction, source material, or pulled course directory. Ask only for missing items in the user's language as a step-by-step choice flow: ask the usage-scenario question first, wait for the answer, then ask only the next still-missing applicable question. Do not offer a bypass before the required choice flow is complete, and do not invent defaults from a sparse topic or short brief. The fallback choices below apply only after the user explicitly skips a question or asks you to continue without answering it.
 

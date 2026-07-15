@@ -4,6 +4,8 @@
 
 Apply the [Generation Workflow](../references/generation-workflow.md); this example illustrates its input and output without redefining Generation rules.
 
+This is an internal phase snapshot. It is terminal only when the user explicitly requests a Teaching Prompt artifact without creating or modifying a platform course; a platform-bound route continues after this snapshot instead of reporting the local handoff as a completed course change.
+
 ## Minimal Input
 
 ```json

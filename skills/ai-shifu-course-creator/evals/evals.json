@@ -9,7 +9,8 @@
       "expectations": [
         "The response treats the requested chapter and lesson count as a course-design question, not as live-course analytics.",
         "The workflow follows authentication and course-target resolution before proposing an outline.",
-        "No analytics DSL query or credit-detail command is attempted."
+        "No analytics DSL query or credit-detail command is attempted.",
+        "Because this request only plans structure and does not create or modify course content, it does not deploy or publish a course."
       ]
     },
     {
@@ -49,18 +50,19 @@
     {
       "id": 5,
       "prompt": "把线上课程第 4 节的授课提示词更新成我提供的新版本，其他课节、价格、权限和 TTS 设置都不要动。",
-      "expected_output": "Treats this as an existing-course content update, applies prompt contracts, and uses the non-destructive sync workflow.",
+      "expected_output": "Treats this as an existing-course content update, automatically writes and publishes it through the non-destructive sync workflow, and preserves unrelated attributes.",
       "files": [],
       "expectations": [
         "The workflow loads authentication, course-target, prompt-contracts, and deployment instructions.",
         "It pulls the existing course and uses a granular content update rather than import --new.",
-        "It preserves unrelated course attributes and handles revision conflicts with the convergence loop."
+        "It preserves unrelated course attributes and handles revision conflicts with the convergence loop.",
+        "After the granular content write succeeds, it publishes and verifies the course without asking for a separate deployment instruction."
       ]
     },
     {
       "id": 6,
-      "prompt": "把这份内部培训文档做成一门新的 AI 师傅互动课，完成脚本优化后直接部署并发布；发布完成后再告诉我学习人数。",
-      "expected_output": "Combines the full authoring, deployment, and analytics routes in dependency order.",
+      "prompt": "把这份内部培训文档做成一门新的 AI 师傅互动课；课程完成后再告诉我学习人数。",
+      "expected_output": "Automatically combines the full authoring, deployment, publication, and analytics routes in dependency order even though deployment was not requested separately.",
       "files": [],
       "expectations": [
         "The workflow resolves authentication and the course target before authoring.",
@@ -70,25 +72,27 @@
     },
     {
       "id": 7,
-      "prompt": "材料只有两课时：第一课“识别风险信号”，第二课“选择处置动作”。Course Design Intake 已完成，我只选择在课程开头收集 learner_context。请直接给出两课时的 Teaching Prompt 设计概要，标明各课的教学循环和交互安排；不要因此给每节课都加互动，也不要增加课前思考或课末自检。",
+      "prompt": "材料只有两课时：第一课“识别风险信号”，第二课“选择处置动作”。Course Design Intake 已完成，我只选择在课程开头收集 learner_context。这里只做不落平台的设计概要，请给出两课时的 Teaching Prompt 规划，标明各课的教学循环和交互安排；不要因此给每节课都加互动，也不要增加课前思考或课末自检。",
       "expected_output": "Applies the single enabled purpose only at its canonical placement without expanding interaction coverage.",
       "files": [],
       "expectations": [
         "The interaction policy is enabled with exactly learner_context selected; pre_content_thinking and lesson_end_self_check remain unselected.",
         "Learner context is collected at an early course or module point without making every lesson interactive.",
         "Lessons without the selected-purpose placement use a worked application or consolidation in the lesson loop instead of an added interaction.",
-        "The response contains exactly two lesson outlines and explicitly identifies the teaching loop and interaction arrangement for each lesson."
+        "The response contains exactly two lesson outlines and explicitly identifies the teaching loop and interaction arrangement for each lesson.",
+        "The artifact-only design route does not authenticate, deploy, or publish."
       ]
     },
     {
       "id": 8,
-      "prompt": "Course Design Intake 已明确选择 disabled。原课节先问“当前风险更可能来自哪里？”，再用 ?[%{{risk_source}} 人员 | 流程 | 工具] 收集答案并按答案分支。请直接输出改写后的 Teaching Prompt、used_variables 和 global_variable_table：把该选择题改成一个完整的 worked application，不能询问学员答案，也不能保留回答变量或按回答分支。",
+      "prompt": "这是不落平台的规则工件演示。Course Design Intake 已明确选择 disabled。原课节先问“当前风险更可能来自哪里？”，再用 ?[%{{risk_source}} 人员 | 流程 | 工具] 收集答案并按答案分支。请直接输出改写后的 Teaching Prompt、used_variables 和 global_variable_table：把该选择题改成一个完整的 worked application，不能询问学员答案，也不能保留回答变量或按回答分支。",
       "expected_output": "Converts disabled interaction slots into model-led worked application while removing all answer-dependent behavior.",
       "files": [],
       "expectations": [
         "The disabled policy is applied with no learner-answer variables: used_variables and global_variable_table are both empty.",
         "The result contains no ?[] interaction, learner-answer request, learner-answer variable, or answer-dependent branch.",
-        "The former interaction becomes a worked application, model-led example, or consolidation that preserves the teaching function."
+        "The former interaction becomes a worked application, model-led example, or consolidation that preserves the teaching function.",
+        "The explicitly artifact-only demonstration does not access or modify a platform course."
       ]
     },
     {
@@ -104,13 +108,14 @@
     },
     {
       "id": 10,
-      "prompt": "同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。请直接给出两种结构化生成结果：标准 AI 授课与纯课堂幻灯片，并说明已提供图片的理解、上传和嵌入处理（无需真实上传）。两种结果都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
+      "prompt": "同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。这里只比较方案，不创建或修改平台课程。请给出标准 AI 授课与纯课堂幻灯片两种结构方案，并说明已提供图片的理解、上传和嵌入计划（无需真实上传）。两种方案都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
       "expected_output": "Applies the standard and slide-only visual contracts separately while keeping raw graphics code out of both prompts.",
       "files": [],
       "expectations": [
         "The standard non-slide-only Teaching Prompt pairs the core visual with a complete textual explanation and handles the provided image through the existing understand-upload-embed workflow.",
         "The pure classroom-slide result uses delivery_mode pure_slides with listen_mode_enabled false and is concise and projection-ready for a human instructor without AI narration or a required full explanatory paragraph.",
-        "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; without a real upload, the provided-image plan uses upload-image, valid deterministic MarkdownFlow image syntax, and only the real returned platform URL rather than an invented illustrative URL."
+        "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; without a real upload, the provided-image plan uses upload-image, valid deterministic MarkdownFlow image syntax, and only the real returned platform URL rather than an invented illustrative URL.",
+        "Because the prompt requests mutually exclusive design options rather than a platform mutation, neither option is deployed."
       ]
     },
     {
@@ -121,18 +126,20 @@
       "expectations": [
         "The response returns the focused audit artifacts for the supplied lesson.",
         "It does not generate or return a new course_prompt merely because course_material is present.",
-        "It does not expand the request into full-course authoring."
+        "It does not expand the request into full-course authoring.",
+        "The pasted-content audit does not authenticate, resolve a course target, deploy, or publish."
       ]
     },
     {
       "id": 12,
-      "prompt": "继续兼容这份旧请求：chapter_hint.target_lessons=2，chapter_hint.granularity=short，course_profile.lesson_count_target=2，generation_constraints.lesson_granularity=short，generation_constraints.persona=严谨教练，teaching_constraints.max_interactions=3。请生成单课结果，并把归一化结果和冲突报告一起给我。",
+      "prompt": "这是不创建或修改平台课程的规范工件演示。继续兼容这份旧请求：chapter_hint.target_lessons=2，chapter_hint.granularity=short，course_profile.lesson_count_target=2，generation_constraints.lesson_granularity=short，generation_constraints.persona=严谨教练，teaching_constraints.max_interactions=3。请生成单课结果，并把归一化结果和冲突报告一起给我。",
       "expected_output": "Normalizes legacy aliases once into authoring_constraints and keeps the canonical array-shaped Generation output.",
       "files": [],
       "expectations": [
         "Equivalent legacy aliases normalize once to lesson_count_target and authoring_constraints fields before phase execution.",
         "Canonical fields would win over conflicting aliases, and ignored conflicts are recorded in the phase report rather than silently discarded.",
-        "Even for one lesson, Generation returns lesson_teaching_prompts as an array and no legacy wrapper keys remain in the handoff."
+        "Even for one lesson, Generation returns lesson_teaching_prompts as an array and no legacy wrapper keys remain in the handoff.",
+        "The explicitly artifact-only compatibility demonstration does not deploy or publish."
       ]
     },
     {

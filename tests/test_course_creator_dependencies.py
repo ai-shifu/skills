@@ -239,6 +239,7 @@ EXAMPLE_AUTHORITIES = {
     },
     Path("examples/pipeline-full.md"): {
         Path("references/course-prompt.md"),
+        Path("references/deployment-workflow.md"),
         Path("references/segmentation-orchestration.md"),
     },
     Path("examples/segmentation-only.md"): {
@@ -1030,6 +1031,13 @@ class AuthoringResponsibilityTests(unittest.TestCase):
                 "course_prompt",
                 "course_description",
             },
+            "Deployment Output": {
+                "deployed_course_url",
+                "shifu_bid",
+                "deployment_result",
+                "lesson_count",
+                "status",
+            },
         }
 
         for heading, fields in expected_fields.items():
@@ -1040,6 +1048,28 @@ class AuthoringResponsibilityTests(unittest.TestCase):
                     fields.issubset(documented),
                     f"{heading} is missing fields: {sorted(fields - documented)}",
                 )
+
+    def test_platform_mutations_require_a_deployment_terminal_result(self):
+        deployment_output = markdown_heading_section(
+            self.data_contracts, "Deployment Output"
+        )
+        pipeline = self.examples[Path("examples/pipeline-full.md")]
+
+        self.assertIn(
+            "required terminal extension for every successful platform-bound "
+            "course creation or content modification",
+            deployment_output,
+        )
+        self.assertIn("explicitly artifact-only authoring", deployment_output)
+        self.assertIn(
+            "`deployment_result` (object, required for platform-bound course "
+            "mutations)",
+            deployment_output,
+        )
+        self.assertIn("`status: published` by default", deployment_output)
+        self.assertIn("## Deployment Continuation", pipeline)
+        self.assertIn("without asking for another upload", pipeline)
+        self.assertIn("published `deployment_result`", pipeline)
 
     def test_authentication_owns_agent_login_decisions(self):
         self.assertEqual(

@@ -238,7 +238,7 @@ Each phase owns execution; this file owns the exact result that phase adds to th
 
 ### Final Authoring Output
 
-Required after end-to-end or full-course authoring:
+Required after end-to-end or full-course authoring. On a platform-bound course mutation, this is the validated pre-deployment authoring handoff rather than the terminal route result:
 
 1. `authoring_run_controls` — unchanged normalized controls from Orchestration.
 2. `lesson_teaching_prompts` — optimized Teaching Prompts.
@@ -312,15 +312,19 @@ This excerpt shows the Final Authoring Output shape while leaving the independen
 
 ### Deployment Output
 
+This is the required terminal extension for every successful platform-bound course creation or content modification. Omit it for planning, phase-only analysis, report-only audit, and explicitly artifact-only authoring that does not change a platform course.
+
 1. `deployed_course_url` — Platform URL of the deployed course.
 2. `shifu_bid` — Course BID on the AI-Shifu platform.
 
-#### `deployment_result` (object, optional)
+#### `deployment_result` (object, required for platform-bound course mutations)
 
 - `shifu_bid` (string, required)
 - `deployed_course_url` (string, required)
 - `lesson_count` (number, required)
 - `status` (string enum: `published|draft`, required)
+
+A successful mutation route returns `status: published` by default. Use `draft` only when the user explicitly requests draft-only or no-publish behavior.
 
 ### Delivery Guarantees
 
