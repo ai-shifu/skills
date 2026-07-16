@@ -124,7 +124,7 @@
         "The restrained, clear, and warm tone appears as a course-wide style adjustment without changing the Teaching Prompt's lesson flow.",
         "The Course Prompt preserves the canonical course-level behavior rules while letting the Teaching Prompt determine whether a slide requires accompanying text.",
         "Both artifacts are Prompts addressed to the runtime LLM rather than scripts or finished learner-facing lectures.",
-        "Every occurrence of you, your, yours, or yourself in Prompt instructions refers only to the runtime LLM; learner-visible text inside a MarkdownFlow ?[] interaction or deterministic block may use second-person forms to address the learner."
+        "Every occurrence of you, your, yours, or yourself in Prompt instructions refers only to the runtime LLM; learner-visible text inside a MarkdownFlow ?[] interaction or deterministic output may use second-person forms to address the learner."
       ]
     }
   ]

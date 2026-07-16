@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import sys
 import tempfile
@@ -790,7 +791,6 @@ class PedagogyContractTests(unittest.TestCase):
             },
             self.markdownflow_path: {
                 "markdownflow-spec",
-                "processing-model",
                 "preprocessing",
                 "variables",
                 "interactions",
@@ -848,7 +848,6 @@ class PedagogyContractTests(unittest.TestCase):
             self.data_contracts_path: {"segment-types", "transfer-signals"},
             self.markdownflow_path: {
                 "markdownflow-spec",
-                "processing-model",
                 "preprocessing",
                 "variables",
                 "interactions",
@@ -906,12 +905,12 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertIn('"the learner" or "the student"', semantics)
         self.assertIn(
             "Learner-visible text inside a MarkdownFlow `?[]` interaction or "
-            "[deterministic block](markdownflow.md#deterministic-blocks) is "
+            "[deterministic form](markdownflow.md#deterministic-blocks) is "
             "the exception",
             semantics,
         )
         self.assertIn(
-            "Outside `?[]` and deterministic blocks", semantics
+            "Outside `?[]` and deterministic output", semantics
         )
         self.assertNotIn("Within Course Prompt content", semantics)
         for block in semantics_section.strip().split("\n\n"):
@@ -957,8 +956,7 @@ class PedagogyContractTests(unittest.TestCase):
 
         self.assertEqual([], matches)
 
-    def test_markdownflow_contains_runtime_mechanics_not_authoring_policy(self):
-        processing = markdown_section(self.markdownflow, "Processing Model")
+    def test_markdownflow_contains_observable_runtime_semantics(self):
         preprocessing = markdown_section(self.markdownflow, "Preprocessing")
         variables = markdown_section(self.markdownflow, "Variables")
         interactions = markdown_section(self.markdownflow, "Interactions")
@@ -971,13 +969,12 @@ class PedagogyContractTests(unittest.TestCase):
         images = markdown_section(self.markdownflow, "Images")
         preservation = markdown_section(self.markdownflow, "Preservation")
 
-        self.assertIn("`---` separates adjacent content blocks", processing)
-        self.assertIn("pauses progression", processing)
-        self.assertIn("current document context", processing)
-        self.assertIn("fenced code blocks", preprocessing)
+        self.assertIn("CommonMark fenced code", preprocessing)
         self.assertIn("HTML comments", preprocessing)
         self.assertIn("`UNKNOWN`", variables)
         self.assertIn("`%{{name}}` is an assignment prefix", variables)
+        self.assertIn("pauses document progression", interactions)
+        self.assertIn("current document context", interactions)
         interaction_forms = re.findall(
             r"^- `(\?\[[^`\n]+\])`:",
             interactions,
@@ -1001,10 +998,72 @@ class PedagogyContractTests(unittest.TestCase):
         )
         self.assertNotIn(r"\|", interactions)
         self.assertIn("no parser-level conditionals", branching)
+        self.assertIn(
+            "without requiring any additional boundary syntax", deterministic
+        )
         self.assertIn("without an LLM call", deterministic)
         self.assertIn("no image-specific control-flow primitive", images)
         self.assertIn("no dedicated parser semantics", images)
-        self.assertIn("Content outside these mechanisms remains generative", preservation)
+        self.assertIn(
+            "Content outside these mechanisms may be paraphrased", preservation
+        )
+
+    def test_markdownflow_hides_internal_block_segmentation(self):
+        internal_taxonomy = {
+            "processing model",
+            "parsed block",
+            "content block",
+            "generative block",
+            "preserved-content block",
+            "preserved content block",
+            "interaction block",
+            "block separator",
+        }
+        markdownflow = self.markdownflow.casefold()
+
+        for term in internal_taxonomy:
+            self.assertNotIn(term, markdownflow)
+        self.assertNotIn("`---`", self.markdownflow)
+        self.assertNotRegex(self.markdownflow, r"(?m)^\s*---\s*$")
+
+    def test_examples_do_not_add_teaching_prompt_separator_boundaries(self):
+        prompt_keys = {"teaching_prompt", "existing_teaching_prompt"}
+        markdown_fence = re.compile(
+            r"^```(?:md|markdown)[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+            flags=re.MULTILINE | re.DOTALL,
+        )
+        separator_line = re.compile(r"(?m)^\s*---\s*$")
+        violations = []
+
+        def collect_prompt_values(value: object) -> list[str]:
+            prompts: list[str] = []
+            if isinstance(value, dict):
+                for key, nested in value.items():
+                    if key in prompt_keys and isinstance(nested, str):
+                        prompts.append(nested)
+                    prompts.extend(collect_prompt_values(nested))
+            elif isinstance(value, list):
+                for nested in value:
+                    prompts.extend(collect_prompt_values(nested))
+            return prompts
+
+        examples_dir = COURSE_CREATOR_REFERENCES.parent / "examples"
+        for path in sorted(examples_dir.rglob("*.md")):
+            content = path.read_text(encoding="utf-8")
+            for match in validate_skill_quality.RE_JSON_FENCE.finditer(content):
+                payload = json.loads(match.group("body"))
+                for prompt in collect_prompt_values(payload):
+                    if separator_line.search(prompt):
+                        violations.append(
+                            f"{path.relative_to(REPO_ROOT)}: JSON Teaching Prompt"
+                        )
+            for match in markdown_fence.finditer(content):
+                if separator_line.search(match.group("body")):
+                    violations.append(
+                        f"{path.relative_to(REPO_ROOT)}: rendered Prompt"
+                    )
+
+        self.assertEqual([], violations)
 
     def test_reviewed_author_side_course_prompt_terms_stay_explicit(self):
         responsibilities = markdown_section(

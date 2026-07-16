@@ -42,7 +42,7 @@ Optimization 全面审计清单。Optimization 必须逐项检查可观察结果
 ## Interaction Quality
 
 - The observed control composition passes [generation-workflow.md#interaction-encoding](generation-workflow.md#interaction-encoding), while its purpose, selection type, and feedback effect pass `pedagogy.md#interaction-design`.
-- Under `disabled`, no `?[]` block, learner-answer request, learner-answer variable, or answer-dependent branch is present.
+- Under `disabled`, no `?[]` interaction control, learner-answer request, learner-answer variable, or answer-dependent branch is present.
 - Interactions that are present are concrete and answerable.
 - Interaction type matches the decision, and multi-select answers drive combined feedback, prioritization, or tailored examples rather than exhaustive branching for every combination.
 - Learner-facing questions appear before interaction syntax, not after `%{{var}}` inside `?[%{{var}} ...]`.
@@ -80,10 +80,10 @@ Optimization 全面审计清单。Optimization 必须逐项检查可观察结果
 
 ## Runtime Stability
 
-- MarkdownFlow blocks parse and execute with the runtime effects defined in `markdownflow.md`.
-- Complete deterministic blocks bypass the LLM; inline preservation remains within a generative block as defined in `markdownflow.md#deterministic-blocks`.
+- MarkdownFlow syntax produces the observable runtime effects defined in `markdownflow.md`.
+- Content wrapped in a deterministic form is emitted without an LLM call as defined in `markdownflow.md#deterministic-blocks`.
 - Preservation scope passes `optimization-workflow.md#preservation-decisions`.
-- Code, image, and required source spans remain intact after the applicable preprocessing, deterministic, or generative path.
+- Code, image, and required source spans remain intact after the applicable preprocessing or generation behavior.
 
 ## Course Prompt
 

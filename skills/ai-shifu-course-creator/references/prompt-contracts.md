@@ -9,7 +9,7 @@ Address imperative instructions to the LLM. When an instruction refers to a lear
 - "Explain ... to the learner."
 - "Ask the student to ..."
 
-Within Prompt instructions, every occurrence of `you`, `your`, `yours`, or `yourself`, in any capitalization, refers only to the runtime LLM. Learner-visible text inside a MarkdownFlow `?[]` interaction or [deterministic block](markdownflow.md#deterministic-blocks) is the exception: it may use second-person forms to address the learner because the platform displays that content directly or verbatim. Outside `?[]` and deterministic blocks, do not use a second-person form to mean the learner.
+Within Prompt instructions, every occurrence of `you`, `your`, `yours`, or `yourself`, in any capitalization, refers only to the runtime LLM. Learner-visible text inside a MarkdownFlow `?[]` interaction or [deterministic form](markdownflow.md#deterministic-blocks) is the exception: it may use second-person forms to address the learner because the platform displays that content directly or verbatim. Outside `?[]` and deterministic output, do not use a second-person form to mean the learner.
 
 Do not write a transcript, lesson-plan narration, or polished learner-facing lecture. Keep author-side structure implicit: do not emit labels such as "Knowledge Block 1/2/3", "Lesson Objective", or "Deliverable", and do not expose internal authoring terms in learner-facing output. Authoring rules, pipeline notes, and process instructions stay in skill docs and references, never in Prompt content; internal design notes may appear only in HTML comments when needed.
 
@@ -30,7 +30,7 @@ Use each linked source directly. Workflow files apply these authorities through 
 |---|---|
 | Prompt audience, instruction voice, addressee, and second-person meaning | [Prompt Semantics](#prompt-semantics) |
 | Lesson loop, teaching patterns, interaction decisions, variable-persistence decisions, and teaching-side visual coordination | [Pedagogy](pedagogy.md) |
-| MarkdownFlow processing, preprocessing, syntax recognition, variable substitution, interaction execution, branch limitations, deterministic output, and image runtime behavior | [MarkdownFlow Spec](markdownflow.md) |
+| MarkdownFlow preprocessing, syntax recognition, variable substitution, interaction execution, branch limitations, deterministic output, and image runtime behavior | [MarkdownFlow Spec](markdownflow.md) |
 | Course Prompt structure, placeholder sources, and materialization | [Course Prompt](course-prompt.md) |
 | Artifact schemas, metadata fields, variable tables, and output-language resolution | [Data Contracts](data-contracts.md) |
 | Source segmentation and cross-lesson orchestration | [Segmentation and Orchestration](segmentation-orchestration.md) |

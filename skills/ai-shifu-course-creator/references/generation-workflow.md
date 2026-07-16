@@ -43,19 +43,19 @@ Ask the learner for the course-wide goal that later lessons and the Course Promp
 #### Variable and Branch Encoding
 
 - Write branch behavior as natural-language instructions; MarkdownFlow has no programmatic conditional syntax.
-- For a lesson-local answer, refer to the learner's latest answer naturally in the following block rather than inventing a variable.
+- For a lesson-local answer, refer to the learner's latest answer naturally in subsequent lesson instructions rather than inventing a variable.
 - For a named value, first bind the substituted value in a natural sentence, such as `The learner goal is {{learning_goal}}.`, and then describe the branches against that sentence's value.
 - When a named value can be read before collection, branch on the literal substituted value `UNKNOWN`; do not test whether the marker exists or whether a variable is ready.
 - Every named learner-answer reference must have a matching variable-backed collection and satisfy the lifecycle and metadata invariants in `data-contracts.md#variable-table`.
 
 #### Preservation Encoding
 
-Encode the spans already selected by `optimization-workflow.md#preservation-decisions` with their corresponding MarkdownFlow forms:
+Encode the spans already selected by `optimization-workflow.md#preservation-decisions` with the MarkdownFlow forms that directly produce deterministic output:
 
 - Put a complete single-line span that must bypass the LLM inside `===...===`.
 - Put a complete multi-line span that must bypass the LLM inside `!===...!===`. When exact fenced code output is required, keep the complete code fence, language tag, and body inside this form.
 - Encode each selected span independently; content not selected for preservation remains outside its deterministic markers.
-- Encode fixed-display and HTML-view images with the distinct forms in [Image Authoring](#image-authoring); an HTML-view directive remains generative and therefore does not contain deterministic markers.
+- Encode fixed-display and HTML-view images with the distinct forms in [Image Authoring](#image-authoring); an HTML-view directive remains an LLM instruction and therefore does not contain deterministic markers.
 
 The parser and runtime effects of these forms are defined in `markdownflow.md#deterministic-blocks` and `markdownflow.md#preservation`.
 
@@ -99,7 +99,7 @@ Per-lesson schema in `data-contracts.md#lesson-schema`.
 
 ### Image Authoring
 
-Generation owns the choice and composition of image forms. The runtime behavior of each resulting block is defined in `markdownflow.md#images` and `markdownflow.md#deterministic-blocks`.
+Generation owns the choice and composition of image forms. The runtime behavior of each resulting form is defined in `markdownflow.md#images` and `markdownflow.md#deterministic-blocks`.
 
 Raw SVG, HTML drawings, Mermaid, PlantUML, and Graphviz source are not image-embedding forms by default. Include one of those raw formats only when the author explicitly requests it.
 
@@ -107,10 +107,10 @@ Every uploaded image URL embedded in a Teaching Prompt uses `https://res.ai-shif
 
 | Authoring intent | Form |
 |---|---|
-| Display the uploaded image as authored, without layout customization | Put standard Markdown image syntax in a complete single-line deterministic block: `===![informative alt](url)===` |
+| Display the uploaded image as authored, without layout customization | Wrap standard Markdown image syntax in the single-line deterministic form: `===![informative alt](url)===` |
 | Control width, alignment, caption, or multi-image layout | Write a natural-language HTML-view instruction and leave it generative |
 
-For a fixed image, make the alt describe what information the image conveys rather than using a generic label. The complete deterministic block makes the image line bypass the LLM.
+For a fixed image, make the alt describe what information the image conveys rather than using a generic label. The deterministic form makes the image line bypass the LLM.
 
 For an HTML-view image, do not put generated HTML or the instruction inside `===...===` / `!===...!===`. Give the LLM one explicit directive containing the position, exact URL, image content, and layout. The wording must require the image to appear at that position, preserve the URL exactly, retain the content description for a semantic alt, and preserve the original aspect ratio whenever width is constrained. Use this compact shape in the resolved output language:
 
@@ -132,7 +132,7 @@ Before finalizing a generated Teaching Prompt that embeds images:
 
 1. Build an expected-image record for every selected asset. For an uploaded asset, read `remote` and `alt` from `<course-dir>/assets/image-manifest.json` as defined by `cli/course-directory-spec.md#assets`; add the selected image form, caption, position, layout constraints, and ordering from the current authoring decision. In explicitly local artifact-only work where upload is excluded, use the authoritative image URL and metadata supplied by the source record instead; do not invent missing fields. If the authoritative record lacks `remote`, an informative `alt`, or any authoring field required by the selected image form, report the missing fields as a blocking error and stop before generating the affected Teaching Prompt.
 2. Compare the generated Teaching Prompt with every expected-image record. The exact URL, description or alt, caption, position, layout constraints, and ordering must all be present where required. A fixed-display record must use the complete deterministic Markdown image form; an HTML-view record must retain every required field in one natural-language directive without deterministic markers.
-3. If any field is missing, changed, duplicated, or reordered, regenerate only the affected image block or lesson from its expected-image record, then run the same comparison again.
+3. If any field is missing, changed, duplicated, or reordered, regenerate only the affected image instruction or lesson from its expected-image record, then run the same comparison again.
 4. If the regenerated result still fails, stop Generation for that lesson and report the mismatched fields as a blocking error. Do not finalize or hand off the Teaching Prompt.
 
 ### Working with Author-Provided Images
