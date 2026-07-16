@@ -151,7 +151,7 @@ In both forms the embedded URL **must** use the platform form `https://res.ai-sh
 ===![short description of what the image conveys](https://res.ai-shifu.cn/abcd…)===
 ```
 
-- The `===…===` wrapper is required. Without it the runtime model is free to rewrite, omit, or paraphrase the image (cf. *Preservation → Immutable Assets* below).
+- The `===…===` wrapper is required. Without it the runtime model is free to rewrite, omit, or paraphrase the image; see [Preservation](#preservation) below.
 - The alt text must describe **what information the image carries** (e.g. `gradient descent three-step diagram`), not `image1` / `figure`. The alt is also the fallback when the image fails to load.
 
 ### 3.2 HTML view image (instruction-style, not fixed output)
