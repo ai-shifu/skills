@@ -183,6 +183,52 @@ class MarkdownSectionHelperTests(unittest.TestCase):
 
 
 class AnchorValidationTests(unittest.TestCase):
+    def test_heading_scan_recognizes_only_zero_to_three_space_fences(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            markdown_file = Path(tmpdir) / "headings.md"
+            real_fences = "".join(
+                f"{' ' * indentation}```markdown\n"
+                f"# Hidden at {indentation} spaces\n"
+                f"{' ' * indentation}```\n"
+                for indentation in range(4)
+            )
+            markdown_file.write_text(
+                real_fences
+                + "    ```markdown\n"
+                + "# Visible after four-space pseudo-fence\n"
+                + "    ```\n",
+                encoding="utf-8",
+            )
+
+            slugs = validate_skill_quality.github_heading_slugs(markdown_file)
+
+            for indentation in range(4):
+                self.assertNotIn(f"hidden-at-{indentation}-spaces", slugs)
+            self.assertIn("visible-after-four-space-pseudo-fence", slugs)
+
+    def test_anchor_scan_recognizes_only_zero_to_three_space_fences(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            real_fences = "".join(
+                f"{' ' * indentation}```markdown\n"
+                f"references/hidden-{indentation}.md#target\n"
+                f"{' ' * indentation}```\n"
+                for indentation in range(4)
+            )
+            (skill_dir / "SKILL.md").write_text(
+                real_fences
+                + "    ```markdown\n"
+                + "references/visible.md#target\n"
+                + "    ```\n",
+                encoding="utf-8",
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual(1, len(issues.errors))
+            self.assertIn("visible.md#target", issues.errors[0])
+
     def test_ignores_anchor_references_in_fences_and_html_comments(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = Path(tmpdir)

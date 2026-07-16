@@ -23,6 +23,7 @@ RE_MD_ANCHOR_REF = re.compile(
     r"#(?P<anchor>[A-Za-z0-9][A-Za-z0-9-]*)"
 )
 RE_HEADING = re.compile(r"^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
+RE_COMMONMARK_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 RE_SLUG_STRIP = re.compile(r"[^\w\- ]")
 RE_SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 RE_JSON_FENCE = re.compile(
@@ -292,9 +293,9 @@ def github_heading_slugs(md_file: Path) -> set[str]:
     in_fence = False
     fence_marker = ""
     for line in md_file.read_text(encoding="utf-8").splitlines():
-        stripped = line.lstrip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            marker = stripped[:3]
+        fence = RE_COMMONMARK_FENCE.match(line)
+        if fence:
+            marker = fence.group(1)[:3]
             if not in_fence:
                 in_fence, fence_marker = True, marker
             elif marker == fence_marker:
@@ -321,7 +322,7 @@ def markdown_without_fenced_code_or_html_comments(content: str) -> str:
     fence_length = 0
 
     for line in content.splitlines(keepends=True):
-        fence = re.match(r"^(`{3,}|~{3,})", line.lstrip())
+        fence = RE_COMMONMARK_FENCE.match(line)
         if fence:
             marker = fence.group(1)
             if not in_fence:
