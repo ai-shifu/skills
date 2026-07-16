@@ -11,18 +11,9 @@ Two modes apply uniformly across all authoring phases:
 
 See `../examples/fallback-mode.md` for the four phase scenarios.
 
-## Cross-File Concept Routing
+## Authority Routing
 
-Use the authoritative source for each aspect before authoring or auditing:
-
-| Concept | Syntax / Format | Strategy / Rules | Schema / Data |
-|---|---|---|---|
-| Variables | `markdownflow.md#variables` | `pedagogy.md#variable-strategy` | `data-contracts.md#variable-table` |
-| Interaction policy | `markdownflow.md#interactions` | `pedagogy.md#interaction-policy-precedence` and `pedagogy.md#interaction-design` | `data-contracts.md#interaction-policy` |
-| Transfer signals | — | `pedagogy.md#transfer-signals` | `data-contracts.md#segment-schema` |
-| Visual boundaries | `markdownflow.md#images` | `pedagogy.md#visual-text-coordination`, `generation-workflow.md#working-with-author-provided-images`, and `generation-workflow.md#slide-only-generation-override` | `data-contracts.md#segment-schema` |
-| Preservation | `markdownflow.md#preservation` | `pedagogy.md#lesson-loop` | — |
-| Output language | — | — | `data-contracts.md#language-resolution` |
+This file selects the execution mode and carries shared authoring inputs; it does not define Prompt, syntax, pedagogy, or data contracts. Before authoring or auditing, use the [Prompt Contracts Authority Index](prompt-contracts.md#authority-index) to load the authoritative section for every concept the task touches.
 
 ## Authoring Control Inputs
 

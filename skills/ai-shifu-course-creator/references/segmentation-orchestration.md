@@ -4,19 +4,33 @@
 
 Turn messy course source material into a reliable intermediate structure for downstream lesson generation.
 
-### Workflow
+### Segmentation Methodology
 
-See `pedagogy.md#segmentation-methodology` for the full methodology (cleanup, immutable-block marking, semantic segmentation, lesson-boundary proposal, source linking).
+#### Objective
+
+Produce stable lesson-oriented semantic segments from noisy source material while preserving immutable artifacts.
+
+#### Core Rules
+
+1. Preserve source order unless explicit ordering hints are provided.
+2. Keep code blocks, image files, and table blocks immutable.
+3. Segment by semantic shift, not heading depth alone.
+4. Keep each lesson candidate centered on one teachable question.
+5. Attach source spans to every segment.
+
+#### Failure Handling
+
+If structure is weak, output a fallback segmentation, mark uncertain spans, and provide focused rerun hints using the fields in [data-contracts.md#segmentation-fallback-fields](data-contracts.md#segmentation-fallback-fields).
 
 ### Outputs
 
-Segment list per `data-contracts.md#segment-schema` (each segment carries id, type, core point, preservation flag, source span, and transfer signals), plus lesson boundary candidates with one core question each. The schema owns the canonical transfer-signal keys and value constraints; their teaching meanings come from `pedagogy.md#transfer-signals`.
+Produce a segment list that conforms to [data-contracts.md#segment-schema](data-contracts.md#segment-schema), including its canonical [segment types](data-contracts.md#segment-types) and [transfer signals](data-contracts.md#transfer-signals), plus lesson boundary candidates with one core question each.
 
 ### Validation
 
 - Segment output covers all valid source spans in traceable order.
-- `transfer_signals` object is non-empty, schema-valid, includes every applicable canonical cue from `pedagogy.md#transfer-signals`, and omits inapplicable cues.
-- Preservation, one-core-question, and information-fidelity constraints pass — see `markdownflow.md#preservation` and `pedagogy.md#lesson-loop`.
+- Every segment passes [data-contracts.md#segment-schema](data-contracts.md#segment-schema).
+- The preservation and one-core-question rules in [Core Rules](#core-rules) pass; immutable assets also satisfy [markdownflow.md#preservation](markdownflow.md#preservation).
 
 ---
 

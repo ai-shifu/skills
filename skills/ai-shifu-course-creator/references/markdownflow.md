@@ -1,24 +1,24 @@
 # MarkdownFlow Spec
 
-MarkdownFlow is the **format** (a small DSL) used to author both **Teaching Prompts** (per-lesson, runtime teaching instructions) and **Course Prompts** (course-level AI persona / style / slide rules). This file is the authoritative source for the format itself — syntax, runtime constraints, and preservation rules. Violating anything here makes the prompt fail to parse, reference a learner-answer variable without a collection contract, or silently lose source content.
+MarkdownFlow is the small DSL used to author Teaching Prompts and Course Prompts. This file is authoritative only for how MarkdownFlow is encoded and executed: variable substitution, interaction forms, natural-language branching, deterministic output, image embedding, and runtime preservation.
 
-For pedagogical / quality-of-teaching constraints (which apply to Teaching Prompts), see [pedagogy.md](pedagogy.md). For Course Prompt structure and authoring rules, see [course-prompt.md](course-prompt.md).
+Decide when and why to teach, interact, persist an answer, or coordinate visuals by following [pedagogy.md](pedagogy.md). Materialize the course-level artifact from [course-prompt.md](course-prompt.md). Apply shared Prompt semantics and authority boundaries from [prompt-contracts.md](prompt-contracts.md).
 
 ## Variables
 
 - Reference syntax: `{{var_name}}`
-- New variable names in generated course content should use the resolved output language and may use Unicode letters, numbers, and underscores; do not use spaces or punctuation
+- Variable names may use Unicode letters, numbers, and underscores; do not use spaces or punctuation
 - Every `{{var_name}}` marker in a Teaching Prompt or Course Prompt is substituted before generation with that variable's system value: the learner's stored value when set, or `UNKNOWN` when unset or empty
 - A variable marker is not an availability check. Do not model variables as present/absent or ready/not-ready; when a fallback matters, write instructions for the substituted value being the literal `UNKNOWN`
 - Prefer wording that still reads correctly after substitution. Incorrect: `The learner goal is {{learner_goal}}. When the {{learner_goal}} is UNKNOWN, use default examples; otherwise adapt examples to it.` Correct: `The learner goal is {{learner_goal}}. When the learner goal is UNKNOWN, use default examples; otherwise adapt examples to it.`
 - For variable-based branches, state the substituted value in a natural sentence first, such as `The learner level is {{level}}.`, then write natural-language branch instructions.
 - Do not reference a learner-answer variable without a corresponding variable-backed interaction and metadata entry
-- A named variable is required only when the learner's answer must be used outside the current lesson: referenced by `course-prompt.md`, reused in another lesson, or used for cross-lesson personalization, examples, summaries, or deliverables
-- No-variable interactions do not create learner variables; use them for lesson-local buttons, choices, inputs, branching, examples, feedback, and summaries that do not need to persist beyond the current lesson
-- See [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy) for collection pacing, downstream-effect, and semantic-duplication rules
+- After [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy) determines whether an answer should persist, encode a persisted answer with a variable-backed interaction and a non-persisted answer with a no-variable interaction. No-variable interactions do not create learner variables.
 - See [data-contracts.md#variable-table](data-contracts.md#variable-table) for the `global_variable_table` schema
 
 ## Interactions
+
+Interaction controls are Teaching Prompt syntax. Course Prompts may reference persisted variables but do not contain `?[]` collection controls; see [prompt-contracts.md#artifact-responsibilities](prompt-contracts.md#artifact-responsibilities).
 
 - Variable-backed single-select: `?[%{{var}} Option A | Option B | Option C]`
 - Variable-backed multi-select: `?[%{{var}} Option A || Option B || Option C]`
@@ -30,7 +30,7 @@ For pedagogical / quality-of-teaching constraints (which apply to Teaching Promp
 - No-variable input: `?[...Enter your answer]`
 - No-variable disposable choice + input: `?[Option A | Option B | ...Other, please specify]`
 
-Use variable-backed syntax only when the answer must leave the current lesson. Use no-variable `?[...]` for lesson-local buttons, choices, or inputs, including current-lesson branching and feedback. Do not leave the variable name blank as a substitute for no-variable syntax.
+Within select forms, `|` encodes single-select and `||` encodes multi-select. Choose the interaction purpose, persistence, and single-select versus multi-select behavior by following [pedagogy.md#interaction-design](pedagogy.md#interaction-design), then use the matching form above. Do not leave the variable name blank as a substitute for no-variable syntax.
 
 ### Prompt Placement Rules
 
@@ -71,28 +71,25 @@ Ask the learner: Which option best matches your situation? ?[%{{choice}} Option 
 
 - `...` is an input marker, not punctuation.
 - `...` must appear immediately before the short free-text placeholder or free-text option label.
-- For variable-backed pure input, use `?[%{{var}} ...Short placeholder]` after a fuller learner-facing question when the free-text answer must be used outside the current lesson.
-- For no-variable pure input, use `?[...Short placeholder]` after a fuller learner-facing question when the free-text answer is used only in the current lesson.
-- For select + input, put `...` at the start of the option that opens text entry, such as `...Other, please specify`, with or without a named variable depending on the persistence rule.
-- Do not add a variable solely because the answer is free text; named variables are for cross-lesson or course-level persistence.
+- Variable-backed pure input uses `?[%{{var}} ...Short placeholder]` after the full learner-facing question.
+- No-variable pure input uses `?[...Short placeholder]` after the full learner-facing question.
+- For select + input, put `...` at the start of the option that opens text entry, such as `...Other, please specify`; use the variable-backed or no-variable form selected through [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy).
 - Do not move `...` to the end of the prompt text.
 - Do not write `?[%{{var}} Prompt text...]`.
 - Do not write `?[%{{var}} Option A | Option B | Other, please specify...]`.
 
 ### Input Marker Examples
 
-- Correct when the answer will be used outside the current lesson:
+- Variable-backed pure input:
   Ask the learner: What is one course-wide goal that should shape later lessons?
   ?[%{{learner_goal}} ...One-sentence goal]
-- Correct when the answer is used only in the current lesson:
+- No-variable pure input:
   Ask the learner: What is the most important risk in this example?
   ?[...Brief risk]
-- Correct when the answer will be used outside the current lesson: `?[%{{difficulty_type}} Concept unclear | Need practice | ...Other, please specify]`
-- Correct when the answer is used only in the current lesson: `?[Concept unclear | Need practice | ...Other, please specify]`
+- Variable-backed select + input: `?[%{{difficulty_type}} Concept unclear | Need practice | ...Other, please specify]`
+- No-variable select + input: `?[Concept unclear | Need practice | ...Other, please specify]`
 - Incorrect: `?[%{{learner_goal}} Describe your goal in one sentence...]`
 - Incorrect: `?[%{{difficulty_type}} Concept unclear | Need practice | Other, please specify...]`
-
-For interaction-design quality (concrete prompts, branching, deepening interactions), see [pedagogy.md#interaction-design](pedagogy.md#interaction-design).
 
 ## Branching on User Input
 
@@ -141,10 +138,12 @@ Use deterministic blocks only for truly fixed content (legally or operationally 
 
 Images in Teaching Prompts have two valid forms. The form is chosen by intent, not by aesthetics:
 
+Raw SVG, HTML drawings, Mermaid, PlantUML, and Graphviz source are not image-embedding forms and must not be inlined by default. When the author explicitly requests one of those raw formats, follow that instruction; the explicit request overrides this default. Instruction-style HTML for uploaded image assets remains the valid 3.2 form below.
+
 - **3.1 — fixed display** (the image should appear exactly as authored, no layout customization needed): use a standard markdown image inside a **single-line deterministic block**.
 - **3.2 — HTML view** (the image needs width control, alignment, a caption, side-by-side layout, …): write a **natural-language instruction** to the runtime model. Do **not** wrap HTML in deterministic blocks — that defeats the runtime's ability to adapt layout.
 
-In both forms the URL **must** come from the platform (`https://res.ai-shifu.cn/<uuid32>`). Obtain it by running `shifu-cli.py upload-image --file <local-path>` (or `--url <remote-url>`); never invent URLs and never reuse external image links directly.
+In both forms the embedded URL **must** use the platform form `https://res.ai-shifu.cn/<uuid32>`. Follow [generation-workflow.md#working-with-author-provided-images](generation-workflow.md#working-with-author-provided-images) to acquire that URL; URL acquisition and source-image handling are outside this syntax specification.
 
 ### 3.1 Fixed image (standard markdown + deterministic)
 
@@ -224,47 +223,12 @@ The locked caption is enforced by the wording `必须原样输出,不要改写`.
 
 ## Preservation
 
-### Immutable Assets
+MarkdownFlow preserves output at runtime only through explicit locking mechanisms:
 
-- Code blocks and fence language.
-- Image URLs, alt text, and ordering.
-- Regulated wording or fixed numeric thresholds.
+- Preserve the complete fenced body and language tag of code blocks selected as immutable source spans.
+- Use `===…===` or `!=== … !===` from [Deterministic Blocks](#deterministic-blocks) for fixed text that must be emitted verbatim. Do not lock an entire lesson.
+- Use the single-line deterministic form from [3.1](#31-fixed-image-standard-markdown--deterministic) when a fixed image must remain exactly as authored.
+- Use the wording locks from [3.2](#32-html-view-image-instruction-style-not-fixed-output) for HTML-view image URLs, descriptions, captions, position, and ordering. Do not mix deterministic blocks into that instruction-style form.
+- Content outside these mechanisms remains generative and may be paraphrased or reorganized by the runtime model.
 
-### Controlled Rewriting
-
-Allowed:
-
-- Filler removal.
-- Sentence smoothing.
-- Structural reorganization for lesson clarity.
-
-Not allowed:
-
-- Silent factual changes.
-- Unmarked omission of required source evidence.
-- Learner-answer variable references without a corresponding variable-backed interaction and metadata entry.
-
-### Deterministic Block Policy
-
-Use deterministic blocks only for truly fixed content. Do not lock entire lessons in fixed syntax. For images that must remain unchanged, use single-line deterministic syntax per image.
-
-## Common Mistakes
-
-- `?[%{{var}} Prompt text…]` — `...` placed at end of prompt instead of before placeholder.
-- `?[%{{var}} A | B | Other, please specify…]` — same issue inside an option label.
-- `?[%{{var}} Question prompt? Option A | Option B]` — question inside the interaction line; move it to the line above.
-- `Ask the learner the question. ?[%{{var}} A | B | C]` — interaction not on its own line.
-- Pre-interaction text enumerates choices A / B / C but `?[%{{var}} X | Y | Z]` exposes a different set — the narrative description and the interaction options must stay aligned (same set, order, and wording).
-- Creating a named variable for a continue button, confirmation, or current-lesson-only choice/input.
-- Using no-variable `?[...]` for an answer that must be used outside the current lesson.
-- Leaving the variable name blank after `%` as a substitute for no-variable syntax; use plain `?[...]` instead.
-- Program-style branching syntax around `{{var}}`, such as `if` / `else`, template conditionals, or `switch` blocks. MarkdownFlow has no conditional parser; express branches as plain instruction sentences (see [Branching on User Input](#branching-on-user-input)).
-- Wrapping an entire lesson body in `=== … ===` or `!=== … !===`.
-- Referencing `{{var}}` with no corresponding `?[%{{var}} ...]` collection and metadata entry.
-- Bare `![alt](url)` for an image that should display as-is — the runtime model is free to rewrite or drop it. Wrap in `===…===` (form 3.1).
-- Putting an HTML `<img>` / `<figure>` / `<div>` block inside `!=== … !===` — defeats the layout adaptability that HTML-view images exist for. Switch to the instruction-style form (3.2).
-- Adding a separate `===caption text===` block inside or beside a 3.2 instruction to lock the caption — instruction-style images lock content through wording (`必须原样输出 / 必须原样保留 / 不要改写`), not by mixing in deterministic blocks.
-- Hardcoding CSS pixel values in a 3.2 instruction (`width: 432px`) — different viewports need different sizes. Describe layout in natural language (`占一半宽度`, `略小于容器`).
-- Forgetting the `(必须原样保留)` phrase on a URL line in a 3.2 instruction — the runtime may then shorten, paraphrase, or invent the URL.
-- Alt text or `图片内容` that just says `图片` / `示意图` — these carry no information; describe what the image *conveys*.
-- Using a URL that is not on `res.ai-shifu.cn` — every image must be uploaded via `shifu-cli.py upload-image` first.
+Source coverage, factual fidelity, and decisions about which source spans require preservation belong to [optimization-workflow.md](optimization-workflow.md); this section defines only how an already-selected span or asset is locked at runtime.

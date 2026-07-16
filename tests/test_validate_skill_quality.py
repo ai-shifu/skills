@@ -580,18 +580,25 @@ class PedagogyContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.pedagogy_path = COURSE_CREATOR_REFERENCES / "pedagogy.md"
         cls.pedagogy = cls.pedagogy_path.read_text(encoding="utf-8")
-        cls.course_prompt = (
-            COURSE_CREATOR_REFERENCES / "course-prompt.md"
-        ).read_text(encoding="utf-8")
+        cls.course_prompt_path = COURSE_CREATOR_REFERENCES / "course-prompt.md"
+        cls.course_prompt = cls.course_prompt_path.read_text(encoding="utf-8")
         cls.generation_workflow = (
             COURSE_CREATOR_REFERENCES / "generation-workflow.md"
         ).read_text(encoding="utf-8")
-        cls.optimization_workflow = (
+        cls.optimization_workflow_path = (
             COURSE_CREATOR_REFERENCES / "optimization-workflow.md"
-        ).read_text(encoding="utf-8")
-        cls.markdownflow = (
-            COURSE_CREATOR_REFERENCES / "markdownflow.md"
-        ).read_text(encoding="utf-8")
+        )
+        cls.optimization_workflow = cls.optimization_workflow_path.read_text(
+            encoding="utf-8"
+        )
+        cls.segmentation_workflow_path = (
+            COURSE_CREATOR_REFERENCES / "segmentation-orchestration.md"
+        )
+        cls.segmentation_workflow = cls.segmentation_workflow_path.read_text(
+            encoding="utf-8"
+        )
+        cls.markdownflow_path = COURSE_CREATOR_REFERENCES / "markdownflow.md"
+        cls.markdownflow = cls.markdownflow_path.read_text(encoding="utf-8")
         cls.prompt_contracts_path = (
             COURSE_CREATOR_REFERENCES / "prompt-contracts.md"
         )
@@ -612,43 +619,63 @@ class PedagogyContractTests(unittest.TestCase):
             / "examples"
             / "optimization-only.md"
         ).read_text(encoding="utf-8")
-        cls.data_contracts = (
-            COURSE_CREATOR_REFERENCES / "data-contracts.md"
-        ).read_text(encoding="utf-8")
+        cls.data_contracts_path = COURSE_CREATOR_REFERENCES / "data-contracts.md"
+        cls.data_contracts = cls.data_contracts_path.read_text(encoding="utf-8")
 
-    def test_public_pedagogy_anchors_stay_stable(self):
-        expected_anchors = {
-            "pedagogy",
-            "interaction-policy-precedence",
-            "lesson-loop",
-            "teaching-patterns",
-            "pattern-a-evidence-chain",
-            "pattern-b-misconception-repair",
-            "pattern-c-comparison-driven-learning",
-            "cognitive-techniques",
-            "interaction-design",
-            "variable-strategy",
-            "visual-text-coordination",
-            "segmentation-methodology",
-            "objective",
-            "core-rules",
-            "segment-types",
-            "transfer-signals",
-            "failure-handling",
-            "optimization-methodology",
-            "principles",
-            "issue-taxonomy",
-            "execution-sequence",
+    def test_reference_anchors_match_authority_boundaries(self):
+        expected_anchors_by_path = {
+            self.pedagogy_path: {
+                "pedagogy",
+                "interaction-policy-precedence",
+                "lesson-loop",
+                "teaching-patterns",
+                "pattern-a-evidence-chain",
+                "pattern-b-misconception-repair",
+                "pattern-c-comparison-driven-learning",
+                "cognitive-techniques",
+                "interaction-design",
+                "variable-strategy",
+                "visual-text-coordination",
+            },
+            self.segmentation_workflow_path: {
+                "segmentation-methodology",
+                "objective",
+                "core-rules",
+                "failure-handling",
+            },
+            self.data_contracts_path: {
+                "segment-types",
+                "transfer-signals",
+            },
+            self.optimization_workflow_path: {
+                "optimization-methodology",
+                "principles",
+                "content-fidelity-and-controlled-rewriting",
+                "issue-taxonomy",
+                "execution-sequence",
+            },
         }
 
-        actual_anchors = validate_skill_quality.github_heading_slugs(
+        for path, expected_anchors in expected_anchors_by_path.items():
+            actual_anchors = validate_skill_quality.github_heading_slugs(path)
+            self.assertTrue(
+                expected_anchors.issubset(actual_anchors),
+                f"missing authority anchors in {path}: "
+                f"{sorted(expected_anchors - actual_anchors)}",
+            )
+
+        pedagogy_anchors = validate_skill_quality.github_heading_slugs(
             self.pedagogy_path
         )
-
         self.assertTrue(
-            expected_anchors.issubset(actual_anchors),
-            f"missing public pedagogy anchors: "
-            f"{sorted(expected_anchors - actual_anchors)}",
+            pedagogy_anchors.isdisjoint(
+                {
+                    "segmentation-methodology",
+                    "segment-types",
+                    "transfer-signals",
+                    "optimization-methodology",
+                }
+            )
         )
 
     def test_prompt_semantics_are_centralized(self):
@@ -743,23 +770,28 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertNotIn("Teaching Prompt", html_view)
 
     def test_reviewed_author_side_course_prompt_terms_stay_explicit(self):
-        boundaries = markdown_section(self.course_prompt, "Boundaries")
-        validation = markdown_section(self.course_prompt, "Validation")
+        responsibilities = markdown_section(
+            self.prompt_contracts, "Artifact Responsibilities"
+        )
+        materialization = markdown_section(
+            self.course_prompt, "Materialization Checks"
+        )
         review = markdown_section(self.review_checklist, "Course Prompt")
 
-        self.assertIn("follows the current Teaching Prompt", boundaries)
-        self.assertIn("defers to the current Teaching Prompt", validation)
+        self.assertIn("follows each Teaching Prompt", responsibilities)
+        self.assertIn("does not own lesson pedagogy", responsibilities)
         self.assertIn(
-            "treats the current Teaching Prompt as authoritative", review
+            "Every non-placeholder template instruction", materialization
         )
-        self.assertIn("lets the Teaching Prompt determine", review)
+        self.assertIn("current Teaching Prompt", review)
+        self.assertIn("without introducing competing lesson pedagogy", review)
         self.assertNotIn("current user message", review)
         self.assertIn("multiple script versions", self.optimization_workflow)
         self.assertIn(
-            "source points to script coverage", self.optimization_workflow
+            "source-to-Prompt coverage matrix", self.optimization_workflow
         )
         self.assertIn(
-            "defers to the current Teaching Prompt",
+            "prompt-contracts.md#artifact-responsibilities",
             self.optimization_workflow,
         )
 
@@ -783,26 +815,21 @@ class PedagogyContractTests(unittest.TestCase):
 
         self.assertIn(narration_rule, slide_override.splitlines())
 
-    def test_transfer_signal_keys_match_pedagogy_data_and_validator(self):
-        transfer_section = markdown_section(self.pedagogy, "Transfer Signals")
-        pedagogy_keys = markdown_table_first_column(transfer_section, "Key")
-
-        segment_section = markdown_section(self.data_contracts, "Segment Schema")
-        data_contract_block = re.search(
-            r"(?ms)^- `transfer_signals`.*?(?=\n\n|\n[^ \t\n]|\Z)",
-            segment_section,
+    def test_transfer_signal_keys_match_data_contract_and_validator(self):
+        transfer_section = markdown_section(
+            self.data_contracts, "Transfer Signals"
         )
-        self.assertIsNotNone(data_contract_block)
-        data_contract_keys = re.findall(
-            r"(?m)^[ \t]+- `([a-z_]+)`[ \t]*$",
-            data_contract_block.group(0),
+        data_contract_keys = markdown_table_first_column(
+            transfer_section, "Key"
         )
 
         validator_keys = validate_skill_quality.TRANSFER_SIGNAL_KEYS
-        self.assertEqual(len(pedagogy_keys), len(set(pedagogy_keys)))
         self.assertEqual(len(data_contract_keys), len(set(data_contract_keys)))
-        self.assertEqual(set(pedagogy_keys), validator_keys)
         self.assertEqual(set(data_contract_keys), validator_keys)
+        self.assertIn(
+            "(data-contracts.md#transfer-signals)",
+            self.segmentation_workflow,
+        )
 
     def test_interaction_matrix_has_only_canonical_modes_and_purposes(self):
         policy_section = markdown_section(
@@ -821,12 +848,18 @@ class PedagogyContractTests(unittest.TestCase):
         )
 
     def test_authority_links_cover_prompt_and_delivery_boundaries(self):
-        scope = markdown_section(self.pedagogy, "Scope and Authority Boundaries")
+        authority = markdown_section(self.prompt_contracts, "Authority Index")
         interaction = markdown_section(self.pedagogy, "Interaction Design")
         variables = markdown_section(self.pedagogy, "Variable Strategy")
         visuals = markdown_section(self.pedagogy, "Visual-Text Coordination")
 
-        self.assertIn("(course-prompt.md)", scope)
+        for link in (
+            "(pedagogy.md)",
+            "(markdownflow.md)",
+            "(course-prompt.md)",
+            "(data-contracts.md)",
+        ):
+            self.assertIn(link, authority)
         self.assertIn("(markdownflow.md#interactions)", interaction)
         self.assertIn("(markdownflow.md#branching-on-user-input)", interaction)
         self.assertIn("(markdownflow.md#variables)", variables)
@@ -837,21 +870,19 @@ class PedagogyContractTests(unittest.TestCase):
         )
 
     def test_course_prompt_template_uses_runtime_user_message_context(self):
-        scope = markdown_section(self.pedagogy, "Scope and Authority Boundaries")
+        responsibilities = markdown_section(
+            self.prompt_contracts, "Artifact Responsibilities"
+        )
         purpose = markdown_section(self.course_prompt, "Purpose")
         template = markdown_section(self.course_prompt, "Fillable Template")
 
         self.assertIn(
-            "follow, rather than define or replace, the Teaching Prompt's pedagogy",
-            scope,
+            "follows each Teaching Prompt and does not own lesson pedagogy",
+            responsibilities,
         )
         self.assertIn(
-            "current user message is the source of truth",
-            purpose,
-        )
-        self.assertIn(
-            'Within Course Prompt content, refer to that lesson input only as '
-            '"the current user message" or "that user message"',
+            "does not redefine shared Prompt semantics, lesson pedagogy, or "
+            "MarkdownFlow runtime behavior",
             purpose,
         )
         self.assertIn(
@@ -896,9 +927,63 @@ class PedagogyContractTests(unittest.TestCase):
             self.generation_workflow,
         )
         self.assertIn(
-            "Teaching Prompts lead; the Course Prompt follows and styles",
+            "follows each Teaching Prompt and does not own lesson pedagogy",
+            responsibilities,
+        )
+
+    def test_reference_files_keep_single_responsibilities(self):
+        authority = markdown_section(self.prompt_contracts, "Authority Index")
+
+        for moved_heading in (
+            "Scope and Authority Boundaries",
+            "Pipeline Methodologies",
+            "Segmentation Methodology",
+            "Transfer Signals",
+            "Optimization Methodology",
+        ):
+            self.assertNotIn(f"## {moved_heading}", self.pedagogy)
+
+        self.assertNotIn(
+            "Teaching Prompt and Course Prompt Authoring Hard Rules",
             self.prompt_contracts,
         )
+        self.assertNotIn("?[%{{var}}", self.prompt_contracts)
+        self.assertNotIn("single-select", self.prompt_contracts)
+        self.assertNotIn("multi-select", self.prompt_contracts)
+        self.assertNotIn("UNKNOWN", self.prompt_contracts)
+        self.assertIn("(pedagogy.md)", authority)
+        self.assertIn("(markdownflow.md)", authority)
+
+        self.assertNotIn("answer must leave the current lesson", self.markdownflow)
+        self.assertNotIn("Use single-select for", self.markdownflow)
+        self.assertNotIn("Use multi-select for", self.markdownflow)
+        self.assertIn("(pedagogy.md#interaction-design)", self.markdownflow)
+        self.assertIn("Raw SVG, HTML drawings, Mermaid", self.markdownflow)
+
+        self.assertIn(
+            "do not duplicate them in the Teaching Prompt body",
+            self.data_contracts,
+        )
+        self.assertIn(
+            "filler removal, sentence smoothing", self.optimization_workflow
+        )
+        self.assertIn("silent factual change", self.optimization_workflow)
+
+        self.assertNotIn("## Boundaries", self.course_prompt)
+        self.assertNotIn("## Validation", self.course_prompt)
+        self.assertIn("## Materialization Checks", self.course_prompt)
+
+    def test_course_prompt_placeholder_map_matches_template(self):
+        template = markdown_section(self.course_prompt, "Fillable Template")
+        sources = markdown_section(
+            self.course_prompt, "Placeholder Sources and Context"
+        )
+        placeholders = markdown_table_first_column(sources, "Placeholder")
+
+        self.assertEqual(5, template.count("XXX"))
+        self.assertEqual(5, len(placeholders))
+        self.assertEqual(len(placeholders), len(set(placeholders)))
+        self.assertIn("they do not add placeholders to the template", sources)
 
     def test_removed_authoring_controls_do_not_reappear(self):
         scan_roots = [

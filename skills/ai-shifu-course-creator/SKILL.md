@@ -62,8 +62,8 @@ Apply `references/report-template.md#formatting-rules` to every user-facing phas
 - `references/session-controls.md` — first-turn contact, update check, global output language, and canonical terminology.
 - `references/authentication.md` — verify-first login and SMS-quota protection.
 - `references/course-target.md` — mandatory new-vs-existing resolution.
-- `references/authoring-controls.md` — execution modes, control inputs, and concept routing.
-- `references/prompt-contracts.md` — non-negotiable Teaching Prompt and Course Prompt rules.
+- `references/authoring-controls.md` — execution modes and shared authoring control inputs.
+- `references/prompt-contracts.md` — shared Prompt semantics, artifact responsibility boundaries, and the authority index.
 - `references/authoring-intake.md` — design intake and end-to-end authoring pipeline.
 - `references/segmentation-orchestration.md` — source segmentation and cross-lesson orchestration.
 - `references/generation-workflow.md` — lesson generation and author-provided images.

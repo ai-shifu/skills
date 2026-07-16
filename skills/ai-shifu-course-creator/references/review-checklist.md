@@ -1,6 +1,6 @@
 # Review Checklist
 
-Optimization 全面审计清单 — Optimization Optimization 必须把每条都过一遍。其他阶段的交付检查见 `segmentation-orchestration.md`、`generation-workflow.md` 和 `deployment-workflow.md` 内的 Validation 段。
+Optimization 全面审计清单。Optimization 必须逐项检查可观察结果；规则含义以每项链接的权威文件为准。其他阶段的交付检查见 `segmentation-orchestration.md`、`generation-workflow.md` 和 `deployment-workflow.md` 内的 Validation 段。
 
 ## Coverage
 
@@ -22,7 +22,7 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 
 ## Structure Separation
 
-- Chapter titles, lesson titles, numbering, and hierarchy labels live in `structure.json` / `course_index`, not in Teaching Prompt body text.
+- Chapter titles, lesson titles, numbering, and hierarchy labels satisfy the separation defined in `data-contracts.md#lesson-schema`.
 - Each lesson file's first non-empty line performs a teaching-start function: scenario, guiding question, prior-experience activation, task setup, or practice start.
 - High-confidence structure pollution is absent: the first line is not a Markdown heading copied from `structure.json`, not a `第X章` / `Chapter X` directory label, and not an exact repeat of the chapter or lesson title.
 - Medium-confidence cases are flagged for review instead of auto-deleted: headings used to teach Markdown syntax, code comments beginning with `#`, or courses with an explicit `allow_headings` / heading-supported rendering decision.
@@ -90,6 +90,5 @@ Optimization 全面审计清单 — Optimization Optimization 必须把每条都
 - A `course_prompt` artifact is produced when input includes course material.
 - All six required canonical sections are present in order, with headings rendered in the resolved output language: Role, Task, Teaching Techniques, Writing Style, Format, and Slides.
 - No `XXX` placeholder remains; every non-placeholder instruction from `course-prompt.md#fillable-template` is represented.
-- The Teaching Techniques section treats the current Teaching Prompt as authoritative and limits the Course Prompt to presentation-layer adjustments.
-- The Course Prompt introduces no generic lesson loop, cognitive rhythm, explanation structure, practice design, or interaction-feedback method that competes with a Teaching Prompt.
-- The Slides section lets the Teaching Prompt determine whether accompanying text is required and preserves the template's writing guidelines when it is.
+- The completed artifact passes `course-prompt.md#materialization-checks` and respects `prompt-contracts.md#artifact-responsibilities`.
+- The Teaching Techniques and Slides sections preserve the template's deference to the current Teaching Prompt without introducing competing lesson pedagogy.

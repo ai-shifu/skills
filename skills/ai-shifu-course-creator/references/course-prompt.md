@@ -1,24 +1,22 @@
 # Course Prompt
 
-Authoritative template for the course-level prompt artifact.
+Course-level materialization contract for the Course Prompt artifact.
 
 ## Purpose
 
-The Course Prompt defines the AI engine's course-wide role and presentation rules. It is loaded once per course and applies to every lesson.
+Use this file to materialize one course-wide artifact from the six-section template below. It defines the template, fill-value sources, context used while filling those values, and completion checks; it does not redefine shared Prompt semantics, lesson pedagogy, or MarkdownFlow runtime behavior.
 
-- The Course Prompt owns cross-lesson constants: identity, audience, writing style, output format, slide presentation policy, and course-wide personalization.
-- Teaching Prompts own lesson pedagogy and per-lesson instructions: teaching method, explanation path, content sequence, pacing, examples, practice, interactions, variable collection, branching, feedback, and closing instructions.
-
-At runtime, the lesson's Teaching Prompt is delivered as the current user message. Within Course Prompt content, refer to that lesson input only as "the current user message" or "that user message"; do not use the author-side term "Teaching Prompt". The current user message is the source of truth for how its lesson teaches. The Course Prompt must follow that pedagogy; its teaching contribution is limited to presentation-style adjustments that do not change the pedagogical intent or lesson flow. Do not move lesson-specific pedagogy or mechanics into `course-prompt.md`.
+- Apply shared Prompt semantics and the Course Prompt versus Teaching Prompt authority boundary from [prompt-contracts.md](prompt-contracts.md).
+- Encode any variables or other runtime behavior used by the completed artifact according to [markdownflow.md](markdownflow.md).
 
 ## Authoring Workflow
 
 1. Resolve the output language using [data-contracts.md#language-resolution](data-contracts.md#language-resolution).
 2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
-3. Replace every `XXX` from the [Placeholder Sources](#placeholder-sources). Use already-collected artifacts.
+3. Replace every `XXX` from [Placeholder Sources and Context](#placeholder-sources-and-context). Use already-collected artifacts and apply the listed context constraints to the fill values.
 4. Render section headings and body text in the resolved output language. The English template is canonical structure, not a language default.
 5. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in the resolved language.
-6. Confirm that no `XXX` remains and that the stated delivery mode matches the Course Design Intake.
+6. Run the [Materialization Checks](#materialization-checks).
 
 ## Fillable Template
 
@@ -65,28 +63,26 @@ At runtime, the lesson's Teaching Prompt is delivered as the current user messag
 - When the current user message requests text alongside a slide, treat the slide as a structural prompt and follow it with a complete text explanation that assumes the learner has not seen the slide.
 ```
 
-## Placeholder Sources
+## Placeholder Sources and Context
 
 | Placeholder | Source |
 | --- | --- |
-| Teacher name | Course author's real name. If unknown, ask the author. |
-| Specialty and teaching field | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
-| Course name | First heading in `README.md`. |
-| Mastery goal | Orchestration course-level goal aggregated from `course_index` core questions. |
-| Learner profile | `course_profile.audience_level` and `course_profile.prerequisite_level`. |
-| Problems in scope | `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage. |
+| Role identity (`You are XXX`) | Course author's real name. If unknown, ask the author. |
+| Specialty (`You specialize in XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
+| Teaching field (`the field of XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
+| Course name (`The current course is *XXX*`) | First heading in `README.md`. |
+| Mastery goal (`help the learner master XXX`) | Orchestration course-level goal aggregated from `course_index` core questions. |
 
-## Boundaries
+Use these inputs as context constraints while wording the five fill values; they do not add placeholders to the template:
 
-- A named `{{var}}` may appear only for intentional course-wide personalization. It is replaced before generation with the learner's stored value or `UNKNOWN`; write instructions against that substituted value.
-- Lesson-specific variable collection, branching, lesson titles, ordering, source excerpts, and instructions for learner-facing delivery stay in Teaching Prompts, `course_index`, or `structure.json`.
-- Lesson loops, cognitive techniques, explanation structures, misconception handling, practice design, and interaction feedback are authored in Teaching Prompts. The Course Prompt must not introduce a competing generic pedagogy.
-- The slide-text relationship follows the current Teaching Prompt and resolved delivery mode; do not hard-code a universal requirement for accompanying text.
+- Calibrate specificity to `course_profile.audience_level` and `course_profile.prerequisite_level`.
+- Keep fill values within `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage.
+- Match the stated delivery mode from the Course Design Intake.
 
-## Validation
+## Materialization Checks
 
-- The six template sections are present in order and localized to the resolved output language.
-- Every `XXX` is replaced with course-specific content.
-- Every non-placeholder template instruction remains represented.
-- No lesson-specific mechanics or author-side process notes appear.
-- The Teaching Techniques section defers to the current Teaching Prompt and limits Course Prompt changes to the presentation layer.
+- The six template sections are present in their original order and localized to the resolved output language.
+- All five `XXX` occurrences are replaced with course-specific content derived from the mapped sources.
+- Every non-placeholder template instruction remains represented with the same behavior.
+- The fill values satisfy the learner-profile, topic-scope, and delivery-mode context constraints above.
+- The completed artifact follows [prompt-contracts.md](prompt-contracts.md) and [markdownflow.md](markdownflow.md) without copying their rules into this file.
