@@ -179,7 +179,7 @@ Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 
 Determine `resolved_target_language` with these two rules:
 
-1. `context_language_directive` — any applicable context explicitly specifies a language, including the current prompt, project or system instructions, earlier conversation turns, and directives from the calling agent.
+1. `context_language_directive` — any applicable context explicitly specifies a language, including the current prompt, project or system instructions, earlier conversation turns, and directives from the calling agent. When explicit directives conflict, follow the normal instruction hierarchy; at the same authority level, use the most recent applicable directive.
 2. `prompt_language_detection` — otherwise, the language detected from the current user prompt.
 
 ## Fallback Output Extensions

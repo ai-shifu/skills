@@ -140,7 +140,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
         priority_items = [
             line
             for line in priority.splitlines()
-            if line.startswith(("1. ", "2. ", "3. ", "4. ", "5. ", "6. "))
+            if re.match(r"^\d+\.\s+", line)
         ]
         priority_identifiers = [
             line.split("`", 2)[1] for line in priority_items
@@ -160,6 +160,8 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "otherwise, the language detected from the current user prompt",
             priority,
         )
+        self.assertIn("follow the normal instruction hierarchy", priority)
+        self.assertIn("most recent applicable directive", priority)
         self.assertIn(
             "`resolved_target_language` is a string",
             data_contracts,
@@ -277,6 +279,18 @@ class CourseCreatorRouterTests(unittest.TestCase):
             for phrase in expected_phrases:
                 with self.subTest(path=relative_path, phrase=phrase):
                     self.assertIn(phrase, content)
+
+        report = (references / "report-template.md").read_text(encoding="utf-8")
+        verification_templates = report.split("Verification URLs:", 1)[1]
+        self.assertIn("illustrative templates only", verification_templates)
+        self.assertIn(
+            "ordinary Markdown without the surrounding fence",
+            verification_templates,
+        )
+        self.assertIn(
+            "translate every non-placeholder instruction",
+            (references / "optimization-workflow.md").read_text(encoding="utf-8"),
+        )
 
         review = (references / "review-checklist.md").read_text(
             encoding="utf-8"

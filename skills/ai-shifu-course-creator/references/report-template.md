@@ -151,6 +151,8 @@ Lesson-level preview URLs are no longer printed at all (they used to clutter rep
 
 Copy each printed URL **verbatim** (never reconstruct from a template, never hand-edit query parameters) and render it as three lines per the top-level Formatting Rules exception. The third line must be the script's following `# ...` hint copied verbatim, with the leading `#` and surrounding indentation removed. This keeps the script as the single source of truth for link-purpose and credit-consumption wording.
 
+The fenced snippets below are illustrative templates only. In the generated report, emit their three content lines as ordinary Markdown without the surrounding fence so the first line remains clickable.
+
 - `Admin console:` → localize the purpose label in `resolved_target_language` (Simplified Chinese: `管理后台`)
 
   ```md

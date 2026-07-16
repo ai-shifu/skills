@@ -66,7 +66,7 @@ Other instructional interactions satisfy their effect requirement through immedi
 
 ### Course Prompt
 
-Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **copying and filling `course-prompt.md#fillable-template`, not by free-form composition**. Preserve the six sections, their order, and every non-placeholder instruction; replace every `XXX` with course-specific content and render the result in `resolved_target_language`.
+Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **copying and filling `course-prompt.md#fillable-template`, not by free-form composition**. Preserve the six-section structure and order, placeholder source mapping, semantic requirements, and required literals. Replace every `XXX` with course-specific content, and translate every non-placeholder instruction into `resolved_target_language` without dropping or weakening its rule; keep required code, syntax, URLs, and other contract literals unchanged.
 
 Load and apply `prompt-contracts.md#artifact-responsibilities` before materializing the Course Prompt; Optimization does not reinterpret that boundary.
 
@@ -84,5 +84,5 @@ Write human-readable findings in `risk_and_issue_report`, each `change_list[].ch
 - Full review against `review-checklist.md` passes, or remaining gaps are explicitly listed as non-blocking suggestions.
 - Coverage, meaning, information density, and immutable source content remain intact; every broader rewrite is scoped, justified, and revalidated.
 - A `course_prompt` artifact is produced when input includes course material, with all six required canonical sections present.
-- Generated `course_prompt` has no unresolved `XXX`, retains every non-placeholder template instruction, and applies delivery-mode behavior consistent with the Course Design Intake.
+- Generated `course_prompt` has no unresolved `XXX`, represents every non-placeholder template instruction with the same behavior after localization, and applies delivery-mode behavior consistent with the Course Design Intake.
 - `course_description`, human-readable review findings, change descriptions, and fallback follow-up entries pass [Course Description and Review Outputs](#course-description-and-review-outputs).
