@@ -47,6 +47,7 @@ Ask the learner for the course-wide goal that later lessons and the Course Promp
 - For a named value, first bind the substituted value in a natural sentence, such as `The learner goal is {{learning_goal}}.`, and then describe the branches against that sentence's value.
 - When a named value can be read before collection, branch on the literal substituted value `UNKNOWN`; do not test whether the marker exists or whether a variable is ready.
 - Every named learner-answer reference must have a matching variable-backed collection and satisfy the lifecycle and metadata invariants in `data-contracts.md#variable-table`.
+- Compose each newly authored variable name in `resolved_target_language` using only letters, numbers, and underscores. Preserve an existing or source-provided variable name when changing it would break the variable contract.
 
 #### Preservation Encoding
 
@@ -90,6 +91,10 @@ When Course Design Intake resolves to pure slides / classroom interactive slides
 
 Per-lesson schema in `data-contracts.md#lesson-schema`.
 
+Write `lesson_teaching_prompts[].lesson_title` and every authored natural-language part of `lesson_teaching_prompts[].teaching_prompt` in `resolved_target_language`. This includes teaching instructions, learner-facing questions and options, input hints, feedback and branch descriptions, explanations, summaries, and deterministic output text. Keep JSON keys, lesson ids, MarkdownFlow syntax, existing variable names, URLs, code, and required verbatim source text unchanged.
+
+When fallback mode adds `assumptions[]` or `upgrade_notes[]`, write those human-readable entries in `resolved_target_language`.
+
 ### Validation
 
 - Each `teaching_prompt` is valid runnable MarkdownFlow.
@@ -97,6 +102,7 @@ Per-lesson schema in `data-contracts.md#lesson-schema`.
 - Per-lesson schema populated per `data-contracts.md#lesson-schema`.
 - Pedagogical decisions pass per `pedagogy.md`; authoring passes [MarkdownFlow Authoring](#markdownflow-authoring); syntax and runtime behavior pass `markdownflow.md`.
 - The Teaching Prompt contains the lesson's teaching method and does not outsource pedagogical decisions to the Course Prompt.
+- The lesson title and every authored natural-language Teaching Prompt fragment pass the output-language requirements in [Outputs](#outputs).
 
 ### Image Authoring
 
@@ -111,9 +117,9 @@ Every uploaded image URL embedded in a Teaching Prompt uses `https://res.ai-shif
 | Display the uploaded image as authored, without layout customization | Wrap standard Markdown image syntax in the single-line deterministic form: `===![informative alt](url)===` |
 | Control width, alignment, caption, or multi-image layout | Write a natural-language HTML-view instruction and leave it generative |
 
-For a fixed image, make the alt describe what information the image conveys rather than using a generic label. The deterministic form makes the image line bypass the LLM.
+For a fixed image, make the alt describe what information the image conveys rather than using a generic label. Write newly authored alt text in `resolved_target_language`; preserve a source-provided alt selected as immutable. The deterministic form makes the image line bypass the LLM.
 
-For an HTML-view image, do not put generated HTML or the instruction inside `===...===` / `!===...!===`. Give the LLM one explicit directive containing the position, exact URL, image content, and layout. The wording must require the image to appear at that position, preserve the URL exactly, retain the content description for a semantic alt, and preserve the original aspect ratio whenever width is constrained. Use this compact shape in the resolved output language:
+For an HTML-view image, do not put generated HTML or the instruction inside `===...===` / `!===...!===`. Give the LLM one explicit directive in `resolved_target_language` containing the position, exact URL, image content, caption, and layout. Write newly authored descriptions, captions, and layout wording in `resolved_target_language`; preserve source-provided immutable text. The wording must require the image to appear at that position, preserve the URL exactly, retain the content description for a semantic alt, and preserve the original aspect ratio whenever width is constrained. Use this compact shape:
 
 ```markdown
 必须在此处以 HTML-view 方式插入一张带图注的图片,不得省略,并使用 HTML <figure>/<figcaption> 结构。

@@ -6,6 +6,8 @@ Read this file before any CLI-backed course-target, deployment, management, or a
 
 Always use `scripts/shifu-cli.py`. Never read tokens directly, construct authentication headers, or make raw platform API calls.
 
+Write SMS-code prompts, verification or network-failure explanations, and next-step login guidance in `resolved_target_language`. Keep CLI commands, exit codes, and raw technical values unchanged when they must be shown.
+
 1. Run `shifu-cli.py verify` before considering login.
 2. Handle the exit code:
    - Exit `0`: the token is valid; continue without logging in.

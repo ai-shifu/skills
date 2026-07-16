@@ -12,13 +12,41 @@ Optimization 全面审计清单。Optimization 必须逐项检查可观察结果
 
 - Teaching Prompt and Course Prompt content passes [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics).
 
-## User-Visible Language
+## Language Audit
 
-- User-visible agent output outside generated course content follows the resolved target language from `data-contracts.md#language-resolution`.
-- Generated course artifacts and learner-facing passages follow the resolved target language.
-- Effective build metadata follows the resolved target language after precedence is applied: course title (`--title`, `README.md`, or directory-name fallback), course description (`--description` or `course-description.md`), chapter titles (`structure.json`, `--chapter-name`, or course-title fallback), and lesson titles.
-- Human-facing labels for canonical concepts follow [session-controls.md#canonical-term-translation-table](session-controls.md#canonical-term-translation-table) when the resolved target language is listed there.
-- Machine-facing identifiers and verbatim source material remain unchanged: JSON keys, file names, CLI flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and required verbatim source quotes.
+Resolve `resolved_target_language` from `data-contracts.md#language-resolution`, then inspect every human-readable output produced or changed by the active workflow. Passing one file is not enough; check each applicable item below.
+
+### Phase Output Fields
+
+- **Segmentation:** `segments[].core_point`, every human-readable `segments[].transfer_signals.*` value, `lesson_cut_candidates[].core_question`, and fallback `rerun_hints[]`.
+- **Orchestration:** `course_index[].lesson_title`, `course_index[].core_question`, and fallback `rerun_plan.reason`.
+- **Generation:** `lesson_teaching_prompts[].lesson_title` and the complete `lesson_teaching_prompts[].teaching_prompt`, including teaching instructions, learner questions and option labels, input hints, feedback or branch descriptions, explanations, summaries, newly authored image alt/content/caption/layout text, and deterministic output text. Also check fallback `assumptions[]` and `upgrade_notes[]`.
+- **Optimization:** the complete `course_prompt` (all six headings, fill values, and every section's instruction text), the complete learner-facing `course_description`, human-readable findings in `risk_and_issue_report`, every `change_list[].change`, and fallback `follow_up[]`.
+- **Variables:** each newly authored `global_variable_table[].name`; preserve an existing or source-provided variable name when changing it would break the contract.
+
+### Course Directory and Effective Build Values
+
+- **Course title:** check the value that will actually win: `--title`, otherwise the first heading in `README.md`, otherwise the directory name.
+- **Course description:** check `--description` when present; otherwise check the complete `course-description.md`; an empty fallback has no language to audit.
+- **Chapter titles:** check `structure.json.chapters[].title`; without `structure.json`, check `--chapter-name` or the resolved course-title fallback.
+- **Lesson titles:** check `structure.json.chapters[].lessons[].title`; without an explicit title, check the filename-derived title that `build` will emit.
+- **Course Prompt and lessons:** check the complete `course-prompt.md` and every lesson file referenced by `structure.json`; without `structure.json`, check every auto-discovered `lessons/lesson-*.md` file.
+- **Images:** check newly authored `assets/image-manifest.json.images[].alt` values that are embedded in lessons, plus the resulting lesson alt/content/caption/layout text.
+- **Direct management commands:** before mutation, check human-readable values passed through `create --name/--description`, `add-chapter --name`, `add-lesson --name/--teaching-prompt-file`, `update-meta --name/--description/--course-prompt-file`, `update-lesson --teaching-prompt-file`, and `rename-lesson --name`.
+- **Built deployment payload:** after `build`, inspect `shifu-import.json` fields `shifu.title`, `shifu.description`, and `shifu.course_prompt`; every `outline_items[].title`; each lesson item's `outline_items[].content`; and each lesson item's copied `outline_items[].course_prompt`. This confirms the final precedence and fallback values, not just the source files.
+
+### User-Facing Operational Outputs
+
+- Check contact and version notices, authentication guidance, course-target choices, Course Design Intake questions and options, progress updates, errors, review notes, and handoff instructions.
+- Check every phase report's headings, field labels, findings, issue explanations, suggestions, validation explanations, next actions, and handoff notes.
+- Check analytics answer headings, narrative findings, interpretations, refusals, and drill-down offers.
+- For canonical concepts, use the corresponding language column in `session-controls.md#canonical-term-translation-table` when available; otherwise localize naturally in `resolved_target_language`.
+
+### Language Audit Exclusions
+
+- Do not translate JSON keys, ids or BIDs, file names and paths, CLI commands and flags, API/DSL fields, code symbols, contract enum values, MarkdownFlow syntax, URLs, code samples, or fixed numeric values.
+- Preserve exact source quotations, regulated wording, source-selected immutable alt/captions, tables, and any other span selected by `optimization-workflow.md#preservation-decisions`; audit only the newly authored surrounding explanation.
+- In deployment reports, preserve the script-owned Chinese Verification URL hint verbatim as required by `report-template.md#formatting-rules`; localize the link-purpose label and surrounding explanation.
 
 ## Structure Separation
 
@@ -35,7 +63,7 @@ Optimization 全面审计清单。Optimization 必须逐项检查可观察结果
 - The final paragraph of each lesson is non-interactive.
 - One core question per lesson; resolved by lesson close.
 - Action tasks executable now or explicitly linked to a downstream lesson.
-- Variable naming consistent and traceable across lessons; new variable names follow the resolved output language and are composed of letters, numbers, and underscores.
+- Variable naming consistent and traceable across lessons; new variable names follow `resolved_target_language` and are composed of letters, numbers, and underscores.
 - Carryover statements only where cross-lesson dependency is allowed.
 - Lesson structure follows the content, not a forced uniform template that erases lesson specificity.
 
@@ -88,7 +116,7 @@ Optimization 全面审计清单。Optimization 必须逐项检查可观察结果
 ## Course Prompt
 
 - A `course_prompt` artifact is produced when input includes course material.
-- All six required canonical sections are present in order, with headings rendered in the resolved output language: Role, Task, Teaching Techniques, Writing Style, Format, and Slides.
+- All six required canonical sections are present in order, with both headings and every section's instruction text rendered in `resolved_target_language`: Role, Task, Teaching Techniques, Writing Style, Format, and Slides.
 - No `XXX` placeholder remains; every non-placeholder instruction from `course-prompt.md#fillable-template` is represented.
 - The completed artifact passes `course-prompt.md#materialization-checks` and respects `prompt-contracts.md#artifact-responsibilities`.
 - The Teaching Techniques and Slides sections preserve the template's deference to the current Teaching Prompt without introducing competing lesson pedagogy.

@@ -23,6 +23,5 @@ Use these optional controls across authoring phases:
 - `course_profile` (json): audience and pedagogical parameters.
 - `delivery_constraints` (json): platform limits, topic policy, and non-negotiable fragments.
 - `interaction_policy` (json): normalized Course Design Intake result with `mode` and selected `purposes`; see `data-contracts.md#interaction-policy`.
-- `target_language` (BCP-47 string): explicit output language; apply the global resolution rules in `session-controls.md#output-language`.
 
 Field-level schemas and example JSON: `data-contracts.md#recommended-object-shapes`.

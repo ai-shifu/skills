@@ -764,7 +764,6 @@ def validate_course_prompt_example(
     prompt_template_lines: list[str],
     md_file: Path,
     issues: IssueBag,
-    is_localized: bool = False,
 ) -> None:
     if "XXX" in prompt:
         issues.add_error(
@@ -804,7 +803,7 @@ def validate_course_prompt_example(
                 f"{md_file}: Course Prompt example headings are out of order; "
                 f"expected: {', '.join(english_headings)}"
             )
-        elif english_headings and not is_localized:
+        elif english_headings:
             missing_headings = sorted(english_heading_set - heading_set)
             unexpected_headings = sorted(heading_set - english_heading_set)
             issues.add_error(
@@ -812,9 +811,6 @@ def validate_course_prompt_example(
                 f"the template; missing: {', '.join(missing_headings) or 'none'}; "
                 f"unexpected: {', '.join(unexpected_headings) or 'none'}"
             )
-        # Localized examples cannot be compared to English instructions by exact
-        # text. Their six-section shape and resolved placeholders are still
-        # validated above; semantic localization remains a human review concern.
         return
 
     for required_line in prompt_template_lines:
@@ -870,7 +866,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             payload_offsets.append(match.start())
 
         source_candidates: dict[str, list[tuple[int, str]]] = {}
-        target_language_candidates: list[tuple[int, str]] = []
         interaction_mode_candidates: list[tuple[int, str | None]] = []
         for payload_index, payload in enumerate(parsed_payloads):
             if isinstance(payload, dict):
@@ -879,8 +874,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                         source_candidates.setdefault(key, []).append(
                             (payload_index, value)
                         )
-                    if key == "target_language" and isinstance(value, str):
-                        target_language_candidates.append((payload_index, value))
                     if key == "interaction_policy":
                         interaction_mode_candidates.append(
                             (
@@ -894,17 +887,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
         for payload_index, payload in enumerate(parsed_payloads):
             source_texts = source_texts_for_payload(
                 payload_index, source_candidates
-            )
-            target_language = source_texts_for_payload(
-                payload_index,
-                (
-                    {"target_language": target_language_candidates}
-                    if target_language_candidates
-                    else {}
-                ),
-            ).get("target_language")
-            is_localized = bool(target_language) and not (
-                target_language.lower().startswith("en")
             )
             interaction_mode = interaction_mode_at_offset(
                 interaction_mode_candidates,
@@ -1021,7 +1003,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                             prompt_template_lines,
                             md_file,
                             issues,
-                            is_localized=is_localized,
                         )
                     else:
                         issues.add_error(
@@ -1057,10 +1038,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                     issues,
                 )
 
-        artifact_is_localized = bool(target_language_candidates) and all(
-            not language.lower().startswith("en")
-            for _, language in target_language_candidates
-        )
         for match in course_prompt_artifact_matches:
             interaction_mode = interaction_mode_at_offset(
                 interaction_mode_candidates,
@@ -1075,7 +1052,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                 prompt_template_lines,
                 md_file,
                 issues,
-                is_localized=artifact_is_localized,
             )
 
 

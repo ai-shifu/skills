@@ -20,11 +20,13 @@ Produce stable lesson-oriented semantic segments from noisy source material whil
 
 #### Failure Handling
 
-If structure is weak, output a fallback segmentation, mark uncertain spans, and provide focused rerun hints using the fields in [data-contracts.md#segmentation-fallback-fields](data-contracts.md#segmentation-fallback-fields).
+If structure is weak, output a fallback segmentation, mark uncertain spans, and provide focused rerun hints in `resolved_target_language` using the fields in [data-contracts.md#segmentation-fallback-fields](data-contracts.md#segmentation-fallback-fields).
 
 ### Outputs
 
 Produce a segment list that conforms to [data-contracts.md#segment-schema](data-contracts.md#segment-schema), including its canonical [segment types](data-contracts.md#segment-types) and [transfer signals](data-contracts.md#transfer-signals), plus lesson boundary candidates with one core question each.
+
+Write `core_point`, human-readable `transfer_signals` values, and each lesson-boundary `core_question` in `resolved_target_language`. Keep segment ids, enum values, source ids and offsets, code, URLs, and exact source quotations unchanged.
 
 ### Validation
 
@@ -68,13 +70,13 @@ Under fallback mode (see `authoring-controls.md#execution-modes`), Orchestration
 
 - Delivers coarse lesson drafts first; continues with best-effort generation instead of stopping.
 - Marks uncertain spans explicitly on `course_index` entries.
-- Emits a `rerun_plan` listing lessons that need recompute and why.
+- Emits a `rerun_plan` listing lessons that need recompute and gives its human-readable `reason` in `resolved_target_language`.
 
 Fallback field shapes per `data-contracts.md#fallback-output-extensions`.
 
 ### Outputs
 
-See `data-contracts.md#output-contract` for the Teaching Prompts, course index, and global variable table schemas.
+See `data-contracts.md#output-contract` for the Teaching Prompts, course index, and global variable table schemas. Write `course_index[].lesson_title` and `course_index[].core_question` in `resolved_target_language`; keep lesson ids and source-span references stable.
 
 ### Validation
 

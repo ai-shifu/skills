@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -112,7 +113,10 @@ class CourseCreatorRouterTests(unittest.TestCase):
         session = (
             SKILL_ROOT / "references" / "session-controls.md"
         ).read_text(encoding="utf-8")
-        self.assertIn("## Output Language", session)
+        self.assertNotIn("## Output " + "Language", session)
+        self.assertIn("## Progress, Errors, and Handoffs", session)
+        self.assertIn("references/data-contracts.md#language-resolution", self.router)
+        self.assertIn("resolve `resolved_target_language`", self.router)
         self.assertIn("before the first user-visible response", self.router)
         self.assertIn("## Reporting", self.router)
         self.assertIn("#deployment-report", self.router)
@@ -120,6 +124,192 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn(
             "When fallback mode applies, also read",
             self.router,
+        )
+
+    def test_resolved_language_identifiers_are_single_sourced(self):
+        data_contracts = (
+            SKILL_ROOT / "references" / "data-contracts.md"
+        ).read_text(encoding="utf-8")
+        session_controls = (
+            SKILL_ROOT / "references" / "session-controls.md"
+        ).read_text(encoding="utf-8")
+        language_resolution = data_contracts.split(
+            "## Language Resolution", 1
+        )[1].split("## Fallback Output Extensions", 1)[0]
+        priority = language_resolution.split("### Priority Order", 1)[1]
+        priority_items = [
+            line
+            for line in priority.splitlines()
+            if line.startswith(("1. ", "2. ", "3. ", "4. ", "5. ", "6. "))
+        ]
+        priority_identifiers = [
+            line.split("`", 2)[1] for line in priority_items
+        ]
+        self.assertEqual(
+            [
+                "context_language_directive",
+                "prompt_language_detection",
+            ],
+            priority_identifiers,
+        )
+        self.assertIn(
+            "any applicable context explicitly specifies a language",
+            priority,
+        )
+        self.assertIn(
+            "otherwise, the language detected from the current user prompt",
+            priority,
+        )
+        self.assertIn(
+            "`resolved_target_language` is a string",
+            data_contracts,
+        )
+        self.assertIn("`resolved_target_language`", data_contracts)
+        self.assertIn("`resolved_target_language`", session_controls)
+        self.assertNotIn("### Rules", language_resolution)
+        self.assertNotIn("Pre-Deploy Language Audit", language_resolution)
+        for identifier in priority_identifiers:
+            self.assertNotIn(f"`{identifier}`", session_controls)
+
+        skill_content = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in SKILL_ROOT.rglob("*.md")
+        ).casefold()
+        deprecated_aliases = (
+            "resolved " + "output language",
+            "resolved " + "target language",
+            "resolved " + "language",
+            "actual " + "output language",
+            "in the user's " + "language",
+            "reply in the user's " + "language",
+        )
+        for alias in deprecated_aliases:
+            self.assertNotIn(alias, skill_content)
+
+        template = (REPO_ROOT / "templates" / "skill.yaml.template").read_text(
+            encoding="utf-8"
+        )
+        template_language_resolution = template.split(
+            "language_resolution:", 1
+        )[1].split("inputs:", 1)[0]
+        template_priority_identifiers = re.findall(
+            r'^\s+-\s+"([^"]+)"$',
+            template_language_resolution,
+            re.MULTILINE,
+        )
+        self.assertEqual(
+            priority_identifiers,
+            template_priority_identifiers,
+        )
+        language_contract_surfaces = "\n".join(
+            (data_contracts, session_controls, template)
+        )
+        self.assertIsNone(
+            re.search(
+                r"\bbcp(?:[-_ ]?47)\b",
+                language_contract_surfaces,
+                re.IGNORECASE,
+            )
+        )
+        legacy_table_headers = (
+            "en-" + "US",
+            "zh-" + "CN",
+            "fr-" + "FR",
+        )
+        for header in legacy_table_headers:
+            self.assertNotIn(header, session_controls)
+
+    def test_language_constraints_are_owned_by_concrete_scenarios(self):
+        references = SKILL_ROOT / "references"
+        scenario_expectations = {
+            "session-controls.md": (
+                "Support & Contact",
+                "Version Check",
+                "Progress, Errors, and Handoffs",
+                "resolved_target_language",
+            ),
+            "authentication.md": (
+                "SMS-code prompts",
+                "resolved_target_language",
+            ),
+            "course-target.md": (
+                "new-versus-existing choice questions",
+                "resolved_target_language",
+            ),
+            "authoring-intake.md": (
+                "Course Design Intake",
+                "resolved_target_language",
+            ),
+            "segmentation-orchestration.md": (
+                "core_point",
+                "transfer_signals",
+                "rerun_plan",
+                "resolved_target_language",
+            ),
+            "generation-workflow.md": (
+                "lesson_teaching_prompts[].teaching_prompt",
+                "assumptions[]",
+                "newly authored alt text",
+                "resolved_target_language",
+            ),
+            "optimization-workflow.md": (
+                "Course Description and Review Outputs",
+                "change_list[].change",
+                "resolved_target_language",
+            ),
+            "report-template.md": (
+                "Report language",
+                "purpose label in resolved_target_language",
+            ),
+            "analytics/privacy-and-presentation.md": (
+                "Answer Structure",
+                "drill-down offers",
+                "resolved_target_language",
+            ),
+            "cli/course-directory-spec.md": (
+                "README.md",
+                "chapters[].title",
+                "resolved_target_language",
+            ),
+        }
+        for relative_path, expected_phrases in scenario_expectations.items():
+            content = (references / relative_path).read_text(encoding="utf-8")
+            for phrase in expected_phrases:
+                with self.subTest(path=relative_path, phrase=phrase):
+                    self.assertIn(phrase, content)
+
+        review = (references / "review-checklist.md").read_text(
+            encoding="utf-8"
+        )
+        language_audit = review.split("## Language Audit", 1)[1].split(
+            "## Structure Separation", 1
+        )[0]
+        checked_outputs = (
+            "segments[].core_point",
+            "course_index[].lesson_title",
+            "course_index[].core_question",
+            "lesson_teaching_prompts[].lesson_title",
+            "lesson_teaching_prompts[].teaching_prompt",
+            "global_variable_table[].name",
+            "course_prompt",
+            "course_description",
+            "README.md",
+            "course-description.md",
+            "structure.json.chapters[].title",
+            "course-prompt.md",
+            "lessons/lesson-*.md",
+            "shifu.title",
+            "shifu.description",
+            "shifu.course_prompt",
+            "outline_items[].title",
+            "outline_items[].content",
+        )
+        for output in checked_outputs:
+            with self.subTest(output=output):
+                self.assertIn(output, language_audit)
+        self.assertNotIn(
+            "Generated course artifacts and learner-facing passages",
+            language_audit,
         )
 
     def test_safe_deployment_branches_new_and_existing_targets(self):

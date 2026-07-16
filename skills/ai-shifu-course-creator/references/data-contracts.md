@@ -1,6 +1,6 @@
 # Data Contracts
 
-Authoritative source for all schemas crossing the skill boundary: what comes in (input), what goes out (output), how output target language is resolved, and the per-lesson and per-variable shapes.
+Authoritative source for all schemas crossing the skill boundary: what comes in (input), what goes out (output), how `resolved_target_language` is derived, and the per-lesson and per-variable shapes.
 
 ## Input Contract
 
@@ -23,7 +23,6 @@ Provide one of:
 - `course_profile` object.
 - `delivery_constraints` object.
 - `interaction_policy` object: normalized Course Design Intake result; see [Interaction Policy](#interaction-policy).
-- `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`).
 
 ### Recommended Object Shapes
 
@@ -75,8 +74,6 @@ The teaching effects, purpose placements, and non-interactive substitutions are 
 
 - Input files must be readable text or markdown.
 - If multiple files are provided, ordering must be explicit.
-- Source language and expected output language should be specified when multilingual content exists.
-- Explicit output language requests must not be overridden by source-language mixes (see [Language Resolution](#language-resolution)).
 - `interaction_policy` must satisfy the mode/purpose invariants above before Generation or Optimization applies pedagogical gates.
 
 ## Output Contract
@@ -94,17 +91,17 @@ The teaching effects, purpose placements, and non-interactive substitutions are 
 Each item:
 
 - `lesson_id` (string, required)
-- `lesson_title` (string, required)
-- `core_question` (string, required)
+- `lesson_title` (string, required) — learner-facing title written in `resolved_target_language`.
+- `core_question` (string, required) — human-readable lesson question written in `resolved_target_language`.
 - `source_span_map` (array of `{source_id, start, end}`, required)
 
 ### `course_prompt` (string, required)
 
-Required for full-course authoring.
+Required for full-course authoring. Its six section headings, fill values, and instruction text use `resolved_target_language`; exact source quotations, code, URLs, and stable MarkdownFlow syntax remain unchanged.
 
 ### `course_description` (string, required)
 
-Required for full-course authoring. Write it to `course-description.md`; its directory contract and build mapping are defined in [course-directory-spec.md](cli/course-directory-spec.md#course-descriptionmd).
+Required for full-course authoring. Write the learner-facing description in `resolved_target_language` to `course-description.md`; its directory contract and build mapping are defined in [course-directory-spec.md](cli/course-directory-spec.md#course-descriptionmd).
 
 ## Segment Schema
 
@@ -112,7 +109,7 @@ Each item in the Segmentation output (consumed by Orchestration and Generation):
 
 - `segment_id` (string, required) — stable identifier within the run.
 - `segment_type` (string enum, required) — must satisfy [Segment Types](#segment-types).
-- `core_point` (string, required) — the single teachable point this segment carries.
+- `core_point` (string, required) — the single teachable point this segment carries, written in `resolved_target_language`.
 - `preserve_block` (boolean, required) — `true` when the source span is selected as immutable by [optimization-workflow.md#preservation-decisions](optimization-workflow.md#preservation-decisions). The field records the decision; downstream MarkdownFlow behavior is defined in [markdownflow.md#preservation](markdownflow.md#preservation).
 - `source_span` (object, required) — traceable source location with `source_id`
   (string), `start` (non-negative integer, inclusive character offset), and `end`
@@ -135,7 +132,7 @@ Each item in the Segmentation output (consumed by Orchestration and Generation):
 
 ### Transfer Signals
 
-`transfer_signals` must be non-empty. Include every applicable canonical key, omit inapplicable keys rather than inventing content, and give every included key a non-empty, concise string value.
+`transfer_signals` must be non-empty. Include every applicable canonical key, omit inapplicable keys rather than inventing content, and give every included key a non-empty, concise string value in `resolved_target_language`. Preserve an exact source quotation or other immutable source span when the signal intentionally carries it verbatim.
 
 | Key | Meaning |
 |---|---|
@@ -157,7 +154,7 @@ For segmentation rules and methodology, see [segmentation-orchestration.md#segme
 
 `global_variable_table` is an array. Each item:
 
-- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; new variable names use the resolved output language and are composed of letters, numbers, and underscores.
+- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; new variable names use `resolved_target_language` and are composed of letters, numbers, and underscores.
 - `collected_in` (string, required) — `lesson_id` where the variable is first collected.
 - `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when `course-prompt.md` references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
 - `effect_scope` (string constant: `cross_lesson`, required).
@@ -169,48 +166,21 @@ Only named variables belong in `global_variable_table`; no-variable `?[...]` int
 Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 
 - `lesson_id` (string, required) — stable, deterministic identifier.
-- `lesson_title` (string, required) — concise learner-facing title. Chapter titles, lesson titles, numbering, hierarchy labels, and ordering markers belong in `course_index` / `structure.json`; do not duplicate them in the Teaching Prompt body.
-- `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content (written in MarkdownFlow); apply [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics).
+- `lesson_title` (string, required) — concise learner-facing title written in `resolved_target_language`. Chapter titles, lesson titles, numbering, hierarchy labels, and ordering markers belong in `course_index` / `structure.json`; do not duplicate them in the Teaching Prompt body.
+- `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content, with authored natural-language instructions and learner-facing text written in `resolved_target_language` and MarkdownFlow syntax kept stable; apply [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics).
 - `used_variables` (array of strings, required) — every named variable referenced or collected in this lesson; no-variable interactions are excluded. Cross-check with [Variable Table](#variable-table): each item here must have a matching `global_variable_table` entry, and that entry's `used_in` list must include this lesson when the variable is referenced outside the interaction line. If the Course Prompt references the same variable, `used_in` must also include `course_prompt`.
 - `depends_on_lessons` (array of lesson ids, required) — explicit list; empty list if none.
 
 ## Language Resolution
 
+`resolved_target_language` is a string derived for the current request; it is not an input field or an output artifact field. All downstream references to the selected language use `resolved_target_language`.
+
 ### Priority Order
 
-Resolve target language with this strict priority:
+Determine `resolved_target_language` with these two rules:
 
-1. `explicit_output_language_request` — language explicitly stated in the current user prompt.
-2. `target_language_parameter` — `target_language` field supplied in the input payload (BCP-47 recommended).
-3. `prior_context_language_directive` — language requirement declared **outside** the current prompt but visible to the skill: project/system instructions (e.g. `CLAUDE.md`), earlier turns of the same conversation, or directives injected by the calling agent. The skill cannot read external platform/account locale settings, so only in-context directives count here.
-4. `prompt_language_detection` — language detected from the wording of the current user prompt itself.
-5. `source_material_dominant_language` — the dominant language of the supplied course material.
-6. `default_fallback_language` — `zh-CN`.
-
-### Control Fields
-
-- `target_language` (BCP-47 recommended, for example `fr-FR`, `ja-JP`, `zh-CN`)
-
-### Rules
-
-- Do not restrict supported languages to a fixed list.
-- If output language is explicit, source-language distribution must not override it.
-- Learner-facing course content generated from Teaching Prompts must follow the resolved target language.
-- Newly authored MarkdownFlow variable names must follow the resolved output language within the valid variable-character set. Preserve existing or source-provided variable names when renaming would break an existing variable contract.
-- User-visible agent output must follow the resolved target language: chat replies, phase summaries, reports, headings, artifact labels, review notes, handoff instructions, and error explanations.
-- Human-facing labels for skill concepts must follow the canonical terms in [session-controls.md#canonical-term-translation-table](session-controls.md#canonical-term-translation-table) when the resolved target language is listed there; do not keep English labels merely because the skill docs and examples are written in English.
-- Stable machine-facing identifiers and verbatim source material remain unchanged even when the surrounding prose is localized: JSON keys (`course_index`, `global_variable_table`, `lesson_id`, `lesson_title`, `lesson_teaching_prompts`, `teaching_prompt`, `course_prompt`, `course_description`), file names (`course-description.md`, `course-prompt.md`, `structure.json`), CLI commands and flags, API fields, code symbols, MarkdownFlow syntax, URLs, code samples, and quoted source text or direct quotations that must be preserved verbatim.
-
-### Pre-Deploy Language Audit
-
-Before finalizing or deploying a generated course directory, audit all build-consumed user-visible artifacts and effective build metadata, so template headings or directive phrases from a different language do not remain after target-language rendering:
-
-- Resolved course title (`--title`, `README.md` first heading, or directory-name fallback).
-- Resolved course description (`--description` or `course-description.md`).
-- Resolved chapter titles (`structure.json`, `--chapter-name`, or course-title fallback).
-- Learner-facing lesson title fields in `structure.json`.
-- `course-prompt.md`.
-- Every lesson file referenced by `structure.json` (or every auto-discovered `lessons/lesson-*.md` file when `structure.json` is absent).
+1. `context_language_directive` — any applicable context explicitly specifies a language, including the current prompt, project or system instructions, earlier conversation turns, and directives from the calling agent.
+2. `prompt_language_detection` — otherwise, the language detected from the current user prompt.
 
 ## Fallback Output Extensions
 
@@ -224,7 +194,7 @@ Per-segment (extends [Segment Schema](#segment-schema)):
 
 Top-level addition to the Segmentation output:
 
-- `rerun_hints` (array of strings) — user-facing prompts describing what authoritative input would resolve the uncertainty.
+- `rerun_hints` (array of strings) — user-facing prompts in `resolved_target_language` describing what authoritative input would resolve the uncertainty.
 
 ### Orchestration fallback fields
 
@@ -236,15 +206,15 @@ Top-level addition:
 
 - `rerun_plan` (object, required when any lesson is uncertain):
   - `lessons_to_rerun` (array of lesson ids).
-  - `reason` (string) — why the rerun is needed.
+  - `reason` (string) — why the rerun is needed, written in `resolved_target_language`.
 
 ### Generation fallback fields
 
 Per-lesson (extends [Lesson Schema](#lesson-schema)):
 
 - `fallback_mode` (boolean) — `true` when this lesson was generated under fallback.
-- `assumptions` (array of strings) — assumptions made due to incomplete input.
-- `upgrade_notes` (array of strings) — what additional input would upgrade this lesson.
+- `assumptions` (array of strings) — assumptions made due to incomplete input, written in `resolved_target_language`.
+- `upgrade_notes` (array of strings) — what additional input would upgrade this lesson, written in `resolved_target_language`.
 
 ### Optimization fallback fields
 
@@ -254,6 +224,6 @@ Inside `risk_and_issue_report`:
 
 Top-level addition:
 
-- `follow_up` (array of strings) — required inputs to complete a full-coverage audit.
+- `follow_up` (array of strings) — required inputs in `resolved_target_language` to complete a full-coverage audit.
 
 For the four end-to-end fallback scenarios, see `examples/fallback-mode.md`.

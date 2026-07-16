@@ -10,7 +10,7 @@ statistics requests.
 
 Before asking anything, extract answers already present in the user's current
 instruction, source material, or pulled course directory. Ask only for missing
-items, in the user's language, as a step-by-step choice flow — ask the
+items, in `resolved_target_language`, as a step-by-step choice flow — ask the
 usage-scenario question first, show its options, wait for the answer, then ask
 only the next still-missing applicable question. Do not offer "you can let me
 decide" or similar bypass wording before the required choice flow is complete.

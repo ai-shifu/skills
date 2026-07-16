@@ -11,11 +11,11 @@ Use this file to materialize one course-wide artifact from the six-section templ
 
 ## Authoring Workflow
 
-1. Resolve the output language using [data-contracts.md#language-resolution](data-contracts.md#language-resolution).
+1. Resolve `resolved_target_language` using [data-contracts.md#language-resolution](data-contracts.md#language-resolution).
 2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
 3. Replace every `XXX` from [Placeholder Sources and Context](#placeholder-sources-and-context). Use already-collected artifacts and apply the listed context constraints to the fill values.
-4. Render section headings and body text in the resolved output language. The English template is canonical structure, not a language default.
-5. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in the resolved language.
+4. Render section headings and body text in `resolved_target_language`. The English template is canonical structure, not a language default.
+5. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in `resolved_target_language`.
 6. Run the [Materialization Checks](#materialization-checks).
 
 ## Fillable Template
@@ -81,7 +81,7 @@ Use these inputs as context constraints while wording the five fill values; they
 
 ## Materialization Checks
 
-- The six template sections are present in their original order and localized to the resolved output language.
+- The six template sections are present in their original order and localized to `resolved_target_language`.
 - All five `XXX` occurrences are replaced with course-specific content derived from the mapped sources.
 - Every non-placeholder template instruction remains represented with the same behavior.
 - The fill values satisfy the learner-profile, topic-scope, and delivery-mode context constraints above.

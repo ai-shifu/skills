@@ -341,6 +341,36 @@ class AnchorValidationTests(unittest.TestCase):
             self.assertIn("target file not found", issues.errors[0])
 
 
+class CoursePromptExampleValidationTests(unittest.TestCase):
+    def test_noncanonical_headings_cannot_bypass_template_validation(self):
+        prompt = "\n\n".join(
+            f"# 非规范标题 {index}\n内容 {index}" for index in range(1, 7)
+        )
+        template_lines = [
+            "# Role",
+            "# Task",
+            "# Teaching Techniques",
+            "# Writing Style",
+            "# Format",
+            "# Slides",
+        ]
+        issues = validate_skill_quality.IssueBag()
+
+        validate_skill_quality.validate_course_prompt_example(
+            prompt,
+            template_lines,
+            Path("example.md"),
+            issues,
+        )
+
+        self.assertTrue(
+            any(
+                "headings do not match the template" in error
+                for error in issues.errors
+            )
+        )
+
+
 class InteractionPolicyValidationTests(unittest.TestCase):
     def test_enabled_policy_requires_a_canonical_purpose(self):
         issues = validate_skill_quality.IssueBag()
@@ -1211,8 +1241,7 @@ class PedagogyContractTests(unittest.TestCase):
 
     def test_preservation_and_language_gates_run_before_content_shipping(self):
         self.assertIn(
-            "[Pre-Deploy Language Audit]"
-            "(data-contracts.md#pre-deploy-language-audit)",
+            "[Language Audit](review-checklist.md#language-audit)",
             self.deployment_workflow,
         )
         self.assertIn(
@@ -1625,6 +1654,7 @@ class PedagogyContractTests(unittest.TestCase):
         scan_roots = [
             COURSE_CREATOR_REFERENCES.parent,
             REPO_ROOT / "scripts",
+            REPO_ROOT / "templates",
             REPO_ROOT / "tests",
         ]
         removed_terms = {
@@ -1633,7 +1663,25 @@ class PedagogyContractTests(unittest.TestCase):
             "interaction-" + "density",
             "互动" + "密度",
             "交互" + "密度",
+            "source_material_" + "dominant_language",
+            "default_fallback_" + "language",
+            "target_language_" + "parameter",
+            "session_" + "language_preference",
+            "explicit_output_language_" + "request",
+            "prior_context_language_" + "directive",
+            "allow_any_" + "language",
+            "bcp" + "47",
+            "bcp-" + "47",
+            "pre-deploy-language-" + "audit",
+            "## User-Visible " + "Language",
+            "## Output " + "Language",
         }
+        removed_input_identifier = "target_" + "language"
+        removed_input_pattern = re.compile(
+            rf"(?<![A-Za-z0-9_]){re.escape(removed_input_identifier)}"
+            r"(?![A-Za-z0-9_])",
+            re.IGNORECASE,
+        )
         matches = []
 
         for root in scan_roots:
@@ -1652,6 +1700,13 @@ class PedagogyContractTests(unittest.TestCase):
                         matches.append(
                             (str(path.relative_to(REPO_ROOT)), term)
                         )
+                if removed_input_pattern.search(content):
+                    matches.append(
+                        (
+                            str(path.relative_to(REPO_ROOT)),
+                            removed_input_identifier,
+                        )
+                    )
 
         self.assertEqual(matches, [])
 

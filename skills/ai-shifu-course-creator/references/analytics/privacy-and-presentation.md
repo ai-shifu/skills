@@ -115,6 +115,8 @@ Pass every result through these checks before showing it to the user:
 
 ## Answer Structure
 
+Write answer headings, narrative findings, interpretations, refusals, and drill-down offers in `resolved_target_language`. Keep table names, JSON/DSL fields, commands, raw enum codes, and ids as internal control data; present their translated human meaning according to the gate above.
+
 1. **Numbers + plain language**: express results in ordinary language; all codes and IDs are already translated.
 2. **One-line interpretation**: avoid raw data dumps — add a brief "what this means" judgement.
 3. **Proactive drill-down offer**: based on the current result, suggest 1–2 follow-up questions the user might want to explore.

@@ -66,11 +66,17 @@ Other instructional interactions satisfy their effect requirement through immedi
 
 ### Course Prompt
 
-Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **copying and filling `course-prompt.md#fillable-template`, not by free-form composition**. Preserve the six sections, their order, and every non-placeholder instruction; replace every `XXX` with course-specific content and render the result in the resolved output language.
+Optimization also produces a course-level `course_prompt` artifact when input includes course material. Generate it by **copying and filling `course-prompt.md#fillable-template`, not by free-form composition**. Preserve the six sections, their order, and every non-placeholder instruction; replace every `XXX` with course-specific content and render the result in `resolved_target_language`.
 
 Load and apply `prompt-contracts.md#artifact-responsibilities` before materializing the Course Prompt; Optimization does not reinterpret that boundary.
 
-Resolve every placeholder and fill-value context strictly from [course-prompt.md#placeholder-sources-and-context](course-prompt.md#placeholder-sources-and-context); do not reconstruct or duplicate that source mapping here. Supply the artifacts and Course Design Intake controls named there, the resolved target language from [data-contracts.md#language-resolution](data-contracts.md#language-resolution), and relevant [Segmentation transfer signals](data-contracts.md#transfer-signals). Do not invent a fill value when its mapped source is unavailable; specifically, if `course_author_name` is missing, ask the author for their real name.
+Resolve every placeholder and fill-value context strictly from [course-prompt.md#placeholder-sources-and-context](course-prompt.md#placeholder-sources-and-context); do not reconstruct or duplicate that source mapping here. Supply the artifacts and Course Design Intake controls named there, `resolved_target_language` from [data-contracts.md#language-resolution](data-contracts.md#language-resolution), and relevant [Segmentation transfer signals](data-contracts.md#transfer-signals). Do not invent a fill value when its mapped source is unavailable; specifically, if `course_author_name` is missing, ask the author for their real name.
+
+### Course Description and Review Outputs
+
+Write the complete learner-facing `course_description` in `resolved_target_language`; keep author-side workflow notes out of it.
+
+Write human-readable findings in `risk_and_issue_report`, each `change_list[].change`, and fallback `follow_up[]` entries in `resolved_target_language`. Keep JSON keys, issue and risk enums, ids, file paths, MarkdownFlow syntax, code, URLs, and required verbatim source text unchanged.
 
 ### Validation
 
@@ -79,3 +85,4 @@ Resolve every placeholder and fill-value context strictly from [course-prompt.md
 - Coverage, meaning, information density, and immutable source content remain intact; every broader rewrite is scoped, justified, and revalidated.
 - A `course_prompt` artifact is produced when input includes course material, with all six required canonical sections present.
 - Generated `course_prompt` has no unresolved `XXX`, retains every non-placeholder template instruction, and applies delivery-mode behavior consistent with the Course Design Intake.
+- `course_description`, human-readable review findings, change descriptions, and fallback follow-up entries pass [Course Description and Review Outputs](#course-description-and-review-outputs).
