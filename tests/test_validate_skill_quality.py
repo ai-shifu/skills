@@ -624,6 +624,10 @@ class PedagogyContractTests(unittest.TestCase):
         cls.reference_anchors_by_path = {
             path: validate_skill_quality.github_heading_slugs(path)
             for path in sorted(COURSE_CREATOR_REFERENCES.rglob("*.md"))
+            if all(
+                not part.startswith(".")
+                for part in path.relative_to(COURSE_CREATOR_REFERENCES).parts
+            )
         }
 
     def test_reference_anchors_match_authority_boundaries(self):
