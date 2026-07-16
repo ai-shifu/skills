@@ -4,6 +4,8 @@
 
 This workflow is mandatory before course creation, course-content editing, or deploy-only work. Read and complete `authentication.md` first.
 
+Write course-match summaries, new-versus-existing choice questions, ambiguous-match choices, and no-match explanations in `resolved_target_language`. Preserve course titles, Shifu BIDs, directory paths, and CLI commands verbatim.
+
 **This runs first for every course-creation or editing request — before
 Orchestration, before proposing any course architecture/outline, before writing a
 single lesson.** The AI-Shifu platform DB is the single source of truth; you must

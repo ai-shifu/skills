@@ -60,6 +60,8 @@ Field reference:
 
 `assets/raw/` is a recommendation, not enforced: store originals there so the manifest's `local` paths are stable across machines. The `build` command ignores `assets/` entirely.
 
+When Generation authors a new `images[].alt` value that will be embedded in a Teaching Prompt, write it in `resolved_target_language`. Preserve a source-provided alt selected as immutable; the other manifest bookkeeping fields are not localized.
+
 ## .shifu-sync.json
 
 Auto-maintained by `pull` and the version-aware write commands
@@ -92,16 +94,22 @@ concurrent edit. `content_sha256` lets `status` tell whether the local file was
 edited since the last sync. See
 `cli-reference.md#version-sync-pull--status` for the workflow.
 
+## README.md
+
+The first Markdown heading is the course-title source when `--title` is absent. When the skill creates or edits that heading, write the title in `resolved_target_language`. Other README content is not consumed by `build` as course metadata.
+
 ## Lesson Files
 
 When `structure.json` is not present, `build` auto-discovers only `lesson-*.md` files (e.g., `lesson-01.md`, `lesson-02.md`) and ignores other filenames. When `structure.json` is present, lesson files are taken from `chapters[].lessons[].file` and any filename is accepted as long as it exists.
+
+For every generated or edited lesson file, write authored Teaching Prompt instructions and learner-facing text in `resolved_target_language`. Preserve MarkdownFlow syntax, code, URLs, existing variable names, and required verbatim source text.
 
 ## course-description.md
 
 Contains the learner-facing SEO/listing description for the course. Path A and
 Author Only outputs must generate this file from the course topic, target
 learners, and concrete learning outcomes; do not include author-side workflow
-notes.
+notes. Write its complete learner-facing content in `resolved_target_language`.
 
 The `build` and `import --course-dir` commands map this file to
 `shifu.description` in `shifu-import.json`, which the CLI sends to the platform
@@ -122,6 +130,8 @@ successful platform update.
 
 Defines the AI engine's course-wide role and presentation style. Teaching methods and interaction rules remain in the per-lesson Teaching Prompts; the Course Prompt follows them without replacing their pedagogy. The `build` command reads this file and populates `shifu.course_prompt` in the import JSON automatically (which the CLI maps to the platform API field `system_prompt` on import).
 
+Write the six section headings, fill values, and instruction text in `resolved_target_language`; preserve stable syntax, URLs, code, and required verbatim source text.
+
 Authoring rules and a fillable template live in `../course-prompt.md`.
 
 Course Prompt content follows the HTML-comment behavior defined in `../markdownflow.md#preprocessing`; comments do not provide runtime instructions to the LLM.
@@ -131,6 +141,8 @@ Course Prompt content follows the HTML-comment behavior defined in `../markdownf
 Defines multi-chapter course structure. If this file exists, `build` uses it to organize lessons into chapters; otherwise all lessons are placed under a single auto-generated chapter.
 
 Use `structure.json` as the metadata outlet for chapter and lesson titles. Do not duplicate these titles as opening Markdown headings inside the lesson files unless the course explicitly needs visible headings and rendering support has been confirmed.
+
+Write `chapters[].title` and `chapters[].lessons[].title` in `resolved_target_language`. Keep JSON keys, lesson filenames, access values, booleans, and ids unchanged.
 
 Schema:
 

@@ -13,11 +13,12 @@ Route each request to the smallest complete instruction set needed to create, ed
 
 On the first invocation in a session:
 
-1. Read `references/session-controls.md` completely before the first user-visible response.
-2. Apply its contact, version-check, output-language, and terminology rules.
-3. Classify the request with the routing table below.
-4. Read every file listed for the selected route, in order, before acting. Do not load unrelated route guides.
-5. For mixed requests, combine the relevant rows and preserve their dependency order.
+1. Read `references/data-contracts.md#language-resolution` and resolve `resolved_target_language` before the first user-visible response.
+2. Read `references/session-controls.md` completely before the first user-visible response.
+3. Apply its contact, version-check, progress/error/handoff, and terminology rules.
+4. Classify the request with the routing table below.
+5. Read every file listed for the selected route, in order, before acting. Do not load unrelated route guides.
+6. For mixed requests, combine the relevant rows and preserve their dependency order.
 
 ## Task Router
 
@@ -59,7 +60,7 @@ Apply `references/report-template.md#formatting-rules` to every user-facing phas
 
 ### Shared and route guides
 
-- `references/session-controls.md` — first-turn contact, update check, global output language, and canonical terminology.
+- `references/session-controls.md` — first-turn contact, update check, progress/error/handoff messages, and canonical terminology.
 - `references/authentication.md` — verify-first login and SMS-quota protection.
 - `references/course-target.md` — mandatory new-vs-existing resolution.
 - `references/authoring-controls.md` — execution modes and shared authoring control inputs.

@@ -22,25 +22,14 @@ target_users:
   - "Learning workflow engineer"
 primary_problem: "The core problem this skill solves."
 language_resolution:
-  allow_any_language: true
-  bcp47_recommended: true
   priority:
-    - "explicit_output_language_request"
-    - "target_language_parameter"
-    - "session_language_preference"
+    - "context_language_directive"
     - "prompt_language_detection"
-    - "source_material_dominant_language"
-    - "default_fallback_language"
-  default_fallback_language: "en-US"
 inputs:
   - name: "input_name"
     type: "text|markdown|json|file"
     required: true
     description: "Input description"
-  - name: "target_language"
-    type: "text"
-    required: false
-    description: "Requested output language tag (BCP-47 recommended)."
 outputs:
   - name: "output_name"
     type: "text|markdown|json|bundle"
