@@ -291,14 +291,17 @@ def github_heading_slugs(md_file: Path) -> set[str]:
     slug_counts: dict[str, int] = {}
     slugs: set[str] = set()
     in_fence = False
-    fence_marker = ""
+    fence_character = ""
+    fence_length = 0
     for line in md_file.read_text(encoding="utf-8").splitlines():
         fence = RE_COMMONMARK_FENCE.match(line)
         if fence:
-            marker = fence.group(1)[:3]
+            marker = fence.group(1)
             if not in_fence:
-                in_fence, fence_marker = True, marker
-            elif marker == fence_marker:
+                in_fence = True
+                fence_character = marker[0]
+                fence_length = len(marker)
+            elif marker[0] == fence_character and len(marker) >= fence_length:
                 in_fence = False
             continue
         if in_fence:

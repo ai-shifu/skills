@@ -206,6 +206,25 @@ class AnchorValidationTests(unittest.TestCase):
                 self.assertNotIn(f"hidden-at-{indentation}-spaces", slugs)
             self.assertIn("visible-after-four-space-pseudo-fence", slugs)
 
+    def test_heading_scan_requires_a_matching_fence_character_and_length(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            markdown_file = Path(tmpdir) / "headings.md"
+            markdown_file.write_text(
+                "````markdown\n"
+                "# Hidden before shorter fence\n"
+                "```\n"
+                "# Hidden after shorter fence\n"
+                "~~~~\n"
+                "# Hidden after different fence\n"
+                "````\n"
+                "# Visible after matching fence\n",
+                encoding="utf-8",
+            )
+
+            slugs = validate_skill_quality.github_heading_slugs(markdown_file)
+
+            self.assertEqual({"visible-after-matching-fence"}, slugs)
+
     def test_anchor_scan_recognizes_only_zero_to_three_space_fences(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = Path(tmpdir)
