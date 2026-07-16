@@ -63,7 +63,7 @@ Optimization also produces a course-level `course_prompt` artifact when input in
 
 Load and apply `prompt-contracts.md#artifact-responsibilities` before materializing the Course Prompt; Optimization does not reinterpret that boundary.
 
-Auto-fill placeholders from existing artifacts (`course_author_name`, `course_profile`, `delivery_constraints`, resolved target language per `data-contracts.md#language-resolution`, and relevant [Segmentation transfer signals](data-contracts.md#transfer-signals)). The Role must use the course author's real name; if `course_author_name` is missing, ask the author instead of inventing a persona.
+Resolve every placeholder and fill-value context strictly from [course-prompt.md#placeholder-sources-and-context](course-prompt.md#placeholder-sources-and-context); do not reconstruct or duplicate that source mapping here. Supply the artifacts and Course Design Intake controls named there, the resolved target language from [data-contracts.md#language-resolution](data-contracts.md#language-resolution), and relevant [Segmentation transfer signals](data-contracts.md#transfer-signals). Do not invent a fill value when its mapped source is unavailable; specifically, if `course_author_name` is missing, ask the author for their real name.
 
 ### Validation
 
