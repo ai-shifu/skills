@@ -621,6 +621,10 @@ class PedagogyContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         cls.data_contracts_path = COURSE_CREATOR_REFERENCES / "data-contracts.md"
         cls.data_contracts = cls.data_contracts_path.read_text(encoding="utf-8")
+        cls.reference_anchors_by_path = {
+            path: validate_skill_quality.github_heading_slugs(path)
+            for path in sorted(COURSE_CREATOR_REFERENCES.rglob("*.md"))
+        }
 
     def test_reference_anchors_match_authority_boundaries(self):
         expected_anchors_by_path = {
@@ -657,26 +661,45 @@ class PedagogyContractTests(unittest.TestCase):
         }
 
         for path, expected_anchors in expected_anchors_by_path.items():
-            actual_anchors = validate_skill_quality.github_heading_slugs(path)
+            actual_anchors = self.reference_anchors_by_path[path]
             self.assertTrue(
                 expected_anchors.issubset(actual_anchors),
                 f"missing authority anchors in {path}: "
                 f"{sorted(expected_anchors - actual_anchors)}",
             )
 
-        pedagogy_anchors = validate_skill_quality.github_heading_slugs(
-            self.pedagogy_path
-        )
-        self.assertTrue(
-            pedagogy_anchors.isdisjoint(
-                {
-                    "segmentation-methodology",
-                    "segment-types",
-                    "transfer-signals",
-                    "optimization-methodology",
-                }
-            )
-        )
+        exclusive_anchors_by_path = {
+            self.pedagogy_path: {
+                "pedagogy",
+                "interaction-policy-precedence",
+                "teaching-patterns",
+                "pattern-a-evidence-chain",
+                "pattern-b-misconception-repair",
+                "pattern-c-comparison-driven-learning",
+                "cognitive-techniques",
+                "interaction-design",
+                "variable-strategy",
+            },
+            self.segmentation_workflow_path: {"segmentation-methodology"},
+            self.data_contracts_path: {"segment-types", "transfer-signals"},
+            self.optimization_workflow_path: {
+                "optimization-methodology",
+                "content-fidelity-and-controlled-rewriting",
+                "issue-taxonomy",
+                "execution-sequence",
+            },
+        }
+
+        for owner_path, exclusive_anchors in exclusive_anchors_by_path.items():
+            for path, actual_anchors in self.reference_anchors_by_path.items():
+                if path == owner_path:
+                    continue
+                duplicated_anchors = exclusive_anchors.intersection(actual_anchors)
+                self.assertFalse(
+                    duplicated_anchors,
+                    f"authority anchors owned by {owner_path} also appear in "
+                    f"{path}: {sorted(duplicated_anchors)}",
+                )
 
     def test_prompt_semantics_are_centralized(self):
         semantics_section = markdown_section(
@@ -934,14 +957,35 @@ class PedagogyContractTests(unittest.TestCase):
     def test_reference_files_keep_single_responsibilities(self):
         authority = markdown_section(self.prompt_contracts, "Authority Index")
 
-        for moved_heading in (
-            "Scope and Authority Boundaries",
-            "Pipeline Methodologies",
-            "Segmentation Methodology",
-            "Transfer Signals",
-            "Optimization Methodology",
-        ):
-            self.assertNotIn(f"## {moved_heading}", self.pedagogy)
+        retired_anchors = {
+            "scope-and-authority-boundaries",
+            "pipeline-methodologies",
+        }
+        moved_anchor_owners = {
+            "segmentation-methodology": self.segmentation_workflow_path,
+            "segment-types": self.data_contracts_path,
+            "transfer-signals": self.data_contracts_path,
+            "optimization-methodology": self.optimization_workflow_path,
+        }
+
+        for path, actual_anchors in self.reference_anchors_by_path.items():
+            self.assertTrue(
+                retired_anchors.isdisjoint(actual_anchors),
+                f"retired responsibility headings reappeared in {path}: "
+                f"{sorted(retired_anchors.intersection(actual_anchors))}",
+            )
+
+        for anchor, owner_path in moved_anchor_owners.items():
+            unexpected_paths = [
+                path
+                for path, actual_anchors in self.reference_anchors_by_path.items()
+                if path != owner_path and anchor in actual_anchors
+            ]
+            self.assertEqual(
+                [],
+                unexpected_paths,
+                f"authority anchor {anchor!r} belongs only in {owner_path}",
+            )
 
         self.assertNotIn(
             "Teaching Prompt and Course Prompt Authoring Hard Rules",
