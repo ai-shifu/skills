@@ -23,6 +23,7 @@ RE_MD_ANCHOR_REF = re.compile(
     r"#(?P<anchor>[A-Za-z0-9][A-Za-z0-9-]*)"
 )
 RE_HEADING = re.compile(r"^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
+RE_COMMONMARK_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 RE_SLUG_STRIP = re.compile(r"[^\w\- ]")
 RE_SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 RE_JSON_FENCE = re.compile(
@@ -290,14 +291,21 @@ def github_heading_slugs(md_file: Path) -> set[str]:
     slug_counts: dict[str, int] = {}
     slugs: set[str] = set()
     in_fence = False
-    fence_marker = ""
+    fence_character = ""
+    fence_length = 0
     for line in md_file.read_text(encoding="utf-8").splitlines():
-        stripped = line.lstrip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            marker = stripped[:3]
+        fence = RE_COMMONMARK_FENCE.match(line)
+        if fence:
+            marker = fence.group(1)
             if not in_fence:
-                in_fence, fence_marker = True, marker
-            elif marker == fence_marker:
+                in_fence = True
+                fence_character = marker[0]
+                fence_length = len(marker)
+            elif (
+                marker[0] == fence_character
+                and len(marker) >= fence_length
+                and not line[fence.end() :].strip()
+            ):
                 in_fence = False
             continue
         if in_fence:
@@ -313,6 +321,48 @@ def github_heading_slugs(md_file: Path) -> set[str]:
     return slugs
 
 
+def markdown_without_fenced_code_or_html_comments(content: str) -> str:
+    """Return Markdown content that can contain navigable anchor references."""
+    visible_lines: list[str] = []
+    in_fence = False
+    fence_character = ""
+    fence_length = 0
+
+    for line in content.splitlines(keepends=True):
+        fence = RE_COMMONMARK_FENCE.match(line)
+        if fence:
+            marker = fence.group(1)
+            if not in_fence:
+                in_fence = True
+                fence_character = marker[0]
+                fence_length = len(marker)
+            elif (
+                marker[0] == fence_character
+                and len(marker) >= fence_length
+                and not line[fence.end() :].strip()
+            ):
+                in_fence = False
+            continue
+        if not in_fence:
+            visible_lines.append(line)
+
+    visible = "".join(visible_lines)
+    uncommented: list[str] = []
+    cursor = 0
+    while True:
+        comment_start = visible.find("<!--", cursor)
+        if comment_start == -1:
+            uncommented.append(visible[cursor:])
+            break
+        uncommented.append(visible[cursor:comment_start])
+        comment_end = visible.find("-->", comment_start + 4)
+        if comment_end == -1:
+            uncommented.append(visible[comment_start:])
+            break
+        cursor = comment_end + 3
+    return "".join(uncommented)
+
+
 def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
     """Every `<path>.md#<anchor>` reference in the skill's doc surface must
     resolve to a real heading in the target file (broken anchors are silent
@@ -321,6 +371,7 @@ def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
     for pattern in ANCHOR_SCAN_GLOBS:
         for md_file in sorted(skill_dir.glob(pattern)):
             content = md_file.read_text(encoding="utf-8")
+            content = markdown_without_fenced_code_or_html_comments(content)
             seen: set[tuple[str, str]] = set()
             for m in RE_MD_ANCHOR_REF.finditer(content):
                 ref = (m.group("path"), m.group("anchor"))
@@ -329,7 +380,10 @@ def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
                 seen.add(ref)
                 target = (md_file.parent / ref[0]).resolve()
                 if not target.is_file():
-                    # Missing files are reported by the RE_REF_PATH check.
+                    issues.add_error(
+                        f"{md_file}: broken anchor -> {ref[0]}#{ref[1]} "
+                        "(target file not found)"
+                    )
                     continue
                 if target not in slug_cache:
                     slug_cache[target] = github_heading_slugs(target)

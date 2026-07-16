@@ -47,6 +47,8 @@ All commands documented in `cli/cli-reference.md` (deployment: `build` / `import
 
 ### Deployment Workflow
 
+**Language gate:** Before finalizing or deploying generated or edited course content, run the [Pre-Deploy Language Audit](data-contracts.md#pre-deploy-language-audit) against the effective course directory and build metadata. This workflow invokes that gate; `data-contracts.md` remains the authority for what the audit covers.
+
 **From pipeline (Path A continuation):**
 1. Write Optimization outputs into the course directory: `lessons/lesson-*.md`, `README.md`, `course-description.md` (the generated SEO description; no author-side process notes), `course-prompt.md` (the Optimization `course_prompt` artifact, structured per `course-prompt.md#fillable-template`), and required `structure.json`.
 2. Run `build --course-dir <dir>` to generate `shifu-import.json`.

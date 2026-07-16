@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import sys
 import tempfile
@@ -70,13 +71,54 @@ def markdown_section(markdown: str, title: str) -> str:
     return markdown[heading_end:]
 
 
+def markdown_table_row_body(line: str) -> str:
+    """Remove at most one actual outer pipe from each side of a table row."""
+    row = line.strip()
+    if row.startswith("|"):
+        row = row[1:]
+    if row.endswith("|"):
+        preceding_backslashes = 0
+        for character in reversed(row[:-1]):
+            if character != "\\":
+                break
+            preceding_backslashes += 1
+        if preceding_backslashes % 2 == 0:
+            row = row[:-1]
+    return row
+
+
+def split_markdown_table_row(line: str) -> list[str]:
+    """Split a table row on pipes preceded by an even backslash count."""
+    cells: list[str] = []
+    current: list[str] = []
+    preceding_backslashes = 0
+
+    for character in markdown_table_row_body(line):
+        if character == "\\":
+            current.append(character)
+            preceding_backslashes += 1
+            continue
+        if character == "|" and preceding_backslashes % 2 == 0:
+            cells.append("".join(current))
+            current = []
+        else:
+            current.append(character)
+        preceding_backslashes = 0
+
+    cells.append("".join(current))
+    return cells
+
+
 def markdown_table_first_column(section: str, header: str) -> list[str]:
     """Read canonical values from a Markdown table identified by its header."""
     lines = section.splitlines()
     for index, line in enumerate(lines):
         if not line.lstrip().startswith("|"):
             continue
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        cells = [
+            cell.strip().replace(r"\|", "|")
+            for cell in split_markdown_table_row(line)
+        ]
         if not cells or cells[0].strip("`").casefold() != header.casefold():
             continue
 
@@ -84,8 +126,8 @@ def markdown_table_first_column(section: str, header: str) -> list[str]:
         for row in lines[index + 2 :]:
             if not row.lstrip().startswith("|"):
                 break
-            first_cell = row.strip().strip("|").split("|", 1)[0].strip()
-            values.append(first_cell.strip("`"))
+            first_cell = split_markdown_table_row(row)[0].strip()
+            values.append(first_cell.strip("`").replace(r"\|", "|"))
         return values
 
     raise AssertionError(f"missing Markdown table with first header: {header}")
@@ -113,6 +155,190 @@ class MarkdownSectionHelperTests(unittest.TestCase):
         self.assertIn("# Not a boundary", section)
         self.assertIn("Body after the fence.", section)
         self.assertNotIn("Outside the target section.", section)
+
+    def test_table_first_column_preserves_trailing_escaped_pipes(self):
+        markdown = "| Header\\||\n|---|\n| value\\||\n"
+
+        values = markdown_table_first_column(markdown, "Header|")
+
+        self.assertEqual(["value|"], values)
+
+    def test_table_row_split_uses_backslash_parity(self):
+        cases = (
+            ("| left | right |", [" left ", " right "]),
+            (r"| left\|right |", [r" left\|right "]),
+            (r"| left\\| right |", [r" left\\", " right "]),
+            (r"| left\\\|right |", [r" left\\\|right "]),
+        )
+
+        for row, expected in cases:
+            with self.subTest(row=row):
+                self.assertEqual(expected, split_markdown_table_row(row))
+
+    def test_table_row_preserves_escaped_pipe_with_optional_outer_boundary(self):
+        expected = [r" value\|"]
+
+        self.assertEqual(expected, split_markdown_table_row(r"| value\||"))
+        self.assertEqual(expected, split_markdown_table_row(r"| value\|"))
+
+
+class AnchorValidationTests(unittest.TestCase):
+    def test_heading_scan_recognizes_only_zero_to_three_space_fences(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            markdown_file = Path(tmpdir) / "headings.md"
+            real_fences = "".join(
+                f"{' ' * indentation}```markdown\n"
+                f"# Hidden at {indentation} spaces\n"
+                f"{' ' * indentation}```\n"
+                for indentation in range(4)
+            )
+            markdown_file.write_text(
+                real_fences
+                + "    ```markdown\n"
+                + "# Visible after four-space pseudo-fence\n"
+                + "    ```\n",
+                encoding="utf-8",
+            )
+
+            slugs = validate_skill_quality.github_heading_slugs(markdown_file)
+
+            for indentation in range(4):
+                self.assertNotIn(f"hidden-at-{indentation}-spaces", slugs)
+            self.assertIn("visible-after-four-space-pseudo-fence", slugs)
+
+    def test_heading_scan_requires_a_matching_fence_character_and_length(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            markdown_file = Path(tmpdir) / "headings.md"
+            markdown_file.write_text(
+                "````markdown\n"
+                "# Hidden before shorter fence\n"
+                "````python\n"
+                "# Hidden after info-string fence\n"
+                "```\n"
+                "# Hidden after shorter fence\n"
+                "~~~~\n"
+                "# Hidden after different fence\n"
+                "````\n"
+                "# Visible after matching fence\n",
+                encoding="utf-8",
+            )
+
+            slugs = validate_skill_quality.github_heading_slugs(markdown_file)
+
+            self.assertEqual({"visible-after-matching-fence"}, slugs)
+
+    def test_anchor_scan_does_not_close_on_a_fence_with_an_info_string(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            (skill_dir / "SKILL.md").write_text(
+                "```markdown\n"
+                "references/hidden-before.md#target\n"
+                "```python\n"
+                "references/hidden-after.md#target\n"
+                "```\n"
+                "references/visible.md#target\n",
+                encoding="utf-8",
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual(1, len(issues.errors))
+            self.assertIn("visible.md#target", issues.errors[0])
+
+    def test_anchor_scan_recognizes_only_zero_to_three_space_fences(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            real_fences = "".join(
+                f"{' ' * indentation}```markdown\n"
+                f"references/hidden-{indentation}.md#target\n"
+                f"{' ' * indentation}```\n"
+                for indentation in range(4)
+            )
+            (skill_dir / "SKILL.md").write_text(
+                real_fences
+                + "    ```markdown\n"
+                + "references/visible.md#target\n"
+                + "    ```\n",
+                encoding="utf-8",
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual(1, len(issues.errors))
+            self.assertIn("visible.md#target", issues.errors[0])
+
+    def test_ignores_anchor_references_in_fences_and_html_comments(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            references = skill_dir / "references"
+            references.mkdir()
+            (skill_dir / "SKILL.md").write_text(
+                "```markdown\n"
+                "references/missing-fenced.md#target\n"
+                "```\n"
+                "~~~text\n"
+                "references/missing-tilde.md#target\n"
+                "~~~\n"
+                "<!--\n"
+                "references/missing-commented.md#target\n"
+                "-->\n"
+                "See [target](references/existing.md#target).\n",
+                encoding="utf-8",
+            )
+            (references / "existing.md").write_text(
+                "# Target\n", encoding="utf-8"
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual([], issues.errors)
+
+    def test_unclosed_html_comment_marker_does_not_hide_later_anchors(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            (skill_dir / "SKILL.md").write_text(
+                "Show the literal inline-code marker `<!--` here.\n"
+                "Read `references/missing.md#target`.\n",
+                encoding="utf-8",
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual(1, len(issues.errors))
+            self.assertIn("missing.md#target", issues.errors[0])
+
+    def test_still_validates_anchor_reference_in_inline_code(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            (skill_dir / "SKILL.md").write_text(
+                "Read `references/missing.md#target`.\n", encoding="utf-8"
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual(1, len(issues.errors))
+            self.assertIn("target file not found", issues.errors[0])
+
+    def test_missing_anchor_target_file_is_an_error(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            references = skill_dir / "references"
+            references.mkdir()
+            (skill_dir / "SKILL.md").write_text(
+                "See [missing](references/missing.md#target).\n",
+                encoding="utf-8",
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual(1, len(issues.errors))
+            self.assertIn("target file not found", issues.errors[0])
 
 
 class InteractionPolicyValidationTests(unittest.TestCase):
@@ -578,20 +804,33 @@ After the learner answers, branch to the matching guidance.
 class PedagogyContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.skill_doc = (
+            COURSE_CREATOR_REFERENCES.parent / "SKILL.md"
+        ).read_text(encoding="utf-8")
         cls.pedagogy_path = COURSE_CREATOR_REFERENCES / "pedagogy.md"
         cls.pedagogy = cls.pedagogy_path.read_text(encoding="utf-8")
-        cls.course_prompt = (
-            COURSE_CREATOR_REFERENCES / "course-prompt.md"
-        ).read_text(encoding="utf-8")
-        cls.generation_workflow = (
+        cls.course_prompt_path = COURSE_CREATOR_REFERENCES / "course-prompt.md"
+        cls.course_prompt = cls.course_prompt_path.read_text(encoding="utf-8")
+        cls.generation_workflow_path = (
             COURSE_CREATOR_REFERENCES / "generation-workflow.md"
-        ).read_text(encoding="utf-8")
-        cls.optimization_workflow = (
+        )
+        cls.generation_workflow = cls.generation_workflow_path.read_text(
+            encoding="utf-8"
+        )
+        cls.optimization_workflow_path = (
             COURSE_CREATOR_REFERENCES / "optimization-workflow.md"
-        ).read_text(encoding="utf-8")
-        cls.markdownflow = (
-            COURSE_CREATOR_REFERENCES / "markdownflow.md"
-        ).read_text(encoding="utf-8")
+        )
+        cls.optimization_workflow = cls.optimization_workflow_path.read_text(
+            encoding="utf-8"
+        )
+        cls.segmentation_workflow_path = (
+            COURSE_CREATOR_REFERENCES / "segmentation-orchestration.md"
+        )
+        cls.segmentation_workflow = cls.segmentation_workflow_path.read_text(
+            encoding="utf-8"
+        )
+        cls.markdownflow_path = COURSE_CREATOR_REFERENCES / "markdownflow.md"
+        cls.markdownflow = cls.markdownflow_path.read_text(encoding="utf-8")
         cls.prompt_contracts_path = (
             COURSE_CREATOR_REFERENCES / "prompt-contracts.md"
         )
@@ -612,44 +851,139 @@ class PedagogyContractTests(unittest.TestCase):
             / "examples"
             / "optimization-only.md"
         ).read_text(encoding="utf-8")
-        cls.data_contracts = (
-            COURSE_CREATOR_REFERENCES / "data-contracts.md"
+        cls.data_contracts_path = COURSE_CREATOR_REFERENCES / "data-contracts.md"
+        cls.data_contracts = cls.data_contracts_path.read_text(encoding="utf-8")
+        cls.deployment_workflow = (
+            COURSE_CREATOR_REFERENCES / "deployment-workflow.md"
         ).read_text(encoding="utf-8")
-
-    def test_public_pedagogy_anchors_stay_stable(self):
-        expected_anchors = {
-            "pedagogy",
-            "interaction-policy-precedence",
-            "lesson-loop",
-            "teaching-patterns",
-            "pattern-a-evidence-chain",
-            "pattern-b-misconception-repair",
-            "pattern-c-comparison-driven-learning",
-            "cognitive-techniques",
-            "interaction-design",
-            "variable-strategy",
-            "visual-text-coordination",
-            "segmentation-methodology",
-            "objective",
-            "core-rules",
-            "segment-types",
-            "transfer-signals",
-            "failure-handling",
-            "optimization-methodology",
-            "principles",
-            "issue-taxonomy",
-            "execution-sequence",
+        cls.reference_anchors_by_path = {
+            path: validate_skill_quality.github_heading_slugs(path)
+            for path in sorted(COURSE_CREATOR_REFERENCES.rglob("*.md"))
+            if all(
+                not part.startswith(".")
+                for part in path.relative_to(COURSE_CREATOR_REFERENCES).parts
+            )
         }
 
-        actual_anchors = validate_skill_quality.github_heading_slugs(
-            self.pedagogy_path
+    def test_reference_anchors_match_authority_boundaries(self):
+        expected_anchors_by_path = {
+            self.pedagogy_path: {
+                "pedagogy",
+                "interaction-policy-precedence",
+                "lesson-loop",
+                "teaching-patterns",
+                "pattern-a-evidence-chain",
+                "pattern-b-misconception-repair",
+                "pattern-c-comparison-driven-learning",
+                "cognitive-techniques",
+                "interaction-design",
+                "variable-strategy",
+                "visual-text-coordination",
+            },
+            self.segmentation_workflow_path: {
+                "segmentation-methodology",
+                "objective",
+                "core-rules",
+                "failure-handling",
+            },
+            self.data_contracts_path: {
+                "segment-types",
+                "transfer-signals",
+            },
+            self.markdownflow_path: {
+                "markdownflow-spec",
+                "preprocessing",
+                "variables",
+                "interactions",
+                "branching-on-user-input",
+                "deterministic-blocks",
+                "images",
+                "preservation",
+            },
+            self.generation_workflow_path: {
+                "markdownflow-authoring",
+                "interaction-encoding",
+                "variable-and-branch-encoding",
+                "preservation-encoding",
+                "image-authoring",
+                "image-output-validation",
+                "working-with-author-provided-images",
+            },
+            self.optimization_workflow_path: {
+                "optimization-methodology",
+                "principles",
+                "content-fidelity-and-controlled-rewriting",
+                "preservation-decisions",
+                "issue-taxonomy",
+                "execution-sequence",
+            },
+        }
+
+        for path, expected_anchors in expected_anchors_by_path.items():
+            actual_anchors = self.reference_anchors_by_path[path]
+            self.assertTrue(
+                expected_anchors.issubset(actual_anchors),
+                f"missing authority anchors in {path}: "
+                f"{sorted(expected_anchors - actual_anchors)}",
+            )
+
+        self.assertEqual(
+            expected_anchors_by_path[self.markdownflow_path],
+            self.reference_anchors_by_path[self.markdownflow_path],
+            "MarkdownFlow may contain only its runtime-specification headings",
         )
 
-        self.assertTrue(
-            expected_anchors.issubset(actual_anchors),
-            f"missing public pedagogy anchors: "
-            f"{sorted(expected_anchors - actual_anchors)}",
-        )
+        exclusive_anchors_by_path = {
+            self.pedagogy_path: {
+                "pedagogy",
+                "interaction-policy-precedence",
+                "teaching-patterns",
+                "pattern-a-evidence-chain",
+                "pattern-b-misconception-repair",
+                "pattern-c-comparison-driven-learning",
+                "cognitive-techniques",
+                "interaction-design",
+                "variable-strategy",
+            },
+            self.segmentation_workflow_path: {"segmentation-methodology"},
+            self.data_contracts_path: {"segment-types", "transfer-signals"},
+            self.markdownflow_path: {
+                "markdownflow-spec",
+                "preprocessing",
+                "variables",
+                "interactions",
+                "branching-on-user-input",
+                "deterministic-blocks",
+                "images",
+                "preservation",
+            },
+            self.generation_workflow_path: {
+                "markdownflow-authoring",
+                "interaction-encoding",
+                "variable-and-branch-encoding",
+                "preservation-encoding",
+                "image-authoring",
+                "image-output-validation",
+            },
+            self.optimization_workflow_path: {
+                "optimization-methodology",
+                "content-fidelity-and-controlled-rewriting",
+                "preservation-decisions",
+                "issue-taxonomy",
+                "execution-sequence",
+            },
+        }
+
+        for owner_path, exclusive_anchors in exclusive_anchors_by_path.items():
+            for path, actual_anchors in self.reference_anchors_by_path.items():
+                if path == owner_path:
+                    continue
+                duplicated_anchors = exclusive_anchors.intersection(actual_anchors)
+                self.assertFalse(
+                    duplicated_anchors,
+                    f"authority anchors owned by {owner_path} also appear in "
+                    f"{path}: {sorted(duplicated_anchors)}",
+                )
 
     def test_prompt_semantics_are_centralized(self):
         semantics_section = markdown_section(
@@ -672,12 +1006,13 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertIn('"the learner" or "the student"', semantics)
         self.assertIn(
             "Learner-visible text inside a MarkdownFlow `?[]` interaction or "
-            "[deterministic block](markdownflow.md#deterministic-blocks) is "
+            "[standalone deterministic output]"
+            "(markdownflow.md#deterministic-blocks) is "
             "the exception",
             semantics,
         )
         self.assertIn(
-            "Outside `?[]` and deterministic blocks", semantics
+            "Outside `?[]` and standalone deterministic output", semantics
         )
         self.assertNotIn("Within Course Prompt content", semantics)
         for block in semantics_section.strip().split("\n\n"):
@@ -723,45 +1058,206 @@ class PedagogyContractTests(unittest.TestCase):
 
         self.assertEqual([], matches)
 
-    def test_markdownflow_preserves_learner_visible_interaction_copy(self):
+    def test_markdownflow_contains_observable_runtime_semantics(self):
+        preprocessing = markdown_section(self.markdownflow, "Preprocessing")
+        variables = markdown_section(self.markdownflow, "Variables")
         interactions = markdown_section(self.markdownflow, "Interactions")
-        no_program_syntax = markdown_section(
-            self.markdownflow, "No program syntax around `{{var}}`"
+        branching = markdown_section(
+            self.markdownflow, "Branching on User Input"
         )
-        html_view = markdown_section(
-            self.markdownflow,
-            "3.2 HTML view image (instruction-style, not fixed output)",
+        deterministic = markdown_section(
+            self.markdownflow, "Deterministic Blocks"
+        )
+        images = markdown_section(self.markdownflow, "Images")
+        preservation = markdown_section(self.markdownflow, "Preservation")
+
+        self.assertIn("CommonMark fenced code", preprocessing)
+        self.assertIn("HTML comments", preprocessing)
+        self.assertIn("`UNKNOWN`", variables)
+        self.assertIn("`%{{name}}` is an assignment prefix", variables)
+        self.assertIn("pauses document progression", interactions)
+        self.assertIn("current document context", interactions)
+        interaction_forms = re.findall(
+            r"^- `(\?\[[^`\n]+\])`:",
+            interactions,
+            flags=re.MULTILINE,
+        )
+        self.assertEqual(
+            [
+                "?[Continue]",
+                "?[Option A | Option B]",
+                "?[Option A || Option B]",
+                "?[...Input hint]",
+                "?[Option A | ...Other]",
+                "?[Option A || ...Other]",
+                "?[%{{name}} Option A | Option B]",
+                "?[%{{name}} Option A || Option B]",
+                "?[%{{name}} ...Input hint]",
+                "?[%{{name}} Option A | ...Other]",
+                "?[%{{name}} Option A || ...Other]",
+            ],
+            interaction_forms,
+        )
+        self.assertNotIn(r"\|", interactions)
+        self.assertIn("no parser-level conditionals", branching)
+        self.assertIn(
+            "Single-line or inline marker: `===fixed text===`", deterministic
+        )
+        self.assertIn(
+            "without requiring any additional boundary syntax", deterministic
+        )
+        self.assertIn("without an LLM call", deterministic)
+        self.assertIn(
+            "When `===...===` appears inline within ordinary prompt content",
+            deterministic,
+        )
+        self.assertIn("surrounding content remains LLM-generated", deterministic)
+        self.assertIn("no image-specific control-flow primitive", images)
+        self.assertIn("no dedicated parser semantics", images)
+        self.assertIn(
+            "inline `===...===` marker remains in LLM-mediated content",
+            preservation,
+        )
+        self.assertIn(
+            "Content outside these mechanisms may be paraphrased", preservation
         )
 
-        self.assertIn("?[%{{var}} ...Enter your answer]", interactions)
-        self.assertIn("?[...Enter your answer]", interactions)
-        self.assertIn("Which option best matches your situation?", interactions)
-        self.assertIn("...Describe your situation", interactions)
-        self.assertIn("Describe your goal in one sentence...", interactions)
-        self.assertNotIn("Teaching Prompt", no_program_syntax)
-        self.assertNotIn("prompt-contracts.md", no_program_syntax)
-        self.assertNotIn("Teaching Prompt", html_view)
+    def test_markdownflow_hides_internal_block_segmentation(self):
+        internal_taxonomy = {
+            "processing model",
+            "parsed block",
+            "content block",
+            "generative block",
+            "preserved-content block",
+            "preserved content block",
+            "interaction block",
+            "block separator",
+        }
+        markdownflow = self.markdownflow.casefold()
+
+        for term in internal_taxonomy:
+            self.assertNotIn(term, markdownflow)
+        self.assertNotIn("`---`", self.markdownflow)
+        self.assertNotRegex(self.markdownflow, r"(?m)^\s*---\s*$")
+
+    def test_examples_do_not_add_teaching_prompt_separator_boundaries(self):
+        prompt_keys = {"teaching_prompt", "existing_teaching_prompt"}
+        markdown_fence = re.compile(
+            r"^```(?:md|markdown)[ \t]*\n(?P<body>.*?)^```[ \t]*$",
+            flags=re.MULTILINE | re.DOTALL,
+        )
+        separator_line = re.compile(r"(?m)^\s*---\s*$")
+        violations = []
+
+        def collect_prompt_values(value: object) -> list[str]:
+            prompts: list[str] = []
+            if isinstance(value, dict):
+                for key, nested in value.items():
+                    if key in prompt_keys and isinstance(nested, str):
+                        prompts.append(nested)
+                    prompts.extend(collect_prompt_values(nested))
+            elif isinstance(value, list):
+                for nested in value:
+                    prompts.extend(collect_prompt_values(nested))
+            return prompts
+
+        examples_dir = COURSE_CREATOR_REFERENCES.parent / "examples"
+        for path in sorted(examples_dir.rglob("*.md")):
+            content = path.read_text(encoding="utf-8")
+            for match in validate_skill_quality.RE_JSON_FENCE.finditer(content):
+                payload = json.loads(match.group("body"))
+                for prompt in collect_prompt_values(payload):
+                    if separator_line.search(prompt):
+                        violations.append(
+                            f"{path.relative_to(REPO_ROOT)}: JSON Teaching Prompt"
+                        )
+            for match in markdown_fence.finditer(content):
+                if separator_line.search(match.group("body")):
+                    violations.append(
+                        f"{path.relative_to(REPO_ROOT)}: rendered Prompt"
+                    )
+
+        self.assertEqual([], violations)
 
     def test_reviewed_author_side_course_prompt_terms_stay_explicit(self):
-        boundaries = markdown_section(self.course_prompt, "Boundaries")
-        validation = markdown_section(self.course_prompt, "Validation")
+        responsibilities = markdown_section(
+            self.prompt_contracts, "Artifact Responsibilities"
+        )
+        materialization = markdown_section(
+            self.course_prompt, "Materialization Checks"
+        )
         review = markdown_section(self.review_checklist, "Course Prompt")
 
-        self.assertIn("follows the current Teaching Prompt", boundaries)
-        self.assertIn("defers to the current Teaching Prompt", validation)
+        self.assertIn("follows each Teaching Prompt", responsibilities)
+        self.assertIn("does not own lesson pedagogy", responsibilities)
         self.assertIn(
-            "treats the current Teaching Prompt as authoritative", review
+            "contains no MarkdownFlow `?[]` interaction controls",
+            responsibilities,
         )
-        self.assertIn("lets the Teaching Prompt determine", review)
+        self.assertIn(
+            "Every non-placeholder template instruction", materialization
+        )
+        self.assertIn("current Teaching Prompt", review)
+        self.assertIn("without introducing competing lesson pedagogy", review)
         self.assertNotIn("current user message", review)
         self.assertIn("multiple script versions", self.optimization_workflow)
         self.assertIn(
-            "source points to script coverage", self.optimization_workflow
+            "source-to-Prompt coverage matrix", self.optimization_workflow
         )
         self.assertIn(
-            "defers to the current Teaching Prompt",
+            "prompt-contracts.md#artifact-responsibilities",
             self.optimization_workflow,
         )
+
+    def test_preservation_and_language_gates_run_before_content_shipping(self):
+        self.assertIn(
+            "[Pre-Deploy Language Audit]"
+            "(data-contracts.md#pre-deploy-language-audit)",
+            self.deployment_workflow,
+        )
+        self.assertIn(
+            "During Segmentation, apply "
+            "`optimization-workflow.md#preservation-decisions`",
+            self.segmentation_workflow,
+        )
+        self.assertIn("before any Generation step", self.segmentation_workflow)
+        self.assertIn(
+            "loaded directly from a route or through a dependency",
+            self.skill_doc,
+        )
+        self.assertIn("dependencies transitively", self.skill_doc)
+
+        mandatory_gates = markdown_section(
+            self.segmentation_workflow, "Mandatory Gates"
+        )
+        visual_review = markdown_section(
+            self.review_checklist, "Visual-Text Coordination"
+        )
+        self.assertIn("`review-checklist.md`", mandatory_gates)
+        self.assertIn(
+            "(generation-workflow.md#image-output-validation)",
+            visual_review,
+        )
+
+        route_order_checks = {
+            "| Create a full course,": "references/segmentation-orchestration.md",
+            "| Plan course structure": "references/segmentation-orchestration.md",
+            "| Segment supplied material only": (
+                "references/segmentation-orchestration.md"
+            ),
+            "| Generate Teaching Prompts": "references/generation-workflow.md",
+        }
+        for row_prefix, downstream_path in route_order_checks.items():
+            row = next(
+                line
+                for line in self.skill_doc.splitlines()
+                if line.startswith(row_prefix)
+            )
+            self.assertLess(
+                row.index("references/optimization-workflow.md#preservation-decisions"),
+                row.index(downstream_path),
+                f"preservation decisions must load before {downstream_path}",
+            )
 
     def test_optimization_report_names_each_prompt_type(self):
         report = markdown_section(self.report_template, "Optimization Report")
@@ -783,26 +1279,21 @@ class PedagogyContractTests(unittest.TestCase):
 
         self.assertIn(narration_rule, slide_override.splitlines())
 
-    def test_transfer_signal_keys_match_pedagogy_data_and_validator(self):
-        transfer_section = markdown_section(self.pedagogy, "Transfer Signals")
-        pedagogy_keys = markdown_table_first_column(transfer_section, "Key")
-
-        segment_section = markdown_section(self.data_contracts, "Segment Schema")
-        data_contract_block = re.search(
-            r"(?ms)^- `transfer_signals`.*?(?=\n\n|\n[^ \t\n]|\Z)",
-            segment_section,
+    def test_transfer_signal_keys_match_data_contract_and_validator(self):
+        transfer_section = markdown_section(
+            self.data_contracts, "Transfer Signals"
         )
-        self.assertIsNotNone(data_contract_block)
-        data_contract_keys = re.findall(
-            r"(?m)^[ \t]+- `([a-z_]+)`[ \t]*$",
-            data_contract_block.group(0),
+        data_contract_keys = markdown_table_first_column(
+            transfer_section, "Key"
         )
 
         validator_keys = validate_skill_quality.TRANSFER_SIGNAL_KEYS
-        self.assertEqual(len(pedagogy_keys), len(set(pedagogy_keys)))
         self.assertEqual(len(data_contract_keys), len(set(data_contract_keys)))
-        self.assertEqual(set(pedagogy_keys), validator_keys)
         self.assertEqual(set(data_contract_keys), validator_keys)
+        self.assertIn(
+            "(data-contracts.md#transfer-signals)",
+            self.segmentation_workflow,
+        )
 
     def test_interaction_matrix_has_only_canonical_modes_and_purposes(self):
         policy_section = markdown_section(
@@ -821,37 +1312,100 @@ class PedagogyContractTests(unittest.TestCase):
         )
 
     def test_authority_links_cover_prompt_and_delivery_boundaries(self):
-        scope = markdown_section(self.pedagogy, "Scope and Authority Boundaries")
+        authority = markdown_section(self.prompt_contracts, "Authority Index")
         interaction = markdown_section(self.pedagogy, "Interaction Design")
         variables = markdown_section(self.pedagogy, "Variable Strategy")
         visuals = markdown_section(self.pedagogy, "Visual-Text Coordination")
+        interaction_encoding = markdown_section(
+            self.generation_workflow, "Interaction Encoding"
+        )
+        image_authoring = markdown_section(
+            self.generation_workflow, "Image Authoring"
+        )
+        image_output_validation = markdown_section(
+            self.generation_workflow, "Image Output Validation"
+        )
+        preservation_encoding = markdown_section(
+            self.generation_workflow, "Preservation Encoding"
+        )
 
-        self.assertIn("(course-prompt.md)", scope)
+        for link in (
+            "(pedagogy.md)",
+            "(markdownflow.md)",
+            "(course-prompt.md)",
+            "(data-contracts.md)",
+        ):
+            self.assertIn(link, authority)
         self.assertIn("(markdownflow.md#interactions)", interaction)
         self.assertIn("(markdownflow.md#branching-on-user-input)", interaction)
         self.assertIn("(markdownflow.md#variables)", variables)
         self.assertIn("(data-contracts.md#variable-table)", variables)
+        self.assertIn(
+            "(generation-workflow.md#markdownflow-authoring)", authority
+        )
+        self.assertIn("(generation-workflow.md#generation)", authority)
+        self.assertIn(
+            "(generation-workflow.md#image-authoring)", authority
+        )
+        self.assertIn(
+            "(optimization-workflow.md#optimization)", authority
+        )
+        self.assertIn(
+            "(optimization-workflow.md#preservation-decisions)", authority
+        )
+        self.assertIn(
+            "(generation-workflow.md#image-authoring)", visuals
+        )
+        self.assertIn("pedagogy.md#interaction-design", interaction_encoding)
+        self.assertIn("pedagogy.md#variable-strategy", interaction_encoding)
+        self.assertIn(
+            "optimization-workflow.md#preservation-decisions",
+            preservation_encoding,
+        )
+        self.assertIn(
+            "markdownflow.md#deterministic-blocks", preservation_encoding
+        )
+        self.assertIn("wrap only the span", preservation_encoding)
+        self.assertIn("Inline preservation does not bypass", preservation_encoding)
+        self.assertIn("markdownflow.md#images", image_authoring)
+        self.assertIn("assets/image-manifest.json", image_output_validation)
+        self.assertIn("`remote` and `alt`", image_output_validation)
+        for required_field in (
+            "selected image form",
+            "caption",
+            "position",
+            "layout constraints",
+            "ordering",
+        ):
+            self.assertIn(required_field, image_output_validation)
+        self.assertIn("stop before generating", image_output_validation)
+        self.assertIn("regenerate only", image_output_validation)
+        self.assertIn("stop Generation", image_output_validation)
+        self.assertIn("Do not finalize or hand off", image_output_validation)
+        self.assertIn(
+            "(generation-workflow.md#image-output-validation)",
+            self.review_checklist,
+        )
+        self.assertNotIn("regenerate only", self.review_checklist)
         self.assertIn(
             "(generation-workflow.md#slide-only-generation-override)",
             visuals,
         )
 
     def test_course_prompt_template_uses_runtime_user_message_context(self):
-        scope = markdown_section(self.pedagogy, "Scope and Authority Boundaries")
+        responsibilities = markdown_section(
+            self.prompt_contracts, "Artifact Responsibilities"
+        )
         purpose = markdown_section(self.course_prompt, "Purpose")
         template = markdown_section(self.course_prompt, "Fillable Template")
 
         self.assertIn(
-            "follow, rather than define or replace, the Teaching Prompt's pedagogy",
-            scope,
+            "follows each Teaching Prompt and does not own lesson pedagogy",
+            responsibilities,
         )
         self.assertIn(
-            "current user message is the source of truth",
-            purpose,
-        )
-        self.assertIn(
-            'Within Course Prompt content, refer to that lesson input only as '
-            '"the current user message" or "that user message"',
+            "does not redefine shared Prompt semantics, lesson pedagogy, or "
+            "MarkdownFlow runtime behavior",
             purpose,
         )
         self.assertIn(
@@ -896,9 +1450,176 @@ class PedagogyContractTests(unittest.TestCase):
             self.generation_workflow,
         )
         self.assertIn(
-            "Teaching Prompts lead; the Course Prompt follows and styles",
+            "follows each Teaching Prompt and does not own lesson pedagogy",
+            responsibilities,
+        )
+
+    def test_reference_files_keep_single_responsibilities(self):
+        authority = markdown_section(self.prompt_contracts, "Authority Index")
+
+        retired_anchors = {
+            "scope-and-authority-boundaries",
+            "pipeline-methodologies",
+            "prompt-placement-rules",
+            "input-marker-rules",
+            "input-marker-examples",
+            "no-program-syntax-around-var",
+            "31-fixed-image-standard-markdown--deterministic",
+            "32-html-view-image-instruction-style-not-fixed-output",
+            "33-which-form-to-use",
+        }
+        moved_anchor_owners = {
+            "segmentation-methodology": self.segmentation_workflow_path,
+            "segment-types": self.data_contracts_path,
+            "transfer-signals": self.data_contracts_path,
+            "optimization-methodology": self.optimization_workflow_path,
+        }
+
+        for path, actual_anchors in self.reference_anchors_by_path.items():
+            self.assertTrue(
+                retired_anchors.isdisjoint(actual_anchors),
+                f"retired responsibility headings reappeared in {path}: "
+                f"{sorted(retired_anchors.intersection(actual_anchors))}",
+            )
+
+        retired_references = []
+        doc_paths = [COURSE_CREATOR_REFERENCES.parent / "SKILL.md"]
+        doc_paths.extend(COURSE_CREATOR_REFERENCES.rglob("*.md"))
+        doc_paths.extend(
+            (COURSE_CREATOR_REFERENCES.parent / "examples").rglob("*.md")
+        )
+        for path in doc_paths:
+            content = path.read_text(encoding="utf-8").casefold()
+            for anchor in retired_anchors:
+                if f"#{anchor}" in content:
+                    retired_references.append(
+                        f"{path.relative_to(REPO_ROOT)}#{anchor}"
+                    )
+        self.assertEqual([], retired_references)
+
+        for anchor, owner_path in moved_anchor_owners.items():
+            unexpected_paths = [
+                path
+                for path, actual_anchors in self.reference_anchors_by_path.items()
+                if path != owner_path and anchor in actual_anchors
+            ]
+            self.assertEqual(
+                [],
+                unexpected_paths,
+                f"authority anchor {anchor!r} belongs only in {owner_path}",
+            )
+
+        self.assertNotIn(
+            "Teaching Prompt and Course Prompt Authoring Hard Rules",
             self.prompt_contracts,
         )
+        self.assertNotIn("?[%{{var}}", self.prompt_contracts)
+        self.assertNotIn("single-select", self.prompt_contracts)
+        self.assertNotIn("multi-select", self.prompt_contracts)
+        self.assertNotIn("UNKNOWN", self.prompt_contracts)
+        self.assertIn("(pedagogy.md)", authority)
+        self.assertIn("(markdownflow.md)", authority)
+
+        forbidden_markdownflow_fragments = {
+            "answer must leave the current lesson",
+            "Use single-select for",
+            "Use multi-select for",
+            "Prompt Placement Rules",
+            "Input Marker Rules",
+            "Input Marker Examples",
+            "Correct:",
+            "Incorrect:",
+            "Which form to use",
+            "Default to 3.1",
+            "upload-image",
+            "res.ai-shifu.cn",
+            "必须原样保留",
+            "不得省略",
+            "语义化 alt",
+            "保持原始宽高比",
+            "Do not lock an entire lesson",
+            "Raw SVG, HTML drawings, Mermaid",
+            "pedagogy.md",
+            "generation-workflow.md",
+            "optimization-workflow.md",
+            "data-contracts.md",
+        }
+        for fragment in forbidden_markdownflow_fragments:
+            self.assertNotIn(fragment, self.markdownflow)
+
+        interaction_encoding = markdown_section(
+            self.generation_workflow, "Interaction Encoding"
+        )
+        image_authoring = markdown_section(
+            self.generation_workflow, "Image Authoring"
+        )
+        preservation_encoding = markdown_section(
+            self.generation_workflow, "Preservation Encoding"
+        )
+        preservation_decisions = markdown_section(
+            self.optimization_workflow, "Preservation Decisions"
+        )
+        self.assertIn("`?[]` control on its own line", interaction_encoding)
+        self.assertIn("Raw SVG, HTML drawings, Mermaid", image_authoring)
+        self.assertIn("res.ai-shifu.cn", image_authoring)
+        self.assertIn("HTML-view", image_authoring)
+        self.assertIn("不得省略", image_authoring)
+        self.assertIn("语义化 alt", image_authoring)
+        self.assertIn("保持原始宽高比", image_authoring)
+
+        image_authoring_only_fragments = {
+            "不得省略",
+            "语义化 alt",
+            "保持原始宽高比",
+        }
+        for path in doc_paths:
+            if path == COURSE_CREATOR_REFERENCES / "generation-workflow.md":
+                continue
+            content = path.read_text(encoding="utf-8")
+            for fragment in image_authoring_only_fragments:
+                self.assertNotIn(
+                    fragment,
+                    content,
+                    f"image authoring rule {fragment!r} belongs only in "
+                    "generation-workflow.md",
+                )
+        self.assertNotIn("entire lesson", preservation_encoding)
+        self.assertIn(
+            "inline `===...===` preservation remains LLM-mediated",
+            self.review_checklist,
+        )
+        self.assertIn(
+            "An entire lesson is not a valid preservation scope",
+            preservation_decisions,
+        )
+        self.assertNotIn("entire lesson", self.review_checklist)
+        self.assertNotIn("`!===", preservation_decisions)
+        self.assertNotIn("deterministic markers", preservation_decisions)
+
+        self.assertIn(
+            "do not duplicate them in the Teaching Prompt body",
+            self.data_contracts,
+        )
+        self.assertIn(
+            "filler removal, sentence smoothing", self.optimization_workflow
+        )
+        self.assertIn("silent factual change", self.optimization_workflow)
+
+        self.assertNotIn("## Boundaries", self.course_prompt)
+        self.assertNotIn("## Validation", self.course_prompt)
+        self.assertIn("## Materialization Checks", self.course_prompt)
+
+    def test_course_prompt_placeholder_map_matches_template(self):
+        template = markdown_section(self.course_prompt, "Fillable Template")
+        sources = markdown_section(
+            self.course_prompt, "Placeholder Sources and Context"
+        )
+        placeholders = markdown_table_first_column(sources, "Placeholder")
+
+        self.assertEqual(5, template.count("XXX"))
+        self.assertEqual(5, len(placeholders))
+        self.assertEqual(len(placeholders), len(set(placeholders)))
+        self.assertIn("they do not add placeholders to the template", sources)
 
     def test_removed_authoring_controls_do_not_reappear(self):
         scan_roots = [

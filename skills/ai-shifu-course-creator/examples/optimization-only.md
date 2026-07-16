@@ -1,12 +1,12 @@
 # Optimization Only Example
 
-> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `../references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
 
 ## Minimal Input
 
 ```json
 {
-  "existing_teaching_prompt": "## Objective\nUnderstand retry policy.\n---\n?[%{{answer}} yes | no]\n---\nGreat job.",
+  "existing_teaching_prompt": "## Objective\nUnderstand retry policy.\n\n?[%{{answer}} yes | no]\n\nGreat job.",
   "course_material": "Learner must differentiate transient vs permanent failure and choose a matching retry stop rule.",
   "course_author_name": "Priya Shah",
   "target_language": "en-US",
@@ -44,9 +44,9 @@
 
 ```md
 Ask the learner to classify the failure as transient or permanent before choosing a retry policy.
----
+
 ?[transient failure | permanent failure]
----
+
 If the learner chooses transient failure, apply bounded retries with backoff.
 If the learner chooses permanent failure, stop retries and open a corrective task.
 ```

@@ -111,48 +111,65 @@ Required for full-course authoring. Write it to `course-description.md`; its dir
 Each item in the Segmentation output (consumed by Orchestration and Generation):
 
 - `segment_id` (string, required) — stable identifier within the run.
-- `segment_type` (string enum, required) — one of `concept`, `example`, `code`, `image`, `exercise`, `transition`; semantics in [pedagogy.md#segment-types](pedagogy.md#segment-types).
+- `segment_type` (string enum, required) — must satisfy [Segment Types](#segment-types).
 - `core_point` (string, required) — the single teachable point this segment carries.
-- `preserve_block` (boolean, required) — `true` for code/image/table/required-quote blocks that must reach the lesson verbatim per [markdownflow.md#preservation](markdownflow.md#preservation).
+- `preserve_block` (boolean, required) — `true` when the source span is selected as immutable by [optimization-workflow.md#preservation-decisions](optimization-workflow.md#preservation-decisions). The field records the decision; downstream MarkdownFlow behavior is defined in [markdownflow.md#preservation](markdownflow.md#preservation).
 - `source_span` (object, required) — traceable source location with `source_id`
   (string), `start` (non-negative integer, inclusive character offset), and `end`
   (integer greater than `start`, exclusive character offset). Use the same object
   shape as entries in `course_index.source_span_map`.
-- `transfer_signals` (object, required and non-empty) — downstream teaching-quality cues. Use only the canonical keys below, include every cue that applies to the segment, and omit inapplicable keys rather than inventing content. Every included value must be a non-empty concise string:
-  - `learner_hook`
-  - `evidence_type`
-  - `visual_cue`
-  - `concept_conflict`
-  - `boundary_cue`
-  - `action_cue`
-  - `density_cue`
-  - `quote_cue`
-  - `visual_text_pair_cue`
-  - `interaction_intent_cue`
-  - `compare_cue`
+- `transfer_signals` (object, required) — must satisfy [Transfer Signals](#transfer-signals).
 
-  The teaching meaning of these cues is defined in
-  [pedagogy.md#transfer-signals](pedagogy.md#transfer-signals).
+### Segment Types
 
-For segmentation rules and methodology see [pedagogy.md#segmentation-methodology](pedagogy.md#segmentation-methodology).
+`segment_type` must use exactly one of these canonical values:
+
+| Value | Meaning |
+|---|---|
+| `concept` | Explanatory statements and definitions. |
+| `example` | Concrete demonstrations and walkthroughs. |
+| `code` | Executable or pseudo-code blocks. |
+| `image` | Image files and their source references. |
+| `exercise` | Learner action prompts. |
+| `transition` | Bridge text that links ideas. |
+
+### Transfer Signals
+
+`transfer_signals` must be non-empty. Include every applicable canonical key, omit inapplicable keys rather than inventing content, and give every included key a non-empty, concise string value.
+
+| Key | Meaning |
+|---|---|
+| `learner_hook` | Teaching entry point. |
+| `evidence_type` | Form of source evidence. |
+| `visual_cue` | Cue for expressing the segment as a slide. |
+| `concept_conflict` | Conceptual conflict or misconception. |
+| `boundary_cue` | Applicability boundary. |
+| `action_cue` | Executable application. |
+| `density_cue` | Information that must not be compressed away. |
+| `quote_cue` | Quotation that should be preserved or used. |
+| `visual_text_pair_cue` | Division of work between slide and text. |
+| `interaction_intent_cue` | Interaction purpose and expected instructional effect. |
+| `compare_cue` | Comparison objects or dimensions. |
+
+For segmentation rules and methodology, see [segmentation-orchestration.md#segmentation-methodology](segmentation-orchestration.md#segmentation-methodology).
 
 ## Variable Table
 
 `global_variable_table` is an array. Each item:
 
-- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; new variable names should use the resolved output language and be composed of letters, numbers, and underscores.
+- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; new variable names use the resolved output language and are composed of letters, numbers, and underscores.
 - `collected_in` (string, required) — `lesson_id` where the variable is first collected.
 - `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when `course-prompt.md` references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
 - `effect_scope` (string constant: `cross_lesson`, required).
 
-Only named variables belong in `global_variable_table`; no-variable `?[...]` interactions do not create table entries. Every table entry has `effect_scope: "cross_lesson"`, and `used_in` includes `course_prompt` whenever `course-prompt.md` references the variable. Variable collection, reuse, and pacing decisions are defined in [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy); syntax and runtime substitution semantics (`{{var}}` → stored value or `UNKNOWN`) are defined in [markdownflow.md#variables](markdownflow.md#variables).
+Only named variables belong in `global_variable_table`; no-variable `?[...]` interactions do not create table entries. Every learner-answer variable referenced by a lesson or Course Prompt has one variable-backed collection and one matching table entry. Every table entry has `effect_scope: "cross_lesson"`, names its first collection lesson, and lists every downstream lesson plus `course_prompt` when applicable. A table entry with no cross-lesson or Course Prompt use is invalid. Variable collection, reuse, and pacing decisions are defined in [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy); parser recognition and runtime substitution semantics (`{{var}}` → stored value or `UNKNOWN`) are defined in [markdownflow.md#variables](markdownflow.md#variables).
 
 ## Lesson Schema
 
 Each item in `lesson_teaching_prompts` (Generation per-lesson output):
 
 - `lesson_id` (string, required) — stable, deterministic identifier.
-- `lesson_title` (string, required) — concise learner-facing title.
+- `lesson_title` (string, required) — concise learner-facing title. Chapter titles, lesson titles, numbering, hierarchy labels, and ordering markers belong in `course_index` / `structure.json`; do not duplicate them in the Teaching Prompt body.
 - `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content (written in MarkdownFlow); apply [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics).
 - `used_variables` (array of strings, required) — every named variable referenced or collected in this lesson; no-variable interactions are excluded. Cross-check with [Variable Table](#variable-table): each item here must have a matching `global_variable_table` entry, and that entry's `used_in` list must include this lesson when the variable is referenced outside the interaction line. If the Course Prompt references the same variable, `used_in` must also include `course_prompt`.
 - `depends_on_lessons` (array of lesson ids, required) — explicit list; empty list if none.

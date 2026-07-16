@@ -383,12 +383,12 @@ Behavior:
 - `--file`: opens with Pillow (HEIC/HEIF via `pillow-heif`), corrects EXIF orientation, downscales to longest-side 2048 px, recompresses JPEG until ≤ 2 MB; transparent images output PNG. Non-image inputs (e.g. `.pdf`, `.txt`) raise an error in the preprocessing stage and exit with code 1.
 - `--url`: posts directly to `/api/shifu/url-upfile`; the backend validates the response is `image/*` and re-hosts the file.
 - `--course-dir`: when provided, an entry is upserted into `<course-dir>/assets/image-manifest.json` keyed by `local` (for file uploads) or `source_url` (for URL uploads). Re-uploading the same path updates the entry rather than appending.
-- `--alt`: short description of what the image conveys; stored in the manifest for review and for later authoring of MarkdownFlow alt text. The LLM should still write a context-appropriate alt when embedding the image — `--alt` is the source of truth, not the final rendered text.
+- `--alt`: short description of what the image conveys; stored in the manifest as the source description used by the authoring workflow.
 - `--no-process` (debug only): skip preprocessing and upload bytes as-is. Use only when investigating a backend issue; will fail for HEIC and oversize files.
 
 Dependencies: `Pillow`, `pillow-heif`. First-run failures suggest `pip install -r scripts/requirements.txt`.
 
-For the embedding rules once you have a URL, see `references/markdownflow.md#images`.
+For authoring after the upload returns a URL, see `../generation-workflow.md#image-authoring`. MarkdownFlow's runtime treatment of the resulting content is defined separately in `../markdownflow.md#images`.
 
 ## State Management
 

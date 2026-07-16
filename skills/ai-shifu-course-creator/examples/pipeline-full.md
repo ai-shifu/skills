@@ -1,6 +1,6 @@
 # Full Pipeline Example (Segmentation → Orchestration → Generation → Optimization)
 
-> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `../references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
 
 ## Input Payload (example)
 
@@ -95,9 +95,9 @@
 
 ```markdown
 Open with a production metric that changed unexpectedly and ask the learner to identify the highest-signal diagnostic step before explaining how to classify the drift.
----
+
 ?[%{{diagnosis_choice}} check workload shape | check lock wait | check cache hit ratio]
----
+
 The learner's diagnosis choice is {{diagnosis_choice}}. Create a slide that shows a stable baseline followed by a sustained metric shift, with the selected diagnostic branch first and visually emphasized among workload shape, lock wait, and cache hit ratio.
 
 Explain that persistence separates drift from noise, while classification prevents the learner from applying a plausible fix to the wrong cause. Based on the learner's choice, run one focused verification before suggesting a fix, and carry the choice into the next lesson's worked example.

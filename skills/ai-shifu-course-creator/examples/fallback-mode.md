@@ -1,6 +1,6 @@
 # Fallback Mode Example
 
-> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
+> Note: Outputs in this example are illustrated in English for clarity. Actual output language follows `../references/data-contracts.md#language-resolution` (e.g., Chinese invocation → Chinese output).
 
 Demonstrates degraded-input handling across the four phases. This file is the single home for fallback scenarios; the phase-only examples cover standard mode and point here.
 
@@ -20,7 +20,7 @@ Demonstrates degraded-input handling across the four phases. This file is the si
 }
 ```
 
-Output includes uncertainty markers and rerun hints; preserved blocks survive even under fallback:
+Output includes uncertainty markers and rerun hints; immutable spans survive even under fallback:
 
 ```json
 {
@@ -93,9 +93,9 @@ Pipeline produces partial but runnable output:
 
 ```md
 Ask the learner to select a first-pass classification rule before comparing the two taxonomies.
----
+
 ?[latency first | contention first]
----
+
 Current evidence is partial; confirm one canonical taxonomy before final pass.
 ```
 
@@ -123,7 +123,7 @@ Current evidence is partial; confirm one canonical taxonomy before final pass.
 {
   "lesson_id": "L07",
   "lesson_title": "Pick a Rollback Trigger",
-  "teaching_prompt": "Ask the learner to pick a rollback trigger that minimizes blast radius.\n---\n?[latency spike threshold | error budget burn threshold]\n---\nAfter the learner answers, define one immediate rollback condition and one follow-up diagnostic for the selected trigger.",
+  "teaching_prompt": "Ask the learner to pick a rollback trigger that minimizes blast radius.\n\n?[latency spike threshold | error budget burn threshold]\n\nAfter the learner answers, define one immediate rollback condition and one follow-up diagnostic for the selected trigger.",
   "used_variables": [],
   "depends_on_lessons": [],
   "fallback_mode": true,
@@ -141,9 +141,9 @@ Rendered `teaching_prompt` value:
 
 ```md
 Ask the learner to pick a rollback trigger that minimizes blast radius.
----
+
 ?[latency spike threshold | error budget burn threshold]
----
+
 After the learner answers, define one immediate rollback condition and one follow-up diagnostic for the selected trigger.
 ```
 
@@ -151,7 +151,7 @@ After the learner answers, define one immediate rollback condition and one follo
 
 ```json
 {
-  "existing_teaching_prompt": "## Goal\nPick a fix.\n---\n?[%{{fix_choice}} option A | option B]\n---\n?[%{{choose_fix}} option A | option B]\n---\nUse {{fix_context}} now.",
+  "existing_teaching_prompt": "## Goal\nPick a fix.\n\n?[%{{fix_choice}} option A | option B]\n\n?[%{{choose_fix}} option A | option B]\n\nUse {{fix_context}} now.",
   "course_material": "",
   "optimization_constraints": {
     "fallback_mode": true,
@@ -189,9 +189,9 @@ Corrected Teaching Prompt (smallest safe edit):
 
 ```md
 Ask the learner to pick one safe first fix.
----
+
 ?[option A | option B]
----
+
 After the learner answers, apply one verification step before rollout.
 ```
 

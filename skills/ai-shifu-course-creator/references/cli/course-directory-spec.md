@@ -54,7 +54,7 @@ Field reference:
 - `local` (file uploads): path relative to `<course-dir>` when possible, otherwise absolute. Acts as the dedup key — uploading the same path again updates the entry rather than appending.
 - `source_url` (URL uploads): the original remote URL provided to `--url`. Acts as the dedup key for URL-based uploads.
 - `remote`: the platform OSS URL produced by upload. This is the value that should appear in Teaching Prompts.
-- `alt`: description supplied via `--alt`. Not auto-rendered into MarkdownFlow — the authoring LLM still writes a contextual alt.
+- `alt`: description supplied via `--alt` and stored for the image-authoring workflow in `../generation-workflow.md#image-authoring`.
 - `uploaded_at`: UTC ISO 8601 timestamp.
 - `bytes` / `original_bytes` / `mime` / `filename` (file uploads only): book-keeping for the preprocessed payload that was actually sent.
 
@@ -90,7 +90,7 @@ The per-lesson `revision` is the optimistic-locking baseline (the version at
 last pull/push) — how `status` detects "behind" and how a push detects a
 concurrent edit. `content_sha256` lets `status` tell whether the local file was
 edited since the last sync. See
-`references/cli/cli-reference.md#version-sync-pull--status` for the workflow.
+`cli-reference.md#version-sync-pull--status` for the workflow.
 
 ## Lesson Files
 
@@ -124,7 +124,7 @@ Defines the AI engine's course-wide role and presentation style. Teaching method
 
 Authoring rules and a fillable template live in `../course-prompt.md`.
 
-Note: MarkdownFlow files do not support HTML comments (`<!-- -->`). The parser discards them entirely, so the AI engine never sees them. Write instructions as plain text directly in the Course Prompt content.
+Course Prompt content follows the HTML-comment behavior defined in `../markdownflow.md#preprocessing`; comments do not provide runtime instructions to the LLM.
 
 ## structure.json
 
