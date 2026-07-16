@@ -13,7 +13,7 @@ Produce stable lesson-oriented semantic segments from noisy source material whil
 #### Core Rules
 
 1. Preserve source order unless explicit ordering hints are provided.
-2. Keep code blocks, image files, and table blocks immutable.
+2. Keep each code block, image reference, and table block as one traceable source span. During Segmentation, apply `optimization-workflow.md#preservation-decisions` and set `preserve_block` before any Generation step; the authority's file location does not defer this decision to the later Optimization phase.
 3. Segment by semantic shift, not heading depth alone.
 4. Keep each lesson candidate centered on one teachable question.
 5. Attach source spans to every segment.
@@ -30,7 +30,7 @@ Produce a segment list that conforms to [data-contracts.md#segment-schema](data-
 
 - Segment output covers all valid source spans in traceable order.
 - Every segment passes [data-contracts.md#segment-schema](data-contracts.md#segment-schema).
-- The preservation and one-core-question rules in [Core Rules](#core-rules) pass; immutable assets also satisfy [markdownflow.md#preservation](markdownflow.md#preservation).
+- The preservation and one-core-question rules in [Core Rules](#core-rules) pass; each immutable span is marked through `data-contracts.md#segment-schema` according to `optimization-workflow.md#preservation-decisions`.
 
 ---
 
@@ -51,7 +51,7 @@ Produce a segment list that conforms to [data-contracts.md#segment-schema](data-
 
 All gates must pass before Orchestration declares lessons complete:
 
-- **Syntax / runtime gates** (violation → Prompt fails to run): preservation of code, images, and required source spans per `markdownflow.md#preservation`; no unresolved placeholders and no learner-answer variable references without a variable-backed interaction and metadata contract; `?[]` on standalone lines; deterministic blocks used only for truly fixed content per `markdownflow.md#deterministic-blocks`; every image URL must be on the `res.ai-shifu.cn` domain — fixed images wrapped in a single-line deterministic block, HTML-view images expressed as instruction-style directives with the `(必须原样保留)` URL phrase per `markdownflow.md#images`.
+- **Syntax / runtime gates** (violation → Prompt fails to run): each Prompt parses and executes according to `markdownflow.md`; every learner-answer variable passes `data-contracts.md#variable-table`; interaction, variable-branch, and image composition pass `generation-workflow.md#markdownflow-authoring`; immutable spans pass `optimization-workflow.md#preservation-decisions`. Verify the observable results through `review-checklist.md` rather than restating those rules here.
 - **Pedagogical gates** (violation → teaching quality fails): one core question per lesson, the policy-resolved teaching loop, and delivery-mode visual-text behavior — all per `pedagogy.md#interaction-policy-precedence`, `pedagogy.md#lesson-loop`, `pedagogy.md#interaction-design`, `pedagogy.md#variable-strategy`, and `pedagogy.md#visual-text-coordination`. At this phase, verify the resulting placements and substitutions rather than redefining policy semantics. Also enforce the five-interaction maximum, distinct branching for viewpoint/path interactions or explicit `require_branching_feedback`, and an immediate feedback or visible instructional effect for every other interaction.
 
 Recompute lessons that fail any gate; do not partially-pass.
@@ -74,7 +74,7 @@ Fallback field shapes per `data-contracts.md#fallback-output-extensions`.
 
 ### Outputs
 
-See `data-contracts.md#output-contract` for the Teaching Prompts, course index, and global variable table schemas; preservation rules per `markdownflow.md#preservation`.
+See `data-contracts.md#output-contract` for the Teaching Prompts, course index, and global variable table schemas.
 
 ### Validation
 

@@ -15,7 +15,7 @@ Apply Optimization audits against artifact-specific constraints:
 - Teaching Prompt pedagogical constraints (interaction-policy effects, variable strategy, interaction design, visual-text coordination, and lesson loop): `pedagogy.md#interaction-policy-precedence`, `pedagogy.md#variable-strategy`, `pedagogy.md#interaction-design`, `pedagogy.md#visual-text-coordination`, and `pedagogy.md#lesson-loop`.
 - Course Prompt responsibility and presentation-layer boundary: `prompt-contracts.md#artifact-responsibilities`; materialization checks: `course-prompt.md#materialization-checks`.
 - Interaction-policy shape and enums: `data-contracts.md#interaction-policy`.
-- Syntax / runtime constraints (preservation, deterministic blocks, variable references): `markdownflow.md`.
+- Syntax and runtime behavior: `markdownflow.md`; authoring form: `generation-workflow.md#markdownflow-authoring`; preservation scope: [Preservation Decisions](#preservation-decisions).
 - Observable audit checks: `review-checklist.md`.
 
 ### Optimization Methodology
@@ -29,12 +29,19 @@ Apply Optimization audits against artifact-specific constraints:
 
 #### Content Fidelity and Controlled Rewriting
 
-- Preserve source coverage, intended meaning, information density, non-negotiable fragments, and immutable assets. Do not trade substance for fluency.
-- Keep immutable code blocks and fence languages, image URLs, alt text and ordering, regulated wording, fixed numeric thresholds, required quotes, and table blocks intact.
+- Preserve source coverage, intended meaning, information density, and non-negotiable fragments. Do not trade substance for fluency.
 - Prefer targeted edits that repair the identified issue while leaving unaffected content intact.
 - Allowed targeted rewrites include filler removal, sentence smoothing, and structural reorganization for lesson clarity when the fidelity constraints above still pass.
 - Never introduce a silent factual change or an unmarked omission of required source evidence.
 - Broaden a rewrite only when a smaller edit cannot resolve the issue coherently. Keep the rewrite within the declared scope, record its rationale, and revalidate the affected source-to-Prompt coverage afterward.
+
+#### Preservation Decisions
+
+Select the smallest spans that must survive generation without semantic or structural drift. Immutable spans include required code and fence languages, image URLs, alt text and ordering, regulated wording, fixed numeric thresholds, required quotations, and table blocks. Segmentation records this decision through `data-contracts.md#segment-schema`; Generation encodes it through `generation-workflow.md#preservation-encoding` and `generation-workflow.md#image-authoring`.
+
+- Select only the spans whose exact wording, value, ordering, or structure is a source requirement; surrounding explanations remain adaptive.
+- An entire lesson is not a valid preservation scope because doing so removes the adaptive generation the lesson depends on.
+- After any rewrite, verify every selected immutable span against the source and re-run MarkdownFlow runtime checks.
 
 #### Issue Taxonomy
 

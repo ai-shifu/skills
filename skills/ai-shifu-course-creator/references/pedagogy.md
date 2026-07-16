@@ -114,7 +114,7 @@ These are the teaching decisions for whether to collect an answer, how often to 
 
 ### Visual-Text Coordination
 
-This section defines how slides and explanatory text divide teaching responsibility. Apply image embedding and runtime rules from [markdownflow.md#images](markdownflow.md#images), and use [generation-workflow.md#working-with-author-provided-images](generation-workflow.md#working-with-author-provided-images) for author-provided asset handling.
+This section defines how slides and explanatory text divide teaching responsibility. Encode the selected visual form through [generation-workflow.md#image-authoring](generation-workflow.md#image-authoring); MarkdownFlow's resulting runtime behavior is defined in [markdownflow.md#images](markdownflow.md#images). Use [generation-workflow.md#working-with-author-provided-images](generation-workflow.md#working-with-author-provided-images) for author-provided asset handling.
 
 | Scenario | Authority and requirements |
 |---|---|

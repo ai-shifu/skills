@@ -329,7 +329,10 @@ def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
                 seen.add(ref)
                 target = (md_file.parent / ref[0]).resolve()
                 if not target.is_file():
-                    # Missing files are reported by the RE_REF_PATH check.
+                    issues.add_error(
+                        f"{md_file}: broken anchor -> {ref[0]}#{ref[1]} "
+                        "(target file not found)"
+                    )
                     continue
                 if target not in slug_cache:
                     slug_cache[target] = github_heading_slugs(target)

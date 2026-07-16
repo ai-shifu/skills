@@ -18,7 +18,7 @@ Do not write a transcript, lesson-plan narration, or polished learner-facing lec
 This file owns the semantics shared by Teaching Prompts and Course Prompts and the top-level responsibility boundary between the two artifacts. Detailed syntax, teaching decisions, schemas, and materialization rules live in the sources indexed below.
 
 - A **Teaching Prompt** is the per-lesson runtime instruction artifact. It owns the lesson's teaching intent and execution, learner interactions, and variable collection.
-- A **Course Prompt** is the course-level runtime instruction artifact. It owns shared role, presentation, and intentional cross-lesson personalization, but it follows each Teaching Prompt and does not own lesson pedagogy. It may reference persisted learner variables; it does not collect learner input or define lesson-local branches.
+- A **Course Prompt** is the course-level runtime instruction artifact. It owns shared role, presentation, and intentional cross-lesson personalization, but it follows each Teaching Prompt and does not own lesson pedagogy. It may reference persisted learner variables; it contains no MarkdownFlow `?[]` interaction controls, does not collect learner input, and does not define lesson-local branches.
 
 Apply lesson-level teaching decisions through [Pedagogy](pedagogy.md) and materialize the Course Prompt through [Course Prompt: Fillable Template](course-prompt.md#fillable-template).
 
@@ -30,9 +30,12 @@ Use each linked source directly. Workflow files apply these authorities through 
 |---|---|
 | Prompt audience, instruction voice, addressee, and second-person meaning | [Prompt Semantics](#prompt-semantics) |
 | Lesson loop, teaching patterns, interaction decisions, variable-persistence decisions, and teaching-side visual coordination | [Pedagogy](pedagogy.md) |
-| MarkdownFlow variable substitution, interactions, branching, deterministic blocks, images, and runtime preservation | [MarkdownFlow Spec](markdownflow.md) |
+| MarkdownFlow processing, preprocessing, syntax recognition, variable substitution, interaction execution, branch limitations, deterministic output, and image runtime behavior | [MarkdownFlow Spec](markdownflow.md) |
 | Course Prompt structure, placeholder sources, and materialization | [Course Prompt](course-prompt.md) |
 | Artifact schemas, metadata fields, variable tables, and output-language resolution | [Data Contracts](data-contracts.md) |
 | Source segmentation and cross-lesson orchestration | [Segmentation and Orchestration](segmentation-orchestration.md) |
-| Lesson generation, author-provided image handling, and slide-only delivery | [Generation Workflow](generation-workflow.md) |
-| Prompt audit, repair, and optimization execution | [Optimization Workflow](optimization-workflow.md) |
+| Lesson generation and slide-only delivery | [Generation Workflow](generation-workflow.md#generation) |
+| MarkdownFlow interaction, variable, branch, and preservation encoding | [MarkdownFlow Authoring](generation-workflow.md#markdownflow-authoring) |
+| Image form selection and composition | [Image Authoring](generation-workflow.md#image-authoring) |
+| Prompt audit, repair, and optimization execution | [Optimization Workflow](optimization-workflow.md#optimization) |
+| Immutable-span and preservation-scope decisions | [Preservation Decisions](optimization-workflow.md#preservation-decisions) |

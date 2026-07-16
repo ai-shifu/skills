@@ -7,7 +7,7 @@ Course-level materialization contract for the Course Prompt artifact.
 Use this file to materialize one course-wide artifact from the six-section template below. It defines the template, fill-value sources, context used while filling those values, and completion checks; it does not redefine shared Prompt semantics, lesson pedagogy, or MarkdownFlow runtime behavior.
 
 - Apply shared Prompt semantics and the Course Prompt versus Teaching Prompt authority boundary from [prompt-contracts.md](prompt-contracts.md).
-- Encode any variables or other runtime behavior used by the completed artifact according to [markdownflow.md](markdownflow.md).
+- Resolve any variable references in the completed artifact against [markdownflow.md#variables](markdownflow.md#variables).
 
 ## Authoring Workflow
 
@@ -85,4 +85,4 @@ Use these inputs as context constraints while wording the five fill values; they
 - All five `XXX` occurrences are replaced with course-specific content derived from the mapped sources.
 - Every non-placeholder template instruction remains represented with the same behavior.
 - The fill values satisfy the learner-profile, topic-scope, and delivery-mode context constraints above.
-- The completed artifact follows [prompt-contracts.md](prompt-contracts.md) and [markdownflow.md](markdownflow.md) without copying their rules into this file.
+- The completed artifact follows [prompt-contracts.md](prompt-contracts.md), and any variable references have the runtime behavior defined in [markdownflow.md#variables](markdownflow.md#variables), without copying those rules into this file.

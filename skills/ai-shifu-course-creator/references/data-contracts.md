@@ -113,7 +113,7 @@ Each item in the Segmentation output (consumed by Orchestration and Generation):
 - `segment_id` (string, required) — stable identifier within the run.
 - `segment_type` (string enum, required) — must satisfy [Segment Types](#segment-types).
 - `core_point` (string, required) — the single teachable point this segment carries.
-- `preserve_block` (boolean, required) — `true` for code/image/table/required-quote blocks that must reach the lesson verbatim per [markdownflow.md#preservation](markdownflow.md#preservation).
+- `preserve_block` (boolean, required) — `true` when the source span is selected as immutable by [optimization-workflow.md#preservation-decisions](optimization-workflow.md#preservation-decisions). The field records the decision; downstream MarkdownFlow behavior is defined in [markdownflow.md#preservation](markdownflow.md#preservation).
 - `source_span` (object, required) — traceable source location with `source_id`
   (string), `start` (non-negative integer, inclusive character offset), and `end`
   (integer greater than `start`, exclusive character offset). Use the same object
@@ -157,12 +157,12 @@ For segmentation rules and methodology, see [segmentation-orchestration.md#segme
 
 `global_variable_table` is an array. Each item:
 
-- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; new variable names should use the resolved output language and be composed of letters, numbers, and underscores.
+- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; new variable names use the resolved output language and are composed of letters, numbers, and underscores.
 - `collected_in` (string, required) — `lesson_id` where the variable is first collected.
 - `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when `course-prompt.md` references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
 - `effect_scope` (string constant: `cross_lesson`, required).
 
-Only named variables belong in `global_variable_table`; no-variable `?[...]` interactions do not create table entries. Every table entry has `effect_scope: "cross_lesson"`, and `used_in` includes `course_prompt` whenever `course-prompt.md` references the variable. Variable collection, reuse, and pacing decisions are defined in [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy); syntax and runtime substitution semantics (`{{var}}` → stored value or `UNKNOWN`) are defined in [markdownflow.md#variables](markdownflow.md#variables).
+Only named variables belong in `global_variable_table`; no-variable `?[...]` interactions do not create table entries. Every learner-answer variable referenced by a lesson or Course Prompt has one variable-backed collection and one matching table entry. Every table entry has `effect_scope: "cross_lesson"`, names its first collection lesson, and lists every downstream lesson plus `course_prompt` when applicable. A table entry with no cross-lesson or Course Prompt use is invalid. Variable collection, reuse, and pacing decisions are defined in [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy); parser recognition and runtime substitution semantics (`{{var}}` → stored value or `UNKNOWN`) are defined in [markdownflow.md#variables](markdownflow.md#variables).
 
 ## Lesson Schema
 

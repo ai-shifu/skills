@@ -41,9 +41,10 @@ Optimization 全面审计清单。Optimization 必须逐项检查可观察结果
 
 ## Interaction Quality
 
+- The observed control composition passes [generation-workflow.md#interaction-encoding](generation-workflow.md#interaction-encoding), while its purpose, selection type, and feedback effect pass `pedagogy.md#interaction-design`.
 - Under `disabled`, no `?[]` block, learner-answer request, learner-answer variable, or answer-dependent branch is present.
 - Interactions that are present are concrete and answerable.
-- Interaction type matches the decision: single-select for mutually exclusive path choices, multi-select for non-exclusive learner context, goals, interests, modules, blockers, scenarios, experience, or practice needs. For multi-select, downstream content is driven through combined feedback, prioritization, or tailored examples rather than exhaustive branching for every combination.
+- Interaction type matches the decision, and multi-select answers drive combined feedback, prioritization, or tailored examples rather than exhaustive branching for every combination.
 - Learner-facing questions appear before interaction syntax, not after `%{{var}}` inside `?[%{{var}} ...]`.
 - Each `?[]` interaction appears on its own line.
 - If the pre-interaction text enumerates or describes choices, the `?[]` option labels match those choices exactly — same set, order, and wording.
@@ -52,6 +53,7 @@ Optimization 全面审计清单。Optimization 必须逐项检查可观察结果
 - Branching paths are distinct for viewpoint/path interactions and whenever `require_branching_feedback` is explicit.
 - Instructional interaction results affect later content through immediate feedback or a visible downstream effect.
 - Repeated interaction semantics avoided across lessons unless comparison intent is explicit.
+- Interaction count per lesson is at most five.
 - Variable-backed interactions are used only when the answer must leave the current lesson.
 - Lesson-local branching, examples, feedback, summaries, and inputs use no-variable `?[...]` and do not introduce `{{var}}`.
 
@@ -62,28 +64,26 @@ Optimization 全面审计清单。Optimization 必须逐项检查可观察结果
 - Any learner answer used outside the current lesson, including `course-prompt.md`, later lessons, or cross-lesson personalization, difficulty control, examples, summaries, or deliverables, has a named variable.
 - No duplicate semantic collection unless comparison intent is explicit.
 - No unresolved placeholders in learner-facing content.
-- Variable references in Teaching Prompt and Course Prompt content are written as substituted values; references that may run before the learner assigns a value handle the literal `UNKNOWN` fallback.
-- Variable-based branches state the substituted value in a natural sentence first, then use natural-language condition phrasing.
+- Variable references and pre-collection `UNKNOWN` behavior pass [generation-workflow.md#variable-and-branch-encoding](generation-workflow.md#variable-and-branch-encoding).
 - Every variable has cross-lesson or Course Prompt utility.
 - No throwaway named variables for continue buttons, confirmations, choices, or inputs used only inside the current lesson.
 
 ## Visual-Text Coordination
 
 - In standard non-slide-only lessons, every core concept that uses a visual has a visual-plus-text explanation.
-- Raw graphic source code (SVG, HTML drawings, Mermaid, PlantUML, or Graphviz) appears in a Teaching Prompt only when the author explicitly requests that raw format; approved HTML-view image instructions are checked separately below.
+- Raw graphic source code appears only when explicitly requested, as required by [generation-workflow.md#image-authoring](generation-workflow.md#image-authoring).
 - Pure classroom slides follow `generation-workflow.md#slide-only-generation-override` and are not failed for omitting AI narration or a full explanation paragraph.
-- When an image asset **is** embedded: its URL is on the `res.ai-shifu.cn` domain and has a corresponding entry in `<course-dir>/assets/image-manifest.json` (no orphan URLs, no externally hot-linked images).
-- Fixed-display images are wrapped in single-line deterministic blocks (`===![alt](url)===`); HTML-view images use instruction-style directives per `markdownflow.md#images` 3.2 (no HTML inside `=== … ===` / `!=== … !===`).
-- HTML-view image instructions include the `(必须原样保留)` phrase on every URL line, and locked text (e.g. figure captions) is enforced through wording (`必须原样输出`), not by mixing in deterministic blocks.
+- Every embedded asset uses the uploaded URL and manifest mapping defined by `cli/cli-reference.md#image-upload` and `cli/course-directory-spec.md#assets`.
+- Every fixed-display or HTML-view image conforms to [generation-workflow.md#image-authoring](generation-workflow.md#image-authoring); the resulting URL, description, caption, position, and ordering survive generation as required by the selected form.
 - Alt text and `图片内容` descriptions carry information about what the image conveys (no `image1` / `示意图`).
 - In standard non-slide-only lessons, text adds context (background / causality / examples), not just a restatement of the image.
 
 ## Runtime Stability
 
-- MarkdownFlow syntax is valid.
-- Deterministic blocks used only where necessary; not wrapping full lessons.
-- Interaction count per lesson at most five (recommended three to four).
-- Code, image, and required source spans preserved per `markdownflow.md#preservation`.
+- MarkdownFlow blocks parse and execute with the runtime effects defined in `markdownflow.md`.
+- Complete deterministic blocks bypass the LLM; inline preservation remains within a generative block as defined in `markdownflow.md#deterministic-blocks`.
+- Preservation scope passes `optimization-workflow.md#preservation-decisions`.
+- Code, image, and required source spans remain intact after the applicable preprocessing, deterministic, or generative path.
 
 ## Course Prompt
 
