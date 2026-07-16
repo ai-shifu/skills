@@ -1301,16 +1301,15 @@ class PedagogyContractTests(unittest.TestCase):
         interaction_encoding = markdown_section(
             self.generation_workflow, "Interaction Encoding"
         )
+        preservation_encoding = markdown_section(
+            self.generation_workflow, "Preservation Encoding"
+        )
         image_authoring = markdown_section(
             self.generation_workflow, "Image Authoring"
         )
         image_output_validation = markdown_section(
             self.generation_workflow, "Image Output Validation"
         )
-        preservation_encoding = markdown_section(
-            self.generation_workflow, "Preservation Encoding"
-        )
-
         for link in (
             "(pedagogy.md)",
             "(markdownflow.md)",
@@ -1373,6 +1372,164 @@ class PedagogyContractTests(unittest.TestCase):
             "(generation-workflow.md#slide-only-generation-override)",
             visuals,
         )
+
+    def test_standard_teaching_slide_rhythm_is_authoritative_and_scoped(self):
+        lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
+        interaction_design = markdown_section(
+            self.pedagogy, "Interaction Design"
+        )
+        visual_coordination = markdown_section(
+            self.pedagogy, "Visual-Text Coordination"
+        )
+        interaction_encoding = markdown_section(
+            self.generation_workflow, "Interaction Encoding"
+        )
+        preservation_encoding = markdown_section(
+            self.generation_workflow, "Preservation Encoding"
+        )
+        single_lesson_strategy = markdown_section(
+            self.generation_workflow, "Single-Lesson Generation Strategy"
+        )
+        slide_only_override = markdown_section(
+            self.generation_workflow, "Slide-Only Generation Override"
+        )
+        markdownflow_interactions = markdown_section(
+            self.markdownflow, "Interactions"
+        )
+        structure_review = markdown_section(
+            self.review_checklist, "Structure Separation"
+        )
+        interaction_review = markdown_section(
+            self.review_checklist, "Interaction Quality"
+        )
+        visual_review = markdown_section(
+            self.review_checklist, "Visual-Text Coordination"
+        )
+
+        self.assertIn("brief lead-in", lesson_loop)
+        self.assertIn("first substantive slide", lesson_loop)
+        self.assertIn("interaction slide", interaction_design)
+        self.assertIn("key-information slide", visual_coordination)
+        self.assertIn("focused quote slide", visual_coordination)
+        self.assertIn("presentation-worthy", visual_coordination)
+        self.assertIn("merely mentioned or supporting", visual_coordination)
+        self.assertIn("interaction slide", interaction_encoding)
+        self.assertIn(
+            "same MarkdownFlow instruction block",
+            self.generation_workflow,
+        )
+
+        self.assertIn("inline with `===...===`", preservation_encoding)
+        self.assertIn("not deterministic", preservation_encoding)
+        self.assertIn("rendered preview or runtime output", preservation_encoding)
+        self.assertIn("blocking Generation error", preservation_encoding)
+        self.assertIn("residual runtime fidelity risk", preservation_encoding)
+        self.assertIn("only `===Quoted source text.===`", preservation_encoding)
+        self.assertIn(
+            "do not append a dash, speaker, author, or source label",
+            preservation_encoding,
+        )
+        self.assertIn(
+            "may be translated",
+            markdown_section(self.markdownflow, "Deterministic Blocks"),
+        )
+
+        self.assertIn("question-bearing", interaction_encoding)
+        self.assertIn("`?[Continue]`", interaction_encoding)
+        encoding_action_rule = next(
+            line
+            for line in interaction_encoding.splitlines()
+            if "`?[Continue]`" in line
+        )
+        self.assertIn(
+            "do not invent a learner question or question slide",
+            encoding_action_rule.casefold(),
+        )
+        self.assertIn("question-bearing", interaction_review)
+        self.assertIn("`?[Continue]`", interaction_review)
+        review_action_rule = next(
+            line
+            for line in interaction_review.splitlines()
+            if "`?[Continue]`" in line
+        )
+        self.assertIn(
+            "not failed for lacking an invented question slide",
+            review_action_rule.casefold(),
+        )
+        self.assertIn("`?[Continue]`", markdownflow_interactions)
+
+        lead_in_rule = next(
+            line for line in lesson_loop.splitlines() if "brief lead-in" in line
+        )
+        self.assertIn("standard non-slide-only", lead_in_rule)
+        self.assertIn("Pure classroom slides instead", lead_in_rule)
+        self.assertRegex(
+            single_lesson_strategy,
+            r"(?is)standard non-slide-only.{0,400}brief opening paragraph",
+        )
+        self.assertIn(
+            "Pure classroom slides replace these anchors",
+            single_lesson_strategy,
+        )
+        structure_start_rule = next(
+            line
+            for line in structure_review.splitlines()
+            if "first non-empty line" in line
+        )
+        self.assertIn("standard non-slide-only", structure_start_rule)
+        self.assertIn("Pure classroom slides instead", structure_start_rule)
+        structure_first_slide_rule = next(
+            line
+            for line in structure_review.splitlines()
+            if "first substantive slide" in line
+        )
+        self.assertIn("standard non-slide-only", structure_first_slide_rule)
+
+        self.assertIn("brief lead-in", structure_review)
+        self.assertIn("first substantive slide", structure_review)
+        self.assertIn(
+            "interaction slide instruction",
+            interaction_review.replace("-", " "),
+        )
+        self.assertIn("key-information slide", visual_review)
+        self.assertIn("focused quote slide", visual_review)
+        self.assertIn("Presentation-worthy", visual_review)
+        self.assertIn("merely mentioned or supporting", visual_review)
+        self.assertIn("same MarkdownFlow instruction block", visual_review)
+        self.assertIn("match the source byte for byte", visual_review)
+        self.assertIn("residual runtime fidelity risk", visual_review)
+
+        skill_markdown = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(COURSE_CREATOR_REFERENCES.parent.rglob("*.md"))
+        )
+        for retired_phrase in (
+            "Keep every core concept paired with a slide",
+            "Opening objective plus slide-style visual cover",
+        ):
+            self.assertNotIn(retired_phrase, skill_markdown)
+
+        course_prompt_scope = self.course_prompt.replace("-", " ")
+        for lesson_level_rule in (
+            "brief lead-in",
+            "substantive slide",
+            "interaction slide",
+            "key-information slide",
+            "focused quote slide",
+            "density_cue",
+            "quote_cue",
+        ):
+            self.assertNotIn(
+                lesson_level_rule.replace("-", " "),
+                course_prompt_scope,
+            )
+
+        self.assertIn("not AI narration", slide_only_override)
+        self.assertIn(
+            "Do not instruct the runtime LLM to narrate",
+            slide_only_override,
+        )
+        self.assertIn("omitting AI narration", visual_review)
 
     def test_course_prompt_template_uses_runtime_user_message_context(self):
         responsibilities = markdown_section(

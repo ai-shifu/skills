@@ -36,7 +36,7 @@ The default loop applies when `unspecified` leaves the baseline active or when a
 A lesson missing a phase required by its selected loop is incomplete. The following constraints apply to both loops:
 
 - **One core question per lesson**: each lesson resolves exactly one teachable question.
-- **Direct teaching start**: the first paragraph must establish a scenario, ask a guiding question, activate prior experience, state the task, or start a practice. Do not use a structural title, hierarchy label, ordering marker, or copied source heading as the opening.
+- **Brief direct teaching start for standard non-slide-only teaching**: the first paragraph must be a brief lead-in that establishes a scenario, asks a guiding question, activates prior experience, states the task, or starts a practice. Follow it with the first substantive slide before any extended explanation. When `pre_content_thinking` applies at the opening, its interaction slide may serve as that first substantive slide. Do not use a structural title, hierarchy label, ordering marker, or copied source heading as the opening. Pure classroom slides instead begin with slide-facing content under the [Slide-Only Generation Override](generation-workflow.md#slide-only-generation-override), without adding an AI-narrated lead-in.
 - **Action tasks** must be immediately executable by the learner or explicitly linked to a downstream lesson; do not create orphan actions.
 - **Carryover statements** are allowed only when cross-lesson dependency is explicitly permitted; otherwise remove them together with any unbound carryover variables.
 
@@ -91,6 +91,7 @@ These are the teaching rules for permitted interactions. For interaction syntax,
 
 - Include every selected-purpose placement at its defined scope.
 - Interaction prompts must be concrete and directly answerable.
+- In standard non-slide-only teaching, present every complete learner-facing question for a question-bearing interaction on an interaction slide before its MarkdownFlow control. Keep option labels, input hints, simulated controls, and answers off the slide so the actual `?[]` control remains the single response surface. An action-only control such as `?[Continue]` poses no learner-facing question, so it does not require or justify an invented question slide. The [Slide-Only Generation Override](generation-workflow.md#slide-only-generation-override) retains its existing projection behavior.
 - Place interactions at decision points, not only at lesson start.
 - Choose the interaction type by the learner decision:
   - Use single-select for mutually exclusive categories, path choices, viewpoint checks, or any interaction where one selected answer should drive a distinct branch.
@@ -116,8 +117,14 @@ These are the teaching decisions for whether to collect an answer, how often to 
 
 This section defines how slides and explanatory text divide teaching responsibility. Encode the selected visual form through [generation-workflow.md#image-authoring](generation-workflow.md#image-authoring); MarkdownFlow's resulting runtime behavior is defined in [markdownflow.md#images](markdownflow.md#images). Use [generation-workflow.md#working-with-author-provided-images](generation-workflow.md#working-with-author-provided-images) for author-provided asset handling.
 
+In standard non-slide-only teaching, use the rhythm **brief lead-in → substantive slide → concise explanation**, then repeat the slide-and-explanation unit only when the content warrants another visual turn. The first slide must carry instructional content rather than act as a cover, decorative page, or objective-only page.
+
+Create a slide when a presentation-worthy process, relationship, comparison, case, decision, core conclusion, key rule, important boundary, interaction question, or memorable quotation carries the current teaching turn. Treat a `density_cue` as key information that must not be compressed away and place it on a key-information slide; group related key information by theme instead of giving every item its own page. Treat a `quote_cue`, or a quotation the source or author explicitly designates as memorable, as a focused-quote trigger and give it a focused quote slide without unrelated points. A merely mentioned or supporting instance of those categories does not trigger a page by itself; supporting details, transitions, and repeated conclusions do not justify their own slides.
+
+After each selected slide and before the next slide, provide one concise but complete explanation that adds background, causality, interpretation, or an example instead of restating the page. A question-bearing interaction slide is followed by its `?[]` control and immediate instructional effect; the explanation may respond to the learner's answer. Preserve the exact wording, punctuation, and existing attribution of a source-identified or author-designated verbatim quotation in the authored Teaching Prompt, and do not invent an attribution when none exists; Generation must apply [Preservation Encoding](generation-workflow.md#preservation-encoding) and the rendered-output fidelity gate defined there. Present a model-distilled sentence as a key conclusion, not as a source quotation or fabricated quote.
+
 | Scenario | Authority and requirements |
 |---|---|
-| Standard non-slide-only teaching | Keep every core concept paired with a slide and textual explanation. The slide carries structural prompting; the text carries the complete explanation and remains understandable when the learner has not seen the slide. Pair each slide direction with a brief explanation of what it should convey. |
-| Author-provided image file | Use the asset as part of the teaching explanation rather than as decoration. In standard teaching, follow it with the complete explanatory paragraph. If the course is slide-only, the next row overrides that paragraph requirement. |
+| Standard non-slide-only teaching | Apply the rhythm and slide-selection rules above. The slide carries structural prompting; the explanation remains understandable when the learner has not seen the slide. Do not place two slide directions back to back without the required explanation or interaction effect between them. |
+| Author-provided image file | Use the asset as part of the teaching explanation rather than as decoration. In standard teaching, follow it with a concise but complete explanatory paragraph. If the course is slide-only, the next row overrides that paragraph requirement. |
 | Pure slides | Follow the [Slide-Only Generation Override](generation-workflow.md#slide-only-generation-override). Produce concise, projection-ready slide content; do not require AI narration or a full standalone explanatory paragraph paired with every slide. |

@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Give standard AI-taught lessons a brief lead-in followed by substantive slides and concise explanations; place interaction questions, grouped key information, and source-exact quote text in purpose-built slide instructions, with rendered quote fidelity checked when output is observable, without changing pure classroom slides' no-narration behavior.
 - Centralize Prompt audience and addressee semantics so Teaching Prompts and Course Prompts are written to the runtime LLM, Course Prompts call the lesson input the current user message, and learner-visible `?[]` or standalone deterministic output is the explicit exception where second-person references may mean the learner.
 - Keep lesson pedagogy in Teaching Prompts and limit Course Prompts to following that pedagogy while adjusting course-wide presentation style.
 - Separate shared Prompt semantics, Teaching Prompt pedagogy, MarkdownFlow syntax and observable runtime effects, MarkdownFlow authoring, preservation decisions, and Course Prompt materialization into single-purpose references without changing behavior.
