@@ -81,7 +81,7 @@ Optimization 全面审计清单。Optimization 必须逐项检查可观察结果
 ## Runtime Stability
 
 - MarkdownFlow syntax produces the observable runtime effects defined in `markdownflow.md`.
-- Content wrapped in a deterministic form is emitted without an LLM call as defined in `markdownflow.md#deterministic-blocks`.
+- Standalone single-line and complete multi-line deterministic forms are emitted without an LLM call; inline `===...===` preservation remains LLM-mediated as defined in `markdownflow.md#deterministic-blocks`.
 - Preservation scope passes `optimization-workflow.md#preservation-decisions`.
 - Code, image, and required source spans remain intact after the applicable preprocessing or generation behavior.
 

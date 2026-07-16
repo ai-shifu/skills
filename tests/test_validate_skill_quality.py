@@ -991,12 +991,13 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertIn('"the learner" or "the student"', semantics)
         self.assertIn(
             "Learner-visible text inside a MarkdownFlow `?[]` interaction or "
-            "[deterministic form](markdownflow.md#deterministic-blocks) is "
+            "[standalone deterministic output]"
+            "(markdownflow.md#deterministic-blocks) is "
             "the exception",
             semantics,
         )
         self.assertIn(
-            "Outside `?[]` and deterministic output", semantics
+            "Outside `?[]` and standalone deterministic output", semantics
         )
         self.assertNotIn("Within Course Prompt content", semantics)
         for block in semantics_section.strip().split("\n\n"):
@@ -1085,11 +1086,23 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertNotIn(r"\|", interactions)
         self.assertIn("no parser-level conditionals", branching)
         self.assertIn(
+            "Single-line or inline marker: `===fixed text===`", deterministic
+        )
+        self.assertIn(
             "without requiring any additional boundary syntax", deterministic
         )
         self.assertIn("without an LLM call", deterministic)
+        self.assertIn(
+            "When `===...===` appears inline within ordinary prompt content",
+            deterministic,
+        )
+        self.assertIn("surrounding content remains LLM-generated", deterministic)
         self.assertIn("no image-specific control-flow primitive", images)
         self.assertIn("no dedicated parser semantics", images)
+        self.assertIn(
+            "inline `===...===` marker remains in LLM-mediated content",
+            preservation,
+        )
         self.assertIn(
             "Content outside these mechanisms may be paraphrased", preservation
         )
@@ -1337,6 +1350,8 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertIn(
             "markdownflow.md#deterministic-blocks", preservation_encoding
         )
+        self.assertIn("wrap only the span", preservation_encoding)
+        self.assertIn("Inline preservation does not bypass", preservation_encoding)
         self.assertIn("markdownflow.md#images", image_authoring)
         self.assertIn("assets/image-manifest.json", image_output_validation)
         self.assertIn("`remote` and `alt`", image_output_validation)
@@ -1554,6 +1569,10 @@ class PedagogyContractTests(unittest.TestCase):
                     "generation-workflow.md",
                 )
         self.assertNotIn("entire lesson", preservation_encoding)
+        self.assertIn(
+            "inline `===...===` preservation remains LLM-mediated",
+            self.review_checklist,
+        )
         self.assertIn(
             "An entire lesson is not a valid preservation scope",
             preservation_decisions,

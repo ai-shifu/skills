@@ -9,7 +9,7 @@ Address imperative instructions to the LLM. When an instruction refers to a lear
 - "Explain ... to the learner."
 - "Ask the student to ..."
 
-Within Prompt instructions, every occurrence of `you`, `your`, `yours`, or `yourself`, in any capitalization, refers only to the runtime LLM. Learner-visible text inside a MarkdownFlow `?[]` interaction or [deterministic form](markdownflow.md#deterministic-blocks) is the exception: it may use second-person forms to address the learner because the platform displays that content directly or verbatim. Outside `?[]` and deterministic output, do not use a second-person form to mean the learner.
+Within Prompt instructions, every occurrence of `you`, `your`, `yours`, or `yourself`, in any capitalization, refers only to the runtime LLM. Learner-visible text inside a MarkdownFlow `?[]` interaction or [standalone deterministic output](markdownflow.md#deterministic-blocks) is the exception: it may use second-person forms to address the learner because the platform displays that content directly or verbatim. Outside `?[]` and standalone deterministic output, do not use a second-person form to mean the learner.
 
 Do not write a transcript, lesson-plan narration, or polished learner-facing lecture. Keep author-side structure implicit: do not emit labels such as "Knowledge Block 1/2/3", "Lesson Objective", or "Deliverable", and do not expose internal authoring terms in learner-facing output. Authoring rules, pipeline notes, and process instructions stay in skill docs and references, never in Prompt content; internal design notes may appear only in HTML comments when needed.
 

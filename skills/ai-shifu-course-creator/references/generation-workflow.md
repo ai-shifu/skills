@@ -50,10 +50,11 @@ Ask the learner for the course-wide goal that later lessons and the Course Promp
 
 #### Preservation Encoding
 
-Encode the spans already selected by `optimization-workflow.md#preservation-decisions` with the MarkdownFlow forms that directly produce deterministic output:
+Encode the spans already selected by `optimization-workflow.md#preservation-decisions` with their corresponding MarkdownFlow preservation forms:
 
-- Put a complete single-line span that must bypass the LLM inside `===...===`.
+- Put a complete standalone single-line span that must bypass the LLM inside `===...===`.
 - Put a complete multi-line span that must bypass the LLM inside `!===...!===`. When exact fenced code output is required, keep the complete code fence, language tag, and body inside this form.
+- When surrounding content must remain LLM-generated, wrap only the span that needs position and formatting retention inline with `===...===`. Inline preservation does not bypass the LLM and may be translated when output-language transformation applies.
 - Encode each selected span independently; content not selected for preservation remains outside its deterministic markers.
 - Encode fixed-display and HTML-view images with the distinct forms in [Image Authoring](#image-authoring); an HTML-view directive remains an LLM instruction and therefore does not contain deterministic markers.
 

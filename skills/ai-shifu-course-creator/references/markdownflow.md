@@ -46,7 +46,7 @@ MarkdownFlow has no parser-level conditionals, loops, boolean expressions, `if` 
 
 MarkdownFlow recognizes two preservation forms:
 
-- Single-line form: `===fixed text===`
+- Single-line or inline marker: `===fixed text===`
 - Multi-line fence:
 
 ```markdown
@@ -56,14 +56,16 @@ Line 2
 !===
 ```
 
-Each complete form produces deterministic output without requiring any additional boundary syntax. The runtime removes the markers, substitutes variables without adding quoting wrappers, restores protected code, and emits the result without an LLM call.
+A standalone `===...===` line and a complete `!===...!===` fence produce deterministic output without requiring any additional boundary syntax. The runtime removes the markers, substitutes variables without adding quoting wrappers, restores protected code, and emits the result without an LLM call.
+
+When `===...===` appears inline within ordinary prompt content, the runtime converts the marked span into a preservation instruction before sending that content to the LLM. The surrounding content remains LLM-generated. If an output-language transformation applies, the marked span may be translated while its position and formatting are retained.
 
 ## Images
 
 MarkdownFlow has no image-specific control-flow primitive. Standard Markdown image syntax, deterministic image syntax, and natural-language image instructions have these results:
 
 - `![alt](url)` is ordinary prompt content and may be transformed by the LLM.
-- `===![alt](url)===` is deterministic output and is emitted without an LLM call.
+- `===![alt](url)===` on its own line is deterministic output and is emitted without an LLM call.
 - A natural-language request for the LLM to emit an HTML image remains ordinary prompt content. URL lines, descriptions, captions, layout wording, and wording that requests exact preservation have no dedicated parser semantics.
 
 ## Preservation
@@ -71,7 +73,8 @@ MarkdownFlow has no image-specific control-flow primitive. Standard Markdown ima
 Runtime preservation is the combined result of preprocessing and deterministic forms:
 
 - Fenced code blocks are hidden from MarkdownFlow syntax parsing and restored before downstream processing.
-- Deterministic forms bypass the LLM after variable substitution.
+- Standalone single-line and complete multi-line forms bypass the LLM after variable substitution.
+- An inline `===...===` marker remains in LLM-mediated content as a preservation instruction.
 - A Markdown image wrapped in the single-line deterministic form is emitted unchanged apart from variable substitution.
 - An HTML-view image instruction remains ordinary LLM input.
 - Content outside these mechanisms may be paraphrased, reorganized, or omitted by the LLM.
