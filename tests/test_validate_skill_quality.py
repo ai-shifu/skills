@@ -704,6 +704,7 @@ class PedagogyContractTests(unittest.TestCase):
                 "variable-and-branch-encoding",
                 "preservation-encoding",
                 "image-authoring",
+                "image-output-validation",
                 "working-with-author-provided-images",
             },
             self.optimization_workflow_path: {
@@ -761,6 +762,7 @@ class PedagogyContractTests(unittest.TestCase):
                 "variable-and-branch-encoding",
                 "preservation-encoding",
                 "image-authoring",
+                "image-output-validation",
             },
             self.optimization_workflow_path: {
                 "optimization-methodology",
@@ -945,6 +947,23 @@ class PedagogyContractTests(unittest.TestCase):
             self.segmentation_workflow,
         )
         self.assertIn("before any Generation step", self.segmentation_workflow)
+        self.assertIn(
+            "loaded directly from a route or through a dependency",
+            self.skill_doc,
+        )
+        self.assertIn("dependencies transitively", self.skill_doc)
+
+        mandatory_gates = markdown_section(
+            self.segmentation_workflow, "Mandatory Gates"
+        )
+        visual_review = markdown_section(
+            self.review_checklist, "Visual-Text Coordination"
+        )
+        self.assertIn("`review-checklist.md`", mandatory_gates)
+        self.assertIn(
+            "(generation-workflow.md#image-output-validation)",
+            visual_review,
+        )
 
         route_order_checks = {
             "| Create a full course,": "references/segmentation-orchestration.md",
@@ -1029,6 +1048,9 @@ class PedagogyContractTests(unittest.TestCase):
         image_authoring = markdown_section(
             self.generation_workflow, "Image Authoring"
         )
+        image_output_validation = markdown_section(
+            self.generation_workflow, "Image Output Validation"
+        )
         preservation_encoding = markdown_section(
             self.generation_workflow, "Preservation Encoding"
         )
@@ -1070,6 +1092,25 @@ class PedagogyContractTests(unittest.TestCase):
             "markdownflow.md#deterministic-blocks", preservation_encoding
         )
         self.assertIn("markdownflow.md#images", image_authoring)
+        self.assertIn("assets/image-manifest.json", image_output_validation)
+        self.assertIn("`remote` and `alt`", image_output_validation)
+        for required_field in (
+            "selected image form",
+            "caption",
+            "position",
+            "layout constraints",
+            "ordering",
+        ):
+            self.assertIn(required_field, image_output_validation)
+        self.assertIn("stop before generating", image_output_validation)
+        self.assertIn("regenerate only", image_output_validation)
+        self.assertIn("stop Generation", image_output_validation)
+        self.assertIn("Do not finalize or hand off", image_output_validation)
+        self.assertIn(
+            "(generation-workflow.md#image-output-validation)",
+            self.review_checklist,
+        )
+        self.assertNotIn("regenerate only", self.review_checklist)
         self.assertIn(
             "(generation-workflow.md#slide-only-generation-override)",
             visuals,

@@ -41,7 +41,7 @@ On the first invocation in a session:
 - Do not propose an outline or write lesson content until the course-target workflow allows authoring to begin.
 - For an existing course, build on the pulled cloud copy and use the converging sync loop. The platform draft is authoritative.
 - Load `prompt-contracts.md` whenever a route writes, rewrites, or audits Teaching Prompt or Course Prompt content.
-- When a selected guide points to a syntax, pedagogy, schema, CLI, or analytics reference, read the named section before applying it.
+- Treat every guide loaded directly from a route or through a dependency as selected. Follow required rule, gate, and validation dependencies transitively, whether a guide names or links the reference; read each named section before applying the dependent step.
 
 ## Reporting
 

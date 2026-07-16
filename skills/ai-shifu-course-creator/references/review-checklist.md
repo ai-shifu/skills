@@ -74,7 +74,7 @@ Optimization 全面审计清单。Optimization 必须逐项检查可观察结果
 - Raw graphic source code appears only when explicitly requested, as required by [generation-workflow.md#image-authoring](generation-workflow.md#image-authoring).
 - Pure classroom slides follow `generation-workflow.md#slide-only-generation-override` and are not failed for omitting AI narration or a full explanation paragraph.
 - Every embedded asset uses the uploaded URL and manifest mapping defined by `cli/cli-reference.md#image-upload` and `cli/course-directory-spec.md#assets`.
-- Every fixed-display or HTML-view image conforms to [generation-workflow.md#image-authoring](generation-workflow.md#image-authoring); the resulting URL, description, caption, position, and ordering survive generation as required by the selected form.
+- Every fixed-display or HTML-view image conforms to [generation-workflow.md#image-authoring](generation-workflow.md#image-authoring); the resulting URL, description, caption, position, and ordering survive generation and pass [Image Output Validation](generation-workflow.md#image-output-validation).
 - Alt text and `图片内容` descriptions carry information about what the image conveys (no `image1` / `示意图`).
 - In standard non-slide-only lessons, text adds context (background / causality / examples), not just a restatement of the image.
 

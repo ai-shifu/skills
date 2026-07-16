@@ -126,6 +126,15 @@ The preservation phrases in this directive constrain the runtime LLM through wor
 
 Apply the explanatory-text requirement and the slide-only exception from `pedagogy.md#visual-text-coordination`; do not redefine that teaching decision here.
 
+#### Image Output Validation
+
+Before finalizing a generated Teaching Prompt that embeds images:
+
+1. Build an expected-image record for every selected asset. For an uploaded asset, read `remote` and `alt` from `<course-dir>/assets/image-manifest.json` as defined by `cli/course-directory-spec.md#assets`; add the selected image form, caption, position, layout constraints, and ordering from the current authoring decision. In explicitly local artifact-only work where upload is excluded, use the authoritative image URL and metadata supplied by the source record instead; do not invent missing fields. If the authoritative record lacks `remote`, an informative `alt`, or any authoring field required by the selected image form, report the missing fields as a blocking error and stop before generating the affected Teaching Prompt.
+2. Compare the generated Teaching Prompt with every expected-image record. The exact URL, description or alt, caption, position, layout constraints, and ordering must all be present where required. A fixed-display record must use the complete deterministic Markdown image form; an HTML-view record must retain every required field in one natural-language directive without deterministic markers.
+3. If any field is missing, changed, duplicated, or reordered, regenerate only the affected image block or lesson from its expected-image record, then run the same comparison again.
+4. If the regenerated result still fails, stop Generation for that lesson and report the mismatched fields as a blocking error. Do not finalize or hand off the Teaching Prompt.
+
 ### Working with Author-Provided Images
 
 When the author supplies image assets — local files (any format incl. heic/heif) or remote URLs — three steps apply *within* Generation (and any later phase that touches the same lessons):
