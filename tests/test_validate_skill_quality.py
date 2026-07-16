@@ -70,6 +70,44 @@ def markdown_section(markdown: str, title: str) -> str:
     return markdown[heading_end:]
 
 
+def markdown_table_row_body(line: str) -> str:
+    """Remove at most one actual outer pipe from each side of a table row."""
+    row = line.strip()
+    if row.startswith("|"):
+        row = row[1:]
+    if row.endswith("|"):
+        preceding_backslashes = 0
+        for character in reversed(row[:-1]):
+            if character != "\\":
+                break
+            preceding_backslashes += 1
+        if preceding_backslashes % 2 == 0:
+            row = row[:-1]
+    return row
+
+
+def split_markdown_table_row(line: str) -> list[str]:
+    """Split a table row on pipes preceded by an even backslash count."""
+    cells: list[str] = []
+    current: list[str] = []
+    preceding_backslashes = 0
+
+    for character in markdown_table_row_body(line):
+        if character == "\\":
+            current.append(character)
+            preceding_backslashes += 1
+            continue
+        if character == "|" and preceding_backslashes % 2 == 0:
+            cells.append("".join(current))
+            current = []
+        else:
+            current.append(character)
+        preceding_backslashes = 0
+
+    cells.append("".join(current))
+    return cells
+
+
 def markdown_table_first_column(section: str, header: str) -> list[str]:
     """Read canonical values from a Markdown table identified by its header."""
     lines = section.splitlines()
@@ -78,7 +116,7 @@ def markdown_table_first_column(section: str, header: str) -> list[str]:
             continue
         cells = [
             cell.strip().replace(r"\|", "|")
-            for cell in re.split(r"(?<!\\)\|", line.strip().strip("|"))
+            for cell in split_markdown_table_row(line)
         ]
         if not cells or cells[0].strip("`").casefold() != header.casefold():
             continue
@@ -87,9 +125,7 @@ def markdown_table_first_column(section: str, header: str) -> list[str]:
         for row in lines[index + 2 :]:
             if not row.lstrip().startswith("|"):
                 break
-            first_cell = re.split(
-                r"(?<!\\)\|", row.strip().strip("|"), maxsplit=1
-            )[0].strip()
+            first_cell = split_markdown_table_row(row)[0].strip()
             values.append(first_cell.strip("`").replace(r"\|", "|"))
         return values
 
@@ -118,6 +154,31 @@ class MarkdownSectionHelperTests(unittest.TestCase):
         self.assertIn("# Not a boundary", section)
         self.assertIn("Body after the fence.", section)
         self.assertNotIn("Outside the target section.", section)
+
+    def test_table_first_column_preserves_trailing_escaped_pipes(self):
+        markdown = "| Header\\||\n|---|\n| value\\||\n"
+
+        values = markdown_table_first_column(markdown, "Header|")
+
+        self.assertEqual(["value|"], values)
+
+    def test_table_row_split_uses_backslash_parity(self):
+        cases = (
+            ("| left | right |", [" left ", " right "]),
+            (r"| left\|right |", [r" left\|right "]),
+            (r"| left\\| right |", [r" left\\", " right "]),
+            (r"| left\\\|right |", [r" left\\\|right "]),
+        )
+
+        for row, expected in cases:
+            with self.subTest(row=row):
+                self.assertEqual(expected, split_markdown_table_row(row))
+
+    def test_table_row_preserves_escaped_pipe_with_optional_outer_boundary(self):
+        expected = [r" value\|"]
+
+        self.assertEqual(expected, split_markdown_table_row(r"| value\||"))
+        self.assertEqual(expected, split_markdown_table_row(r"| value\|"))
 
 
 class AnchorValidationTests(unittest.TestCase):
