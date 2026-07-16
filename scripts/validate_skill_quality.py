@@ -357,6 +357,7 @@ def markdown_without_fenced_code_or_html_comments(content: str) -> str:
         uncommented.append(visible[cursor:comment_start])
         comment_end = visible.find("-->", comment_start + 4)
         if comment_end == -1:
+            uncommented.append(visible[comment_start:])
             break
         cursor = comment_end + 3
     return "".join(uncommented)

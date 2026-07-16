@@ -296,6 +296,21 @@ class AnchorValidationTests(unittest.TestCase):
 
             self.assertEqual([], issues.errors)
 
+    def test_unclosed_html_comment_marker_does_not_hide_later_anchors(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            (skill_dir / "SKILL.md").write_text(
+                "Show the literal inline-code marker `<!--` here.\n"
+                "Read `references/missing.md#target`.\n",
+                encoding="utf-8",
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual(1, len(issues.errors))
+            self.assertIn("missing.md#target", issues.errors[0])
+
     def test_still_validates_anchor_reference_in_inline_code(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = Path(tmpdir)
