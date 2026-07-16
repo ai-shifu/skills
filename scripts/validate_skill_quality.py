@@ -301,7 +301,11 @@ def github_heading_slugs(md_file: Path) -> set[str]:
                 in_fence = True
                 fence_character = marker[0]
                 fence_length = len(marker)
-            elif marker[0] == fence_character and len(marker) >= fence_length:
+            elif (
+                marker[0] == fence_character
+                and len(marker) >= fence_length
+                and not line[fence.end() :].strip()
+            ):
                 in_fence = False
             continue
         if in_fence:
@@ -332,7 +336,11 @@ def markdown_without_fenced_code_or_html_comments(content: str) -> str:
                 in_fence = True
                 fence_character = marker[0]
                 fence_length = len(marker)
-            elif marker[0] == fence_character and len(marker) >= fence_length:
+            elif (
+                marker[0] == fence_character
+                and len(marker) >= fence_length
+                and not line[fence.end() :].strip()
+            ):
                 in_fence = False
             continue
         if not in_fence:

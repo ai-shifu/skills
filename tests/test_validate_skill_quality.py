@@ -212,6 +212,8 @@ class AnchorValidationTests(unittest.TestCase):
             markdown_file.write_text(
                 "````markdown\n"
                 "# Hidden before shorter fence\n"
+                "````python\n"
+                "# Hidden after info-string fence\n"
                 "```\n"
                 "# Hidden after shorter fence\n"
                 "~~~~\n"
@@ -224,6 +226,25 @@ class AnchorValidationTests(unittest.TestCase):
             slugs = validate_skill_quality.github_heading_slugs(markdown_file)
 
             self.assertEqual({"visible-after-matching-fence"}, slugs)
+
+    def test_anchor_scan_does_not_close_on_a_fence_with_an_info_string(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            (skill_dir / "SKILL.md").write_text(
+                "```markdown\n"
+                "references/hidden-before.md#target\n"
+                "```python\n"
+                "references/hidden-after.md#target\n"
+                "```\n"
+                "references/visible.md#target\n",
+                encoding="utf-8",
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual(1, len(issues.errors))
+            self.assertIn("visible.md#target", issues.errors[0])
 
     def test_anchor_scan_recognizes_only_zero_to_three_space_fences(self):
         with tempfile.TemporaryDirectory() as tmpdir:
