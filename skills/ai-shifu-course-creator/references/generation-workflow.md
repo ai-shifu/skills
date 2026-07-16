@@ -30,11 +30,13 @@ Neutral authoring shapes:
 
 ```markdown
 Ask the learner which path best matches the current case.
+
 ?[Path A | Path B]
 
 After the learner answers, explain the selected path and contrast it with the other path.
 
 Ask the learner for the course-wide goal that later lessons and the Course Prompt should use.
+
 ?[%{{learning_goal}} ...One-sentence goal]
 ```
 

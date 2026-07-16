@@ -875,8 +875,10 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertIn("HTML comments", preprocessing)
         self.assertIn("`UNKNOWN`", variables)
         self.assertIn("`%{{name}}` is an assignment prefix", variables)
-        interaction_forms = markdown_table_first_column(
-            interactions, "Form"
+        interaction_forms = re.findall(
+            r"^- `(\?\[[^`\n]+\])`:",
+            interactions,
+            flags=re.MULTILINE,
         )
         self.assertEqual(
             [
@@ -894,6 +896,7 @@ class PedagogyContractTests(unittest.TestCase):
             ],
             interaction_forms,
         )
+        self.assertNotIn(r"\|", interactions)
         self.assertIn("no parser-level conditionals", branching)
         self.assertIn("without an LLM call", deterministic)
         self.assertIn("no image-specific control-flow primitive", images)

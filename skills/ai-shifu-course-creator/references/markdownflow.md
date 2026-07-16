@@ -36,19 +36,17 @@ An unescaped control matching `?[...]` is parsed as an interaction block. The ru
 
 The interaction body is interpreted as follows:
 
-| Form | Parsed control | Runtime state effect |
-|---|---|---|
-| `?[Continue]` | Single action button | Action remains in the current document context |
-| `?[Option A \| Option B]` | Single-select | Answer remains in the current document context |
-| `?[Option A \|\| Option B]` | Multi-select | Answers remain in the current document context |
-| `?[...Input hint]` | Text input | Answer remains in the current document context |
-| `?[Option A \| ...Other]` | Single-select plus text input | Answer remains in the current document context |
-| `?[Option A \|\| ...Other]` | Multi-select plus text input | Answers remain in the current document context |
-| `?[%{{name}} Option A \| Option B]` | Named single-select | Answer also writes `name` |
-| `?[%{{name}} Option A \|\| Option B]` | Named multi-select | Answers also write `name` |
-| `?[%{{name}} ...Input hint]` | Named text input | Answer also writes `name` |
-| `?[%{{name}} Option A \| ...Other]` | Named single-select plus text input | Answer also writes `name` |
-| `?[%{{name}} Option A \|\| ...Other]` | Named multi-select plus text input | Answers also write `name` |
+- `?[Continue]`: single action button; the action remains in the current document context.
+- `?[Option A | Option B]`: single-select; the answer remains in the current document context.
+- `?[Option A || Option B]`: multi-select; the answers remain in the current document context.
+- `?[...Input hint]`: text input; the answer remains in the current document context.
+- `?[Option A | ...Other]`: single-select plus text input; the answer remains in the current document context.
+- `?[Option A || ...Other]`: multi-select plus text input; the answers remain in the current document context.
+- `?[%{{name}} Option A | Option B]`: named single-select; the answer also writes `name`.
+- `?[%{{name}} Option A || Option B]`: named multi-select; the answers also write `name`.
+- `?[%{{name}} ...Input hint]`: named text input; the answer also writes `name`.
+- `?[%{{name}} Option A | ...Other]`: named single-select plus text input; the answer also writes `name`.
+- `?[%{{name}} Option A || ...Other]`: named multi-select plus text input; the answers also write `name`.
 
 The first separator determines selection mode: `|` represents one selected value and `||` represents multiple selected values. The token `...` marks a free-text entry field, and the text immediately after it is the rendered input hint.
 
