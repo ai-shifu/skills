@@ -313,6 +313,43 @@ def github_heading_slugs(md_file: Path) -> set[str]:
     return slugs
 
 
+def markdown_without_fenced_code_or_html_comments(content: str) -> str:
+    """Return Markdown content that can contain navigable anchor references."""
+    visible_lines: list[str] = []
+    in_fence = False
+    fence_character = ""
+    fence_length = 0
+
+    for line in content.splitlines(keepends=True):
+        fence = re.match(r"^(`{3,}|~{3,})", line.lstrip())
+        if fence:
+            marker = fence.group(1)
+            if not in_fence:
+                in_fence = True
+                fence_character = marker[0]
+                fence_length = len(marker)
+            elif marker[0] == fence_character and len(marker) >= fence_length:
+                in_fence = False
+            continue
+        if not in_fence:
+            visible_lines.append(line)
+
+    visible = "".join(visible_lines)
+    uncommented: list[str] = []
+    cursor = 0
+    while True:
+        comment_start = visible.find("<!--", cursor)
+        if comment_start == -1:
+            uncommented.append(visible[cursor:])
+            break
+        uncommented.append(visible[cursor:comment_start])
+        comment_end = visible.find("-->", comment_start + 4)
+        if comment_end == -1:
+            break
+        cursor = comment_end + 3
+    return "".join(uncommented)
+
+
 def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
     """Every `<path>.md#<anchor>` reference in the skill's doc surface must
     resolve to a real heading in the target file (broken anchors are silent
@@ -321,6 +358,7 @@ def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
     for pattern in ANCHOR_SCAN_GLOBS:
         for md_file in sorted(skill_dir.glob(pattern)):
             content = md_file.read_text(encoding="utf-8")
+            content = markdown_without_fenced_code_or_html_comments(content)
             seen: set[tuple[str, str]] = set()
             for m in RE_MD_ANCHOR_REF.finditer(content):
                 ref = (m.group("path"), m.group("anchor"))

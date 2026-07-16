@@ -182,6 +182,46 @@ class MarkdownSectionHelperTests(unittest.TestCase):
 
 
 class AnchorValidationTests(unittest.TestCase):
+    def test_ignores_anchor_references_in_fences_and_html_comments(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            references = skill_dir / "references"
+            references.mkdir()
+            (skill_dir / "SKILL.md").write_text(
+                "```markdown\n"
+                "references/missing-fenced.md#target\n"
+                "```\n"
+                "~~~text\n"
+                "references/missing-tilde.md#target\n"
+                "~~~\n"
+                "<!--\n"
+                "references/missing-commented.md#target\n"
+                "-->\n"
+                "See [target](references/existing.md#target).\n",
+                encoding="utf-8",
+            )
+            (references / "existing.md").write_text(
+                "# Target\n", encoding="utf-8"
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual([], issues.errors)
+
+    def test_still_validates_anchor_reference_in_inline_code(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = Path(tmpdir)
+            (skill_dir / "SKILL.md").write_text(
+                "Read `references/missing.md#target`.\n", encoding="utf-8"
+            )
+            issues = validate_skill_quality.IssueBag()
+
+            validate_skill_quality.validate_anchors(skill_dir, issues)
+
+            self.assertEqual(1, len(issues.errors))
+            self.assertIn("target file not found", issues.errors[0])
+
     def test_missing_anchor_target_file_is_an_error(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = Path(tmpdir)
