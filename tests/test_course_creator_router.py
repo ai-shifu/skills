@@ -47,6 +47,21 @@ class CourseCreatorRouterTests(unittest.TestCase):
                 f"{path} should be split before it becomes a second monolith",
             )
 
+    def test_course_creator_has_no_bundled_examples(self):
+        self.assertFalse((SKILL_ROOT / "examples").exists())
+        self.assertNotIn("examples/", self.router)
+        paths_to_check = list((SKILL_ROOT / "references").rglob("*.md"))
+        paths_to_check.extend(
+            [REPO_ROOT / "README.md", REPO_ROOT / "README.zh-CN.md"]
+        )
+        for path in paths_to_check:
+            content = path.read_text(encoding="utf-8")
+            self.assertNotIn(
+                "examples/",
+                content,
+                f"Stale examples reference found in {path}",
+            )
+
     def test_large_reference_files_have_contents_navigation(self):
         for path in (SKILL_ROOT / "references").rglob("*.md"):
             content = path.read_text(encoding="utf-8")
@@ -136,10 +151,6 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("## Reporting", self.router)
         self.assertIn("#deployment-report", self.router)
         self.assertIn("references/report-template.md", self.router)
-        self.assertIn(
-            "When fallback mode applies, also read",
-            self.router,
-        )
 
     def test_resolved_language_identifiers_are_single_sourced(self):
         data_contracts = (

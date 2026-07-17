@@ -873,14 +873,6 @@ class PedagogyContractTests(unittest.TestCase):
         cls.report_template = (
             COURSE_CREATOR_REFERENCES / "report-template.md"
         ).read_text(encoding="utf-8")
-        cls.pipeline_example = (
-            COURSE_CREATOR_REFERENCES.parent / "examples" / "pipeline-full.md"
-        ).read_text(encoding="utf-8")
-        cls.optimization_example = (
-            COURSE_CREATOR_REFERENCES.parent
-            / "examples"
-            / "optimization-only.md"
-        ).read_text(encoding="utf-8")
         cls.data_contracts_path = COURSE_CREATOR_REFERENCES / "data-contracts.md"
         cls.data_contracts = cls.data_contracts_path.read_text(encoding="utf-8")
         cls.deployment_workflow = (
@@ -1170,45 +1162,6 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertNotIn("`---`", self.markdownflow)
         self.assertNotRegex(self.markdownflow, r"(?m)^\s*---\s*$")
 
-    def test_examples_do_not_add_teaching_prompt_separator_boundaries(self):
-        prompt_keys = {"teaching_prompt", "existing_teaching_prompt"}
-        markdown_fence = re.compile(
-            r"^```(?:md|markdown)[ \t]*\n(?P<body>.*?)^```[ \t]*$",
-            flags=re.MULTILINE | re.DOTALL,
-        )
-        separator_line = re.compile(r"(?m)^\s*---\s*$")
-        violations = []
-
-        def collect_prompt_values(value: object) -> list[str]:
-            prompts: list[str] = []
-            if isinstance(value, dict):
-                for key, nested in value.items():
-                    if key in prompt_keys and isinstance(nested, str):
-                        prompts.append(nested)
-                    prompts.extend(collect_prompt_values(nested))
-            elif isinstance(value, list):
-                for nested in value:
-                    prompts.extend(collect_prompt_values(nested))
-            return prompts
-
-        examples_dir = COURSE_CREATOR_REFERENCES.parent / "examples"
-        for path in sorted(examples_dir.rglob("*.md")):
-            content = path.read_text(encoding="utf-8")
-            for match in validate_skill_quality.RE_JSON_FENCE.finditer(content):
-                payload = json.loads(match.group("body"))
-                for prompt in collect_prompt_values(payload):
-                    if separator_line.search(prompt):
-                        violations.append(
-                            f"{path.relative_to(REPO_ROOT)}: JSON Teaching Prompt"
-                        )
-            for match in markdown_fence.finditer(content):
-                if separator_line.search(match.group("body")):
-                    violations.append(
-                        f"{path.relative_to(REPO_ROOT)}: rendered Prompt"
-                    )
-
-        self.assertEqual([], violations)
-
     def test_reviewed_author_side_course_prompt_terms_stay_explicit(self):
         responsibilities = markdown_section(
             self.prompt_contracts, "Artifact Responsibilities"
@@ -1469,11 +1422,6 @@ class PedagogyContractTests(unittest.TestCase):
             template,
         )
         self.assertIn("follow it with a complete text explanation", template)
-        for example in (self.pipeline_example, self.optimization_example):
-            artifact = markdown_section(example, "Course Prompt Artifact")
-            self.assertNotIn("Teaching Prompt", artifact)
-            self.assertIn("current user message", artifact)
-            self.assertNotIn("the user message", artifact)
         self.assertIn(
             "do not rely on the Course Prompt to supply, repair, or override",
             self.generation_workflow,
@@ -1514,9 +1462,6 @@ class PedagogyContractTests(unittest.TestCase):
         retired_references = []
         doc_paths = [COURSE_CREATOR_REFERENCES.parent / "SKILL.md"]
         doc_paths.extend(COURSE_CREATOR_REFERENCES.rglob("*.md"))
-        doc_paths.extend(
-            (COURSE_CREATOR_REFERENCES.parent / "examples").rglob("*.md")
-        )
         for path in doc_paths:
             content = path.read_text(encoding="utf-8").casefold()
             for anchor in retired_anchors:

@@ -9,8 +9,6 @@ Reusable AI-Shifu skills for course production, from topic selection to deployme
 - **AI-Shifu Course Creator（AI 师傅课程创作器）**: convert raw course material into optimized MarkdownFlow teaching scripts and deploy them as live AI-Shifu courses through a five-phase pipeline (segmentation, orchestration, generation, optimization, deployment).
 - **Course Direction Advisor（课程选题顾问）**: turn source materials into evidence-bound, market-fit course-topic decisions with competitor analysis, pricing guidance, and GO/HOLD/REWORK/NO-GO recommendations.
 
-The AI-Shifu Course Creator（AI 师傅课程创作器） skill includes runnable examples under `skills/ai-shifu-course-creator/examples/`.
-
 ## Repository Layout
 
 ```text
