@@ -11,7 +11,7 @@ Collect and normalize the author's design choices before course structure or Tea
 
 Collect only the unresolved design choices requested by the selected authoring route. Deployment, authentication, platform management, and analytics questions are outside this file.
 
-Before asking anything, extract answers already present in the user's instruction, source material, or pulled course directory. Ask only for missing items in `resolved_target_language`, one choice at a time and in the order below. Do not invent defaults from a sparse topic or brief, and do not proactively offer to bypass a required choice or “decide for the author.” Apply a listed fallback only after the author explicitly skips that question or asks to continue without answering.
+Before asking anything, extract answers already present in the user's instruction, source material, or pulled course directory. Ask only for missing items, one choice at a time and in the order below. Do not invent defaults from a sparse topic or brief, and do not proactively offer to bypass a required choice or “decide for the author.” Apply a listed fallback only after the author explicitly skips that question or asks to continue without answering.
 
 1. Ask which usage scenarios the course should support. Allow personalized AI one-on-one self-study, interactive classroom slides, or both.
 2. Ask what interactions should do. Allow learner-context collection, pre-content thinking or misconception activation, and lesson-end self-check. Choosing none means no interactions.
