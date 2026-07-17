@@ -50,6 +50,13 @@ class CourseCreatorRouterTests(unittest.TestCase):
     def test_course_creator_has_no_bundled_examples(self):
         self.assertFalse((SKILL_ROOT / "examples").exists())
         self.assertNotIn("examples/", self.router)
+        for path in (SKILL_ROOT / "references").rglob("*.md"):
+            content = path.read_text(encoding="utf-8")
+            self.assertNotIn(
+                "examples/",
+                content,
+                f"Stale examples reference found in {path}",
+            )
 
     def test_large_reference_files_have_contents_navigation(self):
         for path in (SKILL_ROOT / "references").rglob("*.md"):
