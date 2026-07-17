@@ -225,5 +225,3 @@ Inside `risk_and_issue_report`:
 Top-level addition:
 
 - `follow_up` (array of strings) — required inputs in `resolved_target_language` to complete a full-coverage audit.
-
-For the four end-to-end fallback scenarios, see `examples/fallback-mode.md`.
