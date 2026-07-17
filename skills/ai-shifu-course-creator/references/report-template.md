@@ -154,20 +154,29 @@ The fenced snippets below are illustrative templates only. In the generated repo
 
 - `Admin console:` → localize the purpose label in `resolved_target_language` (Simplified Chinese: `管理后台`)
 
+  <!-- prettier-ignore -->
   ```md
-  - [<course name> - <localized admin-console label>](<URL from script>) <URL from script> <Chinese hint copied verbatim from the script output, without "#">
+  - [<course name> - <localized admin-console label>](<URL from script>)
+    <URL from script>
+    <Chinese hint copied verbatim from the script output, without "#">
   ```
 
 - `Course preview:` → localize the purpose label in `resolved_target_language` (Simplified Chinese: `预览课程`)
 
+  <!-- prettier-ignore -->
   ```md
-  - [<course name> - <localized course-preview label>](<URL from script>) <URL from script> <Chinese hint copied verbatim from the script output, without "#">
+  - [<course name> - <localized course-preview label>](<URL from script>)
+    <URL from script>
+    <Chinese hint copied verbatim from the script output, without "#">
   ```
 
 - `Published URL:` (only when the script printed it) → localize the purpose label in `resolved_target_language` (Simplified Chinese: `课程学习`)
 
+  <!-- prettier-ignore -->
   ```md
-  - [<course name> - <localized published-course label>](<URL from script>) <URL from script> <Chinese hint copied verbatim from the script output, without "#">
+  - [<course name> - <localized published-course label>](<URL from script>)
+    <URL from script>
+    <Chinese hint copied verbatim from the script output, without "#">
   ```
 
 When the script did **not** print `Published URL:` (typical for fresh `create` / `import` runs), show only the two existing blocks and add one sentence in `resolved_target_language` explaining that the course is not yet published and that `publish <shifu_bid>` will produce the shareable address.

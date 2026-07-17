@@ -313,6 +313,20 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "ordinary Markdown without the surrounding fence",
             verification_templates,
         )
+        for purpose_label in (
+            "localized admin-console label",
+            "localized course-preview label",
+            "localized published-course label",
+        ):
+            with self.subTest(purpose_label=purpose_label):
+                self.assertIn(
+                    f"  - [<course name> - <{purpose_label}>]"
+                    "(<URL from script>)\n"
+                    "    <URL from script>\n"
+                    '    <Chinese hint copied verbatim from the script output, '
+                    'without "#">',
+                    verification_templates,
+                )
         self.assertIn(
             "translate every non-placeholder instruction",
             (references / "optimization-workflow.md").read_text(encoding="utf-8"),
