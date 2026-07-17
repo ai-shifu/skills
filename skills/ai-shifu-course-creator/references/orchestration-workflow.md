@@ -13,6 +13,18 @@ Drive Segmentation and Teaching Prompt generation, then produce the cross-lesson
 - `teaching-prompt.md`
 - `pedagogy.md`
 
+## Lesson Structure Finalization
+
+Use this section after Segmentation when the requested output is a decided course structure or chapter and lesson count, without Teaching Prompt generation.
+
+1. Review the traceable segments and lesson-boundary candidates in source order.
+2. Finalize lesson cuts so every lesson has one core question and every valid source span is assigned exactly once.
+3. Group the lessons into chapters without changing the finalized lesson cuts or source order unless the author supplied an explicit ordering constraint.
+4. Return the decided chapter count, lesson count, ordered chapter and lesson titles, each lesson's core question, and its source-segment references.
+5. Apply Segmentation's preservation and traceability validation before reporting the plan.
+
+Do not run Teaching Prompt generation or build `course_index` and `global_variable_table` unless the selected route also loads the complete Workflow below.
+
 ## Workflow
 
 1. Normalize source ordering and merge the input material.

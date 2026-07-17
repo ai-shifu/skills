@@ -204,10 +204,16 @@ class CourseCreatorRouterTests(unittest.TestCase):
         ):
             self.assertNotIn(filename, route)
 
-    def test_structure_planning_has_an_explicit_segmentation_route(self):
+    def test_structure_planning_runs_segmentation_then_structure_finalization(self):
         route = self.route_line("Plan course structure")
         self.assertIn("course-design-intake.md", route)
-        self.assertIn("segmentation-workflow.md", route)
+        segmentation = "references/segmentation-workflow.md"
+        finalizer = (
+            "references/orchestration-workflow.md#lesson-structure-finalization"
+        )
+        self.assertIn(segmentation, route)
+        self.assertIn(finalizer, route)
+        self.assertLess(route.index(segmentation), route.index(finalizer))
 
     def test_offline_prompt_audit_does_not_require_platform_access(self):
         route = self.route_line("Review or audit pasted")
@@ -277,6 +283,21 @@ class CourseCreatorRouterTests(unittest.TestCase):
             route.index("references/course-management.md"),
         )
         self.assertNotIn("references/deployment-workflow.md", route)
+
+    def test_existing_content_push_routes_load_conflict_convergence(self):
+        for prefix in (
+            "Restructure an existing platform course",
+            "Revise lesson-level teaching design",
+            "Replace an existing lesson Teaching Prompt",
+            "Optimize Teaching Prompt content in an existing platform course",
+        ):
+            with self.subTest(prefix=prefix):
+                route = self.route_line(prefix)
+                push = "references/course-sync.md#push-existing-course-content"
+                convergence = "references/course-sync.md#conflict-convergence"
+                self.assertIn(push, route)
+                self.assertIn(convergence, route)
+                self.assertLess(route.index(push), route.index(convergence))
 
     def test_existing_lesson_design_edit_omits_course_wide_artifacts(self):
         route = self.route_line("Revise lesson-level teaching design")

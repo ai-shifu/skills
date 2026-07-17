@@ -403,6 +403,14 @@ class CourseCreatorDependencyTests(unittest.TestCase):
         self.assertIn("course-management.md", relative_paths)
         self.assertNotIn("deployment-workflow.md", relative_paths)
 
+    def test_structure_planning_route_loads_orchestration_finalizer(self):
+        route = route_line(self.router, "Plan course structure")
+        self.assertIn("segmentation-workflow.md", route)
+        self.assertIn(
+            "orchestration-workflow.md#lesson-structure-finalization",
+            route,
+        )
+
     def test_existing_course_prompt_update_uses_management_not_content_push(self):
         route = route_line(
             self.router,

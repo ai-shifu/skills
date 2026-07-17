@@ -974,7 +974,8 @@ class CourseCreatorContractTests(unittest.TestCase):
             "Single-line or inline marker: `===fixed text===`", deterministic
         )
         self.assertIn(
-            "```markdown\n!===\nLine 1\nLine 2\n!===\n```", deterministic
+            "```markdown\n!===\n\nParagraph 1\n\nParagraph 2\n\n!===\n```",
+            deterministic,
         )
         self.assertIn(
             "without requiring any additional boundary syntax", deterministic
@@ -1428,6 +1429,19 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("three consecutive exit-`2`", self.course_sync)
         self.assertIn("explicit user confirmation", self.course_sync)
+        self.assertIn(
+            "Immediately after each successful `add-chapter`, `add-lesson`, "
+            "`rename-lesson`, or `delete-lesson`",
+            self.course_sync,
+        )
+        self.assertIn(
+            "run `pull <shifu_bid> --course-dir <dir>`",
+            self.course_sync,
+        )
+        self.assertIn(
+            "never continue from the pre-mutation sync baseline",
+            self.course_sync,
+        )
         self.assertNotIn("import --new", self.course_management)
 
     def test_direct_query_consumers_declare_query_command_dependency(self):

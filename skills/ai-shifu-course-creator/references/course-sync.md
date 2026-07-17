@@ -35,6 +35,8 @@ Choose the narrowest command that represents the content change:
 - `add-chapter`, `add-lesson`, `rename-lesson`, and `delete-lesson` apply the corresponding structural content change.
 - `import <bid> --course-dir <dir>` pushes the whole directory. This operation deletes and recreates every outline, regenerates lesson BIDs, and gives recreated lessons the platform-default permission. Use it only when that destructive whole-course effect is intended.
 
+The four structural commands do not accept `--course-dir` and do not refresh `.shifu-sync.json`. Immediately after each successful `add-chapter`, `add-lesson`, `rename-lesson`, or `delete-lesson`, run `pull <shifu_bid> --course-dir <dir>` before another local, status, or version-aware operation. Use the fresh pull to capture platform-assigned BIDs, outline mappings, and revisions; never continue from the pre-mutation sync baseline.
+
 Course name, description, Course Prompt, publication, and other platform attribute writes are outside this workflow.
 
 ## Conflict Convergence
