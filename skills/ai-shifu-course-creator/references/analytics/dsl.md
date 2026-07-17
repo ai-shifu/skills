@@ -1,6 +1,10 @@
 # Analytics DSL Syntax
 
-All examples are CLI invocations. Read `overview.md` first if you have not already.
+All examples are CLI invocations. Analytics task orientation is documented in `overview.md`.
+
+## Required References
+
+None.
 
 ## Body Shape
 

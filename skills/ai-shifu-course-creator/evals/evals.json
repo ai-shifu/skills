@@ -49,10 +49,10 @@
     {
       "id": 5,
       "prompt": "把线上课程第 4 节的授课提示词更新成我提供的新版本，其他课节、价格、权限和 TTS 设置都不要动。",
-      "expected_output": "Treats this as an existing-course content update, applies prompt contracts, and uses the non-destructive sync workflow.",
+      "expected_output": "Treats this as an existing-course Teaching Prompt replacement, audits the supplied artifact through its owners, and uses the non-destructive sync workflow.",
       "files": [],
       "expectations": [
-        "The workflow loads authentication, course-target, prompt-contracts, and deployment instructions.",
+        "The workflow loads authentication, course-target, Optimization, the Teaching Prompt's conditional contract owners, and course-sync instructions.",
         "It pulls the existing course and uses a granular content update rather than import --new.",
         "It preserves unrelated course attributes and handles revision conflicts with the convergence loop."
       ]
@@ -108,8 +108,8 @@
       "expected_output": "Applies the standard and slide-only visual contracts separately while keeping raw graphics code out of both prompts.",
       "files": [],
       "expectations": [
-        "The standard non-slide-only Teaching Prompt pairs the core visual with a complete textual explanation and handles the provided image through the existing understand-upload-embed workflow.",
-        "The pure classroom-slide result follows the Slide-Only Generation Override with concise projected content and does not require AI narration or a full explanatory paragraph after the image.",
+        "The standard non-slide-only Teaching Prompt pairs the core visual with a complete textual explanation and conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
+        "The pure classroom-slide result follows the slide-only delivery rules in pedagogy.md and course-prompt.md with concise projected content and does not require AI narration or a full explanatory paragraph after the image.",
         "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
       ]
     },
@@ -124,7 +124,43 @@
         "The restrained, clear, and warm tone appears as a course-wide style adjustment without changing the Teaching Prompt's lesson flow.",
         "The Course Prompt preserves the canonical course-level behavior rules while letting the Teaching Prompt determine whether a slide requires accompanying text.",
         "Both artifacts are Prompts addressed to the runtime LLM rather than scripts or finished learner-facing lectures.",
-        "Every occurrence of you, your, yours, or yourself in Prompt instructions refers only to the runtime LLM; learner-visible text inside a MarkdownFlow ?[] interaction or standalone deterministic output may use second-person forms to address the learner."
+        "Second-person forms in any language, including English you/your and Chinese 你/您, refer only to the runtime LLM in Prompt instructions; learner-visible text inside a MarkdownFlow ?[] interaction or standalone deterministic output may address the learner in the second person."
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "课程设计和各课节授课提示词都已经完成。现在只生成完整课程提示词，交付模式是纯课堂幻灯片：课堂上只投屏，不需要 AI 口头讲解，也不要给每张图补长段解释。",
+      "expected_output": "Materializes the canonical Course Prompt with its slide-only presentation override while leaving lesson pedagogy in the existing Teaching Prompts.",
+      "files": [],
+      "expectations": [
+        "The workflow loads course-prompt.md and the shared Prompt contract without rerunning segmentation, orchestration, or Teaching Prompt generation.",
+        "The workflow uses the six-section template with its five mapped XXX placeholders, then replaces all five so the completed Course Prompt has no unresolved XXX.",
+        "The slide-only behavior is selected from course-prompt.md: it does not require AI narration or a complete prose explanation after every slide.",
+        "The Course Prompt follows the existing Teaching Prompts and does not introduce, replace, or reorder lesson pedagogy."
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "这节课要教新人比较‘规则驱动处置’和‘情境判断处置’。请用对比驱动学习来生成授课提示词：先建立共同评价维度，再逐项比较，最后给一个迁移练习。不要改回 Evidence Chain，也不要把这套教学顺序写进课程提示词。",
+      "expected_output": "Materializes the selected comparison-driven pattern in the Teaching Prompt without falling back to Evidence Chain or duplicating it in the Course Prompt.",
+      "files": [],
+      "expectations": [
+        "The Teaching Prompt follows the comparison-driven sequence selected from pedagogy.md, including shared dimensions, comparison, and transfer practice.",
+        "It does not silently substitute Pattern A Evidence Chain or combine multiple teaching patterns without a reason.",
+        "teaching-prompt.md materializes the selected strategy; it does not redefine the pedagogy catalog.",
+        "The Course Prompt, if produced, follows the current Teaching Prompt without restating the comparison sequence."
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "根据这段纯文字材料生成一节授课提示词：解释确认偏误，给一个销售复盘案例，再让学员选择哪条证据最可能推翻原判断。材料没有图片，我也不需要配图。只在本地给我结果，不部署。",
+      "expected_output": "Runs the text-only Teaching Prompt path without loading image authoring or deployment-only workflows.",
+      "files": [],
+      "expectations": [
+        "The workflow loads the Teaching Prompt, pedagogy, Prompt contract, MarkdownFlow authoring, runtime syntax, and schema instructions needed for the text-only artifact.",
+        "image-authoring.md is not loaded because neither the source nor the request contains an image task.",
+        "No platform authentication, target resolution, image search, upload-image command, image manifest, deployment, sync, or course-management operation is attempted.",
+        "The generated interaction follows the existing MarkdownFlow syntax and uses a variable only if the answer must be reused later."
       ]
     }
   ]

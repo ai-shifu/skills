@@ -2,6 +2,10 @@
 
 The 10 tables you can query, the fields each carries, the code/enum tables to translate raw values, the ID translation rules, and the data traps to be aware of.
 
+## Required References
+
+None.
+
 ## 10 Tables at a Glance
 
 | Table | Answers | Key fields |
@@ -19,7 +23,7 @@ The 10 tables you can query, the fields each carries, the code/enum tables to tr
 
 The 9 shifu-scoped tables (everything except `user_users`) are automatically constrained to the CLI-supplied `shifu_bid`; all tables except `shifu_user_archives` automatically filter `deleted = 0`. The two `shifu_*_shifus` metadata tables additionally auto-filter `created_user_bid = <caller>` so the row's author must be the caller. `learn_generated_blocks` additionally auto-filters `status = 1` so rerolled history rows do not skew follow-up counts. Do **not** add any of these to your DSL — they are injected.
 
-`user_users` is a **global** user table (no `shifu_bid` column). Its access is heavily restricted — read `privacy-and-presentation.md` before querying.
+`user_users` is a **global** user table (no `shifu_bid` column). Its access restrictions are documented in `privacy-and-presentation.md`.
 
 **Token usage is intentionally not exposed.** Creators can only see _credit_ consumption. The canonical real-time path is `shifu-cli.py credit-detail <bid>`, which the backend joins on the fly from `bill_usage` × `credit_ledger_entries` and returns ABS(amount) as `credits` (positive). When the daily aggregation cron is enabled, `bill_daily_usage_metrics.consumed_credits` will become the path for "by-day trend" DSL queries; until then it is empty and `credit-detail` is the only working path.
 
