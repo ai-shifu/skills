@@ -45,7 +45,7 @@ A lesson missing a phase required by its selected loop is incomplete. The follow
 Keep the three patterns and their step order. The interaction-policy matrix decides whether each pattern's interaction slot remains interactive or uses the corresponding non-interactive replacement:
 
 | Pattern | Interaction slot | Non-interactive replacement |
-|---|---|---|
+| --- | --- | --- |
 | Pattern A: Evidence Chain | Step 4 learner interaction | Worked application |
 | Pattern B: Misconception Repair | Step 4 interaction check | Worked boundary check |
 | Pattern C: Comparison-Driven Learning | Step 1 baseline response capture | Worked baseline |
@@ -117,7 +117,7 @@ These are the teaching decisions for whether to collect an answer, how often to 
 This section defines how slides and explanatory text divide teaching responsibility. Encode the selected visual form through [generation-workflow.md#image-authoring](generation-workflow.md#image-authoring); MarkdownFlow's resulting runtime behavior is defined in [markdownflow.md#images](markdownflow.md#images). Use [generation-workflow.md#working-with-author-provided-images](generation-workflow.md#working-with-author-provided-images) for author-provided asset handling.
 
 | Scenario | Authority and requirements |
-|---|---|
+| --- | --- |
 | Standard non-slide-only teaching | Keep every core concept paired with a slide and textual explanation. The slide carries structural prompting; the text carries the complete explanation and remains understandable when the learner has not seen the slide. Pair each slide direction with a brief explanation of what it should convey. |
 | Author-provided image file | Use the asset as part of the teaching explanation rather than as decoration. In standard teaching, follow it with the complete explanatory paragraph. If the course is slide-only, the next row overrides that paragraph requirement. |
 | Pure slides | Follow the [Slide-Only Generation Override](generation-workflow.md#slide-only-generation-override). Produce concise, projection-ready slide content; do not require AI narration or a full standalone explanatory paragraph paired with every slide. |

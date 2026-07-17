@@ -50,10 +50,7 @@ MarkdownFlow recognizes two preservation forms:
 - Multi-line fence:
 
 ```markdown
-!===
-Line 1
-Line 2
-!===
+!=== Line 1 Line 2 !===
 ```
 
 A standalone `===...===` line and a complete `!===...!===` fence produce deterministic output without requiring any additional boundary syntax. The runtime removes the markers, substitutes variables without adding quoting wrappers, restores protected code, and emits the result without an LLM call.

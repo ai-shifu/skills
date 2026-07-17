@@ -3,6 +3,7 @@
 ## Required Outcome
 
 The result must end in one of two states:
+
 - viable: one recommended topic plus two to three backup directions
 - not viable: a formal `not-viable` conclusion, optionally with downgrade paths
 
@@ -46,6 +47,7 @@ The result must end in one of two states:
 ## Optional Additions for Deeper Market Work
 
 Add only when the user asks for more depth:
+
 - `demand_density`: `small / medium / large / unknown`
 - `market_size_note`: a rough market-size note grounded in public signals
 - `trend_pattern`: `event-spike / seasonal / steady-demand / declining / reframed-demand`
@@ -58,6 +60,7 @@ Add only when the user asks for more depth:
 ## Required Additions for the Recommended Direction
 
 The recommended topic must also explain:
+
 - `why_this_one`: why it wins over larger, hotter, or more obvious directions
 - `fit_reason`: how it matches the material, the user problem, and the market stage at the same time
 - `go_to_market_hint`: the best packaging angle for entering the market
@@ -70,6 +73,7 @@ The recommended topic must also explain:
 ## Human-Facing Report Rules
 
 If the report is meant for humans rather than downstream systems:
+
 - the main and backup directions must differ meaningfully in audience, angle, teaching objective, or product form
 - competitor analysis cannot stop at links; it must explain what problem each product actually solves
 - the report should explicitly state whether the material is topic-ready only or genuinely course-ready
@@ -81,6 +85,7 @@ If the report is meant for humans rather than downstream systems:
 ## `not-viable` Output
 
 If no competitive topic can be justified:
+
 - use `viability_status: not-viable`
 - state whether the failure is due to content, audience, market, or delivery weakness
 - include downgrade options where appropriate
@@ -88,11 +93,13 @@ If no competitive topic can be justified:
 ## Title Rules
 
 A title should express at least two of the following:
+
 - audience
 - problem
 - result
 
 It must not:
+
 - exceed the material boundary
 - promise results the evidence cannot support
 - become abstract or “high-level” at the cost of specificity
@@ -110,6 +117,7 @@ It must not:
 ## Reusable Output Files
 
 When useful, also generate:
+
 - `topic_candidates.json`
 - `market_scan.md`
 - `source_evidence_map.json`

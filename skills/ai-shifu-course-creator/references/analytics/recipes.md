@@ -112,7 +112,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 口径说明（present these definitions alongside the numbers so they are unambiguous):
 
 - **学员数 (learners)** = `count_distinct(user_bid)` on `learn_progress_records` — everyone who entered the course (Method ① in `tables.md`). This is the dashboard's "学员数".
-- **订单数 (orders)** = `count` of `order_orders` rows with `status = 502` — paid orders (includes ¥0 free enrolments). For *strictly paid* (`paid_price > 0`) use Recipe 3; for the full funnel use Recipe 5.
+- **订单数 (orders)** = `count` of `order_orders` rows with `status = 502` — paid orders (includes ¥0 free enrolments). For _strictly paid_ (`paid_price > 0`) use Recipe 3; for the full funnel use Recipe 5.
 - **营收 (revenue)** = `sum(paid_price)` over the same `status = 502` rows. Round to 2 decimals (`¥5,870.70`).
 - **最近活跃 (last_active)** = the `created_at` of the latest `learn_progress_records` row (query 1b). Convert to local time before presenting.
 - **活跃学员 (active_learners)** = non-archived learners (`shifu_user_archives.archived = 0`); usually ≤ 学员数 because some learners archived the course.
@@ -276,9 +276,9 @@ Pseudo-shape:
   "code": 0,
   "data": {
     "summary": {
-      "total_records":   52,
-      "total_credits":   "26.6900",
-      "unique_users":    1,
+      "total_records": 52,
+      "total_credits": "26.6900",
+      "unique_users": 1,
       "unique_progress": 5,
       "wallet_creator_bid": "029bacf0...",
       "time_range": ["2026-05-15 16:05:18", "2026-05-15 23:45:17"]
@@ -290,15 +290,15 @@ Pseudo-shape:
         "user_bid": "...",
         "progress_record_bid": "...",
         "outline_item_bid": "...",
-        "usage_type":  1101,
+        "usage_type": 1101,
         "usage_scene": 1203,
-        "provider":    "deepseek",
-        "model":       "deepseek-v4-flash",
-        "credits":     "0.5100",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "credits": "0.5100",
         "wallet_creator_bid": "029bacf0..."
       }
     ],
-    "limit":  100,
+    "limit": 100,
     "offset": 0
   }
 }
@@ -514,4 +514,4 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-> Translate each `outline_item_bid` to "Lesson X.Y: \<title\>" via the `shifu-cli.py show <bid>` outline cache before presenting. High-ask lessons are usually candidates for content reinforcement (more concrete examples / explicit interaction). Low-ask lessons are often either very clear *or* skipped — cross-reference with `learn_progress_records` to tell which.
+> Translate each `outline_item_bid` to "Lesson X.Y: \<title\>" via the `shifu-cli.py show <bid>` outline cache before presenting. High-ask lessons are usually candidates for content reinforcement (more concrete examples / explicit interaction). Low-ask lessons are often either very clear _or_ skipped — cross-reference with `learn_progress_records` to tell which.

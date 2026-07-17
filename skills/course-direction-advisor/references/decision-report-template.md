@@ -3,6 +3,7 @@
 Use this template when the user needs a decision-oriented course-topic report rather than a loose market summary.
 
 The report should help the user decide:
+
 - which direction to push
 - why that direction wins
 - what the backup routes are
@@ -12,6 +13,7 @@ The report should help the user decide:
 ## When to Use This Template
 
 Use this template only when:
+
 - the material has already been compressed into a stable capability core
 - a basic market scan is complete
 - you can propose at least one main direction and two meaningful backups
@@ -21,16 +23,19 @@ If the material or market evidence is too weak, downgrade to a conservative feas
 ## Analysis Mode
 
 Always state the mode:
+
 - `A-material-only`
 - `B-market-scan`
 
 If the user asks in a specific language:
+
 - write the report in that language unless they ask otherwise
 - include and prioritize markets aligned with that language
 
 ## Lifecycle Labels
 
 Use the canonical lifecycle set:
+
 - `information-explosion`
 - `segmented-understanding`
 - `methodology-phase`
@@ -40,6 +45,7 @@ Use the canonical lifecycle set:
 ## Core Principles
 
 Always preserve these rules:
+
 - material boundary first, market amplification second
 - promise ceiling must not exceed the evidence ceiling
 - market size, sales potential, and breakout potential must remain evidence-constrained judgments
@@ -50,11 +56,13 @@ Always preserve these rules:
 ### 1. Conclusion First
 
 The first screen should give:
+
 - one recommended direction
 - two backup directions
 - two to three directions that should not be pursued
 
 For each recommended direction, include at least:
+
 - what kind of course it is
 - who it is for
 - what problem it solves
@@ -65,6 +73,7 @@ For each recommended direction, include at least:
 Compare all serious directions in one place.
 
 At minimum include:
+
 - direction name
 - course type
 - target audience
@@ -77,6 +86,7 @@ At minimum include:
 The main and backup directions must be genuinely different.
 
 They should differ on at least one of:
+
 - target audience
 - problem framing
 - teaching objective
@@ -87,6 +97,7 @@ If they are merely title variants, treat them as the same direction.
 ### 3. Why the Decision Was Reached
 
 Explain:
+
 - what user-problem cluster was identified in the market
 - how the source material maps back to that cluster
 - why the recommended direction beats the alternatives
@@ -97,11 +108,13 @@ This section should make the reasoning obvious, not just the conclusion.
 ### 4. Competitor and Substitute Analysis
 
 Analyze at least three competitors or substitutes from different categories:
+
 - method/content products
 - tools or platform features
 - services, training camps, or free-content substitutes
 
 For each one, explain:
+
 - what problem it solves
 - who it serves
 - why users buy it
@@ -116,6 +129,7 @@ Do not dump links without interpretation.
 ### 5. Market Stage and Buying Logic
 
 Explain plainly:
+
 - the current stage of the market
 - what users now need
 - what they are actually willing to pay for
@@ -124,6 +138,7 @@ Explain plainly:
 ### 5.5 Growth Curve
 
 For each serious direction, explain:
+
 - whether it is more likely to spike, compound steadily, or follow a hybrid curve
 - what would make the direction grow well
 - what would make it stall or fade
@@ -135,6 +150,7 @@ This helps prevent the report from treating all “good topics” as commerciall
 List at least two directions that should not be pursued.
 
 Typical reasons:
+
 - outside the material boundary
 - clearly crowded
 - low willingness to pay for a course
@@ -144,6 +160,7 @@ Typical reasons:
 ### 7. Final Recommendation
 
 For the recommended direction, specify:
+
 - title
 - teaching objective
 - course type
@@ -154,6 +171,7 @@ For the recommended direction, specify:
 - minimum launch scope
 
 For backups, specify:
+
 - title
 - audience
 - teaching objective
@@ -162,6 +180,7 @@ For backups, specify:
 ### 8. Author or Team Advantage
 
 If the material supports a real edge, state it explicitly:
+
 - real background
 - representative proof
 - scarce perspective
@@ -173,6 +192,7 @@ The goal is to explain why this author has a right to teach this topic.
 ### 9. Decision Gate
 
 Add:
+
 - decision status
 - decision reason
 - top risks
@@ -183,11 +203,13 @@ The report should feel like a decision memo, not a brainstorm note.
 ### 10. MVP and Seven-Day Validation Plan
 
 Include:
+
 - the smallest launchable version
 - the initial pricing hypothesis
 - a seven-day validation plan
 
 Typical validation steps:
+
 - interview target users
 - scan comparable offers
 - test three value propositions
@@ -197,6 +219,7 @@ Typical validation steps:
 ### 10.5 Optional Weighted Scorecard
 
 If a sharper decision gate is useful, add a weighted scorecard:
+
 - source strength: 25
 - user-problem fit: 20
 - market opportunity: 20
@@ -208,11 +231,13 @@ Use the scorecard as a support tool, not as a substitute for reasoning.
 ### 11. Evidence Appendix
 
 Add:
+
 - `claim_evidence_map`
 - external links
 - missing-evidence checklist
 
 Also include a short `course-readiness check`:
+
 - whether the material can support at least three lessons
 - what the lesson spine would be
 - what is still missing if the topic is only partially course-ready
@@ -220,6 +245,7 @@ Also include a short `course-readiness check`:
 ## Readability Rules
 
 If the report is meant for human decision-making:
+
 - make the conclusion readable in under one minute
 - make the reasoning readable in the next section
 - avoid field-name-heavy presentation unless the user explicitly wants a structured version

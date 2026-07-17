@@ -14,8 +14,7 @@ These rules apply to every report produced from this template, and to any other 
 - **Exception — deployment / management Verification URLs.** When transcribing the `Verification URLs:` block printed by `shifu-cli.py` (`publish` / `import` / `create` / `show`), emit each URL as **three lines**:
   1. A Markdown link — `[<course name> - <purpose label in resolved_target_language>](<URL>)`
   2. The same URL again on its own line (intentionally bare), indented two spaces — so the user can long-press / select to copy it cleanly.
-  3. The script's following Chinese `# ...` hint, copied verbatim without the leading `#`.
-  The bare URL on line 2 is the only place a bare URL is allowed; it exists because copying out of a rendered Markdown link is unreliable on some clients. The script-owned Chinese hint on line 3 is a verbatim-output exception to the report-language rule; do not translate or rewrite it.
+  3. The script's following Chinese `# ...` hint, copied verbatim without the leading `#`. The bare URL on line 2 is the only place a bare URL is allowed; it exists because copying out of a rendered Markdown link is unreliable on some clients. The script-owned Chinese hint on line 3 is a verbatim-output exception to the report-language rule; do not translate or rewrite it.
 
 ## Segmentation Report
 
@@ -156,25 +155,19 @@ The fenced snippets below are illustrative templates only. In the generated repo
 - `Admin console:` → localize the purpose label in `resolved_target_language` (Simplified Chinese: `管理后台`)
 
   ```md
-  - [<course name> - <localized admin-console label>](<URL from script>)
-    <URL from script>
-    <Chinese hint copied verbatim from the script output, without "#">
+  - [<course name> - <localized admin-console label>](<URL from script>) <URL from script> <Chinese hint copied verbatim from the script output, without "#">
   ```
 
 - `Course preview:` → localize the purpose label in `resolved_target_language` (Simplified Chinese: `预览课程`)
 
   ```md
-  - [<course name> - <localized course-preview label>](<URL from script>)
-    <URL from script>
-    <Chinese hint copied verbatim from the script output, without "#">
+  - [<course name> - <localized course-preview label>](<URL from script>) <URL from script> <Chinese hint copied verbatim from the script output, without "#">
   ```
 
 - `Published URL:` (only when the script printed it) → localize the purpose label in `resolved_target_language` (Simplified Chinese: `课程学习`)
 
   ```md
-  - [<course name> - <localized published-course label>](<URL from script>)
-    <URL from script>
-    <Chinese hint copied verbatim from the script output, without "#">
+  - [<course name> - <localized published-course label>](<URL from script>) <URL from script> <Chinese hint copied verbatim from the script output, without "#">
   ```
 
 When the script did **not** print `Published URL:` (typical for fresh `create` / `import` runs), show only the two existing blocks and add one sentence in `resolved_target_language` explaining that the course is not yet published and that `publish <shifu_bid>` will produce the shareable address.

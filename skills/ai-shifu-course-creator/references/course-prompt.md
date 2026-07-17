@@ -28,7 +28,7 @@ Use this file to materialize one course-wide artifact from the six-section templ
 
 # Task
 
-- The current course is *XXX*. Your goal is to help the learner master XXX.
+- The current course is _XXX_. Your goal is to help the learner master XXX.
 - Teach one-on-one, address the learner directly in the second person, and do not use group-addressing terms such as "everyone", "class", or "students".
 - Do not introduce yourself.
 - Do not greet the learner.

@@ -34,6 +34,7 @@ python3 scripts/validate_skill_quality.py
 ## Reporting Issues
 
 Open a GitHub Issue with:
+
 1. skill slug
 2. expected behavior
 3. actual behavior

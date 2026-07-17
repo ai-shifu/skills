@@ -23,7 +23,7 @@ On the first invocation in a session:
 ## Task Router
 
 | User intent | Required files, in order |
-|---|---|
+| --- | --- |
 | Create a full course, make a structural course edit, or run authoring end to end | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/prompt-contracts.md` → `references/authoring-intake.md` → `references/optimization-workflow.md#preservation-decisions` → `references/segmentation-orchestration.md` → `references/generation-workflow.md` → `references/optimization-workflow.md` → `references/deployment-workflow.md` |
 | Plan course structure or decide chapter and lesson counts from supplied material | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/authoring-intake.md` → `references/optimization-workflow.md#preservation-decisions` → `references/segmentation-orchestration.md#segmentation` |
 | Segment supplied material only | `references/authentication.md` → `references/course-target.md` → `references/authoring-controls.md` → `references/optimization-workflow.md#preservation-decisions` → `references/segmentation-orchestration.md#segmentation` |

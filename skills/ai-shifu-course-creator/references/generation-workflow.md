@@ -82,9 +82,7 @@ When Course Design Intake resolves to pure slides / classroom interactive slides
 - Generate slide-facing blocks only: slide title, 2-4 short bullets, and a visual/layout instruction. When the interaction policy permits an interaction, also include its prompt, options, and concise feedback states.
 - Keep policy-permitted interactions runnable with the normal MarkdownFlow syntax, but keep the surrounding content presentation-oriented. When the policy calls for the non-interactive substitute, render only the slide-facing content defined by `pedagogy.md#interaction-policy-precedence`.
 - Do not instruct the runtime LLM to narrate or verbally explain the slides. Omit long spoken paragraphs and instructions such as "explain to the learner", "walk through", "向学习者说明", "讲解", "用文字解释", or "讲清".
-- Do not require the normal visual-text explanation pair. The visual itself and
-  the short on-slide labels carry the projection content; any explanation
-  belongs to the human instructor, not the Teaching Prompt.
+- Do not require the normal visual-text explanation pair. The visual itself and the short on-slide labels carry the projection content; any explanation belongs to the human instructor, not the Teaching Prompt.
 - The Course Prompt must describe the runtime role as producing classroom slides, using "interactive slides" only when the interaction policy permits interactions, not as conducting one-on-one tutoring. Do not include course-level instructions that ask the AI to verbally explain the lesson to a single learner.
 
 ### Outputs
@@ -113,7 +111,7 @@ Raw SVG, HTML drawings, Mermaid, PlantUML, and Graphviz source are not image-emb
 Every uploaded image URL embedded in a Teaching Prompt uses `https://res.ai-shifu.cn/<uuid32>`. Choose one of these forms after the lesson's visual intent is known:
 
 | Authoring intent | Form |
-|---|---|
+| --- | --- |
 | Display the uploaded image as authored, without layout customization | Wrap standard Markdown image syntax in the single-line deterministic form: `===![informative alt](url)===` |
 | Control width, alignment, caption, or multi-image layout | Write a natural-language HTML-view instruction and leave it generative |
 
@@ -123,6 +121,7 @@ For an HTML-view image, do not put generated HTML or the instruction inside `===
 
 ```markdown
 必须在此处以 HTML-view 方式插入一张带图注的图片,不得省略,并使用 HTML <figure>/<figcaption> 结构。
+
 - URL(必须原样保留):https://res.ai-shifu.cn/<uuid32>
 - 图片内容(必须用于生成语义化 alt,不得省略):图片传达的具体概念或关系
 - 图注文字(必须原样输出,不要改写):图注原文
@@ -144,7 +143,7 @@ Before finalizing a generated Teaching Prompt that embeds images:
 
 ### Working with Author-Provided Images
 
-When the author supplies image assets — local files (any format incl. heic/heif) or remote URLs — three steps apply *within* Generation (and any later phase that touches the same lessons):
+When the author supplies image assets — local files (any format incl. heic/heif) or remote URLs — three steps apply _within_ Generation (and any later phase that touches the same lessons):
 
 1. **Understand each image before placing it.** You cannot choose the lesson, position, or alt text without knowing what the image shows. Two regimes:
    - **You can see the image** (attached in this conversation and your model is multimodal): describe it to yourself in one sentence — what concept, relation, or example it conveys — then choose the lesson and position per `pedagogy.md#visual-text-coordination`.
