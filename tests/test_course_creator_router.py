@@ -50,7 +50,11 @@ class CourseCreatorRouterTests(unittest.TestCase):
     def test_course_creator_has_no_bundled_examples(self):
         self.assertFalse((SKILL_ROOT / "examples").exists())
         self.assertNotIn("examples/", self.router)
-        for path in (SKILL_ROOT / "references").rglob("*.md"):
+        paths_to_check = list((SKILL_ROOT / "references").rglob("*.md"))
+        paths_to_check.extend(
+            [REPO_ROOT / "README.md", REPO_ROOT / "README.zh-CN.md"]
+        )
+        for path in paths_to_check:
             content = path.read_text(encoding="utf-8")
             self.assertNotIn(
                 "examples/",
