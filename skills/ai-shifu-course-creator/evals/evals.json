@@ -59,12 +59,12 @@
     },
     {
       "id": 6,
-      "prompt": "把这份内部培训文档做成一门新的 AI 师傅互动课，完成脚本优化后直接部署并发布；发布完成后再告诉我学习人数。",
-      "expected_output": "Combines the full authoring, deployment, and analytics routes in dependency order.",
+      "prompt": "把这份内部培训文档做成一门新的 AI 师傅互动课；课程完成后再告诉我学习人数。",
+      "expected_output": "Treats full-course creation as deployment-bound by default, then combines the full authoring, deployment, publication, and analytics routes in dependency order.",
       "files": [],
       "expectations": [
         "The workflow resolves authentication and the course target before authoring.",
-        "It runs intake, authoring phases, prompt validation, and safe new-course deployment in order.",
+        "It runs intake, authoring phases, prompt validation, safe new-course deployment, and publication in order without a separate deployment request.",
         "Analytics runs only after the live course target exists."
       ]
     },

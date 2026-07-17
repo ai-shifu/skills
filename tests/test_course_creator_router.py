@@ -68,6 +68,21 @@ class CourseCreatorRouterTests(unittest.TestCase):
             self.assertIn("references/authentication.md", route)
             self.assertIn("references/prompt-contracts.md", route)
 
+    def test_full_course_deploys_after_optimization_by_default(self):
+        route = self.route_line("Create a full course")
+        deployment = "references/deployment-workflow.md"
+
+        self.assertIn(deployment, route)
+        self.assertLess(
+            route.rindex("references/optimization-workflow.md"),
+            route.index(deployment),
+        )
+        self.assertTrue(route.endswith(f"`{deployment}` |"))
+        self.assertNotIn(
+            "only when deployment or publication is requested",
+            self.router,
+        )
+
     def test_platform_and_analytics_routes_require_authentication(self):
         for prefix in (
             "Publish, preview",
