@@ -5,7 +5,7 @@ The 10 tables you can query, the fields each carries, the code/enum tables to tr
 ## 10 Tables at a Glance
 
 | Table | Answers | Key fields |
-|---|---|---|
+| --- | --- | --- |
 | `learn_progress_records` | Learner count / completion rate / stuck lesson / recent activity / **lessons completed per learner** | `user_bid`, `outline_item_bid`, `status` (601-608, see code table), `created_at` |
 | `learn_generated_blocks` | Content interaction count / likes / type popularity / **interactions per learner** / **follow-up Q&A replay** | `user_bid`, `progress_record_bid`, `outline_item_bid`, `type` (see code table), `role` (1 teacher/AI · 2 learner · 3 UI, **integer**), `status` (1 active / 0 history — **API auto-filters to 1**), `position` (block ordering within a `progress_record_bid`), `liked` (-1/0/1), `generated_content` (raw text, restricted — see `dsl.md`) |
 | `learn_lesson_feedbacks` | Lesson ratings / Read Mode vs Listen Mode preference / **avg rating per learner** | `user_bid`, `progress_record_bid`, `mode` (read/listen), `score` (1-5) |
@@ -21,7 +21,7 @@ The 9 shifu-scoped tables (everything except `user_users`) are automatically con
 
 `user_users` is a **global** user table (no `shifu_bid` column). Its access is heavily restricted — read `privacy-and-presentation.md` before querying.
 
-**Token usage is intentionally not exposed.** Creators can only see *credit* consumption. The canonical real-time path is `shifu-cli.py credit-detail <bid>`, which the backend joins on the fly from `bill_usage` × `credit_ledger_entries` and returns ABS(amount) as `credits` (positive). When the daily aggregation cron is enabled, `bill_daily_usage_metrics.consumed_credits` will become the path for "by-day trend" DSL queries; until then it is empty and `credit-detail` is the only working path.
+**Token usage is intentionally not exposed.** Creators can only see _credit_ consumption. The canonical real-time path is `shifu-cli.py credit-detail <bid>`, which the backend joins on the fly from `bill_usage` × `credit_ledger_entries` and returns ABS(amount) as `credits` (positive). When the daily aggregation cron is enabled, `bill_daily_usage_metrics.consumed_credits` will become the path for "by-day trend" DSL queries; until then it is empty and `credit-detail` is the only working path.
 
 ## Course title is "current published", not "history"
 
@@ -44,7 +44,7 @@ Operational corollaries:
 `type` (integer):
 
 | type | Name | Source | `generated_content` selectable? |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `301` | `content` — system narration | Course template | yes |
 | `311` | `mdcontent` — Markdown narration | Course template | yes |
 | `312` | `mdinteraction` — interaction prompt | Course template | yes |
@@ -54,7 +54,7 @@ Operational corollaries:
 
 `role` (integer): `1` = teacher / AI (`assistant`) · `2` = learner (`user`) · `3` = UI widget
 
-> **Trap — `role = 2` is not only follow-up questions.** The learner-input role is shared by input widgets (`type = 303` input, `type = 309` phone, `type = 310` checkcode, etc.). To count *follow-up* questions specifically, filter `type = 321` — do **not** key off `role = 2` alone. (PDF §6 trap #1.)
+> **Trap — `role = 2` is not only follow-up questions.** The learner-input role is shared by input widgets (`type = 303` input, `type = 309` phone, `type = 310` checkcode, etc.). To count _follow-up_ questions specifically, filter `type = 321` — do **not** key off `role = 2` alone. (PDF §6 trap #1.)
 
 `status` (integer): `1` = current live row · `0` = superseded by a reroll. The API auto-injects `status = 1`, so a follow-up count reflects what the learner actually sees, not earlier rerolls. The DSL still accepts `status` in `filter` / `group_by` for debugging — but adding `status = 1` explicitly is redundant.
 
@@ -75,16 +75,16 @@ The 2026-05-15 query handbook PDF §6 recommends pairing a `type = 321` learner 
 
 ## `learn_progress_records.status`
 
-| Code | Chinese | English |
-|---|---|---|
-| `601` | 未开始 | Not started |
-| `602` | 进行中 | In progress |
-| `603` | 已完成 | Completed |
-| `604` | 已退款 | Refunded |
-| `605` | 已锁定 | Locked |
-| `606` | 不可用 | Unavailable |
+| Code  | Chinese  | English        |
+| ----- | -------- | -------------- |
+| `601` | 未开始   | Not started    |
+| `602` | 进行中   | In progress    |
+| `603` | 已完成   | Completed      |
+| `604` | 已退款   | Refunded       |
+| `605` | 已锁定   | Locked         |
+| `606` | 不可用   | Unavailable    |
 | `607` | 分支跳过 | Branch-skipped |
-| `608` | 已重置 | Reset |
+| `608` | 已重置   | Reset          |
 
 Completion rate counts `status = 603` only. "Participating learners" = `status >= 602`.
 
@@ -95,18 +95,18 @@ Completion rate counts `status = 603` only. "Participating learners" = `status >
 
 ## `order_orders.status`
 
-| Code | Chinese | English |
-|---|---|---|
+| Code  | Chinese      | English         |
+| ----- | ------------ | --------------- |
 | `501` | 已创建未付款 | Created, unpaid |
-| `502` | 已付款 ✅ | Paid |
-| `503` | 已退款 | Refunded |
-| `504` | 待支付 | Pending payment |
-| `505` | 已超时 | Timed out |
+| `502` | 已付款 ✅    | Paid            |
+| `503` | 已退款       | Refunded        |
+| `504` | 待支付       | Pending payment |
+| `505` | 已超时       | Timed out       |
 
 **Match the filter to the user's intent:**
 
 | User asks | Correct filter | Notes |
-|---|---|---|
+| --- | --- | --- |
 | "How many people paid" | `status = 502, paid_price > 0` | Strict paid, excludes ¥0 orders |
 | "Free enrolments / ¥0 purchases" | `status = 502, paid_price = 0` | Paid but ¥0 |
 | "All paid orders (incl. ¥0)" | `status = 502` | No price filter |
@@ -118,21 +118,21 @@ Completion rate counts `status = 603` only. "Participating learners" = `status >
 
 ## `order_orders.payment_channel`
 
-| Value | Meaning |
-|---|---|
-| `pingxx` | Ping++ aggregated channel (WeChat Pay / Alipay etc.) |
-| `stripe` | Stripe (international credit cards) |
-| `alipay` | Alipay native |
-| `wechatpay` | WeChat Pay native |
-| `open_api` | Orders created via OpenAPI (not learner-initiated payments) |
-| `""` (empty) | Legacy data or manually imported activity orders |
+| Value        | Meaning                                                     |
+| ------------ | ----------------------------------------------------------- |
+| `pingxx`     | Ping++ aggregated channel (WeChat Pay / Alipay etc.)        |
+| `stripe`     | Stripe (international credit cards)                         |
+| `alipay`     | Alipay native                                               |
+| `wechatpay`  | WeChat Pay native                                           |
+| `open_api`   | Orders created via OpenAPI (not learner-initiated payments) |
+| `""` (empty) | Legacy data or manually imported activity orders            |
 
 ## `learn_lesson_feedbacks.mode`
 
-| Value | Meaning |
-|---|---|
-| `"read"` | Reading mode (text lesson) |
-| `"listen"` | Listening mode (audio) |
+| Value      | Meaning                    |
+| ---------- | -------------------------- |
+| `"read"`   | Reading mode (text lesson) |
+| `"listen"` | Listening mode (audio)     |
 
 ## `learn_lesson_feedbacks.score`
 
@@ -140,19 +140,17 @@ Completion rate counts `status = 603` only. "Participating learners" = `status >
 
 ## `bill_daily_usage_metrics.usage_type`
 
-| Code | Meaning |
-|---|---|
-| `1101` | LLM inference call |
+| Code   | Meaning              |
+| ------ | -------------------- |
+| `1101` | LLM inference call   |
 | `1102` | TTS speech synthesis |
 
-> **Common misclassification**: `usage_type = 1102` (TTS) has nothing to do with learner follow-up questions.
-> Follow-ups trigger LLM calls (`usage_type = 1101`); TTS records Listen Mode audio generation. They are independent paths.
-> To measure follow-up question volume, query `learn_generated_blocks(type = 321)`.
+> **Common misclassification**: `usage_type = 1102` (TTS) has nothing to do with learner follow-up questions. Follow-ups trigger LLM calls (`usage_type = 1101`); TTS records Listen Mode audio generation. They are independent paths. To measure follow-up question volume, query `learn_generated_blocks(type = 321)`.
 
 ## `bill_daily_usage_metrics.usage_scene`
 
 | Code | Meaning | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `1201` | Debug | Author debugging in editor (rare) |
 | `1202` | Preview | Author / shared teacher / admin previewing course |
 | `1203` | Learner production | **Real learner learning** |
@@ -161,27 +159,27 @@ Completion rate counts `status = 603` only. "Participating learners" = `status >
 
 ## `bill_daily_usage_metrics.billing_metric`
 
-| Code | Meaning |
-|---|---|
-| `7451` | LLM input tokens |
+| Code   | Meaning                                       |
+| ------ | --------------------------------------------- |
+| `7451` | LLM input tokens                              |
 | `7452` | LLM cache-hit tokens (typically priced lower) |
-| `7453` | LLM output tokens |
+| `7453` | LLM output tokens                             |
 
 > `billing_metric` lets you split a model's credit consumption into input vs cache vs output. Sum across all three values for a single model's total credits.
 
 ## `shifu_user_archives.archived`
 
-| Code | Meaning |
-|---|---|
-| `0` | Active / enrolled |
-| `1` | Archived (learner removed from bookshelf) |
+| Code | Meaning                                   |
+| ---- | ----------------------------------------- |
+| `0`  | Active / enrolled                         |
+| `1`  | Archived (learner removed from bookshelf) |
 
 ## ID Field Translation Rules
 
 All `*_bid` values are 36-char pseudo-IDs. Never display them raw. Translate as follows:
 
 | Field | How to translate |
-|---|---|
+| --- | --- |
 | `shifu_bid` | Use the `shifu-cli.py list` cache: `bid → name` |
 | `outline_item_bid` | Use the `shifu-cli.py show <shifu_bid>` cache: recurse the outline tree to map `bid → name`; render as "Lesson X.Y: \<title\>" |
 | `progress_record_bid` | Two-step: ① DSL query `learn_progress_records` with `where progress_record_bid in […]` + `select progress_record_bid, outline_item_bid` to get the mapping; ② translate `outline_item_bid` via the outline cache |
@@ -210,7 +208,7 @@ A learner can have multiple progress records for the **same lesson** (`outline_i
 ## Three Independent "Amounts" — Never Mix
 
 | Amount type | Source | Who pays | How to query |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Course price / revenue** | `order_orders.paid_price` | Learner pays the creator | DSL `order_orders` |
 | **Model call credit consumption** | `credit_ledger_entries.amount` (joined with `bill_usage` server-side) | Creator's credits are deducted | `shifu-cli.py credit-detail <bid>` (`bill_daily_usage_metrics` is currently empty pending cron registration) |
 | **Plan / credit pack purchases** | Internal billing tables | Creator recharges credits | not queryable |
@@ -224,7 +222,7 @@ The `credit-detail` endpoint returns the absolute credit amount (`ABS(credit_led
 When in doubt, do not guess — only the 10 tables above are valid. These table names do **not** exist and will trigger `11003` (table not in whitelist):
 
 | Wrong guess | Why it fails | Use instead |
-|---|---|---|
+| --- | --- | --- |
 | `user_logs` | Does not exist | `learn_generated_blocks` for interaction data, `learn_progress_records` for progress |
 | `logs` / `event_logs` | Does not exist | Same as above |
 | `billing` / `usage` | Does not exist | `bill_daily_usage_metrics` (currently empty) or `shifu-cli.py credit-detail` |

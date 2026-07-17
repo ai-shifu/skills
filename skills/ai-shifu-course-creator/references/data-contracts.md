@@ -17,9 +17,7 @@ Provide one of:
 - Lesson granularity preference (`short`, `medium`, `long`).
 - Tone constraints.
 - Non-negotiable source fragments.
-- `course_author_name` (string): the course author's real name for the Course
-  Prompt role. If absent when a Course Prompt must be generated, ask the author
-  instead of inventing a persona name.
+- `course_author_name` (string): the course author's real name for the Course Prompt role. If absent when a Course Prompt must be generated, ask the author instead of inventing a persona name.
 - `course_profile` object.
 - `delivery_constraints` object.
 - `interaction_policy` object: normalized Course Design Intake result; see [Interaction Policy](#interaction-policy).
@@ -111,31 +109,28 @@ Each item in the Segmentation output (consumed by Orchestration and Generation):
 - `segment_type` (string enum, required) — must satisfy [Segment Types](#segment-types).
 - `core_point` (string, required) — the single teachable point this segment carries, written in `resolved_target_language`.
 - `preserve_block` (boolean, required) — `true` when the source span is selected as immutable by [optimization-workflow.md#preservation-decisions](optimization-workflow.md#preservation-decisions). The field records the decision; downstream MarkdownFlow behavior is defined in [markdownflow.md#preservation](markdownflow.md#preservation).
-- `source_span` (object, required) — traceable source location with `source_id`
-  (string), `start` (non-negative integer, inclusive character offset), and `end`
-  (integer greater than `start`, exclusive character offset). Use the same object
-  shape as entries in `course_index.source_span_map`.
+- `source_span` (object, required) — traceable source location with `source_id` (string), `start` (non-negative integer, inclusive character offset), and `end` (integer greater than `start`, exclusive character offset). Use the same object shape as entries in `course_index.source_span_map`.
 - `transfer_signals` (object, required) — must satisfy [Transfer Signals](#transfer-signals).
 
 ### Segment Types
 
 `segment_type` must use exactly one of these canonical values:
 
-| Value | Meaning |
-|---|---|
-| `concept` | Explanatory statements and definitions. |
-| `example` | Concrete demonstrations and walkthroughs. |
-| `code` | Executable or pseudo-code blocks. |
-| `image` | Image files and their source references. |
-| `exercise` | Learner action prompts. |
-| `transition` | Bridge text that links ideas. |
+| Value        | Meaning                                   |
+| ------------ | ----------------------------------------- |
+| `concept`    | Explanatory statements and definitions.   |
+| `example`    | Concrete demonstrations and walkthroughs. |
+| `code`       | Executable or pseudo-code blocks.         |
+| `image`      | Image files and their source references.  |
+| `exercise`   | Learner action prompts.                   |
+| `transition` | Bridge text that links ideas.             |
 
 ### Transfer Signals
 
 `transfer_signals` must be non-empty. Include every applicable canonical key, omit inapplicable keys rather than inventing content, and give every included key a non-empty, concise string value in `resolved_target_language`. Preserve an exact source quotation or other immutable source span when the signal intentionally carries it verbatim.
 
 | Key | Meaning |
-|---|---|
+| --- | --- |
 | `learner_hook` | Teaching entry point. |
 | `evidence_type` | Form of source evidence. |
 | `visual_cue` | Cue for expressing the segment as a slide. |

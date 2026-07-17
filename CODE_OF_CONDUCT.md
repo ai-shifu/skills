@@ -3,6 +3,7 @@
 ## Our Standards
 
 Contributors are expected to:
+
 1. Be respectful and constructive.
 2. Focus feedback on ideas and implementation.
 3. Avoid harassment, discrimination, and personal attacks.
@@ -16,10 +17,8 @@ Contributors are expected to:
 
 ## Enforcement
 
-Repository maintainers may edit, hide, or remove comments/PRs/issues that violate this code.
-Serious or repeated violations can lead to temporary or permanent bans.
+Repository maintainers may edit, hide, or remove comments/PRs/issues that violate this code. Serious or repeated violations can lead to temporary or permanent bans.
 
 ## Reporting
 
-If you encounter violations, open a private report through repository maintainers.
-Include links and context so maintainers can review quickly.
+If you encounter violations, open a private report through repository maintainers. Include links and context so maintainers can review quickly.

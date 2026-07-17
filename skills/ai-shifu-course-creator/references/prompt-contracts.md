@@ -27,7 +27,7 @@ Apply lesson-level teaching decisions through [Pedagogy](pedagogy.md) and materi
 Use each linked source directly. Workflow files apply these authorities through phase-specific actions and checks; they do not redefine them.
 
 | Concern | Authoritative source |
-|---|---|
+| --- | --- |
 | Prompt audience, instruction voice, addressee, and second-person meaning | [Prompt Semantics](#prompt-semantics) |
 | Lesson loop, teaching patterns, interaction decisions, variable-persistence decisions, and teaching-side visual coordination | [Pedagogy](pedagogy.md) |
 | MarkdownFlow preprocessing, syntax recognition, variable substitution, interaction execution, branch limitations, deterministic output, and image runtime behavior | [MarkdownFlow Spec](markdownflow.md) |

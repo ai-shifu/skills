@@ -49,6 +49,7 @@ MarkdownFlow recognizes two preservation forms:
 - Single-line or inline marker: `===fixed text===`
 - Multi-line fence:
 
+<!-- prettier-ignore -->
 ```markdown
 !===
 Line 1

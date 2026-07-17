@@ -19,8 +19,7 @@ skills/
 
 ## Usage
 
-Each skill keeps `SKILL.md` as the behavior source of truth.
-The directory name is the stable machine slug; the `name` frontmatter field is the human-readable display name.
+Each skill keeps `SKILL.md` as the behavior source of truth. The directory name is the stable machine slug; the `name` frontmatter field is the human-readable display name.
 
 ## Course Authoring & Deployment Paths
 

@@ -64,10 +64,7 @@ When Generation authors a new `images[].alt` value that will be embedded in a Te
 
 ## .shifu-sync.json
 
-Auto-maintained by `pull` and the version-aware write commands
-(`update-lesson` / `update-meta` / `import`). **Do not hand-edit.** It records
-the link between this local directory and the cloud course so pushes behave like
-`git push` (compare baseline before uploading) rather than blindly overwriting.
+Auto-maintained by `pull` and the version-aware write commands (`update-lesson` / `update-meta` / `import`). **Do not hand-edit.** It records the link between this local directory and the cloud course so pushes behave like `git push` (compare baseline before uploading) rather than blindly overwriting.
 
 Schema (abridged):
 
@@ -76,23 +73,38 @@ Schema (abridged):
   "schema_version": 1,
   "shifu_bid": "a1b2c3…",
   "base_url": "https://app.ai-shifu.cn",
-  "course": {"revision": 42, "name": "…", "description": "…", "updated_at": "…", "updated_user_bid": "…"},
+  "course": {
+    "revision": 42,
+    "name": "…",
+    "description": "…",
+    "updated_at": "…",
+    "updated_user_bid": "…"
+  },
   "lessons": [
-    {"file": "lessons/lesson-01.md", "outline_bid": "9a8b…", "name": "…",
-     "parent_bid": "ch_001", "revision": 1187, "is_chapter": false,
-     "content_sha256": "…"},
-    {"file": null, "outline_bid": "ch_001", "name": "第一章", "parent_bid": "",
-     "revision": null, "is_chapter": true}
+    {
+      "file": "lessons/lesson-01.md",
+      "outline_bid": "9a8b…",
+      "name": "…",
+      "parent_bid": "ch_001",
+      "revision": 1187,
+      "is_chapter": false,
+      "content_sha256": "…"
+    },
+    {
+      "file": null,
+      "outline_bid": "ch_001",
+      "name": "第一章",
+      "parent_bid": "",
+      "revision": null,
+      "is_chapter": true
+    }
   ],
-  "last_pull_at": "…", "last_push_at": "…"
+  "last_pull_at": "…",
+  "last_push_at": "…"
 }
 ```
 
-The per-lesson `revision` is the optimistic-locking baseline (the version at
-last pull/push) — how `status` detects "behind" and how a push detects a
-concurrent edit. `content_sha256` lets `status` tell whether the local file was
-edited since the last sync. See
-`cli-reference.md#version-sync-pull--status` for the workflow.
+The per-lesson `revision` is the optimistic-locking baseline (the version at last pull/push) — how `status` detects "behind" and how a push detects a concurrent edit. `content_sha256` lets `status` tell whether the local file was edited since the last sync. See `cli-reference.md#version-sync-pull--status` for the workflow.
 
 ## README.md
 
@@ -106,25 +118,15 @@ For every generated or edited lesson file, write authored Teaching Prompt instru
 
 ## course-description.md
 
-Contains the learner-facing SEO/listing description for the course. Path A and
-Author Only outputs must generate this file from the course topic, target
-learners, and concrete learning outcomes; do not include author-side workflow
-notes. Write its complete learner-facing content in `resolved_target_language`.
+Contains the learner-facing SEO/listing description for the course. Path A and Author Only outputs must generate this file from the course topic, target learners, and concrete learning outcomes; do not include author-side workflow notes. Write its complete learner-facing content in `resolved_target_language`.
 
-The `build` and `import --course-dir` commands map this file to
-`shifu.description` in `shifu-import.json`, which the CLI sends to the platform
-`description` field. Resolution order is:
+The `build` and `import --course-dir` commands map this file to `shifu.description` in `shifu-import.json`, which the CLI sends to the platform `description` field. Resolution order is:
 
 1. `--description`
 2. `<course-dir>/course-description.md`
 3. empty string
 
-Old course directories without `course-description.md` remain valid; they build
-with an empty platform description unless an explicit description flag is used.
-`pull` writes the current cloud description back to this file, and
-`update-meta --course-dir` pushes this file when it has a local content change;
-`update-meta --description --course-dir` also refreshes the file after a
-successful platform update.
+Old course directories without `course-description.md` remain valid; they build with an empty platform description unless an explicit description flag is used. `pull` writes the current cloud description back to this file, and `update-meta --course-dir` pushes this file when it has a local content change; `update-meta --description --course-dir` also refreshes the file after a successful platform update.
 
 ## course-prompt.md
 
@@ -152,8 +154,18 @@ Schema:
     {
       "title": "Chapter Title",
       "lessons": [
-        {"file": "lesson-01.md", "title": "Lesson Title", "access": "guest", "hidden": false},
-        {"file": "lesson-02.md", "title": "Another Lesson Title", "access": "normal", "hidden": false}
+        {
+          "file": "lesson-01.md",
+          "title": "Lesson Title",
+          "access": "guest",
+          "hidden": false
+        },
+        {
+          "file": "lesson-02.md",
+          "title": "Another Lesson Title",
+          "access": "normal",
+          "hidden": false
+        }
       ]
     }
   ]
@@ -171,25 +183,29 @@ Field reference:
 
 ## course-config.json
 
-A **read-only snapshot** of the course-level attributes (model / price / TTS /
-Ask / keywords / …), written by `pull` so the agent can see the current settings.
-**`build`/`import` do NOT send it** (attributes policy: `cli-reference.md#bulk-import`).
-The course **name** lives in `README.md`, the SEO **description** in
-`course-description.md`, and the **system prompt** in `course-prompt.md`.
-The one exception: `set-tts --course-dir` refreshes this snapshot after changing
-Listen Mode or its TTS provider/model/voice/speed settings.
+A **read-only snapshot** of the course-level attributes (model / price / TTS / Ask / keywords / …), written by `pull` so the agent can see the current settings. **`build`/`import` do NOT send it** (attributes policy: `cli-reference.md#bulk-import`). The course **name** lives in `README.md`, the SEO **description** in `course-description.md`, and the **system prompt** in `course-prompt.md`. The one exception: `set-tts --course-dir` refreshes this snapshot after changing Listen Mode or its TTS provider/model/voice/speed settings.
 
 ```json
 {
-  "model": "", "temperature": 0.3, "price": 0, "keywords": [], "avatar": "",
+  "model": "",
+  "temperature": 0.3,
+  "price": 0,
+  "keywords": [],
+  "avatar": "",
   "use_learner_language": false,
-  "tts_enabled": false, "tts_provider": "", "tts_model": "", "tts_voice_id": "",
-  "tts_speed": 1.0, "tts_pitch": 0, "tts_emotion": "",
-  "ask_enabled_status": 5101, "ask_model": "", "ask_temperature": 0.0,
-  "ask_system_prompt": "", "ask_provider_config": {}
+  "tts_enabled": false,
+  "tts_provider": "",
+  "tts_model": "",
+  "tts_voice_id": "",
+  "tts_speed": 1.0,
+  "tts_pitch": 0,
+  "tts_emotion": "",
+  "ask_enabled_status": 5101,
+  "ask_model": "",
+  "ask_temperature": 0.0,
+  "ask_system_prompt": "",
+  "ask_provider_config": {}
 }
 ```
 
-To change a lesson's permission (`set-access`) or course Listen Mode (`set-tts`),
-see `cli-reference.md#update-commands`. Other course-level attributes are changed
-in the platform editor.
+To change a lesson's permission (`set-access`) or course Listen Mode (`set-tts`), see `cli-reference.md#update-commands`. Other course-level attributes are changed in the platform editor.

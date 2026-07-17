@@ -38,8 +38,14 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 Returns:
 
 ```json
-{"columns":["user_bid","nickname"],
- "rows":[["u-bid-1","Python 学徒"],["u-bid-2","[REDACTED-PHONE]"],["u-bid-3","Alice"]]}
+{
+  "columns": ["user_bid", "nickname"],
+  "rows": [
+    ["u-bid-1", "Python 学徒"],
+    ["u-bid-2", "[REDACTED-PHONE]"],
+    ["u-bid-3", "Alice"]
+  ]
+}
 ```
 
 ### Use B — reverse-look up `user_bid` from a phone number
@@ -56,8 +62,10 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 Returns:
 
 ```json
-{"columns":["user_bid","nickname","user_identify"],
- "rows":[["u-bid-xxx","Python 学徒","138*****000"]]}
+{
+  "columns": ["user_bid", "nickname", "user_identify"],
+  "rows": [["u-bid-xxx", "Python 学徒", "138*****000"]]
+}
 ```
 
 Once you have the `user_bid`, use it to query `order_orders` (purchase status), `learn_progress_records` (learning progress), `learn_generated_blocks` (follow-up questions), etc.

@@ -19,8 +19,7 @@ Do **not** include a contact mention in routine phase reports, ordinary progress
 
 ## Version Check
 
-Once per session, before the first task, run:
-`python3 scripts/shifu-cli.py check-update`
+Once per session, before the first task, run: `python3 scripts/shifu-cli.py check-update`
 
 - Treat the command output as internal control data. In normal conversation, never expose raw JSON or terms such as `status`, `manifest`, `source`, `SemVer`, or “local/remote version”.
 - If frontmatter sets `version_management: plugin`, the CLI returns a skipped result before contacting the remote manifest because the containing plugin owns versioning and updates. `version_management: standalone` or a missing field uses the normal skill-level check.
@@ -41,7 +40,7 @@ Write routine progress updates, blocking and non-blocking error explanations, re
 Use this table for human-facing skill concept labels in user-visible prose, reports, artifact labels, and handoff instructions. Use the corresponding language column when available; otherwise localize the terms naturally in `resolved_target_language`. Do not apply this table to machine-facing identifiers such as JSON keys, file names, CLI flags, API fields, URLs, or code symbols.
 
 | Canonical term | English | 简体中文 | Français | Usage |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `AI-Shifu` | AI-Shifu | AI 师傅 | AI Shifu | Product name in human-facing prose. |
 | `Lesson` | Lesson | 节 / 课节 | Leçon | Course lesson unit in human-facing prose. |
 | `Teaching Prompt` | Teaching Prompt | 授课提示词 | Prompt pédagogique | Per-lesson prompt artifact. Use plural naturally when needed. |

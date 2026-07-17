@@ -19,8 +19,7 @@ skills/
 
 ## 使用说明
 
-skill 以 `SKILL.md` 作为行为定义。
-目录名是稳定的机器 slug；`name` frontmatter 字段是面向人的展示名。
+skill 以 `SKILL.md` 作为行为定义。目录名是稳定的机器 slug；`name` frontmatter 字段是面向人的展示名。
 
 ## 课程生产与部署路径
 
