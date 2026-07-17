@@ -11,5 +11,5 @@ repos:
     hooks:
       - id: prettier
         name: format Markdown
-        files: \.md$
+        types: [markdown]
         exclude: ^CLAUDE\.md$
