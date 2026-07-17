@@ -7,7 +7,7 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.9.5
+    rev: 9337a74165b178ae2c766f60bee7252a0f06f3e8 # v3.9.5
     hooks:
       - id: prettier
         name: format Markdown
