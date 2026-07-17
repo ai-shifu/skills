@@ -1126,6 +1126,9 @@ class PedagogyContractTests(unittest.TestCase):
             "Single-line or inline marker: `===fixed text===`", deterministic
         )
         self.assertIn(
+            "```markdown\n!===\nLine 1\nLine 2\n!===\n```", deterministic
+        )
+        self.assertIn(
             "without requiring any additional boundary syntax", deterministic
         )
         self.assertIn("without an LLM call", deterministic)
