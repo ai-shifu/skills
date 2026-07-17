@@ -831,233 +831,81 @@ After the learner answers, branch to the matching guidance.
             )
 
 
-class PedagogyContractTests(unittest.TestCase):
+class CourseCreatorContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.skill_doc = (
-            COURSE_CREATOR_REFERENCES.parent / "SKILL.md"
-        ).read_text(encoding="utf-8")
-        cls.pedagogy_path = COURSE_CREATOR_REFERENCES / "pedagogy.md"
-        cls.pedagogy = cls.pedagogy_path.read_text(encoding="utf-8")
-        cls.course_prompt_path = COURSE_CREATOR_REFERENCES / "course-prompt.md"
-        cls.course_prompt = cls.course_prompt_path.read_text(encoding="utf-8")
-        cls.generation_workflow_path = (
-            COURSE_CREATOR_REFERENCES / "generation-workflow.md"
-        )
-        cls.generation_workflow = cls.generation_workflow_path.read_text(
-            encoding="utf-8"
-        )
-        cls.optimization_workflow_path = (
-            COURSE_CREATOR_REFERENCES / "optimization-workflow.md"
-        )
-        cls.optimization_workflow = cls.optimization_workflow_path.read_text(
-            encoding="utf-8"
-        )
-        cls.segmentation_workflow_path = (
-            COURSE_CREATOR_REFERENCES / "segmentation-orchestration.md"
-        )
-        cls.segmentation_workflow = cls.segmentation_workflow_path.read_text(
-            encoding="utf-8"
-        )
-        cls.markdownflow_path = COURSE_CREATOR_REFERENCES / "markdownflow.md"
-        cls.markdownflow = cls.markdownflow_path.read_text(encoding="utf-8")
-        cls.prompt_contracts_path = (
-            COURSE_CREATOR_REFERENCES / "prompt-contracts.md"
-        )
-        cls.prompt_contracts = cls.prompt_contracts_path.read_text(
-            encoding="utf-8"
-        )
-        cls.review_checklist = (
-            COURSE_CREATOR_REFERENCES / "review-checklist.md"
-        ).read_text(encoding="utf-8")
-        cls.report_template = (
-            COURSE_CREATOR_REFERENCES / "report-template.md"
-        ).read_text(encoding="utf-8")
-        cls.data_contracts_path = COURSE_CREATOR_REFERENCES / "data-contracts.md"
-        cls.data_contracts = cls.data_contracts_path.read_text(encoding="utf-8")
-        cls.deployment_workflow = (
-            COURSE_CREATOR_REFERENCES / "deployment-workflow.md"
-        ).read_text(encoding="utf-8")
-        cls.reference_anchors_by_path = {
-            path: validate_skill_quality.github_heading_slugs(path)
-            for path in sorted(COURSE_CREATOR_REFERENCES.rglob("*.md"))
-            if all(
-                not part.startswith(".")
-                for part in path.relative_to(COURSE_CREATOR_REFERENCES).parts
-            )
-        }
+        cls.skill_root = COURSE_CREATOR_REFERENCES.parent
+        cls.skill_doc = (cls.skill_root / "SKILL.md").read_text(encoding="utf-8")
 
-    def test_reference_anchors_match_authority_boundaries(self):
-        expected_anchors_by_path = {
-            self.pedagogy_path: {
-                "pedagogy",
-                "interaction-policy-precedence",
-                "lesson-loop",
-                "teaching-patterns",
-                "pattern-a-evidence-chain",
-                "pattern-b-misconception-repair",
-                "pattern-c-comparison-driven-learning",
-                "cognitive-techniques",
-                "interaction-design",
-                "variable-strategy",
-                "visual-text-coordination",
-            },
-            self.segmentation_workflow_path: {
-                "segmentation-methodology",
-                "objective",
-                "core-rules",
-                "failure-handling",
-            },
-            self.data_contracts_path: {
-                "segment-types",
-                "transfer-signals",
-            },
-            self.markdownflow_path: {
-                "markdownflow-spec",
-                "preprocessing",
-                "variables",
-                "interactions",
-                "branching-on-user-input",
-                "deterministic-blocks",
-                "images",
-                "preservation",
-            },
-            self.generation_workflow_path: {
-                "markdownflow-authoring",
-                "interaction-encoding",
-                "variable-and-branch-encoding",
-                "preservation-encoding",
-                "image-authoring",
-                "image-output-validation",
-                "working-with-author-provided-images",
-            },
-            self.optimization_workflow_path: {
-                "optimization-methodology",
-                "principles",
-                "content-fidelity-and-controlled-rewriting",
-                "preservation-decisions",
-                "issue-taxonomy",
-                "execution-sequence",
-            },
-        }
-
-        for path, expected_anchors in expected_anchors_by_path.items():
-            actual_anchors = self.reference_anchors_by_path[path]
-            self.assertTrue(
-                expected_anchors.issubset(actual_anchors),
-                f"missing authority anchors in {path}: "
-                f"{sorted(expected_anchors - actual_anchors)}",
+        def load(filename: str) -> str:
+            return (COURSE_CREATOR_REFERENCES / filename).read_text(
+                encoding="utf-8"
             )
 
-        self.assertEqual(
-            expected_anchors_by_path[self.markdownflow_path],
-            self.reference_anchors_by_path[self.markdownflow_path],
-            "MarkdownFlow may contain only its runtime-specification headings",
-        )
-
-        exclusive_anchors_by_path = {
-            self.pedagogy_path: {
-                "pedagogy",
-                "interaction-policy-precedence",
-                "teaching-patterns",
-                "pattern-a-evidence-chain",
-                "pattern-b-misconception-repair",
-                "pattern-c-comparison-driven-learning",
-                "cognitive-techniques",
-                "interaction-design",
-                "variable-strategy",
-            },
-            self.segmentation_workflow_path: {"segmentation-methodology"},
-            self.data_contracts_path: {"segment-types", "transfer-signals"},
-            self.markdownflow_path: {
-                "markdownflow-spec",
-                "preprocessing",
-                "variables",
-                "interactions",
-                "branching-on-user-input",
-                "deterministic-blocks",
-                "images",
-                "preservation",
-            },
-            self.generation_workflow_path: {
-                "markdownflow-authoring",
-                "interaction-encoding",
-                "variable-and-branch-encoding",
-                "preservation-encoding",
-                "image-authoring",
-                "image-output-validation",
-            },
-            self.optimization_workflow_path: {
-                "optimization-methodology",
-                "content-fidelity-and-controlled-rewriting",
-                "preservation-decisions",
-                "issue-taxonomy",
-                "execution-sequence",
-            },
-        }
-
-        for owner_path, exclusive_anchors in exclusive_anchors_by_path.items():
-            for path, actual_anchors in self.reference_anchors_by_path.items():
-                if path == owner_path:
-                    continue
-                duplicated_anchors = exclusive_anchors.intersection(actual_anchors)
-                self.assertFalse(
-                    duplicated_anchors,
-                    f"authority anchors owned by {owner_path} also appear in "
-                    f"{path}: {sorted(duplicated_anchors)}",
-                )
+        cls.language_policy = load("language-policy.md")
+        cls.data_contracts = load("data-contracts.md")
+        cls.prompt_contracts = load("prompt-contracts.md")
+        cls.pedagogy = load("pedagogy.md")
+        cls.markdownflow = load("markdownflow.md")
+        cls.markdownflow_authoring = load("markdownflow-authoring.md")
+        cls.source_preservation = load("source-preservation.md")
+        cls.teaching_prompt = load("teaching-prompt.md")
+        cls.image_authoring = load("image-authoring.md")
+        cls.orchestration_workflow = load("orchestration-workflow.md")
+        cls.course_prompt = load("course-prompt.md")
+        cls.course_description = load("course-description.md")
+        cls.optimization_workflow = load("optimization-workflow.md")
+        cls.optimization_checklist = load("optimization-checklist.md")
+        cls.deployment_workflow = load("deployment-workflow.md")
+        cls.course_sync = load("course-sync.md")
+        cls.course_management = load("course-management.md")
+        cls.report_template = load("report-template.md")
+        cls.course_directory_spec = load("cli/course-directory-spec.md")
+        cls.cli_reference = load("cli/cli-reference.md")
 
     def test_prompt_semantics_are_centralized(self):
         semantics_section = markdown_section(
             self.prompt_contracts, "Prompt Semantics"
         )
         semantics = " ".join(semantics_section.split())
-        review_semantics = markdown_section(
-            self.review_checklist, "Prompt Semantics"
-        )
 
         self.assertIn("Prompts, not Scripts", semantics)
         self.assertIn("runtime LLM", semantics)
         self.assertIn("tell the LLM how to teach the learner", semantics)
         self.assertIn(
-            "Within Prompt instructions, every occurrence of `you`, `your`, "
-            "`yours`, or `yourself`, "
-            "in any capitalization, refers only to the runtime LLM",
+            "Within Prompt instructions, every second-person form in any "
+            "language refers only to the runtime LLM",
             semantics,
         )
+        self.assertIn("`you`, `your`, `yours`, and `yourself`", semantics)
+        self.assertIn("`你`, `您`, and their possessive forms", semantics)
         self.assertIn('"the learner" or "the student"', semantics)
         self.assertIn(
             "Learner-visible text inside a MarkdownFlow `?[]` interaction or "
             "[standalone deterministic output]"
-            "(markdownflow.md#deterministic-blocks) is "
-            "the exception",
+            "(markdownflow.md#deterministic-blocks) is the exception",
             semantics,
         )
         self.assertIn(
             "Outside `?[]` and standalone deterministic output", semantics
         )
-        self.assertNotIn("Within Course Prompt content", semantics)
-        for block in semantics_section.strip().split("\n\n"):
-            block = block.strip()
-            if not block:
-                continue
-            lines = block.splitlines()
-            if lines[0].startswith("- "):
-                self.assertTrue(all(line.startswith("- ") for line in lines))
-            else:
-                self.assertEqual(1, len(lines))
-        self.assertNotIn("## Script " + "Style", self.pedagogy)
-        self.assertIn(
-            "prompt-semantics",
-            validate_skill_quality.github_heading_slugs(
-                self.prompt_contracts_path
-            ),
+        self.assertNotIn("## Authority Index", self.prompt_contracts)
+        required = markdown_section(
+            self.prompt_contracts, "Required References"
         )
-        self.assertIn(
-            "(prompt-contracts.md#prompt-semantics)", review_semantics
-        )
+        self.assertIn("`markdownflow.md#interactions`", required)
+        self.assertIn("`markdownflow.md#deterministic-blocks`", required)
 
-    def test_deprecated_script_style_phrasing_stays_out_of_other_docs(self):
+        for path in COURSE_CREATOR_REFERENCES.rglob("*.md"):
+            if path.name == "prompt-contracts.md":
+                continue
+            self.assertNotIn(
+                "\n## Prompt Semantics\n",
+                path.read_text(encoding="utf-8"),
+                f"Prompt semantics must be owned only by prompt-contracts.md: {path}",
+            )
+
+    def test_deprecated_prompt_phrasing_stays_out_of_other_docs(self):
         deprecated_fragments = {
             "## script style",
             "script that guides teaching",
@@ -1068,8 +916,8 @@ class PedagogyContractTests(unittest.TestCase):
         }
         matches = []
 
-        for path in COURSE_CREATOR_REFERENCES.parent.rglob("*.md"):
-            if path == self.prompt_contracts_path:
+        for path in self.skill_root.rglob("*.md"):
+            if path.name == "prompt-contracts.md":
                 continue
             content = path.read_text(encoding="utf-8").casefold()
             for fragment in deprecated_fragments:
@@ -1126,7 +974,8 @@ class PedagogyContractTests(unittest.TestCase):
             "Single-line or inline marker: `===fixed text===`", deterministic
         )
         self.assertIn(
-            "```markdown\n!===\nLine 1\nLine 2\n!===\n```", deterministic
+            "```markdown\n!===\n\nParagraph 1\n\nParagraph 2\n\n!===\n```",
+            deterministic,
         )
         self.assertIn(
             "without requiring any additional boundary syntax", deterministic
@@ -1147,7 +996,45 @@ class PedagogyContractTests(unittest.TestCase):
             "Content outside these mechanisms may be paraphrased", preservation
         )
 
-    def test_markdownflow_hides_internal_block_segmentation(self):
+    def test_markdownflow_is_runtime_only(self):
+        expected_headings = {
+            "markdownflow-spec",
+            "required-references",
+            "preprocessing",
+            "variables",
+            "interactions",
+            "branching-on-user-input",
+            "deterministic-blocks",
+            "images",
+            "preservation",
+        }
+        actual_headings = validate_skill_quality.github_heading_slugs(
+            COURSE_CREATOR_REFERENCES / "markdownflow.md"
+        )
+        self.assertEqual(expected_headings, actual_headings)
+
+        forbidden_authoring_fragments = {
+            "answer must leave the current lesson",
+            "Use single-select for",
+            "Use multi-select for",
+            "Prompt Placement Rules",
+            "Input Marker Rules",
+            "Which form to use",
+            "upload-image",
+            "res.ai-shifu.cn",
+            "必须原样保留",
+            "不得省略",
+            "语义化 alt",
+            "保持原始宽高比",
+            "Raw SVG, HTML drawings, Mermaid",
+            "pedagogy.md",
+            "markdownflow-authoring.md",
+            "image-authoring.md",
+            "data-contracts.md",
+        }
+        for fragment in forbidden_authoring_fragments:
+            self.assertNotIn(fragment, self.markdownflow)
+
         internal_taxonomy = {
             "processing model",
             "parsed block",
@@ -1158,135 +1045,92 @@ class PedagogyContractTests(unittest.TestCase):
             "interaction block",
             "block separator",
         }
-        markdownflow = self.markdownflow.casefold()
-
         for term in internal_taxonomy:
-            self.assertNotIn(term, markdownflow)
+            self.assertNotIn(term, self.markdownflow.casefold())
         self.assertNotIn("`---`", self.markdownflow)
         self.assertNotRegex(self.markdownflow, r"(?m)^\s*---\s*$")
 
-    def test_reviewed_author_side_course_prompt_terms_stay_explicit(self):
-        responsibilities = markdown_section(
-            self.prompt_contracts, "Artifact Responsibilities"
+    def test_language_resolution_and_audit_are_owned_by_language_policy(self):
+        resolution = markdown_section(
+            self.language_policy, "Language Resolution"
         )
-        materialization = markdown_section(
-            self.course_prompt, "Materialization Checks"
-        )
-        review = markdown_section(self.review_checklist, "Course Prompt")
+        priority = markdown_section(resolution, "Priority Order")
+        priority_items = [
+            line
+            for line in priority.splitlines()
+            if re.match(r"^\d+\.\s+", line)
+        ]
+        priority_identifiers = [
+            line.split("`", 2)[1] for line in priority_items
+        ]
 
-        self.assertIn("follows each Teaching Prompt", responsibilities)
-        self.assertIn("does not own lesson pedagogy", responsibilities)
-        self.assertIn(
-            "contains no MarkdownFlow `?[]` interaction controls",
-            responsibilities,
+        self.assertEqual(
+            [
+                "context_language_directive",
+                "prompt_language_detection",
+            ],
+            priority_identifiers,
         )
         self.assertIn(
-            "Every non-placeholder template instruction", materialization
-        )
-        self.assertIn("current Teaching Prompt", review)
-        self.assertIn("without introducing competing lesson pedagogy", review)
-        self.assertNotIn("current user message", review)
-        self.assertIn("multiple script versions", self.optimization_workflow)
-        self.assertIn(
-            "source-to-Prompt coverage matrix", self.optimization_workflow
+            "any applicable context explicitly specifies", priority
         )
         self.assertIn(
-            "prompt-contracts.md#artifact-responsibilities",
-            self.optimization_workflow,
+            "otherwise, use the language detected from the", priority
         )
+        self.assertIn("follow the normal instruction hierarchy", priority)
+        self.assertIn("most recent applicable directive", priority)
+        self.assertIn(
+            "`resolved_target_language` is a string", resolution
+        )
+        self.assertIn("## Localization Scope", self.language_policy)
+        self.assertIn("## Localization Exclusions", self.language_policy)
+        self.assertIn("## Language Audit", self.language_policy)
 
-    def test_preservation_and_language_gates_run_before_content_shipping(self):
-        self.assertIn(
-            "[Language Audit](review-checklist.md#language-audit)",
-            self.deployment_workflow,
-        )
-        self.assertIn(
-            "During Segmentation, apply "
-            "`optimization-workflow.md#preservation-decisions`",
-            self.segmentation_workflow,
-        )
-        self.assertIn("before any Generation step", self.segmentation_workflow)
-        self.assertIn(
-            "loaded directly from a route or through a dependency",
-            self.skill_doc,
-        )
-        self.assertIn("dependencies transitively", self.skill_doc)
-
-        mandatory_gates = markdown_section(
-            self.segmentation_workflow, "Mandatory Gates"
-        )
-        visual_review = markdown_section(
-            self.review_checklist, "Visual-Text Coordination"
-        )
-        self.assertIn("`review-checklist.md`", mandatory_gates)
-        self.assertIn(
-            "(generation-workflow.md#image-output-validation)",
-            visual_review,
-        )
-
-        route_order_checks = {
-            "| Create a full course,": "references/segmentation-orchestration.md",
-            "| Plan course structure": "references/segmentation-orchestration.md",
-            "| Segment supplied material only": (
-                "references/segmentation-orchestration.md"
-            ),
-            "| Generate Teaching Prompts": "references/generation-workflow.md",
-        }
-        for row_prefix, downstream_path in route_order_checks.items():
-            row = next(
-                line
-                for line in self.skill_doc.splitlines()
-                if line.startswith(row_prefix)
-            )
-            self.assertLess(
-                row.index("references/optimization-workflow.md#preservation-decisions"),
-                row.index(downstream_path),
-                f"preservation decisions must load before {downstream_path}",
+        for path in COURSE_CREATOR_REFERENCES.rglob("*.md"):
+            if path.name == "language-policy.md":
+                continue
+            self.assertNotIn(
+                "\n## Language Resolution\n",
+                path.read_text(encoding="utf-8"),
+                f"language resolution must be single-sourced: {path}",
             )
 
-    def test_optimization_report_names_each_prompt_type(self):
-        report = markdown_section(self.report_template, "Optimization Report")
-
-        self.assertIn("- Target Teaching Prompt(s):", report)
-        self.assertIn("- Target Course Prompt:", report)
-        self.assertNotIn("- Target Prompt(s):", report)
-
-    def test_reviewed_prompt_prose_has_no_soft_line_wraps(self):
-        slide_override = markdown_section(
-            self.generation_workflow, "Slide-Only Generation Override"
+        template = (REPO_ROOT / "templates" / "skill.yaml.template").read_text(
+            encoding="utf-8"
         )
-        narration_rule = (
-            "- Do not instruct the runtime LLM to narrate or verbally explain "
-            "the slides. Omit long spoken paragraphs and instructions such as "
-            '"explain to the learner", "walk through", "向学习者说明", "讲解", '
-            '"用文字解释", or "讲清".'
+        template_resolution = template.split(
+            "language_resolution:", 1
+        )[1].split("inputs:", 1)[0]
+        template_priority_identifiers = re.findall(
+            r'^\s+-\s+"([^"]+)"$',
+            template_resolution,
+            re.MULTILINE,
         )
+        self.assertEqual(
+            priority_identifiers,
+            template_priority_identifiers,
+        )
+        self.assertNotIn("resolved_target_language", self.data_contracts)
+        self.assertNotIn("## Language Audit", self.optimization_checklist)
 
-        self.assertIn(narration_rule, slide_override.splitlines())
-
-    def test_transfer_signal_keys_match_data_contract_and_validator(self):
+    def test_schema_enums_match_the_validator(self):
         transfer_section = markdown_section(
             self.data_contracts, "Transfer Signals"
         )
         data_contract_keys = markdown_table_first_column(
             transfer_section, "Key"
         )
-
-        validator_keys = validate_skill_quality.TRANSFER_SIGNAL_KEYS
         self.assertEqual(len(data_contract_keys), len(set(data_contract_keys)))
-        self.assertEqual(set(data_contract_keys), validator_keys)
-        self.assertIn(
-            "(data-contracts.md#transfer-signals)",
-            self.segmentation_workflow,
+        self.assertEqual(
+            set(data_contract_keys),
+            validate_skill_quality.TRANSFER_SIGNAL_KEYS,
         )
 
-    def test_interaction_matrix_has_only_canonical_modes_and_purposes(self):
         policy_section = markdown_section(
             self.pedagogy, "Interaction Policy Precedence"
         )
         modes = markdown_table_first_column(policy_section, "Mode")
         purposes = markdown_table_first_column(policy_section, "Purpose")
-
         self.assertEqual(len(modes), len(set(modes)))
         self.assertEqual(len(purposes), len(set(purposes)))
         self.assertEqual(
@@ -1295,94 +1139,170 @@ class PedagogyContractTests(unittest.TestCase):
         self.assertEqual(
             set(purposes), validate_skill_quality.INTERACTION_PURPOSES
         )
+        self.assertNotIn("## Language Resolution", self.data_contracts)
+        self.assertNotIn("## Teaching Patterns", self.data_contracts)
 
-    def test_authority_links_cover_prompt_and_delivery_boundaries(self):
-        authority = markdown_section(self.prompt_contracts, "Authority Index")
-        interaction = markdown_section(self.pedagogy, "Interaction Design")
-        variables = markdown_section(self.pedagogy, "Variable Strategy")
-        visuals = markdown_section(self.pedagogy, "Visual-Text Coordination")
-        interaction_encoding = markdown_section(
-            self.generation_workflow, "Interaction Encoding"
-        )
-        image_authoring = markdown_section(
-            self.generation_workflow, "Image Authoring"
-        )
-        image_output_validation = markdown_section(
-            self.generation_workflow, "Image Output Validation"
-        )
-        preservation_encoding = markdown_section(
-            self.generation_workflow, "Preservation Encoding"
-        )
-
-        for link in (
-            "(pedagogy.md)",
-            "(markdownflow.md)",
-            "(course-prompt.md)",
-            "(data-contracts.md)",
+    def test_teaching_patterns_are_selected_not_redefined_during_generation(self):
+        patterns = markdown_section(self.pedagogy, "Teaching Patterns")
+        for pattern in (
+            "Pattern A: Evidence Chain",
+            "Pattern B: Misconception Repair",
+            "Pattern C: Comparison-Driven Learning",
         ):
-            self.assertIn(link, authority)
-        self.assertIn("(markdownflow.md#interactions)", interaction)
-        self.assertIn("(markdownflow.md#branching-on-user-input)", interaction)
-        self.assertIn("(markdownflow.md#variables)", variables)
-        self.assertIn("(data-contracts.md#variable-table)", variables)
+            self.assertIn(pattern, patterns)
         self.assertIn(
-            "(generation-workflow.md#markdownflow-authoring)", authority
+            "do not force every lesson into Evidence Chain",
+            self.teaching_prompt,
         )
-        self.assertIn("(generation-workflow.md#generation)", authority)
-        self.assertIn(
-            "(generation-workflow.md#image-authoring)", authority
+        self.assertNotRegex(
+            self.teaching_prompt,
+            r"(?m)^#{2,6} Pattern [ABC]:",
         )
-        self.assertIn(
-            "(optimization-workflow.md#optimization)", authority
+        self.assertNotIn("## Teaching Patterns", self.prompt_contracts)
+        self.assertNotIn("## Teaching Patterns", self.course_prompt)
+
+    def test_markdownflow_authoring_owns_encoding(self):
+        interaction = markdown_section(
+            self.markdownflow_authoring, "Interaction Encoding"
         )
-        self.assertIn(
-            "(optimization-workflow.md#preservation-decisions)", authority
+        variables = markdown_section(
+            self.markdownflow_authoring, "Variable and Branch Encoding"
         )
-        self.assertIn(
-            "(generation-workflow.md#image-authoring)", visuals
+        preservation = markdown_section(
+            self.markdownflow_authoring, "Preservation Encoding"
         )
-        self.assertIn("pedagogy.md#interaction-design", interaction_encoding)
-        self.assertIn("pedagogy.md#variable-strategy", interaction_encoding)
-        self.assertIn(
-            "optimization-workflow.md#preservation-decisions",
-            preservation_encoding,
+
+        self.assertIn("`?[]` control on its own line", interaction)
+        self.assertIn("`|` for single-select", interaction)
+        self.assertIn("`||` for multi-select", interaction)
+        self.assertIn("literal substituted value `UNKNOWN`", variables)
+        self.assertIn("wrap only the position- and formatting-sensitive span", preservation)
+        self.assertIn("Inline preservation remains LLM-mediated", preservation)
+        required = markdown_section(
+            self.markdownflow_authoring, "Required References"
         )
-        self.assertIn(
-            "markdownflow.md#deterministic-blocks", preservation_encoding
+        conditional = markdown_section(
+            self.markdownflow_authoring, "Conditional References"
         )
-        self.assertIn("wrap only the span", preservation_encoding)
-        self.assertIn("Inline preservation does not bypass", preservation_encoding)
-        self.assertIn("markdownflow.md#images", image_authoring)
-        self.assertIn("assets/image-manifest.json", image_output_validation)
-        self.assertIn("`remote` and `alt`", image_output_validation)
+        self.assertNotIn("source-preservation.md", required)
+        self.assertIn("source-preservation.md", conditional)
+        self.assertNotIn("## Interaction Encoding", self.pedagogy)
+        self.assertNotIn("## Interaction Encoding", self.teaching_prompt)
+
+    def test_pedagogy_resolves_explicit_text_only_delivery(self):
+        lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
+        visual_text = markdown_section(
+            self.pedagogy, "Visual-Text Coordination"
+        )
+
+        self.assertIn("author explicitly excludes visuals", lesson_loop)
+        self.assertIn("Explicit text-only constraint", visual_text)
+        self.assertIn("overrides the default slide pairing", visual_text)
+        self.assertIn("complete textual explanation", visual_text)
+        self.assertNotIn("`viewpoint_check`", self.pedagogy)
+
+    def test_source_preservation_owns_selection_and_scope(self):
+        decisions = markdown_section(
+            self.source_preservation, "Preservation Decisions"
+        )
+        self.assertIn("Never preserve an entire lesson", decisions)
+        self.assertIn("Preserve author-selected immutable content", decisions)
+        self.assertNotIn("`!===`", decisions)
+        self.assertNotIn("deterministic markers", decisions)
+        self.assertNotIn(
+            "## Preservation Decisions", self.optimization_workflow
+        )
+        self.assertNotIn(
+            "## Preservation Decisions", self.optimization_checklist
+        )
+
+    def test_image_authoring_owns_asset_composition_and_validation(self):
+        composition = markdown_section(
+            self.image_authoring, "Image Composition"
+        )
+        validation = markdown_section(
+            self.image_authoring, "Image Output Validation"
+        )
+        required = markdown_section(
+            self.image_authoring, "Required References"
+        )
+        conditional = markdown_section(
+            self.image_authoring, "Conditional References"
+        )
+        self.assertIn("Raw SVG, HTML drawings, Mermaid", composition)
+        self.assertIn("res.ai-shifu.cn", self.image_authoring)
+        self.assertIn("HTML-view", composition)
+        self.assertIn("assets/image-manifest.json", validation)
+        self.assertIn("`remote`", validation)
+        self.assertIn("`alt`", validation)
         for required_field in (
-            "selected image form",
+            "selected form",
             "caption",
             "position",
             "layout constraints",
             "ordering",
         ):
-            self.assertIn(required_field, image_output_validation)
-        self.assertIn("stop before generating", image_output_validation)
-        self.assertIn("regenerate only", image_output_validation)
-        self.assertIn("stop Generation", image_output_validation)
-        self.assertIn("Do not finalize or hand off", image_output_validation)
-        self.assertIn(
-            "(generation-workflow.md#image-output-validation)",
-            self.review_checklist,
-        )
-        self.assertNotIn("regenerate only", self.review_checklist)
-        self.assertIn(
-            "(generation-workflow.md#slide-only-generation-override)",
-            visuals,
-        )
+            self.assertIn(required_field, validation)
+        self.assertIn("Stop before generation", validation)
+        self.assertIn("Regenerate only", validation)
+        self.assertIn("Do not finalize or hand off", validation)
+        self.assertNotIn("source-preservation.md", required)
+        self.assertIn("source-preservation.md", conditional)
 
-    def test_course_prompt_template_uses_runtime_user_message_context(self):
+        owner_only_fragments = {
+            "不得省略",
+            "语义化 alt",
+            "保持原始宽高比",
+        }
+        for path in self.skill_root.rglob("*.md"):
+            if path.name == "image-authoring.md":
+                continue
+            content = path.read_text(encoding="utf-8")
+            for fragment in owner_only_fragments:
+                self.assertNotIn(
+                    fragment,
+                    content,
+                    f"image authoring rule {fragment!r} belongs only in "
+                    "image-authoring.md",
+                )
+
+    def test_course_prompt_keeps_six_sections_and_five_placeholders(self):
+        template = markdown_section(self.course_prompt, "Fillable Template")
+        headings = re.findall(
+            r"^# (Role|Task|Teaching Techniques|Writing Style|Format|Slides)$",
+            template,
+            flags=re.MULTILINE,
+        )
+        self.assertEqual(
+            [
+                "Role",
+                "Task",
+                "Teaching Techniques",
+                "Writing Style",
+                "Format",
+                "Slides",
+            ],
+            headings,
+        )
+        self.assertEqual(5, template.count("XXX"))
+
+        sources = markdown_section(
+            self.course_prompt, "Placeholder Sources and Context"
+        )
+        placeholders = markdown_table_first_column(sources, "Placeholder")
+        self.assertEqual(5, len(placeholders))
+        self.assertEqual(len(placeholders), len(set(placeholders)))
+        self.assertIn("they do not add placeholders to the template", sources)
+
+    def test_course_prompt_owns_delivery_mode_not_lesson_pedagogy(self):
         responsibilities = markdown_section(
             self.prompt_contracts, "Artifact Responsibilities"
         )
         purpose = markdown_section(self.course_prompt, "Purpose")
         template = markdown_section(self.course_prompt, "Fillable Template")
+        required = markdown_section(
+            self.course_prompt, "Required References"
+        )
 
         self.assertIn(
             "follows each Teaching Prompt and does not own lesson pedagogy",
@@ -1393,6 +1313,8 @@ class PedagogyContractTests(unittest.TestCase):
             "MarkdownFlow runtime behavior",
             purpose,
         )
+        self.assertIn("standard one-on-one", self.course_prompt.casefold())
+        self.assertIn("pure classroom slides", self.course_prompt.casefold())
         self.assertIn(
             "Course Prompt's teaching contribution to the presentation layer",
             template,
@@ -1401,211 +1323,217 @@ class PedagogyContractTests(unittest.TestCase):
             "build interest → lower the barrier → understand the structure",
             template,
         )
-        self.assertIn(
-            "proactively guide the learner to the next step at the end",
-            template,
-        )
-        self.assertIn("Teach one-on-one", template)
-        self.assertIn(
-            "address the learner directly in the second person", template
-        )
-        self.assertNotIn('address the learner only as "you"', template)
-        self.assertIn("Do not greet the learner", template)
-        self.assertNotIn("You may use analogies", template)
-        self.assertNotIn("Teaching Prompt", template)
         self.assertIn("current user message", template)
         self.assertNotIn("the user message", template)
-        self.assertIn(
-            "Follow the current user message's delivery mode and "
-            "slide-text relationship",
-            template,
+        self.assertNotIn("Teaching Prompt", template)
+        self.assertNotRegex(
+            self.course_prompt,
+            r"(?m)^#{2,6} Pattern [ABC]:",
         )
+        self.assertIn("prompt-contracts.md#prompt-semantics", required)
+        self.assertIn("prompt-contracts.md#artifact-responsibilities", required)
+
+    def test_optimization_audits_existing_artifacts_without_absorbing_creation(self):
+        self.assertIn("## Entry Conditions", self.optimization_workflow)
+        self.assertIn("## Optimization Method", self.optimization_workflow)
+        self.assertIn("## Issue Taxonomy", self.optimization_workflow)
         self.assertIn(
-            "When the current user message requests text alongside a slide",
-            template,
+            "does not perform first-time course authoring",
+            self.optimization_workflow,
         )
-        self.assertIn("follow it with a complete text explanation", template)
-        self.assertIn(
-            "do not rely on the Course Prompt to supply, repair, or override",
-            self.generation_workflow,
-        )
-        self.assertIn(
-            "follows each Teaching Prompt and does not own lesson pedagogy",
-            responsibilities,
-        )
-
-    def test_reference_files_keep_single_responsibilities(self):
-        authority = markdown_section(self.prompt_contracts, "Authority Index")
-
-        retired_anchors = {
-            "scope-and-authority-boundaries",
-            "pipeline-methodologies",
-            "prompt-placement-rules",
-            "input-marker-rules",
-            "input-marker-examples",
-            "no-program-syntax-around-var",
-            "31-fixed-image-standard-markdown--deterministic",
-            "32-html-view-image-instruction-style-not-fixed-output",
-            "33-which-form-to-use",
-        }
-        moved_anchor_owners = {
-            "segmentation-methodology": self.segmentation_workflow_path,
-            "segment-types": self.data_contracts_path,
-            "transfer-signals": self.data_contracts_path,
-            "optimization-methodology": self.optimization_workflow_path,
-        }
-
-        for path, actual_anchors in self.reference_anchors_by_path.items():
-            self.assertTrue(
-                retired_anchors.isdisjoint(actual_anchors),
-                f"retired responsibility headings reappeared in {path}: "
-                f"{sorted(retired_anchors.intersection(actual_anchors))}",
-            )
-
-        retired_references = []
-        doc_paths = [COURSE_CREATOR_REFERENCES.parent / "SKILL.md"]
-        doc_paths.extend(COURSE_CREATOR_REFERENCES.rglob("*.md"))
-        for path in doc_paths:
-            content = path.read_text(encoding="utf-8").casefold()
-            for anchor in retired_anchors:
-                if f"#{anchor}" in content:
-                    retired_references.append(
-                        f"{path.relative_to(REPO_ROOT)}#{anchor}"
-                    )
-        self.assertEqual([], retired_references)
-
-        for anchor, owner_path in moved_anchor_owners.items():
-            unexpected_paths = [
-                path
-                for path, actual_anchors in self.reference_anchors_by_path.items()
-                if path != owner_path and anchor in actual_anchors
-            ]
-            self.assertEqual(
-                [],
-                unexpected_paths,
-                f"authority anchor {anchor!r} belongs only in {owner_path}",
-            )
-
         self.assertNotIn(
-            "Teaching Prompt and Course Prompt Authoring Hard Rules",
-            self.prompt_contracts,
+            "## Preservation Decisions", self.optimization_workflow
         )
-        self.assertNotIn("?[%{{var}}", self.prompt_contracts)
-        self.assertNotIn("single-select", self.prompt_contracts)
-        self.assertNotIn("multi-select", self.prompt_contracts)
-        self.assertNotIn("UNKNOWN", self.prompt_contracts)
-        self.assertIn("(pedagogy.md)", authority)
-        self.assertIn("(markdownflow.md)", authority)
+        self.assertNotIn(
+            "Course Description and Review Outputs", self.optimization_workflow
+        )
+        self.assertNotIn(
+            "## Language Audit", self.optimization_checklist
+        )
 
-        forbidden_markdownflow_fragments = {
-            "answer must leave the current lesson",
-            "Use single-select for",
-            "Use multi-select for",
-            "Prompt Placement Rules",
-            "Input Marker Rules",
-            "Input Marker Examples",
-            "Correct:",
-            "Incorrect:",
-            "Which form to use",
-            "Default to 3.1",
-            "upload-image",
-            "res.ai-shifu.cn",
-            "必须原样保留",
-            "不得省略",
-            "语义化 alt",
-            "保持原始宽高比",
-            "Do not lock an entire lesson",
-            "Raw SVG, HTML drawings, Mermaid",
-            "pedagogy.md",
-            "generation-workflow.md",
-            "optimization-workflow.md",
-            "data-contracts.md",
+    def test_content_only_optimization_does_not_claim_source_fidelity(self):
+        workflow_required = markdown_section(
+            self.optimization_workflow, "Required References"
+        )
+        workflow_conditional = markdown_section(
+            self.optimization_workflow, "Conditional References"
+        )
+        checklist_required = markdown_section(
+            self.optimization_checklist, "Required References"
+        )
+        checklist_conditional = markdown_section(
+            self.optimization_checklist, "Conditional References"
+        )
+        coverage = markdown_section(
+            self.optimization_checklist, "Coverage and Fidelity"
+        )
+
+        self.assertNotIn("source-preservation.md", workflow_required)
+        self.assertNotIn("source-preservation.md", checklist_required)
+        self.assertIn("source-preservation.md", workflow_conditional)
+        self.assertIn("source-preservation.md", checklist_conditional)
+        self.assertIn("does not claim coverage of or fidelity", coverage)
+        self.assertNotIn("`allow_headings`", self.optimization_checklist)
+
+    def test_course_author_is_required_only_for_course_prompt_generation(self):
+        input_contract = markdown_section(self.data_contracts, "Input Contract")
+
+        self.assertIn("`course_author_name` (string)", input_contract)
+        self.assertIn(
+            "optional for routes that do not produce a Course Prompt",
+            input_contract,
+        )
+        self.assertIn("ask the author before continuing", input_contract)
+
+    def test_phase_workflows_directly_load_their_fallback_schemas(self):
+        expected = {
+            "segmentation-fallback-fields": (
+                COURSE_CREATOR_REFERENCES / "segmentation-workflow.md"
+            ),
+            "orchestration-fallback-fields": (
+                COURSE_CREATOR_REFERENCES / "orchestration-workflow.md"
+            ),
+            "generation-fallback-fields": (
+                COURSE_CREATOR_REFERENCES / "teaching-prompt.md"
+            ),
+            "optimization-fallback-fields": (
+                COURSE_CREATOR_REFERENCES / "optimization-workflow.md"
+            ),
         }
-        for fragment in forbidden_markdownflow_fragments:
-            self.assertNotIn(fragment, self.markdownflow)
 
-        interaction_encoding = markdown_section(
-            self.generation_workflow, "Interaction Encoding"
-        )
-        image_authoring = markdown_section(
-            self.generation_workflow, "Image Authoring"
-        )
-        preservation_encoding = markdown_section(
-            self.generation_workflow, "Preservation Encoding"
-        )
-        preservation_decisions = markdown_section(
-            self.optimization_workflow, "Preservation Decisions"
-        )
-        self.assertIn("`?[]` control on its own line", interaction_encoding)
-        self.assertIn("Raw SVG, HTML drawings, Mermaid", image_authoring)
-        self.assertIn("res.ai-shifu.cn", image_authoring)
-        self.assertIn("HTML-view", image_authoring)
-        self.assertIn("不得省略", image_authoring)
-        self.assertIn("语义化 alt", image_authoring)
-        self.assertIn("保持原始宽高比", image_authoring)
-
-        image_authoring_only_fragments = {
-            "不得省略",
-            "语义化 alt",
-            "保持原始宽高比",
-        }
-        for path in doc_paths:
-            if path == COURSE_CREATOR_REFERENCES / "generation-workflow.md":
-                continue
-            content = path.read_text(encoding="utf-8")
-            for fragment in image_authoring_only_fragments:
-                self.assertNotIn(
-                    fragment,
-                    content,
-                    f"image authoring rule {fragment!r} belongs only in "
-                    "generation-workflow.md",
+        for anchor, path in expected.items():
+            with self.subTest(path=path.name):
+                required = markdown_section(
+                    path.read_text(encoding="utf-8"), "Required References"
                 )
-        self.assertNotIn("entire lesson", preservation_encoding)
+                self.assertIn(f"data-contracts.md#{anchor}", required)
+
+    def test_platform_workflows_have_disjoint_mutation_responsibilities(self):
+        self.assertIn("import --new", self.deployment_workflow)
+        self.assertIn("build", self.deployment_workflow)
+        self.assertIn("publish", self.deployment_workflow)
+        self.assertNotIn("Version Sync Workflow", self.deployment_workflow)
+        self.assertNotIn("Conflict Convergence", self.deployment_workflow)
+        self.assertNotIn("## Operations", self.deployment_workflow)
+
+        self.assertIn("Pull Before Editing", self.course_sync)
+        self.assertIn("Conflict Convergence", self.course_sync)
+        self.assertNotIn("import --new", self.course_sync)
+
+        self.assertIn("## Operations", self.course_management)
+        self.assertIn("archive", self.course_management)
+        self.assertIn("reorder", self.course_management)
         self.assertIn(
-            "inline `===...===` preservation remains LLM-mediated",
-            self.review_checklist,
+            "pass that same directory through `--course-dir`",
+            self.course_management,
+        )
+        self.assertIn("three consecutive exit-`2`", self.course_sync)
+        self.assertIn("explicit user confirmation", self.course_sync)
+        self.assertIn(
+            "Immediately after each successful `add-chapter`, `add-lesson`, "
+            "`rename-lesson`, or `delete-lesson`",
+            self.course_sync,
         )
         self.assertIn(
-            "An entire lesson is not a valid preservation scope",
-            preservation_decisions,
+            "run `pull <shifu_bid> --course-dir <dir>`",
+            self.course_sync,
         )
-        self.assertNotIn("entire lesson", self.review_checklist)
-        self.assertNotIn("`!===", preservation_decisions)
-        self.assertNotIn("deterministic markers", preservation_decisions)
+        self.assertIn(
+            "never continue from the pre-mutation sync baseline",
+            self.course_sync,
+        )
+        self.assertNotIn("import --new", self.course_management)
+
+    def test_direct_query_consumers_declare_query_command_dependency(self):
+        analytics = (
+            COURSE_CREATOR_REFERENCES / "analytics" / "workflow.md"
+        ).read_text(encoding="utf-8")
+        analytics_required = markdown_section(analytics, "Required References")
+        deployment_required = markdown_section(
+            self.deployment_workflow, "Required References"
+        )
 
         self.assertIn(
-            "do not duplicate them in the Teaching Prompt body",
-            self.data_contracts,
+            "../cli/cli-reference.md#query-commands", analytics_required
+        )
+        self.assertIn("cli/cli-reference.md#query-commands", deployment_required)
+
+    def test_orchestration_rebuilds_derived_outputs_after_phase_reruns(self):
+        workflow = markdown_section(self.orchestration_workflow, "Workflow")
+        reruns = markdown_section(self.orchestration_workflow, "Rerun Rules")
+
+        self.assertIn("Rerun the phase that owns each failed output", workflow)
+        self.assertIn("rebuild both `course_index`", workflow)
+        self.assertIn("rerun Segmentation", reruns)
+        self.assertIn("never hand off a stale `course_index`", reruns)
+
+    def test_find_title_contract_matches_cli_keyword_validation(self):
+        query_commands = markdown_section(self.cli_reference, "Query Commands")
+
+        self.assertIn("at least two non-whitespace characters", query_commands)
+
+    def test_new_deployment_keeps_authoring_and_selected_attributes_explicit(self):
+        conditional = markdown_section(
+            self.deployment_workflow, "Conditional References"
+        )
+        deploy = markdown_section(
+            self.deployment_workflow, "Deploy and Publish"
+        )
+
+        self.assertIn("standalone course directory lacks a Course Prompt", conditional)
+        self.assertIn("`course-prompt.md`", conditional)
+        self.assertIn("`course-description.md`", conditional)
+        self.assertIn("`course-management.md#operations`", conditional)
+        self.assertLess(
+            deploy.index("Before first publication"),
+            deploy.index("Run `publish <shifu_bid>`"),
+        )
+        self.assertIn("enabling Listen Mode", deploy)
+
+    def test_optimization_report_names_each_prompt_type(self):
+        report = markdown_section(self.report_template, "Optimization Report")
+        self.assertIn("- Target Teaching Prompt(s):", report)
+        self.assertIn("- Target Course Prompt:", report)
+        self.assertIn("- Target course description:", report)
+        self.assertIn(
+            "- Artifact envelope/schema check: `pass|fail|not-assessed`",
+            report,
+        )
+        self.assertNotIn("- Target Prompt(s):", report)
+
+    def test_orchestration_handoffs_do_not_expand_directory_contract(self):
+        self.assertIn("structured phase-handoff data", self.orchestration_workflow)
+        self.assertIn("closed artifact set owned by", self.orchestration_workflow)
+        self.assertNotIn("authoring-manifest.json", self.orchestration_workflow)
+        self.assertIn("authoring-manifest.json", self.course_directory_spec)
+        self.assertIn(
+            "complete set of recognized and managed", self.course_directory_spec
+        )
+        self.assertIn("must not synthesize CLI-managed outputs", self.course_directory_spec)
+        self.assertIn("should write only that", self.course_directory_spec)
+        self.assertIn("title heading", self.course_directory_spec)
+        self.assertIn("do not duplicate the author", self.course_directory_spec)
+
+    def test_import_omission_semantics_distinguish_new_and_existing_courses(self):
+        self.assertIn(
+            "Existing-course import leaves omitted", self.cli_reference
         )
         self.assertIn(
-            "filler removal, sentence smoothing", self.optimization_workflow
+            "new-course import uses platform defaults", self.cli_reference
         )
-        self.assertIn("silent factual change", self.optimization_workflow)
-
-        self.assertNotIn("## Boundaries", self.course_prompt)
-        self.assertNotIn("## Validation", self.course_prompt)
-        self.assertIn("## Materialization Checks", self.course_prompt)
-
-    def test_course_prompt_placeholder_map_matches_template(self):
-        template = markdown_section(self.course_prompt, "Fillable Template")
-        sources = markdown_section(
-            self.course_prompt, "Placeholder Sources and Context"
+        self.assertNotIn(
+            "Both forms send content fields while leaving omitted",
+            self.cli_reference,
         )
-        placeholders = markdown_table_first_column(sources, "Placeholder")
-
-        self.assertEqual(5, template.count("XXX"))
-        self.assertEqual(5, len(placeholders))
-        self.assertEqual(len(placeholders), len(set(placeholders)))
-        self.assertIn("they do not add placeholders to the template", sources)
 
     def test_removed_authoring_controls_do_not_reappear(self):
         scan_roots = [
-            COURSE_CREATOR_REFERENCES.parent,
+            self.skill_root,
             REPO_ROOT / "scripts",
             REPO_ROOT / "templates",
-            REPO_ROOT / "tests",
         ]
         removed_terms = {
+            "require_" + "branching_feedback",
             "interaction_" + "density",
             "interaction " + "density",
             "interaction-" + "density",

@@ -1,6 +1,10 @@
 # Data Contracts
 
-Authoritative source for all schemas crossing the skill boundary: what comes in (input), what goes out (output), how `resolved_target_language` is derived, and the per-lesson and per-variable shapes.
+Authoritative source for schemas, enum values, and cross-field invariants at the boundaries between authoring phases.
+
+## Required References
+
+None.
 
 ## Input Contract
 
@@ -17,10 +21,10 @@ Provide one of:
 - Lesson granularity preference (`short`, `medium`, `long`).
 - Tone constraints.
 - Non-negotiable source fragments.
-- `course_author_name` (string): the course author's real name for the Course Prompt role. If absent when a Course Prompt must be generated, ask the author instead of inventing a persona name.
+- `course_author_name` (string): the course author's real name. It is optional for routes that do not produce a Course Prompt; when a Course Prompt must be generated and the value is absent, ask the author before continuing.
 - `course_profile` object.
 - `delivery_constraints` object.
-- `interaction_policy` object: normalized Course Design Intake result; see [Interaction Policy](#interaction-policy).
+- `interaction_policy` object.
 
 ### Recommended Object Shapes
 
@@ -60,61 +64,52 @@ Provide one of:
 }
 ```
 
-This section owns only the normalized data shape and enum constraints. Course Design Intake resolves the object once and passes it unchanged to Generation and Optimization:
-
 - `mode` is required and must be exactly `enabled`, `disabled`, or `unspecified`.
 - `purposes` is required, duplicate-free, and may contain only `learner_context`, `pre_content_thinking`, and `lesson_end_self_check`.
-- `enabled` requires a non-empty `purposes` array; `disabled` and `unspecified` require an empty `purposes` array.
+- `enabled` requires a non-empty `purposes` array. `disabled` and `unspecified` require an empty `purposes` array.
 
-The teaching effects, purpose placements, and non-interactive substitutions are defined in [pedagogy.md#interaction-policy-precedence](pedagogy.md#interaction-policy-precedence).
+### Input Invariants
 
-### Validation Rules
-
-- Input files must be readable text or markdown.
-- If multiple files are provided, ordering must be explicit.
-- `interaction_policy` must satisfy the mode/purpose invariants above before Generation or Optimization applies pedagogical gates.
+- Input files must be readable text or Markdown.
+- When multiple files are provided, their order must be explicit.
+- `interaction_policy` must satisfy its mode and purpose invariants.
 
 ## Output Contract
 
-### Required Artifacts
+Full-course authoring produces these required artifacts:
 
-1. `lesson_teaching_prompts` — one Teaching Prompt per lesson (written in MarkdownFlow). Each Prompt follows [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics) and the [Lesson Schema](#lesson-schema).
-2. `course_index` — `lesson_id`, `lesson_title`, `core_question`, `source_span_map`.
+1. `lesson_teaching_prompts` — one item per lesson; see [Lesson Schema](#lesson-schema).
+2. `course_index` — an array of course-index items.
 3. `global_variable_table` — see [Variable Table](#variable-table).
-4. `course_prompt` — course-level Markdown string; see [course-prompt.md](course-prompt.md) for its artifact contract and authoring rules.
-5. `course_description` — learner-facing SEO/listing description written to `course-description.md`.
+4. `course_prompt` — a course-level Markdown string.
+5. `course_description` — a learner-facing description string stored in `course-description.md`.
 
-### `course_index` Schema (array, required)
+### `course_index` Schema
 
-Each item:
+Each array item contains:
 
-- `lesson_id` (string, required)
-- `lesson_title` (string, required) — learner-facing title written in `resolved_target_language`.
-- `core_question` (string, required) — human-readable lesson question written in `resolved_target_language`.
-- `source_span_map` (array of `{source_id, start, end}`, required)
-
-### `course_prompt` (string, required)
-
-Required for full-course authoring. Its six section headings, fill values, and instruction text use `resolved_target_language`; exact source quotations, code, URLs, and stable MarkdownFlow syntax remain unchanged.
-
-### `course_description` (string, required)
-
-Required for full-course authoring. Write the learner-facing description in `resolved_target_language` to `course-description.md`; its directory contract and build mapping are defined in [course-directory-spec.md](cli/course-directory-spec.md#course-descriptionmd).
+- `lesson_id` (string, required).
+- `lesson_title` (string, required).
+- `core_question` (string, required).
+- `source_span_map` (array of `{source_id, start, end}`, required).
 
 ## Segment Schema
 
-Each item in the Segmentation output (consumed by Orchestration and Generation):
+Each Segmentation item contains:
 
-- `segment_id` (string, required) — stable identifier within the run.
-- `segment_type` (string enum, required) — must satisfy [Segment Types](#segment-types).
-- `core_point` (string, required) — the single teachable point this segment carries, written in `resolved_target_language`.
-- `preserve_block` (boolean, required) — `true` when the source span is selected as immutable by [optimization-workflow.md#preservation-decisions](optimization-workflow.md#preservation-decisions). The field records the decision; downstream MarkdownFlow behavior is defined in [markdownflow.md#preservation](markdownflow.md#preservation).
-- `source_span` (object, required) — traceable source location with `source_id` (string), `start` (non-negative integer, inclusive character offset), and `end` (integer greater than `start`, exclusive character offset). Use the same object shape as entries in `course_index.source_span_map`.
-- `transfer_signals` (object, required) — must satisfy [Transfer Signals](#transfer-signals).
+- `segment_id` (string, required) — stable within the run.
+- `segment_type` (string enum, required) — one value from [Segment Types](#segment-types).
+- `core_point` (string, required) — the single teachable point.
+- `preserve_block` (boolean, required) — `true` exactly when the source span is selected as immutable; otherwise `false`.
+- `source_span` (object, required):
+  - `source_id` (string, required).
+  - `start` (non-negative integer, required) — inclusive character offset.
+  - `end` (integer greater than `start`, required) — exclusive character offset.
+- `transfer_signals` (object, required) — satisfies [Transfer Signals](#transfer-signals).
+
+Entries in `course_index.source_span_map` use the same `source_span` object shape.
 
 ### Segment Types
-
-`segment_type` must use exactly one of these canonical values:
 
 | Value        | Meaning                                   |
 | ------------ | ----------------------------------------- |
@@ -127,7 +122,7 @@ Each item in the Segmentation output (consumed by Orchestration and Generation):
 
 ### Transfer Signals
 
-`transfer_signals` must be non-empty. Include every applicable canonical key, omit inapplicable keys rather than inventing content, and give every included key a non-empty, concise string value in `resolved_target_language`. Preserve an exact source quotation or other immutable source span when the signal intentionally carries it verbatim.
+`transfer_signals` must be non-empty. Include every applicable canonical key, omit inapplicable keys, and give every included key a non-empty, concise string value.
 
 | Key | Meaning |
 | --- | --- |
@@ -143,80 +138,71 @@ Each item in the Segmentation output (consumed by Orchestration and Generation):
 | `interaction_intent_cue` | Interaction purpose and expected instructional effect. |
 | `compare_cue` | Comparison objects or dimensions. |
 
-For segmentation rules and methodology, see [segmentation-orchestration.md#segmentation-methodology](segmentation-orchestration.md#segmentation-methodology).
-
 ## Variable Table
 
-`global_variable_table` is an array. Each item:
+`global_variable_table` is an array. Each item contains:
 
-- `name` (string, required) — the variable name as referenced in `{{var}}` / `?[%{{var}} ...]`; new variable names use `resolved_target_language` and are composed of letters, numbers, and underscores.
+- `name` (string, required) — the name referenced by `{{var}}` or `?[%{{var}} ...]`; letters, numbers, and underscores only.
 - `collected_in` (string, required) — `lesson_id` where the variable is first collected.
-- `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when `course-prompt.md` references it. Include `collected_in` only if that same lesson also references `{{var}}` after collecting it.
-- `effect_scope` (string constant: `cross_lesson`, required).
+- `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when the Course Prompt references it. Include `collected_in` only if that lesson also references `{{var}}` after collection.
+- `effect_scope` (string constant `cross_lesson`, required).
 
-Only named variables belong in `global_variable_table`; no-variable `?[...]` interactions do not create table entries. Every learner-answer variable referenced by a lesson or Course Prompt has one variable-backed collection and one matching table entry. Every table entry has `effect_scope: "cross_lesson"`, names its first collection lesson, and lists every downstream lesson plus `course_prompt` when applicable. A table entry with no cross-lesson or Course Prompt use is invalid. Variable collection, reuse, and pacing decisions are defined in [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy); parser recognition and runtime substitution semantics (`{{var}}` → stored value or `UNKNOWN`) are defined in [markdownflow.md#variables](markdownflow.md#variables).
+Only named variables belong in `global_variable_table`; no-variable `?[...]` interactions do not create entries. Every referenced learner-answer variable has exactly one variable-backed collection and one matching table entry. Every table entry has cross-lesson or Course Prompt use and lists every consumer in `used_in`.
 
 ## Lesson Schema
 
-Each item in `lesson_teaching_prompts` (Generation per-lesson output):
+Each `lesson_teaching_prompts` item contains:
 
-- `lesson_id` (string, required) — stable, deterministic identifier.
-- `lesson_title` (string, required) — concise learner-facing title written in `resolved_target_language`. Chapter titles, lesson titles, numbering, hierarchy labels, and ordering markers belong in `course_index` / `structure.json`; do not duplicate them in the Teaching Prompt body.
-- `teaching_prompt` (string, required) — the per-lesson Teaching Prompt content, with authored natural-language instructions and learner-facing text written in `resolved_target_language` and MarkdownFlow syntax kept stable; apply [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics).
-- `used_variables` (array of strings, required) — every named variable referenced or collected in this lesson; no-variable interactions are excluded. Cross-check with [Variable Table](#variable-table): each item here must have a matching `global_variable_table` entry, and that entry's `used_in` list must include this lesson when the variable is referenced outside the interaction line. If the Course Prompt references the same variable, `used_in` must also include `course_prompt`.
-- `depends_on_lessons` (array of lesson ids, required) — explicit list; empty list if none.
+- `lesson_id` (string, required) — stable and deterministic.
+- `lesson_title` (string, required) — concise learner-facing title.
+- `teaching_prompt` (string, required) — per-lesson Teaching Prompt content in MarkdownFlow.
+- `used_variables` (array of strings, required) — every named variable collected or referenced in the lesson; no-variable interactions are excluded.
+- `depends_on_lessons` (array of lesson ids, required) — empty when none.
 
-## Language Resolution
+Every item in `used_variables` has a matching `global_variable_table` entry. The matching entry lists the lesson in `used_in` when the variable is referenced outside its collection control, and also lists `course_prompt` when the Course Prompt references it.
 
-`resolved_target_language` is a string derived for the current request; it is not an input field or an output artifact field. All downstream references to the selected language use `resolved_target_language`.
-
-### Priority Order
-
-Determine `resolved_target_language` with these two rules:
-
-1. `context_language_directive` — any applicable context explicitly specifies a language, including the current prompt, project or system instructions, earlier conversation turns, and directives from the calling agent. When explicit directives conflict, follow the normal instruction hierarchy; at the same authority level, use the most recent applicable directive.
-2. `prompt_language_detection` — otherwise, the language detected from the current user prompt.
+Chapter titles, lesson titles, numbering, hierarchy labels, and ordering markers belong in `course_index` or `structure.json`, not in the Teaching Prompt body.
 
 ## Fallback Output Extensions
 
-When a phase runs under fallback mode (see `authoring-controls.md#execution-modes`), its standard output is augmented with the following fields. Standard-mode output omits these fields entirely; fallback-mode output adds them on top of the standard schema.
+Fallback mode augments the standard schema with the fields below. Standard mode omits them.
 
-### Segmentation fallback fields
+### Segmentation Fallback Fields
 
-Per-segment (extends [Segment Schema](#segment-schema)):
+Per segment:
 
-- `uncertainty` (string enum: `low|medium|high`) — confidence on the segment's interpretation.
+- `uncertainty` (string enum `low|medium|high`) — confidence in the segment's interpretation.
 
-Top-level addition to the Segmentation output:
+Top-level:
 
-- `rerun_hints` (array of strings) — user-facing prompts in `resolved_target_language` describing what authoritative input would resolve the uncertainty.
+- `rerun_hints` (array of strings) — focused prompts describing the authoritative input needed to resolve uncertainty.
 
-### Orchestration fallback fields
+### Orchestration Fallback Fields
 
-Per-lesson (extends `course_index` items):
+Per `course_index` item:
 
-- `uncertainty` (string enum: `low|medium|high`).
+- `uncertainty` (string enum `low|medium|high`).
 
-Top-level addition:
+Top-level, required when any lesson is uncertain:
 
-- `rerun_plan` (object, required when any lesson is uncertain):
+- `rerun_plan` (object):
   - `lessons_to_rerun` (array of lesson ids).
-  - `reason` (string) — why the rerun is needed, written in `resolved_target_language`.
+  - `reason` (string) — why the rerun is needed.
 
-### Generation fallback fields
+### Generation Fallback Fields
 
-Per-lesson (extends [Lesson Schema](#lesson-schema)):
+Per lesson:
 
-- `fallback_mode` (boolean) — `true` when this lesson was generated under fallback.
-- `assumptions` (array of strings) — assumptions made due to incomplete input, written in `resolved_target_language`.
-- `upgrade_notes` (array of strings) — what additional input would upgrade this lesson, written in `resolved_target_language`.
+- `fallback_mode` (boolean constant `true`) — identifies a lesson generated in fallback mode.
+- `assumptions` (array of strings) — assumptions made because input is incomplete or conflicting.
+- `upgrade_notes` (array of strings) — additional input that would allow a standard-mode lesson.
 
-### Optimization fallback fields
+### Optimization Fallback Fields
 
 Inside `risk_and_issue_report`:
 
-- `coverage_status` (string enum: `complete|partial|unknown_without_source`).
+- `coverage_status` (string enum `complete|partial|unknown_without_source`).
 
-Top-level addition:
+Top-level:
 
-- `follow_up` (array of strings) — required inputs in `resolved_target_language` to complete a full-coverage audit.
+- `follow_up` (array of strings) — inputs needed to complete a full-coverage audit.

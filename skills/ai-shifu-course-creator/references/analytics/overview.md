@@ -2,6 +2,10 @@
 
 Use this page as the entry point for any analytics task. The deeper references on this page are read on demand.
 
+## Required References
+
+None.
+
 ## When to Use
 
 Enter the analytics path when a course author or admin asks about:
@@ -131,7 +135,7 @@ Before constructing any DSL, identify the correct table. Use this map:
 | Current course title | `shifu_published_shifus` | `deleted = 0` (auto-injected) | `title` |
 | Draft course title | `shifu_draft_shifus` | `deleted = 0` (auto-injected) | `title` |
 
-## Common Pitfalls (read this before your first query)
+## Common Query Pitfalls
 
 These are the mistakes that most commonly cause repeated failed queries and wasted time:
 

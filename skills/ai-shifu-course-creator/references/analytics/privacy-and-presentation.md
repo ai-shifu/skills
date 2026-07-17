@@ -2,6 +2,10 @@
 
 Two concerns: the privacy rules baked into the endpoint (refusals, audits, masking) and the Translation Gate that every result must pass before reaching the user.
 
+## Required References
+
+None.
+
 ## `user_users` — Restricted Access
 
 `user_users` is a **global** user table with two legitimate uses:

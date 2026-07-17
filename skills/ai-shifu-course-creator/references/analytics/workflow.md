@@ -1,5 +1,16 @@
 # Course Analytics
 
+## Required References
+
+- `../authentication.md`
+- `overview.md`
+- `dsl.md`
+- `tables.md`
+- `recipes.md`
+- `privacy-and-presentation.md`
+- `../cli/cli-reference.md#query-commands`
+- `../cli/cli-reference.md#analytics-query`
+
 ## Analytics
 
 Post-deployment data queries on live courses. Trigger this section whenever a course author or admin asks about learner count, completion rate, stuck lessons, orders, revenue, ratings, follow-up Q&A volume, credit consumption, audience profile distribution, or individual learner tracking. For a one-glance course overview use Recipe 0d in `recipes.md`.

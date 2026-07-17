@@ -2,6 +2,15 @@
 
 Course-level materialization contract for the Course Prompt artifact.
 
+## Required References
+
+- `language-policy.md`
+- `prompt-contracts.md#prompt-semantics`
+- `prompt-contracts.md#artifact-responsibilities`
+- `data-contracts.md#input-contract`
+- `data-contracts.md#variable-table`
+- `markdownflow.md#variables`
+
 ## Purpose
 
 Use this file to materialize one course-wide artifact from the six-section template below. It defines the template, fill-value sources, context used while filling those values, and completion checks; it does not redefine shared Prompt semantics, lesson pedagogy, or MarkdownFlow runtime behavior.
@@ -11,7 +20,7 @@ Use this file to materialize one course-wide artifact from the six-section templ
 
 ## Authoring Workflow
 
-1. Resolve `resolved_target_language` using [data-contracts.md#language-resolution](data-contracts.md#language-resolution).
+1. Resolve `resolved_target_language` using [language-policy.md#language-resolution](language-policy.md#language-resolution).
 2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
 3. Replace every `XXX` from [Placeholder Sources and Context](#placeholder-sources-and-context). Use already-collected artifacts and apply the listed context constraints to the fill values.
 4. Render section headings and body text in `resolved_target_language`. The English template is canonical structure, not a language default.
@@ -29,7 +38,7 @@ Use this file to materialize one course-wide artifact from the six-section templ
 # Task
 
 - The current course is _XXX_. Your goal is to help the learner master XXX.
-- Teach one-on-one, address the learner directly in the second person, and do not use group-addressing terms such as "everyone", "class", or "students".
+- Follow the current user message's delivery mode. In standard one-on-one teaching, address the learner directly in the second person and do not use group-addressing terms such as "everyone", "class", or "students". In pure classroom slides, produce projection-ready content for a human instructor and do not narrate or address a single learner.
 - Do not introduce yourself.
 - Do not greet the learner.
 - Do not proactively guide the learner to the next step at the end.

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import re
 import unittest
 from pathlib import Path
 
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = REPO_ROOT / "skills" / "ai-shifu-course-creator"
+REFERENCES = SKILL_ROOT / "references"
 SKILL_MD = SKILL_ROOT / "SKILL.md"
 
 
@@ -23,34 +24,78 @@ class CourseCreatorRouterTests(unittest.TestCase):
     def test_main_file_is_a_small_router(self):
         self.assertLess(len(self.router.splitlines()), 150)
         self.assertIn("## Task Router", self.router)
-        self.assertFalse(
-            (SKILL_ROOT / "references" / "authoring-workflow.md").exists()
+        self.assertNotIn("## Reference Map", self.router)
+
+    def test_router_does_not_duplicate_downstream_operating_rules(self):
+        analytics_workflow = (
+            REFERENCES / "analytics" / "workflow.md"
+        ).read_text(encoding="utf-8")
+        course_sync = (REFERENCES / "course-sync.md").read_text(
+            encoding="utf-8"
         )
-        routed_guides = (
-            "session-controls.md",
-            "authentication.md",
-            "course-target.md",
+
+        self.assertIn("All analytics traffic goes through", analytics_workflow)
+        self.assertIn("Never write raw HTTP", analytics_workflow)
+        self.assertNotIn("Do not guess analytics endpoints", self.router)
+        self.assertIn("## Pull Before Editing", course_sync)
+        self.assertNotIn("always author from the freshly pulled", self.router)
+
+    def test_single_purpose_reference_set_replaces_combined_guides(self):
+        expected_files = {
+            "language-policy.md",
+            "authoring-mode.md",
+            "course-design-intake.md",
+            "source-preservation.md",
+            "segmentation-workflow.md",
+            "orchestration-workflow.md",
+            "teaching-prompt.md",
+            "markdownflow-authoring.md",
+            "image-authoring.md",
+            "course-description.md",
+            "optimization-checklist.md",
+            "course-sync.md",
+            "course-management.md",
+        }
+        retired_files = {
             "authoring-controls.md",
-            "prompt-contracts.md",
             "authoring-intake.md",
             "segmentation-orchestration.md",
             "generation-workflow.md",
-            "optimization-workflow.md",
-            "deployment-workflow.md",
-            "analytics/workflow.md",
-        )
+            "review-checklist.md",
+            "authoring-workflow.md",
+        }
+
+        for filename in expected_files:
+            with self.subTest(filename=filename):
+                self.assertTrue((REFERENCES / filename).is_file())
+
+        for filename in retired_files:
+            with self.subTest(filename=filename):
+                self.assertFalse((REFERENCES / filename).exists())
+                self.assertNotIn(filename, self.router)
+
+    def test_routed_guides_remain_focused(self):
+        routed_guides = {
+            path.removeprefix("references/").split("#", 1)[0]
+            for line in self.router.splitlines()
+            if line.startswith("| ")
+            for path in _backticked_paths(line)
+            if path.startswith("references/")
+        }
         for relative_path in routed_guides:
-            path = SKILL_ROOT / "references" / relative_path
-            self.assertLess(
-                len(path.read_text(encoding="utf-8").splitlines()),
-                300,
-                f"{path} should be split before it becomes a second monolith",
-            )
+            path = REFERENCES / relative_path
+            with self.subTest(path=relative_path):
+                self.assertTrue(path.is_file())
+                self.assertLess(
+                    len(path.read_text(encoding="utf-8").splitlines()),
+                    300,
+                    f"{path} should be split before it becomes a second monolith",
+                )
 
     def test_course_creator_has_no_bundled_examples(self):
         self.assertFalse((SKILL_ROOT / "examples").exists())
         self.assertNotIn("examples/", self.router)
-        paths_to_check = list((SKILL_ROOT / "references").rglob("*.md"))
+        paths_to_check = list(REFERENCES.rglob("*.md"))
         paths_to_check.extend(
             [REPO_ROOT / "README.md", REPO_ROOT / "README.zh-CN.md"]
         )
@@ -63,7 +108,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
             )
 
     def test_large_reference_files_have_contents_navigation(self):
-        for path in (SKILL_ROOT / "references").rglob("*.md"):
+        for path in REFERENCES.rglob("*.md"):
             content = path.read_text(encoding="utf-8")
             if len(content.splitlines()) > 300:
                 self.assertIn(
@@ -72,64 +117,232 @@ class CourseCreatorRouterTests(unittest.TestCase):
                     f"{path} needs navigation for progressive disclosure",
                 )
 
-    def test_authoring_routes_declare_shared_dependencies(self):
-        for prefix in (
-            "Create a full course",
-            "Generate Teaching Prompts",
-            "Optimize content in an existing platform course",
-            "Deploy a new course",
-        ):
-            route = self.route_line(prefix)
-            self.assertIn("references/authentication.md", route)
-            self.assertIn("references/prompt-contracts.md", route)
-
-    def test_full_course_deploys_after_optimization_by_default(self):
+    def test_full_course_deploys_after_authoring_and_optimization_by_default(self):
         route = self.route_line("Create a full course")
-        deployment = "references/deployment-workflow.md"
-
-        self.assertIn(deployment, route)
-        self.assertLess(
-            route.rindex("references/optimization-workflow.md"),
-            route.index(deployment),
+        ordered_files = (
+            "references/course-design-intake.md",
+            "references/orchestration-workflow.md",
+            "references/course-prompt.md",
+            "references/course-description.md",
+            "references/optimization-workflow.md",
+            "references/deployment-workflow.md",
         )
-        self.assertTrue(route.endswith(f"`{deployment}` |"))
+
+        positions = []
+        for path in ordered_files:
+            self.assertIn(path, route)
+            positions.append(route.index(path))
+        self.assertEqual(positions, sorted(positions))
+        self.assertTrue(route.endswith("`references/deployment-workflow.md` |"))
         self.assertNotIn(
             "only when deployment or publication is requested",
             self.router,
         )
 
-    def test_platform_and_analytics_routes_require_authentication(self):
+    def test_platform_routes_require_authentication(self):
         for prefix in (
+            "Create a full course",
+            "Optimize Teaching Prompt content in an existing platform course",
+            "Deploy a new course",
             "Publish, preview",
             "Query observed data",
         ):
-            route = self.route_line(prefix)
-            self.assertIn("references/authentication.md", route)
+            with self.subTest(prefix=prefix):
+                self.assertIn(
+                    "references/authentication.md", self.route_line(prefix)
+                )
 
-    def test_generation_runs_design_intake_before_prompt_contracts(self):
+    def test_generation_runs_design_intake_before_teaching_prompt(self):
         route = self.route_line("Generate Teaching Prompts")
         self.assertLess(
-            route.index("references/authoring-intake.md"),
-            route.index("references/prompt-contracts.md"),
+            route.index("references/course-design-intake.md"),
+            route.index("references/teaching-prompt.md"),
         )
 
-    def test_pure_analytics_does_not_load_authoring_guides(self):
-        route = self.route_line("Query observed data")
-        self.assertNotIn("authoring-intake.md", route)
-        self.assertNotIn("generation-workflow.md", route)
-        self.assertNotIn("optimization-workflow.md", route)
+    def test_local_teaching_prompt_route_omits_platform_setup(self):
+        route = self.route_line(
+            "Produce local Teaching Prompts from existing segments"
+        )
+        self.assertIn("references/teaching-prompt.md", route)
+        self.assertNotIn("authentication.md", route)
+        self.assertNotIn("course-target.md", route)
+
+    def test_raw_local_teaching_prompt_route_segments_without_platform_setup(self):
+        route = self.route_line(
+            "Produce local Teaching Prompts from raw supplied material"
+        )
+        self.assertLess(
+            route.index("references/segmentation-workflow.md"),
+            route.index("references/teaching-prompt.md"),
+        )
+        self.assertNotIn("authentication.md", route)
+        self.assertNotIn("course-target.md", route)
+        self.assertNotIn("orchestration-workflow.md", route)
+
+    def test_target_kind_change_requires_router_reclassification(self):
+        target_contract = (REFERENCES / "course-target.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("resolved target kind", self.router)
+        self.assertIn("reclassify the remaining work", self.router)
+        self.assertIn("new-only or existing-only", self.router)
+        self.assertIn("Create intent with one or more matches", target_contract)
+        self.assertIn("Edit intent with no match", target_contract)
+        self.assertIn("explicitly confirms creation", target_contract)
+        self.assertIn("explicit Shifu BID", target_contract)
+        self.assertIn("run `show <shifu_bid>`", target_contract)
+
+    def test_course_prompt_only_route_stays_local_and_focused(self):
+        route = self.route_line("Create or revise a Course Prompt")
+        self.assertIn("references/course-prompt.md", route)
+        for filename in (
+            "authentication.md",
+            "course-target.md",
+            "orchestration-workflow.md",
+            "teaching-prompt.md",
+            "deployment-workflow.md",
+        ):
+            self.assertNotIn(filename, route)
+
+    def test_structure_planning_runs_segmentation_then_structure_finalization(self):
+        route = self.route_line("Plan course structure")
+        self.assertIn("course-design-intake.md", route)
+        segmentation = "references/segmentation-workflow.md"
+        finalizer = (
+            "references/orchestration-workflow.md#lesson-structure-finalization"
+        )
+        self.assertIn(segmentation, route)
+        self.assertIn(finalizer, route)
+        self.assertLess(route.index(segmentation), route.index(finalizer))
 
     def test_offline_prompt_audit_does_not_require_platform_access(self):
         route = self.route_line("Review or audit pasted")
         self.assertNotIn("authentication.md", route)
         self.assertNotIn("course-target.md", route)
-        self.assertIn("prompt-contracts.md", route)
         self.assertIn("optimization-workflow.md", route)
 
-    def test_structure_planning_has_an_explicit_route(self):
-        route = self.route_line("Plan course structure")
-        self.assertIn("authoring-intake.md", route)
-        self.assertIn("segmentation-orchestration.md#segmentation", route)
+        session_controls = (
+            REFERENCES / "session-controls.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "explicitly requires offline or no-network execution",
+            session_controls,
+        )
+        self.assertIn("skip this automatic check", session_controls)
+
+    def test_explicit_local_only_authoring_skips_platform_setup(self):
+        route = self.route_line("Produce a complete course locally")
+        self.assertIn("references/orchestration-workflow.md", route)
+        for filename in (
+            "authentication.md",
+            "course-target.md",
+            "deployment-workflow.md",
+            "course-sync.md",
+            "course-management.md",
+        ):
+            self.assertNotIn(filename, route)
+
+    def test_pure_analytics_does_not_load_authoring_guides(self):
+        route = self.route_line("Query observed data")
+        for filename in (
+            "course-design-intake.md",
+            "segmentation-workflow.md",
+            "orchestration-workflow.md",
+            "teaching-prompt.md",
+            "optimization-workflow.md",
+        ):
+            self.assertNotIn(filename, route)
+
+    def test_sync_and_management_are_separate_platform_routes(self):
+        sync_route = self.route_line("Sync edited lesson content")
+        management_route = self.route_line("Publish, preview")
+        self.assertIn("course-sync.md", sync_route)
+        self.assertNotIn("course-management.md", sync_route)
+        self.assertIn("course-management.md", management_route)
+        self.assertNotIn("course-sync.md", management_route)
+        self.assertNotIn("teaching-prompt.md", management_route)
+
+    def test_listing_courses_does_not_require_target_resolution(self):
+        route = self.route_line("List platform courses")
+        self.assertIn("authentication.md", route)
+        self.assertIn("course-management.md", route)
+        self.assertNotIn("course-target.md", route)
+
+    def test_existing_structural_edit_syncs_content_before_metadata(self):
+        route = self.route_line("Restructure an existing platform course")
+        self.assertLess(
+            route.index("references/course-sync.md#pull-before-editing"),
+            route.index("references/orchestration-workflow.md"),
+        )
+        self.assertLess(
+            route.index("references/optimization-workflow.md"),
+            route.index("references/course-sync.md#push-existing-course-content"),
+        )
+        self.assertLess(
+            route.index("references/course-sync.md#push-existing-course-content"),
+            route.index("references/course-management.md"),
+        )
+        self.assertNotIn("references/deployment-workflow.md", route)
+
+    def test_existing_content_push_routes_load_conflict_convergence(self):
+        for prefix in (
+            "Restructure an existing platform course",
+            "Revise lesson-level teaching design",
+            "Replace an existing lesson Teaching Prompt",
+            "Optimize Teaching Prompt content in an existing platform course",
+        ):
+            with self.subTest(prefix=prefix):
+                route = self.route_line(prefix)
+                push = "references/course-sync.md#push-existing-course-content"
+                convergence = "references/course-sync.md#conflict-convergence"
+                self.assertIn(push, route)
+                self.assertIn(convergence, route)
+                self.assertLess(route.index(push), route.index(convergence))
+
+    def test_existing_lesson_design_edit_omits_course_wide_artifacts(self):
+        route = self.route_line("Revise lesson-level teaching design")
+        self.assertIn("references/course-design-intake.md", route)
+        self.assertIn("references/teaching-prompt.md", route)
+        self.assertIn("references/optimization-workflow.md", route)
+        for filename in (
+            "orchestration-workflow.md",
+            "course-prompt.md",
+            "course-description.md",
+            "course-management.md",
+            "deployment-workflow.md",
+        ):
+            self.assertNotIn(filename, route)
+
+    def test_provided_teaching_prompt_is_audited_between_pull_and_push(self):
+        route = self.route_line("Replace an existing lesson Teaching Prompt")
+        self.assertLess(
+            route.index("references/course-sync.md#pull-before-editing"),
+            route.index("references/optimization-workflow.md"),
+        )
+        self.assertLess(
+            route.index("references/optimization-workflow.md"),
+            route.index("references/course-sync.md#push-existing-course-content"),
+        )
+        self.assertNotIn("references/course-management.md", route)
+        self.assertNotIn("references/deployment-workflow.md", route)
+
+    def test_existing_course_level_artifacts_use_metadata_management(self):
+        for prefix, owner in (
+            ("Create or revise a Course Prompt in an existing", "course-prompt.md"),
+            (
+                "Create or revise a course description in an existing",
+                "course-description.md",
+            ),
+        ):
+            with self.subTest(prefix=prefix):
+                route = self.route_line(prefix)
+                self.assertIn(f"references/{owner}", route)
+                self.assertIn("references/optimization-workflow.md", route)
+                self.assertIn("references/course-management.md", route)
+                self.assertNotIn(
+                    "references/course-sync.md#push-existing-course-content",
+                    route,
+                )
 
     def test_design_count_is_not_analytics(self):
         self.assertIn(
@@ -139,180 +352,20 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("remain authoring tasks", self.router)
         self.assertNotIn("any question asking for a number", self.router)
 
-    def test_global_language_and_reporting_contracts_are_loaded(self):
-        session = (
-            SKILL_ROOT / "references" / "session-controls.md"
-        ).read_text(encoding="utf-8")
-        self.assertNotIn("## Output " + "Language", session)
-        self.assertIn("## Progress, Errors, and Handoffs", session)
-        self.assertIn("references/data-contracts.md#language-resolution", self.router)
-        self.assertIn("resolve `resolved_target_language`", self.router)
-        self.assertIn("before the first user-visible response", self.router)
+    def test_language_and_reporting_contracts_are_loaded_once(self):
+        startup = self.router.split("## Task Router", 1)[0]
+        self.assertIn("references/language-policy.md", startup)
+        self.assertIn("references/session-controls.md", startup)
+        self.assertIn("resolve `resolved_target_language`", startup)
+        self.assertIn("before the first user-visible response", startup)
         self.assertIn("## Reporting", self.router)
         self.assertIn("#deployment-report", self.router)
         self.assertIn("references/report-template.md", self.router)
 
-    def test_resolved_language_identifiers_are_single_sourced(self):
-        data_contracts = (
-            SKILL_ROOT / "references" / "data-contracts.md"
-        ).read_text(encoding="utf-8")
-        session_controls = (
-            SKILL_ROOT / "references" / "session-controls.md"
-        ).read_text(encoding="utf-8")
-        language_resolution = data_contracts.split(
-            "## Language Resolution", 1
-        )[1].split("## Fallback Output Extensions", 1)[0]
-        priority = language_resolution.split("### Priority Order", 1)[1]
-        priority_items = [
-            line
-            for line in priority.splitlines()
-            if re.match(r"^\d+\.\s+", line)
-        ]
-        priority_identifiers = [
-            line.split("`", 2)[1] for line in priority_items
-        ]
-        self.assertEqual(
-            [
-                "context_language_directive",
-                "prompt_language_detection",
-            ],
-            priority_identifiers,
-        )
-        self.assertIn(
-            "any applicable context explicitly specifies a language",
-            priority,
-        )
-        self.assertIn(
-            "otherwise, the language detected from the current user prompt",
-            priority,
-        )
-        self.assertIn("follow the normal instruction hierarchy", priority)
-        self.assertIn("most recent applicable directive", priority)
-        self.assertIn(
-            "`resolved_target_language` is a string",
-            data_contracts,
-        )
-        self.assertIn("`resolved_target_language`", data_contracts)
-        self.assertIn("`resolved_target_language`", session_controls)
-        self.assertNotIn("### Rules", language_resolution)
-        self.assertNotIn("Pre-Deploy Language Audit", language_resolution)
-        for identifier in priority_identifiers:
-            self.assertNotIn(f"`{identifier}`", session_controls)
-
-        skill_content = "\n".join(
-            path.read_text(encoding="utf-8")
-            for path in SKILL_ROOT.rglob("*.md")
-        ).casefold()
-        deprecated_aliases = (
-            "resolved " + "output language",
-            "resolved " + "target language",
-            "resolved " + "language",
-            "actual " + "output language",
-            "in the user's " + "language",
-            "reply in the user's " + "language",
-        )
-        for alias in deprecated_aliases:
-            self.assertNotIn(alias, skill_content)
-
-        template = (REPO_ROOT / "templates" / "skill.yaml.template").read_text(
-            encoding="utf-8"
-        )
-        template_language_resolution = template.split(
-            "language_resolution:", 1
-        )[1].split("inputs:", 1)[0]
-        template_priority_identifiers = re.findall(
-            r'^\s+-\s+"([^"]+)"$',
-            template_language_resolution,
-            re.MULTILINE,
-        )
-        self.assertEqual(
-            priority_identifiers,
-            template_priority_identifiers,
-        )
-        language_contract_surfaces = "\n".join(
-            (data_contracts, session_controls, template)
-        )
-        self.assertIsNone(
-            re.search(
-                r"\bbcp(?:[-_ ]?47)\b",
-                language_contract_surfaces,
-                re.IGNORECASE,
-            )
-        )
-        legacy_table_headers = (
-            "en-" + "US",
-            "zh-" + "CN",
-            "fr-" + "FR",
-        )
-        for header in legacy_table_headers:
-            self.assertNotIn(header, session_controls)
-
-    def test_language_constraints_are_owned_by_concrete_scenarios(self):
-        references = SKILL_ROOT / "references"
-        scenario_expectations = {
-            "session-controls.md": (
-                "Support & Contact",
-                "Version Check",
-                "Progress, Errors, and Handoffs",
-                "resolved_target_language",
-            ),
-            "authentication.md": (
-                "SMS-code prompts",
-                "resolved_target_language",
-            ),
-            "course-target.md": (
-                "new-versus-existing choice questions",
-                "resolved_target_language",
-            ),
-            "authoring-intake.md": (
-                "Course Design Intake",
-                "resolved_target_language",
-            ),
-            "segmentation-orchestration.md": (
-                "core_point",
-                "transfer_signals",
-                "rerun_plan",
-                "resolved_target_language",
-            ),
-            "generation-workflow.md": (
-                "lesson_teaching_prompts[].teaching_prompt",
-                "assumptions[]",
-                "newly authored alt text",
-                "resolved_target_language",
-            ),
-            "optimization-workflow.md": (
-                "Course Description and Review Outputs",
-                "change_list[].change",
-                "resolved_target_language",
-            ),
-            "report-template.md": (
-                "Report language",
-                "purpose label in resolved_target_language",
-            ),
-            "analytics/privacy-and-presentation.md": (
-                "Answer Structure",
-                "drill-down offers",
-                "resolved_target_language",
-            ),
-            "cli/course-directory-spec.md": (
-                "README.md",
-                "chapters[].title",
-                "resolved_target_language",
-            ),
-        }
-        for relative_path, expected_phrases in scenario_expectations.items():
-            content = (references / relative_path).read_text(encoding="utf-8")
-            for phrase in expected_phrases:
-                with self.subTest(path=relative_path, phrase=phrase):
-                    self.assertIn(phrase, content)
-
-        report = (references / "report-template.md").read_text(encoding="utf-8")
+    def test_verification_url_templates_survive_markdown_formatting(self):
+        report = (REFERENCES / "report-template.md").read_text(encoding="utf-8")
         verification_templates = report.split("Verification URLs:", 1)[1]
-        self.assertIn("illustrative templates only", verification_templates)
-        self.assertIn(
-            "ordinary Markdown without the surrounding fence",
-            verification_templates,
-        )
+
         for purpose_label in (
             "localized admin-console label",
             "localized course-preview label",
@@ -327,65 +380,31 @@ class CourseCreatorRouterTests(unittest.TestCase):
                     'without "#">',
                     verification_templates,
                 )
-        self.assertIn(
-            "translate every non-placeholder instruction",
-            (references / "optimization-workflow.md").read_text(encoding="utf-8"),
-        )
 
-        review = (references / "review-checklist.md").read_text(
-            encoding="utf-8"
-        )
-        language_audit = review.split("## Language Audit", 1)[1].split(
-            "## Structure Separation", 1
-        )[0]
-        checked_outputs = (
-            "segments[].core_point",
-            "course_index[].lesson_title",
-            "course_index[].core_question",
-            "lesson_teaching_prompts[].lesson_title",
-            "lesson_teaching_prompts[].teaching_prompt",
-            "global_variable_table[].name",
-            "course_prompt",
-            "course_description",
-            "README.md",
-            "course-description.md",
-            "structure.json.chapters[].title",
-            "course-prompt.md",
-            "lessons/lesson-*.md",
-            "shifu.title",
-            "shifu.description",
-            "shifu.course_prompt",
-            "outline_items[].title",
-            "outline_items[].content",
-        )
-        for output in checked_outputs:
-            with self.subTest(output=output):
-                self.assertIn(output, language_audit)
-        self.assertNotIn(
-            "Generated course artifacts and learner-facing passages",
-            language_audit,
-        )
-
-    def test_safe_deployment_branches_new_and_existing_targets(self):
-        deployment = (
-            SKILL_ROOT / "references" / "deployment-workflow.md"
-        ).read_text(encoding="utf-8")
-        self.assertIn("Deploy a new target", deployment)
-        self.assertIn("do not run this command", deployment)
-        self.assertIn("Existing target: use the Version Sync Workflow", deployment)
-
-    def test_removed_section_references_do_not_return(self):
+    def test_removed_identifiers_and_section_references_do_not_return(self):
         stale_phrases = (
+            "require_branching_feedback",
+            "allow_headings",
+            "viewpoint_check",
             "Data & Statistics Routing",
             "Workflow, references, and validation: `## Analytics` below",
             "SKILL.md `## Execution Modes`",
         )
         content = "\n".join(
             path.read_text(encoding="utf-8")
-            for path in SKILL_ROOT.rglob("*.md")
+            for path in SKILL_ROOT.rglob("*")
+            if path.is_file() and path.suffix in {".md", ".json", ".py"}
         )
         for phrase in stale_phrases:
             self.assertNotIn(phrase, content)
+
+
+def _backticked_paths(markdown: str) -> list[str]:
+    paths = []
+    for piece in markdown.split("`")[1::2]:
+        if ".md" in piece:
+            paths.append(piece)
+    return paths
 
 
 if __name__ == "__main__":
