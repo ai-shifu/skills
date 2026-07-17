@@ -160,10 +160,24 @@ class CourseCreatorRouterTests(unittest.TestCase):
         )
 
     def test_local_teaching_prompt_route_omits_platform_setup(self):
-        route = self.route_line("Produce local Teaching Prompts")
+        route = self.route_line(
+            "Produce local Teaching Prompts from existing segments"
+        )
         self.assertIn("references/teaching-prompt.md", route)
         self.assertNotIn("authentication.md", route)
         self.assertNotIn("course-target.md", route)
+
+    def test_raw_local_teaching_prompt_route_segments_without_platform_setup(self):
+        route = self.route_line(
+            "Produce local Teaching Prompts from raw supplied material"
+        )
+        self.assertLess(
+            route.index("references/segmentation-workflow.md"),
+            route.index("references/teaching-prompt.md"),
+        )
+        self.assertNotIn("authentication.md", route)
+        self.assertNotIn("course-target.md", route)
+        self.assertNotIn("orchestration-workflow.md", route)
 
     def test_target_kind_change_requires_router_reclassification(self):
         target_contract = (REFERENCES / "course-target.md").read_text(
@@ -174,6 +188,9 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("new-only or existing-only", self.router)
         self.assertIn("Create intent with one or more matches", target_contract)
         self.assertIn("Edit intent with no match", target_contract)
+        self.assertIn("explicitly confirms creation", target_contract)
+        self.assertIn("explicit Shifu BID", target_contract)
+        self.assertIn("run `show <shifu_bid>`", target_contract)
 
     def test_course_prompt_only_route_stays_local_and_focused(self):
         route = self.route_line("Create or revise a Course Prompt")

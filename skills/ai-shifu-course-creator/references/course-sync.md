@@ -50,6 +50,8 @@ On exit `2`, the CLI backs up the unpushed work, pulls the latest cloud course o
 1. Read the freshly pulled files as the new baseline.
 2. Reapply the intended change on top of that baseline. The agent performs this merge; the CLI never merges content automatically.
 3. Run the same version-aware command again with `--course-dir`.
-4. Repeat until exit `0`, or stop on exit `1`.
+4. Repeat until exit `0`, stop on exit `1`, or stop after three consecutive exit-`2` responses for the same intended change.
+
+After the third consecutive conflict, stop automatic retries, report the repeated convergence failure and current conflict details, and require explicit user confirmation before attempting the write again.
 
 Do not force the stale local copy over the cloud. Backup locations and exact command side effects are defined in `cli/cli-reference.md`.

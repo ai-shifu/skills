@@ -45,8 +45,9 @@ def declared_paths(markdown: str, section: str) -> list[str]:
         return []
 
     dependencies = []
-    for line in body.splitlines():
-        if not line.strip():
+    for raw_line in body.splitlines():
+        line = raw_line.strip()
+        if not line:
             continue
         if section == "Required References":
             match = DEPENDENCY_ITEM.fullmatch(line)
@@ -170,6 +171,16 @@ class CourseCreatorDependencyTests(unittest.TestCase):
             len(list(REFERENCES.rglob("*.md"))),
             len(graph),
         )
+        for source in graph:
+            markdown = source.read_text(encoding="utf-8")
+            for value in declared_paths(markdown, "Conditional References"):
+                target, anchor = resolve_reference(source, value)
+                if anchor is not None:
+                    self.assertIn(
+                        anchor,
+                        validate_skill_quality.github_heading_slugs(target),
+                        f"missing conditional-reference anchor: {value}",
+                    )
 
     def test_required_reference_graph_is_a_dag(self):
         graph = dependency_graph()
@@ -205,11 +216,11 @@ class CourseCreatorDependencyTests(unittest.TestCase):
         sample = (
             "# Example\n\n"
             "## Required References\n\n"
-            "- `prompt-contracts.md`\n\n"
+            "  - `prompt-contracts.md`  \n\n"
             "## Notes\n\n"
             "See [ordinary navigation](pedagogy.md).\n\n"
             "## Conditional References\n\n"
-            "- When images are present: `image-authoring.md`\n"
+            "  - When images are present: `image-authoring.md`  \n"
         )
         self.assertEqual(
             ["prompt-contracts.md"],
@@ -317,6 +328,36 @@ class CourseCreatorDependencyTests(unittest.TestCase):
                 "course-management.md",
                 "deployment-workflow.md",
                 "pedagogy.md",
+            }.isdisjoint(relative_paths)
+        )
+
+    def test_raw_local_teaching_prompt_closure_stays_authoring_only(self):
+        graph = dependency_graph()
+        closure = transitive_closure(
+            self.route_roots(
+                "Produce local Teaching Prompts from raw supplied material"
+            ),
+            graph,
+        )
+        relative_paths = {
+            str(path.relative_to(REFERENCES)) for path in closure
+        }
+        self.assertTrue(
+            {
+                "segmentation-workflow.md",
+                "teaching-prompt.md",
+                "pedagogy.md",
+                "markdownflow-authoring.md",
+            }.issubset(relative_paths)
+        )
+        self.assertTrue(
+            {
+                "authentication.md",
+                "course-target.md",
+                "orchestration-workflow.md",
+                "course-prompt.md",
+                "course-description.md",
+                "deployment-workflow.md",
             }.isdisjoint(relative_paths)
         )
 

@@ -35,6 +35,7 @@ On the first invocation in a session:
 | Segment supplied material only | `references/authentication.md` → `references/course-target.md` → `references/authoring-mode.md` → `references/segmentation-workflow.md` |
 | Generate Teaching Prompts from existing segments | `references/authentication.md` → `references/course-target.md` → `references/authoring-mode.md` → `references/course-design-intake.md` → `references/teaching-prompt.md` |
 | Produce local Teaching Prompts from existing segments without platform access | `references/authoring-mode.md` → `references/course-design-intake.md` → `references/teaching-prompt.md` |
+| Produce local Teaching Prompts from raw supplied material without platform access | `references/authoring-mode.md` → `references/course-design-intake.md` → `references/segmentation-workflow.md` → `references/teaching-prompt.md` |
 | Create or revise a Course Prompt from approved local artifacts | `references/course-prompt.md` |
 | Create or revise a course description from approved local artifacts | `references/course-description.md` |
 | Review or audit pasted Teaching Prompt or Course Prompt content without accessing a platform course | `references/authoring-mode.md` → `references/optimization-workflow.md` |

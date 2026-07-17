@@ -5,6 +5,7 @@
 - `authentication.md`
 - `course-target.md`
 - `language-policy.md#language-audit`
+- `cli/cli-reference.md#query-commands`
 - `cli/cli-reference.md#bulk-import`
 - `cli/cli-reference.md#state-management`
 - `cli/course-directory-spec.md`

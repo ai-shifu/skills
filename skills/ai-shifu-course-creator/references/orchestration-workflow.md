@@ -20,7 +20,8 @@ Drive Segmentation and Teaching Prompt generation, then produce the cross-lesson
 3. Finalize lesson cuts with one core question per lesson.
 4. Run Teaching Prompt generation for each lesson.
 5. Build `course_index` and `global_variable_table` from the completed lesson set.
-6. Apply the gates below and recompute only failed lessons.
+6. Apply the gates below. Rerun the phase that owns each failed output rather than treating every failure as a lesson-only generation failure.
+7. After every affected Segmentation and Teaching Prompt rerun passes, rebuild both `course_index` and `global_variable_table`, then reapply the gates. Block handoff while any gate still fails.
 
 ## Mandatory Gates
 
@@ -30,13 +31,14 @@ Drive Segmentation and Teaching Prompt generation, then produce the cross-lesson
 - Require Segmentation's preservation validation to pass.
 - Verify every required interaction effect and branch against `pedagogy.md#interaction-design`.
 
-Do not partially pass a lesson. Recompute it when any gate fails.
+Do not partially pass a phase or lesson.
 
 ## Rerun Rules
 
-- Recompute only impacted lessons.
-- Recompute dependency-linked lessons when shared variables change.
-- Recompute the full course only when global source order changes.
+- When a preservation, traceability, or lesson-boundary gate fails, rerun Segmentation for the affected source scope, then rerun every Teaching Prompt affected by the changed segments or lesson cuts.
+- When a Teaching Prompt authoring or runtime gate fails, rerun only the affected lesson and any dependency-linked lessons.
+- After a rerun changes lesson boundaries, variables, or their consumers, rebuild both cross-lesson outputs from the passing lesson set; never hand off a stale `course_index` or `global_variable_table`.
+- Recompute the full course only when global source order changes. If an owning phase cannot pass after its focused rerun, stop and report the blocking gate instead of handing off partial outputs.
 
 ## Fallback Handling
 

@@ -8,6 +8,7 @@
 - `tables.md`
 - `recipes.md`
 - `privacy-and-presentation.md`
+- `../cli/cli-reference.md#query-commands`
 - `../cli/cli-reference.md#analytics-query`
 
 ## Analytics

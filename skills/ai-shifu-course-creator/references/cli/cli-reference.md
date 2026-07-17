@@ -68,7 +68,7 @@ find-title <keyword>
 - `show <shifu_bid>` prints course detail and the outline tree. `show <shifu_bid> <outline_bid>` prints one lesson's Teaching Prompt.
 - `history` prints one lesson's Teaching Prompt revision history.
 - `export` writes course JSON to stdout or the path passed with `-o`.
-- `find-title` matches the keyword case-insensitively after whitespace normalization against current draft and published titles. It does not match historical or renamed titles.
+- `find-title` requires at least two non-whitespace characters, then matches the keyword case-insensitively after whitespace normalization against current draft and published titles. It does not match historical or renamed titles.
 
 `show` without an outline BID prints a `Verification URLs:` block containing admin and preview URLs plus the published URL when available. `create`, `import`, `pull`, and `publish` also print command-appropriate verification URL blocks. Per-lesson preview URLs are not printed.
 

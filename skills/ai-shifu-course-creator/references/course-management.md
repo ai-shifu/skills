@@ -30,9 +30,11 @@ Complete `authentication.md` first. Before mutating learner-facing metadata, com
 | Publish current draft | `publish <shifu_bid>` | Confirm the CLI-produced public learner URL works. |
 | Archive or restore | `archive <shifu_bid>` / `unarchive <shifu_bid>` | Re-run `list` or `show` as appropriate to confirm state. |
 | Reorder lessons | `reorder <shifu_bid> --order bid1,bid2,...` | Run `show <shifu_bid>` and confirm the returned order. |
-| Update name, description, or Course Prompt | `update-meta <shifu_bid> ...` | Use `show` for name/description and `export` for the Course Prompt; confirm only requested fields changed. |
+| Update name, description, or Course Prompt | `update-meta <shifu_bid> ... [--course-dir <dir>]` | Use `show` for name/description and `export` for the Course Prompt; confirm only requested fields changed. |
 | Set lesson access or visibility | `set-access <shifu_bid> <outline_bid> ...` | Confirm success output; with `--course-dir`, also inspect the updated `structure.json`. |
 | Configure Listen Mode | `set-tts <shifu_bid> ...` | Confirm success output; with `--course-dir`, also inspect the refreshed `course-config.json`. |
+
+When this workflow follows `course-sync.md#pull-before-editing`, pass that same directory through `--course-dir` on every `update-meta` call so the recorded course revision protects the write. Omit `--course-dir` only for a standalone management request that did not pull or otherwise establish a local sync baseline.
 
 When `update-meta --course-dir` or `set-tts --course-dir` exits `2`, apply `course-sync.md#conflict-convergence` to the intended management change and retry on the freshly pulled baseline.
 

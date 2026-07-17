@@ -5,6 +5,7 @@ Course-level materialization contract for the Course Prompt artifact.
 ## Required References
 
 - `language-policy.md`
+- `prompt-contracts.md#prompt-semantics`
 - `prompt-contracts.md#artifact-responsibilities`
 - `data-contracts.md#input-contract`
 - `data-contracts.md#variable-table`

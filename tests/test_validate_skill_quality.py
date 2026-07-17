@@ -1299,6 +1299,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         purpose = markdown_section(self.course_prompt, "Purpose")
         template = markdown_section(self.course_prompt, "Fillable Template")
+        required = markdown_section(
+            self.course_prompt, "Required References"
+        )
 
         self.assertIn(
             "follows each Teaching Prompt and does not own lesson pedagogy",
@@ -1326,6 +1329,8 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.course_prompt,
             r"(?m)^#{2,6} Pattern [ABC]:",
         )
+        self.assertIn("prompt-contracts.md#prompt-semantics", required)
+        self.assertIn("prompt-contracts.md#artifact-responsibilities", required)
 
     def test_optimization_audits_existing_artifacts_without_absorbing_creation(self):
         self.assertIn("## Entry Conditions", self.optimization_workflow)
@@ -1417,7 +1422,41 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("## Operations", self.course_management)
         self.assertIn("archive", self.course_management)
         self.assertIn("reorder", self.course_management)
+        self.assertIn(
+            "pass that same directory through `--course-dir`",
+            self.course_management,
+        )
+        self.assertIn("three consecutive exit-`2`", self.course_sync)
+        self.assertIn("explicit user confirmation", self.course_sync)
         self.assertNotIn("import --new", self.course_management)
+
+    def test_direct_query_consumers_declare_query_command_dependency(self):
+        analytics = (
+            COURSE_CREATOR_REFERENCES / "analytics" / "workflow.md"
+        ).read_text(encoding="utf-8")
+        analytics_required = markdown_section(analytics, "Required References")
+        deployment_required = markdown_section(
+            self.deployment_workflow, "Required References"
+        )
+
+        self.assertIn(
+            "../cli/cli-reference.md#query-commands", analytics_required
+        )
+        self.assertIn("cli/cli-reference.md#query-commands", deployment_required)
+
+    def test_orchestration_rebuilds_derived_outputs_after_phase_reruns(self):
+        workflow = markdown_section(self.orchestration_workflow, "Workflow")
+        reruns = markdown_section(self.orchestration_workflow, "Rerun Rules")
+
+        self.assertIn("Rerun the phase that owns each failed output", workflow)
+        self.assertIn("rebuild both `course_index`", workflow)
+        self.assertIn("rerun Segmentation", reruns)
+        self.assertIn("never hand off a stale `course_index`", reruns)
+
+    def test_find_title_contract_matches_cli_keyword_validation(self):
+        query_commands = markdown_section(self.cli_reference, "Query Commands")
+
+        self.assertIn("at least two non-whitespace characters", query_commands)
 
     def test_new_deployment_keeps_authoring_and_selected_attributes_explicit(self):
         conditional = markdown_section(
