@@ -126,6 +126,36 @@
         "Both artifacts are Prompts addressed to the runtime LLM rather than scripts or finished learner-facing lectures.",
         "Every occurrence of you, your, yours, or yourself in Prompt instructions refers only to the runtime LLM; learner-visible text inside a MarkdownFlow ?[] interaction or standalone deterministic output may use second-person forms to address the learner."
       ]
+    },
+    {
+      "id": 12,
+      "prompt": "Course Design Intake 已完成：这是标准 AI 授课，不是纯课堂幻灯片；interaction_policy 为 enabled，只启用 pre_content_thinking。请直接生成一节关于‘验证性能修复’的 Teaching Prompt。开场互动问题是‘哪个信号最能证明锁竞争瓶颈已经被移除？’，选项为‘p95 延迟趋势｜错误率斜率｜锁等待时长’。材料的 density_cue 要求完整保留并按主题呈现这三条判断标准：信号响应被修改的机制、在观察窗口内发生变化、具有明确失败阈值。材料的 quote_cue 是原文‘“没有验证的修复，只是一次猜测。”——陈迈’，必须保留原文、标点和署名。‘本案例观察窗口为 15 分钟’只是支撑细节。请安排自然的幻灯片与讲解节奏，不要增加课程封面、目标页或无意义的细节页。",
+      "expected_output": "Generates a standard Teaching Prompt with a brief lead-in, question-slide interaction, grouped key information, an exact focused quote slide, and no filler slides.",
+      "files": [],
+      "expectations": [
+        "The Teaching Prompt opens with one brief lead-in and then moves directly to a substantive slide; it does not insert a cover, decorative page, or objective-only page.",
+        "The complete question appears on an interaction slide immediately before the ?[] control, while option labels, simulated controls, input hints, and the answer stay off that slide.",
+        "The ?[] control contains the complete option set, and the learner answer receives concise immediate feedback or an explanation before any later slide.",
+        "All three density_cue criteria remain present and are grouped by theme on one key-information slide rather than split into one slide per fact.",
+        "The focused quote slide wraps the exact source text and attribution ‘“没有验证的修复，只是一次猜测。”——陈迈’ inline with ===...===, includes no unrelated points, and does not invent or alter attribution.",
+        "The 15-minute observation-window detail remains supporting explanation and does not receive a filler slide.",
+        "Each standard slide is followed by an explanation or interaction effect before the next slide, and no arbitrary global word, sentence, or slide quota is introduced."
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "请最小范围修复下面这份标准 AI 授课 Teaching Prompt，保留原来的互动意图和事实，只调整不合格的节奏、幻灯片分工与金句保真：\n\n先用约 300 字介绍性能优化的背景和本节目标。\n\n创建课程封面幻灯片，只显示‘验证性能修复’。\n\n在正文里问学习者：哪个信号最能证明锁竞争瓶颈已经被移除？\n\n创建互动幻灯片，同时展示问题、p95 延迟趋势、错误率斜率、锁等待时长三个选项和可点击按钮，并标出锁等待时长是正确答案。\n\n?[p95 延迟趋势 | 错误率斜率 | 锁等待时长]\n\n创建一页幻灯片，只显示‘响应被修改的机制’。\n\n创建一页幻灯片，只显示‘在观察窗口内发生变化’。\n\n创建一页幻灯片，只显示‘具有明确失败阈值’。\n\n创建一页幻灯片，只显示‘观察 15 分钟’。\n\n创建金句页，显示‘未经验证的修复只是猜想。——陈迈’。\n\n最后统一讲解以上所有幻灯片。\n\n来源指定的三条关键信息必须完整保留并按主题呈现：信号响应被修改的机制、在观察窗口内发生变化、具有明确失败阈值。来源金句原文为‘“没有验证的修复，只是一次猜测。”——陈迈’；‘本案例观察窗口为 15 分钟’只是支撑细节。请直接输出修复后的 Teaching Prompt，不要重写课程提示词或改变 MarkdownFlow 语法。",
+      "expected_output": "Repairs the malformed standard Teaching Prompt into the intended slide-explanation rhythm while preserving interaction semantics, key facts, and the exact source quote.",
+      "files": [],
+      "expectations": [
+        "The repaired prompt replaces the long preamble and cover slide with a brief lead-in followed by the first substantive slide.",
+        "The interaction becomes a complete-question slide followed immediately by the unchanged option-only ?[] control; the slide does not duplicate options, simulate controls, or reveal an answer.",
+        "Concise answer feedback or explanation follows the control before any later slide, and the prompt no longer stacks slides for a final combined explanation.",
+        "The three related key facts are preserved and grouped on one key-information slide rather than split across three pages.",
+        "The quote slide wraps the exact source text and attribution ‘“没有验证的修复，只是一次猜测。”——陈迈’ inline with ===...=== instead of using the paraphrase, with no unrelated points added.",
+        "The 15-minute supporting detail is retained in explanation but its filler slide is removed.",
+        "The repair stays scoped to the Teaching Prompt, preserves the original interaction intent and facts, and introduces no arbitrary global word, sentence, or slide quota."
+      ]
     }
   ]
 }

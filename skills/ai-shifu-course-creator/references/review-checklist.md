@@ -51,7 +51,8 @@ Resolve `resolved_target_language` from `data-contracts.md#language-resolution`,
 ## Structure Separation
 
 - Chapter titles, lesson titles, numbering, and hierarchy labels satisfy the separation defined in `data-contracts.md#lesson-schema`.
-- Each lesson file's first non-empty line performs a teaching-start function: scenario, guiding question, prior-experience activation, task setup, or practice start.
+- Each standard non-slide-only lesson file's first non-empty line begins a brief teaching lead-in: scenario, guiding question, prior-experience activation, task setup, or practice start. Pure classroom slides instead begin with slide-facing content under `generation-workflow.md#slide-only-generation-override`.
+- In standard non-slide-only teaching, the brief lead-in is followed by the first substantive slide before any extended explanation; the first slide is not a cover, decorative page, or objective-only page.
 - High-confidence structure pollution is absent: the first line is not a Markdown heading copied from `structure.json`, not a `第X章` / `Chapter X` directory label, and not an exact repeat of the chapter or lesson title.
 - Medium-confidence cases are flagged for review instead of auto-deleted: headings used to teach Markdown syntax, code comments beginning with `#`, or courses with an explicit `allow_headings` / heading-supported rendering decision.
 
@@ -73,10 +74,12 @@ Resolve `resolved_target_language` from `data-contracts.md#language-resolution`,
 - Under `disabled`, no `?[]` interaction control, learner-answer request, learner-answer variable, or answer-dependent branch is present.
 - Interactions that are present are concrete and answerable.
 - Interaction type matches the decision, and multi-select answers drive combined feedback, prioritization, or tailored examples rather than exhaustive branching for every combination.
-- Learner-facing questions appear before interaction syntax, not after `%{{var}}` inside `?[%{{var}} ...]`.
+- Learner-facing questions for question-bearing interactions appear before interaction syntax, not after `%{{var}}` inside `?[%{{var}} ...]`.
 - Each `?[]` interaction appears on its own line.
-- If the pre-interaction text enumerates or describes choices, the `?[]` option labels match those choices exactly — same set, order, and wording.
-- Input interactions include a specific pre-interaction question plus a shorter `...` placeholder.
+- In standard non-slide-only teaching, each question-bearing `?[]` immediately follows an interaction-slide instruction that contains the complete learner-facing question as the slide's central content.
+- An action-only control such as `?[Continue]` follows the content or instruction it advances and is not failed for lacking an invented question slide.
+- A standard question-bearing interaction slide contains no option labels, input hint, simulated clickable control, or answer; the complete option set, order, and wording appears only in `?[]`.
+- Input interactions put the specific question on the interaction slide and only the shorter `...` placeholder inside the control.
 - Interaction presence, placement, and deepening match the resolved policy in `pedagogy.md#interaction-policy-precedence`.
 - Branching paths are distinct for viewpoint/path interactions and whenever `require_branching_feedback` is explicit.
 - Instructional interaction results affect later content through immediate feedback or a visible downstream effect.
@@ -98,13 +101,20 @@ Resolve `resolved_target_language` from `data-contracts.md#language-resolution`,
 
 ## Visual-Text Coordination
 
-- In standard non-slide-only lessons, every core concept that uses a visual has a visual-plus-text explanation.
+- Standard non-slide-only lessons follow the brief-lead-in → substantive-slide → concise-explanation rhythm in `pedagogy.md#visual-text-coordination` without imposing a word, sentence, or slide-count quota.
+- The first standard slide is substantive, and no two standard slide directions appear back to back without the required concise explanation, interaction control, or immediate instructional effect between them.
+- Presentation-worthy processes, relationships, comparisons, cases, decisions, core conclusions, key rules, important boundaries, interaction questions, and memorable quotations receive slides when they carry a teaching turn; merely mentioned or supporting instances do not trigger filler pages.
+- Information identified by `density_cue` appears without compression in the same MarkdownFlow instruction block as its key-information slide direction, and related key information is grouped by theme instead of split into one slide per item or moved into a following standalone block.
+- Every quotation explicitly designated as memorable by the source or author, including one identified by `quote_cue`, appears on a focused quote slide without unrelated points; in the authored Teaching Prompt, the complete quotation plus its existing attribution is wrapped inline with `===...===`, its exact wording and punctuation remain unchanged, and no missing attribution is invented.
+- When a rendered preview or runtime output is observable, its quote text, punctuation, and existing attribution match the source byte for byte; any mismatch blocks completion. When rendered output is unavailable, the report records residual runtime fidelity risk and does not claim exact rendering was verified.
+- A model-distilled takeaway is presented as a key conclusion rather than as a source quotation or fabricated quote.
+- Supporting details, transitions, and repeated conclusions do not receive filler slides.
 - Raw graphic source code appears only when explicitly requested, as required by [generation-workflow.md#image-authoring](generation-workflow.md#image-authoring).
 - Pure classroom slides follow `generation-workflow.md#slide-only-generation-override` and are not failed for omitting AI narration or a full explanation paragraph.
 - Every embedded asset uses the uploaded URL and manifest mapping defined by `cli/cli-reference.md#image-upload` and `cli/course-directory-spec.md#assets`.
 - Every fixed-display or HTML-view image conforms to [generation-workflow.md#image-authoring](generation-workflow.md#image-authoring); the resulting URL, description, caption, position, and ordering survive generation and pass [Image Output Validation](generation-workflow.md#image-output-validation).
 - Alt text and `图片内容` descriptions carry information about what the image conveys (no `image1` / `示意图`).
-- In standard non-slide-only lessons, text adds context (background / causality / examples), not just a restatement of the image.
+- In standard non-slide-only lessons, each selected slide is followed before the next slide by a concise but complete explanation that adds context (background / causality / examples), not just a restatement of the image.
 
 ## Runtime Stability
 

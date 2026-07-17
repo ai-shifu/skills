@@ -12,30 +12,33 @@ Encode the selected teaching method in each Teaching Prompt itself. Every lesson
 
 Consume the normalized Course Design Intake interaction policy only after it passes `data-contracts.md#interaction-policy`. Apply its teaching effect and substitution from `pedagogy.md#interaction-policy-precedence`; Generation does not reinterpret the modes or purposes. Whenever that policy calls for an interaction, choose its type and persistence per `pedagogy.md#interaction-design` and `pedagogy.md#variable-strategy`, then apply [MarkdownFlow Authoring](#markdownflow-authoring).
 
+Apply transfer signals to the standard teaching rhythm instead of treating them as optional decoration. Place information named by `density_cue` on a key-information slide without compressing it away, grouping related signals by theme. Keep the complete grouped `density_cue` content in the same MarkdownFlow instruction block as that slide direction rather than moving required items into a following standalone block. Place every quotation explicitly designated as memorable by the source or author, including one named by `quote_cue`, on a focused quote slide; keep its exact wording, punctuation, and existing attribution in the authored Teaching Prompt, apply [Preservation Encoding](#preservation-encoding) plus its rendered-output fidelity gate, and do not invent an attribution. Present a model-distilled takeaway as a key conclusion rather than as a source quotation or fabricated quote.
+
 ### MarkdownFlow Authoring
 
 This section owns how Generation encodes already-resolved teaching and persistence decisions into MarkdownFlow. Parser recognition and runtime effects remain defined in `markdownflow.md`.
 
 #### Interaction Encoding
 
-- Put the complete learner-facing question immediately before the interaction control, and put the `?[]` control on its own line.
-- Keep only control content inside `?[]`: option labels, the optional `%{{name}}` assignment prefix, and any free-text marker plus short hint.
+- In standard non-slide-only teaching, immediately before each question-bearing interaction control, instruct the runtime LLM to create an interaction slide whose central content is the complete learner-facing question. Show no option labels, input hint, simulated clickable control, or answer on that slide. The [Slide-Only Generation Override](#slide-only-generation-override) retains its existing projection behavior.
+- Put a question-bearing `?[]` control on its own line immediately after the interaction-slide instruction. Keep only control content inside `?[]`: option labels, the optional `%{{name}}` assignment prefix, and any free-text marker plus short hint.
+- For an action-only control such as `?[Continue]`, do not invent a learner question or question slide; put the control on its own line after the content or instruction it advances.
 - Use the form whose selection behavior was chosen in `pedagogy.md#interaction-design`: `|` for single-select, `||` for multi-select, and `...` immediately before the hint or custom-answer label for text entry.
 - Apply `pedagogy.md#variable-strategy` after deciding the interaction's downstream effect. Use `%{{name}}` only for a named answer that leaves the current lesson; lesson-local answers use the no-variable form. Never use a blank variable name as no-variable syntax.
-- For an input, write a specific question before the control and a shorter hint after `...`. For select-plus-input, put `...` at the start of the custom-answer option rather than at the end of the surrounding prompt.
-- When preceding text enumerates or describes choices, keep the control labels identical in set, order, and wording.
+- For an input, put the specific question on the interaction slide and a shorter hint after `...` in the control. For select-plus-input, put `...` at the start of the custom-answer option rather than at the end of the surrounding prompt.
+- Keep the complete option set, order, and wording only in the control. Do not duplicate those option labels on the standard interaction slide.
 - After the control, state the immediate feedback or visible downstream effect required by `pedagogy.md#interaction-design`.
 
 Neutral authoring shapes:
 
 ```markdown
-Ask the learner which path best matches the current case.
+Create an interaction slide with "Which path best matches the current case?" as its complete central question. Use the case context to support judgment without showing option labels, simulating a clickable control, or revealing the answer.
 
 ?[Path A | Path B]
 
 After the learner answers, explain the selected path and contrast it with the other path.
 
-Ask the learner for the course-wide goal that later lessons and the Course Prompt should use.
+Create an interaction slide with "What course-wide goal should later lessons use?" as its complete central question. Do not show an input hint or simulated input field on the slide.
 
 ?[%{{learning_goal}} ...One-sentence goal]
 ```
@@ -56,6 +59,9 @@ Encode the spans already selected by `optimization-workflow.md#preservation-deci
 - Put a complete standalone single-line span that must bypass the LLM inside `===...===`.
 - Put a complete multi-line span that must bypass the LLM inside `!===...!===`. When exact fenced code output is required, keep the complete code fence, language tag, and body inside this form.
 - When surrounding content must remain LLM-generated, wrap only the span that needs position and formatting retention inline with `===...===`. Inline preservation does not bypass the LLM and may be translated when output-language transformation applies.
+- For an exact `quote_cue` inside a generative focused quote slide, keep the slide instruction outside deterministic markers and wrap only the complete quotation plus its existing attribution inline with `===...===`. This is the strongest available preservation instruction inside a generative slide, but it remains LLM-mediated and is not deterministic; as defined in `markdownflow.md#deterministic-blocks`, an output-language transformation may still translate the inline span. Do not wrap the entire slide instruction or emit the quotation as a separate standalone block, because either choice would stop it from functioning as the intended generative slide instruction.
+- For an unattributed quotation whose exact source text is `Quoted source text.`, encode only `===Quoted source text.===`; do not append a dash, speaker, author, or source label.
+- Keep the source quotation byte-for-byte unchanged in the authored Teaching Prompt. When a rendered preview or runtime output is observable, compare its quotation, punctuation, and existing attribution with the source and treat any mismatch as a blocking Generation error to revise and recheck. When no rendered output is observable, record the residual runtime fidelity risk instead of claiming that exact rendering was verified.
 - Encode each selected span independently; content not selected for preservation remains outside its deterministic markers.
 - Encode fixed-display and HTML-view images with the distinct forms in [Image Authoring](#image-authoring); an HTML-view directive remains an LLM instruction and therefore does not contain deterministic markers.
 
@@ -63,11 +69,11 @@ The parser and runtime effects of these forms are defined in `markdownflow.md#de
 
 ### Single-Lesson Generation Strategy
 
-Required anchors per lesson:
+Required anchors per standard non-slide-only lesson. Pure classroom slides replace these anchors with the [Slide-Only Generation Override](#slide-only-generation-override):
 
-1. Opening paragraph with the teaching-start function defined by `pedagogy.md#lesson-loop` — not a copied chapter / lesson title or directory label.
-2. Opening objective plus slide-style visual cover.
-3. Evidence-chain explanation.
+1. Brief opening paragraph with the teaching-start function defined by `pedagogy.md#lesson-loop` — not a copied chapter / lesson title or directory label.
+2. First substantive slide immediately after the lead-in; an opening `pre_content_thinking` interaction slide may satisfy this anchor.
+3. Concise explanation after each standard slide and before the next, with additional slide-and-explanation units only at the presentation-worthy points defined by `pedagogy.md#visual-text-coordination`.
 4. The interaction slot or non-interactive substitute required by `pedagogy.md#interaction-policy-precedence`, with visible instructional value.
 5. At least one reusable deliverable.
 6. Lesson close with summary or decision checkpoint.
@@ -98,7 +104,7 @@ When fallback mode adds `assumptions[]` or `upgrade_notes[]`, write those human-
 ### Validation
 
 - Each `teaching_prompt` is valid runnable MarkdownFlow.
-- The first non-empty line of each Teaching Prompt performs the teaching-start function defined by `pedagogy.md#lesson-loop`, not a duplicated `structure.json` chapter / lesson title or a copied source heading such as `# 第2章 ...`.
+- In standard non-slide-only teaching, the first non-empty line performs the teaching-start function defined by `pedagogy.md#lesson-loop`, not a duplicated `structure.json` chapter / lesson title or a copied source heading such as `# 第2章 ...`; pure classroom slides instead begin with slide-facing content under the override.
 - Per-lesson schema populated per `data-contracts.md#lesson-schema`.
 - Pedagogical decisions pass per `pedagogy.md`; authoring passes [MarkdownFlow Authoring](#markdownflow-authoring); syntax and runtime behavior pass `markdownflow.md`.
 - The Teaching Prompt contains the lesson's teaching method and does not outsource pedagogical decisions to the Course Prompt.
