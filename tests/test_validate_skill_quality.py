@@ -873,6 +873,33 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("runtime LLM", semantics)
         self.assertIn("tell the LLM how to teach the learner", semantics)
         self.assertIn(
+            "core question, teaching objective, must-cover evidence and "
+            "boundaries, required teaching path, interaction purpose and "
+            "visible effect, and required close",
+            semantics,
+        )
+        self.assertIn(
+            "ordinary phrasing, transitions, and non-critical example "
+            "elaboration",
+            semantics,
+        )
+        self.assertIn(
+            "within the Course Prompt's course-wide presentation constraints "
+            "and the Teaching Prompt's lesson-specific delivery constraints",
+            semantics,
+        )
+        self.assertIn(
+            "Increase precision only when exactness protects correctness, "
+            "teaching effect, runtime behavior, source fidelity, or an "
+            "explicit author requirement",
+            semantics,
+        )
+        self.assertIn(
+            'Directions such as "explain the concept", "add an example", or '
+            '"ask a question" are incomplete',
+            semantics,
+        )
+        self.assertIn(
             "Within Prompt instructions, every second-person form in any "
             "language refers only to the runtime LLM",
             semantics,
@@ -1197,9 +1224,62 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         self.assertIn("author explicitly excludes visuals", lesson_loop)
         self.assertIn("Explicit text-only constraint", visual_text)
-        self.assertIn("overrides the default slide pairing", visual_text)
-        self.assertIn("complete textual explanation", visual_text)
+        self.assertIn("Give complete teaching direction", visual_text)
+        self.assertIn("rather than prewriting a lecture transcript", visual_text)
         self.assertNotIn("`viewpoint_check`", self.pedagogy)
+
+    def test_teaching_prompt_preserves_runtime_discretion(self):
+        lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
+        visual_text = markdown_section(
+            self.pedagogy, "Visual-Text Coordination"
+        )
+        generation = markdown_section(self.teaching_prompt, "Generation")
+        intent = markdown_section(
+            self.teaching_prompt, "Intent-First Materialization"
+        )
+        validation = markdown_section(self.teaching_prompt, "Validation")
+        checklist = markdown_section(
+            self.optimization_checklist, "Teaching Prompt Behavior"
+        )
+
+        self.assertIn("do not add a cover or opening slide by default", lesson_loop)
+        self.assertIn("instructional role", visual_text)
+        self.assertIn("let the runtime LLM choose its wording", visual_text)
+        self.assertIn("classroom-ready deck", visual_text)
+        self.assertIn("runtime LLM choose the slide count", visual_text)
+        self.assertIn("must-cover evidence and boundaries", generation)
+        self.assertIn("Preserve non-critical freedom", generation)
+        self.assertIn("intent-and-constraint level", validation)
+        self.assertIn("complete learner-facing interaction question", intent)
+        self.assertIn("option wording and order", intent)
+        self.assertIn("literal `UNKNOWN` behavior", intent)
+        self.assertIn("selected feedback or branch effect", intent)
+        self.assertIn("deterministic output and required code", intent)
+        self.assertIn("regulated wording, fixed numeric thresholds", intent)
+        self.assertIn("source spans already selected as immutable", intent)
+        self.assertIn("wording or layout the author explicitly requires", intent)
+        self.assertIn(
+            "selected image URLs, alt or caption text, ordering, and form",
+            intent,
+        )
+        self.assertIn("over-scripted wording", checklist)
+        self.assertIn("unnecessary layout rules", checklist)
+        self.assertIn(
+            "core question, intended understanding, critical facts and "
+            "boundaries, material teaching order, interaction purpose and "
+            "visible effect, or closing result",
+            " ".join(checklist.split()),
+        )
+
+        deprecated_surface_rules = {
+            "slide-style visual cover",
+            "every core concept paired with a slide",
+            "2–4 short bullets",
+            "overrides the default slide pairing",
+            "follow it with the complete explanatory paragraph",
+        }
+        for fragment in deprecated_surface_rules:
+            self.assertNotIn(fragment, self.pedagogy)
 
     def test_source_preservation_owns_selection_and_scope(self):
         decisions = markdown_section(

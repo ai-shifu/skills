@@ -108,8 +108,8 @@
       "expected_output": "Applies the standard and slide-only visual contracts separately while keeping raw graphics code out of both prompts.",
       "files": [],
       "expectations": [
-        "The standard non-slide-only Teaching Prompt pairs the core visual with a complete textual explanation and conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
-        "The pure classroom-slide result follows the slide-only delivery rules in pedagogy.md and course-prompt.md with concise projected content and does not require AI narration or a full explanatory paragraph after the image.",
+        "The standard non-slide-only Teaching Prompt gives each selected visual a defined teaching purpose and enough textual teaching direction to explain the concept independently, without forcing a slide for every concept or prewriting a finished paragraph; it conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
+        "The pure classroom-slide result follows the slide-only delivery rules in pedagogy.md and course-prompt.md with projection-ready content, no AI narration or full explanatory paragraph after the image, and runtime freedom over non-essential slide count, titles, point count, visual hierarchy, and layout.",
         "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
       ]
     },
@@ -161,6 +161,48 @@
         "image-authoring.md is not loaded because neither the source nor the request contains an image task.",
         "No platform authentication, target resolution, image search, upload-image command, image manifest, deployment, sync, or course-management operation is attempted.",
         "The generated interaction follows the existing MarkdownFlow syntax and uses a variable only if the answer must be reused later."
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "Course Design Intake、分段和教学模式已经确定。请只生成一节标准 AI 授课的授课提示词，不生成课程提示词、不部署。lesson_id 固定为 L15，核心问题是‘退款审核人员如何区分风险信号与欺诈结论？’。\n\n来源与不可变约束：\n1. 账号信息不一致和短时间内多设备登录都只是风险信号，不能单独证明欺诈。\n2. 教学中的处置顺序必须是：核验身份 → 留存证据 → 决定处置。\n3. 下面制度阈值原句必须作为独立确定性内容原样出现且只出现一次：两个及以上风险信号同时出现时，必须在 15 分钟内上报。\n4. 下面固定金句必须作为独立确定性内容原样出现且只出现一次：先验证，再处置；先留证，再定责。\n\n课内单选互动必须使用下面完整提问和控件，二者各出现一次且顺序不变：\n这个案例当前最应该先做什么？\n?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]\n\n该答案只在本课用于即时反馈：针对每个选项解释其后果，并把正确选择重新连回‘风险信号不是欺诈结论’。后续课节和课程提示词都不会使用这个答案，因此不要创建命名变量。\n\n没有其他固定文案或版式要求。请按技能的现行规则生成完整、可运行的授课提示词，并由技能判断普通讲解与视觉辅助应具体到什么程度。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
+      "expected_output": "Produces one runnable standard-mode Teaching Prompt that makes the teaching intent, required evidence, sequence, interaction effect, and close executable while leaving non-critical wording and visual composition to the runtime LLM.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object containing exactly one L15 lesson item with all required lesson-schema fields and an empty global_variable_table.",
+        "The Teaching Prompt preserves the distinction between risk signals and a fraud conclusion and teaches identity verification before evidence retention before the handling decision.",
+        "The exact standalone deterministic lines `===两个及以上风险信号同时出现时，必须在 15 分钟内上报。===` and `===先验证，再处置；先留证，再定责。===` each occur exactly once.",
+        "The exact question and `?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]` control each occur exactly once, preserve option order, and lead to immediate answer-specific feedback.",
+        "used_variables and global_variable_table are empty, and the Teaching Prompt contains no named assignment or learner-answer variable reference.",
+        "The Teaching Prompt remains executable without introducing a transcript, fixed slide count, page-by-page title list, concrete typography, color, coordinates, animation, or uniform point quota."
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "请只修复下面这份已经完成的授课提示词。不要重做课程结构，不生成课程提示词，不部署，也不要输出审计报告。它现在把普通讲解和幻灯片细节写得像逐字稿与排版施工单；请按技能的现行规则作最小修复，同时保持教学意图、事实、顺序、互动效果和收束结果完整、可运行。\n\n原授课提示词：\n\n# 第 3 节：异常容器处置\n\n第1页：使用 16:9 深蓝色背景，标题‘异常容器处置’居中，标题 44pt，副标题 24pt。\n你要逐字说：‘大家把目光看向屏幕左侧那只鲜红色警报灯。现在，请和我一起深呼吸三秒。’\n\n第2页：左 40% 放容器照片，右 60% 放三条文字，每条依次淡入。\n你要逐字说：‘标签缺失就像一颗已经拉开保险栓的手雷，它在提醒我们危险已经发生。’\n必须讲清：标签缺失或破损只是风险信号，不能据此判定内容物危险。\n\n第3页：使用红黄绿三色箭头和飞入动画展示以下顺序：原地隔离 → 记录容器编号和当前时间 → 上报值班主管。\n你要逐字说：‘第一步，原地隔离；第二步，一字不差地抄下编号；第三步，马上找到值班主管。’\n\n===未确认内容物前，不得移动容器。===\n\n!===\n紧急处置口诀：\n不触碰、不移动、先隔离、再上报。\n!===\n\n看到标签缺失但容器完好时，第一步应该做什么？\n?[立即打开确认 | 原地隔离并上报 | 继续使用]\n\n学员选择后，分别说明每个选项会造成的后果，并用正确选项收束到规定的处置顺序。这个答案只用于本课，不在后续复用。\n\n必须保留一个核心问题、上述三项来源事实及其顺序、完整互动及即时反馈。两个确定性内容必须原样、原结构、各出现一次。不要用另一套固定模板替代原有问题；其余具体程度按技能规则决定。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。lesson_id 固定为 L16；used_variables 和 global_variable_table 都应为空。",
+      "expected_output": "Repairs the supplied over-scripted artifact into a complete intent-led Teaching Prompt while preserving its source facts, runtime controls, deterministic content, and current-lesson feedback behavior.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object containing exactly one L16 lesson item, with empty used_variables and global_variable_table.",
+        "The repaired Teaching Prompt preserves that a missing or damaged label is only a risk signal and keeps the operational order: isolate in place, record the container number and current time, then report to the duty supervisor.",
+        "The exact deterministic line and the complete multi-line mnemonic block each occur exactly once without wording or marker changes.",
+        "The exact question and `?[立即打开确认 | 原地隔离并上报 | 继续使用]` control each occur exactly once, preserve option order, and retain immediate answer-specific feedback without a named variable.",
+        "The first non-empty Teaching Prompt line performs a teaching-start function rather than repeating the lesson title, numbering, or a page marker.",
+        "The repaired artifact removes the supplied read-aloud sentences, numbered pages, typography, percentage layout, and animation without replacing them with another concrete page or layout template."
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "Course Design Intake 和课节结构已经完成。请只生成一节纯课堂幻灯片模式的授课提示词：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白或长篇口头解释。lesson_id 固定为 L17，核心问题是‘向外部供应商发送客户数据前，如何确定合规动作？’。\n\n必须呈现的事实与关系：\n- L1 公开数据：审核后可以公开。\n- L2 内部数据：只能通过获授权的内部渠道流转。\n- L3 敏感数据：外发前需要审批，并使用获批准的加密渠道。\n- 决策顺序是：识别数据级别 → 核验接收方授权 → 选择合规通道 → 登记外发。\n\n下面是内部制度原文，必须作为独立确定性内容原样出现且只出现一次：\n外发含客户联系方式的数据前，必须完成数据分级、接收方授权核验和外发登记。\n\n下面图片已经选定并上传。必须按‘制度原文 → 图片 → 图注 → 互动’的顺序使用；图片和图注都要作为独立确定性内容原样出现且只出现一次：\n![数据分级与外发路径](https://static.example.com/training/data-export-path-v3.png)\n图：先分级，再核验授权，最后登记外发。\n\n互动必须完整保留并放在图片和图注之后：\n一份包含客户手机号的表格需要发给外部供应商，发送前最先确认什么？\n?[供应商是否催得急 | 数据级别与授权范围 | 文件是否足够美观]\n\n答案只用于本课的简短反馈状态，不在后续复用，因此不要创建命名变量。\n\n没有额外的页数、标题、要点数量、视觉层级、字号、颜色、坐标、百分比布局或动画要求。结果必须足以生成可直接投屏的课堂幻灯片；具体文案和构图程度按技能规则决定。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
+      "expected_output": "Produces a projection-ready pure-classroom-slide Teaching Prompt that preserves regulated text, image order, and interaction behavior while delegating non-critical slide copy and composition to the runtime LLM.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object containing exactly one L17 lesson item, with empty used_variables and global_variable_table.",
+        "The Teaching Prompt preserves all three classification rules and the decision sequence from level identification through authorization, channel selection, and external-transfer registration.",
+        "The exact deterministic policy line, deterministic image line, and deterministic caption line each occur exactly once and remain in policy-before-image-before-caption order.",
+        "The exact question and `?[供应商是否催得急 | 数据级别与授权范围 | 文件是否足够美观]` control each occur exactly once after the caption, preserve option order, and produce concise current-lesson feedback without a named variable.",
+        "The artifact requests slide-facing projected content only and does not positively instruct the runtime LLM to narrate or provide long spoken explanatory paragraphs.",
+        "The Teaching Prompt introduces no fixed slide count, page-title inventory, uniform point quota, concrete font size, color value, pixel coordinate, percentage split, animation, or element-by-element layout prescription."
       ]
     }
   ]

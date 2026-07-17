@@ -32,6 +32,11 @@ For a pasted content-only Prompt, run every check observable from the body and r
 ## Teaching Prompt Behavior
 
 - Each lesson resolves one core question through a complete loop and valid teaching pattern under `pedagogy.md`.
+- The Teaching Prompt states executable intent and must-cover content without prewriting ordinary lecture prose or surface formatting that the runtime LLM can decide.
+- No direction remains at the empty-outline level of "explain the concept", "add an example", or "ask a question" without the content, purpose, boundaries, or expected effect needed to execute it.
+- No unnecessary transcript, fixed slide count, ready-made title sequence, uniform point quota, font or color choice, pixel coordinate, or animation constrains adaptive delivery.
+- Removing over-scripted wording or unnecessary layout rules does not remove the core question, intended understanding, critical facts and boundaries, material teaching order, interaction purpose and visible effect, or closing result.
+- Every resolved constraint island remains complete and exact under its owning MarkdownFlow authoring, source-preservation, or image-authoring rule; surrounding teaching remains adaptive.
 - The first non-empty line teaches directly instead of repeating a heading or structure label.
 - A heading used to teach Markdown syntax, a code comment beginning with `#`, or a heading explicitly permitted by the author is flagged for review rather than automatically deleted.
 - Interaction presence, placement, selection type, feedback effect, and lesson close match the resolved interaction policy.
