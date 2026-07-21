@@ -80,7 +80,7 @@ Use this file to materialize one course-wide artifact from the six-section templ
 
 | Placeholder | Source |
 | --- | --- |
-| Role identity (`You are XXX`) | `course_author_name` from Course Design Intake. When it is empty, omit this complete list item instead of filling the placeholder. |
+| Role identity (`You are XXX`) | `course_author_name` from Course Design Intake. When it is empty, omit the corresponding list item in the Fillable Template instead of filling the placeholder. |
 | Specialty (`You specialize in XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
 | Teaching field (`the field of XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
 | Course name (`The current course is *XXX*`) | First heading in `README.md`. |
