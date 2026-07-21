@@ -210,11 +210,13 @@
     {
       "id": 18,
       "prompt": "我要把一份门店新人培训材料做成标准 AI 一对一自学课程。使用场景已经确定为标准一对一授课，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有 teaching_prompt_personalization_level 还没决定。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Pauses authoring to ask one localized five-level Teaching Prompt personalization question instead of guessing a level or starting downstream work.",
+      "expected_output": "Pauses authoring to ask one localized, effect-aware five-level Teaching Prompt personalization question instead of guessing a level or starting downstream work.",
       "files": [],
       "expectations": [
         "The response asks for the missing teaching_prompt_personalization_level before Segmentation, Orchestration, Teaching Prompt generation, or deployment.",
         "The question presents exactly five ordered choices numbered 1 through 5, with level 1 described as the most deterministic or concrete and level 5 as the most personalized or adaptive.",
+        "Before requesting the choice, the response explains that this answer controls how much learner-facing expression the author fixes in advance versus how much AI-Shifu may adapt to available learner context; every level description states its practical author- or learner-visible effect rather than showing only a number and name.",
+        "The explanation says that the level uses only learner context already available and never authorizes new context collection, interactions, variables, or branches.",
         "The choices make the progression observable only in content expression: higher levels emphasize intent for the same title, ordinary explanation, already-required example identity and detail, transition, and feedback slots while every level keeps the same teaching sequence, slide count, slide order and placement, the teaching purpose of each slide and content slot, required example-slot presence and placement, content grouping, semantic layout, and interaction, image, and close placement.",
         "The localized question describes the invariant meaning as each slide's and content slot's 教学目的, and does not call it instructional role or 教学角色.",
         "The response reuses the supplied usage scenario, interaction policy, Listen Mode, and structure choices without asking them again or silently selecting a personalization level."
@@ -262,6 +264,56 @@
         "Because delivery is slide-only and no level was provided, the response normalizes teaching_prompt_personalization_level to the integer 1 and identifies it as High determinism for content expression, not as permission to change teaching sequence, slide count, slide order or placement, the teaching purpose of any slide or content slot, content grouping, semantic layout, or interaction, image, and close placement.",
         "The response reuses the supplied usage scenario, interaction policy, Listen Mode, and structure choices without asking them again.",
         "The workflow does not start Segmentation, Orchestration, Teaching Prompt generation, or deployment."
+      ]
+    },
+    {
+      "id": 22,
+      "prompt": "我要把一份门店新人培训材料做成课程。teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有使用场景还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
+      "expected_output": "Asks only for the missing usage scenario and explains the learner-visible effect of personalized one-on-one study, instructor-paced classroom slides, and supporting both experiences.",
+      "files": [],
+      "expectations": [
+        "The response asks exactly one current intake question about the usage scenario before any downstream authoring or deployment work.",
+        "Personalized AI one-on-one self-study is described by its concrete effect: AI-Shifu guides one learner directly and may adapt ordinary explanation or feedback to learner context already available.",
+        "Interactive classroom slides are described as projection-ready content paced by a human instructor, and the combined option explicitly prepares the course for both learner experiences.",
+        "The response does not show only the three option names, add a separate sales pitch, or promise an unsupported outcome.",
+        "The supplied personalization, interaction, Listen Mode, and structure answers are reused without being asked again."
+      ]
+    },
+    {
+      "id": 23,
+      "prompt": "我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，Listen Mode 关闭，结构固定为 1 章 3 节；只有互动用途还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
+      "expected_output": "Asks only what interactions should accomplish and explains the teaching effect of learner-context collection, pre-content thinking, lesson-end self-check, and choosing no interactions.",
+      "files": [],
+      "expectations": [
+        "The response asks exactly one current intake question about interaction purpose before any downstream authoring or deployment work.",
+        "Learner-context collection is explained as occurring at an early course or module point and giving later teaching selected context to use; pre-content thinking or misconception activation is explained as giving the following explanation an initial judgment to refine.",
+        "Lesson-end self-check is explained as helping the learner check or consolidate core understanding.",
+        "Choosing no interactions is explained as replacing learner-answer controls with worked applications, model-led demonstrations, or consolidation rather than leaving a teaching gap.",
+        "Every option has a practical effect description, and the supplied scenario, personalization, Listen Mode, and structure answers are reused without being asked again."
+      ]
+    },
+    {
+      "id": 24,
+      "prompt": "我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，结构固定为 1 章 3 节；只有 Listen Mode 还没决定。请先继续 Course Design Intake，这一轮请询问我，不要直接采用默认值，也不要开始分段、生成授课提示词或部署。",
+      "expected_output": "Asks only whether to enable Listen Mode and explains both the AI voice with slides experience and its additional AI-Shifu credit consumption.",
+      "files": [],
+      "expectations": [
+        "The response asks exactly one current intake question about Listen Mode before any downstream authoring or deployment work.",
+        "Enabling Listen Mode is explained as adding AI voice with slides and consuming more AI-Shifu credits.",
+        "Disabling Listen Mode is explained as leaving the course available without Listen Mode and avoiding that additional credit consumption.",
+        "The response does not show only enabled and disabled labels or silently apply the fallback, and it reuses the supplied scenario, personalization, interaction, and structure answers."
+      ]
+    },
+    {
+      "id": 25,
+      "prompt": "我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，Listen Mode 关闭；只有章数和节数还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
+      "expected_output": "Asks only for chapter and lesson counts after explaining how the answer changes lesson grouping, course granularity, and the amount of material each single-question lesson must resolve without changing required source coverage.",
+      "files": [],
+      "expectations": [
+        "The response asks exactly one current intake question about chapter and lesson counts before any downstream authoring or deployment work.",
+        "Before asking for numbers, it explains that chapter count changes how lessons are grouped into broader topics, while fewer lessons concentrate more material into each single-question lesson and more lessons distribute it across more single-question units.",
+        "The response does not invent fixed count options or imply that either choice may drop required material or break source order.",
+        "The supplied scenario, personalization, interaction, and Listen Mode answers are reused without being asked again."
       ]
     }
   ]
