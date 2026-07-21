@@ -1563,7 +1563,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
 
         self.assertIn("explicit text-only constraint", lesson_loop)
-        self.assertIn("Pure classroom slides instead begin", lesson_loop)
+        self.assertIn("Pure classroom slides begin directly", lesson_loop)
         self.assertIn("Explicit text-only constraint", visual_text)
         self.assertIn("Give complete teaching direction", visual_text)
         self.assertIn("selected personalization level", visual_text)
@@ -1577,6 +1577,158 @@ class CourseCreatorContractTests(unittest.TestCase):
             visual_text,
         )
         self.assertNotIn("`viewpoint_check`", self.pedagogy)
+
+    def test_every_slide_using_lesson_starts_with_cover_without_changing_mode_rules(self):
+        lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
+        visual_text = markdown_section(
+            self.pedagogy, "Visual-Text Coordination"
+        )
+        standard_row = next(
+            line
+            for line in visual_text.splitlines()
+            if line.startswith("| Standard visual-text teaching |")
+        )
+        pure_slides_row = next(
+            line
+            for line in visual_text.splitlines()
+            if line.startswith("| Pure slides |")
+        )
+        materialization = markdown_section(
+            self.teaching_prompt, "Lesson Materialization"
+        )
+        validation = markdown_section(self.teaching_prompt, "Validation")
+        lesson_schema = markdown_section(self.data_contracts, "Lesson Schema")
+        artifact_boundaries = markdown_section(
+            self.optimization_checklist, "Artifact Boundaries"
+        )
+        checklist = markdown_section(
+            self.optimization_checklist, "Teaching Prompt Behavior"
+        )
+
+        for fragment in (
+            "whenever a lesson creates one or more slides in any delivery mode",
+            "make its slide 1 a dedicated cover",
+            "exact `lesson_title`",
+            "Keep objectives, interactions, answers, outlines, and other substantive "
+            "teaching content off the cover",
+            "Count the cover in the exact slide count and structural signature",
+            "Apart from occupying slide 1, the cover follows the selected delivery "
+            "mode's existing slide-text relationship",
+            "standalone images without creating any slide does not gain a cover",
+        ):
+            self.assertIn(fragment, lesson_loop)
+
+        for fragment in (
+            "When any slide is created",
+            "reserve slide 1 for the required cover",
+            "place it after the brief text lead-in",
+            "treat it as the first visual in the same visual-and-explanation cadence",
+            "Begin substantive slides at slide 2 after the cover's normal following "
+            "explanation",
+        ):
+            self.assertIn(fragment, standard_row)
+
+        for fragment in (
+            "Make slide 1 the required cover",
+            "displaying the lesson item's exact `lesson_title`",
+            "begin substantive teaching and establish the objective on slide 2",
+            "Include the cover in the exact slide count",
+            "Do not instruct the Teaching Agent to narrate",
+        ):
+            self.assertIn(fragment, pure_slides_row)
+
+        for surface in (materialization, validation, checklist):
+            self.assertIn("slide 1", surface)
+            self.assertIn("required cover", surface)
+            self.assertIn("exact `lesson_title`", surface)
+            self.assertIn("substantive teaching content off", surface)
+
+        self.assertIn("Every Teaching Prompt that creates one or more slides", lesson_schema)
+        self.assertIn("required slide-1 cover", lesson_schema)
+        self.assertIn("every Teaching Prompt that creates slides", artifact_boundaries)
+        self.assertIn(
+            "otherwise record title equality as `not-assessed`",
+            checklist,
+        )
+        self.assertIn("standard teaching branch of combined delivery", lesson_loop)
+        self.assertIn("standalone-image-only delivery", materialization)
+        self.assertNotIn("required cover", self.course_prompt.casefold())
+
+        evals_data = json.loads(
+            (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
+        )
+        evals_by_id = {case["id"]: case for case in evals_data["evals"]}
+        self.assertIn(
+            "exact equality with lesson_title is recorded as not-assessed",
+            " ".join(evals_by_id[4]["expectations"]),
+        )
+        standard_and_pure = " ".join(evals_by_id[10]["expectations"])
+        self.assertIn("standard Teaching Prompt", standard_and_pure)
+        self.assertIn("first slide then serves as the dedicated cover", standard_and_pure)
+        self.assertIn("receives the normal concise explanation", standard_and_pure)
+        self.assertIn("no Teaching Agent narration", standard_and_pure)
+        self.assertIn("or paired explanatory text", standard_and_pure)
+        self.assertIn(
+            "brief teaching paragraph rather than a heading, cover, slide, image",
+            standard_and_pure,
+        )
+        self.assertIn(
+            "uses slide 1 as a dedicated cover",
+            " ".join(evals_by_id[15]["expectations"]),
+        )
+        self.assertIn(
+            "existing first slide as the required cover",
+            evals_by_id[16]["expected_output"],
+        )
+        self.assertIn("fixed four-slide", evals_by_id[19]["expected_output"])
+        self.assertIn("required lesson cover", evals_by_id[17]["expected_output"])
+        self.assertIn("固定五页结构", evals_by_id[20]["prompt"])
+        self.assertIn("fixed five-slide", evals_by_id[20]["expected_output"])
+        self.assertIn("结果共四张幻灯片", evals_by_id[26]["prompt"])
+        self.assertNotIn("不要增加封面", evals_by_id[26]["prompt"])
+        self.assertIn("required lesson cover", evals_by_id[26]["expected_output"])
+        self.assertIn("two pure-classroom-slide lessons", evals_by_id[28]["expected_output"])
+        multi_lesson_expectations = " ".join(evals_by_id[28]["expectations"])
+        for fragment in (
+            "Each lesson uses slide 1 as its own dedicated cover",
+            "‘先判断数据级别’",
+            "‘再决定外发动作’",
+            "one shared course cover does not satisfy either lesson requirement",
+            "substantive teaching and the lesson objective begin on slide 2",
+            "without Teaching Agent narration, paired explanatory text",
+        ):
+            self.assertIn(fragment, multi_lesson_expectations)
+        self.assertIn("adds no slide", " ".join(evals_by_id[14]["expectations"]))
+        self.assertIn(
+            "standalone-image-only lesson",
+            evals_by_id[29]["expected_output"],
+        )
+        self.assertIn(
+            "does not add a cover",
+            " ".join(evals_by_id[29]["expectations"]),
+        )
+        standard_cover_explanation_fragments = {
+            10: "receives the normal concise explanation",
+            15: "normal concise explanation appears before substantive slides",
+            16: "receives the normal following explanation",
+            19: "normal following explanation appears before slide 2",
+            26: "with its following explanation before slide 2",
+        }
+        for eval_id, fragment in standard_cover_explanation_fragments.items():
+            self.assertIn(fragment, " ".join(evals_by_id[eval_id]["expectations"]))
+
+        for eval_id in (10, 17, 20, 28):
+            expectations = " ".join(evals_by_id[eval_id]["expectations"])
+            self.assertRegex(expectations, r"Teaching Agent (?:narration|to narrate)")
+
+        page_count_expectations = {
+            16: "exactly three slides",
+            19: "exactly four slides",
+            20: "exactly five slides",
+            26: "exactly four slides",
+        }
+        for eval_id, fragment in page_count_expectations.items():
+            self.assertIn(fragment, " ".join(evals_by_id[eval_id]["expectations"]))
 
     def test_teaching_prompt_owns_five_personalization_levels(self):
         lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
@@ -1593,9 +1745,12 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
 
         self.assertIn(
-            "first substantive slide rather than adding a cover, decorative page, "
-            "or objective-only page",
+            "first substantive slide after the cover",
             lesson_loop,
+        )
+        self.assertIn(
+            "adaptable title wording never includes the cover's exact `lesson_title`",
+            levels,
         )
         for path in COURSE_CREATOR_REFERENCES.rglob("*.md"):
             self.assertNotIn(
@@ -1652,9 +1807,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn(
             "move content between slides; change any content slot's or slide's "
-            "teaching purpose; change content grouping, visual hierarchy, or "
-            "layout; alter the teaching sequence; or move an interaction, image, "
-            "feedback state, or close",
+            "teaching purpose; change content grouping, visual hierarchy, or layout; "
+            "alter the teaching sequence; or move an interaction, image, feedback "
+            "state, or close",
             normalized_levels,
         )
         level_rows = {}
@@ -1823,8 +1978,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("word-count or sentence-count quota", lesson_loop)
 
         self.assertIn(
-            "brief text lead-in → substantive visual unit → concise but complete "
-            "text explanation",
+            "brief text lead-in → visual unit → concise but complete text explanation",
             visual_text,
         )
         self.assertIn(
@@ -1835,7 +1989,19 @@ class CourseCreatorContractTests(unittest.TestCase):
             "A visual unit is one slide or one standalone image",
             visual_text,
         )
-        self.assertIn("slide containing an image still counts as one", visual_text)
+        self.assertIn(
+            "slide containing an image still counts as one visual unit",
+            visual_text,
+        )
+        self.assertIn(
+            "the required cover is the first visual unit in this cadence",
+            visual_text,
+        )
+        self.assertIn(
+            "If every visual unit is a standalone image and no slide is created, "
+            "do not manufacture a cover",
+            visual_text,
+        )
         self.assertIn("Do not place two visual units back to back", visual_text)
         self.assertIn(
             "defer several visuals' explanations to one later block",
@@ -1859,12 +2025,13 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("`?[Continue]`", visual_text)
 
         self.assertIn("one brief learner-visible text lead-in", materialization)
-        self.assertIn("at least one substantive visual-and-explanation pair", materialization)
+        self.assertIn("followed by visual-and-explanation pairs", materialization)
+        self.assertIn("including the required slide-1 cover", materialization)
         self.assertIn("final explanation carrying the close", materialization)
         self.assertIn("no consecutive visual units", validation)
         self.assertIn(
-            "one concise but complete explanation after every visual and before "
-            "the next",
+            "one concise but complete explanation after every visual and before the "
+            "next",
             validation,
         )
         self.assertIn("final explanation that also performs the close", validation)
@@ -1894,10 +2061,13 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("feedback or explanatory effects", authoring_validation)
 
         for defect in (
-            "visual opening",
+            "missing cover",
+            "cover outside slide 1",
+            "substantive teaching placed on the cover",
+            "visual opening before the brief lead-in",
             "consecutive visual units",
             "several visuals followed by one delayed explanation",
-            "cover or decorative or objective-only page",
+            "second cover or decorative or objective-only page",
             "unpaired learner-visible text turn after the lead-in",
         ):
             self.assertIn(defect, checklist)
@@ -1906,7 +2076,11 @@ class CourseCreatorContractTests(unittest.TestCase):
             "explanatory text",
             checklist,
         )
-        self.assertIn("explicit text-only delivery uses no visual units", checklist)
+        self.assertIn(
+            "Explicit text-only delivery and standalone-image-only delivery "
+            "create no slide and therefore do not gain a cover",
+            checklist,
+        )
 
         non_owners = {
             "Course Prompt": self.course_prompt,
@@ -1953,9 +2127,10 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("explicit text-only constraint overrides image use", image_row)
         self.assertIn("Do not instruct the Teaching Agent to narrate", pure_slides_row)
         self.assertIn("omit long spoken paragraphs", pure_slides_row)
+        self.assertIn("Make slide 1 the required cover", pure_slides_row)
+        self.assertIn("displaying the lesson item's exact `lesson_title`", pure_slides_row)
 
         deprecated_surface_rules = {
-            "slide-style visual cover",
             "every core concept paired with a slide",
             "2–4 short bullets",
             "overrides the default slide pairing",

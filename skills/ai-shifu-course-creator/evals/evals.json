@@ -36,14 +36,15 @@
     },
     {
       "id": 4,
-      "prompt": "只审查我贴出来的这节 MarkdownFlow，不重做课程结构。重点检查互动语法、变量是否滥用，以及开头有没有重复课节标题。",
+      "prompt": "只审查我贴出来的这节 MarkdownFlow，不重做课程结构。重点检查互动语法、变量是否滥用，以及开头的课节标题究竟是含幻灯片课节所需的第 1 张封面，还是封面之外重复出现的结构标题。",
       "expected_output": "Routes to the focused optimization path with prompt contracts, without loading unrelated generation or segmentation workflows.",
       "files": [],
       "expectations": [
         "The workflow loads prompt-contracts.md and optimization-workflow.md.",
         "The workflow does not authenticate or resolve a platform course for this pasted-snippet-only audit.",
         "It does not run Segmentation or the Course Design Intake.",
-        "The audit covers interaction syntax, variable scope, and structural metadata."
+        "The audit covers interaction syntax, variable scope, and structural metadata.",
+        "When the supplied lesson creates slides, the audit treats the slide-1 title block as the required cover rather than a duplicate heading, while still flagging a missing or misplaced cover and unneeded structural-title repetition outside it; because no lesson metadata is supplied, exact equality with lesson_title is recorded as not-assessed rather than inferred."
       ]
     },
     {
@@ -106,15 +107,15 @@
     },
     {
       "id": 10,
-      "prompt": "Course Design Intake 已完成，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled。同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。请直接给出两种结构化生成结果：标准 AI 一对一授课与纯课堂幻灯片，并说明已提供图片的理解、上传和嵌入处理（无需真实上传）。标准结果不是纯文字模式，必须保留概念图和作者图片这两个实质视觉单元。两种结果都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
-      "expected_output": "Applies the standard brief-text and alternating visual-explanation cadence to the two required visuals while preserving the separate slide-only contract and keeping raw graphics code out of both prompts.",
+      "prompt": "Course Design Intake 已完成，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，lesson_title 固定为“风险由概率与影响共同决定”。同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。请直接给出两种结构化生成结果：标准 AI 一对一授课与纯课堂幻灯片，并说明已提供图片的理解、上传和嵌入处理（无需真实上传）。标准结果不是纯文字模式，必须把二维矩阵作为幻灯片，并保留作者图片作为另一个实质视觉单元。两种结果都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
+      "expected_output": "Makes slide 1 the lesson cover in both standard and pure classroom-slide results while preserving each mode's existing slide-text relationship: standard visual-and-explanation pairing and pure slide-facing delivery without narration.",
       "files": [],
       "expectations": [
-        "The standard Teaching Prompt makes the first learner-visible block one brief teaching paragraph rather than a heading, cover, slide, image, or word-count-constrained preamble.",
-        "The standard result uses both required substantive visual units—the probability-by-impact matrix and the author-provided team image—and immediately follows each one with its own concise but complete textual explanation before another visual appears; it contains no consecutive visuals, unpaired text turn after the lead-in, or delayed pooled explanation.",
+        "The standard Teaching Prompt makes the first learner-visible block one brief teaching paragraph rather than a heading, cover, slide, image, or word-count-constrained preamble; its first slide then serves as the dedicated cover, displays the exact lesson_title ‘风险由概率与影响共同决定’, and receives the normal concise explanation required after every visual before slide 2 appears.",
+        "The standard result uses both required substantive visual units—the probability-by-impact matrix slide and the author-provided team image—and immediately follows each one with its own concise but complete textual explanation before another visual appears; after the lead-in it contains no consecutive visuals, unpaired text turn, or delayed pooled explanation.",
         "The matrix explanation develops how probability and impact jointly determine risk, while the author-image explanation supplies the context, inference, or practical application needed to interpret the team's annotations; neither merely repeats visible labels or the caption, and the final explanation also closes with a summary, decision checkpoint, or action.",
-        "The standard result fixes the lead-in, both visual-explanation pairs, their adjacency, and the close independently of teaching_prompt_personalization_level, while leaving only ordinary expression inside those slots adaptable; it conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
-        "The pure classroom-slide result remains projection-ready with no Teaching Agent narration or required paired explanatory text after each visual, while fixing its complete slide count, order, placement, teaching purpose for each slide and content slot, content grouping, semantic layout, image placement, and close placement.",
+        "The standard result fixes the lead-in, required cover, every visual-explanation pair and its adjacency, and the close independently of teaching_prompt_personalization_level, while leaving only ordinary expression inside adaptable slots; it conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
+        "The pure classroom-slide result starts with a dedicated cover that displays its lesson_title, begins substantive teaching on slide 2, and remains projection-ready with no Teaching Agent narration or paired explanatory text; the cover is included in its fixed slide count, order, placement, and structural signature, with every slide and content slot's teaching purpose, content grouping, semantic layout, image placement, and close placement fixed.",
         "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
       ]
     },
@@ -127,7 +128,7 @@
         "The Teaching Prompt itself encodes the misconception-repair sequence, including the explanation and case practice.",
         "The Course Prompt keeps all six canonical sections, and its Teaching Techniques section explicitly follows the current Teaching Prompt without adding, replacing, or reordering pedagogy.",
         "The restrained, clear, and warm tone appears as a course-wide style adjustment without changing the Teaching Prompt's lesson flow.",
-        "The Course Prompt preserves the canonical course-level behavior rules while letting the Teaching Prompt determine whether a slide requires accompanying text.",
+        "The Course Prompt preserves the canonical course-level behavior rules while letting the Teaching Prompt own the selected delivery mode's slide-text relationship, including whether its slide-1 cover participates in normal visual-and-explanation pairing.",
         "Both artifacts are Prompts addressed to the Teaching Agent rather than scripts or finished learner-facing lectures.",
         "Second-person forms in any language, including English you/your and Chinese 你/您, refer only to the Teaching Agent in Prompt instructions; learner-visible text inside a MarkdownFlow ?[] interaction or standalone deterministic output may address the learner in the second person."
       ]
@@ -171,7 +172,7 @@
     },
     {
       "id": 15,
-      "prompt": "Course Design Intake、分段和教学模式已经确定，teaching_prompt_personalization_level=5。请只生成一节标准 AI 授课的授课提示词，不生成课程提示词、不部署。lesson_id 固定为 L15，核心问题是‘退款审核人员如何区分风险信号与欺诈结论？’。\n\n来源与不可变约束：\n1. 账号信息不一致和短时间内多设备登录都只是风险信号，不能单独证明欺诈。\n2. 教学中的处置顺序必须是：核验身份 → 留存证据 → 决定处置。\n3. 下面制度阈值原句必须作为独立确定性内容原样出现且只出现一次：两个及以上风险信号同时出现时，必须在 15 分钟内上报。\n4. 下面固定金句必须作为独立确定性内容原样出现且只出现一次：先验证，再处置；先留证，再定责。\n\n课内单选互动必须使用下面完整提问和控件，二者各出现一次且顺序不变：\n这个案例当前最应该先做什么？\n?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]\n\n该答案只在本课用于即时反馈：针对每个选项解释其后果，并把正确选择重新连回‘风险信号不是欺诈结论’。后续课节和课程提示词都不会使用这个答案，因此不要创建命名变量。\n\n没有其他固定文案或视觉样式要求。请按技能的现行规则固定完整教学顺序和幻灯片结构，包括页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及互动和收束的位置；level=5 只决定这些固定槽位内普通标题、讲解、例子细节、过渡和反馈措辞的预写程度。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
+      "prompt": "Course Design Intake、分段和教学模式已经确定，teaching_prompt_personalization_level=5。请只生成一节标准 AI 授课的授课提示词，不生成课程提示词、不部署。lesson_id 固定为 L15，lesson_title 固定为‘先核验，再判断’，核心问题是‘退款审核人员如何区分风险信号与欺诈结论？’。\n\n来源与不可变约束：\n1. 账号信息不一致和短时间内多设备登录都只是风险信号，不能单独证明欺诈。\n2. 教学中的处置顺序必须是：核验身份 → 留存证据 → 决定处置。\n3. 下面制度阈值原句必须作为独立确定性内容原样出现且只出现一次：两个及以上风险信号同时出现时，必须在 15 分钟内上报。\n4. 下面固定金句必须作为独立确定性内容原样出现且只出现一次：先验证，再处置；先留证，再定责。\n\n课内单选互动必须使用下面完整提问和控件，二者各出现一次且顺序不变：\n这个案例当前最应该先做什么？\n?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]\n\n该答案只在本课用于即时反馈：针对每个选项解释其后果，并把正确选择重新连回‘风险信号不是欺诈结论’。后续课节和课程提示词都不会使用这个答案，因此不要创建命名变量。\n\n没有其他固定文案或视觉样式要求。请按技能的现行规则固定完整教学顺序和幻灯片结构，包括页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及互动和收束的位置；level=5 只决定这些固定槽位内普通标题、讲解、例子细节、过渡和反馈措辞的预写程度。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
       "expected_output": "Produces one runnable level-5 standard-mode Teaching Prompt with a complete fixed teaching and slide skeleton while leaving non-critical content expression inside each fixed slot to the Teaching Agent.",
       "files": [],
       "expectations": [
@@ -180,27 +181,28 @@
         "The exact standalone deterministic lines `===两个及以上风险信号同时出现时，必须在 15 分钟内上报。===` and `===先验证，再处置；先留证，再定责。===` each occur exactly once.",
         "The exact question and `?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]` control each occur exactly once, preserve option order, and lead to immediate answer-specific feedback.",
         "used_variables and global_variable_table are empty, and the Teaching Prompt contains no named assignment or learner-answer variable reference.",
+        "The Teaching Prompt uses slide 1 as a dedicated cover displaying the exact lesson_title ‘先核验，再判断’, keeps substantive content off it, and treats it as the first visual in the standard mode's existing visual-and-explanation cadence, so its normal concise explanation appears before substantive slides start at slide 2 without adding another slide.",
         "The Teaching Prompt applies teaching_prompt_personalization_level 5 by fixing its slide count, order, placement, the teaching purpose of each slide and content slot, content grouping, semantic layout, interaction placement, and close placement while expressing ordinary titles, explanations, example details, transitions, and feedback as executable intent rather than a transcript; it does not add concrete typography, color, coordinates, animation, or a uniform point quota."
       ]
     },
     {
       "id": 16,
-      "prompt": "teaching_prompt_personalization_level=5。请只修复下面这份已经完成的授课提示词。不要重做课程结构，不生成课程提示词，不部署，也不要输出审计报告。它现在把普通讲解和幻灯片细节写得像逐字稿与排版施工单；请按技能的现行规则作最小修复，同时保持教学意图、事实、顺序、互动效果和收束结果完整、可运行。\n\n原授课提示词：\n\n# 第 3 节：异常容器处置\n\n第1页：使用 16:9 深蓝色背景，标题‘异常容器处置’居中，标题 44pt，副标题 24pt。\n你要逐字说：‘大家把目光看向屏幕左侧那只鲜红色警报灯。现在，请和我一起深呼吸三秒。’\n\n第2页：左 40% 放容器照片，右 60% 放三条文字，每条依次淡入。\n你要逐字说：‘标签缺失就像一颗已经拉开保险栓的手雷，它在提醒我们危险已经发生。’\n必须讲清：标签缺失或破损只是风险信号，不能据此判定内容物危险。\n\n第3页：使用红黄绿三色箭头和飞入动画展示以下顺序：原地隔离 → 记录容器编号和当前时间 → 上报值班主管。\n你要逐字说：‘第一步，原地隔离；第二步，一字不差地抄下编号；第三步，马上找到值班主管。’\n\n===未确认内容物前，不得移动容器。===\n\n!===\n紧急处置口诀：\n不触碰、不移动、先隔离、再上报。\n!===\n\n看到标签缺失但容器完好时，第一步应该做什么？\n?[立即打开确认 | 原地隔离并上报 | 继续使用]\n\n学员选择后，分别说明每个选项会造成的后果，并用正确选项收束到规定的处置顺序。这个答案只用于本课，不在后续复用。\n\n必须保留一个核心问题、上述三项来源事实及其顺序、完整互动及即时反馈。两个确定性内容必须原样、原结构、各出现一次。不要用另一套固定模板替代原有问题；其余具体程度按技能规则决定。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。lesson_id 固定为 L16；used_variables 和 global_variable_table 都应为空。",
-      "expected_output": "Repairs the supplied over-scripted artifact into a complete level-5 Teaching Prompt while preserving its three-slide teaching skeleton, source facts, runtime controls, deterministic content, and current-lesson feedback behavior.",
+      "prompt": "teaching_prompt_personalization_level=5。请只修复下面这份已经完成的授课提示词。不要重做课程结构，不生成课程提示词，不部署，也不要输出审计报告。它现在把普通讲解和幻灯片细节写得像逐字稿与排版施工单；请按技能的现行规则作最小修复，同时保持教学意图、事实、顺序、互动效果和收束结果完整、可运行。\n\n原授课提示词：\n\n# 第 3 节：异常容器处置\n\n第1页：使用 16:9 深蓝色背景，标题‘异常容器处置’居中，标题 44pt，副标题 24pt。\n你要逐字说：‘大家把目光看向屏幕左侧那只鲜红色警报灯。现在，请和我一起深呼吸三秒。’\n\n第2页：左 40% 放容器照片，右 60% 放三条文字，每条依次淡入。\n你要逐字说：‘标签缺失就像一颗已经拉开保险栓的手雷，它在提醒我们危险已经发生。’\n必须讲清：标签缺失或破损只是风险信号，不能据此判定内容物危险。\n\n第3页：使用红黄绿三色箭头和飞入动画展示以下顺序：原地隔离 → 记录容器编号和当前时间 → 上报值班主管。\n你要逐字说：‘第一步，原地隔离；第二步，一字不差地抄下编号；第三步，马上找到值班主管。’\n\n===未确认内容物前，不得移动容器。===\n\n!===\n紧急处置口诀：\n不触碰、不移动、先隔离、再上报。\n!===\n\n看到标签缺失但容器完好时，第一步应该做什么？\n?[立即打开确认 | 原地隔离并上报 | 继续使用]\n\n学员选择后，分别说明每个选项会造成的后果，并用正确选项收束到规定的处置顺序。这个答案只用于本课，不在后续复用。\n\n必须保留一个核心问题、上述三项来源事实及其顺序、完整互动及即时反馈。两个确定性内容必须原样、原结构、各出现一次。不要用另一套固定模板替代原有问题；其余具体程度按技能规则决定。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。lesson_id 固定为 L16，lesson_title 固定为‘异常容器处置’；used_variables 和 global_variable_table 都应为空。",
+      "expected_output": "Repairs the supplied over-scripted artifact into a complete level-5 Teaching Prompt, recognizes its existing first slide as the required cover, and preserves the three-slide skeleton, source facts, runtime controls, deterministic content, and current-lesson feedback behavior.",
       "files": [],
       "expectations": [
         "The output is a parseable JSON object containing exactly one L16 lesson item, with empty used_variables and global_variable_table.",
         "The repaired Teaching Prompt preserves that a missing or damaged label is only a risk signal and keeps the operational order: isolate in place, record the container number and current time, then report to the duty supervisor.",
         "The exact deterministic line and the complete multi-line mnemonic block each occur exactly once without wording or marker changes.",
         "The exact question and `?[立即打开确认 | 原地隔离并上报 | 继续使用]` control each occur exactly once, preserve option order, and retain immediate answer-specific feedback without a named variable.",
-        "The repaired artifact retains exactly three slides in the supplied order and keeps each slide's teaching purpose, semantic grouping, and sequence: orientation, risk-signal explanation, then the operational sequence followed by deterministic content, interaction, feedback, and close.",
+        "The repaired artifact retains exactly three slides rather than adding another cover: slide 1 becomes the dedicated cover displaying the exact lesson_title ‘异常容器处置’ without substantive teaching content and receives the normal following explanation required by standard visual-text cadence before slide 2, while slides 2 and 3 preserve the risk-signal explanation and operational sequence followed by deterministic content, interaction, feedback, and close.",
         "At teaching_prompt_personalization_level 5, the repair replaces supplied read-aloud sentences with executable expression intent and removes concrete typography, exact percentage sizing, color styling, and animation, but it does not remove or rearrange the three-slide skeleton, content grouping, semantic layout, interaction placement, or close placement."
       ]
     },
     {
       "id": 17,
       "prompt": "Course Design Intake 和课节结构已经完成，teaching_prompt_personalization_level=5。请只生成一节纯课堂幻灯片模式的授课提示词：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白或长篇口头解释。lesson_id 固定为 L17，核心问题是‘向外部供应商发送客户数据前，如何确定合规动作？’。\n\n必须呈现的事实与关系：\n- L1 公开数据：审核后可以公开。\n- L2 内部数据：只能通过获授权的内部渠道流转。\n- L3 敏感数据：外发前需要审批，并使用获批准的加密渠道。\n- 决策顺序是：识别数据级别 → 核验接收方授权 → 选择合规通道 → 登记外发。\n\n下面是内部制度原文，必须作为独立确定性内容原样出现且只出现一次：\n外发含客户联系方式的数据前，必须完成数据分级、接收方授权核验和外发登记。\n\n下面图片已经选定并上传。必须按‘制度原文 → 图片 → 图注 → 互动’的顺序使用；图片和图注都要作为独立确定性内容原样出现且只出现一次：\n![数据分级与外发路径](https://static.example.com/training/data-export-path-v3.png)\n图：先分级，再核验授权，最后登记外发。\n\n互动必须完整保留并放在图片和图注之后：\n一份包含客户手机号的表格需要发给外部供应商，发送前最先确认什么？\n?[供应商是否催得急 | 数据级别与授权范围 | 文件是否足够美观]\n\n答案只用于本课的简短反馈状态，不在后续复用，因此不要创建命名变量。\n\n没有额外的固定文案或视觉样式要求。结果必须足以生成可直接投屏的课堂幻灯片；请固定完整教学顺序和幻灯片结构，包括页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及制度、图片、图注、互动和收束的位置。level=5 只开放这些固定槽位内的普通标题、解释、例子细节、过渡和反馈措辞。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
-      "expected_output": "Produces a projection-ready level-5 pure-classroom-slide Teaching Prompt with a complete fixed teaching and slide skeleton that preserves regulated text, image order, and interaction behavior while delegating only ordinary content expression inside fixed slots to the Teaching Agent.",
+      "expected_output": "Produces a projection-ready level-5 pure-classroom-slide Teaching Prompt whose first slide is the required lesson cover and whose complete fixed teaching and slide skeleton preserves regulated text, image order, interaction behavior, and the existing no-narration delivery rule.",
       "files": [],
       "expectations": [
         "The output is a parseable JSON object containing exactly one L17 lesson item, with empty used_variables and global_variable_table.",
@@ -208,7 +210,8 @@
         "The exact deterministic policy line, deterministic image line, and deterministic caption line each occur exactly once and remain in policy-before-image-before-caption order.",
         "The exact question and `?[供应商是否催得急 | 数据级别与授权范围 | 文件是否足够美观]` control each occur exactly once after the caption, preserve option order, and produce concise current-lesson feedback without a named variable.",
         "The artifact requests slide-facing projected content only and does not positively instruct the Teaching Agent to narrate or provide long spoken explanatory paragraphs.",
-        "At teaching_prompt_personalization_level 5, the Teaching Prompt fixes its slide count, page order, the teaching purpose of each slide and content slot, content grouping, semantic layout, and policy, image, caption, interaction, feedback, and close placement; only ordinary title and projected-copy wording remains adaptable, with no concrete font size, color value, pixel coordinate, exact percentage split, or animation requirement."
+        "Slide 1 is a dedicated cover that displays the same lesson_title returned by the lesson item and carries no policy, image, interaction, feedback, or other substantive teaching content; substantive teaching begins on slide 2, and the cover is included in the fixed slide count, page order, and structural signature.",
+        "At teaching_prompt_personalization_level 5, the Teaching Prompt fixes its slide count, page order, the teaching purpose of each slide and content slot, content grouping, semantic layout, and policy, image, caption, interaction, feedback, and close placement; only ordinary later-slide title wording and projected-copy wording remains adaptable, with no concrete font size, color value, pixel coordinate, exact percentage split, or animation requirement."
       ]
     },
     {
@@ -228,15 +231,16 @@
     },
     {
       "id": 19,
-      "prompt": "Course Design Intake 已全部完成。请基于同一份材料，分别以 teaching_prompt_personalization_level=1、3、5 生成同一节标准 AI 一对一授课的授课提示词。三份必须共用完全相同的固定三页结构：第 1 页提出核心问题，建立可疑邮件判断边界并说明多因素认证不能替代唯一且强度足够的密码；第 2 页按‘核验发件人和域名 → 不打开链接地检查链接目标 → 通过内部安全渠道上报’讲解处置路径，放置下方确定性原文，并保留一个例子细节槽位；第 3 页依次放置下方完整互动、各选项即时反馈和回扣核心问题的收束。每页都有一个标题槽位。三份的页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及确定性内容、互动、反馈和收束的位置必须逐项一致；level 只改变同一槽位内标题、普通讲解、例子细节、过渡和反馈措辞的预写程度。\n\n核心问题是‘员工收到疑似钓鱼邮件时，如何安全判断并处置？’。必须保持的事实是：多因素认证可以降低账号被接管的风险，但不能替代唯一且强度足够的密码。下面原文必须在每份结果中作为独立确定性内容原样出现且只出现一次：\n===不要点击、回复或转发尚未核验的可疑邮件。===\n\n下面互动也必须在每份结果中完整出现且只出现一次，选项顺序不变，答案只用于本课即时反馈且不创建命名变量：\n收到一封要求立即重置密码的邮件时，第一步应做什么？\n?[直接点击邮件链接 | 独立核验发件人和域名 | 转发给同事确认]\n\n只输出一个可解析的 JSON 对象，字段仅为 variants；variants 必须依次包含 3 项，每项字段仅为 teaching_prompt_personalization_level 和 teaching_prompt。",
-      "expected_output": "Produces directly comparable level-1, level-3, and level-5 Teaching Prompts with an identical fixed three-slide structural fingerprint and monotonically less prewritten ordinary content expression.",
+      "prompt": "Course Design Intake 已全部完成。请基于同一份材料，分别以 teaching_prompt_personalization_level=1、3、5 生成同一节标准 AI 一对一授课的授课提示词，lesson_title 固定为‘安全识别并处置钓鱼邮件’。三份必须共用完全相同的固定四页结构：第 1 页是封面，只显示固定 lesson_title，不承载实质教学内容；第 2 页提出核心问题，建立可疑邮件判断边界并说明多因素认证不能替代唯一且强度足够的密码；第 3 页按‘核验发件人和域名 → 不打开链接地检查链接目标 → 通过内部安全渠道上报’讲解处置路径，放置下方确定性原文，并保留一个例子细节槽位；第 4 页只显示下方完整问题，紧接该页在页外依次放置真实控件、各选项即时反馈和回扣核心问题的收束。第 2、3 页各有一个普通标题槽位，第 4 页不另设标题。三份的页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及确定性内容、互动、反馈和收束的位置必须逐项一致；level 只改变同一槽位内普通标题、讲解、例子细节、过渡和反馈措辞的预写程度。\n\n核心问题是‘员工收到疑似钓鱼邮件时，如何安全判断并处置？’。必须保持的事实是：多因素认证可以降低账号被接管的风险，但不能替代唯一且强度足够的密码。下面原文必须在每份结果中作为独立确定性内容原样出现且只出现一次：\n===不要点击、回复或转发尚未核验的可疑邮件。===\n\n下面互动也必须在每份结果中完整出现且只出现一次，选项顺序不变，答案只用于本课即时反馈且不创建命名变量：\n收到一封要求立即重置密码的邮件时，第一步应做什么？\n?[直接点击邮件链接 | 独立核验发件人和域名 | 转发给同事确认]\n\n只输出一个可解析的 JSON 对象，字段仅为 variants；variants 必须依次包含 3 项，每项字段仅为 teaching_prompt_personalization_level 和 teaching_prompt。",
+      "expected_output": "Produces directly comparable level-1, level-3, and level-5 Teaching Prompts with the same required lesson cover, the same standard visual-and-explanation cadence, an identical fixed four-slide structural fingerprint, and monotonically less prewritten ordinary content expression.",
       "files": [],
       "expectations": [
         "The output is a parseable JSON object with exactly three variants ordered by teaching_prompt_personalization_level 1, 3, and 5, and every teaching_prompt is non-empty.",
         "All three variants preserve the phishing facts, the required verification-to-link-check-to-report order, and the boundary that multi-factor authentication does not replace a unique strong password.",
         "In each variant, the exact deterministic line, exact learner-facing question, and exact `?[直接点击邮件链接 | 独立核验发件人和域名 | 转发给同事确认]` control each occur exactly once; option order and immediate current-lesson feedback are preserved without a named variable.",
-        "All three structural fingerprints are identical: exactly three slides in the same order, with the same teaching purpose for every slide and content slot, title slot, required example-slot presence and placement, content grouping, semantic layout, and deterministic-content, interaction, feedback, and close placement.",
-        "All three variants use the same brief text lead-in, immediately follow slides 1 and 2 with their own concise but complete explanations, and use the complete-question slide → exact control → immediate feedback or explanation sequence on slide 3; the final feedback or explanation also performs the close, and every adjacency remains identical across levels.",
+        "All three variants use slide 1 as the dedicated cover, display the exact lesson_title ‘安全识别并处置钓鱼邮件’ there, keep substantive teaching content off it, and treat it as the first visual in the standard mode's existing cadence, so its normal following explanation appears before slide 2 without changing the four-slide count.",
+        "All three structural fingerprints are identical: exactly four slides in the same order, with the same teaching purpose for every slide and content slot, title slot, required example-slot presence and placement, content grouping, semantic layout, and deterministic-content, interaction, feedback, and close placement.",
+        "All three variants use the same brief text lead-in before the cover, immediately follow every visual—including the cover and substantive slides 2 and 3—with its own concise but complete explanation, and use the complete-question slide → exact control → immediate feedback or explanation sequence on slide 4; the final feedback or explanation also performs the close, and every adjacency remains identical across levels.",
         "All three variants describe the invariant meaning as each slide's and content slot's 教学目的, and none calls it instructional role or 教学角色.",
         "Content-expression specificity decreases monotonically: level 1 prewrites more ordinary title and explanation wording, example detail, transitions, and feedback language than level 3, and level 3 prewrites more than level 5; no comparison relies on a relaxed page, grouping, placement, or layout decision.",
         "Level 5 remains executable by stating the intent and must-cover points for every fixed content slot while leaving only incidental phrasing and example detail to the Teaching Agent; it does not delete, merge, split, add, reorder, or reposition slides or their structural slots.",
@@ -245,16 +249,17 @@
     },
     {
       "id": 20,
-      "prompt": "Course Design Intake 已全部完成，交付模式是纯课堂幻灯片：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白。请用同一份材料分别生成 teaching_prompt_personalization_level=1 和 5 的两份授课提示词。两份必须共用完全相同的固定四页结构：第 1 页提出核心问题、呈现‘识别数据级别’，并保留一个必须填充的简短例子槽位；第 2 页呈现‘确认接收方授权 → 完成审批 → 使用获批准的渠道外发’并放置下方制度原文；第 3 页只承载下方图片与紧随其后的图注；第 4 页依次承载下方完整互动、各选项简短反馈和收束。每页都有一个标题槽位。两份的页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局、例子槽位的存在和位置，以及制度、图片、图注、互动、反馈和收束的位置必须逐项一致；每份都必须填充第 1 页的例子槽位，level 只改变同一槽位内标题、普通解释、例子身份与细节、过渡和反馈措辞的预写程度。\n\n核心问题是‘向合作方外发客户数据前，如何完成合规检查？’；决策顺序固定为：识别数据级别 → 确认接收方授权 → 完成审批 → 使用获批准的渠道外发。\n\n下面制度、图片和图注必须在每份结果中作为独立确定性内容原样各出现一次，并保持制度 → 图片 → 图注 → 互动的顺序：\n===外发客户数据前，必须完成接收方授权核验和审批。===\n===![客户数据外发决策路径](https://static.example.com/training/customer-data-export.png)===\n===图：先确认数据级别和授权，再审批并选择合规通道。===\n\n下面互动必须在图片和图注之后完整出现且只出现一次，答案只用于本课简短反馈，不创建命名变量：\n哪项条件满足后才可以外发客户数据？\n?[合作方口头承诺保密 | 已核验授权并完成审批 | 文件已经压缩]\n\n只输出一个可解析的 JSON 对象，字段仅为 variants；variants 必须依次包含 2 项，每项字段仅为 teaching_prompt_personalization_level 和 teaching_prompt。",
-      "expected_output": "Produces level-1 and level-5 projection-ready slide prompts with an identical fixed four-slide structural fingerprint and clearly different ordinary content-expression prescription.",
+      "prompt": "Course Design Intake 已全部完成，交付模式是纯课堂幻灯片：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白。请用同一份材料分别生成 teaching_prompt_personalization_level=1 和 5 的两份授课提示词。本课 lesson_title 固定为‘客户数据外发合规检查’。两份必须共用完全相同的固定五页结构：第 1 页是封面页，只显示固定 lesson_title，不承载实质教学内容；第 2 页提出核心问题、呈现‘识别数据级别’，并保留一个必须填充的简短例子槽位；第 3 页呈现‘确认接收方授权 → 完成审批 → 使用获批准的渠道外发’并放置下方制度原文；第 4 页只承载下方图片与紧随其后的图注，不另设标题；第 5 页依次承载下方完整互动、各选项简短反馈和收束。第 2、3、5 页各有一个标题槽位。两份的页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局、例子槽位的存在和位置，以及制度、图片、图注、互动、反馈和收束的位置必须逐项一致；每份都必须填充第 2 页的例子槽位，level 只改变同一槽位内普通标题、解释、例子身份与细节、过渡和反馈措辞的预写程度。\n\n核心问题是‘向合作方外发客户数据前，如何完成合规检查？’；决策顺序固定为：识别数据级别 → 确认接收方授权 → 完成审批 → 使用获批准的渠道外发。\n\n下面制度、图片和图注必须在每份结果中作为独立确定性内容原样各出现一次，并保持制度 → 图片 → 图注 → 互动的顺序：\n===外发客户数据前，必须完成接收方授权核验和审批。===\n===![客户数据外发决策路径](https://static.example.com/training/customer-data-export.png)===\n===图：先确认数据级别和授权，再审批并选择合规通道。===\n\n下面互动必须在图片和图注之后完整出现且只出现一次，答案只用于本课简短反馈，不创建命名变量：\n哪项条件满足后才可以外发客户数据？\n?[合作方口头承诺保密 | 已核验授权并完成审批 | 文件已经压缩]\n\n只输出一个可解析的 JSON 对象，字段仅为 variants；variants 必须依次包含 2 项，每项字段仅为 teaching_prompt_personalization_level 和 teaching_prompt。",
+      "expected_output": "Produces level-1 and level-5 projection-ready slide prompts with the same required lesson cover, an identical fixed five-slide structural fingerprint, and the unchanged pure-slide rule against Teaching Agent narration or external explanations.",
       "files": [],
       "expectations": [
         "The output is a parseable JSON object with exactly two variants ordered by teaching_prompt_personalization_level 1 and 5, and both are explicitly limited to projection-ready classroom-slide content without Teaching Agent narration.",
         "Both variants preserve the four-step compliance sequence and include the exact deterministic policy, image, and caption lines exactly once in policy-before-image-before-caption order.",
         "Both variants place the exact question and `?[合作方口头承诺保密 | 已核验授权并完成审批 | 文件已经压缩]` control after the caption exactly once, preserve option order, request concise immediate feedback, and create no named variable.",
-        "Both structural fingerprints are identical: exactly four slides in the same order, with the same teaching purpose for every slide and content slot, title slot, required example-slot presence and placement, content grouping, semantic layout, and policy, image, caption, interaction, feedback, and close placement.",
+        "Both variants use slide 1 as the dedicated cover, display the exact lesson title ‘客户数据外发合规检查’ there, keep substantive teaching content off that slide, and begin substantive teaching on slide 2; the cover's presence and first position are identical across levels.",
+        "Both structural fingerprints are identical: exactly five slides in the same order, with the same teaching purpose for every slide and content slot, title slot, required example-slot presence and placement, content grouping, semantic layout, and policy, image, caption, interaction, feedback, and close placement.",
         "Both variants describe the invariant meaning as each slide's and content slot's 教学目的, and neither calls it instructional role or 教学角色.",
-        "Both variants populate the required example slot on slide 1. Level 1 prewrites substantially more ordinary title and projected-copy wording, example identity and detail, transitions, and feedback language than level 5, while level 5 expresses executable intent for those same fixed slots; neither variant changes slide count, slide order or placement, the teaching purpose of any slide or content slot, example presence, content grouping, semantic layout, or any required-content placement.",
+        "Both variants populate the required example slot on slide 2. Level 1 prewrites substantially more ordinary title and projected-copy wording, example identity and detail, transitions, and feedback language than level 5, while level 5 expresses executable intent for those same fixed slots; neither variant changes slide count, slide order or placement, the teaching purpose of any slide or content slot, example presence, content grouping, semantic layout, or any required-content placement.",
         "The level-5 variant remains understandable and directly projectable, conveys what the selected image teaches, and does not add narration or a long explanatory paragraph merely to compensate for less prewritten ordinary projected-copy wording.",
         "The two variants do not change, omit, duplicate, reorder, or reposition the required example slot, policy, selected image, caption, interaction, feedback, close, source facts, or delivery mode to create their expression difference."
       ]
@@ -323,17 +328,18 @@
     },
     {
       "id": 26,
-      "prompt": "teaching_prompt_personalization_level=5。请只对下面这份标准 AI 一对一授课提示词做最小修复，不生成课程提示词、不部署，也不要输出审计报告。lesson_id 固定为 L26；used_variables 和 global_variable_table 都应为空。\n\n它当前以视觉开场，连续堆叠视觉，最后才统一讲解。请按技能现行规则修复节奏，同时保留恰好三页视觉单元及其原有顺序和教学目的，保留全部事实、确定性内容、完整互动、即时反馈和收束结果。不要增加封面、目标空页、装饰页或其他填充页。\n\n原授课提示词：\n\n第1页：用对照关系呈现两个风险信号——供应商突然要求变更收款账户、同时催促立即付款——以及边界：它们只是风险信号，不能单独证明欺诈。\n\n第2页：呈现处置顺序：通过原登记联系方式独立核验 → 留存核验记录 → 提交双人复核 → 决定是否付款。\n\n===付款信息变更未经原登记联系人独立核验，不得发起付款。===\n\n第3页：展示完整问题“供应商邮件要求改用新账户并立即付款时，第一步应该做什么？”，同时在页内列出三个选项，并标注“正确答案：通过原登记联系方式独立核验”。\n\n供应商邮件要求改用新账户并立即付款时，第一步应该做什么？\n?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]\n\n最后统一讲解：说明两个风险信号为什么不能直接推出欺诈结论，解释四步处置顺序，并针对三个选项分别给出后果；用正确选择回扣核心问题并完成行动收束。答案只用于本课，不创建命名变量。\n\n最小修复时，可以把最后统一讲解拆回各视觉单元之后，但不得删改事实、改变处置顺序、改变三页的教学目的或改动确定性内容、问题、控件及选项顺序。level=5 只允许普通标题、讲解、过渡和反馈措辞保持意图式表达。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。",
-      "expected_output": "Minimally repairs a visual-first, back-to-back-visual standard lesson into a brief text lead-in followed by three correctly paired visual units while preserving facts, deterministic content, interaction behavior, and the level-5 structural skeleton.",
+      "prompt": "teaching_prompt_personalization_level=5。请只对下面这份标准 AI 一对一授课提示词做最小修复，不生成课程提示词、不部署，也不要输出审计报告。lesson_id 固定为 L26，lesson_title 固定为‘供应商付款变更核验’；used_variables 和 global_variable_table 都应为空。\n\n它当前以视觉开场，连续堆叠视觉，最后才统一讲解。请按技能现行规则修复节奏：先增加简短文字引领，再把 slide 1 设为只显示固定 lesson_title 的封面；把下方原有三页作为三张实质视觉页保留原有顺序和教学目的，并顺延为 slide 2、3、4。结果共四张幻灯片。保留全部事实、确定性内容、完整互动、即时反馈和收束结果，不要增加目标空页、装饰页或其他填充页。\n\n原授课提示词：\n\n原第1页：用对照关系呈现两个风险信号——供应商突然要求变更收款账户、同时催促立即付款——以及边界：它们只是风险信号，不能单独证明欺诈。\n\n原第2页：呈现处置顺序：通过原登记联系方式独立核验 → 留存核验记录 → 提交双人复核 → 决定是否付款。\n\n===付款信息变更未经原登记联系人独立核验，不得发起付款。===\n\n原第3页：展示完整问题“供应商邮件要求改用新账户并立即付款时，第一步应该做什么？”，同时在页内列出三个选项，并标注“正确答案：通过原登记联系方式独立核验”。\n\n供应商邮件要求改用新账户并立即付款时，第一步应该做什么？\n?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]\n\n最后统一讲解：说明两个风险信号为什么不能直接推出欺诈结论，解释四步处置顺序，并针对三个选项分别给出后果；用正确选择回扣核心问题并完成行动收束。答案只用于本课，不创建命名变量。\n\n最小修复时，可以把最后统一讲解拆回各实质视觉单元之后，但不得删改事实、改变处置顺序、改变原三页的教学目的或改动确定性内容、问题、控件及选项顺序。level=5 只允许普通标题、讲解、过渡和反馈措辞保持意图式表达。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。",
+      "expected_output": "Minimally repairs a visual-first, back-to-back-visual standard lesson into a brief text lead-in and four visual-and-explanation pairs whose first visual is the required lesson cover, while preserving facts, deterministic content, interaction behavior, and the level-5 structural skeleton.",
       "files": [],
       "expectations": [
         "The output is a parseable JSON object containing exactly one L26 lesson item, with empty used_variables and global_variable_table.",
-        "The Teaching Prompt makes the first learner-visible block one brief teaching paragraph rather than a heading, cover, slide, or image, and retains exactly the supplied three substantive visual pages in their original order without adding filler pages.",
-        "Page 1 is immediately followed by its own explanation of why the two observations are risk signals rather than proof of fraud; page 2 is immediately followed by its own explanation of the independent-verification-to-record-to-dual-review-to-decision sequence. No two non-question visuals remain consecutive, no unpaired learner-visible text turn appears after the lead-in, and there is no delayed pooled explanation.",
+        "The Teaching Prompt makes the first learner-visible block one brief teaching paragraph rather than a heading, cover, slide, or image, then uses slide 1 as the dedicated cover displaying the exact lesson_title ‘供应商付款变更核验’ without substantive teaching content and treats it as the first visual in the normal cadence, with its following explanation before slide 2.",
+        "The result contains exactly four slides: the required cover followed by the supplied three substantive visual pages in their original order and teaching purposes, with no other filler page.",
+        "Slide 2 is immediately followed by its own explanation of why the two observations are risk signals rather than proof of fraud; slide 3 is immediately followed by its own explanation of the independent-verification-to-record-to-dual-review-to-decision sequence. No two substantive non-question visuals remain consecutive, no unpaired learner-visible text turn appears after the lead-in, and there is no delayed pooled explanation.",
         "The exact deterministic line `===付款信息变更未经原登记联系人独立核验，不得发起付款。===` occurs exactly once, and all facts plus the four-step order remain unchanged.",
-        "Page 3 contains the complete learner-facing question but does not duplicate the option labels, input hint or simulated control, or correct answer. It is immediately followed by the exact `?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]` control and then immediate answer-specific feedback.",
+        "Slide 4 contains the complete learner-facing question but does not duplicate the option labels, input hint or simulated control, or correct answer. It is immediately followed by the exact `?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]` control and then immediate answer-specific feedback.",
         "The final feedback or explanatory paragraph reconnects the correct choice to the risk-signal boundary and also performs the required summary, decision checkpoint, or action close.",
-        "At teaching_prompt_personalization_level 5, the repair preserves the lead-in, all three visual positions and teaching purposes, every visual-explanation adjacency, the question-control-feedback sequence, deterministic content, and close while leaving only ordinary wording adaptable; it introduces no typography, color, coordinates, animation, or uniform word, sentence, or slide quota."
+        "At teaching_prompt_personalization_level 5, the repair preserves the lead-in, required cover, every visual-explanation adjacency, all three substantive visual positions and teaching purposes, the question-control-feedback sequence, deterministic content, and close while leaving only ordinary wording adaptable; it introduces no extra slide, typography, color, coordinates, animation, or uniform word or sentence quota."
       ]
     },
     {
@@ -345,6 +351,32 @@
         "The response asks exactly one normal Course Design Intake question for the author's name before Course Prompt generation.",
         "Before asking, it tells the teacher that providing the name lets AI 师傅的授课智能体 teach under that teacher identity, while leaving it blank does not affect course creation.",
         "It accepts a free-form answer, explicitly allows the teacher to leave it blank, asks no unrelated design question, and does not generate the Course Prompt in the same turn."
+      ]
+    },
+    {
+      "id": 28,
+      "prompt": "Course Design Intake 和两节课的结构已经完成。交付模式是纯课堂幻灯片，teaching_prompt_personalization_level=1，interaction_policy 已选择 disabled，Listen Mode 关闭。请生成同一章中的两节授课提示词：L28A 的 lesson_title 固定为‘先判断数据级别’，核心问题是‘如何区分公开、内部和敏感数据？’，必须讲清公开数据经审核后可公开、内部数据只能通过获授权的内部渠道流转、敏感数据外发前需要审批；L28B 的 lesson_title 固定为‘再决定外发动作’，核心问题是‘向外部合作方发送数据前要完成哪些检查？’，必须按‘识别数据级别 → 核验接收方授权 → 完成审批 → 使用获批准的渠道 → 登记外发’完成教学。每节都要形成自己的完整幻灯片骨架，不要用一个课程总封面替代课节封面。只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。",
+      "expected_output": "Produces two pure-classroom-slide lessons whose own exact lesson titles appear on separate required first-slide covers before each lesson's substantive teaching begins, without changing the existing no-narration pure-slide behavior.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object with exactly two lesson_teaching_prompts items for L28A and L28B plus an empty global_variable_table, and contains no unrequested course_index field.",
+        "Each lesson uses slide 1 as its own dedicated cover and displays its exact lesson_title there: ‘先判断数据级别’ for L28A and ‘再决定外发动作’ for L28B; one shared course cover does not satisfy either lesson requirement.",
+        "In both lessons, the cover remains free of explanation, interaction, answer, outline, or other substantive teaching content; substantive teaching and the lesson objective begin on slide 2.",
+        "Each cover is included in that lesson's exact slide count, order, and structural signature, and teaching_prompt_personalization_level=1 does not allow either cover to be omitted, merged with slide 2, moved, or renamed.",
+        "Both lessons remain projection-ready without Teaching Agent narration, paired explanatory text, learner-answer controls, named variables, answer-dependent branches, or long spoken paragraphs."
+      ]
+    },
+    {
+      "id": 29,
+      "prompt": "Course Design Intake 已完成。请生成一节标准 AI 一对一授课提示词，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，lesson_id 固定为 L29，lesson_title 固定为‘识别设备异常信号’。本课不是纯文字模式，但视觉只使用下面两张已经上传的 standalone image，不生成任何幻灯片、PPT、视觉页或课堂投屏页：\n![正常设备状态](https://static.example.com/training/device-normal.png)\n![异常设备状态](https://static.example.com/training/device-warning.png)\n\n先用简短文字引领，再依次展示正常状态图片和异常状态图片；每张图片后立即用简短但完整的文字解释它所表达的状态、两张图之间的差异，以及异常信号为什么需要核验但不能单独证明设备已经故障。最后用文字完成判断检查和收束，不增加互动。只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。",
+      "expected_output": "Produces a standard standalone-image-only lesson with the brief lead-in and paired explanations, without manufacturing a slide or lesson cover when no slide is requested.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object containing exactly one L29 lesson item, with empty used_variables and global_variable_table.",
+        "The first learner-visible block is one brief text lead-in, followed by the two exact standalone images in the supplied order, with one concise but complete explanation immediately after each image.",
+        "The Teaching Prompt creates no slide, PPT, visual page, classroom projection page, slide count, or slide layout and therefore does not add a cover or repeat the lesson_title in learner-visible teaching content.",
+        "The explanations distinguish normal and abnormal states, preserve that an abnormal signal requires verification but does not alone prove equipment failure, and end with a non-interactive judgment check or close.",
+        "Both image records remain exact and image-authoring.md is loaded for their understand-and-validate workflow without adding an interaction or named variable."
       ]
     }
   ]
