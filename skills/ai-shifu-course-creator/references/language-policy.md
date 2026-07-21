@@ -31,9 +31,16 @@ Use this table for human-facing skill concepts. Use the matching language column
 | `Lesson` | Lesson | 节 / 课节 | Leçon | Course lesson unit in human-facing prose. |
 | `Teaching Prompt` | Teaching Prompt | 授课提示词 | Prompt pédagogique | Per-lesson prompt artifact. Use plural naturally when needed. |
 | `Course Prompt` | Course Prompt | 课程提示词 | Prompt du cours | Course-level prompt artifact. |
+| `Teaching Agent` | Teaching Agent | 授课智能体 | Agent pédagogique | Learner-time AI role that executes Course Prompts and Teaching Prompts, gives interaction feedback, and answers learner follow-up questions. Apply the product-qualified first-mention form below before using this short form in user-facing conversation. |
 | `Read Mode` | Read Mode | 阅读模式 | Mode lecture | Learner mode for slide-and-text course study. |
 | `Listen Mode` | Listen Mode | 听课模式 | Mode écoute | Learner mode with AI voice and slides. |
 | `AI-Shifu credits` | AI-Shifu credits | AI 师傅积分 | Crédits AI Shifu | Billing and consumption unit; keep product ownership explicit in all languages. |
+
+## Teaching Agent First Mention
+
+At this skill's first user-facing mention of the Teaching Agent concept in a conversation, identify its product ownership explicitly. Use `AI-Shifu's Teaching Agent` in English, `AI 师傅的授课智能体` in Simplified Chinese, and `l'Agent pédagogique d'AI Shifu` in French. For another language, localize an equally explicit phrase that identifies the role as AI-Shifu's. After that introduction in the same conversation, use the canonical short form from the table.
+
+For direct user-facing text that has no conversation context, such as a CLI label, always use the product-qualified form. This rule governs explanations to the user; do not add an ownership introduction to Teaching Prompt or Course Prompt content solely to satisfy it, and do not change preserved source wording or machine-facing fields.
 
 ## Localization Scope
 
@@ -79,4 +86,5 @@ Resolve `resolved_target_language`, then inspect every applicable surface below 
 - Inspect all operational conversation named in [Localization Scope](#localization-scope).
 - Inspect every phase report's headings, field labels, findings, issue explanations, suggestions, validation explanations, next actions, and handoff notes.
 - Inspect analytics headings, narrative findings, interpretations, refusals, and drill-down offers.
+- Confirm that the skill's first user-facing Teaching Agent mention in each conversation follows [Teaching Agent First Mention](#teaching-agent-first-mention), and that direct user-facing text without conversation context always uses the product-qualified form.
 - Confirm that canonical concepts use the terminology table and every excluded literal remains unchanged.

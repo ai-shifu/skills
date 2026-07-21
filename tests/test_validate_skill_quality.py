@@ -871,8 +871,13 @@ class CourseCreatorContractTests(unittest.TestCase):
         semantics = " ".join(semantics_section.split())
 
         self.assertIn("Prompts, not Scripts", semantics)
-        self.assertIn("runtime LLM", semantics)
-        self.assertIn("tell the LLM how to teach the learner", semantics)
+        self.assertIn(
+            "The **Teaching Agent** is AI-Shifu's learner-time AI role", semantics
+        )
+        self.assertIn("gives interaction feedback", semantics)
+        self.assertIn("answers learner follow-up questions", semantics)
+        self.assertIn("different underlying models", semantics)
+        self.assertIn("tell the Teaching Agent how to teach the learner", semantics)
         self.assertIn(
             "core question, teaching objective, must-cover evidence and "
             "boundaries, complete teaching path, fixed slide structure, "
@@ -914,7 +919,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn(
             "Within Prompt instructions, every second-person form in any "
-            "language refers only to the runtime LLM",
+            "language refers only to the Teaching Agent",
             semantics,
         )
         self.assertIn("`you`, `your`, `yours`, and `yourself`", semantics)
@@ -944,6 +949,103 @@ class CourseCreatorContractTests(unittest.TestCase):
                 path.read_text(encoding="utf-8"),
                 f"Prompt semantics must be owned only by prompt-contracts.md: {path}",
             )
+
+    def test_teaching_agent_is_the_canonical_human_facing_term(self):
+        self.assertIn(
+            "| `Teaching Agent` | Teaching Agent | 授课智能体 |",
+            self.language_policy,
+        )
+        first_mention = " ".join(
+            markdown_section(
+                self.language_policy, "Teaching Agent First Mention"
+            ).split()
+        )
+        for fragment in (
+            "skill's first user-facing mention of the Teaching Agent concept",
+            "in a conversation",
+            "`AI-Shifu's Teaching Agent`",
+            "`AI 师傅的授课智能体`",
+            "After that introduction in the same conversation",
+            "canonical short form",
+            "no conversation context",
+            "always use the product-qualified form",
+            "do not add an ownership introduction to Teaching Prompt or Course "
+            "Prompt content solely to satisfy it",
+            "do not change preserved source wording or machine-facing fields",
+        ):
+            self.assertIn(fragment, first_mention)
+
+        deprecated_terms = {
+            "runtime llm",
+            "the llm",
+            "llm-generated",
+            "llm-mediated",
+            "ai narration",
+            "ai answer",
+            "teacher / ai",
+            "teacher/ai",
+            "model-led",
+        }
+        paths = list(self.skill_root.rglob("*.md"))
+        paths.append(self.skill_root / "scripts" / "shifu-cli.py")
+        surfaces = [
+            (
+                str(path.relative_to(REPO_ROOT)),
+                path.read_text(encoding="utf-8"),
+            )
+            for path in paths
+        ]
+        evals_path = self.skill_root / "evals" / "evals.json"
+        evals_data = json.loads(evals_path.read_text(encoding="utf-8"))
+        evals_by_id = {case["id"]: case for case in evals_data["evals"]}
+        self.assertIn("AI 旁白", evals_by_id[17]["prompt"])
+        self.assertIn("AI 旁白", evals_by_id[20]["prompt"])
+        for case_id in (18, 22, 23):
+            skill_owned_text = "\n".join(
+                [
+                    evals_by_id[case_id].get("expected_output", ""),
+                    *evals_by_id[case_id].get("expectations", []),
+                ]
+            )
+            self.assertIn("AI 师傅的授课智能体", skill_owned_text)
+        for case in evals_data["evals"]:
+            skill_owned_text = "\n".join(
+                [case.get("expected_output", ""), *case.get("expectations", [])]
+            )
+            surfaces.append(
+                (
+                    f"{evals_path.relative_to(REPO_ROOT)}#{case['id']}",
+                    skill_owned_text,
+                )
+            )
+
+        matches = []
+        for label, surface in surfaces:
+            content = surface.casefold()
+            for term in deprecated_terms:
+                if term in content:
+                    matches.append(f"{label}: {term}")
+
+        self.assertEqual([], matches)
+        self.assertIn(
+            "stable machine-facing fields for the underlying models and settings "
+            "used by the Teaching Agent",
+            self.course_directory_spec,
+        )
+        self.assertIn(
+            "human-facing explanations identify AI-Shifu ownership on the first "
+            "Teaching Agent mention and use Teaching Agent thereafter",
+            self.course_directory_spec,
+        )
+        cli_script = (
+            self.skill_root / "scripts" / "shifu-cli.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            'print(f"AI-Shifu\'s Teaching Agent model: {model}")', cli_script
+        )
+        self.assertIn(
+            "(1101 AI-Shifu's Teaching Agent / 1102 TTS)", cli_script
+        )
 
     def test_deprecated_prompt_phrasing_stays_out_of_other_docs(self):
         deprecated_fragments = {
@@ -1020,16 +1122,20 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn(
             "without requiring any additional boundary syntax", deterministic
         )
-        self.assertIn("without an LLM call", deterministic)
+        self.assertIn("without invoking the Teaching Agent", deterministic)
         self.assertIn(
             "When `===...===` appears inline within ordinary prompt content",
             deterministic,
         )
-        self.assertIn("surrounding content remains LLM-generated", deterministic)
+        self.assertIn(
+            "surrounding content remains generated by the Teaching Agent",
+            deterministic,
+        )
         self.assertIn("no image-specific control-flow primitive", images)
         self.assertIn("no dedicated parser semantics", images)
         self.assertIn(
-            "inline `===...===` marker remains in LLM-mediated content",
+            "inline `===...===` marker remains in content mediated by the "
+            "Teaching Agent",
             preservation,
         )
         self.assertIn(
@@ -1299,6 +1405,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "downstream course decision",
             "learner- or author-visible effect of every option presented",
             "without adding a separate sales pitch or an unsupported outcome",
+            "language-policy.md#teaching-agent-first-mention",
             "Never present only bare option labels, numbers, or names",
             "explain the tradeoff dimensions before asking",
         ):
@@ -1307,7 +1414,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         question_effects = {
             1: (
                 "controls the learner's delivery experience",
-                "AI-Shifu guide one learner directly",
+                "lets the Teaching Agent guide one learner directly",
                 "projection-ready content paced by a human instructor",
                 "both experiences",
             ),
@@ -1315,14 +1422,15 @@ class CourseCreatorContractTests(unittest.TestCase):
                 "uses only learner context already available",
                 "never authorizes new context collection, interactions, variables, or branches",
                 "what the author will see fixed in advance",
-                "what the runtime LLM may adapt for the learner",
+                "what the Teaching Agent may adapt for the learner",
             ),
             3: (
                 "at an early course or module point",
                 "later teaching selected context to use",
                 "initial judgment to refine",
                 "check or consolidate the lesson's core understanding",
-                "worked applications, model-led demonstrations, or consolidation",
+                "worked applications, demonstrations by the Teaching Agent, "
+                "or consolidation",
             ),
             4: (
                 "adds AI voice with slides",
@@ -1426,7 +1534,10 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("`||` for multi-select", interaction)
         self.assertIn("literal substituted value `UNKNOWN`", variables)
         self.assertIn("wrap only the position- and formatting-sensitive span", preservation)
-        self.assertIn("Inline preservation remains LLM-mediated", preservation)
+        self.assertIn(
+            "Inline preservation remains mediated by the Teaching Agent",
+            preservation,
+        )
         required = markdown_section(
             self.markdownflow_authoring, "Required References"
         )
@@ -1549,7 +1660,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertIn("Within the fixed lesson skeleton", row, level)
             self.assertNotRegex(
                 row,
-                r"(?i)(?:runtime LLM|level).*(?:choose|change|adapt|vary).*"
+                r"(?i)(?:Teaching Agent|level).*(?:choose|change|adapt|vary).*"
                 r"(?:slide count|slide order|content grouping|"
                 r"visual hierarchy|semantic layout|placement)",
                 level,
@@ -1579,7 +1690,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "feedback phrasing",
         ):
             self.assertIn(fragment, level_5)
-        self.assertIn("runtime LLM", level_5)
+        self.assertIn("Teaching Agent", level_5)
         self.assertIn("do not reduce them to an empty outline", levels)
 
         common_constraints = normalized_levels
@@ -1685,7 +1796,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("Listen Mode", image_row)
         self.assertIn("follow it with a complete explanatory paragraph", image_row)
         self.assertRegex(image_row, r"(?i)slide-only.*overrides")
-        self.assertIn("Do not instruct the runtime LLM to narrate", pure_slides_row)
+        self.assertIn("Do not instruct the Teaching Agent to narrate", pure_slides_row)
         self.assertIn("omit long spoken paragraphs", pure_slides_row)
 
         deprecated_surface_rules = {

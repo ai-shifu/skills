@@ -78,7 +78,7 @@ Even when the nickname is redacted, **never paste the raw `user_bid` in user-fac
 
 ## `learn_generated_blocks.generated_content` — Selective Access
 
-The conversation/content text column is selectable **only** for types `[301, 311, 312, 321, 322]` — system narration, Markdown narration, interaction prompts, learner follow-up questions, and LLM answers to follow-ups.
+The conversation/content text column is selectable **only** for types `[301, 311, 312, 321, 322]` — system narration, Markdown narration, interaction prompts, learner follow-up questions, and Teaching Agent answers to follow-ups.
 
 Hard rules (any violation → `11002`):
 

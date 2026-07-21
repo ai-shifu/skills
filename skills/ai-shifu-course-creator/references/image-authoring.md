@@ -37,9 +37,9 @@ Choose one form after the visual intent is known:
 | Display the uploaded image without layout customization | `===![informative alt](url)===` on its own line |
 | Control width, alignment, caption, or multi-image layout | A natural-language HTML-view instruction |
 
-For fixed display, write informative alt text. When an alt was selected as immutable source content, load `source-preservation.md` and retain it exactly. The deterministic line bypasses the LLM.
+For fixed display, write informative alt text. When an alt was selected as immutable source content, load `source-preservation.md` and retain it exactly. The deterministic line bypasses the Teaching Agent.
 
-For HTML-view, keep the instruction outside deterministic markers and include position, exact URL, image content for semantic alt, caption, layout, ordering, and aspect-ratio behavior. Keep each URL on its own labeled line. Describe responsive layout in natural language rather than fixed pixel values. The preservation wording constrains the LLM but is not parser-level locking.
+For HTML-view, keep the instruction outside deterministic markers and include position, exact URL, image content for semantic alt, caption, layout, ordering, and aspect-ratio behavior. Keep each URL on its own labeled line. Describe responsive layout in natural language rather than fixed pixel values. The preservation wording constrains the Teaching Agent but is not parser-level locking.
 
 Use this compact shape when authored output language is Simplified Chinese; localize it under `language-policy.md` for other languages:
 
