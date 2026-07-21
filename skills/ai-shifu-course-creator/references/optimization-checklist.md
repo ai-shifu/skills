@@ -40,11 +40,15 @@ For a pasted content-only Prompt, run every check observable from the body and r
 - At every level, keep the complete teaching sequence, every content slot's and slide's teaching purpose, slide count, slide order and placement in the teaching loop, content grouping, every required content slot's presence and placement, visual hierarchy, semantic layout, and the placement of interactions, images, feedback, and the close fixed. Treat any structural or teaching-purpose change made because of the personalization level as a defect.
 - When multiple level variants or an approved lesson skeleton are in scope, compare their structural signatures explicitly. For an isolated content-only Prompt with no supplied structure reference, record cross-level structural consistency as `not-assessed` rather than inferring a skeleton.
 - At every level, unrequested font or color choices, pixel coordinates, and animations remain defects, and each resolved constraint island remains complete and exact under its owning MarkdownFlow authoring, source-preservation, or image-authoring rule.
-- The first non-empty line teaches directly instead of repeating a heading or structure label.
+- In the standard visual-text scope—standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint—the first non-empty instruction makes the first learner-visible block one brief text lead-in instead of a heading, structure label, slide, or image; no arbitrary word-count or sentence-count quota is imposed.
+- Within that scope, the lesson contains at least one substantive visual unit and repeats one visual-and-explanation pair per substantive teaching turn. Flag a visual opening, consecutive visual units, several visuals followed by one delayed explanation, a cover or decorative or objective-only page, and any unpaired learner-visible text turn after the lead-in as cadence defects.
+- Within that scope, each explanation appears before the next visual and adds context, relationship, reasoning, inference, or application rather than merely restating the preceding visual. The final explanation also performs the required close instead of leaving an isolated closing page or paragraph.
+- Within that scope, a question-bearing interaction follows the question-only visual → unchanged `?[]` control → immediate feedback or explanation sequence. The question visual contains no duplicated option labels, input hint, simulated control, or answer, while an action-only control does not require an invented question visual.
+- Pure classroom slides do not use Teaching Agent narration or paired explanatory text; explicit text-only delivery uses no visual units.
 - A heading used to teach Markdown syntax, a code comment beginning with `#`, or a heading explicitly permitted by the author is flagged for review rather than automatically deleted.
 - Interaction presence, placement, selection type, feedback effect, and lesson close match the resolved interaction policy.
 - Each action or carryover has the downstream use required by `pedagogy.md`.
-- Pure-slide and standard visual-text behavior match `pedagogy.md#visual-text-coordination`.
+- Pure-slide, explicit text-only, and standard visual-text behavior match `pedagogy.md#visual-text-coordination`.
 - A schema-bearing Teaching Prompt item passes all of `teaching-prompt.md#validation`. A content-only Prompt body passes every observable body and runtime check there; its schema envelope is `not-assessed`.
 
 ## Interaction and Variable Safety

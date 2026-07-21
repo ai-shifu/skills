@@ -1555,7 +1555,8 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.pedagogy, "Visual-Text Coordination"
         )
 
-        self.assertIn("author explicitly excludes visuals", lesson_loop)
+        self.assertIn("explicit text-only constraint", lesson_loop)
+        self.assertIn("Pure classroom slides instead begin", lesson_loop)
         self.assertIn("Explicit text-only constraint", visual_text)
         self.assertIn("Give complete teaching direction", visual_text)
         self.assertIn("selected personalization level", visual_text)
@@ -1584,7 +1585,11 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.optimization_checklist, "Teaching Prompt Behavior"
         )
 
-        self.assertIn("do not add a cover or opening slide by default", lesson_loop)
+        self.assertIn(
+            "first substantive slide rather than adding a cover, decorative page, "
+            "or objective-only page",
+            lesson_loop,
+        )
         for path in COURSE_CREATOR_REFERENCES.rglob("*.md"):
             self.assertNotIn(
                 "instructional role",
@@ -1777,6 +1782,132 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertNotIn(field, owner_section)
             self.assertNotIn("Personalization Levels", owner_section)
 
+    def test_standard_teaching_uses_brief_text_visual_text_cadence(self):
+        lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
+        visual_text = markdown_section(
+            self.pedagogy, "Visual-Text Coordination"
+        )
+        materialization = markdown_section(
+            self.teaching_prompt, "Lesson Materialization"
+        )
+        validation = markdown_section(self.teaching_prompt, "Validation")
+        interaction_encoding = markdown_section(
+            self.markdownflow_authoring, "Interaction Encoding"
+        )
+        authoring_validation = markdown_section(
+            self.markdownflow_authoring, "Validation"
+        )
+        checklist = markdown_section(
+            self.optimization_checklist, "Teaching Prompt Behavior"
+        )
+
+        normalized_visual = " ".join(visual_text.split())
+        normalized_validation = " ".join(validation.split())
+        normalized_checklist = " ".join(checklist.split())
+
+        self.assertIn("brief text lead-in", lesson_loop)
+        self.assertIn("standard teaching branch of combined delivery", lesson_loop)
+        self.assertIn("first learner-visible block", normalized_validation)
+        self.assertIn("slide, or image as the opening", lesson_loop)
+        self.assertIn("word-count or sentence-count quota", lesson_loop)
+
+        self.assertIn(
+            "brief text lead-in → substantive visual unit → concise but complete "
+            "text explanation",
+            normalized_visual,
+        )
+        self.assertIn(
+            "Every lesson in this mode contains at least one substantive visual unit",
+            normalized_visual,
+        )
+        self.assertIn(
+            "A visual unit is one slide or one standalone image",
+            normalized_visual,
+        )
+        self.assertIn("slide containing an image still counts as one", normalized_visual)
+        self.assertIn("Do not place two visual units back to back", normalized_visual)
+        self.assertIn(
+            "defer several visuals' explanations to one later block",
+            normalized_visual,
+        )
+        self.assertIn(
+            "context, relationship, reasoning, inference, or application",
+            normalized_visual,
+        )
+        self.assertIn("rather than merely restating it", normalized_visual)
+        self.assertIn(
+            "final pair's explanation also performs the selected summary, "
+            "decision checkpoint, or action close",
+            normalized_visual,
+        )
+        self.assertIn(
+            "question-only slide, place the unchanged `?[]` control immediately "
+            "after it, then provide the immediate feedback or explanatory effect",
+            normalized_visual,
+        )
+        self.assertIn("`?[Continue]`", normalized_visual)
+
+        self.assertIn("one brief learner-visible text lead-in", materialization)
+        self.assertIn("at least one substantive visual-and-explanation pair", materialization)
+        self.assertIn("final explanation carrying the close", materialization)
+        self.assertIn("no consecutive visual units", normalized_validation)
+        self.assertIn(
+            "one concise but complete explanation after every visual and before "
+            "the next",
+            normalized_validation,
+        )
+        self.assertIn("final explanation that also performs the close", normalized_validation)
+        self.assertIn("question-only visual", normalized_validation)
+        self.assertIn("unchanged `?[]` control", normalized_validation)
+
+        self.assertIn("question-only visual instruction", interaction_encoding)
+        self.assertIn("without option labels", interaction_encoding)
+        self.assertIn("unchanged `?[]` control", interaction_encoding)
+        self.assertIn("`?[Continue]`", interaction_encoding)
+        self.assertIn("do not invent a learner question", interaction_encoding)
+        self.assertIn("only in the interaction control", interaction_encoding)
+        self.assertIn(
+            "do not duplicate those labels on the question-only visual",
+            interaction_encoding,
+        )
+        self.assertIn("question-only visual instructions", authoring_validation)
+        self.assertIn("feedback or explanatory effects", authoring_validation)
+
+        for defect in (
+            "visual opening",
+            "consecutive visual units",
+            "several visuals followed by one delayed explanation",
+            "cover or decorative or objective-only page",
+            "unpaired learner-visible text turn after the lead-in",
+        ):
+            self.assertIn(defect, normalized_checklist)
+        self.assertIn(
+            "Pure classroom slides do not use Teaching Agent narration or paired "
+            "explanatory text",
+            normalized_checklist,
+        )
+        self.assertIn("explicit text-only delivery uses no visual units", normalized_checklist)
+
+        non_owners = {
+            "Course Prompt": self.course_prompt,
+            "Prompt Contracts": self.prompt_contracts,
+            "Orchestration": self.orchestration_workflow,
+            "MarkdownFlow runtime": self.markdownflow,
+            "Image authoring": self.image_authoring,
+        }
+        for lesson_level_contract in (
+            "brief text lead-in",
+            "substantive visual unit",
+            "question-only visual",
+            "visual-and-explanation pair",
+        ):
+            for label, content in non_owners.items():
+                self.assertNotIn(
+                    lesson_level_contract,
+                    content.casefold(),
+                    f"{label} must not own the lesson cadence contract",
+                )
+
     def test_author_images_keep_complete_explanation_except_in_pure_slides(self):
         visual_text = markdown_section(
             self.pedagogy, "Visual-Text Coordination"
@@ -1792,10 +1923,14 @@ class CourseCreatorContractTests(unittest.TestCase):
             if line.startswith("| Pure slides |")
         )
 
-        self.assertIn("In standard teaching", image_row)
+        self.assertIn("Under the standard visual-text scope", image_row)
         self.assertNotIn("Listen Mode", image_row)
-        self.assertIn("follow it with a complete explanatory paragraph", image_row)
-        self.assertRegex(image_row, r"(?i)slide-only.*overrides")
+        self.assertIn(
+            "give it the required following explanation before any later visual",
+            image_row,
+        )
+        self.assertRegex(image_row, r"(?i)pure-slide.*overrides")
+        self.assertIn("explicit text-only constraint overrides image use", image_row)
         self.assertIn("Do not instruct the Teaching Agent to narrate", pure_slides_row)
         self.assertIn("omit long spoken paragraphs", pure_slides_row)
 
