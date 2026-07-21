@@ -106,12 +106,15 @@
     },
     {
       "id": 10,
-      "prompt": "同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。请直接给出两种结构化生成结果：标准 AI 授课与纯课堂幻灯片，并说明已提供图片的理解、上传和嵌入处理（无需真实上传）。两种结果都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
-      "expected_output": "Applies the standard and slide-only visual contracts separately while keeping raw graphics code out of both prompts.",
+      "prompt": "Course Design Intake 已完成，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled。同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。请直接给出两种结构化生成结果：标准 AI 一对一授课与纯课堂幻灯片，并说明已提供图片的理解、上传和嵌入处理（无需真实上传）。标准结果不是纯文字模式，必须保留概念图和作者图片这两个实质视觉单元。两种结果都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
+      "expected_output": "Applies the standard brief-text and alternating visual-explanation cadence to the two required visuals while preserving the separate slide-only contract and keeping raw graphics code out of both prompts.",
       "files": [],
       "expectations": [
-        "The standard non-slide-only Teaching Prompt gives each selected visual a defined teaching purpose and enough textual teaching direction to explain the concept independently; it fixes the complete slide skeleton and image placement while leaving only the selected level's ordinary explanation wording within those slots adaptable, and conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
-        "The pure classroom-slide result follows the slide-only delivery rules in pedagogy.md and course-prompt.md with projection-ready content, no Teaching Agent narration or full explanatory paragraph after the image, and a fixed slide count, order, placement, teaching purpose for each slide and content slot, content grouping, semantic layout, and image and close placement.",
+        "The standard Teaching Prompt makes the first learner-visible block one brief teaching paragraph rather than a heading, cover, slide, image, or word-count-constrained preamble.",
+        "The standard result uses both required substantive visual units—the probability-by-impact matrix and the author-provided team image—and immediately follows each one with its own concise but complete textual explanation before another visual appears; it contains no consecutive visuals, unpaired text turn after the lead-in, or delayed pooled explanation.",
+        "The matrix explanation develops how probability and impact jointly determine risk, while the author-image explanation supplies the context, inference, or practical application needed to interpret the team's annotations; neither merely repeats visible labels or the caption, and the final explanation also closes with a summary, decision checkpoint, or action.",
+        "The standard result fixes the lead-in, both visual-explanation pairs, their adjacency, and the close independently of teaching_prompt_personalization_level, while leaving only ordinary expression inside those slots adaptable; it conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
+        "The pure classroom-slide result remains projection-ready with no Teaching Agent narration or required paired explanatory text after each visual, while fixing its complete slide count, order, placement, teaching purpose for each slide and content slot, content grouping, semantic layout, image placement, and close placement.",
         "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
       ]
     },
@@ -162,6 +165,7 @@
         "The workflow loads the Teaching Prompt, pedagogy, Prompt contract, MarkdownFlow authoring, runtime syntax, and schema instructions needed for the text-only artifact.",
         "image-authoring.md is not loaded because neither the source nor the request contains an image task.",
         "No platform authentication, target resolution, image search, upload-image command, image manifest, deployment, sync, or course-management operation is attempted.",
+        "The explicit text-only request remains exempt from the standard visual minimum and visual-explanation alternation: it begins with brief direct teaching text, adds no slide, image, diagram, or visual instruction, and still completes its explanation, interaction, feedback, and close.",
         "The generated interaction follows the existing MarkdownFlow syntax and uses a variable only if the answer must be reused later."
       ]
     },
@@ -232,6 +236,7 @@
         "All three variants preserve the phishing facts, the required verification-to-link-check-to-report order, and the boundary that multi-factor authentication does not replace a unique strong password.",
         "In each variant, the exact deterministic line, exact learner-facing question, and exact `?[直接点击邮件链接 | 独立核验发件人和域名 | 转发给同事确认]` control each occur exactly once; option order and immediate current-lesson feedback are preserved without a named variable.",
         "All three structural fingerprints are identical: exactly three slides in the same order, with the same teaching purpose for every slide and content slot, title slot, required example-slot presence and placement, content grouping, semantic layout, and deterministic-content, interaction, feedback, and close placement.",
+        "All three variants use the same brief text lead-in, immediately follow slides 1 and 2 with their own concise but complete explanations, and use the complete-question slide → exact control → immediate feedback or explanation sequence on slide 3; the final feedback or explanation also performs the close, and every adjacency remains identical across levels.",
         "All three variants describe the invariant meaning as each slide's and content slot's 教学目的, and none calls it instructional role or 教学角色.",
         "Content-expression specificity decreases monotonically: level 1 prewrites more ordinary title and explanation wording, example detail, transitions, and feedback language than level 3, and level 3 prewrites more than level 5; no comparison relies on a relaxed page, grouping, placement, or layout decision.",
         "Level 5 remains executable by stating the intent and must-cover points for every fixed content slot while leaving only incidental phrasing and example detail to the Teaching Agent; it does not delete, merge, split, add, reorder, or reposition slides or their structural slots.",
@@ -314,6 +319,21 @@
         "Before asking for numbers, it explains that chapter count changes how lessons are grouped into broader topics, while fewer lessons concentrate more material into each single-question lesson and more lessons distribute it across more single-question units.",
         "The response does not invent fixed count options or imply that either choice may drop required material or break source order.",
         "The supplied scenario, personalization, interaction, and Listen Mode answers are reused without being asked again."
+      ]
+    },
+    {
+      "id": 26,
+      "prompt": "teaching_prompt_personalization_level=5。请只对下面这份标准 AI 一对一授课提示词做最小修复，不生成课程提示词、不部署，也不要输出审计报告。lesson_id 固定为 L26；used_variables 和 global_variable_table 都应为空。\n\n它当前以视觉开场，连续堆叠视觉，最后才统一讲解。请按技能现行规则修复节奏，同时保留恰好三页视觉单元及其原有顺序和教学目的，保留全部事实、确定性内容、完整互动、即时反馈和收束结果。不要增加封面、目标空页、装饰页或其他填充页。\n\n原授课提示词：\n\n第1页：用对照关系呈现两个风险信号——供应商突然要求变更收款账户、同时催促立即付款——以及边界：它们只是风险信号，不能单独证明欺诈。\n\n第2页：呈现处置顺序：通过原登记联系方式独立核验 → 留存核验记录 → 提交双人复核 → 决定是否付款。\n\n===付款信息变更未经原登记联系人独立核验，不得发起付款。===\n\n第3页：展示完整问题“供应商邮件要求改用新账户并立即付款时，第一步应该做什么？”，同时在页内列出三个选项，并标注“正确答案：通过原登记联系方式独立核验”。\n\n供应商邮件要求改用新账户并立即付款时，第一步应该做什么？\n?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]\n\n最后统一讲解：说明两个风险信号为什么不能直接推出欺诈结论，解释四步处置顺序，并针对三个选项分别给出后果；用正确选择回扣核心问题并完成行动收束。答案只用于本课，不创建命名变量。\n\n最小修复时，可以把最后统一讲解拆回各视觉单元之后，但不得删改事实、改变处置顺序、改变三页的教学目的或改动确定性内容、问题、控件及选项顺序。level=5 只允许普通标题、讲解、过渡和反馈措辞保持意图式表达。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。",
+      "expected_output": "Minimally repairs a visual-first, back-to-back-visual standard lesson into a brief text lead-in followed by three correctly paired visual units while preserving facts, deterministic content, interaction behavior, and the level-5 structural skeleton.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object containing exactly one L26 lesson item, with empty used_variables and global_variable_table.",
+        "The Teaching Prompt makes the first learner-visible block one brief teaching paragraph rather than a heading, cover, slide, or image, and retains exactly the supplied three substantive visual pages in their original order without adding filler pages.",
+        "Page 1 is immediately followed by its own explanation of why the two observations are risk signals rather than proof of fraud; page 2 is immediately followed by its own explanation of the independent-verification-to-record-to-dual-review-to-decision sequence. No two non-question visuals remain consecutive, no unpaired learner-visible text turn appears after the lead-in, and there is no delayed pooled explanation.",
+        "The exact deterministic line `===付款信息变更未经原登记联系人独立核验，不得发起付款。===` occurs exactly once, and all facts plus the four-step order remain unchanged.",
+        "Page 3 contains the complete learner-facing question but does not duplicate the option labels, input hint or simulated control, or correct answer. It is immediately followed by the exact `?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]` control and then immediate answer-specific feedback.",
+        "The final feedback or explanatory paragraph reconnects the correct choice to the risk-signal boundary and also performs the required summary, decision checkpoint, or action close.",
+        "At teaching_prompt_personalization_level 5, the repair preserves the lead-in, all three visual positions and teaching purposes, every visual-explanation adjacency, the question-control-feedback sequence, deterministic content, and close while leaving only ordinary wording adaptable; it introduces no typography, color, coordinates, animation, or uniform word, sentence, or slide quota."
       ]
     }
   ]

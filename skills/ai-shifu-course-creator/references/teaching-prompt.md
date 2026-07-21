@@ -21,7 +21,7 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 1. Select the teaching pattern that best fits the lesson's core question and source evidence. Preserve the pattern order defined in `pedagogy.md#teaching-patterns`; do not force every lesson into Evidence Chain.
 2. Apply the normalized interaction policy without adding unselected purposes or blanket interactions.
 3. Resolve the teaching objective, must-cover evidence and boundaries, required path, interaction purpose and visible effect, and required close from the approved lesson design.
-4. Resolve and lock one lesson skeleton from the approved design, selected pedagogy, delivery mode, and interaction policy without using the personalization level to decide any structural surface.
+4. Resolve and lock one lesson skeleton from the approved design, selected pedagogy, delivery mode, and interaction policy without using the personalization level to decide any structural surface. For standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint, resolve the complete lead-in and visual-and-explanation cadence from `pedagogy.md#visual-text-coordination` at this step.
 5. Apply the normalized `teaching_prompt_personalization_level` only to content expression within that fixed skeleton through [Personalization Levels](#personalization-levels).
 6. Express the resulting decisions as executable instructions under `prompt-contracts.md#prompt-semantics`.
 7. Apply `markdownflow-authoring.md` after those teaching decisions are complete.
@@ -72,6 +72,7 @@ Apply each island through its owning MarkdownFlow authoring, source-preservation
 Each Teaching Prompt must:
 
 - Start with the teaching-start behavior defined in `pedagogy.md#lesson-loop`, not a copied chapter or lesson title.
+- For standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint, materialize instructions that produce one brief learner-visible text lead-in followed by at least one substantive visual-and-explanation pair, with every explanation before the next visual and the final explanation carrying the close, exactly as defined in `pedagogy.md#visual-text-coordination`. Express every required visual unit as an explicit slide or image instruction in the Teaching Prompt.
 - Resolve exactly one core question through the selected teaching pattern.
 - Make the teaching objective, must-cover facts and boundaries, and required explanatory relationships unambiguous at the specificity selected by the normalized personalization level.
 - Use the interaction or non-interactive loop selected by the normalized policy.
@@ -93,7 +94,9 @@ Under fallback mode, add only the Generation extensions defined in `data-contrac
 - The normalized personalization level is an integer from `1` through `5`, and the Teaching Prompt's content-expression specificity matches that level.
 - The fixed lesson skeleton is resolved before the level is applied and is explicit enough that the Teaching Agent cannot change the teaching sequence; add, omit, or relocate a content slot; change any content slot's or slide's teaching purpose; change slide count, slide placement, content grouping, visual hierarchy, or layout; or change the placement of interactions, images, feedback, and the close.
 - When multiple level variants are generated from the same approved design and controls, their structural signatures are identical, including every content slot's and slide's teaching purpose and the presence and placement of every example slot; only content-expression specificity may differ.
-- The first non-empty line performs a teaching-start function and does not duplicate structure metadata.
+- In standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint, the first non-empty instruction makes the first learner-visible block a brief text lead-in rather than a heading, slide, or image; the fixed skeleton contains at least one substantive visual unit, no consecutive visual units, one concise but complete explanation after every visual and before the next, no unpaired learner-visible text turn after the lead-in, and a final explanation that also performs the close.
+- A standard question-bearing interaction uses the question-only visual, unchanged `?[]` control, and immediate feedback or explanation sequence defined by `pedagogy.md#visual-text-coordination`; pure classroom slides and explicit text-only delivery retain their respective overrides.
+- In other delivery modes, the first non-empty instruction produces the applicable teaching-start behavior and does not duplicate structure metadata.
 - The Teaching Prompt contains the selected teaching method and does not outsource pedagogy to the Course Prompt.
 - The objective, must-cover facts and boundaries, required sequence, interaction effect, and close are specific enough to execute without guessing.
 - Levels `1` and `2` provide the requested near-final specificity without introducing unrequested typography, color, coordinates, animation, or deterministic markers.

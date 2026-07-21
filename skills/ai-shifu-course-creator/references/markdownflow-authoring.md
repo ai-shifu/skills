@@ -8,6 +8,7 @@ Encode already-resolved teaching, interaction, variable, and preservation decisi
 - `data-contracts.md#variable-table`
 - `pedagogy.md#interaction-design`
 - `pedagogy.md#variable-strategy`
+- `pedagogy.md#visual-text-coordination`
 - `markdownflow.md`
 
 ## Conditional References
@@ -16,26 +17,30 @@ Encode already-resolved teaching, interaction, variable, and preservation decisi
 
 ## Interaction Encoding
 
-- Put the complete learner-facing question immediately before the interaction control, and put the `?[]` control on its own line.
+- Encode the complete learner-facing question in the block immediately before every question-bearing interaction control, and put the unchanged `?[]` control on its own line.
+- In standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint, make that preceding block a question-only visual instruction and place the control immediately after it. Make the complete question the visual's central content, without option labels, input hints, simulated controls, or answers. Pure classroom slides retain their projection behavior, and explicit text-only delivery uses ordinary question text as the preceding block, as defined in `pedagogy.md#visual-text-coordination`.
 - Keep only option labels, the optional `%{{name}}` assignment prefix, and any free-text marker plus short hint inside `?[]`.
+- For an action-only control such as `?[Continue]`, do not invent a learner question or question slide; put the control on its own line after the content or instruction it advances.
 - Use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label.
 - Use `%{{name}}` only when the answer must leave the current lesson. Lesson-local answers use the no-variable form; a blank variable name is invalid.
-- For input, write a specific question before the control and a shorter hint after `...`. For select-plus-input, put `...` at the start of the custom-answer option.
-- When preceding text describes choices, keep control labels identical in set, order, and wording.
+- For input interactions, use a specific question in the preceding block and a shorter hint after `...` in the control; in standard visual-text delivery, that preceding block is the question-only visual. For select-plus-input, put `...` at the start of the custom-answer option.
+- Keep the complete option set, order, and wording only in the interaction control. In the standard visual-text scope, do not duplicate those labels on the question-only visual.
 - After the control, encode the feedback or visible instructional effect selected by `pedagogy.md#interaction-design`.
 
-Neutral shapes:
+Standard visual-text shapes:
 
 ```markdown
-Ask the learner which path best matches the current case.
+Create a question-only slide whose complete central question is "Which path best matches the current case?" Do not show option labels, simulated controls, or the answer.
 
 ?[Path A | Path B]
 
 After the learner answers, explain the selected path and contrast it with the other path.
 
-Ask the learner for the course-wide goal that later lessons and the Course Prompt should use.
+Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.
 
 ?[%{{learning_goal}} ...One-sentence goal]
+
+After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.
 ```
 
 ## Variable and Branch Encoding
@@ -60,7 +65,7 @@ Image composition is owned by `image-authoring.md` and is loaded conditionally b
 
 ## Validation
 
-- Every interaction control is on its own line and matches the preceding question or options.
+- Every interaction control is on its own line and matches the preceding question or options. Standard question-bearing controls immediately follow their question-only visual instructions and precede their feedback or explanatory effects.
 - Every named variable passes collection, reference, and metadata invariants.
 - Branch instructions use natural language and literal `UNKNOWN` where required.
 - Each immutable span uses the runtime form matching its selected preservation scope.
