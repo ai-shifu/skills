@@ -1783,82 +1783,86 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertNotIn("Personalization Levels", owner_section)
 
     def test_standard_teaching_uses_brief_text_visual_text_cadence(self):
-        lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
-        visual_text = markdown_section(
-            self.pedagogy, "Visual-Text Coordination"
+        lesson_loop = " ".join(
+            markdown_section(self.pedagogy, "Lesson Loop").split()
         )
-        materialization = markdown_section(
-            self.teaching_prompt, "Lesson Materialization"
+        visual_text = " ".join(
+            markdown_section(self.pedagogy, "Visual-Text Coordination").split()
         )
-        validation = markdown_section(self.teaching_prompt, "Validation")
-        interaction_encoding = markdown_section(
-            self.markdownflow_authoring, "Interaction Encoding"
+        materialization = " ".join(
+            markdown_section(self.teaching_prompt, "Lesson Materialization").split()
         )
-        authoring_validation = markdown_section(
-            self.markdownflow_authoring, "Validation"
+        validation = " ".join(
+            markdown_section(self.teaching_prompt, "Validation").split()
         )
-        checklist = markdown_section(
-            self.optimization_checklist, "Teaching Prompt Behavior"
+        interaction_encoding = " ".join(
+            markdown_section(
+                self.markdownflow_authoring, "Interaction Encoding"
+            ).split()
         )
-
-        normalized_visual = " ".join(visual_text.split())
-        normalized_validation = " ".join(validation.split())
-        normalized_checklist = " ".join(checklist.split())
+        authoring_validation = " ".join(
+            markdown_section(self.markdownflow_authoring, "Validation").split()
+        )
+        checklist = " ".join(
+            markdown_section(
+                self.optimization_checklist, "Teaching Prompt Behavior"
+            ).split()
+        )
 
         self.assertIn("brief text lead-in", lesson_loop)
         self.assertIn("standard teaching branch of combined delivery", lesson_loop)
-        self.assertIn("first learner-visible block", normalized_validation)
+        self.assertIn("first learner-visible block", validation)
         self.assertIn("slide, or image as the opening", lesson_loop)
         self.assertIn("word-count or sentence-count quota", lesson_loop)
 
         self.assertIn(
             "brief text lead-in → substantive visual unit → concise but complete "
             "text explanation",
-            normalized_visual,
+            visual_text,
         )
         self.assertIn(
             "Every lesson in this mode contains at least one substantive visual unit",
-            normalized_visual,
+            visual_text,
         )
         self.assertIn(
             "A visual unit is one slide or one standalone image",
-            normalized_visual,
+            visual_text,
         )
-        self.assertIn("slide containing an image still counts as one", normalized_visual)
-        self.assertIn("Do not place two visual units back to back", normalized_visual)
+        self.assertIn("slide containing an image still counts as one", visual_text)
+        self.assertIn("Do not place two visual units back to back", visual_text)
         self.assertIn(
             "defer several visuals' explanations to one later block",
-            normalized_visual,
+            visual_text,
         )
         self.assertIn(
             "context, relationship, reasoning, inference, or application",
-            normalized_visual,
+            visual_text,
         )
-        self.assertIn("rather than merely restating it", normalized_visual)
+        self.assertIn("rather than merely restating it", visual_text)
         self.assertIn(
             "final pair's explanation also performs the selected summary, "
             "decision checkpoint, or action close",
-            normalized_visual,
+            visual_text,
         )
         self.assertIn(
             "question-only slide, place the unchanged `?[]` control immediately "
             "after it, then provide the immediate feedback or explanatory effect",
-            normalized_visual,
+            visual_text,
         )
-        self.assertIn("`?[Continue]`", normalized_visual)
+        self.assertIn("`?[Continue]`", visual_text)
 
         self.assertIn("one brief learner-visible text lead-in", materialization)
         self.assertIn("at least one substantive visual-and-explanation pair", materialization)
         self.assertIn("final explanation carrying the close", materialization)
-        self.assertIn("no consecutive visual units", normalized_validation)
+        self.assertIn("no consecutive visual units", validation)
         self.assertIn(
             "one concise but complete explanation after every visual and before "
             "the next",
-            normalized_validation,
+            validation,
         )
-        self.assertIn("final explanation that also performs the close", normalized_validation)
-        self.assertIn("question-only visual", normalized_validation)
-        self.assertIn("unchanged `?[]` control", normalized_validation)
+        self.assertIn("final explanation that also performs the close", validation)
+        self.assertIn("question-only visual", validation)
+        self.assertIn("unchanged `?[]` control", validation)
 
         self.assertIn("question-only visual instruction", interaction_encoding)
         self.assertIn("without option labels", interaction_encoding)
@@ -1868,6 +1872,10 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("only in the interaction control", interaction_encoding)
         self.assertIn(
             "do not duplicate those labels on the question-only visual",
+            interaction_encoding,
+        )
+        self.assertIn(
+            "After the learner responds, acknowledge the goal and explain",
             interaction_encoding,
         )
         self.assertIn("question-only visual instructions", authoring_validation)
@@ -1880,13 +1888,13 @@ class CourseCreatorContractTests(unittest.TestCase):
             "cover or decorative or objective-only page",
             "unpaired learner-visible text turn after the lead-in",
         ):
-            self.assertIn(defect, normalized_checklist)
+            self.assertIn(defect, checklist)
         self.assertIn(
             "Pure classroom slides do not use Teaching Agent narration or paired "
             "explanatory text",
-            normalized_checklist,
+            checklist,
         )
-        self.assertIn("explicit text-only delivery uses no visual units", normalized_checklist)
+        self.assertIn("explicit text-only delivery uses no visual units", checklist)
 
         non_owners = {
             "Course Prompt": self.course_prompt,
