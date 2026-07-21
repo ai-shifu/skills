@@ -2055,6 +2055,10 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertEqual(5, len(placeholders))
         self.assertEqual(len(placeholders), len(set(placeholders)))
         self.assertIn("`course_author_name` from Course Design Intake", sources)
+        self.assertIn(
+            "omit the corresponding list item in the Fillable Template",
+            sources,
+        )
         self.assertNotIn("If unknown, ask the author", sources)
         self.assertIn("they do not add placeholders to the template", sources)
 
@@ -2148,7 +2152,6 @@ class CourseCreatorContractTests(unittest.TestCase):
         conditional = markdown_section(
             self.course_prompt, "Conditional References"
         )
-        workflow = markdown_section(self.course_prompt, "Authoring Workflow")
         checks = markdown_section(self.course_prompt, "Materialization Checks")
 
         self.assertIn("`course_author_name` (string)", input_contract)
@@ -2162,7 +2165,6 @@ class CourseCreatorContractTests(unittest.TestCase):
             normalized_controls,
         )
         self.assertIn("`course-design-intake.md`", conditional)
-        self.assertIn("remove the complete `- You are XXX.` list item", workflow)
         self.assertIn(
             "optional named Role identity item is either absent or contains a "
             "non-empty name",

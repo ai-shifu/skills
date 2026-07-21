@@ -26,7 +26,7 @@ Use this file to materialize one course-wide artifact from the six-section templ
 
 1. Resolve `resolved_target_language` using [language-policy.md#language-resolution](language-policy.md#language-resolution).
 2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
-3. Apply [Placeholder Sources and Context](#placeholder-sources-and-context). When `course_author_name` from Course Design Intake is non-empty, replace the Role identity `XXX` with it. When it is empty, remove the complete `- You are XXX.` list item. Replace each of the remaining four `XXX` placeholders from its mapped source. Use already-collected artifacts and apply the listed context constraints to the fill values.
+3. Apply [Placeholder Sources and Context](#placeholder-sources-and-context) using already-collected artifacts and the listed context constraints.
 4. Render section headings and body text in `resolved_target_language`. The English template is canonical structure, not a language default.
 5. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in `resolved_target_language`.
 6. Run the [Materialization Checks](#materialization-checks).
