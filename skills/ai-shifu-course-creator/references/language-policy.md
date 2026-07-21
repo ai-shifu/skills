@@ -31,6 +31,7 @@ Use this table for human-facing skill concepts. Use the matching language column
 | `Lesson` | Lesson | 节 / 课节 | Leçon | Course lesson unit in human-facing prose. |
 | `Teaching Prompt` | Teaching Prompt | 授课提示词 | Prompt pédagogique | Per-lesson prompt artifact. Use plural naturally when needed. |
 | `Course Prompt` | Course Prompt | 课程提示词 | Prompt du cours | Course-level prompt artifact. |
+| `Teaching Agent` | Teaching Agent | 授课智能体 | Agent pédagogique | Learner-time AI role that executes Course Prompts and Teaching Prompts, gives interaction feedback, and answers learner follow-up questions. |
 | `Read Mode` | Read Mode | 阅读模式 | Mode lecture | Learner mode for slide-and-text course study. |
 | `Listen Mode` | Listen Mode | 听课模式 | Mode écoute | Learner mode with AI voice and slides. |
 | `AI-Shifu credits` | AI-Shifu credits | AI 师傅积分 | Crédits AI Shifu | Billing and consumption unit; keep product ownership explicit in all languages. |

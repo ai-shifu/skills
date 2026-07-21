@@ -253,10 +253,10 @@ python3 scripts/shifu-cli.py credit-detail <bid> --scene 1203
 
 `--scene` accepts a comma-separated subset of `{1201, 1202, 1203}` (debug / preview / production). Combine with `--start` / `--end` to scope a window.
 
-### Recipe 11 — LLM-only vs TTS-only
+### Recipe 11 — Teaching Agent usage vs TTS usage
 
 ```bash
-# LLM only
+# Teaching Agent only
 python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1101
 
 # TTS only
@@ -406,7 +406,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-> Returns interleaved learner questions (`type = 321, role = 2`) and LLM answers (`type = 322, role = 1`) in chronological order. Every access is audited server-side.
+> Returns interleaved learner questions (`type = 321, role = 2`) and Teaching Agent answers (`type = 322, role = 1`) in chronological order. Every access is audited server-side.
 
 ### Recipe 20 — All follow-up questions by one learner (raw text, `limit ≤ 100`)
 
@@ -422,7 +422,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-### Recipe 21 — Latest LLM answers (evaluate model quality)
+### Recipe 21 — Latest Teaching Agent answers (evaluate the underlying model)
 
 ```bash
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
@@ -454,7 +454,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 Each row is one question: `(user_bid, question_text, progress_record_bid, outline_item_bid, position, asked_at)`. The 4-tuple `(progress_record_bid, outline_item_bid, position, asked_at)` is what you use to pair against the matching answer below.
 
-**Step 2 — fetch the matching LLM answers**
+**Step 2 — fetch the matching Teaching Agent answers**
 
 Collect the distinct `progress_record_bid` values from Step 1 and pass them into `in`:
 
@@ -498,7 +498,7 @@ Apply the Translation Gate in `privacy-and-presentation.md`:
 
 Final shape per row:
 
-> **Learner A (Python 学徒 · 138\*\*\*\*\*000)** asked in **Lesson 3.1 装饰器与闭包** at `2026-05-13 21:42`: "闭包和装饰器啥区别?" → AI answer: "闭包是…"
+> **Learner A (Python 学徒 · 138\*\*\*\*\*000)** asked in **Lesson 3.1 装饰器与闭包** at `2026-05-13 21:42`: "闭包和装饰器啥区别?" → Teaching Agent answer: "闭包是…"
 
 If the user starts from a phone number and wants to know which learner asked, run `privacy-and-presentation.md` Use B (`user_identify = "13800138000"` exact match) to get the `user_bid` first, then filter Step 1 by that `user_bid` (`{"field":"user_bid","op":"=","value":"<u-bid>"}`) — `in` / `like` / range on `user_identify` are rejected to prevent enumeration.
 

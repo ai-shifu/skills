@@ -51,9 +51,9 @@ Ask the learner for the course-wide goal that later lessons and the Course Promp
 
 When immutable source spans were selected, load `source-preservation.md` and encode only those spans:
 
-- Put a complete standalone single-line span that must bypass the LLM inside `===...===`.
-- Put a complete multi-line span that must bypass the LLM inside `!===...!===`; include the full code fence and language tag when exact fenced output is required.
-- In otherwise generated content, wrap only the position- and formatting-sensitive span inline with `===...===`. Inline preservation remains LLM-mediated and may be translated.
+- Put a complete standalone single-line span that must bypass the Teaching Agent inside `===...===`.
+- Put a complete multi-line span that must bypass the Teaching Agent inside `!===...!===`; include the full code fence and language tag when exact fenced output is required.
+- In otherwise generated content, wrap only the position- and formatting-sensitive span inline with `===...===`. Inline preservation remains mediated by the Teaching Agent and may be translated.
 - Encode each selected span independently and leave adaptive content outside deterministic markers.
 
 Image composition is owned by `image-authoring.md` and is loaded conditionally by the selected workflow.

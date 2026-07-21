@@ -84,12 +84,12 @@
     {
       "id": 8,
       "prompt": "Course Design Intake 已完成，teaching_prompt_personalization_level=3，interaction_policy 已明确选择 disabled。原课节先问“当前风险更可能来自哪里？”，再用 ?[%{{risk_source}} 人员 | 流程 | 工具] 收集答案并按答案分支。请直接输出改写后的 Teaching Prompt、used_variables 和 global_variable_table：把该选择题改成一个完整的 worked application，不能询问学员答案，也不能保留回答变量或按回答分支。",
-      "expected_output": "Converts disabled interaction slots into a balanced level-3 model-led worked application while removing all answer-dependent behavior.",
+      "expected_output": "Converts disabled interaction slots into a balanced level-3 worked application demonstrated by the Teaching Agent while removing all answer-dependent behavior.",
       "files": [],
       "expectations": [
         "The disabled policy is applied with no learner-answer variables: used_variables and global_variable_table are both empty.",
         "The result contains no ?[] interaction, learner-answer request, learner-answer variable, or answer-dependent branch.",
-        "The former interaction becomes a worked application, model-led example, or consolidation that preserves the teaching function.",
+        "The former interaction becomes a worked application, example demonstrated by the Teaching Agent, or consolidation that preserves the teaching function.",
         "The rewrite applies teaching_prompt_personalization_level 3 without turning the worked application into either a fixed transcript or an underspecified intent-only note."
       ]
     },
@@ -111,7 +111,7 @@
       "files": [],
       "expectations": [
         "The standard non-slide-only Teaching Prompt gives each selected visual a defined teaching purpose and enough textual teaching direction to explain the concept independently; it fixes the complete slide skeleton and image placement while leaving only the selected level's ordinary explanation wording within those slots adaptable, and conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
-        "The pure classroom-slide result follows the slide-only delivery rules in pedagogy.md and course-prompt.md with projection-ready content, no AI narration or full explanatory paragraph after the image, and a fixed slide count, order, placement, teaching purpose for each slide and content slot, content grouping, semantic layout, and image and close placement.",
+        "The pure classroom-slide result follows the slide-only delivery rules in pedagogy.md and course-prompt.md with projection-ready content, no Teaching Agent narration or full explanatory paragraph after the image, and a fixed slide count, order, placement, teaching purpose for each slide and content slot, content grouping, semantic layout, and image and close placement.",
         "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
       ]
     },
@@ -125,8 +125,8 @@
         "The Course Prompt keeps all six canonical sections, and its Teaching Techniques section explicitly follows the current Teaching Prompt without adding, replacing, or reordering pedagogy.",
         "The restrained, clear, and warm tone appears as a course-wide style adjustment without changing the Teaching Prompt's lesson flow.",
         "The Course Prompt preserves the canonical course-level behavior rules while letting the Teaching Prompt determine whether a slide requires accompanying text.",
-        "Both artifacts are Prompts addressed to the runtime LLM rather than scripts or finished learner-facing lectures.",
-        "Second-person forms in any language, including English you/your and Chinese 你/您, refer only to the runtime LLM in Prompt instructions; learner-visible text inside a MarkdownFlow ?[] interaction or standalone deterministic output may address the learner in the second person."
+        "Both artifacts are Prompts addressed to the Teaching Agent rather than scripts or finished learner-facing lectures.",
+        "Second-person forms in any language, including English you/your and Chinese 你/您, refer only to the Teaching Agent in Prompt instructions; learner-visible text inside a MarkdownFlow ?[] interaction or standalone deterministic output may address the learner in the second person."
       ]
     },
     {
@@ -137,7 +137,7 @@
       "expectations": [
         "The workflow loads course-prompt.md and the shared Prompt contract without rerunning segmentation, orchestration, or Teaching Prompt generation.",
         "The workflow uses the six-section template with its five mapped XXX placeholders, then replaces all five so the completed Course Prompt has no unresolved XXX.",
-        "The slide-only behavior is selected from course-prompt.md: it does not require AI narration or a complete prose explanation after every slide.",
+        "The slide-only behavior is selected from course-prompt.md: it does not require Teaching Agent narration or a complete prose explanation after every slide.",
         "The Course Prompt follows the existing Teaching Prompts and does not introduce, replace, or reorder lesson pedagogy."
       ]
     },
@@ -168,7 +168,7 @@
     {
       "id": 15,
       "prompt": "Course Design Intake、分段和教学模式已经确定，teaching_prompt_personalization_level=5。请只生成一节标准 AI 授课的授课提示词，不生成课程提示词、不部署。lesson_id 固定为 L15，核心问题是‘退款审核人员如何区分风险信号与欺诈结论？’。\n\n来源与不可变约束：\n1. 账号信息不一致和短时间内多设备登录都只是风险信号，不能单独证明欺诈。\n2. 教学中的处置顺序必须是：核验身份 → 留存证据 → 决定处置。\n3. 下面制度阈值原句必须作为独立确定性内容原样出现且只出现一次：两个及以上风险信号同时出现时，必须在 15 分钟内上报。\n4. 下面固定金句必须作为独立确定性内容原样出现且只出现一次：先验证，再处置；先留证，再定责。\n\n课内单选互动必须使用下面完整提问和控件，二者各出现一次且顺序不变：\n这个案例当前最应该先做什么？\n?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]\n\n该答案只在本课用于即时反馈：针对每个选项解释其后果，并把正确选择重新连回‘风险信号不是欺诈结论’。后续课节和课程提示词都不会使用这个答案，因此不要创建命名变量。\n\n没有其他固定文案或视觉样式要求。请按技能的现行规则固定完整教学顺序和幻灯片结构，包括页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及互动和收束的位置；level=5 只决定这些固定槽位内普通标题、讲解、例子细节、过渡和反馈措辞的预写程度。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
-      "expected_output": "Produces one runnable level-5 standard-mode Teaching Prompt with a complete fixed teaching and slide skeleton while leaving non-critical content expression inside each fixed slot to the runtime LLM.",
+      "expected_output": "Produces one runnable level-5 standard-mode Teaching Prompt with a complete fixed teaching and slide skeleton while leaving non-critical content expression inside each fixed slot to the Teaching Agent.",
       "files": [],
       "expectations": [
         "The output is a parseable JSON object containing exactly one L15 lesson item with all required lesson-schema fields and an empty global_variable_table.",
@@ -196,14 +196,14 @@
     {
       "id": 17,
       "prompt": "Course Design Intake 和课节结构已经完成，teaching_prompt_personalization_level=5。请只生成一节纯课堂幻灯片模式的授课提示词：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白或长篇口头解释。lesson_id 固定为 L17，核心问题是‘向外部供应商发送客户数据前，如何确定合规动作？’。\n\n必须呈现的事实与关系：\n- L1 公开数据：审核后可以公开。\n- L2 内部数据：只能通过获授权的内部渠道流转。\n- L3 敏感数据：外发前需要审批，并使用获批准的加密渠道。\n- 决策顺序是：识别数据级别 → 核验接收方授权 → 选择合规通道 → 登记外发。\n\n下面是内部制度原文，必须作为独立确定性内容原样出现且只出现一次：\n外发含客户联系方式的数据前，必须完成数据分级、接收方授权核验和外发登记。\n\n下面图片已经选定并上传。必须按‘制度原文 → 图片 → 图注 → 互动’的顺序使用；图片和图注都要作为独立确定性内容原样出现且只出现一次：\n![数据分级与外发路径](https://static.example.com/training/data-export-path-v3.png)\n图：先分级，再核验授权，最后登记外发。\n\n互动必须完整保留并放在图片和图注之后：\n一份包含客户手机号的表格需要发给外部供应商，发送前最先确认什么？\n?[供应商是否催得急 | 数据级别与授权范围 | 文件是否足够美观]\n\n答案只用于本课的简短反馈状态，不在后续复用，因此不要创建命名变量。\n\n没有额外的固定文案或视觉样式要求。结果必须足以生成可直接投屏的课堂幻灯片；请固定完整教学顺序和幻灯片结构，包括页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及制度、图片、图注、互动和收束的位置。level=5 只开放这些固定槽位内的普通标题、解释、例子细节、过渡和反馈措辞。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
-      "expected_output": "Produces a projection-ready level-5 pure-classroom-slide Teaching Prompt with a complete fixed teaching and slide skeleton that preserves regulated text, image order, and interaction behavior while delegating only ordinary content expression inside fixed slots to the runtime LLM.",
+      "expected_output": "Produces a projection-ready level-5 pure-classroom-slide Teaching Prompt with a complete fixed teaching and slide skeleton that preserves regulated text, image order, and interaction behavior while delegating only ordinary content expression inside fixed slots to the Teaching Agent.",
       "files": [],
       "expectations": [
         "The output is a parseable JSON object containing exactly one L17 lesson item, with empty used_variables and global_variable_table.",
         "The Teaching Prompt preserves all three classification rules and the decision sequence from level identification through authorization, channel selection, and external-transfer registration.",
         "The exact deterministic policy line, deterministic image line, and deterministic caption line each occur exactly once and remain in policy-before-image-before-caption order.",
         "The exact question and `?[供应商是否催得急 | 数据级别与授权范围 | 文件是否足够美观]` control each occur exactly once after the caption, preserve option order, and produce concise current-lesson feedback without a named variable.",
-        "The artifact requests slide-facing projected content only and does not positively instruct the runtime LLM to narrate or provide long spoken explanatory paragraphs.",
+        "The artifact requests slide-facing projected content only and does not positively instruct the Teaching Agent to narrate or provide long spoken explanatory paragraphs.",
         "At teaching_prompt_personalization_level 5, the Teaching Prompt fixes its slide count, page order, the teaching purpose of each slide and content slot, content grouping, semantic layout, and policy, image, caption, interaction, feedback, and close placement; only ordinary title and projected-copy wording remains adaptable, with no concrete font size, color value, pixel coordinate, exact percentage split, or animation requirement."
       ]
     },
@@ -215,7 +215,7 @@
       "expectations": [
         "The response asks for the missing teaching_prompt_personalization_level before Segmentation, Orchestration, Teaching Prompt generation, or deployment.",
         "The question presents exactly five ordered choices numbered 1 through 5, with level 1 described as the most deterministic or concrete and level 5 as the most personalized or adaptive.",
-        "Before requesting the choice, the response explains that this answer controls how much learner-facing expression the author fixes in advance versus how much AI-Shifu may adapt to available learner context; every level description states its practical author- or learner-visible effect rather than showing only a number and name.",
+        "Before requesting the choice, the response explains that this answer controls how much learner-facing expression the author fixes in advance versus how much the Teaching Agent may adapt to available learner context; every level description states its practical author- or learner-visible effect rather than showing only a number and name.",
         "The explanation says that the level uses only learner context already available and never authorizes new context collection, interactions, variables, or branches.",
         "The choices make the progression observable only in content expression: higher levels emphasize intent for the same title, ordinary explanation, already-required example identity and detail, transition, and feedback slots while every level keeps the same teaching sequence, slide count, slide order and placement, the teaching purpose of each slide and content slot, required example-slot presence and placement, content grouping, semantic layout, and interaction, image, and close placement.",
         "The localized question describes the invariant meaning as each slide's and content slot's 教学目的, and does not call it instructional role or 教学角色.",
@@ -234,7 +234,7 @@
         "All three structural fingerprints are identical: exactly three slides in the same order, with the same teaching purpose for every slide and content slot, title slot, required example-slot presence and placement, content grouping, semantic layout, and deterministic-content, interaction, feedback, and close placement.",
         "All three variants describe the invariant meaning as each slide's and content slot's 教学目的, and none calls it instructional role or 教学角色.",
         "Content-expression specificity decreases monotonically: level 1 prewrites more ordinary title and explanation wording, example detail, transitions, and feedback language than level 3, and level 3 prewrites more than level 5; no comparison relies on a relaxed page, grouping, placement, or layout decision.",
-        "Level 5 remains executable by stating the intent and must-cover points for every fixed content slot while leaving only incidental phrasing and example detail to the runtime LLM; it does not delete, merge, split, add, reorder, or reposition slides or their structural slots.",
+        "Level 5 remains executable by stating the intent and must-cover points for every fixed content slot while leaving only incidental phrasing and example detail to the Teaching Agent; it does not delete, merge, split, add, reorder, or reposition slides or their structural slots.",
         "No level adds deterministic markers beyond the supplied immutable line or changes interaction syntax, source facts, required order, the teaching purpose of any slide or content slot, slide structure, or delivery mode to create the expression difference."
       ]
     },
@@ -244,7 +244,7 @@
       "expected_output": "Produces level-1 and level-5 projection-ready slide prompts with an identical fixed four-slide structural fingerprint and clearly different ordinary content-expression prescription.",
       "files": [],
       "expectations": [
-        "The output is a parseable JSON object with exactly two variants ordered by teaching_prompt_personalization_level 1 and 5, and both are explicitly limited to projection-ready classroom-slide content without AI narration.",
+        "The output is a parseable JSON object with exactly two variants ordered by teaching_prompt_personalization_level 1 and 5, and both are explicitly limited to projection-ready classroom-slide content without Teaching Agent narration.",
         "Both variants preserve the four-step compliance sequence and include the exact deterministic policy, image, and caption lines exactly once in policy-before-image-before-caption order.",
         "Both variants place the exact question and `?[合作方口头承诺保密 | 已核验授权并完成审批 | 文件已经压缩]` control after the caption exactly once, preserve option order, request concise immediate feedback, and create no named variable.",
         "Both structural fingerprints are identical: exactly four slides in the same order, with the same teaching purpose for every slide and content slot, title slot, required example-slot presence and placement, content grouping, semantic layout, and policy, image, caption, interaction, feedback, and close placement.",
@@ -273,7 +273,7 @@
       "files": [],
       "expectations": [
         "The response asks exactly one current intake question about the usage scenario before any downstream authoring or deployment work.",
-        "Personalized AI one-on-one self-study is described by its concrete effect: AI-Shifu guides one learner directly and may adapt ordinary explanation or feedback to learner context already available.",
+        "Personalized AI one-on-one self-study is described by its concrete effect: the Teaching Agent guides one learner directly and may adapt ordinary explanation or feedback to learner context already available.",
         "Interactive classroom slides are described as projection-ready content paced by a human instructor, and the combined option explicitly prepares the course for both learner experiences.",
         "The response does not show only the three option names, add a separate sales pitch, or promise an unsupported outcome.",
         "The supplied personalization, interaction, Listen Mode, and structure answers are reused without being asked again."
@@ -288,7 +288,7 @@
         "The response asks exactly one current intake question about interaction purpose before any downstream authoring or deployment work.",
         "Learner-context collection is explained as occurring at an early course or module point and giving later teaching selected context to use; pre-content thinking or misconception activation is explained as giving the following explanation an initial judgment to refine.",
         "Lesson-end self-check is explained as helping the learner check or consolidate core understanding.",
-        "Choosing no interactions is explained as replacing learner-answer controls with worked applications, model-led demonstrations, or consolidation rather than leaving a teaching gap.",
+        "Choosing no interactions is explained as replacing learner-answer controls with worked applications, demonstrations by the Teaching Agent, or consolidation rather than leaving a teaching gap.",
         "Every option has a practical effect description, and the supplied scenario, personalization, Listen Mode, and structure answers are reused without being asked again."
       ]
     },

@@ -65,7 +65,7 @@ Use this file to materialize one course-wide artifact from the six-section templ
 # Slides
 
 - Only create a slide, PPT, visual page, or classroom projection page when the current user message explicitly requests one. Do not proactively create visuals.
-- Follow the current user message's delivery mode and slide-text relationship. Do not add AI narration, a full text explanation, or presenter notes unless that user message requests them.
+- Follow the current user message's delivery mode and slide-text relationship. Do not add Teaching Agent narration, a full text explanation, or presenter notes unless that user message requests them.
 - Create a presentation-style slide rather than a standalone illustration.
 - In-slide option labels must not be interactive.
 - Keep in-slide text concise and prompt-like. Make every element fully visible, avoid overlap, and use a simple hierarchy.
