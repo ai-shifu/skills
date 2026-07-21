@@ -30,14 +30,16 @@ Do not run Teaching Prompt generation or build `course_index` and `global_variab
 1. Normalize source ordering and merge the input material.
 2. Run Segmentation and retain its traceable segments and lesson-boundary candidates.
 3. Finalize lesson cuts with one core question per lesson.
-4. Run Teaching Prompt generation for each lesson.
-5. Build `course_index` and `global_variable_table` from the completed lesson set.
-6. Apply the gates below. Rerun the phase that owns each failed output rather than treating every failure as a lesson-only generation failure.
-7. After every affected Segmentation and Teaching Prompt rerun passes, rebuild both `course_index` and `global_variable_table`, then reapply the gates. Block handoff while any gate still fails.
+4. Finalize each lesson's teaching sequence, every required content slot's presence, placement, and teaching purpose, and, when applicable, exact slide count, slide order and placement, each slide's teaching purpose, content grouping, visual hierarchy, and semantic layout without using `teaching_prompt_personalization_level` as an input.
+5. Run Teaching Prompt generation for each lesson with that fixed skeleton and the normalized `teaching_prompt_personalization_level` passed unchanged across the course.
+6. Build `course_index` and `global_variable_table` from the completed lesson set.
+7. Apply the gates below. Rerun the phase that owns each failed output rather than treating every failure as a lesson-only generation failure.
+8. After every affected Segmentation and Teaching Prompt rerun passes, rebuild both `course_index` and `global_variable_table`, then reapply the gates. Block handoff while any gate still fails.
 
 ## Mandatory Gates
 
 - Verify syntax and runtime results through the requirements loaded by `teaching-prompt.md`.
+- Verify each Teaching Prompt's content-expression specificity against `teaching-prompt.md#personalization-levels` and reject any level-driven change to its fixed teaching or slide structure, including changing a content slot's or slide's teaching purpose or adding, omitting, or relocating a content slot because of the level.
 - Verify every learner-answer variable against `data-contracts.md#variable-table`.
 - Verify the selected teaching loop, interaction effects, variable-persistence decisions, and delivery-mode behavior against `pedagogy.md`.
 - Require Segmentation's preservation validation to pass.

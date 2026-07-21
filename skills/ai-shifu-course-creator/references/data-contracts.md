@@ -25,6 +25,15 @@ Provide one of:
 - `course_profile` object.
 - `delivery_constraints` object.
 - `interaction_policy` object.
+- `teaching_prompt_personalization_level` (integer from `1` through `5`): a course-wide, transient authoring input that controls how much learner-visible wording, explanation, already-required example identity and detail, and feedback wording each Teaching Prompt predetermines. It does not control teaching or slide structure.
+
+### Teaching Prompt Personalization Level
+
+`teaching_prompt_personalization_level` is a top-level scalar and transient authoring input, and it must be strictly an integer from `1` through `5`. It is not a member of `course_profile`, `delivery_constraints`, or `interaction_policy`. Its author-facing names, level semantics, and materialization rules are owned exclusively by `teaching-prompt.md#personalization-levels`.
+
+This is a content-expression control, not a structure control. It never changes the fixed teaching sequence or slide structure, including which content slots appear, where they appear, and the teaching purpose each content slot and slide serves.
+
+Pass the normalized value unchanged through the in-memory authoring handoff to Teaching Prompt generation and, when applicable, optimization review. Keep it absent from output artifacts, course-directory files, CLI inputs or configuration, all build or deployment payloads including `shifu-import.json`, and platform metadata. In particular, do not serialize this control as a field in `lesson_teaching_prompts`, `course_index`, `global_variable_table`, `course_prompt`, `course_description`, or fallback output extensions.
 
 ### Recommended Object Shapes
 
@@ -73,6 +82,7 @@ Provide one of:
 - Input files must be readable text or Markdown.
 - When multiple files are provided, their order must be explicit.
 - `interaction_policy` must satisfy its mode and purpose invariants.
+- When present, `teaching_prompt_personalization_level` must be an integer from `1` through `5`. Reject booleans, floats, numeric strings, and out-of-range values rather than coercing them.
 
 ## Output Contract
 

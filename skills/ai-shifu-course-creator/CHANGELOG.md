@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Write Teaching Prompts as executable teaching intent and must-cover constraints by default, while reserving exact wording and layout for interactions, runtime behavior, source fidelity, and explicit author requirements.
+- Let course authors choose one of five Teaching Prompt personalization levels, from near-final learner-facing content to more intent-led, learner-adaptive expression, while keeping the teaching sequence, slide structure, and teaching purpose of every content slot and slide fixed at every level; pure classroom-slide courses resolve an otherwise missing choice to high determinism without an extra question.
 - Centralize Prompt audience and addressee semantics so Teaching Prompts and Course Prompts are written to the runtime LLM, Course Prompts call the lesson input the current user message, and learner-visible `?[]` or standalone deterministic output is the explicit exception where second-person references may mean the learner.
 - Keep lesson pedagogy in Teaching Prompts and limit Course Prompts to following that pedagogy while adjusting course-wide presentation style.
 - Refactor `SKILL.md` into a compact router backed by single-purpose references for language, authoring mode and intake, source preservation, segmentation, orchestration, Teaching and Course Prompt materialization, MarkdownFlow authoring, images, course descriptions, optimization, deployment, sync, management, analytics, and reporting; declare required and conditional dependencies explicitly without changing course behavior.
