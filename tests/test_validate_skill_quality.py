@@ -2170,7 +2170,10 @@ class CourseCreatorContractTests(unittest.TestCase):
             "non-empty name",
             checks,
         )
-        self.assertIn("malformed `You are .` line", checks)
+        self.assertIn(
+            "completed artifact contains no unresolved `XXX` placeholder",
+            checks,
+        )
 
         evals_data = json.loads(
             (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
