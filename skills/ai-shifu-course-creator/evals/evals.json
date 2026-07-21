@@ -70,25 +70,27 @@
     },
     {
       "id": 7,
-      "prompt": "材料只有两课时：第一课“识别风险信号”，第二课“选择处置动作”。Course Design Intake 已完成，我只选择在课程开头收集 learner_context。请直接给出两课时的 Teaching Prompt 设计概要，标明各课的教学循环和交互安排；不要因此给每节课都加互动，也不要增加课前思考或课末自检。",
-      "expected_output": "Applies the single enabled purpose only at its canonical placement without expanding interaction coverage.",
+      "prompt": "材料只有两课时：第一课“识别风险信号”，第二课“选择处置动作”。Course Design Intake 已完成，teaching_prompt_personalization_level=3，我只选择在课程开头收集 learner_context。请直接给出两课时的 Teaching Prompt 设计概要，标明各课的教学循环和交互安排；不要因此给每节课都加互动，也不要增加课前思考或课末自检。",
+      "expected_output": "Applies the single enabled purpose only at its canonical placement and uses the balanced level-3 Teaching Prompt personalization behavior without expanding interaction coverage.",
       "files": [],
       "expectations": [
         "The interaction policy is enabled with exactly learner_context selected; pre_content_thinking and lesson_end_self_check remain unselected.",
         "Learner context is collected at an early course or module point without making every lesson interactive.",
         "Lessons without the selected-purpose placement use a worked application or consolidation in the lesson loop instead of an added interaction.",
-        "The response contains exactly two lesson outlines and explicitly identifies the teaching loop and interaction arrangement for each lesson."
+        "The response contains exactly two lesson outlines and explicitly identifies the teaching loop and interaction arrangement for each lesson.",
+        "The Teaching Prompt design uses teaching_prompt_personalization_level 3 only to set how much ordinary wording, example detail, transitions, and feedback language are prewritten; each lesson still fixes its complete teaching sequence and slide skeleton, including slide count, order, placement, the teaching purpose of each slide and content slot, content grouping, semantic layout, and interaction and close placement."
       ]
     },
     {
       "id": 8,
-      "prompt": "Course Design Intake 已明确选择 disabled。原课节先问“当前风险更可能来自哪里？”，再用 ?[%{{risk_source}} 人员 | 流程 | 工具] 收集答案并按答案分支。请直接输出改写后的 Teaching Prompt、used_variables 和 global_variable_table：把该选择题改成一个完整的 worked application，不能询问学员答案，也不能保留回答变量或按回答分支。",
-      "expected_output": "Converts disabled interaction slots into model-led worked application while removing all answer-dependent behavior.",
+      "prompt": "Course Design Intake 已完成，teaching_prompt_personalization_level=3，interaction_policy 已明确选择 disabled。原课节先问“当前风险更可能来自哪里？”，再用 ?[%{{risk_source}} 人员 | 流程 | 工具] 收集答案并按答案分支。请直接输出改写后的 Teaching Prompt、used_variables 和 global_variable_table：把该选择题改成一个完整的 worked application，不能询问学员答案，也不能保留回答变量或按回答分支。",
+      "expected_output": "Converts disabled interaction slots into a balanced level-3 model-led worked application while removing all answer-dependent behavior.",
       "files": [],
       "expectations": [
         "The disabled policy is applied with no learner-answer variables: used_variables and global_variable_table are both empty.",
         "The result contains no ?[] interaction, learner-answer request, learner-answer variable, or answer-dependent branch.",
-        "The former interaction becomes a worked application, model-led example, or consolidation that preserves the teaching function."
+        "The former interaction becomes a worked application, model-led example, or consolidation that preserves the teaching function.",
+        "The rewrite applies teaching_prompt_personalization_level 3 without turning the worked application into either a fixed transcript or an underspecified intent-only note."
       ]
     },
     {
@@ -108,8 +110,8 @@
       "expected_output": "Applies the standard and slide-only visual contracts separately while keeping raw graphics code out of both prompts.",
       "files": [],
       "expectations": [
-        "The standard non-slide-only Teaching Prompt pairs the core visual with a complete textual explanation and conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
-        "The pure classroom-slide result follows the slide-only delivery rules in pedagogy.md and course-prompt.md with concise projected content and does not require AI narration or a full explanatory paragraph after the image.",
+        "The standard non-slide-only Teaching Prompt gives each selected visual a defined teaching purpose and enough textual teaching direction to explain the concept independently; it fixes the complete slide skeleton and image placement while leaving only the selected level's ordinary explanation wording within those slots adaptable, and conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
+        "The pure classroom-slide result follows the slide-only delivery rules in pedagogy.md and course-prompt.md with projection-ready content, no AI narration or full explanatory paragraph after the image, and a fixed slide count, order, placement, teaching purpose for each slide and content slot, content grouping, semantic layout, and image and close placement.",
         "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
       ]
     },
@@ -161,6 +163,105 @@
         "image-authoring.md is not loaded because neither the source nor the request contains an image task.",
         "No platform authentication, target resolution, image search, upload-image command, image manifest, deployment, sync, or course-management operation is attempted.",
         "The generated interaction follows the existing MarkdownFlow syntax and uses a variable only if the answer must be reused later."
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "Course Design Intake、分段和教学模式已经确定，teaching_prompt_personalization_level=5。请只生成一节标准 AI 授课的授课提示词，不生成课程提示词、不部署。lesson_id 固定为 L15，核心问题是‘退款审核人员如何区分风险信号与欺诈结论？’。\n\n来源与不可变约束：\n1. 账号信息不一致和短时间内多设备登录都只是风险信号，不能单独证明欺诈。\n2. 教学中的处置顺序必须是：核验身份 → 留存证据 → 决定处置。\n3. 下面制度阈值原句必须作为独立确定性内容原样出现且只出现一次：两个及以上风险信号同时出现时，必须在 15 分钟内上报。\n4. 下面固定金句必须作为独立确定性内容原样出现且只出现一次：先验证，再处置；先留证，再定责。\n\n课内单选互动必须使用下面完整提问和控件，二者各出现一次且顺序不变：\n这个案例当前最应该先做什么？\n?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]\n\n该答案只在本课用于即时反馈：针对每个选项解释其后果，并把正确选择重新连回‘风险信号不是欺诈结论’。后续课节和课程提示词都不会使用这个答案，因此不要创建命名变量。\n\n没有其他固定文案或视觉样式要求。请按技能的现行规则固定完整教学顺序和幻灯片结构，包括页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及互动和收束的位置；level=5 只决定这些固定槽位内普通标题、讲解、例子细节、过渡和反馈措辞的预写程度。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
+      "expected_output": "Produces one runnable level-5 standard-mode Teaching Prompt with a complete fixed teaching and slide skeleton while leaving non-critical content expression inside each fixed slot to the runtime LLM.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object containing exactly one L15 lesson item with all required lesson-schema fields and an empty global_variable_table.",
+        "The Teaching Prompt preserves the distinction between risk signals and a fraud conclusion and teaches identity verification before evidence retention before the handling decision.",
+        "The exact standalone deterministic lines `===两个及以上风险信号同时出现时，必须在 15 分钟内上报。===` and `===先验证，再处置；先留证，再定责。===` each occur exactly once.",
+        "The exact question and `?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]` control each occur exactly once, preserve option order, and lead to immediate answer-specific feedback.",
+        "used_variables and global_variable_table are empty, and the Teaching Prompt contains no named assignment or learner-answer variable reference.",
+        "The Teaching Prompt applies teaching_prompt_personalization_level 5 by fixing its slide count, order, placement, the teaching purpose of each slide and content slot, content grouping, semantic layout, interaction placement, and close placement while expressing ordinary titles, explanations, example details, transitions, and feedback as executable intent rather than a transcript; it does not add concrete typography, color, coordinates, animation, or a uniform point quota."
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "teaching_prompt_personalization_level=5。请只修复下面这份已经完成的授课提示词。不要重做课程结构，不生成课程提示词，不部署，也不要输出审计报告。它现在把普通讲解和幻灯片细节写得像逐字稿与排版施工单；请按技能的现行规则作最小修复，同时保持教学意图、事实、顺序、互动效果和收束结果完整、可运行。\n\n原授课提示词：\n\n# 第 3 节：异常容器处置\n\n第1页：使用 16:9 深蓝色背景，标题‘异常容器处置’居中，标题 44pt，副标题 24pt。\n你要逐字说：‘大家把目光看向屏幕左侧那只鲜红色警报灯。现在，请和我一起深呼吸三秒。’\n\n第2页：左 40% 放容器照片，右 60% 放三条文字，每条依次淡入。\n你要逐字说：‘标签缺失就像一颗已经拉开保险栓的手雷，它在提醒我们危险已经发生。’\n必须讲清：标签缺失或破损只是风险信号，不能据此判定内容物危险。\n\n第3页：使用红黄绿三色箭头和飞入动画展示以下顺序：原地隔离 → 记录容器编号和当前时间 → 上报值班主管。\n你要逐字说：‘第一步，原地隔离；第二步，一字不差地抄下编号；第三步，马上找到值班主管。’\n\n===未确认内容物前，不得移动容器。===\n\n!===\n紧急处置口诀：\n不触碰、不移动、先隔离、再上报。\n!===\n\n看到标签缺失但容器完好时，第一步应该做什么？\n?[立即打开确认 | 原地隔离并上报 | 继续使用]\n\n学员选择后，分别说明每个选项会造成的后果，并用正确选项收束到规定的处置顺序。这个答案只用于本课，不在后续复用。\n\n必须保留一个核心问题、上述三项来源事实及其顺序、完整互动及即时反馈。两个确定性内容必须原样、原结构、各出现一次。不要用另一套固定模板替代原有问题；其余具体程度按技能规则决定。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。lesson_id 固定为 L16；used_variables 和 global_variable_table 都应为空。",
+      "expected_output": "Repairs the supplied over-scripted artifact into a complete level-5 Teaching Prompt while preserving its three-slide teaching skeleton, source facts, runtime controls, deterministic content, and current-lesson feedback behavior.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object containing exactly one L16 lesson item, with empty used_variables and global_variable_table.",
+        "The repaired Teaching Prompt preserves that a missing or damaged label is only a risk signal and keeps the operational order: isolate in place, record the container number and current time, then report to the duty supervisor.",
+        "The exact deterministic line and the complete multi-line mnemonic block each occur exactly once without wording or marker changes.",
+        "The exact question and `?[立即打开确认 | 原地隔离并上报 | 继续使用]` control each occur exactly once, preserve option order, and retain immediate answer-specific feedback without a named variable.",
+        "The repaired artifact retains exactly three slides in the supplied order and keeps each slide's teaching purpose, semantic grouping, and sequence: orientation, risk-signal explanation, then the operational sequence followed by deterministic content, interaction, feedback, and close.",
+        "At teaching_prompt_personalization_level 5, the repair replaces supplied read-aloud sentences with executable expression intent and removes concrete typography, exact percentage sizing, color styling, and animation, but it does not remove or rearrange the three-slide skeleton, content grouping, semantic layout, interaction placement, or close placement."
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "Course Design Intake 和课节结构已经完成，teaching_prompt_personalization_level=5。请只生成一节纯课堂幻灯片模式的授课提示词：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白或长篇口头解释。lesson_id 固定为 L17，核心问题是‘向外部供应商发送客户数据前，如何确定合规动作？’。\n\n必须呈现的事实与关系：\n- L1 公开数据：审核后可以公开。\n- L2 内部数据：只能通过获授权的内部渠道流转。\n- L3 敏感数据：外发前需要审批，并使用获批准的加密渠道。\n- 决策顺序是：识别数据级别 → 核验接收方授权 → 选择合规通道 → 登记外发。\n\n下面是内部制度原文，必须作为独立确定性内容原样出现且只出现一次：\n外发含客户联系方式的数据前，必须完成数据分级、接收方授权核验和外发登记。\n\n下面图片已经选定并上传。必须按‘制度原文 → 图片 → 图注 → 互动’的顺序使用；图片和图注都要作为独立确定性内容原样出现且只出现一次：\n![数据分级与外发路径](https://static.example.com/training/data-export-path-v3.png)\n图：先分级，再核验授权，最后登记外发。\n\n互动必须完整保留并放在图片和图注之后：\n一份包含客户手机号的表格需要发给外部供应商，发送前最先确认什么？\n?[供应商是否催得急 | 数据级别与授权范围 | 文件是否足够美观]\n\n答案只用于本课的简短反馈状态，不在后续复用，因此不要创建命名变量。\n\n没有额外的固定文案或视觉样式要求。结果必须足以生成可直接投屏的课堂幻灯片；请固定完整教学顺序和幻灯片结构，包括页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及制度、图片、图注、互动和收束的位置。level=5 只开放这些固定槽位内的普通标题、解释、例子细节、过渡和反馈措辞。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
+      "expected_output": "Produces a projection-ready level-5 pure-classroom-slide Teaching Prompt with a complete fixed teaching and slide skeleton that preserves regulated text, image order, and interaction behavior while delegating only ordinary content expression inside fixed slots to the runtime LLM.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object containing exactly one L17 lesson item, with empty used_variables and global_variable_table.",
+        "The Teaching Prompt preserves all three classification rules and the decision sequence from level identification through authorization, channel selection, and external-transfer registration.",
+        "The exact deterministic policy line, deterministic image line, and deterministic caption line each occur exactly once and remain in policy-before-image-before-caption order.",
+        "The exact question and `?[供应商是否催得急 | 数据级别与授权范围 | 文件是否足够美观]` control each occur exactly once after the caption, preserve option order, and produce concise current-lesson feedback without a named variable.",
+        "The artifact requests slide-facing projected content only and does not positively instruct the runtime LLM to narrate or provide long spoken explanatory paragraphs.",
+        "At teaching_prompt_personalization_level 5, the Teaching Prompt fixes its slide count, page order, the teaching purpose of each slide and content slot, content grouping, semantic layout, and policy, image, caption, interaction, feedback, and close placement; only ordinary title and projected-copy wording remains adaptable, with no concrete font size, color value, pixel coordinate, exact percentage split, or animation requirement."
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "我要把一份门店新人培训材料做成标准 AI 一对一自学课程。使用场景已经确定为标准一对一授课，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有 teaching_prompt_personalization_level 还没决定。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
+      "expected_output": "Pauses authoring to ask one localized five-level Teaching Prompt personalization question instead of guessing a level or starting downstream work.",
+      "files": [],
+      "expectations": [
+        "The response asks for the missing teaching_prompt_personalization_level before Segmentation, Orchestration, Teaching Prompt generation, or deployment.",
+        "The question presents exactly five ordered choices numbered 1 through 5, with level 1 described as the most deterministic or concrete and level 5 as the most personalized or adaptive.",
+        "The choices make the progression observable only in content expression: higher levels emphasize intent for the same title, ordinary explanation, already-required example identity and detail, transition, and feedback slots while every level keeps the same teaching sequence, slide count, slide order and placement, the teaching purpose of each slide and content slot, required example-slot presence and placement, content grouping, semantic layout, and interaction, image, and close placement.",
+        "The localized question describes the invariant meaning as each slide's and content slot's 教学目的, and does not call it instructional role or 教学角色.",
+        "The response reuses the supplied usage scenario, interaction policy, Listen Mode, and structure choices without asking them again or silently selecting a personalization level."
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "Course Design Intake 已全部完成。请基于同一份材料，分别以 teaching_prompt_personalization_level=1、3、5 生成同一节标准 AI 一对一授课的授课提示词。三份必须共用完全相同的固定三页结构：第 1 页提出核心问题，建立可疑邮件判断边界并说明多因素认证不能替代唯一且强度足够的密码；第 2 页按‘核验发件人和域名 → 不打开链接地检查链接目标 → 通过内部安全渠道上报’讲解处置路径，放置下方确定性原文，并保留一个例子细节槽位；第 3 页依次放置下方完整互动、各选项即时反馈和回扣核心问题的收束。每页都有一个标题槽位。三份的页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及确定性内容、互动、反馈和收束的位置必须逐项一致；level 只改变同一槽位内标题、普通讲解、例子细节、过渡和反馈措辞的预写程度。\n\n核心问题是‘员工收到疑似钓鱼邮件时，如何安全判断并处置？’。必须保持的事实是：多因素认证可以降低账号被接管的风险，但不能替代唯一且强度足够的密码。下面原文必须在每份结果中作为独立确定性内容原样出现且只出现一次：\n===不要点击、回复或转发尚未核验的可疑邮件。===\n\n下面互动也必须在每份结果中完整出现且只出现一次，选项顺序不变，答案只用于本课即时反馈且不创建命名变量：\n收到一封要求立即重置密码的邮件时，第一步应做什么？\n?[直接点击邮件链接 | 独立核验发件人和域名 | 转发给同事确认]\n\n只输出一个可解析的 JSON 对象，字段仅为 variants；variants 必须依次包含 3 项，每项字段仅为 teaching_prompt_personalization_level 和 teaching_prompt。",
+      "expected_output": "Produces directly comparable level-1, level-3, and level-5 Teaching Prompts with an identical fixed three-slide structural fingerprint and monotonically less prewritten ordinary content expression.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object with exactly three variants ordered by teaching_prompt_personalization_level 1, 3, and 5, and every teaching_prompt is non-empty.",
+        "All three variants preserve the phishing facts, the required verification-to-link-check-to-report order, and the boundary that multi-factor authentication does not replace a unique strong password.",
+        "In each variant, the exact deterministic line, exact learner-facing question, and exact `?[直接点击邮件链接 | 独立核验发件人和域名 | 转发给同事确认]` control each occur exactly once; option order and immediate current-lesson feedback are preserved without a named variable.",
+        "All three structural fingerprints are identical: exactly three slides in the same order, with the same teaching purpose for every slide and content slot, title slot, required example-slot presence and placement, content grouping, semantic layout, and deterministic-content, interaction, feedback, and close placement.",
+        "All three variants describe the invariant meaning as each slide's and content slot's 教学目的, and none calls it instructional role or 教学角色.",
+        "Content-expression specificity decreases monotonically: level 1 prewrites more ordinary title and explanation wording, example detail, transitions, and feedback language than level 3, and level 3 prewrites more than level 5; no comparison relies on a relaxed page, grouping, placement, or layout decision.",
+        "Level 5 remains executable by stating the intent and must-cover points for every fixed content slot while leaving only incidental phrasing and example detail to the runtime LLM; it does not delete, merge, split, add, reorder, or reposition slides or their structural slots.",
+        "No level adds deterministic markers beyond the supplied immutable line or changes interaction syntax, source facts, required order, the teaching purpose of any slide or content slot, slide structure, or delivery mode to create the expression difference."
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "Course Design Intake 已全部完成，交付模式是纯课堂幻灯片：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白。请用同一份材料分别生成 teaching_prompt_personalization_level=1 和 5 的两份授课提示词。两份必须共用完全相同的固定四页结构：第 1 页提出核心问题、呈现‘识别数据级别’，并保留一个必须填充的简短例子槽位；第 2 页呈现‘确认接收方授权 → 完成审批 → 使用获批准的渠道外发’并放置下方制度原文；第 3 页只承载下方图片与紧随其后的图注；第 4 页依次承载下方完整互动、各选项简短反馈和收束。每页都有一个标题槽位。两份的页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局、例子槽位的存在和位置，以及制度、图片、图注、互动、反馈和收束的位置必须逐项一致；每份都必须填充第 1 页的例子槽位，level 只改变同一槽位内标题、普通解释、例子身份与细节、过渡和反馈措辞的预写程度。\n\n核心问题是‘向合作方外发客户数据前，如何完成合规检查？’；决策顺序固定为：识别数据级别 → 确认接收方授权 → 完成审批 → 使用获批准的渠道外发。\n\n下面制度、图片和图注必须在每份结果中作为独立确定性内容原样各出现一次，并保持制度 → 图片 → 图注 → 互动的顺序：\n===外发客户数据前，必须完成接收方授权核验和审批。===\n===![客户数据外发决策路径](https://static.example.com/training/customer-data-export.png)===\n===图：先确认数据级别和授权，再审批并选择合规通道。===\n\n下面互动必须在图片和图注之后完整出现且只出现一次，答案只用于本课简短反馈，不创建命名变量：\n哪项条件满足后才可以外发客户数据？\n?[合作方口头承诺保密 | 已核验授权并完成审批 | 文件已经压缩]\n\n只输出一个可解析的 JSON 对象，字段仅为 variants；variants 必须依次包含 2 项，每项字段仅为 teaching_prompt_personalization_level 和 teaching_prompt。",
+      "expected_output": "Produces level-1 and level-5 projection-ready slide prompts with an identical fixed four-slide structural fingerprint and clearly different ordinary content-expression prescription.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object with exactly two variants ordered by teaching_prompt_personalization_level 1 and 5, and both are explicitly limited to projection-ready classroom-slide content without AI narration.",
+        "Both variants preserve the four-step compliance sequence and include the exact deterministic policy, image, and caption lines exactly once in policy-before-image-before-caption order.",
+        "Both variants place the exact question and `?[合作方口头承诺保密 | 已核验授权并完成审批 | 文件已经压缩]` control after the caption exactly once, preserve option order, request concise immediate feedback, and create no named variable.",
+        "Both structural fingerprints are identical: exactly four slides in the same order, with the same teaching purpose for every slide and content slot, title slot, required example-slot presence and placement, content grouping, semantic layout, and policy, image, caption, interaction, feedback, and close placement.",
+        "Both variants describe the invariant meaning as each slide's and content slot's 教学目的, and neither calls it instructional role or 教学角色.",
+        "Both variants populate the required example slot on slide 1. Level 1 prewrites substantially more ordinary title and projected-copy wording, example identity and detail, transitions, and feedback language than level 5, while level 5 expresses executable intent for those same fixed slots; neither variant changes slide count, slide order or placement, the teaching purpose of any slide or content slot, example presence, content grouping, semantic layout, or any required-content placement.",
+        "The level-5 variant remains understandable and directly projectable, conveys what the selected image teaches, and does not add narration or a long explanatory paragraph merely to compensate for less prewritten ordinary projected-copy wording.",
+        "The two variants do not change, omit, duplicate, reorder, or reposition the required example slot, policy, selected image, caption, interaction, feedback, close, source facts, or delivery mode to create their expression difference."
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "我要把一份门店新人培训材料做成纯课堂幻灯片课程。使用场景已经确定为 slide-only，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；没有提供 teaching_prompt_personalization_level。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
+      "expected_output": "Completes intake without asking a personalization question and normalizes the missing Teaching Prompt personalization level to level 1 High determinism for slide-only delivery, where the level controls only content-expression prescription inside an invariant course and slide structure.",
+      "files": [],
+      "expectations": [
+        "The response does not ask the author to choose a teaching_prompt_personalization_level and does not present the five personalization options.",
+        "Because delivery is slide-only and no level was provided, the response normalizes teaching_prompt_personalization_level to the integer 1 and identifies it as High determinism for content expression, not as permission to change teaching sequence, slide count, slide order or placement, the teaching purpose of any slide or content slot, content grouping, semantic layout, or interaction, image, and close placement.",
+        "The response reuses the supplied usage scenario, interaction policy, Listen Mode, and structure choices without asking them again.",
+        "The workflow does not start Segmentation, Orchestration, Teaching Prompt generation, or deployment."
       ]
     }
   ]

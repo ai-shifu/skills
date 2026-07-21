@@ -6,6 +6,7 @@ Authoritative source for **Teaching Prompt** pedagogy: interaction-policy effect
 
 - `data-contracts.md#interaction-policy`
 - `data-contracts.md#variable-table`
+- `prompt-contracts.md#prompt-semantics`
 - `prompt-contracts.md#artifact-responsibilities`
 - `markdownflow.md#variables`
 - `markdownflow.md#interactions`
@@ -23,7 +24,7 @@ Course Design Intake resolves the author's selection into one of the three modes
 
 When the mode is `enabled`, selected purposes map to exactly these placements:
 
-| Purpose | Placement | Instructional role |
+| Purpose | Placement | Teaching purpose |
 | --- | --- | --- |
 | `learner_context` | An early course or module point | Collect context that improves later teaching. |
 | `pre_content_thinking` | Before the relevant explanation | Elicit an initial judgment that the explanation can refine. |
@@ -46,7 +47,7 @@ A lesson missing a phase required by its selected loop is incomplete. The follow
 
 - **One core question per lesson**: each lesson resolves exactly one teachable question.
 - **Direct teaching start**: the first paragraph must establish a scenario, ask a guiding question, activate prior experience, state the task, or start a practice. Do not use a structural title, hierarchy label, ordering marker, or copied source heading as the opening.
-- **Opening frame**: establish the lesson objective without replacing the direct teaching start with structure metadata. When the selected delivery and author constraints allow slides, use a slide-style visual cover; when the author explicitly excludes visuals, use a text-only opening.
+- **Opening frame**: establish the lesson objective within the direct teaching start. Use a visual opening only when it advances the lesson's core question and the selected delivery and author constraints allow it; do not add a cover or opening slide by default. When the author explicitly excludes visuals, use a text-only opening.
 - **Reusable result**: each lesson produces at least one reusable deliverable.
 - **Action tasks** must be immediately executable by the learner or explicitly linked to a downstream lesson; do not create orphan actions.
 - **Carryover statements** are allowed only when cross-lesson dependency is explicitly permitted; otherwise remove them together with any unbound carryover variables.
@@ -127,11 +128,11 @@ These are the teaching decisions for whether to collect an answer, how often to 
 
 ### Visual-Text Coordination
 
-This section defines how slides and explanatory text divide teaching responsibility. Image composition and asset handling remain separate authoring concerns; MarkdownFlow's resulting runtime behavior is defined in [markdownflow.md#images](markdownflow.md#images).
+This section defines how slides and explanatory text divide teaching responsibility. Resolve where they appear, what each must contain, and the teaching purpose each serves independently of the normalized Teaching Prompt personalization level; that level changes only content-expression specificity inside the resolved structure and never changes the teaching effect required here. Image composition and asset handling remain separate authoring concerns; MarkdownFlow's resulting runtime behavior is defined in [markdownflow.md#images](markdownflow.md#images).
 
 | Scenario | Authority and requirements |
 | --- | --- |
-| Standard non-slide-only teaching | Keep every core concept paired with a slide and textual explanation. The slide carries structural prompting; the text carries the complete explanation and remains understandable when the learner has not seen the slide. Pair each slide direction with a brief explanation of what it should convey, and add background, causality, or examples rather than merely restating the image. |
-| Author-provided image file | Use the asset as part of the teaching explanation rather than as decoration. In standard teaching, follow it with the complete explanatory paragraph. If the course is slide-only, the next row overrides that paragraph requirement. |
-| Pure slides | Treat each lesson as a small slide deck controlled by a human instructor. Generate slide-facing blocks only: a slide title, 2–4 short bullets, and a visual or layout instruction. Include prompts, options, and concise feedback states only when the interaction policy permits them. Do not instruct the runtime LLM to narrate, verbally explain, or address a single learner; omit long spoken paragraphs and the normal visual-plus-text explanation pair. |
-| Explicit text-only constraint | This author constraint overrides the default slide pairing above. Use no slides, images, diagrams, visual directions, or layout instructions; retain a complete textual explanation of every core concept. |
+| Standard non-slide-only teaching | Use a slide only when it materially improves understanding of a relationship, contrast, sequence, body of evidence, or decision point. State the teaching purpose it must achieve and make its required information and relationships clear, then provide complete textual explanation for every core concept so the lesson remains understandable without the slide. Do not add a cover or pair every concept with a slide by default, and do not merely restate slide content. Once selected, keep each slide's presence, position, and teaching purpose independent of the personalization level. |
+| Author-provided image file | Use the asset for an identified teaching purpose rather than as decoration. In standard teaching, follow it with a complete explanatory paragraph that supplies the context, relationship, or inference needed to understand it; keep that paragraph's existence and placement fixed while the selected personalization level controls its ordinary wording, elaboration, and non-exact example detail. If the course is slide-only, the next row overrides narration and explanatory-paragraph expectations. |
+| Pure slides | Produce a classroom-ready deck controlled by a human instructor: slide-facing direction and learner-visible content only, with enough information and relationships for the instructor to teach from the projected result. Resolve the exact slide count, sequence position, teaching purpose of each slide and required content slot, required content-slot presence and placement, content groups, visual hierarchy, and semantic layout independently of the personalization level and keep them fixed. The level controls only non-exact title, body, already-required example identity and detail, transition, and feedback wording inside that structure. Do not instruct the runtime LLM to narrate, verbally explain, or address a single learner, and omit long spoken paragraphs. When an interaction is permitted, include its complete learner-facing question, resolved options and control in their required order, and concise visible feedback states. |
+| Explicit text-only constraint | Use no slides, images, diagrams, visual directions, or layout instructions. Give complete teaching direction for every core concept, including its required facts, boundaries, reasoning, and examples where needed; keep the teaching and paragraph sequence fixed while the selected personalization level controls ordinary explanation wording, elaboration, example detail, transition wording, and feedback wording. |

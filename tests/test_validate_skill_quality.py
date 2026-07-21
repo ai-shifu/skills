@@ -844,6 +844,7 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         cls.language_policy = load("language-policy.md")
         cls.data_contracts = load("data-contracts.md")
+        cls.course_design_intake = load("course-design-intake.md")
         cls.prompt_contracts = load("prompt-contracts.md")
         cls.pedagogy = load("pedagogy.md")
         cls.markdownflow = load("markdownflow.md")
@@ -872,6 +873,45 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("Prompts, not Scripts", semantics)
         self.assertIn("runtime LLM", semantics)
         self.assertIn("tell the LLM how to teach the learner", semantics)
+        self.assertIn(
+            "core question, teaching objective, must-cover evidence and "
+            "boundaries, complete teaching path, fixed slide structure, "
+            "each required content slot's and slide's teaching purpose, "
+            "interaction purpose and visible effect, and required close",
+            semantics,
+        )
+        self.assertIn(
+            "Depending on its selected personalization level",
+            semantics,
+        )
+        self.assertIn(
+            "controls only ordinary title and explanation wording, transition "
+            "wording, the identity and details of already-required examples, "
+            "and non-deterministic feedback wording "
+            "within an already fixed lesson and slide structure",
+            semantics,
+        )
+        self.assertIn(
+            "Which content slots are required, where they appear, and the "
+            "teaching purpose each content slot and slide serves are fixed "
+            "before the level is applied",
+            semantics,
+        )
+        self.assertIn(
+            "the same fixed content slots may contain near-final learner-visible "
+            "wording or intent-and-constraint direction",
+            semantics,
+        )
+        self.assertIn(
+            "Precision chosen for ordinary content expression is separate from "
+            "exact output",
+            semantics,
+        )
+        self.assertIn(
+            'Directions such as "explain the concept", "add an example", or '
+            '"ask a question" are incomplete',
+            semantics,
+        )
         self.assertIn(
             "Within Prompt instructions, every second-person form in any "
             "language refers only to the runtime LLM",
@@ -1142,6 +1182,148 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("## Language Resolution", self.data_contracts)
         self.assertNotIn("## Teaching Patterns", self.data_contracts)
 
+    def test_personalization_level_is_a_transient_input_contract(self):
+        personalization = markdown_section(
+            self.data_contracts, "Teaching Prompt Personalization Level"
+        )
+        normalized = " ".join(personalization.split())
+
+        self.assertIn("`teaching_prompt_personalization_level`", normalized)
+        self.assertIn("top-level scalar", normalized)
+        self.assertIn(
+            "content-expression control, not a structure control", normalized
+        )
+        self.assertIn(
+            "never changes the fixed teaching sequence or slide structure, "
+            "including which content slots appear, where they appear, and the "
+            "teaching purpose each content slot and slide serves",
+            normalized,
+        )
+        self.assertRegex(
+            self.data_contracts,
+            r"`teaching_prompt_personalization_level` \(integer from `1` "
+            r"through `5`\):.*transient authoring input",
+        )
+        self.assertIn("in-memory authoring handoff", normalized)
+        for excluded_surface in (
+            "lesson_teaching_prompts",
+            "course-directory files",
+            "CLI inputs or configuration",
+            "deployment payloads",
+            "platform metadata",
+        ):
+            self.assertIn(excluded_surface, normalized)
+        self.assertIn(
+            "Reject booleans, floats, numeric strings, and out-of-range values",
+            self.data_contracts,
+        )
+
+        output_contract = markdown_section(self.data_contracts, "Output Contract")
+        self.assertNotIn(
+            "teaching_prompt_personalization_level", output_contract
+        )
+        self.assertNotIn(
+            "teaching_prompt_personalization_level", self.course_directory_spec
+        )
+        self.assertNotIn(
+            "teaching_prompt_personalization_level", self.cli_reference
+        )
+
+    def test_intake_asks_for_personalization_after_usage_and_before_interactions(self):
+        scope = markdown_section(self.course_design_intake, "Intake Scope")
+        normalized_scope = " ".join(scope.split())
+
+        usage_step = re.search(
+            r"(?m)^1\.\s+Ask which usage scenarios the course should support", scope
+        )
+        personalization_step = re.search(
+            r"(?m)^2\.\s+.*(?:personalization|personalisation)", scope
+        )
+        interaction_step = re.search(r"(?m)^3\.\s+.*interaction", scope)
+        self.assertIsNotNone(usage_step)
+        self.assertIsNotNone(personalization_step)
+        self.assertIsNotNone(interaction_step)
+        self.assertLess(usage_step.start(), personalization_step.start())
+        self.assertLess(personalization_step.start(), interaction_step.start())
+
+        personalization_block = scope[
+            personalization_step.start() : interaction_step.start()
+        ]
+        choices = re.findall(
+            r"`([1-5])`\s+—\s+([^,.;\n]+)", personalization_block
+        )
+        self.assertEqual(["1", "2", "3", "4", "5"], [n for n, _ in choices])
+        self.assertRegex(choices[0][1], r"(?i)certainty|determin")
+        self.assertRegex(choices[2][1], r"(?i)balanced")
+        self.assertRegex(choices[4][1], r"(?i)personalization|personalisation")
+        self.assertRegex(normalized_scope, r"(?i)higher.*intent.*key points")
+        self.assertRegex(
+            normalized_scope,
+            r"(?i)fixing less.*wording.*example identity and detail.*feedback wording",
+        )
+        self.assertRegex(
+            normalized_scope,
+            r"(?i)complete teaching sequence.*exact slide count.*slide.*position.*"
+            r"teaching purpose.*content slots appear.*where they appear.*"
+            r"teaching purpose.*whether an example is "
+            r"required.*stay fixed at every level.*only expression inside those "
+            r"slots varies",
+        )
+        self.assertIn("teaching-prompt.md#personalization-levels", personalization_block)
+        self.assertIn("`resolved_target_language`", personalization_block)
+        self.assertIn("Do not silently skip this question", scope)
+
+        controls = markdown_section(
+            self.course_design_intake, "Normalized Design Controls"
+        )
+        normalized_controls = " ".join(controls.split())
+        self.assertIn("`teaching_prompt_personalization_level`", controls)
+        self.assertIn("Reuse a value already present in context", controls)
+        self.assertRegex(
+            normalized_controls,
+            r"(?i)(?:fall back|fallback) level `?3`? only when the author "
+            r"explicitly skips or asks to continue without answering",
+        )
+        self.assertIn("absence alone is not a skip", controls)
+
+    def test_slide_only_intake_uses_high_determinism_without_asking(self):
+        scope = markdown_section(self.course_design_intake, "Intake Scope")
+        normalized_scope = " ".join(scope.split())
+        self.assertRegex(
+            normalized_scope,
+            r"(?i)slide-only delivery with no already-provided level, "
+            r"do not ask it and use level `1` \(High determinism\)",
+        )
+        self.assertIn(
+            "Do not silently skip this question for standard or combined delivery",
+            normalized_scope,
+        )
+
+        controls = markdown_section(
+            self.course_design_intake, "Normalized Design Controls"
+        )
+        normalized_controls = " ".join(controls.split())
+        self.assertIn(
+            "Reuse a value already present in context instead of asking again, "
+            "including for pure-slide delivery",
+            normalized_controls,
+        )
+        self.assertRegex(
+            normalized_controls,
+            r"(?i)pure-slide delivery has no explicit value, normalize "
+            r"directly to level `1` without asking",
+        )
+        self.assertLess(
+            normalized_controls.index("including for pure-slide delivery"),
+            normalized_controls.index("pure-slide delivery has no explicit value"),
+        )
+        self.assertRegex(
+            normalized_controls,
+            r"(?i)for standard or combined delivery, apply fallback level "
+            r"`3` only when the author explicitly skips or asks to continue "
+            r"without answering",
+        )
+
     def test_teaching_patterns_are_selected_not_redefined_during_generation(self):
         patterns = markdown_section(self.pedagogy, "Teaching Patterns")
         for pattern in (
@@ -1197,9 +1379,256 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         self.assertIn("author explicitly excludes visuals", lesson_loop)
         self.assertIn("Explicit text-only constraint", visual_text)
-        self.assertIn("overrides the default slide pairing", visual_text)
-        self.assertIn("complete textual explanation", visual_text)
+        self.assertIn("Give complete teaching direction", visual_text)
+        self.assertIn("selected personalization level", visual_text)
+        self.assertIn(
+            "keep the teaching and paragraph sequence fixed",
+            visual_text,
+        )
+        self.assertIn(
+            "ordinary explanation wording, elaboration, example detail, "
+            "transition wording, and feedback wording",
+            visual_text,
+        )
         self.assertNotIn("`viewpoint_check`", self.pedagogy)
+
+    def test_teaching_prompt_owns_five_personalization_levels(self):
+        lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
+        visual_text = markdown_section(
+            self.pedagogy, "Visual-Text Coordination"
+        )
+        generation = markdown_section(self.teaching_prompt, "Generation")
+        levels = markdown_section(
+            self.teaching_prompt, "Personalization Levels"
+        )
+        validation = markdown_section(self.teaching_prompt, "Validation")
+        checklist = markdown_section(
+            self.optimization_checklist, "Teaching Prompt Behavior"
+        )
+
+        self.assertIn("do not add a cover or opening slide by default", lesson_loop)
+        for path in COURSE_CREATOR_REFERENCES.rglob("*.md"):
+            self.assertNotIn(
+                "instructional role",
+                path.read_text(encoding="utf-8").lower(),
+                f"use teaching purpose instead of the ambiguous role label: {path}",
+            )
+        self.assertIn("teaching purpose", visual_text)
+        self.assertIn("classroom-ready deck", visual_text)
+        self.assertIn("must-cover evidence and boundaries", generation)
+        self.assertIn("`teaching_prompt_personalization_level`", generation)
+        self.assertLess(
+            generation.index("Select the teaching pattern"),
+            generation.index("`teaching_prompt_personalization_level`"),
+        )
+        self.assertLess(
+            generation.index("Resolve and lock one lesson skeleton"),
+            generation.index("`teaching_prompt_personalization_level`"),
+        )
+        self.assertLess(
+            generation.index("`teaching_prompt_personalization_level`"),
+            generation.index("`markdownflow-authoring.md`"),
+        )
+
+        self.assertEqual(
+            ["1", "2", "3", "4", "5"],
+            markdown_table_first_column(levels, "Level"),
+        )
+        normalized_levels = " ".join(levels.split())
+        for structural_fragment in (
+            "fixed lesson skeleton",
+            "required presence, position, and teaching purpose of every content slot",
+            "including titles, ordinary explanations, examples, transitions, "
+            "interactions, images, feedback states, and the close",
+            "complete teaching sequence",
+            "exact slide count",
+            "each slide's ordinal position and teaching purpose",
+            "slide order and placement in the teaching loop",
+            "each slide's teaching purpose",
+            "content grouping",
+            "visual hierarchy",
+            "semantic layout",
+            "Every required content slot remains populated at every level",
+        ):
+            self.assertIn(structural_fragment, normalized_levels)
+        self.assertIn(
+            "The level changes only content-expression specificity",
+            normalized_levels,
+        )
+        self.assertIn(
+            "Across levels, never add, omit, or relocate a content slot; add, "
+            "remove, reorder, split, or merge slides",
+            normalized_levels,
+        )
+        self.assertIn(
+            "move content between slides; change any content slot's or slide's "
+            "teaching purpose; change content grouping, visual hierarchy, or "
+            "layout; alter the teaching sequence; or move an interaction, image, "
+            "feedback state, or close",
+            normalized_levels,
+        )
+        level_rows = {}
+        for line in levels.splitlines():
+            if not line.lstrip().startswith("|"):
+                continue
+            cells = [
+                cell.strip().replace(r"\|", "|")
+                for cell in split_markdown_table_row(line)
+            ]
+            if cells and cells[0].strip("`") in {"1", "2", "3", "4", "5"}:
+                level_rows[cells[0].strip("`")] = " ".join(cells[1:])
+
+        for level, row in level_rows.items():
+            self.assertIn("Within the fixed lesson skeleton", row, level)
+            self.assertNotRegex(
+                row,
+                r"(?i)(?:runtime LLM|level).*(?:choose|change|adapt|vary).*"
+                r"(?:slide count|slide order|content grouping|"
+                r"visual hierarchy|semantic layout|placement)",
+                level,
+            )
+
+        level_1 = " ".join(level_rows["1"].split())
+        for fragment in (
+            "exact or near-final title wording",
+            "selected example details",
+            "ordinary explanations",
+            "transitions",
+            "feedback wording",
+        ):
+            self.assertIn(fragment, level_1)
+
+        level_5 = " ".join(level_rows["5"].split())
+        for fragment in (
+            "concrete message and outcome for every content slot",
+            "critical facts and boundaries",
+            "every required example slot's material requirements and intended "
+            "takeaway",
+            "feedback completion conditions and effects",
+            "title wording",
+            "example identity and details",
+            "explanation phrasing",
+            "transitions",
+            "feedback phrasing",
+        ):
+            self.assertIn(fragment, level_5)
+        self.assertIn("runtime LLM", level_5)
+        self.assertIn("do not reduce them to an empty outline", levels)
+
+        common_constraints = normalized_levels
+        for fragment in (
+            "complete learner-facing interaction question",
+            "`?[]`",
+            "variable lifecycle",
+            "deterministic output",
+            "regulated wording",
+            "fixed numeric",
+            "selected image URLs",
+            "caption",
+            "ordering",
+            "wording or layout the author explicitly requires",
+        ):
+            self.assertIn(fragment, common_constraints)
+        self.assertRegex(
+            common_constraints,
+            r"(?i)factual or source fidelity.*selected teaching pattern and "
+            r"loop, interaction policy",
+        )
+        self.assertIn(
+            "never authorizes new learner-context collection, interactions, "
+            "variables, or branches",
+            common_constraints,
+        )
+        self.assertIn(
+            "does not automatically add MarkdownFlow deterministic markers",
+            common_constraints,
+        )
+
+        self.assertIn("normalized personalization level", validation)
+        self.assertIn("`teaching_prompt_personalization_level`", checklist)
+        self.assertIn("ordinary title and explanation wording", checklist)
+        self.assertIn("overly specific", checklist)
+        self.assertIn("overly abstract", checklist)
+        self.assertIn("At levels `1` and `2`", checklist)
+        self.assertIn("At levels `4` and `5`", checklist)
+        self.assertIn(
+            "At every level, keep the complete teaching sequence, every content "
+            "slot's and slide's teaching purpose, slide count, slide order and "
+            "placement in the teaching loop, content grouping, "
+            "every required content slot's presence and placement, visual "
+            "hierarchy, semantic layout, and the placement of interactions, "
+            "images, feedback, and the close fixed",
+            checklist,
+        )
+        self.assertIn(
+            "Treat any structural or teaching-purpose change made because of "
+            "the personalization level as a defect",
+            checklist,
+        )
+        self.assertIn("compare their structural signatures explicitly", checklist)
+        self.assertIn(
+            "record cross-level structural consistency as `not-assessed`",
+            checklist,
+        )
+        self.assertIn("`not-assessed`", checklist)
+        self.assertRegex(checklist, r"(?i)do not infer")
+
+        for path in COURSE_CREATOR_REFERENCES.rglob("*.md"):
+            if path.name == "teaching-prompt.md":
+                continue
+            self.assertNotIn(
+                "\n## Personalization Levels\n",
+                path.read_text(encoding="utf-8"),
+                f"five-level behavior table belongs only in teaching-prompt.md: {path}",
+            )
+
+    def test_personalization_does_not_absorb_course_prompt_or_runtime_contracts(self):
+        field = "teaching_prompt_personalization_level"
+        self.assertNotIn(field, self.course_prompt)
+
+        for owner_section in (
+            markdown_section(self.pedagogy, "Interaction Design"),
+            markdown_section(self.pedagogy, "Variable Strategy"),
+            markdown_section(self.markdownflow, "Interactions"),
+            markdown_section(self.markdownflow, "Variables"),
+            markdown_section(self.markdownflow_authoring, "Interaction Encoding"),
+            markdown_section(
+                self.markdownflow_authoring, "Variable and Branch Encoding"
+            ),
+        ):
+            self.assertNotIn(field, owner_section)
+            self.assertNotIn("Personalization Levels", owner_section)
+
+    def test_author_images_keep_complete_explanation_except_in_pure_slides(self):
+        visual_text = markdown_section(
+            self.pedagogy, "Visual-Text Coordination"
+        )
+        image_row = next(
+            line
+            for line in visual_text.splitlines()
+            if line.startswith("| Author-provided image file |")
+        )
+        pure_slides_row = next(
+            line
+            for line in visual_text.splitlines()
+            if line.startswith("| Pure slides |")
+        )
+
+        self.assertIn("In standard teaching", image_row)
+        self.assertNotIn("Listen Mode", image_row)
+        self.assertIn("follow it with a complete explanatory paragraph", image_row)
+        self.assertRegex(image_row, r"(?i)slide-only.*overrides")
+        self.assertIn("Do not instruct the runtime LLM to narrate", pure_slides_row)
+        self.assertIn("omit long spoken paragraphs", pure_slides_row)
+
+        deprecated_surface_rules = {
+            "slide-style visual cover",
+            "every core concept paired with a slide",
+            "2–4 short bullets",
+            "overrides the default slide pairing",
+        }
+        for fragment in deprecated_surface_rules:
+            self.assertNotIn(fragment, self.pedagogy)
 
     def test_source_preservation_owns_selection_and_scope(self):
         decisions = markdown_section(
