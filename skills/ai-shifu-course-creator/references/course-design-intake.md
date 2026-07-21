@@ -1,19 +1,31 @@
 # Course Design Intake
 
-Collect and normalize the author's design choices before course structure or Teaching Prompt generation begins. This file owns the author-facing preview of what each choice changes; the course pipeline, artifact schemas, and actual teaching effects remain defined by their downstream owners.
+Collect and normalize the course author's identity when a Course Prompt is in scope, then collect their design choices before course structure or Teaching Prompt generation begins. This file owns author-facing intake questions and the preview of what each answer changes; the course pipeline, artifact schemas, and actual teaching effects remain defined by their downstream owners.
 
 ## Required References
 
 - `language-policy.md`
-- `data-contracts.md#interaction-policy`
-- `data-contracts.md#teaching-prompt-personalization-level`
-- `pedagogy.md#interaction-policy-precedence`
-- `pedagogy.md#visual-text-coordination`
-- `teaching-prompt.md#personalization-levels`
+- `data-contracts.md#course-author-name`
+
+## Conditional References
+
+- When collecting, reusing, normalizing, or validating interaction choices: `data-contracts.md#interaction-policy`
+- When collecting, reusing, normalizing, or validating interaction choices: `pedagogy.md#interaction-policy-precedence`
+- When collecting, reusing, defaulting, normalizing, or validating Teaching Prompt personalization: `data-contracts.md#teaching-prompt-personalization-level`
+- When collecting, reusing, defaulting, normalizing, or validating Teaching Prompt personalization: `teaching-prompt.md#personalization-levels`
+- When collecting, reusing, inferring, normalizing, or validating usage scenario or delivery mode: `pedagogy.md#visual-text-coordination`
+
+## Author Identity Intake
+
+Apply this section whenever Course Prompt materialization is in scope, whether the active workflow creates, revises, or fills a missing Course Prompt. Resolve it before the design questions below and before Course Prompt materialization.
+
+Reuse a non-empty `course_author_name` already present in the user's instruction or active authoring handoff. When it is missing, explain that the author's real name fills the Course Prompt's Role identity (`You are XXX`), then ask the author for that name as one free-form question in `resolved_target_language`. Ask no unrelated design questions when the selected route names only this anchored section.
+
+Preserve the author's supplied spelling as the normalized `course_author_name`. Reject an empty or whitespace-only answer. Do not infer a name from an account profile, course title, or unrelated metadata, and do not apply a fallback. This section owns every author-facing request for `course_author_name`; downstream Course Prompt materialization only consumes the normalized value.
 
 ## Intake Scope
 
-Collect only the unresolved design choices requested by the selected authoring route. Deployment, authentication, platform management, and analytics questions are outside this file.
+After completing the applicable Author Identity Intake, collect only the unresolved design choices requested by the selected authoring route. Deployment, authentication, platform management, and analytics questions are outside this file.
 
 Before asking anything, extract answers already present in the user's instruction, source material, or pulled course directory. Ask only for missing items, one choice at a time and in the order below. Do not invent defaults from a sparse topic or brief, and do not proactively offer to bypass a required choice or “decide for the author.” Apply a listed fallback only after the author explicitly skips that question or asks to continue without answering.
 
@@ -37,6 +49,8 @@ Produce these controls once and pass them unchanged to downstream workflows:
 
 ## Validation
 
+- Every workflow with Course Prompt materialization in scope resolves a non-empty `course_author_name` through Author Identity Intake before materialization; workflows without Course Prompt materialization do not ask for it.
+- Only Author Identity Intake asks the author for `course_author_name`; downstream workflows consume the normalized value without asking again or inventing a fallback.
 - Every answer available from existing context is reused rather than asked again.
 - Every missing applicable question is asked before its fallback is applied.
 - Every asked question includes an effect preview that identifies its downstream course decision, and every presented option describes its learner- or author-visible consequence rather than showing a bare label.

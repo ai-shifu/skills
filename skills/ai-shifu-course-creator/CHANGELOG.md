@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Collect the course author's real name during Course Design Intake before Course Prompt materialization, including Course Prompt-only routes, so downstream prompt generation never pauses to ask for it.
 - Make standard AI-taught lessons open with a brief text lead-in and then alternate substantive slides or images with concise, complete explanations; keep interaction questions on question-only slides before their real controls, and preserve pure-slide and explicit text-only delivery as separate modes.
 - Introduce the learner-time AI as AI-Shifu's Teaching Agent (AI 师傅的授课智能体), then use Teaching Agent (授课智能体) as its single short human-facing name across prompt execution, interaction feedback, follow-up answers, analytics, and CLI guidance while preserving stable machine-facing `model` and `llm` fields.
 - Explain what every Course Design Intake answer changes and what experience each option creates, so authors see the Teaching Agent's one-on-one guidance, classroom projection, answer-informed teaching, AI voice with slides, and lesson-granularity tradeoffs while choosing.

@@ -194,7 +194,13 @@ class CourseCreatorRouterTests(unittest.TestCase):
 
     def test_course_prompt_only_route_stays_local_and_focused(self):
         route = self.route_line("Create or revise a Course Prompt")
-        self.assertIn("references/course-prompt.md", route)
+        identity_intake = (
+            "references/course-design-intake.md#author-identity-intake"
+        )
+        course_prompt = "references/course-prompt.md"
+        self.assertIn(identity_intake, route)
+        self.assertIn(course_prompt, route)
+        self.assertLess(route.index(identity_intake), route.index(course_prompt))
         for filename in (
             "authentication.md",
             "course-target.md",
@@ -343,6 +349,18 @@ class CourseCreatorRouterTests(unittest.TestCase):
                     "references/course-sync.md#push-existing-course-content",
                     route,
                 )
+
+    def test_existing_course_prompt_collects_author_identity_before_materialization(self):
+        route = self.route_line(
+            "Create or revise a Course Prompt in an existing"
+        )
+        identity_intake = (
+            "references/course-design-intake.md#author-identity-intake"
+        )
+        course_prompt = "references/course-prompt.md"
+
+        self.assertIn(identity_intake, route)
+        self.assertLess(route.index(identity_intake), route.index(course_prompt))
 
     def test_design_count_is_not_analytics(self):
         self.assertIn(

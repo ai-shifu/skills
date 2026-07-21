@@ -320,6 +320,7 @@ class CourseCreatorDependencyTests(unittest.TestCase):
             str(path.relative_to(REFERENCES)) for path in closure
         }
         self.assertIn("course-prompt.md", relative_paths)
+        self.assertIn("course-design-intake.md", relative_paths)
         self.assertTrue(
             {
                 "authentication.md",
@@ -426,6 +427,7 @@ class CourseCreatorDependencyTests(unittest.TestCase):
         relative_paths = {
             str(path.relative_to(REFERENCES)) for path in closure
         }
+        self.assertIn("course-design-intake.md", relative_paths)
         self.assertIn("course-management.md", relative_paths)
         self.assertNotIn("deployment-workflow.md", relative_paths)
 

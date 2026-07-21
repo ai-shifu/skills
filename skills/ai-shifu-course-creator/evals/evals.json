@@ -120,7 +120,7 @@
     },
     {
       "id": 11,
-      "prompt": "为同一课节生成授课提示词和完整课程提示词。授课提示词采用‘先暴露常见误区，再解释误区为什么看似合理，然后纠正并做案例练习’的教学法；课程提示词只把表达风格调整为克制、清晰、温暖。不要让课程提示词另起一套教学法。",
+      "prompt": "course_author_name=李明。为同一课节生成授课提示词和完整课程提示词。授课提示词采用‘先暴露常见误区，再解释误区为什么看似合理，然后纠正并做案例练习’的教学法；课程提示词只把表达风格调整为克制、清晰、温暖。不要让课程提示词另起一套教学法。",
       "expected_output": "Places the requested pedagogy in the Teaching Prompt while the complete Course Prompt defers to it and changes only course-wide presentation style.",
       "files": [],
       "expectations": [
@@ -134,7 +134,7 @@
     },
     {
       "id": 12,
-      "prompt": "课程设计和各课节授课提示词都已经完成。现在只生成完整课程提示词，交付模式是纯课堂幻灯片：课堂上只投屏，不需要 AI 口头讲解，也不要给每张图补长段解释。",
+      "prompt": "course_author_name=李明。课程设计和各课节授课提示词都已经完成。现在只生成完整课程提示词，交付模式是纯课堂幻灯片：课堂上只投屏，不需要 AI 口头讲解，也不要给每张图补长段解释。",
       "expected_output": "Materializes the canonical Course Prompt with its slide-only presentation override while leaving lesson pedagogy in the existing Teaching Prompts.",
       "files": [],
       "expectations": [
@@ -213,7 +213,7 @@
     },
     {
       "id": 18,
-      "prompt": "我要把一份门店新人培训材料做成标准 AI 一对一自学课程。使用场景已经确定为标准一对一授课，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有 teaching_prompt_personalization_level 还没决定。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
+      "prompt": "course_author_name=李明。我要把一份门店新人培训材料做成标准 AI 一对一自学课程。使用场景已经确定为标准一对一授课，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有 teaching_prompt_personalization_level 还没决定。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
       "expected_output": "Pauses authoring to ask one localized, effect-aware five-level Teaching Prompt personalization question, first identifying the role as AI 师傅的授课智能体, instead of guessing a level or starting downstream work.",
       "files": [],
       "expectations": [
@@ -261,7 +261,7 @@
     },
     {
       "id": 21,
-      "prompt": "我要把一份门店新人培训材料做成纯课堂幻灯片课程。使用场景已经确定为 slide-only，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；没有提供 teaching_prompt_personalization_level。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
+      "prompt": "course_author_name=李明。我要把一份门店新人培训材料做成纯课堂幻灯片课程。使用场景已经确定为 slide-only，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；没有提供 teaching_prompt_personalization_level。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
       "expected_output": "Completes intake without asking a personalization question and normalizes the missing Teaching Prompt personalization level to level 1 High determinism for slide-only delivery, where the level controls only content-expression prescription inside an invariant course and slide structure.",
       "files": [],
       "expectations": [
@@ -273,7 +273,7 @@
     },
     {
       "id": 22,
-      "prompt": "我要把一份门店新人培训材料做成课程。teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有使用场景还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
+      "prompt": "course_author_name=李明。我要把一份门店新人培训材料做成课程。teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有使用场景还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
       "expected_output": "Asks only for the missing usage scenario, first identifies the one-on-one role as AI 师傅的授课智能体, and explains the learner-visible effect of personalized one-on-one study, instructor-paced classroom slides, and supporting both experiences.",
       "files": [],
       "expectations": [
@@ -286,7 +286,7 @@
     },
     {
       "id": 23,
-      "prompt": "我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，Listen Mode 关闭，结构固定为 1 章 3 节；只有互动用途还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
+      "prompt": "course_author_name=李明。我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，Listen Mode 关闭，结构固定为 1 章 3 节；只有互动用途还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
       "expected_output": "Asks only what interactions should accomplish, first identifies the relevant role as AI 师傅的授课智能体, and explains the teaching effect of learner-context collection, pre-content thinking, lesson-end self-check, and choosing no interactions.",
       "files": [],
       "expectations": [
@@ -299,7 +299,7 @@
     },
     {
       "id": 24,
-      "prompt": "我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，结构固定为 1 章 3 节；只有 Listen Mode 还没决定。请先继续 Course Design Intake，这一轮请询问我，不要直接采用默认值，也不要开始分段、生成授课提示词或部署。",
+      "prompt": "course_author_name=李明。我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，结构固定为 1 章 3 节；只有 Listen Mode 还没决定。请先继续 Course Design Intake，这一轮请询问我，不要直接采用默认值，也不要开始分段、生成授课提示词或部署。",
       "expected_output": "Asks only whether to enable Listen Mode and explains both the AI voice with slides experience and its additional AI-Shifu credit consumption.",
       "files": [],
       "expectations": [
@@ -311,7 +311,7 @@
     },
     {
       "id": 25,
-      "prompt": "我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，Listen Mode 关闭；只有章数和节数还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
+      "prompt": "course_author_name=李明。我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，Listen Mode 关闭；只有章数和节数还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
       "expected_output": "Asks only for chapter and lesson counts after explaining how the answer changes lesson grouping, course granularity, and the amount of material each single-question lesson must resolve without changing required source coverage.",
       "files": [],
       "expectations": [
@@ -334,6 +334,18 @@
         "Page 3 contains the complete learner-facing question but does not duplicate the option labels, input hint or simulated control, or correct answer. It is immediately followed by the exact `?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]` control and then immediate answer-specific feedback.",
         "The final feedback or explanatory paragraph reconnects the correct choice to the risk-signal boundary and also performs the required summary, decision checkpoint, or action close.",
         "At teaching_prompt_personalization_level 5, the repair preserves the lead-in, all three visual positions and teaching purposes, every visual-explanation adjacency, the question-control-feedback sequence, deterministic content, and close while leaving only ordinary wording adaptable; it introduces no typography, color, coordinates, animation, or uniform word, sentence, or slide quota."
+      ]
+    },
+    {
+      "id": 27,
+      "prompt": "README.md 课程标题、分段结果、course_index、course_profile、delivery_constraints、交付模式和各课节授课提示词都已批准，只有 course_author_name 缺失。请基于这些本地材料生成完整 Course Prompt；先继续 intake，这一轮只询问当前缺少的信息，不要先生成 Course Prompt，也不要询问其他设计项。",
+      "expected_output": "Routes through Author Identity Intake and asks only for the missing course author's real name before Course Prompt materialization.",
+      "files": [],
+      "expectations": [
+        "The response enters Course Design Intake's Author Identity Intake before Course Prompt materialization.",
+        "It explains that the real name fills the Course Prompt Role identity and asks one localized free-form question for that name.",
+        "It does not infer a name, apply a fallback, ask unrelated design questions, or repeat already supplied inputs.",
+        "It does not materialize or output the Course Prompt while course_author_name is missing."
       ]
     }
   ]

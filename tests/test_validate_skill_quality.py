@@ -1394,12 +1394,16 @@ class CourseCreatorContractTests(unittest.TestCase):
 
     def test_intake_explains_the_effect_of_every_design_question(self):
         required = markdown_section(self.course_design_intake, "Required References")
+        conditional = markdown_section(
+            self.course_design_intake, "Conditional References"
+        )
         scope = markdown_section(self.course_design_intake, "Intake Scope")
         validation = markdown_section(self.course_design_intake, "Validation")
         normalized_scope = " ".join(scope.split())
 
-        self.assertIn("pedagogy.md#interaction-policy-precedence", required)
-        self.assertIn("pedagogy.md#visual-text-coordination", required)
+        self.assertIn("data-contracts.md#course-author-name", required)
+        self.assertIn("pedagogy.md#interaction-policy-precedence", conditional)
+        self.assertIn("pedagogy.md#visual-text-coordination", conditional)
         for fragment in (
             "Before every applicable question, give a concise effect preview",
             "downstream course decision",
@@ -2047,6 +2051,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         placeholders = markdown_table_first_column(sources, "Placeholder")
         self.assertEqual(5, len(placeholders))
         self.assertEqual(len(placeholders), len(set(placeholders)))
+        self.assertIn("`course_author_name` from Course Design Intake", sources)
+        self.assertNotIn("If unknown, ask the author", sources)
         self.assertIn("they do not add placeholders to the template", sources)
 
     def test_course_prompt_owns_delivery_mode_not_lesson_pedagogy(self):
@@ -2130,15 +2136,44 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("does not claim coverage of or fidelity", coverage)
         self.assertNotIn("`allow_headings`", self.optimization_checklist)
 
-    def test_course_author_is_required_only_for_course_prompt_generation(self):
+    def test_course_author_is_collected_by_intake_before_course_prompt_generation(self):
         input_contract = markdown_section(self.data_contracts, "Input Contract")
+        author_contract = markdown_section(self.data_contracts, "Course Author Name")
+        author_intake = markdown_section(
+            self.course_design_intake, "Author Identity Intake"
+        )
+        course_prompt_required = markdown_section(
+            self.course_prompt, "Required References"
+        )
+        course_prompt_workflow = markdown_section(
+            self.course_prompt, "Authoring Workflow"
+        )
 
         self.assertIn("`course_author_name` (string)", input_contract)
+        self.assertIn("optional for workflows that do not produce one", author_contract)
         self.assertIn(
-            "optional for routes that do not produce a Course Prompt",
-            input_contract,
+            "owned exclusively by `course-design-intake.md#author-identity-intake`",
+            author_contract,
         )
-        self.assertIn("ask the author before continuing", input_contract)
+        self.assertIn("then ask the author for that name", author_intake)
+        self.assertIn("one free-form question", author_intake)
+        self.assertIn("Ask no unrelated design questions", author_intake)
+        self.assertIn("do not apply a fallback", author_intake)
+        self.assertIn(
+            "course-design-intake.md#author-identity-intake",
+            course_prompt_required,
+        )
+        self.assertIn("rather than asking here", course_prompt_workflow)
+        self.assertNotIn("If unknown, ask the author", self.course_prompt)
+
+        evals_data = json.loads(
+            (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
+        )
+        author_name_eval = next(
+            case for case in evals_data["evals"] if case["id"] == 27
+        )
+        self.assertIn("course_author_name", author_name_eval["prompt"])
+        self.assertIn("只询问", author_name_eval["prompt"])
 
     def test_phase_workflows_directly_load_their_fallback_schemas(self):
         expected = {

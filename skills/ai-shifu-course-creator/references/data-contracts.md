@@ -21,11 +21,17 @@ Provide one of:
 - Lesson granularity preference (`short`, `medium`, `long`).
 - Tone constraints.
 - Non-negotiable source fragments.
-- `course_author_name` (string): the course author's real name. It is optional for routes that do not produce a Course Prompt; when a Course Prompt must be generated and the value is absent, ask the author before continuing.
+- `course_author_name` (string): the course author's real name; conditionally required under [Course Author Name](#course-author-name).
 - `course_profile` object.
 - `delivery_constraints` object.
 - `interaction_policy` object.
 - `teaching_prompt_personalization_level` (integer from `1` through `5`): a course-wide, transient authoring input that controls how much learner-visible wording, explanation, already-required example identity and detail, and feedback wording each Teaching Prompt predetermines. It does not control teaching or slide structure.
+
+### Course Author Name
+
+`course_author_name` is a top-level, non-empty string containing the course author's real name. It is required whenever Course Prompt materialization is in scope and optional for workflows that do not produce one. Author-facing collection and normalization are owned exclusively by `course-design-intake.md#author-identity-intake`.
+
+Pass the normalized value unchanged to Course Prompt materialization as the Role identity source. Do not infer it from an account profile, course title, or unrelated metadata, and do not serialize it as a separate course-directory file, CLI setting, deployment field, or platform metadata field.
 
 ### Teaching Prompt Personalization Level
 
@@ -82,6 +88,7 @@ Pass the normalized value unchanged through the in-memory authoring handoff to T
 - Input files must be readable text or Markdown.
 - When multiple files are provided, their order must be explicit.
 - `interaction_policy` must satisfy its mode and purpose invariants.
+- Whenever Course Prompt materialization is in scope, `course_author_name` must be present and contain at least one non-whitespace character. Reject an empty or whitespace-only value rather than substituting a fallback.
 - When present, `teaching_prompt_personalization_level` must be an integer from `1` through `5`. Reject booleans, floats, numeric strings, and out-of-range values rather than coercing them.
 
 ## Output Contract
