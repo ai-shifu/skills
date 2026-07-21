@@ -36,7 +36,7 @@ Produce these controls once and pass them unchanged to downstream workflows:
 - **Interaction policy**: one or more purposes produces `enabled` with exactly those purposes; none produces `disabled` with an empty `purposes` array; skipped produces `unspecified` with an empty `purposes` array. Validate only the shape against `data-contracts.md#interaction-policy`; teaching effects belong to `pedagogy.md#interaction-policy-precedence`.
 - **Listen Mode**: pure slides always disable it. Otherwise preserve the explicit answer or use disabled after a skipped/unanswered question.
 - **Chapter and lesson counts**: preserve the explicit numbers. If skipped, infer them from source volume and lesson granularity rather than using a fixed count.
-- **Course author name**: preserve the supplied free-form `course_author_name`. If the question is skipped or unanswered, use an empty string; an empty value means the Course Prompt has no named teacher identity.
+- **Course author name**: preserve the supplied free-form `course_author_name`. If the supplied value is blank, or the question is skipped or unanswered, use an empty string; an empty value means the Course Prompt has no named teacher identity.
 
 ## Validation
 

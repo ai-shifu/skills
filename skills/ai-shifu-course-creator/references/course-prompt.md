@@ -95,7 +95,7 @@ Use these inputs as context constraints while wording the applicable fill values
 ## Materialization Checks
 
 - The six template sections are present in their original order and localized to `resolved_target_language`.
-- When `course_author_name` is non-empty, all five `XXX` occurrences are replaced with course-specific content derived from the mapped sources. When it is empty, the complete named Role identity item is absent and the remaining four occurrences are replaced. The completed artifact contains neither unresolved `XXX` nor a malformed `You are .` line.
+- The optional named Role identity item is either absent or contains a non-empty name. The remaining four `XXX` occurrences are replaced with course-specific content derived from the mapped sources, and the completed artifact contains neither unresolved `XXX` nor a malformed `You are .` line.
 - Every non-placeholder template instruction remains represented with the same behavior.
 - The fill values satisfy the learner-profile, topic-scope, and delivery-mode context constraints above.
 - The completed artifact follows [prompt-contracts.md](prompt-contracts.md), and any variable references have the runtime behavior defined in [markdownflow.md#variables](markdownflow.md#variables), without copying those rules into this file.

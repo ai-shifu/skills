@@ -2156,9 +2156,18 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertRegex(intake_scope, r"(?m)^6\. When a Course Prompt is in scope")
         self.assertIn("leaving it blank does not affect course creation", intake_scope)
         self.assertIn("**Course author name**", normalized_controls)
-        self.assertIn("skipped or unanswered, use an empty string", normalized_controls)
+        self.assertIn(
+            "supplied value is blank, or the question is skipped or unanswered, "
+            "use an empty string",
+            normalized_controls,
+        )
         self.assertIn("`course-design-intake.md`", conditional)
         self.assertIn("remove the complete `- You are XXX.` list item", workflow)
+        self.assertIn(
+            "optional named Role identity item is either absent or contains a "
+            "non-empty name",
+            checks,
+        )
         self.assertIn("malformed `You are .` line", checks)
 
         evals_data = json.loads(
