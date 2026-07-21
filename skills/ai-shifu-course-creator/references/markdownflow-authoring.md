@@ -36,11 +36,11 @@ Create a question-only slide whose complete central question is "Which path best
 
 After the learner answers, explain the selected path and contrast it with the other path.
 
-Create a question-only slide whose complete central question is "What course-wide goal should later lessons and the Course Prompt use?" Do not show an input hint or simulated input field.
+Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.
 
 ?[%{{learning_goal}} ...One-sentence goal]
 
-After the learner responds, acknowledge the goal and explain that later lessons and the Course Prompt will use it to adapt examples and emphasis.
+After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.
 ```
 
 ## Variable and Branch Encoding

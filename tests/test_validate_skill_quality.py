@@ -1878,6 +1878,11 @@ class CourseCreatorContractTests(unittest.TestCase):
             "After the learner responds, acknowledge the goal and explain",
             interaction_encoding,
         )
+        self.assertIn(
+            "What course-wide goal should later lessons use?",
+            interaction_encoding,
+        )
+        self.assertNotIn("Course Prompt", interaction_encoding)
         self.assertIn("question-only visual instructions", authoring_validation)
         self.assertIn("feedback or explanatory effects", authoring_validation)
 
