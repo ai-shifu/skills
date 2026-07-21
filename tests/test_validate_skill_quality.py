@@ -1337,10 +1337,11 @@ class CourseCreatorContractTests(unittest.TestCase):
                 "more lessons distribute it across more single-question units",
             ),
         }
-        step_starts = {
-            number: re.search(rf"(?m)^{number}\.\s+", scope).start()
-            for number in question_effects
-        }
+        step_starts = {}
+        for number in question_effects:
+            match = re.search(rf"(?m)^{number}\.\s+", scope)
+            self.assertIsNotNone(match, f"Step {number} not found in scope")
+            step_starts[number] = match.start()
         for number, fragments in question_effects.items():
             end = step_starts.get(number + 1, len(scope))
             step = " ".join(scope[step_starts[number] : end].split())
