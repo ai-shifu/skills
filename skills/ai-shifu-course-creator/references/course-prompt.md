@@ -21,10 +21,10 @@ Use this file to materialize one course-wide artifact from the six-section templ
 
 ## Authoring Workflow
 
-1. Read the non-empty `course_author_name` already normalized by [Author Identity Intake](course-design-intake.md#author-identity-intake). A missing value is an upstream intake failure: stop and return control to that intake section rather than asking here or substituting a value.
+1. Read the `course_author_name` string already normalized by [Author Identity Intake](course-design-intake.md#author-identity-intake); it may be empty. A missing field is an upstream intake failure: stop and return control to that intake section rather than asking here or substituting a value.
 2. Resolve `resolved_target_language` using [language-policy.md#language-resolution](language-policy.md#language-resolution).
 3. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
-4. Replace every `XXX` from [Placeholder Sources and Context](#placeholder-sources-and-context). Use already-collected artifacts and apply the listed context constraints to the fill values.
+4. Apply [Placeholder Sources and Context](#placeholder-sources-and-context). When `course_author_name` is non-empty, replace the Role identity `XXX` with it. When it is empty, remove the complete `- You are XXX.` list item. Replace each of the remaining four `XXX` placeholders from its mapped source. Use already-collected artifacts and apply the listed context constraints to the fill values.
 5. Render section headings and body text in `resolved_target_language`. The English template is canonical structure, not a language default.
 6. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in `resolved_target_language`.
 7. Run the [Materialization Checks](#materialization-checks).
@@ -78,13 +78,13 @@ Use this file to materialize one course-wide artifact from the six-section templ
 
 | Placeholder | Source |
 | --- | --- |
-| Role identity (`You are XXX`) | Pre-collected `course_author_name` from Course Design Intake. |
+| Role identity (`You are XXX`) | Resolved `course_author_name` from Course Design Intake. When it is empty, omit this complete list item instead of filling the placeholder. |
 | Specialty (`You specialize in XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
 | Teaching field (`the field of XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
 | Course name (`The current course is *XXX*`) | First heading in `README.md`. |
 | Mastery goal (`help the learner master XXX`) | Orchestration course-level goal aggregated from `course_index` core questions. |
 
-Use these inputs as context constraints while wording the five fill values; they do not add placeholders to the template:
+Use these inputs as context constraints while wording the applicable fill values; they do not add placeholders to the template:
 
 - Calibrate specificity to `course_profile.audience_level` and `course_profile.prerequisite_level`.
 - Keep fill values within `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage.
@@ -93,8 +93,8 @@ Use these inputs as context constraints while wording the five fill values; they
 ## Materialization Checks
 
 - The six template sections are present in their original order and localized to `resolved_target_language`.
-- All five `XXX` occurrences are replaced with course-specific content derived from the mapped sources.
-- The Role identity uses the pre-collected `course_author_name` without a downstream question, inferred name, or fallback.
+- When `course_author_name` is non-empty, all five `XXX` occurrences are replaced with course-specific content derived from the mapped sources. When it is empty, the complete named Role identity item is absent and the remaining four occurrences are replaced. The completed artifact contains neither unresolved `XXX` nor a malformed `You are .` line.
+- The Role identity consumes the resolved `course_author_name` without a downstream question, inferred name, or fallback; an explicit empty string does not block materialization.
 - Every non-placeholder template instruction remains represented with the same behavior.
 - The fill values satisfy the learner-profile, topic-scope, and delivery-mode context constraints above.
 - The completed artifact follows [prompt-contracts.md](prompt-contracts.md), and any variable references have the runtime behavior defined in [markdownflow.md#variables](markdownflow.md#variables), without copying those rules into this file.

@@ -339,13 +339,26 @@
     {
       "id": 27,
       "prompt": "README.md 课程标题、分段结果、course_index、course_profile、delivery_constraints、交付模式和各课节授课提示词都已批准，只有 course_author_name 缺失。请基于这些本地材料生成完整 Course Prompt；先继续 intake，这一轮只询问当前缺少的信息，不要先生成 Course Prompt，也不要询问其他设计项。",
-      "expected_output": "Routes through Author Identity Intake and asks only for the missing course author's real name before Course Prompt materialization.",
+      "expected_output": "Routes through Author Identity Intake, explains why the optional author name is used, and asks only for that value while allowing the author to leave it blank.",
       "files": [],
       "expectations": [
         "The response enters Course Design Intake's Author Identity Intake before Course Prompt materialization.",
-        "It explains that the real name fills the Course Prompt Role identity and asks one localized free-form question for that name.",
+        "Before asking, it explains that the optional name fills the Course Prompt Role identity so the course teaches under the named author's identity, while leaving it blank omits that identity line and does not block generation.",
+        "It asks one localized free-form question for the name and explicitly allows the author to leave it blank or skip.",
         "It does not infer a name, apply a fallback, ask unrelated design questions, or repeat already supplied inputs.",
-        "It does not materialize or output the Course Prompt while course_author_name is missing."
+        "It does not materialize or output the Course Prompt in the same turn while the course_author_name field is still absent."
+      ]
+    },
+    {
+      "id": 28,
+      "prompt": "course_author_name=\"\"。README.md 课程标题、分段结果、course_index、course_profile、delivery_constraints、交付模式和各课节授课提示词都已批准。请基于这些本地材料生成完整 Course Prompt，不要再询问作者姓名。",
+      "expected_output": "Treats the explicit empty author name as resolved, materializes the complete Course Prompt without asking again, and omits the named Role identity line.",
+      "files": [],
+      "expectations": [
+        "The present empty course_author_name is treated as the author's resolved choice to use no named Role identity, so the response does not ask for an author name.",
+        "The materialized Course Prompt keeps all six canonical sections in order and preserves the non-identity Role instruction about subject expertise and professional teaching.",
+        "It omits the complete `You are XXX.` Role identity item, contains neither an unresolved XXX nor a malformed `You are .` line, and fills the remaining four mapped placeholders.",
+        "It does not infer an author name or substitute a fallback identity."
       ]
     }
   ]

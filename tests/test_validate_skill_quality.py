@@ -2136,7 +2136,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("does not claim coverage of or fidelity", coverage)
         self.assertNotIn("`allow_headings`", self.optimization_checklist)
 
-    def test_course_author_is_collected_by_intake_before_course_prompt_generation(self):
+    def test_course_author_is_resolved_by_intake_before_course_prompt_generation(self):
         input_contract = markdown_section(self.data_contracts, "Input Contract")
         author_contract = markdown_section(self.data_contracts, "Course Author Name")
         author_intake = markdown_section(
@@ -2148,22 +2148,56 @@ class CourseCreatorContractTests(unittest.TestCase):
         course_prompt_workflow = markdown_section(
             self.course_prompt, "Authoring Workflow"
         )
+        course_prompt_checks = markdown_section(
+            self.course_prompt, "Materialization Checks"
+        )
 
         self.assertIn("`course_author_name` (string)", input_contract)
-        self.assertIn("optional for workflows that do not produce one", author_contract)
+        self.assertIn("may be empty", author_contract)
+        self.assertIn(
+            "optional for workflows that do not produce one",
+            author_contract,
+        )
+        self.assertIn("An absent field is unresolved", author_contract)
+        self.assertIn(
+            "records the author's choice to use no named Role identity",
+            author_contract,
+        )
         self.assertIn(
             "owned exclusively by `course-design-intake.md#author-identity-intake`",
             author_contract,
         )
-        self.assertIn("then ask the author for that name", author_intake)
+        self.assertIn("explain before asking that this optional name", author_intake)
+        self.assertIn("leaving it blank omits that identity line", author_intake)
+        self.assertIn("does not block Course Prompt generation", author_intake)
         self.assertIn("one free-form question", author_intake)
+        self.assertIn(
+            "explicitly allowing the author to leave it blank or skip",
+            author_intake,
+        )
         self.assertIn("Ask no unrelated design questions", author_intake)
+        self.assertIn(
+            "normalize it to the empty string and do not ask again",
+            author_intake,
+        )
         self.assertIn("do not apply a fallback", author_intake)
         self.assertIn(
             "course-design-intake.md#author-identity-intake",
             course_prompt_required,
         )
         self.assertIn("rather than asking here", course_prompt_workflow)
+        self.assertIn(
+            "remove the complete `- You are XXX.` list item",
+            course_prompt_workflow,
+        )
+        self.assertIn(
+            "an explicit empty string does not block materialization",
+            course_prompt_checks,
+        )
+        self.assertIn(
+            "neither unresolved `XXX` nor a malformed `You are .` line",
+            course_prompt_checks,
+        )
         self.assertNotIn("If unknown, ask the author", self.course_prompt)
 
         evals_data = json.loads(
@@ -2174,6 +2208,29 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("course_author_name", author_name_eval["prompt"])
         self.assertIn("只询问", author_name_eval["prompt"])
+        self.assertTrue(
+            any(
+                "optional name" in expectation and "leaving it blank" in expectation
+                for expectation in author_name_eval["expectations"]
+            )
+        )
+
+        empty_author_eval = next(
+            case for case in evals_data["evals"] if case["id"] == 28
+        )
+        self.assertIn('course_author_name=""', empty_author_eval["prompt"])
+        self.assertTrue(
+            any(
+                "does not ask for an author name" in expectation
+                for expectation in empty_author_eval["expectations"]
+            )
+        )
+        self.assertTrue(
+            any(
+                "malformed `You are .`" in expectation
+                for expectation in empty_author_eval["expectations"]
+            )
+        )
 
     def test_phase_workflows_directly_load_their_fallback_schemas(self):
         expected = {

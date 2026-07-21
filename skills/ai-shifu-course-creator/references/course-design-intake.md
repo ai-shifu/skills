@@ -1,6 +1,6 @@
 # Course Design Intake
 
-Collect and normalize the course author's identity when a Course Prompt is in scope, then collect their design choices before course structure or Teaching Prompt generation begins. This file owns author-facing intake questions and the preview of what each answer changes; the course pipeline, artifact schemas, and actual teaching effects remain defined by their downstream owners.
+Resolve the optional course author's identity when a Course Prompt is in scope, then collect their design choices before course structure or Teaching Prompt generation begins. This file owns author-facing intake questions and the preview of what each answer changes; the course pipeline, artifact schemas, and actual teaching effects remain defined by their downstream owners.
 
 ## Required References
 
@@ -19,9 +19,9 @@ Collect and normalize the course author's identity when a Course Prompt is in sc
 
 Apply this section whenever Course Prompt materialization is in scope, whether the active workflow creates, revises, or fills a missing Course Prompt. Resolve it before the design questions below and before Course Prompt materialization.
 
-Reuse a non-empty `course_author_name` already present in the user's instruction or active authoring handoff. When it is missing, explain that the author's real name fills the Course Prompt's Role identity (`You are XXX`), then ask the author for that name as one free-form question in `resolved_target_language`. Ask no unrelated design questions when the selected route names only this anchored section.
+Reuse a `course_author_name` already present in the user's instruction or active authoring handoff, including an explicit empty value. When the field is absent, explain before asking that this optional name fills the Course Prompt's Role identity (`You are XXX`) so the course teaches under the named author's identity; leaving it blank omits that identity line and does not block Course Prompt generation. Then ask for the name as one free-form question in `resolved_target_language`, explicitly allowing the author to leave it blank or skip. Ask no unrelated design questions when the selected route names only this anchored section.
 
-Preserve the author's supplied spelling as the normalized `course_author_name`. Reject an empty or whitespace-only answer. Do not infer a name from an account profile, course title, or unrelated metadata, and do not apply a fallback. This section owns every author-facing request for `course_author_name`; downstream Course Prompt materialization only consumes the normalized value.
+Treat an absent `course_author_name` as unresolved. Preserve the author's supplied spelling when the answer is non-empty. When the field is present but empty or whitespace-only, or the author explicitly skips the question, normalize it to the empty string and do not ask again. Do not infer a name from an account profile, course title, or unrelated metadata, and do not apply a fallback. This section owns every author-facing request for `course_author_name`; downstream Course Prompt materialization only consumes the normalized value.
 
 ## Intake Scope
 
@@ -49,7 +49,7 @@ Produce these controls once and pass them unchanged to downstream workflows:
 
 ## Validation
 
-- Every workflow with Course Prompt materialization in scope resolves a non-empty `course_author_name` through Author Identity Intake before materialization; workflows without Course Prompt materialization do not ask for it.
+- Every workflow with Course Prompt materialization in scope resolves `course_author_name` through Author Identity Intake to either the supplied name or an explicit empty string before materialization; workflows without Course Prompt materialization do not ask for it.
 - Only Author Identity Intake asks the author for `course_author_name`; downstream workflows consume the normalized value without asking again or inventing a fallback.
 - Every answer available from existing context is reused rather than asked again.
 - Every missing applicable question is asked before its fallback is applied.
