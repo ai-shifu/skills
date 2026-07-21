@@ -2,7 +2,7 @@
 
 Observable acceptance criteria for Optimization. Use each linked owner to interpret the rule; this checklist records `pass`, `fail`, or `not-assessed` without redefining that rule.
 
-For a pasted content-only Prompt, run every check observable from the body and record any check that needs an unprovided schema envelope or metadata table as `not-assessed`; do not manufacture the missing wrapper.
+For a pasted content-only Prompt, run every check observable from the body and record any check that needs an unprovided schema envelope, metadata table, or transient authoring handoff as `not-assessed`; do not manufacture the missing input.
 
 ## Required References
 
@@ -71,7 +71,8 @@ For a pasted content-only Prompt, run every check observable from the body and r
 - The existing Course Prompt keeps all six required sections in order and has no unresolved `XXX` placeholder.
 - Every non-placeholder instruction remains behaviorally represented after localization.
 - Standard and pure-slide delivery behavior matches `course-prompt.md`; lesson pedagogy is not duplicated there.
-- The complete artifact passes `course-prompt.md#materialization-checks` and `prompt-contracts.md`.
+- Apply every body-observable check from `course-prompt.md#materialization-checks`, and require the complete artifact to pass those observable checks plus `prompt-contracts.md`.
+- When the transient `course_author_name` handoff is unavailable, record both identity-source equality and whether an omitted named identity item reflects an explicit empty choice as `not-assessed`. Do not enter Author Identity Intake, fail the audit, or repair the existing Course Prompt solely because that handoff is absent.
 
 ## Course Description
 

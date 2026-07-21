@@ -5,12 +5,15 @@ Course-level materialization contract for the Course Prompt artifact.
 ## Required References
 
 - `language-policy.md`
-- `course-design-intake.md#author-identity-intake`
 - `prompt-contracts.md#prompt-semantics`
 - `prompt-contracts.md#artifact-responsibilities`
 - `data-contracts.md#input-contract`
 - `data-contracts.md#variable-table`
 - `markdownflow.md#variables`
+
+## Conditional References
+
+- When applying the Authoring Workflow to materialize a new or revised Course Prompt, rather than only auditing an existing artifact: `course-design-intake.md#author-identity-intake`
 
 ## Purpose
 
@@ -91,6 +94,8 @@ Use these inputs as context constraints while wording the applicable fill values
 - Match the stated delivery mode from the Course Design Intake.
 
 ## Materialization Checks
+
+These checks govern Course Prompt materialization. When Optimization consults this section to audit an existing artifact, apply the body-observable and `not-assessed` boundary owned by `optimization-checklist.md#course-prompt`; an unavailable transient author-name handoff does not trigger Author Identity Intake or fail the audit by itself.
 
 - The six template sections are present in their original order and localized to `resolved_target_language`.
 - When `course_author_name` is non-empty, all five `XXX` occurrences are replaced with course-specific content derived from the mapped sources. When it is empty, the complete named Role identity item is absent and the remaining four occurrences are replaced. The completed artifact contains neither unresolved `XXX` nor a malformed `You are .` line.

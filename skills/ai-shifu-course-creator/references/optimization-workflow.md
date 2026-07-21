@@ -20,7 +20,7 @@ Use this workflow only when the supplied artifact set already contains the Teach
 
 Declare the audit scope before editing: one lesson, selected artifacts, or the complete existing course. When multiple versions exist, identify the authoritative version.
 
-A pasted Prompt body may be audited as a content-only artifact. Apply every check observable from that body, but do not invent an absent lesson-schema envelope, variable table, or other metadata. Record checks that require unprovided envelope data as `not-assessed` in the Optimization report.
+A pasted Prompt body may be audited as a content-only artifact. Apply every check observable from that body, but do not invent an absent lesson-schema envelope, variable table, other metadata, or transient authoring handoff. Record checks that require any such unavailable input as `not-assessed` in the Optimization report.
 
 ## Optimization Method
 
@@ -70,5 +70,5 @@ Optimization must not create a Course Prompt, course description, or Teaching Pr
 - Every applicable item in `optimization-checklist.md` passes, or the remaining gap is explicitly reported.
 - Each repair is the smallest coherent change and retains the meaning and density observable in the supplied scope. When source material is in scope, it also retains source coverage and immutable content.
 - Repaired artifacts still satisfy their owning contracts.
-- Checks that require unprovided schema-envelope data are reported as `not-assessed`, never guessed or silently marked as passing.
+- Checks that require unprovided schema-envelope data or transient authoring handoffs are reported as `not-assessed`, never guessed or silently marked as passing.
 - Any fallback extension matches `data-contracts.md#optimization-fallback-fields` and remains additive to the standard output.

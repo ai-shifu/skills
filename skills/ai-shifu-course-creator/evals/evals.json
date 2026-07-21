@@ -362,6 +362,30 @@
         "It omits the complete `You are XXX.` Role identity item, contains neither an unresolved XXX nor a malformed `You are .` line, and fills the remaining four mapped placeholders.",
         "It does not infer an author name or substitute a fallback identity."
       ]
+    },
+    {
+      "id": 29,
+      "prompt": "稍后会提供一份已经物化并正在使用的完整 Course Prompt 正文做纯内容审查；当前只确认审查准备状态。这次没有 course_author_name 或其他临时 authoring handoff。不要重新生成 Prompt，也不要询问作者姓名。",
+      "expected_output": "Keeps the planned existing-Prompt audit in Optimization without entering Author Identity Intake, marks author-identity checks that require the unavailable transient handoff as not-assessed, and does not claim unprovided body checks passed.",
+      "files": [],
+      "expectations": [
+        "The workflow stays in Optimization and does not enter Author Identity Intake or ask for an author name solely because the transient course_author_name handoff is unavailable.",
+        "It records identity-source equality and whether an omitted named identity item reflects an explicit empty choice as not-assessed instead of guessing, failing the audit, or rewriting the existing Prompt.",
+        "Because the Prompt body has not yet been supplied, it does not claim that body-observable structure, placeholder, instruction, delivery-mode, artifact-boundary, or Prompt-semantics checks pass; those checks remain pending or not-assessed until the body is available.",
+        "It does not materialize a new Course Prompt or manufacture transient authoring state."
+      ]
+    },
+    {
+      "id": 30,
+      "prompt": "一个准备部署为新课程的本地课程目录已有 README.md、全部课节文件和其他获批制品，但缺少 course-prompt.md，也没有 course_author_name。请继续部署流程；当前先处理生成 Course Prompt 所缺的信息，不要开始 build、import 或 publish，也不要询问其他设计项。",
+      "expected_output": "Routes the deploy-time missing Course Prompt through Author Identity Intake before materialization and asks only the optional author-name question in teacher-facing language.",
+      "files": [],
+      "expectations": [
+        "Before Course Prompt materialization or any build, import, or publish command, the deployment workflow enters the Course Prompt's conditional Author Identity Intake.",
+        "It explains directly that providing the name lets AI 师傅的授课智能体 use it as the teacher identity during course delivery, while leaving it blank still allows course creation.",
+        "It asks one free-form author-name question, explicitly allows blank or skip, and asks no unrelated design question.",
+        "It does not start Course Prompt materialization or deployment in this turn before the missing field is resolved."
+      ]
     }
   ]
 }

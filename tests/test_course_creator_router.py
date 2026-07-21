@@ -225,6 +225,8 @@ class CourseCreatorRouterTests(unittest.TestCase):
         route = self.route_line("Review or audit pasted")
         self.assertNotIn("authentication.md", route)
         self.assertNotIn("course-target.md", route)
+        self.assertNotIn("course-design-intake.md", route)
+        self.assertNotIn("course-prompt.md", route)
         self.assertIn("optimization-workflow.md", route)
 
         session_controls = (

@@ -39,8 +39,9 @@ Before every applicable question, give a concise effect preview in `resolved_tar
 
 ## Normalized Design Controls
 
-Produce these controls once and pass them unchanged to downstream workflows:
+Produce this author identity and these design controls once, then retain them unchanged in the active authoring handoff for their downstream consumers:
 
+- **Course author name**: preserve the normalized top-level `course_author_name`, including an explicit empty string, in the active in-memory authoring handoff across intervening workflows and pass it unchanged to Course Prompt materialization. It remains transient; serialization boundaries stay owned by `data-contracts.md#course-author-name`.
 - **Usage scenario**: normalize personalized AI self-study to standard one-on-one delivery, classroom projection to pure-slide delivery, and an explicit combined choice to both modes. If skipped, infer the delivery mode from source structure. Teaching and presentation effects remain in their owning references.
 - **Teaching Prompt personalization level**: preserve an explicit integer from `1` through `5` as the top-level `teaching_prompt_personalization_level` and pass it unchanged. Reuse a value already present in context instead of asking again, including for pure-slide delivery. When pure-slide delivery has no explicit value, normalize directly to level `1` without asking. For standard or combined delivery, apply fallback level `3` only when the author explicitly skips or asks to continue without answering; absence alone is not a skip, and the level must not be inferred from source style or other controls. Level semantics and materialization remain owned by `teaching-prompt.md#personalization-levels`.
 - **Interaction policy**: one or more purposes produces `enabled` with exactly those purposes; none produces `disabled` with an empty `purposes` array; skipped produces `unspecified` with an empty `purposes` array. Validate only the shape against `data-contracts.md#interaction-policy`; teaching effects belong to `pedagogy.md#interaction-policy-precedence`.
