@@ -1286,6 +1286,73 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("absence alone is not a skip", controls)
 
+    def test_intake_explains_the_effect_of_every_design_question(self):
+        required = markdown_section(self.course_design_intake, "Required References")
+        scope = markdown_section(self.course_design_intake, "Intake Scope")
+        validation = markdown_section(self.course_design_intake, "Validation")
+        normalized_scope = " ".join(scope.split())
+
+        self.assertIn("pedagogy.md#interaction-policy-precedence", required)
+        self.assertIn("pedagogy.md#visual-text-coordination", required)
+        for fragment in (
+            "Before every applicable question, give a concise effect preview",
+            "downstream course decision",
+            "learner- or author-visible effect of every option presented",
+            "without adding a separate sales pitch or an unsupported outcome",
+            "Never present only bare option labels, numbers, or names",
+            "explain the tradeoff dimensions before asking",
+        ):
+            self.assertIn(fragment, normalized_scope)
+
+        question_effects = {
+            1: (
+                "controls the learner's delivery experience",
+                "AI-Shifu guide one learner directly",
+                "projection-ready content paced by a human instructor",
+                "both experiences",
+            ),
+            2: (
+                "uses only learner context already available",
+                "never authorizes new context collection, interactions, variables, or branches",
+                "what the author will see fixed in advance",
+                "what the runtime LLM may adapt for the learner",
+            ),
+            3: (
+                "at an early course or module point",
+                "later teaching selected context to use",
+                "initial judgment to refine",
+                "check or consolidate the lesson's core understanding",
+                "worked applications, model-led demonstrations, or consolidation",
+            ),
+            4: (
+                "adds AI voice with slides",
+                "consumes more AI-Shifu credits",
+                "leaves the course available without Listen Mode",
+                "avoids that additional credit consumption",
+            ),
+            5: (
+                "chapter count controls how lessons are grouped into broader topics",
+                "lesson count controls course granularity",
+                "fewer lessons concentrate more material into each lesson",
+                "more lessons distribute it across more single-question units",
+            ),
+        }
+        step_starts = {}
+        for number in question_effects:
+            match = re.search(rf"(?m)^{number}\.\s+", scope)
+            self.assertIsNotNone(match, f"Step {number} not found in scope")
+            step_starts[number] = match.start()
+        for number, fragments in question_effects.items():
+            end = step_starts.get(number + 1, len(scope))
+            step = " ".join(scope[step_starts[number] : end].split())
+            for fragment in fragments:
+                self.assertIn(fragment, step, f"missing effect for intake question {number}")
+
+        normalized_validation = " ".join(validation.split())
+        self.assertIn("Every asked question includes an effect preview", normalized_validation)
+        self.assertIn("rather than showing a bare label", normalized_validation)
+        self.assertIn("make no promotional or unsupported promise", normalized_validation)
+
     def test_slide_only_intake_uses_high_determinism_without_asking(self):
         scope = markdown_section(self.course_design_intake, "Intake Scope")
         normalized_scope = " ".join(scope.split())

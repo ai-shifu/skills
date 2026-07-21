@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Explain what every Course Design Intake answer changes and what experience each option creates, so authors see AI-Shifu's one-on-one guidance, classroom projection, answer-informed teaching, AI voice with slides, and lesson-granularity tradeoffs while choosing.
 - Let course authors choose one of five Teaching Prompt personalization levels, from near-final learner-facing content to more intent-led, learner-adaptive expression, while keeping the teaching sequence, slide structure, and teaching purpose of every content slot and slide fixed at every level; pure classroom-slide courses resolve an otherwise missing choice to high determinism without an extra question.
 - Centralize Prompt audience and addressee semantics so Teaching Prompts and Course Prompts are written to the runtime LLM, Course Prompts call the lesson input the current user message, and learner-visible `?[]` or standalone deterministic output is the explicit exception where second-person references may mean the learner.
 - Keep lesson pedagogy in Teaching Prompts and limit Course Prompts to following that pedagogy while adjusting course-wide presentation style.
