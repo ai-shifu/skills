@@ -311,65 +311,6 @@ class CourseCreatorDependencyTests(unittest.TestCase):
             any(path.startswith("analytics/") for path in relative_paths)
         )
 
-    def test_offline_course_prompt_audit_does_not_load_author_intake(self):
-        graph = dependency_graph()
-        roots = self.route_roots("Review or audit pasted")
-        checklist = (REFERENCES / "optimization-checklist.md").resolve()
-        course_prompt = None
-        for value in declared_paths(
-            checklist.read_text(encoding="utf-8"),
-            "Conditional References",
-        ):
-            target, _ = resolve_reference(checklist, value)
-            if target.name == "course-prompt.md":
-                course_prompt = target
-                break
-        self.assertIsNotNone(
-            course_prompt,
-            "offline Course Prompt audit needs a declared conditional owner",
-        )
-
-        closure = transitive_closure([*roots, course_prompt], graph)
-        relative_paths = {
-            str(path.relative_to(REFERENCES)) for path in closure
-        }
-        self.assertIn("course-prompt.md", relative_paths)
-        self.assertIn("optimization-workflow.md", relative_paths)
-        self.assertNotIn("course-design-intake.md", relative_paths)
-
-    def test_deploy_time_course_prompt_materialization_declares_author_intake(self):
-        deployment = (REFERENCES / "deployment-workflow.md").resolve()
-        course_prompt = None
-        for value in declared_paths(
-            deployment.read_text(encoding="utf-8"),
-            "Conditional References",
-        ):
-            target, _ = resolve_reference(deployment, value)
-            if target.name == "course-prompt.md":
-                course_prompt = target
-                break
-        self.assertIsNotNone(
-            course_prompt,
-            "deploy-time missing Course Prompt needs a conditional owner",
-        )
-
-        author_intake = None
-        author_anchor = None
-        for value in declared_paths(
-            course_prompt.read_text(encoding="utf-8"),
-            "Conditional References",
-        ):
-            target, anchor = resolve_reference(course_prompt, value)
-            if target.name == "course-design-intake.md":
-                author_intake = target
-                author_anchor = anchor
-                break
-        self.assertIsNotNone(
-            author_intake,
-            "Course Prompt materialization needs conditional author intake",
-        )
-        self.assertEqual("author-identity-intake", author_anchor)
-
     def test_local_course_prompt_closure_excludes_platform_access(self):
         graph = dependency_graph()
         closure = transitive_closure(
@@ -379,7 +320,6 @@ class CourseCreatorDependencyTests(unittest.TestCase):
             str(path.relative_to(REFERENCES)) for path in closure
         }
         self.assertIn("course-prompt.md", relative_paths)
-        self.assertIn("course-design-intake.md", relative_paths)
         self.assertTrue(
             {
                 "authentication.md",
@@ -486,7 +426,6 @@ class CourseCreatorDependencyTests(unittest.TestCase):
         relative_paths = {
             str(path.relative_to(REFERENCES)) for path in closure
         }
-        self.assertIn("course-design-intake.md", relative_paths)
         self.assertIn("course-management.md", relative_paths)
         self.assertNotIn("deployment-workflow.md", relative_paths)
 

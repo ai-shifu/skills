@@ -21,17 +21,11 @@ Provide one of:
 - Lesson granularity preference (`short`, `medium`, `long`).
 - Tone constraints.
 - Non-negotiable source fragments.
-- `course_author_name` (string): the optional course author's real name; an empty string selects no named Role identity under [Course Author Name](#course-author-name).
+- `course_author_name` (string): the optional name the author wants the Teaching Agent to use as the teacher identity during course delivery. A blank or unanswered value normalizes to an empty string, which produces no named teacher identity in the Course Prompt.
 - `course_profile` object.
 - `delivery_constraints` object.
 - `interaction_policy` object.
 - `teaching_prompt_personalization_level` (integer from `1` through `5`): a course-wide, transient authoring input that controls how much learner-visible wording, explanation, already-required example identity and detail, and feedback wording each Teaching Prompt predetermines. It does not control teaching or slide structure.
-
-### Course Author Name
-
-`course_author_name` is a top-level string containing the course author's real name and may be empty. It must be resolved whenever Course Prompt materialization is in scope and is optional for workflows that do not produce one. An absent field is unresolved and enters Author Identity Intake; a present non-empty value is the supplied identity; a present empty or whitespace-only value is normalized to the empty string and records the author's choice to use no named Role identity. Author-facing collection and normalization are owned exclusively by `course-design-intake.md#author-identity-intake`.
-
-Pass the normalized value unchanged to Course Prompt materialization. A non-empty value is the Role identity source; an empty value makes materialization omit the named Role identity line. Do not infer it from an account profile, course title, or unrelated metadata, and do not serialize it as a separate course-directory file, CLI setting, deployment field, or platform metadata field.
 
 ### Teaching Prompt Personalization Level
 
@@ -88,7 +82,6 @@ Pass the normalized value unchanged through the in-memory authoring handoff to T
 - Input files must be readable text or Markdown.
 - When multiple files are provided, their order must be explicit.
 - `interaction_policy` must satisfy its mode and purpose invariants.
-- Whenever Course Prompt materialization is in scope, `course_author_name` must be resolved to a present string through Author Identity Intake. Absence remains unresolved; an empty string is valid, and a whitespace-only value is normalized to the empty string rather than rejected or replaced with a fallback.
 - When present, `teaching_prompt_personalization_level` must be an integer from `1` through `5`. Reject booleans, floats, numeric strings, and out-of-range values rather than coercing them.
 
 ## Output Contract

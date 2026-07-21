@@ -1,31 +1,20 @@
 # Course Design Intake
 
-Resolve the optional course author's identity when a Course Prompt is in scope, then collect their design choices before course structure or Teaching Prompt generation begins. This file owns author-facing intake questions and the preview of what each answer changes; the course pipeline, artifact schemas, and actual teaching effects remain defined by their downstream owners.
+Collect and normalize the author's design choices before course structure or Teaching Prompt generation begins. This file owns the author-facing preview of what each choice changes; the course pipeline, artifact schemas, and actual teaching effects remain defined by their downstream owners.
 
 ## Required References
 
 - `language-policy.md`
-- `data-contracts.md#course-author-name`
-
-## Conditional References
-
-- When collecting, reusing, normalizing, or validating interaction choices: `data-contracts.md#interaction-policy`
-- When collecting, reusing, normalizing, or validating interaction choices: `pedagogy.md#interaction-policy-precedence`
-- When collecting, reusing, defaulting, normalizing, or validating Teaching Prompt personalization: `data-contracts.md#teaching-prompt-personalization-level`
-- When collecting, reusing, defaulting, normalizing, or validating Teaching Prompt personalization: `teaching-prompt.md#personalization-levels`
-- When collecting, reusing, inferring, normalizing, or validating usage scenario or delivery mode: `pedagogy.md#visual-text-coordination`
-
-## Author Identity Intake
-
-Apply this section whenever Course Prompt materialization is in scope, whether the active workflow creates, revises, or fills a missing Course Prompt. Resolve it before the design questions below and before Course Prompt materialization.
-
-Reuse a `course_author_name` already present in the user's instruction or active authoring handoff, including an explicit empty value. When the field is absent, give this direct author-facing explanation before asking, in `resolved_target_language`: providing your name lets AI-Shifu's Teaching Agent use it as the teacher identity during course delivery; you can leave it blank and still create the course. Follow `language-policy.md#teaching-agent-first-mention` when this is the first user-facing mention of the role. Keep the explanation focused on this teaching effect rather than exposing internal prompt structure or placeholder mechanics. Then ask for the name as one free-form question, explicitly allowing the author to leave it blank or skip. Ask no unrelated design questions when the selected route names only this anchored section.
-
-Treat an absent `course_author_name` as unresolved. Preserve the author's supplied spelling when the answer is non-empty. When the field is present but empty or whitespace-only, or the author explicitly skips the question, normalize it to the empty string and do not ask again. Do not infer a name from an account profile, course title, or unrelated metadata, and do not apply a fallback. This section owns every author-facing request for `course_author_name`; downstream Course Prompt materialization only consumes the normalized value.
+- `data-contracts.md#input-contract`
+- `data-contracts.md#interaction-policy`
+- `data-contracts.md#teaching-prompt-personalization-level`
+- `pedagogy.md#interaction-policy-precedence`
+- `pedagogy.md#visual-text-coordination`
+- `teaching-prompt.md#personalization-levels`
 
 ## Intake Scope
 
-After completing the applicable Author Identity Intake, collect only the unresolved design choices requested by the selected authoring route. Deployment, authentication, platform management, and analytics questions are outside this file.
+Collect only the unresolved design choices requested by the selected authoring route. Deployment, authentication, platform management, and analytics questions are outside this file.
 
 Before asking anything, extract answers already present in the user's instruction, source material, or pulled course directory. Ask only for missing items, one choice at a time and in the order below. Do not invent defaults from a sparse topic or brief, and do not proactively offer to bypass a required choice or “decide for the author.” Apply a listed fallback only after the author explicitly skips that question or asks to continue without answering.
 
@@ -36,22 +25,21 @@ Before every applicable question, give a concise effect preview in `resolved_tar
 3. Ask what interactions should do. Explain each purpose's effect from `pedagogy.md#interaction-policy-precedence`: learner-context collection occurs at an early course or module point and gives later teaching selected context to use, pre-content thinking or misconception activation gives the following explanation an initial judgment to refine, and lesson-end self-check lets the learner check or consolidate the lesson's core understanding. Explain that choosing none removes learner-answer controls and uses worked applications, demonstrations by the Teaching Agent, or consolidation instead of leaving a teaching gap.
 4. Unless the course is slide-only, ask whether Listen Mode should be enabled. Explain that enabling it adds AI voice with slides and consumes more AI-Shifu credits, while disabling it leaves the course available without Listen Mode and avoids that additional credit consumption. An unanswered question defaults to disabled.
 5. Ask for the desired chapter and lesson counts. Explain that the chapter count controls how lessons are grouped into broader topics, while the lesson count controls course granularity and how much material each single-question lesson must resolve: fewer lessons concentrate more material into each lesson, while more lessons distribute it across more single-question units. Neither choice may drop required source material or break source order.
+6. When a Course Prompt is in scope, ask what name the author wants AI-Shifu's Teaching Agent to use as the teacher identity during course delivery. Explain that providing a name lets the Teaching Agent teach under that teacher identity, while leaving it blank does not affect course creation. Accept a free-form answer; an unanswered question defaults to no named teacher identity.
 
 ## Normalized Design Controls
 
-Produce this author identity and these design controls once, then retain them unchanged in the active authoring handoff for their downstream consumers:
+Produce these controls once and pass them unchanged to downstream workflows:
 
-- **Course author name**: preserve the normalized top-level `course_author_name`, including an explicit empty string, in the active in-memory authoring handoff across intervening workflows and pass it unchanged to Course Prompt materialization. It remains transient; serialization boundaries stay owned by `data-contracts.md#course-author-name`.
 - **Usage scenario**: normalize personalized AI self-study to standard one-on-one delivery, classroom projection to pure-slide delivery, and an explicit combined choice to both modes. If skipped, infer the delivery mode from source structure. Teaching and presentation effects remain in their owning references.
 - **Teaching Prompt personalization level**: preserve an explicit integer from `1` through `5` as the top-level `teaching_prompt_personalization_level` and pass it unchanged. Reuse a value already present in context instead of asking again, including for pure-slide delivery. When pure-slide delivery has no explicit value, normalize directly to level `1` without asking. For standard or combined delivery, apply fallback level `3` only when the author explicitly skips or asks to continue without answering; absence alone is not a skip, and the level must not be inferred from source style or other controls. Level semantics and materialization remain owned by `teaching-prompt.md#personalization-levels`.
 - **Interaction policy**: one or more purposes produces `enabled` with exactly those purposes; none produces `disabled` with an empty `purposes` array; skipped produces `unspecified` with an empty `purposes` array. Validate only the shape against `data-contracts.md#interaction-policy`; teaching effects belong to `pedagogy.md#interaction-policy-precedence`.
 - **Listen Mode**: pure slides always disable it. Otherwise preserve the explicit answer or use disabled after a skipped/unanswered question.
 - **Chapter and lesson counts**: preserve the explicit numbers. If skipped, infer them from source volume and lesson granularity rather than using a fixed count.
+- **Course author name**: preserve the supplied free-form `course_author_name`. If the question is skipped or unanswered, use an empty string; an empty value means the Course Prompt has no named teacher identity.
 
 ## Validation
 
-- Every workflow with Course Prompt materialization in scope resolves `course_author_name` through Author Identity Intake to either the supplied name or an explicit empty string before materialization; workflows without Course Prompt materialization do not ask for it.
-- Only Author Identity Intake asks the author for `course_author_name`; downstream workflows consume the normalized value without asking again or inventing a fallback.
 - Every answer available from existing context is reused rather than asked again.
 - Every missing applicable question is asked before its fallback is applied.
 - Every asked question includes an effect preview that identifies its downstream course decision, and every presented option describes its learner- or author-visible consequence rather than showing a bare label.

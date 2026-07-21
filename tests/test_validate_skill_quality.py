@@ -1394,16 +1394,13 @@ class CourseCreatorContractTests(unittest.TestCase):
 
     def test_intake_explains_the_effect_of_every_design_question(self):
         required = markdown_section(self.course_design_intake, "Required References")
-        conditional = markdown_section(
-            self.course_design_intake, "Conditional References"
-        )
         scope = markdown_section(self.course_design_intake, "Intake Scope")
         validation = markdown_section(self.course_design_intake, "Validation")
         normalized_scope = " ".join(scope.split())
 
-        self.assertIn("data-contracts.md#course-author-name", required)
-        self.assertIn("pedagogy.md#interaction-policy-precedence", conditional)
-        self.assertIn("pedagogy.md#visual-text-coordination", conditional)
+        self.assertIn("data-contracts.md#input-contract", required)
+        self.assertIn("pedagogy.md#interaction-policy-precedence", required)
+        self.assertIn("pedagogy.md#visual-text-coordination", required)
         for fragment in (
             "Before every applicable question, give a concise effect preview",
             "downstream course decision",
@@ -1447,6 +1444,12 @@ class CourseCreatorContractTests(unittest.TestCase):
                 "lesson count controls course granularity",
                 "fewer lessons concentrate more material into each lesson",
                 "more lessons distribute it across more single-question units",
+            ),
+            6: (
+                "AI-Shifu's Teaching Agent",
+                "teacher identity during course delivery",
+                "leaving it blank does not affect course creation",
+                "unanswered question defaults to no named teacher identity",
             ),
         }
         step_starts = {}
@@ -2136,106 +2139,27 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("does not claim coverage of or fidelity", coverage)
         self.assertNotIn("`allow_headings`", self.optimization_checklist)
 
-    def test_course_author_is_resolved_by_intake_before_course_prompt_generation(self):
+    def test_optional_course_author_uses_standard_intake_fallback(self):
         input_contract = markdown_section(self.data_contracts, "Input Contract")
-        author_contract = markdown_section(self.data_contracts, "Course Author Name")
-        author_intake = markdown_section(
-            self.course_design_intake, "Author Identity Intake"
-        )
-        course_prompt_required = markdown_section(
-            self.course_prompt, "Required References"
-        )
-        course_prompt_conditional = markdown_section(
-            self.course_prompt, "Conditional References"
-        )
-        course_prompt_workflow = markdown_section(
-            self.course_prompt, "Authoring Workflow"
-        )
-        course_prompt_checks = markdown_section(
-            self.course_prompt, "Materialization Checks"
-        )
+        intake_scope = markdown_section(self.course_design_intake, "Intake Scope")
         normalized_controls = markdown_section(
             self.course_design_intake, "Normalized Design Controls"
         )
+        conditional = markdown_section(
+            self.course_prompt, "Conditional References"
+        )
+        workflow = markdown_section(self.course_prompt, "Authoring Workflow")
+        checks = markdown_section(self.course_prompt, "Materialization Checks")
 
         self.assertIn("`course_author_name` (string)", input_contract)
-        self.assertIn("may be empty", author_contract)
-        self.assertIn(
-            "optional for workflows that do not produce one",
-            author_contract,
-        )
-        self.assertIn("An absent field is unresolved", author_contract)
-        self.assertIn(
-            "records the author's choice to use no named Role identity",
-            author_contract,
-        )
-        self.assertIn(
-            "owned exclusively by `course-design-intake.md#author-identity-intake`",
-            author_contract,
-        )
-        self.assertIn(
-            "direct author-facing explanation before asking, in "
-            "`resolved_target_language`",
-            author_intake,
-        )
-        self.assertIn(
-            "providing your name lets AI-Shifu's Teaching Agent use it as the teacher "
-            "identity during course delivery",
-            author_intake,
-        )
-        self.assertIn(
-            "you can leave it blank and still create the course",
-            author_intake,
-        )
-        self.assertIn(
-            "language-policy.md#teaching-agent-first-mention",
-            author_intake,
-        )
-        self.assertIn(
-            "focused on this teaching effect rather than exposing internal prompt "
-            "structure or placeholder mechanics",
-            author_intake,
-        )
-        self.assertNotIn("You are XXX", author_intake)
-        self.assertNotIn("Course Prompt's Role identity", author_intake)
-        self.assertIn("one free-form question", author_intake)
-        self.assertIn(
-            "explicitly allowing the author to leave it blank or skip",
-            author_intake,
-        )
-        self.assertIn("Ask no unrelated design questions", author_intake)
-        self.assertIn(
-            "normalize it to the empty string and do not ask again",
-            author_intake,
-        )
-        self.assertIn("do not apply a fallback", author_intake)
-        self.assertIn(
-            "course-design-intake.md#author-identity-intake",
-            course_prompt_conditional,
-        )
-        self.assertNotIn(
-            "course-design-intake.md#author-identity-intake",
-            course_prompt_required,
-        )
+        self.assertIn("blank or unanswered value", input_contract)
+        self.assertRegex(intake_scope, r"(?m)^6\. When a Course Prompt is in scope")
+        self.assertIn("leaving it blank does not affect course creation", intake_scope)
         self.assertIn("**Course author name**", normalized_controls)
-        self.assertIn("including an explicit empty string", normalized_controls)
-        self.assertIn("active in-memory authoring handoff", normalized_controls)
-        self.assertIn("across intervening workflows", normalized_controls)
-        self.assertIn("pass it unchanged to Course Prompt", normalized_controls)
-        self.assertIn("rather than asking here", course_prompt_workflow)
-        self.assertIn(
-            "remove the complete `- You are XXX.` list item",
-            course_prompt_workflow,
-        )
-        self.assertIn(
-            "an explicit empty string does not block materialization",
-            course_prompt_checks,
-        )
-        self.assertIn(
-            "neither unresolved `XXX` nor a malformed `You are .` line",
-            course_prompt_checks,
-        )
-        self.assertNotIn("If unknown, ask the author", self.course_prompt)
+        self.assertIn("skipped or unanswered, use an empty string", normalized_controls)
+        self.assertIn("`course-design-intake.md`", conditional)
+        self.assertIn("remove the complete `- You are XXX.` list item", workflow)
+        self.assertIn("malformed `You are .` line", checks)
 
         evals_data = json.loads(
             (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
@@ -2243,89 +2167,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         author_name_eval = next(
             case for case in evals_data["evals"] if case["id"] == 27
         )
-        self.assertIn("course_author_name", author_name_eval["prompt"])
-        self.assertIn("只询问", author_name_eval["prompt"])
-        self.assertTrue(
-            any(
-                "addresses the teacher directly" in expectation
-                and "use it as the teacher identity during course delivery"
-                in expectation
-                for expectation in author_name_eval["expectations"]
-            )
-        )
-        self.assertTrue(
-            any(
-                "AI 师傅的授课智能体" in expectation
-                for expectation in author_name_eval["expectations"]
-            )
-        )
-        self.assertTrue(
-            any(
-                "does not mention course_author_name" in expectation
-                and "implementation mechanics" in expectation
-                for expectation in author_name_eval["expectations"]
-            )
-        )
-
-        empty_author_eval = next(
-            case for case in evals_data["evals"] if case["id"] == 28
-        )
-        self.assertIn('course_author_name=""', empty_author_eval["prompt"])
-        self.assertTrue(
-            any(
-                "does not ask for an author name" in expectation
-                for expectation in empty_author_eval["expectations"]
-            )
-        )
-        self.assertTrue(
-            any(
-                "malformed `You are .`" in expectation
-                for expectation in empty_author_eval["expectations"]
-            )
-        )
-
-    def test_existing_course_prompt_audit_does_not_require_author_handoff(self):
-        entry_conditions = markdown_section(
-            self.optimization_workflow, "Entry Conditions"
-        )
-        workflow_validation = markdown_section(
-            self.optimization_workflow, "Validation"
-        )
-        prompt_audit = markdown_section(
-            self.optimization_checklist, "Course Prompt"
-        )
-        prompt_checks = markdown_section(
-            self.course_prompt, "Materialization Checks"
-        )
-
-        self.assertIn("transient authoring handoff", entry_conditions)
-        self.assertIn("transient authoring handoffs", workflow_validation)
-        self.assertIn("body-observable check", prompt_audit)
-        self.assertIn("transient `course_author_name` handoff", prompt_audit)
-        self.assertIn("`not-assessed`", prompt_audit)
-        self.assertIn("Do not enter Author Identity Intake", prompt_audit)
-        self.assertIn("fail the audit", prompt_audit)
-        self.assertIn("does not trigger Author Identity Intake", prompt_checks)
-
-        evals_data = json.loads(
-            (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
-        )
-        audit_eval = next(
-            case for case in evals_data["evals"] if case["id"] == 29
-        )
-        self.assertIn("不要询问作者姓名", audit_eval["prompt"])
-        self.assertTrue(
-            any(
-                "does not enter Author Identity Intake" in expectation
-                for expectation in audit_eval["expectations"]
-            )
-        )
-        self.assertTrue(
-            any(
-                "not-assessed" in expectation
-                for expectation in audit_eval["expectations"]
-            )
-        )
+        self.assertEqual(3, len(author_name_eval["expectations"]))
+        self.assertIn("normal Course Design Intake", author_name_eval["expected_output"])
 
     def test_phase_workflows_directly_load_their_fallback_schemas(self):
         expected = {
@@ -2418,46 +2261,19 @@ class CourseCreatorContractTests(unittest.TestCase):
         conditional = markdown_section(
             self.deployment_workflow, "Conditional References"
         )
-        preconditions = markdown_section(
-            self.deployment_workflow, "Preconditions"
-        )
         deploy = markdown_section(
             self.deployment_workflow, "Deploy and Publish"
         )
 
         self.assertIn("standalone course directory lacks a Course Prompt", conditional)
-        self.assertIn("conditional Author Identity Intake", conditional)
         self.assertIn("`course-prompt.md`", conditional)
         self.assertIn("`course-description.md`", conditional)
         self.assertIn("`course-management.md#operations`", conditional)
-        self.assertIn(
-            "first complete the Course Prompt's conditional Author Identity Intake",
-            preconditions,
-        )
-        self.assertIn("retain the normalized `course_author_name`", preconditions)
-        self.assertLess(
-            preconditions.index("Author Identity Intake"),
-            preconditions.index("materialize the Course Prompt"),
-        )
         self.assertLess(
             deploy.index("Before first publication"),
             deploy.index("Run `publish <shifu_bid>`"),
         )
         self.assertIn("enabling Listen Mode", deploy)
-
-        evals_data = json.loads(
-            (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
-        )
-        deploy_eval = next(
-            case for case in evals_data["evals"] if case["id"] == 30
-        )
-        self.assertIn("不要开始 build、import 或 publish", deploy_eval["prompt"])
-        self.assertTrue(
-            any(
-                "conditional Author Identity Intake" in expectation
-                for expectation in deploy_eval["expectations"]
-            )
-        )
 
     def test_optimization_report_names_each_prompt_type(self):
         report = markdown_section(self.report_template, "Optimization Report")

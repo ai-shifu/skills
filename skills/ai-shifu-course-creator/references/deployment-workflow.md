@@ -13,7 +13,7 @@
 
 ## Conditional References
 
-- When a standalone course directory lacks a Course Prompt, materialize it through its conditional Author Identity Intake before deployment: `course-prompt.md`
+- When a standalone course directory lacks a Course Prompt: `course-prompt.md`
 - When a non-empty course description is required but absent: `course-description.md`
 - When an explicitly selected platform attribute must be set before first publication: `course-management.md#operations`
 
@@ -31,7 +31,7 @@ Existing-course edits and standalone platform-management operations are outside 
 
 - Complete `authentication.md`.
 - Confirm the resolved target is `new`.
-- Provide a course directory that conforms to `cli/course-directory-spec.md`, including lesson files. Require a completed `course-prompt.md` for a content-complete deployment; when it is missing, first complete the Course Prompt's conditional Author Identity Intake, retain the normalized `course_author_name` in the active handoff, and then materialize the Course Prompt before building. A missing course description keeps the CLI's existing empty-description fallback unless the author requests non-empty listing copy. This workflow consumes final artifacts; it does not define their content.
+- Provide a course directory that conforms to `cli/course-directory-spec.md`, including lesson files. Require a completed `course-prompt.md` for a content-complete deployment; when it is missing, complete the applicable conditional authoring reference before building. A missing course description keeps the CLI's existing empty-description fallback unless the author requests non-empty listing copy. This workflow consumes final artifacts; it does not define their content.
 - Complete the source-file checks in `language-policy.md#language-audit` before the first platform mutation.
 
 ## Deploy and Publish
