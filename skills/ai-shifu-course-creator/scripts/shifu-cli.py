@@ -698,7 +698,7 @@ def cmd_show(args):
                 print(f"Desc:   {desc}")
             model = detail.get("model", "")
             if model:
-                print(f"Teaching Agent model: {model}")
+                print(f"AI-Shifu's Teaching Agent model: {model}")
             print()
 
         tree = api(base_url, token, "get", f"/shifus/{shifu_bid}/outlines")
@@ -2944,7 +2944,7 @@ def build_parser():
                         "(1201 debug / 1202 preview / 1203 production)")
     p.add_argument("--usage-type", dest="usage_type",
                    help="Comma-separated usage_type codes, e.g. 1101,1102 "
-                        "(1101 Teaching Agent / 1102 TTS)")
+                        "(1101 AI-Shifu's Teaching Agent / 1102 TTS)")
     p.add_argument("--limit", type=int, default=None,
                    help="Row count cap, 1..1000 (default 100 server-side)")
     p.add_argument("--offset", type=int, default=None,

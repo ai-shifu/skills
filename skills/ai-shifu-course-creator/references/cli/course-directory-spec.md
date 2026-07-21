@@ -132,7 +132,7 @@ Fields:
 }
 ```
 
-`model`, `llm`, `ask_model`, `ask_llm`, and their related keys are stable machine-facing fields for the underlying models and settings used by the Teaching Agent. Keep those keys unchanged in files and payloads; human-facing explanations use Teaching Agent for both course delivery and learner follow-up answers.
+`model`, `llm`, `ask_model`, `ask_llm`, and their related keys are stable machine-facing fields for the underlying models and settings used by the Teaching Agent. Keep those keys unchanged in files and payloads; human-facing explanations identify AI-Shifu ownership on the first Teaching Agent mention and use Teaching Agent thereafter for both course delivery and learner follow-up answers.
 
 `build` and `import` do not read or send this file. `set-tts --course-dir` refreshes it after a successful Listen Mode update.
 

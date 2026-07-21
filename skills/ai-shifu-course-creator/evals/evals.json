@@ -210,12 +210,12 @@
     {
       "id": 18,
       "prompt": "我要把一份门店新人培训材料做成标准 AI 一对一自学课程。使用场景已经确定为标准一对一授课，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有 teaching_prompt_personalization_level 还没决定。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Pauses authoring to ask one localized, effect-aware five-level Teaching Prompt personalization question instead of guessing a level or starting downstream work.",
+      "expected_output": "Pauses authoring to ask one localized, effect-aware five-level Teaching Prompt personalization question, first identifying the role as AI 师傅的授课智能体, instead of guessing a level or starting downstream work.",
       "files": [],
       "expectations": [
         "The response asks for the missing teaching_prompt_personalization_level before Segmentation, Orchestration, Teaching Prompt generation, or deployment.",
         "The question presents exactly five ordered choices numbered 1 through 5, with level 1 described as the most deterministic or concrete and level 5 as the most personalized or adaptive.",
-        "Before requesting the choice, the response explains that this answer controls how much learner-facing expression the author fixes in advance versus how much the Teaching Agent may adapt to available learner context; every level description states its practical author- or learner-visible effect rather than showing only a number and name.",
+        "Before requesting the choice, the response explains that this answer controls how much learner-facing expression the author fixes in advance versus how much the Teaching Agent may adapt to available learner context; its first mention identifies the role as AI 师傅的授课智能体 before any shortened 授课智能体 reference, and every level description states its practical author- or learner-visible effect rather than showing only a number and name.",
         "The explanation says that the level uses only learner context already available and never authorizes new context collection, interactions, variables, or branches.",
         "The choices make the progression observable only in content expression: higher levels emphasize intent for the same title, ordinary explanation, already-required example identity and detail, transition, and feedback slots while every level keeps the same teaching sequence, slide count, slide order and placement, the teaching purpose of each slide and content slot, required example-slot presence and placement, content grouping, semantic layout, and interaction, image, and close placement.",
         "The localized question describes the invariant meaning as each slide's and content slot's 教学目的, and does not call it instructional role or 教学角色.",
@@ -269,11 +269,11 @@
     {
       "id": 22,
       "prompt": "我要把一份门店新人培训材料做成课程。teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有使用场景还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Asks only for the missing usage scenario and explains the learner-visible effect of personalized one-on-one study, instructor-paced classroom slides, and supporting both experiences.",
+      "expected_output": "Asks only for the missing usage scenario, first identifies the one-on-one role as AI 师傅的授课智能体, and explains the learner-visible effect of personalized one-on-one study, instructor-paced classroom slides, and supporting both experiences.",
       "files": [],
       "expectations": [
         "The response asks exactly one current intake question about the usage scenario before any downstream authoring or deployment work.",
-        "Personalized AI one-on-one self-study is described by its concrete effect: the Teaching Agent guides one learner directly and may adapt ordinary explanation or feedback to learner context already available.",
+        "Personalized AI one-on-one self-study is described by its concrete effect: the first mention identifies the role as AI 师傅的授课智能体 before any shortened 授课智能体 reference, and the role guides one learner directly and may adapt ordinary explanation or feedback to learner context already available.",
         "Interactive classroom slides are described as projection-ready content paced by a human instructor, and the combined option explicitly prepares the course for both learner experiences.",
         "The response does not show only the three option names, add a separate sales pitch, or promise an unsupported outcome.",
         "The supplied personalization, interaction, Listen Mode, and structure answers are reused without being asked again."
@@ -282,13 +282,13 @@
     {
       "id": 23,
       "prompt": "我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，Listen Mode 关闭，结构固定为 1 章 3 节；只有互动用途还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Asks only what interactions should accomplish and explains the teaching effect of learner-context collection, pre-content thinking, lesson-end self-check, and choosing no interactions.",
+      "expected_output": "Asks only what interactions should accomplish, first identifies the relevant role as AI 师傅的授课智能体, and explains the teaching effect of learner-context collection, pre-content thinking, lesson-end self-check, and choosing no interactions.",
       "files": [],
       "expectations": [
         "The response asks exactly one current intake question about interaction purpose before any downstream authoring or deployment work.",
         "Learner-context collection is explained as occurring at an early course or module point and giving later teaching selected context to use; pre-content thinking or misconception activation is explained as giving the following explanation an initial judgment to refine.",
         "Lesson-end self-check is explained as helping the learner check or consolidate core understanding.",
-        "Choosing no interactions is explained as replacing learner-answer controls with worked applications, demonstrations by the Teaching Agent, or consolidation rather than leaving a teaching gap.",
+        "Choosing no interactions is explained as replacing learner-answer controls with worked applications, demonstrations by the Teaching Agent, or consolidation rather than leaving a teaching gap; the first mention identifies the role as AI 师傅的授课智能体 before any shortened 授课智能体 reference.",
         "Every option has a practical effect description, and the supplied scenario, personalization, Listen Mode, and structure answers are reused without being asked again."
       ]
     },

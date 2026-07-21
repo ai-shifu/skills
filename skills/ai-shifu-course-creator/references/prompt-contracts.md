@@ -9,7 +9,7 @@ Define the semantics shared by Teaching Prompts and Course Prompts, plus the res
 
 ## Prompt Semantics
 
-The **Teaching Agent** is the learner-time AI role that executes Course Prompts and Teaching Prompts during course delivery, gives interaction feedback, and answers learner follow-up questions. A deployment may route those responsibilities to different underlying models, but this skill always refers to the product role as the Teaching Agent.
+The **Teaching Agent** is AI-Shifu's learner-time AI role that executes Course Prompts and Teaching Prompts during course delivery, gives interaction feedback, and answers learner follow-up questions. A deployment may route those responsibilities to different underlying models, but this skill always refers to the product role as the Teaching Agent.
 
 Teaching Prompts and Course Prompts are Prompts, not Scripts. The Teaching Agent consumes them. Their purpose is to tell the Teaching Agent how to teach the learner: what to explain, ask, show, adapt, and how to respond. They are not text for a person to read aloud or finished lesson prose addressed directly to the learner.
 

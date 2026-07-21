@@ -872,7 +872,7 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         self.assertIn("Prompts, not Scripts", semantics)
         self.assertIn(
-            "The **Teaching Agent** is the learner-time AI role", semantics
+            "The **Teaching Agent** is AI-Shifu's learner-time AI role", semantics
         )
         self.assertIn("gives interaction feedback", semantics)
         self.assertIn("answers learner follow-up questions", semantics)
@@ -955,6 +955,25 @@ class CourseCreatorContractTests(unittest.TestCase):
             "| `Teaching Agent` | Teaching Agent | 授课智能体 |",
             self.language_policy,
         )
+        first_mention = " ".join(
+            markdown_section(
+                self.language_policy, "Teaching Agent First Mention"
+            ).split()
+        )
+        for fragment in (
+            "skill's first user-facing mention of the Teaching Agent concept",
+            "in a conversation",
+            "`AI-Shifu's Teaching Agent`",
+            "`AI 师傅的授课智能体`",
+            "After that introduction in the same conversation",
+            "canonical short form",
+            "no conversation context",
+            "always use the product-qualified form",
+            "do not add an ownership introduction to Teaching Prompt or Course "
+            "Prompt content solely to satisfy it",
+            "do not change preserved source wording or machine-facing fields",
+        ):
+            self.assertIn(fragment, first_mention)
 
         deprecated_terms = {
             "runtime llm",
@@ -981,6 +1000,14 @@ class CourseCreatorContractTests(unittest.TestCase):
         evals_by_id = {case["id"]: case for case in evals_data["evals"]}
         self.assertIn("AI 旁白", evals_by_id[17]["prompt"])
         self.assertIn("AI 旁白", evals_by_id[20]["prompt"])
+        for case_id in (18, 22, 23):
+            skill_owned_text = "\n".join(
+                [
+                    evals_by_id[case_id].get("expected_output", ""),
+                    *evals_by_id[case_id].get("expectations", []),
+                ]
+            )
+            self.assertIn("AI 师傅的授课智能体", skill_owned_text)
         for case in evals_data["evals"]:
             skill_owned_text = "\n".join(
                 [case.get("expected_output", ""), *case.get("expectations", [])]
@@ -1006,14 +1033,19 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.course_directory_spec,
         )
         self.assertIn(
-            "human-facing explanations use Teaching Agent",
+            "human-facing explanations identify AI-Shifu ownership on the first "
+            "Teaching Agent mention and use Teaching Agent thereafter",
             self.course_directory_spec,
         )
         cli_script = (
             self.skill_root / "scripts" / "shifu-cli.py"
         ).read_text(encoding="utf-8")
-        self.assertIn('print(f"Teaching Agent model: {model}")', cli_script)
-        self.assertIn("(1101 Teaching Agent / 1102 TTS)", cli_script)
+        self.assertIn(
+            'print(f"AI-Shifu\'s Teaching Agent model: {model}")', cli_script
+        )
+        self.assertIn(
+            "(1101 AI-Shifu's Teaching Agent / 1102 TTS)", cli_script
+        )
 
     def test_deprecated_prompt_phrasing_stays_out_of_other_docs(self):
         deprecated_fragments = {
@@ -1373,6 +1405,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "downstream course decision",
             "learner- or author-visible effect of every option presented",
             "without adding a separate sales pitch or an unsupported outcome",
+            "language-policy.md#teaching-agent-first-mention",
             "Never present only bare option labels, numbers, or names",
             "explain the tradeoff dimensions before asking",
         ):

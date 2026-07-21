@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Use Teaching Agent (授课智能体) as the single human-facing name for the learner-time AI across prompt execution, interaction feedback, follow-up answers, analytics, and CLI guidance while preserving stable machine-facing `model` and `llm` fields.
+- Introduce the learner-time AI as AI-Shifu's Teaching Agent (AI 师傅的授课智能体), then use Teaching Agent (授课智能体) as its single short human-facing name across prompt execution, interaction feedback, follow-up answers, analytics, and CLI guidance while preserving stable machine-facing `model` and `llm` fields.
 - Explain what every Course Design Intake answer changes and what experience each option creates, so authors see the Teaching Agent's one-on-one guidance, classroom projection, answer-informed teaching, AI voice with slides, and lesson-granularity tradeoffs while choosing.
 - Let course authors choose one of five Teaching Prompt personalization levels, from near-final learner-facing content to more intent-led, learner-adaptive expression, while keeping the teaching sequence, slide structure, and teaching purpose of every content slot and slide fixed at every level; pure classroom-slide courses resolve an otherwise missing choice to high determinism without an extra question.
 - Centralize Prompt audience and addressee semantics so Teaching Prompts and Course Prompts are written to the Teaching Agent, Course Prompts call the lesson input the current user message, and learner-visible `?[]` or standalone deterministic output is the explicit exception where second-person references may mean the learner.
