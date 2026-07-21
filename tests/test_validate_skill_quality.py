@@ -1398,6 +1398,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         validation = markdown_section(self.course_design_intake, "Validation")
         normalized_scope = " ".join(scope.split())
 
+        self.assertIn("data-contracts.md#input-contract", required)
         self.assertIn("pedagogy.md#interaction-policy-precedence", required)
         self.assertIn("pedagogy.md#visual-text-coordination", required)
         for fragment in (
@@ -1443,6 +1444,12 @@ class CourseCreatorContractTests(unittest.TestCase):
                 "lesson count controls course granularity",
                 "fewer lessons concentrate more material into each lesson",
                 "more lessons distribute it across more single-question units",
+            ),
+            6: (
+                "AI-Shifu's Teaching Agent",
+                "teacher identity during course delivery",
+                "leaving it blank does not affect course creation",
+                "unanswered question defaults to no named teacher identity",
             ),
         }
         step_starts = {}
@@ -2047,6 +2054,12 @@ class CourseCreatorContractTests(unittest.TestCase):
         placeholders = markdown_table_first_column(sources, "Placeholder")
         self.assertEqual(5, len(placeholders))
         self.assertEqual(len(placeholders), len(set(placeholders)))
+        self.assertIn("`course_author_name` from Course Design Intake", sources)
+        self.assertIn(
+            "omit the corresponding list item in the Fillable Template",
+            sources,
+        )
+        self.assertNotIn("If unknown, ask the author", sources)
         self.assertIn("they do not add placeholders to the template", sources)
 
     def test_course_prompt_owns_delivery_mode_not_lesson_pedagogy(self):
@@ -2130,15 +2143,46 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("does not claim coverage of or fidelity", coverage)
         self.assertNotIn("`allow_headings`", self.optimization_checklist)
 
-    def test_course_author_is_required_only_for_course_prompt_generation(self):
+    def test_optional_course_author_uses_standard_intake_fallback(self):
         input_contract = markdown_section(self.data_contracts, "Input Contract")
+        intake_scope = markdown_section(self.course_design_intake, "Intake Scope")
+        normalized_controls = markdown_section(
+            self.course_design_intake, "Normalized Design Controls"
+        )
+        conditional = markdown_section(
+            self.course_prompt, "Conditional References"
+        )
+        checks = markdown_section(self.course_prompt, "Materialization Checks")
 
         self.assertIn("`course_author_name` (string)", input_contract)
+        self.assertIn("blank or unanswered value", input_contract)
+        self.assertRegex(intake_scope, r"(?m)^6\. When a Course Prompt is in scope")
+        self.assertIn("leaving it blank does not affect course creation", intake_scope)
+        self.assertIn("**Course author name**", normalized_controls)
         self.assertIn(
-            "optional for routes that do not produce a Course Prompt",
-            input_contract,
+            "supplied value is blank, or the question is skipped or unanswered, "
+            "use an empty string",
+            normalized_controls,
         )
-        self.assertIn("ask the author before continuing", input_contract)
+        self.assertIn("`course-design-intake.md`", conditional)
+        self.assertIn(
+            "optional named Role identity item is either absent or contains a "
+            "non-empty name",
+            checks,
+        )
+        self.assertIn(
+            "completed artifact contains no unresolved `XXX` placeholder",
+            checks,
+        )
+
+        evals_data = json.loads(
+            (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
+        )
+        author_name_eval = next(
+            case for case in evals_data["evals"] if case["id"] == 27
+        )
+        self.assertEqual(3, len(author_name_eval["expectations"]))
+        self.assertIn("normal Course Design Intake", author_name_eval["expected_output"])
 
     def test_phase_workflows_directly_load_their_fallback_schemas(self):
         expected = {

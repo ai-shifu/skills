@@ -11,6 +11,10 @@ Course-level materialization contract for the Course Prompt artifact.
 - `data-contracts.md#variable-table`
 - `markdownflow.md#variables`
 
+## Conditional References
+
+- When applying the Authoring Workflow to materialize a new or revised Course Prompt, rather than only auditing an existing artifact: `course-design-intake.md`
+
 ## Purpose
 
 Use this file to materialize one course-wide artifact from the six-section template below. It defines the template, fill-value sources, context used while filling those values, and completion checks; it does not redefine shared Prompt semantics, lesson pedagogy, or MarkdownFlow runtime behavior.
@@ -22,7 +26,7 @@ Use this file to materialize one course-wide artifact from the six-section templ
 
 1. Resolve `resolved_target_language` using [language-policy.md#language-resolution](language-policy.md#language-resolution).
 2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
-3. Replace every `XXX` from [Placeholder Sources and Context](#placeholder-sources-and-context). Use already-collected artifacts and apply the listed context constraints to the fill values.
+3. Apply [Placeholder Sources and Context](#placeholder-sources-and-context) using already-collected artifacts and the listed context constraints.
 4. Render section headings and body text in `resolved_target_language`. The English template is canonical structure, not a language default.
 5. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in `resolved_target_language`.
 6. Run the [Materialization Checks](#materialization-checks).
@@ -76,13 +80,13 @@ Use this file to materialize one course-wide artifact from the six-section templ
 
 | Placeholder | Source |
 | --- | --- |
-| Role identity (`You are XXX`) | Course author's real name. If unknown, ask the author. |
+| Role identity (`You are XXX`) | `course_author_name` from Course Design Intake. When it is empty, omit the corresponding list item in the Fillable Template instead of filling the placeholder. |
 | Specialty (`You specialize in XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
 | Teaching field (`the field of XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
 | Course name (`The current course is *XXX*`) | First heading in `README.md`. |
 | Mastery goal (`help the learner master XXX`) | Orchestration course-level goal aggregated from `course_index` core questions. |
 
-Use these inputs as context constraints while wording the five fill values; they do not add placeholders to the template:
+Use these inputs as context constraints while wording the applicable fill values; they do not add placeholders to the template:
 
 - Calibrate specificity to `course_profile.audience_level` and `course_profile.prerequisite_level`.
 - Keep fill values within `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage.
@@ -91,7 +95,7 @@ Use these inputs as context constraints while wording the five fill values; they
 ## Materialization Checks
 
 - The six template sections are present in their original order and localized to `resolved_target_language`.
-- All five `XXX` occurrences are replaced with course-specific content derived from the mapped sources.
+- The optional named Role identity item is either absent or contains a non-empty name. The remaining four `XXX` occurrences are replaced with course-specific content derived from the mapped sources, and the completed artifact contains no unresolved `XXX` placeholder.
 - Every non-placeholder template instruction remains represented with the same behavior.
 - The fill values satisfy the learner-profile, topic-scope, and delivery-mode context constraints above.
 - The completed artifact follows [prompt-contracts.md](prompt-contracts.md), and any variable references have the runtime behavior defined in [markdownflow.md#variables](markdownflow.md#variables), without copying those rules into this file.

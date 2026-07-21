@@ -21,7 +21,7 @@ Provide one of:
 - Lesson granularity preference (`short`, `medium`, `long`).
 - Tone constraints.
 - Non-negotiable source fragments.
-- `course_author_name` (string): the course author's real name. It is optional for routes that do not produce a Course Prompt; when a Course Prompt must be generated and the value is absent, ask the author before continuing.
+- `course_author_name` (string): the optional name the author wants the Teaching Agent to use as the teacher identity during course delivery. A blank or unanswered value normalizes to an empty string, which produces no named teacher identity in the Course Prompt.
 - `course_profile` object.
 - `delivery_constraints` object.
 - `interaction_policy` object.

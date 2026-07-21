@@ -5,6 +5,7 @@ Collect and normalize the author's design choices before course structure or Tea
 ## Required References
 
 - `language-policy.md`
+- `data-contracts.md#input-contract`
 - `data-contracts.md#interaction-policy`
 - `data-contracts.md#teaching-prompt-personalization-level`
 - `pedagogy.md#interaction-policy-precedence`
@@ -24,6 +25,7 @@ Before every applicable question, give a concise effect preview in `resolved_tar
 3. Ask what interactions should do. Explain each purpose's effect from `pedagogy.md#interaction-policy-precedence`: learner-context collection occurs at an early course or module point and gives later teaching selected context to use, pre-content thinking or misconception activation gives the following explanation an initial judgment to refine, and lesson-end self-check lets the learner check or consolidate the lesson's core understanding. Explain that choosing none removes learner-answer controls and uses worked applications, demonstrations by the Teaching Agent, or consolidation instead of leaving a teaching gap.
 4. Unless the course is slide-only, ask whether Listen Mode should be enabled. Explain that enabling it adds AI voice with slides and consumes more AI-Shifu credits, while disabling it leaves the course available without Listen Mode and avoids that additional credit consumption. An unanswered question defaults to disabled.
 5. Ask for the desired chapter and lesson counts. Explain that the chapter count controls how lessons are grouped into broader topics, while the lesson count controls course granularity and how much material each single-question lesson must resolve: fewer lessons concentrate more material into each lesson, while more lessons distribute it across more single-question units. Neither choice may drop required source material or break source order.
+6. When a Course Prompt is in scope, ask what name the author wants AI-Shifu's Teaching Agent to use as the teacher identity during course delivery. Explain that providing a name lets the Teaching Agent teach under that teacher identity, while leaving it blank does not affect course creation. Accept a free-form answer; an unanswered question defaults to no named teacher identity.
 
 ## Normalized Design Controls
 
@@ -34,6 +36,7 @@ Produce these controls once and pass them unchanged to downstream workflows:
 - **Interaction policy**: one or more purposes produces `enabled` with exactly those purposes; none produces `disabled` with an empty `purposes` array; skipped produces `unspecified` with an empty `purposes` array. Validate only the shape against `data-contracts.md#interaction-policy`; teaching effects belong to `pedagogy.md#interaction-policy-precedence`.
 - **Listen Mode**: pure slides always disable it. Otherwise preserve the explicit answer or use disabled after a skipped/unanswered question.
 - **Chapter and lesson counts**: preserve the explicit numbers. If skipped, infer them from source volume and lesson granularity rather than using a fixed count.
+- **Course author name**: preserve the supplied free-form `course_author_name`. If the supplied value is blank, or the question is skipped or unanswered, use an empty string; an empty value means the Course Prompt has no named teacher identity.
 
 ## Validation
 
