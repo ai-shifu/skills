@@ -2167,9 +2167,31 @@ class CourseCreatorContractTests(unittest.TestCase):
             "owned exclusively by `course-design-intake.md#author-identity-intake`",
             author_contract,
         )
-        self.assertIn("explain before asking that this optional name", author_intake)
-        self.assertIn("leaving it blank omits that identity line", author_intake)
-        self.assertIn("does not block Course Prompt generation", author_intake)
+        self.assertIn(
+            "direct author-facing explanation before asking, in "
+            "`resolved_target_language`",
+            author_intake,
+        )
+        self.assertIn(
+            "providing your name lets AI-Shifu's Teaching Agent use it as the teacher "
+            "identity during course delivery",
+            author_intake,
+        )
+        self.assertIn(
+            "you can leave it blank and still create the course",
+            author_intake,
+        )
+        self.assertIn(
+            "language-policy.md#teaching-agent-first-mention",
+            author_intake,
+        )
+        self.assertIn(
+            "focused on this teaching effect rather than exposing internal prompt "
+            "structure or placeholder mechanics",
+            author_intake,
+        )
+        self.assertNotIn("You are XXX", author_intake)
+        self.assertNotIn("Course Prompt's Role identity", author_intake)
         self.assertIn("one free-form question", author_intake)
         self.assertIn(
             "explicitly allowing the author to leave it blank or skip",
@@ -2210,7 +2232,22 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("只询问", author_name_eval["prompt"])
         self.assertTrue(
             any(
-                "optional name" in expectation and "leaving it blank" in expectation
+                "addresses the teacher directly" in expectation
+                and "use it as the teacher identity during course delivery"
+                in expectation
+                for expectation in author_name_eval["expectations"]
+            )
+        )
+        self.assertTrue(
+            any(
+                "AI 师傅的授课智能体" in expectation
+                for expectation in author_name_eval["expectations"]
+            )
+        )
+        self.assertTrue(
+            any(
+                "does not mention course_author_name" in expectation
+                and "implementation mechanics" in expectation
                 for expectation in author_name_eval["expectations"]
             )
         )

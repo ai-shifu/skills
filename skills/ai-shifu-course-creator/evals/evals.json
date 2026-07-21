@@ -339,11 +339,13 @@
     {
       "id": 27,
       "prompt": "README.md 课程标题、分段结果、course_index、course_profile、delivery_constraints、交付模式和各课节授课提示词都已批准，只有 course_author_name 缺失。请基于这些本地材料生成完整 Course Prompt；先继续 intake，这一轮只询问当前缺少的信息，不要先生成 Course Prompt，也不要询问其他设计项。",
-      "expected_output": "Routes through Author Identity Intake, explains why the optional author name is used, and asks only for that value while allowing the author to leave it blank.",
+      "expected_output": "Routes through Author Identity Intake, explains the teacher-facing effect of providing an optional author name, and asks only for that value while allowing the author to leave it blank.",
       "files": [],
       "expectations": [
         "The response enters Course Design Intake's Author Identity Intake before Course Prompt materialization.",
-        "Before asking, it explains that the optional name fills the Course Prompt Role identity so the course teaches under the named author's identity, while leaving it blank omits that identity line and does not block generation.",
+        "Before asking, it addresses the teacher directly: providing your name lets AI-Shifu's Teaching Agent use it as the teacher identity during course delivery, while leaving it blank still allows the course to be created.",
+        "Because this is the first user-facing mention in the Chinese response, it identifies the role as AI 师傅的授课智能体 before any shortened 授课智能体 reference.",
+        "The author-facing explanation describes only this teaching effect; it does not mention course_author_name, Course Prompt, a Role section, `You are XXX`, placeholders, templates, materialization, or other implementation mechanics.",
         "It asks one localized free-form question for the name and explicitly allows the author to leave it blank or skip.",
         "It does not infer a name, apply a fallback, ask unrelated design questions, or repeat already supplied inputs.",
         "It does not materialize or output the Course Prompt in the same turn while the course_author_name field is still absent."
