@@ -69,7 +69,6 @@ Use this file to materialize one course-wide artifact from the six-section templ
 # Slides
 
 - Only create a slide, PPT, visual page, or classroom projection page when the current user message explicitly requests one. Do not proactively create visuals.
-- Whenever one or more slides are created for a lesson, give slide 1 a clear cover-page visual treatment. Apply that treatment within the requested slide structure rather than adding a separate cover slide or changing slide content, count, order, or the delivery mode's slide-text and narration behavior.
 - Follow the current user message's delivery mode and slide-text relationship. Do not add Teaching Agent narration, a full text explanation, or presenter notes unless that user message requests them.
 - Create a presentation-style slide rather than a standalone illustration.
 - In-slide option labels must not be interactive.

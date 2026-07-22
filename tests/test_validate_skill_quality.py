@@ -1593,8 +1593,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
 
         self.assertIn(
-            "first substantive slide rather than adding a separate cover-only slide, "
-            "decorative page, or objective-only page",
+            "first substantive slide rather than adding a cover, decorative page, "
+            "or objective-only page",
             lesson_loop,
         )
         for path in COURSE_CREATOR_REFERENCES.rglob("*.md"):
@@ -1897,7 +1897,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "visual opening",
             "consecutive visual units",
             "several visuals followed by one delayed explanation",
-            "cover-only, decorative, or objective-only page",
+            "cover or decorative or objective-only page",
             "unpaired learner-visible text turn after the lead-in",
         ):
             self.assertIn(defect, checklist)
@@ -2101,37 +2101,44 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("prompt-contracts.md#prompt-semantics", required)
         self.assertIn("prompt-contracts.md#artifact-responsibilities", required)
 
-    def test_course_prompt_owns_first_slide_cover_treatment(self):
+    def test_teaching_prompt_owns_first_slide_cover_treatment(self):
         responsibilities = markdown_section(
             self.prompt_contracts, "Artifact Responsibilities"
         )
-        template = markdown_section(self.course_prompt, "Fillable Template")
-        slides = template[template.index("# Slides") :]
+        materialization = markdown_section(
+            self.teaching_prompt, "Lesson Materialization"
+        )
+        validation = markdown_section(self.teaching_prompt, "Validation")
 
-        self.assertIn("owns shared role, presentation", responsibilities)
-        self.assertIn("one or more slides are created for a lesson", slides)
-        self.assertIn("slide 1 a clear cover-page visual treatment", slides)
-        self.assertIn("rather than adding a separate cover slide", slides)
-        self.assertIn("changing slide content, count, order", slides)
-        self.assertIn("slide-text and narration behavior", slides)
+        self.assertIn("Teaching Prompt", responsibilities)
+        self.assertIn("lesson's teaching intent and execution", responsibilities)
+        self.assertIn("one or more slides", materialization)
+        self.assertIn("slide 1 a clear cover-page visual treatment", materialization)
+        self.assertIn(
+            "Apply every other slide and explanation rule normally for the selected "
+            "delivery mode",
+            materialization,
+        )
+        self.assertIn("clear cover-page visual treatment", validation)
+        self.assertIn("selected delivery mode's existing rules", validation)
 
         for non_owner in (
             self.pedagogy,
-            self.teaching_prompt,
+            self.course_prompt,
             self.data_contracts,
             self.optimization_checklist,
         ):
-            self.assertNotIn("required cover", non_owner.casefold())
-            self.assertNotIn("exact `lesson_title`", non_owner)
+            self.assertNotIn("cover-page visual treatment", non_owner.casefold())
 
         evals_data = json.loads(
             (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
         )
-        eval_12 = next(case for case in evals_data["evals"] if case["id"] == 12)
-        self.assertIn(
-            "cover-page visual treatment",
-            " ".join(eval_12["expectations"]),
-        )
+        evals_by_id = {case["id"]: case for case in evals_data["evals"]}
+        for eval_id in (19, 20):
+            self.assertIn(
+                "cover-page visual treatment",
+                " ".join(evals_by_id[eval_id]["expectations"]),
+            )
 
     def test_optimization_audits_existing_artifacts_without_absorbing_creation(self):
         self.assertIn("## Entry Conditions", self.optimization_workflow)
