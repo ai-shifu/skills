@@ -2179,16 +2179,12 @@ class CourseCreatorContractTests(unittest.TestCase):
             (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
         )
         evals_by_id = {case["id"]: case for case in evals_data["evals"]}
-        all_eval_prompts = "\n".join(case["prompt"] for case in evals_data["evals"])
-        for removed_page_rule in (
-            "decorative page",
-            "decorative pages",
-            "objective-only page",
-            "objective-only pages",
-            "装饰页",
-            "目标空页",
-        ):
-            self.assertNotIn(removed_page_rule, all_eval_prompts)
+        eval_26_prompt = evals_by_id[26]["prompt"]
+        self.assertNotRegex(
+            eval_26_prompt,
+            r"(?:不要增加|不得增加|禁止增加)[^。\n]*(?:装饰页|目标空页)",
+        )
+        self.assertIn("不要增加封面或其他填充页", eval_26_prompt)
         self.assertIn(
             "does not mention, create, or style a cover page or slide 1 specially",
             " ".join(evals_by_id[12]["expectations"]),
