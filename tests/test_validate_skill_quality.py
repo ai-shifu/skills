@@ -1561,9 +1561,22 @@ class CourseCreatorContractTests(unittest.TestCase):
         visual_text = markdown_section(
             self.pedagogy, "Visual-Text Coordination"
         )
+        opening_frame = next(
+            line
+            for line in lesson_loop.splitlines()
+            if line.startswith("- **Opening frame**:")
+        )
 
         self.assertIn("explicit text-only constraint", lesson_loop)
         self.assertIn("Pure classroom slides instead begin", lesson_loop)
+        self.assertIn(
+            "In pure classroom slides, the deck must present the lesson objective",
+            opening_frame,
+        )
+        self.assertIn("learner-visible slide content", opening_frame)
+        self.assertIn("do not fix its slide position", opening_frame)
+        self.assertIn("or require other content on the same slide", opening_frame)
+        self.assertNotIn("first substantive", opening_frame)
         self.assertIn("Explicit text-only constraint", visual_text)
         self.assertIn("Give complete teaching direction", visual_text)
         self.assertIn("selected personalization level", visual_text)
@@ -1831,18 +1844,70 @@ class CourseCreatorContractTests(unittest.TestCase):
             visual_text,
         )
         self.assertIn("slide containing an image still counts as one", visual_text)
-        self.assertIn("Do not place two visual units back to back", visual_text)
+        self.assertIn("Apply pairing only to substantive visual units", visual_text)
         self.assertIn(
-            "defer several visuals' explanations to one later block",
+            "complete each substantive visual's concise but complete explanation "
+            "before any later visual",
             visual_text,
         )
+        self.assertIn(
+            "do not pool several substantive visuals into one later explanation",
+            visual_text,
+        )
+        for label, surface in (
+            ("pedagogy", visual_text),
+            ("Teaching Prompt validation", validation),
+            ("optimization checklist", checklist),
+        ):
+            self.assertIn("intentional non-substantive visual unit", surface.casefold())
+            for allowed_type in ("cover", "decorative", "objective-only"):
+                self.assertIn(allowed_type, surface, f"{label} must allow {allowed_type}")
+            self.assertIn(
+                "may appear after the lead-in and before the first substantive pair",
+                surface,
+            )
+            self.assertIn("or after the final pair", surface)
+            self.assertIn("required substantive visual unit", surface)
+        self.assertIn("does not require its own explanation", visual_text)
+        self.assertIn(
+            "does not by itself create a consecutive-visual defect", visual_text
+        )
+        for derived_surface in (validation, checklist):
+            self.assertIn("without a required explanation", derived_surface)
+            self.assertIn(
+                "not a cadence defect solely because it appears next to another visual",
+                derived_surface,
+            )
+            self.assertIn(
+                "does not count toward the required substantive visual unit",
+                derived_surface,
+            )
+        self.assertIn(
+            "reject any visual unit whose sole purpose is to pad the lesson's "
+            "length or pacing",
+            visual_text,
+        )
+        self.assertIn(
+            "flag any visual unit whose sole purpose is to pad the lesson's length "
+            "or pacing",
+            checklist,
+        )
+        self.assertNotIn("Do not add visual units solely", visual_text)
+        for retained_filler_surface in (visual_text, checklist):
+            self.assertIn(
+                "defined framing, orientation, transition, atmosphere, or teaching "
+                "purpose",
+                retained_filler_surface,
+            )
+            self.assertIn("merely because it is non-substantive", retained_filler_surface)
+        self.assertIn("Within the standard visual-text scope", visual_text)
         self.assertIn(
             "context, relationship, reasoning, inference, or application",
             visual_text,
         )
         self.assertIn("rather than merely restating it", visual_text)
         self.assertIn(
-            "final pair's explanation also performs the selected summary, "
+            "final substantive pair's explanation performs the selected summary, "
             "decision checkpoint, or action close",
             visual_text,
         )
@@ -1855,14 +1920,21 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         self.assertIn("one brief learner-visible text lead-in", materialization)
         self.assertIn("at least one substantive visual-and-explanation pair", materialization)
-        self.assertIn("final explanation carrying the close", materialization)
-        self.assertIn("no consecutive visual units", validation)
         self.assertIn(
-            "one concise but complete explanation after every visual and before "
-            "the next",
+            "every substantive visual's explanation completing its pair before "
+            "any later visual",
+            materialization,
+        )
+        self.assertIn("final substantive explanation carrying the close", materialization)
+        self.assertIn(
+            "no substantive visual followed by another visual before its concise "
+            "but complete explanation",
             validation,
         )
-        self.assertIn("final explanation that also performs the close", validation)
+        self.assertIn("no pooled explanation for several substantive visuals", validation)
+        self.assertIn(
+            "final substantive explanation that also performs the close", validation
+        )
         self.assertIn("question-only visual", validation)
         self.assertIn("unchanged `?[]` control", validation)
 
@@ -1890,11 +1962,12 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         for defect in (
             "visual opening",
-            "consecutive visual units",
-            "several visuals followed by one delayed explanation",
+            "substantive visual followed by another visual before its explanation",
+            "several substantive visuals pooled into one delayed explanation",
             "unpaired learner-visible text turn after the lead-in",
         ):
             self.assertIn(defect, checklist)
+        self.assertIn("Across visual delivery modes", checklist)
         self.assertIn(
             "Pure classroom slides do not use Teaching Agent narration or paired "
             "explanatory text",
@@ -1922,7 +1995,7 @@ class CourseCreatorContractTests(unittest.TestCase):
                     f"{label} must not own the lesson cadence contract",
                 )
 
-    def test_author_images_keep_complete_explanation_except_in_pure_slides(self):
+    def test_author_images_follow_substantive_or_presentation_purpose(self):
         visual_text = markdown_section(
             self.pedagogy, "Visual-Text Coordination"
         )
@@ -1940,7 +2013,20 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("Under the standard visual-text scope", image_row)
         self.assertNotIn("Listen Mode", image_row)
         self.assertIn(
+            "when the asset is substantive",
+            image_row,
+        )
+        self.assertIn(
             "give it the required following explanation before any later visual",
+            image_row,
+        )
+        self.assertIn(
+            "When it has a defined non-substantive purpose",
+            image_row,
+        )
+        self.assertIn(
+            "without counting it toward the required substantive visual unit or "
+            "requiring a paired explanation",
             image_row,
         )
         self.assertRegex(image_row, r"(?i)pure-slide.*overrides")
@@ -2127,15 +2213,10 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("with lesson title and author information", validation)
         self.assertNotIn("rather than adding a cover", self.pedagogy)
         self.assertNotIn("rather than serve as a cover", self.pedagogy)
-        self.assertNotIn("cover-only", self.optimization_checklist)
-        for removed_page_rule in (
-            "decorative page",
-            "decorative pages",
-            "objective-only page",
-            "objective-only pages",
-        ):
-            self.assertNotIn(removed_page_rule, self.pedagogy)
-            self.assertNotIn(removed_page_rule, self.optimization_checklist)
+        self.assertNotIn(
+            "cover-only, decorative, or objective-only page",
+            self.optimization_checklist,
+        )
         self.assertIn(
             "without restating the general presentation requirements",
             validation,
@@ -2149,16 +2230,9 @@ class CourseCreatorContractTests(unittest.TestCase):
             (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
         )
         evals_by_id = {case["id"]: case for case in evals_data["evals"]}
-        all_eval_prompts = "\n".join(case["prompt"] for case in evals_data["evals"])
-        for removed_page_rule in (
-            "decorative page",
-            "decorative pages",
-            "objective-only page",
-            "objective-only pages",
-            "装饰页",
-            "目标空页",
-        ):
-            self.assertNotIn(removed_page_rule, all_eval_prompts)
+        eval_26_prompt = evals_by_id[26]["prompt"]
+        self.assertNotRegex(eval_26_prompt, r"不要增加[^。]*(?:装饰页|目标空页)")
+        self.assertIn("不要增加封面或其他填充页", eval_26_prompt)
         self.assertIn(
             "does not mention, create, or style a cover page or slide 1 specially",
             " ".join(evals_by_id[12]["expectations"]),

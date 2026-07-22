@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Remove pedagogy and optimization rules that reject cover pages, plus all skill and evaluation prohibitions on decorative or objective-only pages.
+- Allow cover, decorative, and objective-only pages when they serve a defined purpose, while preserving pure-slide objectives, substantive visual-explanation cadence, and padding-only rejection.
 - Require first-slide covers created by Teaching Prompts to include lesson title and author information.
 - Keep general presentation requirements shared by every slide in the Course Prompt while leaving first-slide cover treatment and other position-specific decisions in Teaching Prompts.
 - Add the optional course author name to Course Design Intake, explain that it lets AI-Shifu's Teaching Agent teach under the author's identity, and default to no named identity when left blank.
