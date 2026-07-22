@@ -1592,11 +1592,6 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.optimization_checklist, "Teaching Prompt Behavior"
         )
 
-        self.assertIn(
-            "first substantive slide rather than adding a cover, decorative page, "
-            "or objective-only page",
-            lesson_loop,
-        )
         for path in COURSE_CREATOR_REFERENCES.rglob("*.md"):
             self.assertNotIn(
                 "instructional role",
@@ -1897,7 +1892,6 @@ class CourseCreatorContractTests(unittest.TestCase):
             "visual opening",
             "consecutive visual units",
             "several visuals followed by one delayed explanation",
-            "cover-only, decorative, or objective-only page",
             "unpaired learner-visible text turn after the lead-in",
         ):
             self.assertIn(defect, checklist)
@@ -2131,6 +2125,17 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("with lesson title and author information", materialization)
         self.assertIn("clear cover-page visual treatment", validation)
         self.assertIn("with lesson title and author information", validation)
+        self.assertNotIn("rather than adding a cover", self.pedagogy)
+        self.assertNotIn("rather than serve as a cover", self.pedagogy)
+        self.assertNotIn("cover-only", self.optimization_checklist)
+        for removed_page_rule in (
+            "decorative page",
+            "decorative pages",
+            "objective-only page",
+            "objective-only pages",
+        ):
+            self.assertNotIn(removed_page_rule, self.pedagogy)
+            self.assertNotIn(removed_page_rule, self.optimization_checklist)
         self.assertIn(
             "without restating the general presentation requirements",
             validation,
@@ -2144,6 +2149,16 @@ class CourseCreatorContractTests(unittest.TestCase):
             (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
         )
         evals_by_id = {case["id"]: case for case in evals_data["evals"]}
+        all_eval_prompts = "\n".join(case["prompt"] for case in evals_data["evals"])
+        for removed_page_rule in (
+            "decorative page",
+            "decorative pages",
+            "objective-only page",
+            "objective-only pages",
+            "装饰页",
+            "目标空页",
+        ):
+            self.assertNotIn(removed_page_rule, all_eval_prompts)
         self.assertIn(
             "does not mention, create, or style a cover page or slide 1 specially",
             " ".join(evals_by_id[12]["expectations"]),
