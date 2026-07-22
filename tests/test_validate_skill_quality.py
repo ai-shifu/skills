@@ -1897,7 +1897,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "visual opening",
             "consecutive visual units",
             "several visuals followed by one delayed explanation",
-            "cover or decorative or objective-only page",
+            "cover-only, decorative, or objective-only page",
             "unpaired learner-visible text turn after the lead-in",
         ):
             self.assertIn(defect, checklist)
