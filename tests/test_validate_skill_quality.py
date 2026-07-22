@@ -1592,11 +1592,6 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.optimization_checklist, "Teaching Prompt Behavior"
         )
 
-        self.assertIn(
-            "first substantive slide rather than adding a cover, decorative page, "
-            "or objective-only page",
-            lesson_loop,
-        )
         for path in COURSE_CREATOR_REFERENCES.rglob("*.md"):
             self.assertNotIn(
                 "instructional role",
@@ -1842,6 +1837,21 @@ class CourseCreatorContractTests(unittest.TestCase):
             visual_text,
         )
         self.assertIn(
+            "reject any visual unit whose sole purpose is to pad the lesson's "
+            "length or pacing",
+            visual_text,
+        )
+        self.assertIn("already present in an audited artifact", visual_text)
+        self.assertIn(
+            "defined framing, orientation, transition, atmosphere, or teaching "
+            "purpose",
+            visual_text,
+        )
+        self.assertIn(
+            "does not fail this padding rule merely because it is non-substantive",
+            visual_text,
+        )
+        self.assertIn(
             "context, relationship, reasoning, inference, or application",
             visual_text,
         )
@@ -1897,10 +1907,24 @@ class CourseCreatorContractTests(unittest.TestCase):
             "visual opening",
             "consecutive visual units",
             "several visuals followed by one delayed explanation",
-            "cover-only, decorative, or objective-only page",
             "unpaired learner-visible text turn after the lead-in",
         ):
             self.assertIn(defect, checklist)
+        self.assertIn(
+            "flag any visual unit whose sole purpose is to pad the lesson's length "
+            "or pacing",
+            checklist,
+        )
+        self.assertIn("newly proposed or already present", checklist)
+        self.assertIn(
+            "defined framing, orientation, transition, atmosphere, or teaching "
+            "purpose",
+            checklist,
+        )
+        self.assertIn(
+            "as padding merely because it is non-substantive",
+            checklist,
+        )
         self.assertIn(
             "Pure classroom slides do not use Teaching Agent narration or paired "
             "explanatory text",
@@ -2131,6 +2155,17 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("with lesson title and author information", materialization)
         self.assertIn("clear cover-page visual treatment", validation)
         self.assertIn("with lesson title and author information", validation)
+        self.assertNotIn("rather than adding a cover", self.pedagogy)
+        self.assertNotIn("rather than serve as a cover", self.pedagogy)
+        self.assertNotIn("cover-only", self.optimization_checklist)
+        for removed_page_rule in (
+            "decorative page",
+            "decorative pages",
+            "objective-only page",
+            "objective-only pages",
+        ):
+            self.assertNotIn(removed_page_rule, self.pedagogy)
+            self.assertNotIn(removed_page_rule, self.optimization_checklist)
         self.assertIn(
             "without restating the general presentation requirements",
             validation,
@@ -2144,6 +2179,12 @@ class CourseCreatorContractTests(unittest.TestCase):
             (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
         )
         evals_by_id = {case["id"]: case for case in evals_data["evals"]}
+        eval_26_prompt = evals_by_id[26]["prompt"]
+        self.assertNotRegex(
+            eval_26_prompt,
+            r"(?:不要增加|不得增加|禁止增加)[^。\n]*(?:装饰页|目标空页)",
+        )
+        self.assertIn("不要增加封面或其他填充页", eval_26_prompt)
         self.assertIn(
             "does not mention, create, or style a cover page or slide 1 specially",
             " ".join(evals_by_id[12]["expectations"]),
