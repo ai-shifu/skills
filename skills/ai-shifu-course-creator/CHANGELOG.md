@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Give the first slide of every slide-based lesson a cover-page visual treatment.
 - Add the optional course author name to Course Design Intake, explain that it lets AI-Shifu's Teaching Agent teach under the author's identity, and default to no named identity when left blank.
 - Make standard AI-taught lessons open with a brief text lead-in and then alternate substantive slides or images with concise, complete explanations; keep interaction questions on question-only slides before their real controls, and preserve pure-slide and explicit text-only delivery as separate modes.
 - Introduce the learner-time AI as AI-Shifu's Teaching Agent (AI 师傅的授课智能体), then use Teaching Agent (授课智能体) as its single short human-facing name across prompt execution, interaction feedback, follow-up answers, analytics, and CLI guidance while preserving stable machine-facing `model` and `llm` fields.
