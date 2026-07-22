@@ -2128,7 +2128,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("does not special-case a cover", checks)
 
         self.assertIn("slide 1 a clear cover-page visual treatment", materialization)
+        self.assertIn("with lesson title and author information", materialization)
         self.assertIn("clear cover-page visual treatment", validation)
+        self.assertIn("with lesson title and author information", validation)
         self.assertIn(
             "without restating the general presentation requirements",
             validation,
@@ -2147,10 +2149,12 @@ class CourseCreatorContractTests(unittest.TestCase):
             " ".join(evals_by_id[12]["expectations"]),
         )
         for eval_id in (19, 20):
+            expectations = " ".join(evals_by_id[eval_id]["expectations"])
             self.assertIn(
                 "cover-page visual treatment",
-                " ".join(evals_by_id[eval_id]["expectations"]),
+                expectations,
             )
+            self.assertIn("with lesson title and author information", expectations)
 
     def test_optimization_audits_existing_artifacts_without_absorbing_creation(self):
         self.assertIn("## Entry Conditions", self.optimization_workflow)
