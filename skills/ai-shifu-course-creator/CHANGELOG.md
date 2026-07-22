@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Require first-slide covers created by Teaching Prompts to include lesson title and author information.
 - Keep general presentation requirements shared by every slide in the Course Prompt while leaving first-slide cover treatment and other position-specific decisions in Teaching Prompts.
 - Add the optional course author name to Course Design Intake, explain that it lets AI-Shifu's Teaching Agent teach under the author's identity, and default to no named identity when left blank.
 - Make standard AI-taught lessons open with a brief text lead-in and then alternate substantive slides or images with concise, complete explanations; keep interaction questions on question-only slides before their real controls, and preserve pure-slide and explicit text-only delivery as separate modes.

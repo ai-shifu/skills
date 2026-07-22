@@ -79,7 +79,7 @@ Each Teaching Prompt must:
 - Preserve required source evidence and any downstream deliverable defined by the lesson design.
 - Close with the summary, decision checkpoint, or action required by the selected pattern.
 
-Whenever a Teaching Prompt creates one or more slides, give slide 1 a clear cover-page visual treatment. Apply every other slide and explanation rule normally for the selected delivery mode.
+Whenever a Teaching Prompt creates one or more slides, give slide 1 a clear cover-page visual treatment with lesson title and author information. Apply every other slide and explanation rule normally for the selected delivery mode.
 
 For pure classroom slides, materialize the required visible content and teaching effects from `pedagogy.md#visual-text-coordination` as a fixed slide skeleton with an exact count, order, placement, teaching purpose for each slide and content slot, content grouping, visual hierarchy, and semantic layout. Then use the selected personalization level only to decide how much title, body, example, transition, and feedback wording to prewrite inside that skeleton. General slide presentation and delivery-mode behavior remain owned by `course-prompt.md`.
 
@@ -98,7 +98,7 @@ Under fallback mode, add only the Generation extensions defined in `data-contrac
 - When multiple level variants are generated from the same approved design and controls, their structural signatures are identical, including every content slot's and slide's teaching purpose and the presence and placement of every example slot; only content-expression specificity may differ.
 - In standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint, the first non-empty instruction makes the first learner-visible block a brief text lead-in rather than a heading, slide, or image; the fixed skeleton contains at least one substantive visual unit, no consecutive visual units, one concise but complete explanation after every visual and before the next, no unpaired learner-visible text turn after the lead-in, and a final explanation that also performs the close.
 - A standard question-bearing interaction uses the question-only visual, unchanged `?[]` control, and immediate feedback or explanation sequence defined by `pedagogy.md#visual-text-coordination`; pure classroom slides and explicit text-only delivery retain their respective overrides.
-- When a Teaching Prompt creates one or more slides, slide 1 has a clear cover-page visual treatment and every other slide or explanation behavior follows the selected delivery mode's existing rules.
+- When a Teaching Prompt creates one or more slides, slide 1 has a clear cover-page visual treatment with lesson title and author information, and every other slide or explanation behavior follows the selected delivery mode's existing rules.
 - In other delivery modes, the first non-empty instruction produces the applicable teaching-start behavior and does not duplicate structure metadata.
 - The Teaching Prompt contains the selected teaching method and does not outsource pedagogy to the Course Prompt.
 - The Teaching Prompt fixes lesson-specific slide structure, teaching purpose, and position- or purpose-specific treatment without restating the general presentation requirements that the Course Prompt applies to every slide.
