@@ -26,7 +26,7 @@ For a pasted content-only Prompt, run every check observable from the body and r
 ## Artifact Boundaries
 
 - Teaching Prompts contain lesson method and flow; the Course Prompt contributes only course-wide role and presentation behavior.
-- Chapter titles, lesson titles, numbering, hierarchy, and ordering remain in structure metadata rather than Teaching Prompt bodies.
+- Chapter titles, numbering, hierarchy, and ordering remain in structure metadata rather than Teaching Prompt bodies. Lesson titles follow the narrow Teaching Prompt-body exception in [data-contracts.md#lesson-schema](data-contracts.md#lesson-schema).
 - No artifact relies on another artifact to supply behavior that its owner requires locally.
 
 ## Teaching Prompt Behavior

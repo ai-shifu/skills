@@ -2112,6 +2112,10 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.teaching_prompt, "Lesson Materialization"
         )
         validation = markdown_section(self.teaching_prompt, "Validation")
+        lesson_schema = markdown_section(self.data_contracts, "Lesson Schema")
+        artifact_boundaries = markdown_section(
+            self.optimization_checklist, "Artifact Boundaries"
+        )
 
         self.assertIn(
             "general presentation requirements applied uniformly to every slide",
@@ -2131,6 +2135,16 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("with lesson title and author information", materialization)
         self.assertIn("clear cover-page visual treatment", validation)
         self.assertIn("with lesson title and author information", validation)
+        self.assertIn(
+            "may also appear in the Teaching Prompt only as slide 1's required "
+            "learner-visible cover title",
+            lesson_schema,
+        )
+        self.assertIn(
+            "narrow Teaching Prompt-body exception in "
+            "[data-contracts.md#lesson-schema](data-contracts.md#lesson-schema)",
+            artifact_boundaries,
+        )
         self.assertIn(
             "without restating the general presentation requirements",
             validation,
