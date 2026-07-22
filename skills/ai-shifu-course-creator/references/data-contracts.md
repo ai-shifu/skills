@@ -171,7 +171,7 @@ Each `lesson_teaching_prompts` item contains:
 
 Every item in `used_variables` has a matching `global_variable_table` entry. The matching entry lists the lesson in `used_in` when the variable is referenced outside its collection control, and also lists `course_prompt` when the Course Prompt references it.
 
-Chapter titles, numbering, hierarchy labels, and ordering markers belong in `course_index` or `structure.json`, not in the Teaching Prompt body. The canonical `lesson_title` also remains in the lesson item and structure metadata. Every Teaching Prompt that creates one or more slides has one presentation exception: its required slide-1 cover must display that exact `lesson_title` without inventing a different structural title. The exception does not turn later learner-visible headings into structure metadata or require a slide in text-only or standalone-image-only delivery.
+Chapter titles, lesson titles, numbering, hierarchy labels, and ordering markers belong in `course_index` or `structure.json`, not in the Teaching Prompt body.
 
 ## Fallback Output Extensions
 
