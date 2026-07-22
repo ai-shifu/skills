@@ -70,7 +70,7 @@ For a pasted content-only Prompt, run every check observable from the body and r
 
 - The existing Course Prompt keeps all six required sections in order and has no unresolved `XXX` placeholder.
 - Every non-placeholder instruction remains behaviorally represented after localization.
-- Standard and pure-slide delivery behavior matches `course-prompt.md`; lesson pedagogy is not duplicated there.
+- Standard and pure-slide delivery behavior matches `course-prompt.md`; its `# Slides` section contains the general presentation requirements applied uniformly to every slide, without special handling for a cover or any other slide position or teaching purpose and without duplicating or changing lesson pedagogy or lesson-specific slide structure.
 - The complete artifact passes `course-prompt.md#materialization-checks` and `prompt-contracts.md`.
 
 ## Course Description

@@ -27,7 +27,7 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 7. Apply `markdownflow-authoring.md` after those teaching decisions are complete.
 8. Load `image-authoring.md` only when the lesson actually uses an image asset.
 
-Every lesson must carry enough direction to run with the Course Prompt contributing only course-wide role and presentation style. Do not rely on the Course Prompt to supply, repair, or override lesson pedagogy.
+Every lesson must carry enough direction to run with the Course Prompt contributing only course-wide role and general presentation requirements shared by every slide. Do not rely on the Course Prompt to supply, repair, or override lesson pedagogy, lesson-specific slide structure, or treatment tied to a particular slide position or teaching purpose.
 
 Enough direction means that the Teaching Agent can identify what must be taught, why it matters, the complete teaching order and content slots, the teaching purpose of every content slot and slide, the intended learner effect, and the completion condition. The selected personalization level decides how much ordinary learner-visible wording, already-required example identity and detail, transition wording, and feedback wording to prewrite within the fixed lesson skeleton.
 
@@ -81,7 +81,7 @@ Each Teaching Prompt must:
 
 Whenever a Teaching Prompt creates one or more slides, give slide 1 a clear cover-page visual treatment. Apply every other slide and explanation rule normally for the selected delivery mode.
 
-For pure classroom slides, materialize the required visible content and teaching effects from `pedagogy.md#visual-text-coordination` as a fixed slide skeleton with an exact count, order, placement, teaching purpose for each slide and content slot, content grouping, visual hierarchy, and semantic layout. Then use the selected personalization level only to decide how much title, body, example, transition, and feedback wording to prewrite inside that skeleton. Course Prompt delivery-mode behavior remains owned by `course-prompt.md`.
+For pure classroom slides, materialize the required visible content and teaching effects from `pedagogy.md#visual-text-coordination` as a fixed slide skeleton with an exact count, order, placement, teaching purpose for each slide and content slot, content grouping, visual hierarchy, and semantic layout. Then use the selected personalization level only to decide how much title, body, example, transition, and feedback wording to prewrite inside that skeleton. General slide presentation and delivery-mode behavior remain owned by `course-prompt.md`.
 
 ## Outputs
 
@@ -101,6 +101,7 @@ Under fallback mode, add only the Generation extensions defined in `data-contrac
 - When a Teaching Prompt creates one or more slides, slide 1 has a clear cover-page visual treatment and every other slide or explanation behavior follows the selected delivery mode's existing rules.
 - In other delivery modes, the first non-empty instruction produces the applicable teaching-start behavior and does not duplicate structure metadata.
 - The Teaching Prompt contains the selected teaching method and does not outsource pedagogy to the Course Prompt.
+- The Teaching Prompt fixes lesson-specific slide structure, teaching purpose, and position- or purpose-specific treatment without restating the general presentation requirements that the Course Prompt applies to every slide.
 - The objective, must-cover facts and boundaries, required sequence, interaction effect, and close are specific enough to execute without guessing.
 - Levels `1` and `2` provide the requested near-final specificity without introducing unrequested typography, color, coordinates, animation, or deterministic markers.
 - Levels `4` and `5` leave ordinary wording and example or feedback detail open without omitting the executable teaching content or effect and without delegating structure to the Teaching Agent.

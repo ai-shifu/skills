@@ -141,6 +141,7 @@
         "The workflow loads course-prompt.md and the shared Prompt contract without rerunning segmentation, orchestration, or Teaching Prompt generation.",
         "The workflow uses the six-section template with its five mapped XXX placeholders, then replaces all five so the completed Course Prompt has no unresolved XXX.",
         "The slide-only behavior is selected from course-prompt.md: it does not require Teaching Agent narration or a complete prose explanation after every slide.",
+        "The Course Prompt's Slides section contains only general presentation requirements applied uniformly to every slide; it does not mention, create, or style a cover page or slide 1 specially, leaving position- and purpose-specific treatment to the existing Teaching Prompts.",
         "The Course Prompt follows the existing Teaching Prompts and does not introduce, replace, or reorder lesson pedagogy."
       ]
     },

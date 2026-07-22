@@ -2101,39 +2101,51 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("prompt-contracts.md#prompt-semantics", required)
         self.assertIn("prompt-contracts.md#artifact-responsibilities", required)
 
-    def test_teaching_prompt_owns_first_slide_cover_treatment(self):
+    def test_course_prompt_owns_general_slide_rules_without_cover_handling(self):
         responsibilities = markdown_section(
             self.prompt_contracts, "Artifact Responsibilities"
         )
+        purpose = markdown_section(self.course_prompt, "Purpose")
+        template = markdown_section(self.course_prompt, "Fillable Template")
+        checks = markdown_section(self.course_prompt, "Materialization Checks")
         materialization = markdown_section(
             self.teaching_prompt, "Lesson Materialization"
         )
         validation = markdown_section(self.teaching_prompt, "Validation")
 
-        self.assertIn("Teaching Prompt", responsibilities)
-        self.assertIn("lesson's teaching intent and execution", responsibilities)
-        self.assertIn("one or more slides", materialization)
-        self.assertIn("slide 1 a clear cover-page visual treatment", materialization)
         self.assertIn(
-            "Apply every other slide and explanation rule normally for the selected "
-            "delivery mode",
-            materialization,
+            "general presentation requirements applied uniformly to every slide",
+            responsibilities,
         )
-        self.assertIn("clear cover-page visual treatment", validation)
-        self.assertIn("selected delivery mode's existing rules", validation)
+        self.assertIn(
+            "special handling for an individual slide position or purpose",
+            responsibilities,
+        )
+        self.assertIn("single runtime owner", purpose)
+        self.assertIn("uniformly to every slide", purpose)
+        self.assertNotIn("cover", template.casefold())
+        self.assertNotIn("slide 1", template.casefold())
+        self.assertIn("does not special-case a cover", checks)
 
-        for non_owner in (
-            self.pedagogy,
-            self.course_prompt,
-            self.data_contracts,
+        self.assertIn("slide 1 a clear cover-page visual treatment", materialization)
+        self.assertIn("clear cover-page visual treatment", validation)
+        self.assertIn(
+            "without restating the general presentation requirements",
+            validation,
+        )
+        self.assertIn(
+            "without special handling for a cover",
             self.optimization_checklist,
-        ):
-            self.assertNotIn("cover-page visual treatment", non_owner.casefold())
+        )
 
         evals_data = json.loads(
             (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
         )
         evals_by_id = {case["id"]: case for case in evals_data["evals"]}
+        self.assertIn(
+            "does not mention, create, or style a cover page or slide 1 specially",
+            " ".join(evals_by_id[12]["expectations"]),
+        )
         for eval_id in (19, 20):
             self.assertIn(
                 "cover-page visual treatment",
