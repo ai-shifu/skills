@@ -71,7 +71,7 @@ Apply each island through its owning MarkdownFlow authoring, source-preservation
 
 Each Teaching Prompt must:
 
-- Start with the teaching-start behavior defined in `pedagogy.md#lesson-loop`, not a copied chapter or lesson title.
+- Start with the teaching-start behavior defined in `pedagogy.md#lesson-loop`, not a copied chapter title.
 - For standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint, materialize instructions that produce one brief learner-visible text lead-in followed by at least one substantive visual-and-explanation pair, with every explanation before the next visual and the final explanation carrying the close, exactly as defined in `pedagogy.md#visual-text-coordination`. Express every required visual unit as an explicit slide or image instruction in the Teaching Prompt.
 - Resolve exactly one core question through the selected teaching pattern.
 - Make the teaching objective, must-cover facts and boundaries, and required explanatory relationships unambiguous at the specificity selected by the normalized personalization level.
