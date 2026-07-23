@@ -19,6 +19,14 @@ from dotenv import load_dotenv, set_key
 
 from skill_update import DEV_CACHE_FILE, check_for_update
 
+# Usage tracking is strictly optional: a broken tracker must never take the
+# CLI down with it.
+try:
+    from usage_tracker import track
+except Exception:  # pragma: no cover - defensive import guard
+    def track(event_name, data=None):
+        return None
+
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
@@ -2996,6 +3004,13 @@ def main():
 
     handler = commands.get(args.command)
     if handler:
+        # check-update runs once per session (session-controls.md), so it
+        # doubles as the session-start marker; every other command reports
+        # its own name. Only the command name is sent, never its arguments.
+        if args.command == "check-update":
+            track("skill_start")
+        else:
+            track(f"cli_{args.command}")
         handler(args)
     else:
         parser.print_help()
