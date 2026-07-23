@@ -117,6 +117,14 @@ class UserAgentTests(unittest.TestCase):
         for marker in ("python-requests", "curl", "bot"):
             self.assertNotIn(marker, ua.lower())
 
+    def test_isbot_risky_words_are_stripped_from_agent(self) -> None:
+        ua = usage_tracker._user_agent("claude-code_2-1-215_agent")
+        self.assertNotIn("agent", ua.lower())
+        self.assertIn("claude-code_2-1-215", ua)
+
+    def test_fully_risky_agent_falls_back_to_unknown(self) -> None:
+        self.assertEqual(usage_tracker._ua_safe("agent"), "unknown")
+
 
 class TrackTests(unittest.TestCase):
     def _env(self, **extra: str) -> dict[str, str]:
@@ -152,9 +160,11 @@ class TrackTests(unittest.TestCase):
         )
         self.assertEqual(kwargs["timeout"], usage_tracker.REQUEST_TIMEOUT)
 
-    def test_no_request_without_website_id(self) -> None:
+    def test_no_request_when_website_id_blank(self) -> None:
         with mock.patch.dict(
             usage_tracker.os.environ, {}, clear=True
+        ), mock.patch.object(
+            usage_tracker, "WEBSITE_ID", ""
         ), mock.patch.object(usage_tracker.requests, "post") as post:
             usage_tracker.track("cli_list")
         post.assert_not_called()

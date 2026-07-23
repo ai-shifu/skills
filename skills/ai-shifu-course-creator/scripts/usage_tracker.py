@@ -30,12 +30,13 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 SKILL_MD = SKILL_ROOT / "SKILL.md"
 ENV_FILE = SKILL_ROOT / ".env"
 
-# The umami website id is a public identifier — the same value a browser
-# deployment exposes to every visitor in <script data-website-id> — not a
-# secret. Paste the id of the "ai-shifu-skills" website created in the umami
-# admin UI; tracking stays silently disabled while it is empty.
+# The umami website id is a public identifier — the same value the ai-shifu
+# web frontend exposes to every visitor in <script data-website-id> — not a
+# secret. Skill events deliberately share the main-site website so that one
+# user_bid links skill and website sessions; skill traffic stays separable
+# via hostname/url/data.skill.
 UMAMI_URL = "https://umami.ai-shifu.cn/api/send"
-WEBSITE_ID = ""
+WEBSITE_ID = "f3108c8f-6898-4404-b6d7-fd076ad011db"
 
 # hostname is a logical label for the umami website (no DNS resolution needed).
 HOSTNAME = "skills.ai-shifu.cn"
@@ -201,12 +202,29 @@ def detect_agent() -> str:
     return "unknown"
 
 
+# Words that umami's isbot filter matches anywhere in the UA. Verified live:
+# "claude-code_2-1-215_agent" was silently discarded ({"beep":"boop"}) purely
+# because of the "agent" substring; the same UA without it was accepted.
+_ISBOT_RISKY_WORDS = re.compile(
+    r"(?i)bot|agent|spider|crawl|scan|search|monitor|fetch|http|client"
+)
+
+
+def _ua_safe(value: str) -> str:
+    """Strip isbot-triggering substrings before embedding a value in the UA."""
+    cleaned = _ISBOT_RISKY_WORDS.sub("", value)
+    cleaned = re.sub(r"[-_ ]{2,}", "-", cleaned).strip("-_ ")
+    return cleaned or "unknown"
+
+
 def _user_agent(agent: str) -> str:
     """Build a browser-shaped UA that passes umami's isbot filter.
 
     Requests without a User-Agent are dropped by umami, and UAs matching
-    isbot patterns (python-requests/, curl/, ...) are silently discarded
-    with HTTP 200 — hence the Mozilla/5.0 prefix and a parsable OS segment.
+    isbot patterns (python-requests/, curl/, "agent", ...) are silently
+    discarded with HTTP 200 — hence the Mozilla/5.0 prefix, a parsable OS
+    segment, and _ua_safe() on the embedded agent name. The raw agent value
+    still travels in payload.tag and data.agent.
     """
     system = platform.system()
     machine = platform.machine()
@@ -219,7 +237,7 @@ def _user_agent(agent: str) -> str:
         os_segment = f"X11; Linux {machine}"
     return (
         f"Mozilla/5.0 ({os_segment}) "
-        f"AIShifuSkill/{_skill_version()} ({SKILL_NAME}; {agent})"
+        f"AIShifuSkill/{_skill_version()} ({SKILL_NAME}; {_ua_safe(agent)})"
     )
 
 
