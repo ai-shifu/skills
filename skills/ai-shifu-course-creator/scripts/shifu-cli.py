@@ -11,7 +11,7 @@ import shutil
 import sys
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -292,12 +292,19 @@ def safe_join_path(base_dir, filename):
 
 
 def fmt_time(ts):
-    """Format an ISO timestamp for display, return '' if missing."""
+    """Format a backend timestamp for display in the local timezone.
+
+    Backend timestamps are UTC; values without an explicit offset are
+    interpreted as UTC, then converted to the machine-local timezone.
+    Returns '' if missing.
+    """
     if not ts:
         return ""
     try:
-        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        return dt.strftime("%Y-%m-%d %H:%M")
+        dt = datetime.fromisoformat(str(ts).strip().replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone().strftime("%Y-%m-%d %H:%M")
     except Exception:
         return ts[:16] if len(ts) >= 16 else ts
 
@@ -339,7 +346,7 @@ SYNC_MANIFEST_NAME = ".shifu-sync.json"
 
 def _now_iso():
     """UTC timestamp, second precision, Z-suffixed — matches image-manifest style."""
-    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _mask_phone(phone):
@@ -2237,7 +2244,7 @@ def _build_import_json(course_dir, title=None, description=None,
 
     import_data = {
         "version": "1.0",
-        "exported_at": datetime.now().isoformat(),
+        "exported_at": _now_iso(),
         "shifu": {
             "shifu_bid": shifu_bid,
             "title": title,
@@ -2656,7 +2663,7 @@ def cmd_upload_image(args):
                 "local": local_rel,
                 "remote": remote_url,
                 "alt": alt,
-                "uploaded_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "uploaded_at": _now_iso(),
                 "bytes": len(file_bytes),
                 "original_bytes": original_bytes,
                 "mime": mime,
@@ -2673,7 +2680,7 @@ def cmd_upload_image(args):
             "source_url": args.url,
             "remote": remote_url,
             "alt": alt,
-            "uploaded_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "uploaded_at": _now_iso(),
         })
 
 
