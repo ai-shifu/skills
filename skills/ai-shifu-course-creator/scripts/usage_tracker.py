@@ -248,8 +248,14 @@ def _opted_out() -> bool:
     )
 
 
-def track(event_name: str, data: dict | None = None) -> None:
-    """Send one umami event; silent no-op on any failure or when disabled."""
+def track(event_name: str) -> None:
+    """Send one umami event; silent no-op on any failure or when disabled.
+
+    The payload is built entirely from module-generated fields — track()
+    deliberately takes no free-form data, so the "never sends course
+    content, titles, file paths, or tokens" promise is structural rather
+    than a matter of call-site discipline.
+    """
     try:
         if _opted_out():
             return
@@ -272,7 +278,6 @@ def track(event_name: str, data: dict | None = None) -> None:
                 "os": platform.system().lower(),
                 "arch": platform.machine(),
                 "python": platform.python_version(),
-                **(data or {}),
             },
         }
         requests.post(

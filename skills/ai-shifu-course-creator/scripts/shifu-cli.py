@@ -23,8 +23,8 @@ from skill_update import DEV_CACHE_FILE, check_for_update
 # CLI down with it.
 try:
     from usage_tracker import track
-except Exception:  # pragma: no cover - defensive import guard
-    def track(event_name, data=None):
+except Exception:  # noqa: BLE001 - fail-open: any tracker breakage must not take the CLI down
+    def track(event_name):
         return None
 
 # ── Constants ──────────────────────────────────────────────────────────────────

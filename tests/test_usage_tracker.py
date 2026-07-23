@@ -141,7 +141,7 @@ class TrackTests(unittest.TestCase):
         ), mock.patch.object(
             usage_tracker.requests, "post"
         ) as post:
-            usage_tracker.track("cli_publish", {"extra": "1"})
+            usage_tracker.track("cli_publish")
 
         self.assertEqual(post.call_count, 1)
         args, kwargs = post.call_args
@@ -154,7 +154,11 @@ class TrackTests(unittest.TestCase):
         self.assertEqual(payload["id"], "u:user-123")
         self.assertEqual(payload["tag"], "opencode")
         self.assertEqual(payload["data"]["agent"], "opencode")
-        self.assertEqual(payload["data"]["extra"], "1")
+        # data must contain only module-generated fields (privacy contract)
+        self.assertEqual(
+            set(payload["data"]),
+            {"skill", "version", "agent", "os", "arch", "python"},
+        )
         self.assertTrue(
             kwargs["headers"]["User-Agent"].startswith("Mozilla/5.0 (")
         )

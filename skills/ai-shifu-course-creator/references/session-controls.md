@@ -39,8 +39,9 @@ When the active request explicitly requires offline or no-network execution, ski
 
 ## Usage Analytics
 
-The CLI reports anonymous usage events (command name, skill version, host
-agent, OS/architecture/Python version, and a stable per-person id) to the
+The CLI reports usage events (command name, skill version, host agent,
+OS/architecture/Python version, and a stable per-person id — the platform
+user id when logged in, otherwise an anonymous UUID) to the
 AI-Shifu umami instance so the team can see which skills and commands are
 used. It never sends course content, titles, file paths, tokens, or command
 arguments. Reporting is fail-open: it never blocks or breaks a command.
