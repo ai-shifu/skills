@@ -203,5 +203,57 @@ class CourseCreatorCliPaginationTests(unittest.TestCase):
         )
 
 
+class FmtTimeTests(unittest.TestCase):
+    """Backend timestamps are UTC; fmt_time must render them in local time."""
+
+    @contextlib.contextmanager
+    def _local_tz(self, tz: str):
+        import os
+        import time as time_module
+
+        if not hasattr(time_module, "tzset"):
+            self.skipTest("time.tzset is unavailable on this platform")
+        original = os.environ.get("TZ")
+        os.environ["TZ"] = tz
+        time_module.tzset()
+        try:
+            yield
+        finally:
+            if original is None:
+                os.environ.pop("TZ", None)
+            else:
+                os.environ["TZ"] = original
+            time_module.tzset()
+
+    def test_z_suffixed_utc_converts_to_local(self) -> None:
+        with self._local_tz("Asia/Shanghai"):
+            self.assertEqual(
+                course_creator_cli.fmt_time("2026-05-12T06:23:00Z"),
+                "2026-05-12 14:23",
+            )
+
+    def test_offsetless_value_is_treated_as_utc(self) -> None:
+        with self._local_tz("Asia/Shanghai"):
+            self.assertEqual(
+                course_creator_cli.fmt_time("2026-05-12T06:23:00"),
+                course_creator_cli.fmt_time("2026-05-12T06:23:00Z"),
+            )
+
+    def test_explicit_offset_is_respected(self) -> None:
+        with self._local_tz("Asia/Shanghai"):
+            self.assertEqual(
+                course_creator_cli.fmt_time("2026-05-12T06:23:00+08:00"),
+                "2026-05-12 06:23",
+            )
+
+    def test_missing_and_unparsable_values(self) -> None:
+        self.assertEqual(course_creator_cli.fmt_time(""), "")
+        self.assertEqual(course_creator_cli.fmt_time(None), "")
+        self.assertEqual(
+            course_creator_cli.fmt_time("not-a-timestamp-value"),
+            "not-a-timestamp-",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

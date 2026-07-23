@@ -1,6 +1,7 @@
 ## Unreleased
 
 - Add fail-open anonymous usage tracking to the CLI via the AI-Shifu umami instance, reporting command name, skill version, host agent, and platform info with a stable per-person id (platform user id when logged in, anonymous UUID otherwise); never sends course content or command arguments, and `AISHIFU_ANALYTICS=off` disables it.
+- Treat backend timestamps as UTC across the CLI: `fmt_time` interprets offsetless values as UTC and renders them in the machine-local timezone; internal manifest stamps (`exported_at`, `uploaded_at`, sync timestamps) are written as Z-suffixed UTC; analytics presentation docs state the UTC-to-local rule.
 - Remove pedagogy and optimization rules that reject cover pages and page-type prohibitions on decorative or objective-only pages, while retaining padding-only rejection for newly generated and existing visual units.
 - Require first-slide covers created by Teaching Prompts to include lesson title and author information.
 - Keep general presentation requirements shared by every slide in the Course Prompt while leaving first-slide cover treatment and other position-specific decisions in Teaching Prompts.
