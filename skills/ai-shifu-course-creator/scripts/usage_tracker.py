@@ -9,7 +9,7 @@ What is sent per event: event name (CLI command), skill name/version, host
 agent (Claude Code / opencode / codex / ...), OS/arch/Python version, and a
 distinct id (platform user_id when logged in, otherwise a random anonymous
 UUID persisted in ~/.ai-shifu/analytics-id). No course content, titles, file
-paths, or tokens are ever sent. Set AISHIFU_ANALYTICS=off to disable.
+paths, or tokens are ever sent. Set AI_SHIFU_SKILL_TELEMETRY=off to disable.
 """
 
 from __future__ import annotations
@@ -243,7 +243,7 @@ def _user_agent(agent: str) -> str:
 
 def _opted_out() -> bool:
     return (
-        os.environ.get("AISHIFU_ANALYTICS", "").strip().lower()
+        os.environ.get("AI_SHIFU_SKILL_TELEMETRY", "").strip().lower()
         in _OPT_OUT_VALUES
     )
 
@@ -259,10 +259,10 @@ def track(event_name: str) -> None:
     try:
         if _opted_out():
             return
-        website = os.environ.get("AISHIFU_UMAMI_WEBSITE_ID") or WEBSITE_ID
+        website = os.environ.get("AI_SHIFU_SKILL_UMAMI_WEBSITE_ID") or WEBSITE_ID
         if not website:
             return
-        url = os.environ.get("AISHIFU_UMAMI_URL") or UMAMI_URL
+        url = os.environ.get("AI_SHIFU_SKILL_UMAMI_URL") or UMAMI_URL
         agent = detect_agent()
         payload = {
             "website": website,

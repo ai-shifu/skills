@@ -45,10 +45,10 @@ user id when logged in, otherwise an anonymous UUID) to the
 AI-Shifu umami instance so the team can see which skills and commands are
 used. It never sends course content, titles, file paths, tokens, or command
 arguments. Reporting is fail-open: it never blocks or breaks a command.
-Setting `AISHIFU_ANALYTICS=off` disables it entirely; when the user asks
+Setting `AI_SHIFU_SKILL_TELEMETRY=off` disables it entirely; when the user asks
 about analytics, explain the above and mention that switch. When the active
 request explicitly requires offline or no-network execution, prefix every CLI
-invocation with `AISHIFU_ANALYTICS=off` so no network attempt is made.
+invocation with `AI_SHIFU_SKILL_TELEMETRY=off` so no network attempt is made.
 
 ## Progress, Errors, and Handoffs
 

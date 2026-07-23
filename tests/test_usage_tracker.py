@@ -128,7 +128,7 @@ class UserAgentTests(unittest.TestCase):
 
 class TrackTests(unittest.TestCase):
     def _env(self, **extra: str) -> dict[str, str]:
-        env = {"AISHIFU_UMAMI_WEBSITE_ID": "site-1"}
+        env = {"AI_SHIFU_SKILL_UMAMI_WEBSITE_ID": "site-1"}
         env.update(extra)
         return env
 
@@ -176,7 +176,7 @@ class TrackTests(unittest.TestCase):
     def test_opt_out_disables_tracking(self) -> None:
         with mock.patch.dict(
             usage_tracker.os.environ,
-            self._env(AISHIFU_ANALYTICS="off"),
+            self._env(AI_SHIFU_SKILL_TELEMETRY="off"),
             clear=True,
         ), mock.patch.object(usage_tracker.requests, "post") as post:
             usage_tracker.track("cli_list")
