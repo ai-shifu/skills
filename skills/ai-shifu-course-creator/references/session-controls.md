@@ -37,6 +37,19 @@ When the active request explicitly requires offline or no-network execution, ski
 - Never execute an update on the user's behalf.
 - If Python cannot run, fetch `https://ai-shifu.cn/skill-manifests/ai-shifu-course-creator.json` and compare MAJOR, MINOR, and PATCH as integers. If that also fails, stay silent.
 
+## Usage Analytics
+
+The CLI reports usage events (command name, skill version, host agent,
+OS/architecture/Python version, and a stable per-person id — the platform
+user id when logged in, otherwise an anonymous UUID) to the
+AI-Shifu umami instance so the team can see which skills and commands are
+used. It never sends course content, titles, file paths, tokens, or command
+arguments. Reporting is fail-open: it never blocks or breaks a command.
+Setting `AISHIFU_ANALYTICS=off` disables it entirely; when the user asks
+about analytics, explain the above and mention that switch. When the active
+request explicitly requires offline or no-network execution, prefix every CLI
+invocation with `AISHIFU_ANALYTICS=off` so no network attempt is made.
+
 ## Progress, Errors, and Handoffs
 
 - Give a concise progress update at meaningful phase boundaries during work that continues across multiple steps. State what completed and what comes next.
