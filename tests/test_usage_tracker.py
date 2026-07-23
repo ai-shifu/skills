@@ -64,12 +64,12 @@ class DetectAgentTests(unittest.TestCase):
 
 
 class DistinctIdTests(unittest.TestCase):
-    def test_prefers_platform_user_id_from_env_token(self) -> None:
+    def test_uses_raw_user_bid_matching_web_identify(self) -> None:
         token = fake_jwt({"user_id": "user-123", "time_stamp": 1})
         with mock.patch.dict(
             usage_tracker.os.environ, {"SHIFU_TOKEN": token}, clear=True
         ):
-            self.assertEqual(usage_tracker.distinct_id(), "u:user-123")
+            self.assertEqual(usage_tracker.distinct_id(), "user-123")
 
     def test_truncates_to_umami_limit(self) -> None:
         token = fake_jwt({"user_id": "x" * 80, "time_stamp": 1})

@@ -140,12 +140,18 @@ def _anonymous_id() -> str:
 
 
 def distinct_id() -> str:
-    """Stable per-person id: platform user_id first, anonymous UUID fallback."""
+    """Stable per-person id: platform user_id first, anonymous UUID fallback.
+
+    The logged-in value is the raw user_bid, exactly what the ai-shifu web
+    frontend passes to umami.identify() — so the same person tracked from the
+    skill and from the website shares one distinct id. Only the anonymous
+    fallback carries an `a:` prefix.
+    """
     token = os.environ.get("SHIFU_TOKEN") or _token_from_env_file()
     if token:
         user_id = _jwt_user_id(token)
         if user_id:
-            return f"u:{user_id}"[:DISTINCT_ID_MAX]
+            return user_id[:DISTINCT_ID_MAX]
     return f"a:{_anonymous_id()}"[:DISTINCT_ID_MAX]
 
 
