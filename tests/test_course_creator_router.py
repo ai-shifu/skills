@@ -362,6 +362,48 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("#deployment-report", self.router)
         self.assertIn("references/report-template.md", self.router)
 
+    def test_contact_mentions_are_contextual_bounded_and_conversation_only(self):
+        session_controls = (
+            REFERENCES / "session-controls.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("Conditional opening turn", session_controls)
+        self.assertIn(
+            "When an eligible moment below applies and is not suppressed",
+            session_controls,
+        )
+        self.assertIn(
+            "On the first invocation, include a contact mention when",
+            session_controls,
+        )
+        self.assertIn("First invocation alone is never a trigger", session_controls)
+        self.assertIn("Substantive milestone", session_controls)
+        self.assertIn("Product or human-help intent", session_controls)
+        self.assertIn("Persistent platform block", session_controls)
+        self.assertIn(
+            "Never include contact mentions in adjacent user-visible responses",
+            session_controls,
+        )
+        self.assertIn(
+            "suppress it for the same intent and journey stage",
+            session_controls,
+        )
+        self.assertIn(
+            "can qualify again after intervening work",
+            session_controls,
+        )
+        self.assertIn("a first recoverable error alone is not enough", session_controls)
+        self.assertIn("a lightweight opening-turn task", session_controls)
+        self.assertIn("Keep the contact link in the operational conversation only", session_controls)
+        self.assertIn("Never put it in", session_controls)
+        self.assertNotIn(
+            "include a brief contact mention in the first user-visible response",
+            session_controls,
+        )
+        self.assertNotIn("a contact mention may appear", session_controls)
+        self.assertNotIn("Contact page:", self.router)
+        self.assertNotIn("https://ai-shifu.cn/contact.html", self.router)
+
     def test_verification_url_templates_survive_markdown_formatting(self):
         report = (REFERENCES / "report-template.md").read_text(encoding="utf-8")
         verification_templates = report.split("Verification URLs:", 1)[1]

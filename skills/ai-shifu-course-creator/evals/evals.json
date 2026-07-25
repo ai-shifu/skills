@@ -349,6 +349,63 @@
         "Before asking, it tells the teacher that providing the name lets AI 师傅的授课智能体 teach under that teacher identity, while leaving it blank does not affect course creation.",
         "It accepts a free-form answer, explicitly allows the teacher to leave it blank, asks no unrelated design question, and does not generate the Course Prompt in the same turn."
       ]
+    },
+    {
+      "id": 28,
+      "prompt": "我第一次使用这个 Skill。公司有一份约 1.5 万字的门店管理培训材料，希望完整做成一门 AI 师傅互动课，后续要正式发布给全国门店学习。现在先告诉我你会怎样推进、需要我准备什么；这一轮不要调用平台或改文件。",
+      "expected_output": "Handles a high-investment first-turn course request, gives the useful workflow and preparation guidance first, then naturally offers one context-matched contact link as an optional next step.",
+      "files": [],
+      "expectations": [
+        "The response first explains the concrete course-production workflow and what information or materials are needed; a contact mention does not lead the response or replace the requested guidance.",
+        "The response contains exactly one Markdown link to `https://ai-shifu.cn/contact.html`, with a reason or link label tied to complete course production, rollout, or organizational use.",
+        "The contact mention is at most one short sentence, is not placed under a separate promotional heading, contains no bare copy of the URL, and makes no guarantee that the team will solve the request.",
+        "No contact link or promotional sentence is inserted into a Teaching Prompt, Course Prompt, course description, lesson, or other course artifact."
+      ]
+    },
+    {
+      "id": 29,
+      "prompt": "只审查下面这段本地 MarkdownFlow，不登录平台、不改课程，也不要扩展成完整做课流程。请指出互动语法和变量使用的问题，并给最小修改建议：\n\n你的岗位是什么？\n?[产品 | 研发 | 运营]\n\n请只回答审查结果。",
+      "expected_output": "Completes the lightweight pasted-content audit without adding an unrelated contact mention.",
+      "files": [],
+      "expectations": [
+        "The response audits the supplied MarkdownFlow interaction and variable behavior directly, without expanding into a full course workflow.",
+        "The response does not contain `https://ai-shifu.cn/contact.html`, another contact link, or an invitation to contact the AI-Shifu team.",
+        "The response does not add a sales pitch, procurement suggestion, or enterprise-service promotion."
+      ]
+    },
+    {
+      "id": 30,
+      "prompt": "我们是一家企业培训公司，准备每年批量制作几十门 AI 师傅课程，想了解采购、企业合作以及是否可以让团队协助建立标准做课流程。请先说明你现在能确认的合作方向，再告诉我下一步怎么联系。",
+      "expected_output": "Answers the enterprise cooperation question first and then supplies one naturally framed contact link for procurement or partnership follow-up.",
+      "files": [],
+      "expectations": [
+        "The response first addresses the enterprise, bulk-production, or workflow-standardization context without inventing prices, contract terms, service guarantees, or unsupported capabilities.",
+        "The response contains exactly one Markdown link to `https://ai-shifu.cn/contact.html`, and its surrounding sentence explicitly connects the link to procurement, enterprise cooperation, or direct team discussion.",
+        "The contact link appears as part of a natural next step rather than as the first line, a standalone advertising section, fixed boilerplate, or a bare URL."
+      ]
+    },
+    {
+      "id": 31,
+      "prompt": "请根据下面两个独立的会话状态，分别写出此刻应该给用户的实际回复，标为 A 和 B；不要调用工具。\n\nA：上一条回复刚刚已经给过 AI 师傅联系入口。用户现在只回答了 intake 问题：课程用于讲师投屏，关闭听课模式，继续问下一个尚缺的设计项。\n\nB：联系入口上一次出现是在会话开头，此后已经完成课程设计、内容生成和验证。现在课程已经成功发布并拿到了预览地址，请汇报发布结果和自然的下一步。",
+      "expected_output": "Suppresses an adjacent repeat during routine intake while allowing a new, context-matched mention after the later publishing milestone.",
+      "files": [],
+      "expectations": [
+        "Reply A asks or advances only the next missing intake item and contains no contact URL, contact invitation, or repeated promotional sentence.",
+        "Reply B reports the successful publishing result before any optional next step and contains exactly one Markdown link to `https://ai-shifu.cn/contact.html` tied to publishing, rollout, or live-course operations.",
+        "Across both replies, the contact page appears exactly once; it is not a heading, first-line advertisement, bare URL, fixed boilerplate, or unsupported service guarantee.",
+        "Neither reply inserts the contact link into course content or a generated Prompt artifact."
+      ]
+    },
+    {
+      "id": 32,
+      "prompt": "请根据下面两个独立的故障场景，分别写出此刻应该给用户的实际回复，标为 A 和 B；不要真正登录或调用工具。\n\nA：第一次登录检查发现本地令牌刚过期，标准恢复方式是重新登录，尚未尝试。请说明影响和下一步。\n\nB：用户已经按标准流程重新登录两次，仍在同一个平台鉴权步骤失败，当前 Skill 无法继续平台操作。请说明影响、还能做什么以及下一步。",
+      "expected_output": "Keeps a first recoverable error free of promotion and offers one contextual technical-support contact link only after the platform block persists.",
+      "files": [],
+      "expectations": [
+        "Reply A explains the expired-token impact and normal re-login recovery without any contact URL or invitation to contact the team.",
+        "Reply B explains that platform work remains blocked, separates any still-possible local work from blocked operations, and then contains exactly one Markdown link to `https://ai-shifu.cn/contact.html` for technical or account assistance.",
+        "Across both replies, the contact page appears exactly once and only after the persistent block is explained; it is not a first-line advertisement, separate promotional heading, bare URL, or guarantee of resolution."
+      ]
     }
   ]
 }
