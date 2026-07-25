@@ -368,6 +368,14 @@ class CourseCreatorRouterTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn("Conditional opening turn", session_controls)
+        self.assertIn(
+            "When an eligible moment below applies and is not suppressed",
+            session_controls,
+        )
+        self.assertIn(
+            "On the first invocation, include a contact mention when",
+            session_controls,
+        )
         self.assertIn("First invocation alone is never a trigger", session_controls)
         self.assertIn("Substantive milestone", session_controls)
         self.assertIn("Product or human-help intent", session_controls)
@@ -392,7 +400,9 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "include a brief contact mention in the first user-visible response",
             session_controls,
         )
+        self.assertNotIn("a contact mention may appear", session_controls)
         self.assertNotIn("Contact page:", self.router)
+        self.assertNotIn("https://ai-shifu.cn/contact.html", self.router)
 
     def test_verification_url_templates_survive_markdown_formatting(self):
         report = (REFERENCES / "report-template.md").read_text(encoding="utf-8")
