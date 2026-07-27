@@ -19,7 +19,7 @@ skills/
 
 ## Usage
 
-Each skill keeps `SKILL.md` as the behavior source of truth. The directory name is the stable machine slug; the `name` frontmatter field is the human-readable display name.
+Each skill keeps `SKILL.md` as the behavior source of truth. The `name` frontmatter field must match the directory name, using lowercase letters, digits, and hyphens only, as required by the [Agent Skills](https://agentskills.io/specification) standard. That format was originally developed by Anthropic and released as an open standard, and the [Claude Code documentation](https://code.claude.com/docs/en/skills) states that its skills follow it. Claude Code itself is more permissive and treats `name` as an optional display label, but this repository follows the stricter standard rule so the skills stay portable across every skills-compatible agent. Human-readable display names live in the skill list above.
 
 ## Course Authoring & Deployment Paths
 
