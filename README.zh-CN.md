@@ -19,7 +19,7 @@ skills/
 
 ## 使用说明
 
-skill 以 `SKILL.md` 作为行为定义。遵循 [Agent Skills](https://agentskills.io/specification) 标准，`name` frontmatter 字段必须与目录名一致，只允许小写字母、数字和连字符。面向人的展示名维护在上方的 skill 列表中。
+skill 以 `SKILL.md` 作为行为定义。按照 [Agent Skills](https://agentskills.io/specification) 标准，`name` frontmatter 字段必须与目录名一致，只允许小写字母、数字和连字符。该格式最初由 Anthropic 开发并作为开放标准发布，[Claude Code 官方文档](https://code.claude.com/docs/en/skills)声明其 skill 遵循这一标准。Claude Code 自身的实现更宽松，把 `name` 当作可选的展示标签；本仓库采用标准中更严格的规则，以保证 skill 在所有兼容 Agent Skills 的 agent 中都能正常使用。面向人的展示名维护在上方的 skill 列表中。
 
 ## 课程生产与部署路径
 

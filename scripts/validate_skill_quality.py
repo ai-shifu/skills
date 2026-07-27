@@ -197,6 +197,11 @@ def validate_skill(skill_dir: Path, issues: IssueBag) -> None:
     if front is None:
         return
 
+    # The Agent Skills standard (https://agentskills.io/specification) requires
+    # `name` to match the directory name. Anthropic originally developed that
+    # format and released it as an open standard, and the Claude Code docs state
+    # that its skills follow it. Claude Code alone would accept a free-form
+    # display name here, but matching the slug keeps these skills portable.
     name = front.get("name", "").strip()
     if not name:
         issues.add_error(f"{skill_md}: frontmatter 'name' field is required")
