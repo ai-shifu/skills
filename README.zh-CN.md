@@ -19,7 +19,7 @@ skills/
 
 ## 使用说明
 
-skill 以 `SKILL.md` 作为行为定义。目录名是稳定的机器 slug；`name` frontmatter 字段是面向人的展示名。
+skill 以 `SKILL.md` 作为行为定义。遵循 [Agent Skills](https://agentskills.io/specification) 标准，`name` frontmatter 字段必须与目录名一致，只允许小写字母、数字和连字符。面向人的展示名维护在上方的 skill 列表中。
 
 ## 课程生产与部署路径
 

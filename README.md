@@ -19,7 +19,7 @@ skills/
 
 ## Usage
 
-Each skill keeps `SKILL.md` as the behavior source of truth. The directory name is the stable machine slug; the `name` frontmatter field is the human-readable display name.
+Each skill keeps `SKILL.md` as the behavior source of truth. Following the [Agent Skills](https://agentskills.io/specification) standard, the `name` frontmatter field must match the directory name: lowercase letters, digits, and hyphens only. Human-readable display names live in the skill list above.
 
 ## Course Authoring & Deployment Paths
 

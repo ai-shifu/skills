@@ -14,7 +14,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 RE_KEBAB_CASE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-RE_HUMAN_READABLE_NAME = re.compile(r"^\S[^\r\n<>]*$")
 RE_XML_TAG = re.compile(r"[<>]")
 RE_REF_PATH = re.compile(r"references/[A-Za-z0-9_./-]+\.md")
 RE_MD_ANCHOR_REF = re.compile(
@@ -202,15 +201,11 @@ def validate_skill(skill_dir: Path, issues: IssueBag) -> None:
     if not name:
         issues.add_error(f"{skill_md}: frontmatter 'name' field is required")
     else:
-        if name == slug:
+        if name != slug:
             issues.add_error(
-                f"{skill_md}: frontmatter 'name' must be a human-readable "
-                f"display name, but it matches the folder slug '{name}'"
-            )
-        elif not RE_HUMAN_READABLE_NAME.match(name):
-            issues.add_error(
-                f"{skill_md}: frontmatter 'name' contains unsupported display "
-                f"name characters, got '{name}'"
+                f"{skill_md}: frontmatter 'name' must match the folder slug "
+                f"'{slug}' (Agent Skills spec: lowercase alphanumerics and "
+                f"hyphens only), got '{name}'"
             )
         name_lower = name.lower()
         for word in FORBIDDEN_WORDS:
