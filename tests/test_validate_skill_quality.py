@@ -879,10 +879,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("different underlying models", semantics)
         self.assertIn("tell the Teaching Agent how to teach the learner", semantics)
         self.assertIn(
-            "core question, teaching objective, must-cover evidence and "
-            "boundaries, complete teaching path, fixed slide structure, "
-            "each required content slot's and slide's teaching purpose, "
-            "interaction purpose and visible effect, and required close",
+            "turn the resolved lesson design into the actual sequence of "
+            "learner-time teaching actions",
             semantics,
         )
         self.assertIn(
@@ -890,21 +888,19 @@ class CourseCreatorContractTests(unittest.TestCase):
             semantics,
         )
         self.assertIn(
-            "controls only ordinary title and explanation wording, transition "
-            "wording, the identity and details of already-required examples, "
-            "and non-deterministic feedback wording "
-            "within an already fixed lesson and slide structure",
+            "a transient authoring control, not runtime Prompt content",
             semantics,
         )
         self.assertIn(
-            "Which content slots are required, where they appear, and the "
-            "teaching purpose each content slot and slide serves are fixed "
-            "before the level is applied",
+            "the level controls how much ordinary title, explanation, "
+            "transition, example-detail, and non-deterministic feedback wording "
+            "generation writes into the local runtime instructions",
             semantics,
         )
         self.assertIn(
-            "the same fixed content slots may contain near-final learner-visible "
-            "wording or intent-and-constraint direction",
+            "a local instruction may include near-final learner-visible wording "
+            "or only the message, evidence, boundaries, selection constraints, "
+            "and effect needed at that point",
             semantics,
         )
         self.assertIn(
@@ -934,6 +930,19 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn(
             "Outside `?[]` and standalone deterministic output", semantics
         )
+        self.assertIn(
+            "Every part of its body serves learner-time delivery", semantics
+        )
+        self.assertIn(
+            "Represent the lesson structure through the order and grouping of "
+            "those runtime instructions",
+            semantics,
+        )
+        self.assertIn(
+            "remains in the in-memory handoff and owning references", semantics
+        )
+        self.assertNotIn("internal design notes may appear", self.prompt_contracts)
+        self.assertNotIn("HTML comments", self.prompt_contracts)
         self.assertNotIn("## Authority Index", self.prompt_contracts)
         required = markdown_section(
             self.prompt_contracts, "Required References"
@@ -1300,9 +1309,9 @@ class CourseCreatorContractTests(unittest.TestCase):
             "content-expression control, not a structure control", normalized
         )
         self.assertIn(
-            "never changes the fixed teaching sequence or slide structure, "
-            "including which content slots appear, where they appear, and the "
-            "teaching purpose each content slot and slide serves",
+            "never changes the internal lesson execution plan, including the "
+            "teaching sequence, required actions and effects, slide count and "
+            "order, or interaction and feedback placement",
             normalized,
         )
         self.assertRegex(
@@ -1311,6 +1320,17 @@ class CourseCreatorContractTests(unittest.TestCase):
             r"through `5`\):.*transient authoring input",
         )
         self.assertIn("in-memory authoring handoff", normalized)
+        self.assertIn(
+            "Its only effect on `teaching_prompt` is the amount of ordinary "
+            "wording and already-permitted example detail materialized inside "
+            "direct local runtime instructions",
+            normalized,
+        )
+        self.assertIn(
+            "Keep the control's name, value, and authoring semantics absent "
+            "from Prompt bodies",
+            normalized,
+        )
         for excluded_surface in (
             "lesson_teaching_prompts",
             "course-directory files",
@@ -1333,6 +1353,206 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertNotIn(
             "teaching_prompt_personalization_level", self.cli_reference
+        )
+
+    def test_authoring_state_materializes_as_direct_runtime_instructions(self):
+        semantics = " ".join(
+            markdown_section(self.prompt_contracts, "Prompt Semantics").split()
+        )
+        generation = " ".join(
+            markdown_section(self.teaching_prompt, "Generation").split()
+        )
+        validation = " ".join(
+            markdown_section(self.teaching_prompt, "Validation").split()
+        )
+        gates = " ".join(
+            markdown_section(
+                self.orchestration_workflow, "Mandatory Gates"
+            ).split()
+        )
+        repair = " ".join(
+            markdown_section(
+                self.optimization_checklist, "Language and Repair Scope"
+            ).split()
+        )
+
+        self.assertIn(
+            "leaving the rest unwritten is the materialization of that "
+            "authoring choice",
+            semantics,
+        )
+        self.assertIn(
+            "Materialize the plan as direct local instructions to the Teaching "
+            "Agent in learner-time execution order",
+            generation,
+        )
+        self.assertIn(
+            "Begin with the first teaching action for the selected delivery mode",
+            generation,
+        )
+        self.assertIn(
+            "Insert every selected interaction, deterministic block, required "
+            "code or source span, and image instruction directly at its resolved "
+            "learner-time position",
+            generation,
+        )
+        self.assertIn(
+            "When the level leaves ordinary expression open, write only those "
+            "required runtime elements and end the instruction there",
+            generation,
+        )
+        self.assertIn(
+            "Recover the execution signature from the Teaching Prompt's actual "
+            "ordered instructions",
+            validation,
+        )
+        self.assertIn(
+            "open ordinary expression is visible as a shorter local instruction",
+            validation,
+        )
+        self.assertIn(
+            "Recover each Teaching Prompt's execution signature from its actual "
+            "ordered instructions",
+            gates,
+        )
+        self.assertIn("interaction-control-feedback adjacency", gates)
+        self.assertIn(
+            "When a Teaching Prompt contains an authoring rationale or a summary "
+            "of its internal execution plan",
+            repair,
+        )
+        self.assertIn(
+            "Fold lesson-specific behavior into the corresponding local teaching, "
+            "slide, interaction, feedback, or close instruction",
+            repair,
+        )
+        self.assertIn(
+            "leave course-wide uniform presentation behavior with the Course Prompt",
+            repair,
+        )
+        self.assertIn(
+            "The shorter instruction carries that choice without a replacement "
+            "explanation about adaptable wording or detail",
+            repair,
+        )
+        self.assertIn(
+            "Classify a passage by its function in learner-time execution",
+            repair,
+        )
+        self.assertIn("not by the presence of authoring vocabulary alone", repair)
+
+    def test_runtime_schema_markdownflow_and_variable_contracts_stay_stable(self):
+        lesson_schema = markdown_section(self.data_contracts, "Lesson Schema")
+        variable_table = markdown_section(self.data_contracts, "Variable Table")
+        interactions = markdown_section(self.markdownflow, "Interactions")
+        variables = markdown_section(self.markdownflow, "Variables")
+
+        for field in (
+            "`lesson_id` (string, required)",
+            "`lesson_title` (string, required)",
+            "`teaching_prompt` (string, required)",
+            "`used_variables` (array of strings, required)",
+            "`depends_on_lessons` (array of lesson ids, required)",
+        ):
+            self.assertIn(field, lesson_schema)
+        self.assertNotIn(
+            "teaching_prompt_personalization_level", lesson_schema
+        )
+
+        for syntax in (
+            "`?[Option A | Option B]`",
+            "`?[Option A || Option B]`",
+            "`?[...Input hint]`",
+            "`?[%{{name}} Option A | Option B]`",
+        ):
+            self.assertIn(syntax, interactions)
+        self.assertIn("`UNKNOWN`", variables)
+        self.assertIn(
+            "Only named variables belong in `global_variable_table`",
+            variable_table,
+        )
+        self.assertIn(
+            "no-variable `?[...]` interactions do not create entries",
+            variable_table,
+        )
+        self.assertIn(
+            "Every item in `used_variables` has a matching "
+            "`global_variable_table` entry",
+            lesson_schema,
+        )
+
+    def test_generation_evals_grade_runtime_sequence_not_authoring_labels(self):
+        evals_data = json.loads(
+            (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
+        )
+        evals_by_id = {case["id"]: case for case in evals_data["evals"]}
+
+        for case_id in (10, 15, 16, 17, 19, 20, 26):
+            expectations = " ".join(evals_by_id[case_id]["expectations"])
+            self.assertRegex(
+                expectations,
+                r"(?i)(?:actual|emitted|runtime|learner-time|page directions|"
+                r"proceeds directly)",
+            )
+            self.assertRegex(
+                expectations,
+                r"(?i)(?:author-facing|global authoring|authoring note)",
+            )
+
+        self.assertIn(
+            "三份都直接按下面的运行时顺序写",
+            evals_by_id[19]["prompt"],
+        )
+        self.assertIn(
+            "The actual runtime directions in all three variants",
+            " ".join(evals_by_id[19]["expectations"]),
+        )
+        self.assertIn(
+            "两份都直接按下面顺序创建四页",
+            evals_by_id[20]["prompt"],
+        )
+        self.assertIn(
+            "The actual page directions in both variants",
+            " ".join(evals_by_id[20]["expectations"]),
+        )
+        for case_id in (15, 16, 17, 19, 20):
+            expectations = " ".join(evals_by_id[case_id]["expectations"])
+            self.assertRegex(
+                expectations,
+                r"(?i)(?:no .*sentence|not through replacement sentences|"
+                r"do not add local meta-instructions)",
+            )
+
+        regression = evals_by_id[33]
+        page_numbers = [
+            int(value)
+            for value in re.findall(r"第 (\d+) 页：", regression["prompt"])
+        ]
+        self.assertEqual(list(range(1, 32)), page_numbers)
+        self.assertIn(
+            "本节采用标准一对一教学。严格按照下列顺序创建 31 张",
+            regression["prompt"],
+        )
+        self.assertIn(
+            "下文只有这些精确岛必须原样保留", regression["prompt"]
+        )
+        self.assertEqual(3, regression["prompt"].count("\n?["))
+        regression_expectations = " ".join(regression["expectations"])
+        self.assertIn("exactly 31 page directions", regression_expectations)
+        self.assertIn(
+            "contains no global passage whose only function is to explain the "
+            "authoring skeleton",
+            regression_expectations,
+        )
+        self.assertIn(
+            "failure depends on whether a passage explains the authoring "
+            "process rather than instructing learner-time teaching",
+            regression_expectations,
+        )
+        self.assertIn(
+            "`16:9`, visual, and Logo rules from the leaked wrapper are not "
+            "copied into or distributed across the 31 local page directions",
+            regression_expectations,
         )
 
     def test_intake_asks_for_personalization_after_usage_and_before_interactions(self):
@@ -1607,12 +1827,26 @@ class CourseCreatorContractTests(unittest.TestCase):
             generation.index("`teaching_prompt_personalization_level`"),
         )
         self.assertLess(
-            generation.index("Resolve and lock one lesson skeleton"),
+            generation.index("Build one internal lesson execution plan"),
             generation.index("`teaching_prompt_personalization_level`"),
         )
         self.assertLess(
             generation.index("`teaching_prompt_personalization_level`"),
+            generation.index(
+                "Materialize the plan as direct local instructions"
+            ),
+        )
+        self.assertLess(
+            generation.index("Materialize the plan as direct local instructions"),
             generation.index("`markdownflow-authoring.md`"),
+        )
+        self.assertIn(
+            "Begin with the first teaching action for the selected delivery mode",
+            generation,
+        )
+        self.assertIn(
+            "the resulting sequence and adjacency carry the lesson structure",
+            generation,
         )
 
         self.assertEqual(
@@ -1621,19 +1855,21 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         normalized_levels = " ".join(levels.split())
         for structural_fragment in (
-            "fixed lesson skeleton",
-            "required presence, position, and teaching purpose of every content slot",
-            "including titles, ordinary explanations, examples, transitions, "
-            "interactions, images, feedback states, and the close",
-            "complete teaching sequence",
+            "internal lesson execution plan",
+            "required presence, position, and teaching effect of titles, ordinary "
+            "explanations, examples, transitions, interactions, images, feedback "
+            "states, and the close",
+            "teaching sequence",
             "exact slide count",
-            "each slide's ordinal position and teaching purpose",
-            "slide order and placement in the teaching loop",
-            "each slide's teaching purpose",
-            "content grouping",
+            "each slide's ordinal position and teaching function",
+            "content groups",
             "visual hierarchy",
             "semantic layout",
-            "Every required content slot remains populated at every level",
+            "Apply the level only while writing the local runtime instructions",
+            "Every level materializes the same teaching actions, slide order and "
+            "grouping, interactions, images, feedback states, and close",
+            "The level itself and this authoring rationale remain in the in-memory "
+            "handoff",
         ):
             self.assertIn(structural_fragment, normalized_levels)
         self.assertIn(
@@ -1641,15 +1877,8 @@ class CourseCreatorContractTests(unittest.TestCase):
             normalized_levels,
         )
         self.assertIn(
-            "Across levels, never add, omit, or relocate a content slot; add, "
-            "remove, reorder, split, or merge slides",
-            normalized_levels,
-        )
-        self.assertIn(
-            "move content between slides; change any content slot's or slide's "
-            "teaching purpose; change content grouping, visual hierarchy, or "
-            "layout; alter the teaching sequence; or move an interaction, image, "
-            "feedback state, or close",
+            "The actual ordered runtime instructions at every level implement "
+            "the same structural decisions",
             normalized_levels,
         )
         level_rows = {}
@@ -1664,14 +1893,7 @@ class CourseCreatorContractTests(unittest.TestCase):
                 level_rows[cells[0].strip("`")] = " ".join(cells[1:])
 
         for level, row in level_rows.items():
-            self.assertIn("Within the fixed lesson skeleton", row, level)
-            self.assertNotRegex(
-                row,
-                r"(?i)(?:Teaching Agent|level).*(?:choose|change|adapt|vary).*"
-                r"(?:slide count|slide order|content grouping|"
-                r"visual hierarchy|semantic layout|placement)",
-                level,
-            )
+            self.assertIn("Write", row, level)
 
         level_1 = " ".join(level_rows["1"].split())
         for fragment in (
@@ -1685,20 +1907,15 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         level_5 = " ".join(level_rows["5"].split())
         for fragment in (
-            "concrete message and outcome for every content slot",
+            "concrete message and outcome for every teaching action",
             "critical facts and boundaries",
-            "every required example slot's material requirements and intended "
+            "each required example's material requirements and intended "
             "takeaway",
             "feedback completion conditions and effects",
-            "title wording",
-            "example identity and details",
-            "explanation phrasing",
-            "transitions",
-            "feedback phrasing",
+            "Omit all other ordinary wording and example identity or detail",
         ):
             self.assertIn(fragment, level_5)
-        self.assertIn("Teaching Agent", level_5)
-        self.assertIn("do not reduce them to an empty outline", levels)
+        self.assertIn("an empty outline", levels)
 
         common_constraints = normalized_levels
         for fragment in (
@@ -1720,12 +1937,13 @@ class CourseCreatorContractTests(unittest.TestCase):
             r"loop, interaction policy",
         )
         self.assertIn(
-            "never authorizes new learner-context collection, interactions, "
+            "The level adds no learner-context collection, interactions, "
             "variables, or branches",
             common_constraints,
         )
         self.assertIn(
-            "does not automatically add MarkdownFlow deterministic markers",
+            "Insert material selected for exact preservation directly at its "
+            "resolved runtime position",
             common_constraints,
         )
 
@@ -1737,20 +1955,17 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("At levels `1` and `2`", checklist)
         self.assertIn("At levels `4` and `5`", checklist)
         self.assertIn(
-            "At every level, keep the complete teaching sequence, every content "
-            "slot's and slide's teaching purpose, slide count, slide order and "
-            "placement in the teaching loop, content grouping, "
-            "every required content slot's presence and placement, visual "
-            "hierarchy, semantic layout, and the placement of interactions, "
-            "images, feedback, and the close fixed",
+            "At every level, recover the execution signature from the actual "
+            "ordered runtime instructions",
             checklist,
         )
         self.assertIn(
-            "Treat any structural or teaching-purpose change made because of "
-            "the personalization level as a defect",
+            "Treat a level-driven difference in that signature as a defect",
             checklist,
         )
-        self.assertIn("compare their structural signatures explicitly", checklist)
+        self.assertIn(
+            "compare the actual instruction sequences explicitly", checklist
+        )
         self.assertIn(
             "record cross-level structural consistency as `not-assessed`",
             checklist,
@@ -1870,7 +2085,7 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         self.assertIn("one brief learner-visible text lead-in", materialization)
         self.assertIn("at least one substantive visual-and-explanation pair", materialization)
-        self.assertIn("final explanation carrying the close", materialization)
+        self.assertIn("make the final explanation perform the close", materialization)
         self.assertIn("no consecutive visual units", validation)
         self.assertIn(
             "one concise but complete explanation after every visual and before "
