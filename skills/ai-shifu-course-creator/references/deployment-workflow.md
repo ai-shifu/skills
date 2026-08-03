@@ -40,7 +40,7 @@ Existing-course edits and standalone platform-management operations are outside 
 2. Run `build --course-dir <dir>` to generate `<dir>/shifu-import.json` locally.
 3. Complete the payload checks in `language-policy.md#language-audit` against the generated import file. Stop before import if the payload fails.
 4. Run `import --new --json-file <dir>/shifu-import.json` and capture the returned Shifu BID. `import --new --course-dir <dir>` remains an equivalent one-step build-and-import CLI form, but a separate build is required when the payload must be inspected before mutation.
-5. Before first publication, apply only explicitly selected platform-attribute operations through the conditional management reference. This includes enabling Listen Mode when Course Design Intake selected it; leave every unspecified attribute unchanged.
+5. Before first publication, apply the platform-attribute operations resolved by Course Design Intake through the conditional management reference. This includes enabling Listen Mode whenever its normalized control is enabled — chosen explicitly or defaulted after a skipped question, in which case the platform default voice applies; leave every other unspecified attribute unchanged.
 6. Run `publish <shifu_bid>` to make the current draft available at the public learner URL.
 
 `import --new` creates the platform course but does not publish it. The public URL is expected to work only after `publish` succeeds.
