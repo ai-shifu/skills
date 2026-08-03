@@ -255,5 +255,103 @@ class FmtTimeTests(unittest.TestCase):
         )
 
 
+class CourseCreatorCliTtsDefaultsTests(unittest.TestCase):
+    TENCENT_VOICES = [
+        {"value": "101001", "label": "Zhiyu", "resource_id": "premium"},
+        {"value": "501001", "label": "Zhilan", "resource_id": "large-model"},
+        {"value": "601002", "label": "Aiyue", "resource_id": "large-model"},
+    ]
+
+    def _tts_config(self, model_options):
+        return {
+            "providers": [
+                {
+                    "name": "tencent_texttovoice",
+                    "models": [
+                        {"value": "premium"},
+                        {"value": "large-model"},
+                    ],
+                    "voices": self.TENCENT_VOICES,
+                    "speed": {"default": 1.0},
+                },
+                {
+                    "name": "minimax",
+                    "models": [{"value": "speech-2.8-turbo"}],
+                    "voices": [
+                        {"value": "voice-a", "label": "Voice A"},
+                        {"value": "voice-b", "label": "Voice B"},
+                    ],
+                    "speed": {"default": 1.0},
+                },
+            ],
+            "model_options": model_options,
+        }
+
+    def test_voice_filter_scopes_resource_annotated_voices_to_model(self):
+        filtered = course_creator_cli._filter_tts_voices_for_model(
+            "tencent_texttovoice", self.TENCENT_VOICES, "large-model"
+        )
+        self.assertEqual([v["value"] for v in filtered], ["501001", "601002"])
+
+    def test_voice_filter_keeps_unannotated_voices(self):
+        plain_voices = [
+            {"value": "voice-a", "label": "Voice A"},
+            {"value": "voice-b", "label": "Voice B"},
+        ]
+        filtered = course_creator_cli._filter_tts_voices_for_model(
+            "minimax", plain_voices, "speech-2.8-turbo"
+        )
+        self.assertEqual(filtered, plain_voices)
+
+    def test_defaults_prefer_platform_declared_default_option(self):
+        config = self._tts_config(
+            [
+                {
+                    "provider": "tencent_texttovoice",
+                    "value": "tencent_texttovoice/premium",
+                    "model": "premium",
+                    "is_default": False,
+                },
+                {
+                    "provider": "tencent_texttovoice",
+                    "value": "tencent_texttovoice/large-model",
+                    "model": "large-model",
+                    "is_default": True,
+                },
+            ]
+        )
+        provider, model, voice_id, speed = (
+            course_creator_cli._select_platform_tts_defaults(None, config)
+        )
+        self.assertEqual(provider, "tencent_texttovoice")
+        self.assertEqual(model, "large-model")
+        # The default voice must match the default model tier, not the first
+        # voice in the provider list (which belongs to the premium tier).
+        self.assertEqual(voice_id, "501001")
+        self.assertEqual(speed, 1.0)
+
+    def test_defaults_fall_back_to_first_option_without_marker(self):
+        config = self._tts_config(
+            [
+                {
+                    "provider": "tencent_texttovoice",
+                    "value": "tencent_texttovoice/premium",
+                    "model": "premium",
+                },
+                {
+                    "provider": "minimax",
+                    "value": "minimax/speech-2.8-turbo",
+                    "model": "speech-2.8-turbo",
+                },
+            ]
+        )
+        provider, model, voice_id, _speed = (
+            course_creator_cli._select_platform_tts_defaults(None, config)
+        )
+        self.assertEqual(provider, "tencent_texttovoice")
+        self.assertEqual(model, "premium")
+        self.assertEqual(voice_id, "101001")
+
+
 if __name__ == "__main__":
     unittest.main()
