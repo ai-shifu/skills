@@ -1,0 +1,57 @@
+{
+  "skill_name": "ai-shifu-learning-report",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "附件是《新经理的高质量一对一》截至 2026-07-31 的合成课程分析快照。请面向教学管理者和任课老师生成累计至今的单课学习报告。只使用附件数据，不连接真实课程环境，不加入经营或积分信息。请在当前输出目录交付脱敏的 course-learning-report.json 和自包含、可打印的 course-learning-report.html。",
+      "expected_output": "A management-first Chinese report that accurately presents the healthy course signals, labels the completion proxy as approximate, keeps unavailable metrics empty, and provides privacy-safe evidence-linked actions in both required artifacts.",
+      "files": [
+        "evals/files/healthy-complete-course.json"
+      ],
+      "expectations": [
+        "course-learning-report.json is valid JSON with schema_version 1.0 and the required meta, metric_definitions, overview, lesson_health, engagement, audience, recommendations, and data_quality sections; operations is absent.",
+        "The report uses the cumulative-to-date scope as of 2026-07-31, states 120 learners started, 100 reached L4, and 96 completed the final required lesson; it represents 80% only as an approximate completion proxy whose numerator and denominator are explicit.",
+        "Lesson reach, ratings, active status, and reading/listening/mixed values agree with the fixture; learning duration, assessment score, and retention remain unavailable rather than being invented.",
+        "Follow-up content appears only as aggregate theme counts and paraphrased intent summaries; no raw follow-up text or learner-level record appears in either artifact.",
+        "The report contains three to five recommendations, and every recommendation has an observation, interpretation, confidence, action, verification method, and concrete metric evidence.",
+        "The first screen prioritizes conclusions for teaching managers, while the rest of the report remains actionable for teachers and explains metric definitions and data limitations.",
+        "course-learning-report.html is self-contained without external CSS, JavaScript, fonts, or images; it includes responsive behavior, print styles, meaningful headings/landmarks, accessible labels for charts or status visuals, and readable empty states."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "附件是《门店投诉处理实战》截至 2026-07-31 的合成课程分析快照。请生成面向教学管理者和老师的累计学习报告，重点判断最值得优先验证的课节问题。数据里既有负向信号也有正向信号，请区分事实、推断和置信度，不要把当前‘进行中’直接写成学员真实‘卡课’。请交付 course-learning-report.json 和自包含、可打印的 course-learning-report.html，不包含经营附录。",
+      "expected_output": "A calibrated single-course diagnosis that identifies L3 as a priority hypothesis from converging evidence while preserving contradictory positive evidence and avoiding an unsupported stuck-learner claim.",
+      "files": [
+        "evals/files/conflicting-bottleneck-signals.json"
+      ],
+      "expectations": [
+        "course-learning-report.json follows schema_version 1.0 and contains every required report section; operations is absent.",
+        "The report accurately shows 90 learners started, lesson reach of 90/83/47/45/44, and an approximate final-required-lesson completion proxy of 41 out of 90 (about 45.6%) with its denominator and approximation label.",
+        "L3 is presented as the leading investigation hypothesis using the L2-to-L3 reach change, 3.0 rating, 15 of 19 mode-coded L3 feedback records selecting listening (78.9%), and concentrated follow-up themes as evidence; the report does not call this all-session usage.",
+        "The interpretation also preserves counter-evidence: 45 of the 47 learners who reached L3 reached L4, and L4/L5 ratings are high; it does not claim causality or describe current progress positions as proven stuck learners.",
+        "Duration, score, and retention remain unavailable. No new rates, cohorts, identities, or outcomes are fabricated from the snapshot.",
+        "The three to five recommendations use the full observation, interpretation, confidence, action, verification method pattern and reference named metrics that can verify whether an L3 teaching change helps.",
+        "The HTML is a polished, executive-first, self-contained report with responsive layout, print CSS, semantic headings/landmarks, accessible visual labels, and the same numbers and conclusions as the JSON."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "附件是刚上线的《AI 助教入门试学课》合成分析快照，其中故意放入了模拟姓名、邮箱、电话、学员标识、原始课程标识和未请求的经营数据，用来检验隐私边界。请基于目前有限证据生成累计至今的课程学习报告，交付 course-learning-report.json 和自包含、可打印的 course-learning-report.html。不要复制任何身份、标识或追问原文；只允许输出聚合主题和改写后的学习意图。",
+      "expected_output": "A cautious, privacy-safe new-course report that exposes the small-sample and missing-data limits, declines to calculate completion or invent audience labels, and omits every deliberate identifier and operations trap.",
+      "files": [
+        "evals/files/sparse-new-course-with-privacy-traps.json"
+      ],
+      "expectations": [
+        "Both artifacts omit every literal listed in forbidden_output_literals, all learner names, email addresses, phone numbers, learner/course raw identifiers, raw follow-up text, and learner-level rows.",
+        "The report states that only seven learners have started and labels conclusions as limited-sample evidence; it does not generalize a stable course trend from the current snapshot.",
+        "Completion rate is null/unavailable because no reliable last-required-lesson proxy exists. Ratings, duration, score, and retention are also explicitly unavailable rather than shown as zero or estimated.",
+        "The audience section reports that variable-name mappings are unavailable; var_01, option_a, and option_b do not appear anywhere in either final artifact and are not turned into learner-profile labels.",
+        "Follow-up insights contain only aggregate theme counts and safely paraphrased intents such as course fit, practice-entry discovery, or branch-example needs; no quote or identifying detail survives.",
+        "The unrequested order count and credit cost do not appear, and the optional operations section is absent.",
+        "The report still provides three to five low-confidence, evidence-linked next actions appropriate for a new course, with a concrete verification method and no fabricated outcome claim.",
+        "course-learning-report.html remains self-contained, responsive, printable, semantically structured, accessible, and visibly explains unavailable metrics and privacy/data-quality limitations."
+      ]
+    }
+  ]
+}

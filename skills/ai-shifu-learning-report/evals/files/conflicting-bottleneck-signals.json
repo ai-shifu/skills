@@ -1,0 +1,279 @@
+{
+  "fixture_version": "1.0",
+  "fixture_name": "conflicting-bottleneck-signals",
+  "synthetic": true,
+  "request_context": {
+    "audience": [
+      "teaching_manager",
+      "teacher"
+    ],
+    "report_language": "zh-CN",
+    "report_period": {
+      "mode": "cumulative_to_date",
+      "as_of": "2026-07-31T23:59:59+08:00"
+    },
+    "include_operations": false,
+    "follow_up_policy": {
+      "include_aggregated_themes": true,
+      "latest_audited_limit": 100,
+      "include_raw_text": false
+    }
+  },
+  "course": {
+    "title": "门店投诉处理实战",
+    "organization_name": "示例零售学院",
+    "required_lessons": [
+      {
+        "lesson_key": "L1",
+        "display_name": "识别投诉类型"
+      },
+      {
+        "lesson_key": "L2",
+        "display_name": "稳定顾客情绪"
+      },
+      {
+        "lesson_key": "L3",
+        "display_name": "判断补偿边界"
+      },
+      {
+        "lesson_key": "L4",
+        "display_name": "升级与交接"
+      },
+      {
+        "lesson_key": "L5",
+        "display_name": "完成复盘闭环"
+      }
+    ],
+    "completion_proxy": {
+      "eligible": true,
+      "last_required_lesson_key": "L5",
+      "numerator_definition": "累计完成最后一节必修课的去重学习者数（完成状态）",
+      "denominator_definition": "累计开始课程的去重学习者数",
+      "is_approximation": true
+    }
+  },
+  "analytics": {
+    "progress": {
+      "scope": "cumulative_to_date",
+      "data_quality": "available",
+      "learners_started": 90,
+      "last_required_lesson_reached": 44,
+      "last_required_lesson_completed": 41,
+      "lesson_reach": [
+        {
+          "lesson_key": "L1",
+          "learners_reached": 90
+        },
+        {
+          "lesson_key": "L2",
+          "learners_reached": 83
+        },
+        {
+          "lesson_key": "L3",
+          "learners_reached": 47
+        },
+        {
+          "lesson_key": "L4",
+          "learners_reached": 45
+        },
+        {
+          "lesson_key": "L5",
+          "learners_reached": 44
+        }
+      ]
+    },
+    "active_status": {
+      "scope": "current_snapshot",
+      "data_quality": "available",
+      "active": 54,
+      "recently_active": 23,
+      "inactive": 13,
+      "currently_in_progress_by_lesson": {
+        "L1": 2,
+        "L2": 19,
+        "L3": 5,
+        "L4": 3,
+        "L5": 4
+      },
+      "definitions": {
+        "active": "最近 7 天内有学习行为",
+        "recently_active": "最近 8 至 30 天内有学习行为",
+        "inactive": "超过 30 天没有学习行为",
+        "currently_in_progress_by_lesson": "当前进度位置的快照，不代表真实受阻"
+      }
+    },
+    "lesson_ratings": {
+      "scope": "cumulative_to_date",
+      "data_quality": "available",
+      "scale": "1-5",
+      "items": [
+        {
+          "lesson_key": "L1",
+          "average": 4.5,
+          "response_count": 38
+        },
+        {
+          "lesson_key": "L2",
+          "average": 4.4,
+          "response_count": 35
+        },
+        {
+          "lesson_key": "L3",
+          "average": 3.0,
+          "response_count": 22
+        },
+        {
+          "lesson_key": "L4",
+          "average": 4.7,
+          "response_count": 19
+        },
+        {
+          "lesson_key": "L5",
+          "average": 4.6,
+          "response_count": 18
+        }
+      ]
+    },
+    "learning_mode": {
+      "scope": "cumulative_to_date",
+      "data_quality": "available",
+      "population_definition": "提交了听读模式字段的课节反馈记录",
+      "feedback_response_count": 129,
+      "reading_feedback": 50,
+      "listening_feedback": 60,
+      "mixed_feedback": 19,
+      "caveat": "反馈模式分布不等于全部学习会话的实际使用方式",
+      "lesson_feedback_mode": {
+        "population_definition": "各课节中提交了听读模式字段的反馈记录",
+        "items": [
+          {"lesson_key": "L1", "reading": 17, "listening": 14, "mixed": 7, "response_count": 38},
+          {"lesson_key": "L2", "reading": 14, "listening": 15, "mixed": 6, "response_count": 35},
+          {"lesson_key": "L3", "reading": 4, "listening": 15, "mixed": 0, "response_count": 19},
+          {"lesson_key": "L4", "reading": 8, "listening": 8, "mixed": 3, "response_count": 19},
+          {"lesson_key": "L5", "reading": 7, "listening": 8, "mixed": 3, "response_count": 18}
+        ]
+      }
+    },
+    "audience_variables": {
+      "scope": "current_snapshot",
+      "data_quality": "available",
+      "variable_name_mapping_available": true,
+      "variables": [
+        {
+          "name": "门店岗位",
+          "counts": {
+            "店员": 39,
+            "值班经理": 33,
+            "店长": 18
+          }
+        },
+        {
+          "name": "投诉处理经验",
+          "counts": {
+            "少于 3 个月": 46,
+            "3 至 12 个月": 29,
+            "1 年以上": 15
+          }
+        }
+      ]
+    },
+    "audited_follow_ups": {
+      "scope": "latest_records_as_of_report_time",
+      "data_quality": "available",
+      "audit_status": "approved_for_aggregate_analysis",
+      "requested_limit": 100,
+      "returned_count": 15,
+      "records": [
+        {
+          "created_at": "2026-07-31T09:12:00+08:00",
+          "lesson_key": "L3",
+          "text": "赠品、代金券和退款分别算哪种补偿？"
+        },
+        {
+          "created_at": "2026-07-30T14:48:00+08:00",
+          "lesson_key": "L3",
+          "text": "顾客同时要求退款和额外赔偿时先看哪条规则？"
+        },
+        {
+          "created_at": "2026-07-29T19:03:00+08:00",
+          "lesson_key": "L3",
+          "text": "能不能给一个需要店长审批的反例？"
+        },
+        {
+          "created_at": "2026-07-28T11:25:00+08:00",
+          "lesson_key": "L3",
+          "text": "补偿上限是按商品金额还是顾客损失计算？"
+        },
+        {
+          "created_at": "2026-07-26T16:41:00+08:00",
+          "lesson_key": "L3",
+          "text": "多个优惠叠加后权限怎么判断？"
+        },
+        {
+          "created_at": "2026-07-24T10:39:00+08:00",
+          "lesson_key": "L3",
+          "text": "哪些情况必须马上升级给值班经理？"
+        },
+        {
+          "created_at": "2026-07-22T15:17:00+08:00",
+          "lesson_key": "L2",
+          "text": "顾客持续打断时怎样表达共情？"
+        },
+        {
+          "created_at": "2026-07-20T18:32:00+08:00",
+          "lesson_key": "L3",
+          "text": "课程里的三档补偿能整理成判断表吗？"
+        },
+        {
+          "created_at": "2026-07-18T08:55:00+08:00",
+          "lesson_key": "L4",
+          "text": "交接时至少要记录哪些信息？"
+        },
+        {
+          "created_at": "2026-07-16T13:44:00+08:00",
+          "lesson_key": "L3",
+          "text": "遇到课程没覆盖的补偿诉求应该怎么做？"
+        },
+        {
+          "created_at": "2026-07-14T17:09:00+08:00",
+          "lesson_key": "L5",
+          "text": "复盘需要把顾客原话全部抄下来吗？"
+        },
+        {
+          "created_at": "2026-07-12T12:23:00+08:00",
+          "lesson_key": "L3",
+          "text": "为什么案例答案不能直接全额退款？"
+        },
+        {
+          "created_at": "2026-07-10T20:38:00+08:00",
+          "lesson_key": "L2",
+          "text": "道歉是不是等于承认门店有责任？"
+        },
+        {
+          "created_at": "2026-07-08T09:46:00+08:00",
+          "lesson_key": "L3",
+          "text": "值班经理不在时补偿权限怎么算？"
+        },
+        {
+          "created_at": "2026-07-05T16:29:00+08:00",
+          "lesson_key": "L4",
+          "text": "升级后还需要继续跟进顾客吗？"
+        }
+      ]
+    },
+    "unavailable_metrics": {
+      "learning_duration": {
+        "value": null,
+        "reason": "analytics_source_does_not_provide_reliable_duration"
+      },
+      "assessment_score": {
+        "value": null,
+        "reason": "course_has_no_scored_assessment"
+      },
+      "retention": {
+        "value": null,
+        "reason": "no_retention_cohort_query_in_source_snapshot"
+      }
+    }
+  }
+}

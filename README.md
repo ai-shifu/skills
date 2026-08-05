@@ -2,11 +2,12 @@
 
 [中文 README](./README.zh-CN.md)
 
-Reusable AI-Shifu skills for course production, from topic selection to deployment.
+Reusable AI-Shifu skills for course production and improvement, from topic selection and deployment to privacy-safe learning analysis.
 
 ## Included Skills
 
 - **AI-Shifu Course Creator（AI 师傅课程创作器）**: convert raw course material into optimized MarkdownFlow teaching scripts and deploy them as live AI-Shifu courses through a five-phase pipeline (segmentation, orchestration, generation, optimization, deployment).
+- **AI-Shifu Learning Report（AI 师傅学习报告）**: analyze one AI-Shifu course and produce a privacy-safe `course-learning-report.json` plus a polished, self-contained, printable `course-learning-report.html` for teaching managers and teachers.
 - **Course Direction Advisor（课程选题顾问）**: turn source materials into evidence-bound, market-fit course-topic decisions with competitor analysis, pricing guidance, and GO/HOLD/REWORK/NO-GO recommendations.
 
 ## Repository Layout
@@ -14,8 +15,20 @@ Reusable AI-Shifu skills for course production, from topic selection to deployme
 ```text
 skills/
   ai-shifu-course-creator/
+  ai-shifu-learning-report/
   course-direction-advisor/
 ```
+
+## Learning Report Path
+
+Use **AI-Shifu Learning Report** after a course has learning activity and you need an actionable single-course review. It reuses the course creator's authenticated analytics workflow, then turns aggregate progress, lesson health, engagement, audience, and audited follow-up signals into:
+
+- a versioned, privacy-safe JSON data artifact with metric definitions and data-quality notes;
+- an executive-first HTML report that works without external assets and prints cleanly to PDF;
+- three to five evidence-linked teaching recommendations with confidence and a verification method.
+
+The report does not expose learner identities, raw course identifiers, or raw follow-up text. Business and credit data stay out of the report unless the user explicitly asks for the optional operations appendix.
+Reports default to Simplified Chinese; English is used only when explicitly requested.
 
 ## Usage
 

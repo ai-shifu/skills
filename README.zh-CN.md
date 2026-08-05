@@ -2,11 +2,12 @@
 
 [English README](./README.md)
 
-本仓库包含可复用的 AI 师傅 skills，覆盖从课程选题到部署的全流程。
+本仓库包含可复用的 AI 师傅 skills，覆盖课程选题、制作部署和学习效果改进。
 
 ## 包含的 Skills
 
 - **AI-Shifu Course Creator（AI 师傅课程创作器）**：通过五阶段流水线（分段、编排、生成、优化、部署）将原始课程素材转换为优化后的可运行 MarkdownFlow 授课脚本，并部署为 AI 师傅平台上的在线课程。
+- **AI-Shifu Learning Report（AI 师傅学习报告）**：分析单门 AI 师傅课程，为教学管理者和老师生成脱敏的 `course-learning-report.json`，以及美观、自包含、可打印的 `course-learning-report.html`。
 - **Course Direction Advisor（课程选题顾问）**：将素材转化为基于证据的、市场适配的课程选题决策，包含竞品分析、定价建议和 GO/HOLD/REWORK/NO-GO 推荐。
 
 ## 仓库结构
@@ -14,8 +15,20 @@
 ```text
 skills/
   ai-shifu-course-creator/
+  ai-shifu-learning-report/
   course-direction-advisor/
 ```
+
+## 学习报告路径
+
+课程产生学习数据后，如需复盘单门课程并形成改进动作，使用 **AI-Shifu Learning Report**。它复用课程制作 skill 已认证的分析流程，再将汇总后的学习进度、课节健康度、参与信号、学员画像和受审计追问转化为：
+
+- 带版本、指标口径和数据质量说明的脱敏 JSON 数据文件；
+- 首屏先呈现管理结论、无需外部资源且可直接打印为 PDF 的 HTML 报告；
+- 三至五条带证据、置信度和验证方法的教学建议。
+
+报告不会暴露学员身份、原始课程标识或追问原文。经营与积分数据默认不进入报告，只有用户明确要求时才加入可选附录。
+报告默认使用简体中文；只有用户明确要求英文时才切换为英文。
 
 ## 使用说明
 

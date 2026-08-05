@@ -1,0 +1,233 @@
+{
+  "fixture_version": "1.0",
+  "fixture_name": "healthy-complete-course",
+  "synthetic": true,
+  "request_context": {
+    "audience": [
+      "teaching_manager",
+      "teacher"
+    ],
+    "report_language": "zh-CN",
+    "report_period": {
+      "mode": "cumulative_to_date",
+      "as_of": "2026-07-31T23:59:59+08:00"
+    },
+    "include_operations": false,
+    "follow_up_policy": {
+      "include_aggregated_themes": true,
+      "latest_audited_limit": 100,
+      "include_raw_text": false
+    }
+  },
+  "course": {
+    "title": "新经理的高质量一对一",
+    "organization_name": "示例学习中心",
+    "required_lessons": [
+      {
+        "lesson_key": "L1",
+        "display_name": "从任务汇报转向成长对话"
+      },
+      {
+        "lesson_key": "L2",
+        "display_name": "用提问定位真实障碍"
+      },
+      {
+        "lesson_key": "L3",
+        "display_name": "给出可执行的反馈"
+      },
+      {
+        "lesson_key": "L4",
+        "display_name": "形成跟进闭环"
+      }
+    ],
+    "completion_proxy": {
+      "eligible": true,
+      "last_required_lesson_key": "L4",
+      "numerator_definition": "累计完成最后一节必修课的去重学习者数（完成状态）",
+      "denominator_definition": "累计开始课程的去重学习者数",
+      "is_approximation": true
+    }
+  },
+  "analytics": {
+    "progress": {
+      "scope": "cumulative_to_date",
+      "data_quality": "available",
+      "learners_started": 120,
+      "last_required_lesson_reached": 100,
+      "last_required_lesson_completed": 96,
+      "lesson_reach": [
+        {
+          "lesson_key": "L1",
+          "learners_reached": 120
+        },
+        {
+          "lesson_key": "L2",
+          "learners_reached": 114
+        },
+        {
+          "lesson_key": "L3",
+          "learners_reached": 108
+        },
+        {
+          "lesson_key": "L4",
+          "learners_reached": 100
+        }
+      ]
+    },
+    "active_status": {
+      "scope": "current_snapshot",
+      "data_quality": "available",
+      "active": 77,
+      "recently_active": 25,
+      "inactive": 18,
+      "definitions": {
+        "active": "最近 7 天内有学习行为",
+        "recently_active": "最近 8 至 30 天内有学习行为",
+        "inactive": "超过 30 天没有学习行为"
+      }
+    },
+    "lesson_ratings": {
+      "scope": "cumulative_to_date",
+      "data_quality": "available",
+      "scale": "1-5",
+      "items": [
+        {
+          "lesson_key": "L1",
+          "average": 4.6,
+          "response_count": 48
+        },
+        {
+          "lesson_key": "L2",
+          "average": 4.5,
+          "response_count": 45
+        },
+        {
+          "lesson_key": "L3",
+          "average": 4.4,
+          "response_count": 41
+        },
+        {
+          "lesson_key": "L4",
+          "average": 4.7,
+          "response_count": 38
+        }
+      ]
+    },
+    "learning_mode": {
+      "scope": "cumulative_to_date",
+      "data_quality": "available",
+      "population_definition": "提交了听读模式字段的课节反馈记录",
+      "feedback_response_count": 172,
+      "reading_feedback": 86,
+      "listening_feedback": 52,
+      "mixed_feedback": 34,
+      "caveat": "反馈模式分布不等于全部学习会话的实际使用方式"
+    },
+    "audience_variables": {
+      "scope": "current_snapshot",
+      "data_quality": "available",
+      "variable_name_mapping_available": true,
+      "variables": [
+        {
+          "name": "管理经验",
+          "counts": {
+            "首次带团队": 48,
+            "1 至 3 年": 42,
+            "3 年以上": 30
+          }
+        },
+        {
+          "name": "主要学习目标",
+          "counts": {
+            "提升反馈能力": 51,
+            "改善沟通节奏": 39,
+            "建立跟进机制": 30
+          }
+        }
+      ]
+    },
+    "audited_follow_ups": {
+      "scope": "latest_records_as_of_report_time",
+      "data_quality": "available",
+      "audit_status": "approved_for_aggregate_analysis",
+      "requested_limit": 100,
+      "returned_count": 12,
+      "records": [
+        {
+          "created_at": "2026-07-30T16:04:00+08:00",
+          "lesson_key": "L3",
+          "text": "怎样让批评听起来不那么像否定个人？"
+        },
+        {
+          "created_at": "2026-07-29T12:11:00+08:00",
+          "lesson_key": "L3",
+          "text": "对方一直解释客观原因时，反馈对话应该怎么推进？"
+        },
+        {
+          "created_at": "2026-07-27T20:16:00+08:00",
+          "lesson_key": "L2",
+          "text": "有哪些问题能区分能力不足和资源不足？"
+        },
+        {
+          "created_at": "2026-07-25T09:31:00+08:00",
+          "lesson_key": "L4",
+          "text": "跟进周期设为一周还是一个月更合适？"
+        },
+        {
+          "created_at": "2026-07-21T18:20:00+08:00",
+          "lesson_key": "L2",
+          "text": "员工不愿意说真实困难时还能怎么问？"
+        },
+        {
+          "created_at": "2026-07-18T14:45:00+08:00",
+          "lesson_key": "L3",
+          "text": "事实、影响、期待这三步能给一个完整例子吗？"
+        },
+        {
+          "created_at": "2026-07-15T10:08:00+08:00",
+          "lesson_key": "L1",
+          "text": "一对一应该由经理还是员工准备议题？"
+        },
+        {
+          "created_at": "2026-07-12T15:54:00+08:00",
+          "lesson_key": "L4",
+          "text": "怎么记录行动项又不让员工觉得被监控？"
+        },
+        {
+          "created_at": "2026-07-08T08:33:00+08:00",
+          "lesson_key": "L3",
+          "text": "远程一对一反馈有哪些容易忽略的地方？"
+        },
+        {
+          "created_at": "2026-07-05T19:27:00+08:00",
+          "lesson_key": "L2",
+          "text": "连续追问会不会给人审讯感？"
+        },
+        {
+          "created_at": "2026-07-03T13:19:00+08:00",
+          "lesson_key": "L1",
+          "text": "第一次一对一只有二十分钟，怎么安排？"
+        },
+        {
+          "created_at": "2026-07-01T17:42:00+08:00",
+          "lesson_key": "L4",
+          "text": "行动项没有完成时下一次该怎么复盘？"
+        }
+      ]
+    },
+    "unavailable_metrics": {
+      "learning_duration": {
+        "value": null,
+        "reason": "analytics_source_does_not_provide_reliable_duration"
+      },
+      "assessment_score": {
+        "value": null,
+        "reason": "course_has_no_scored_assessment"
+      },
+      "retention": {
+        "value": null,
+        "reason": "no_retention_cohort_query_in_source_snapshot"
+      }
+    }
+  }
+}

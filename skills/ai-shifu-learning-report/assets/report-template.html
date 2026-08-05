@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="{{LANG}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:,">
+  <title>{{COURSE_TITLE}} · {{TITLE_SUFFIX}}</title>
+  <style>
+    :root {
+      --accent: {{ACCENT_COLOR}};
+      --ink: #172033;
+      --ink-soft: #526079;
+      --surface: #ffffff;
+      --canvas: #f4f6fb;
+      --line: #dfe4ee;
+      --line-strong: #c7cfdd;
+      --navy: #17233f;
+      --navy-soft: #263655;
+      --good: #147d64;
+      --watch: #a4600b;
+      --attention: #b33b4a;
+      --muted: #6d778d;
+      --shadow: 0 16px 44px rgba(20, 31, 56, .08);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+        Arial, sans-serif;
+      line-height: 1.58;
+      scroll-behavior: smooth;
+    }
+
+    body { margin: 0; }
+
+    a { color: inherit; }
+
+    .skip-link {
+      position: fixed;
+      z-index: 20;
+      top: 12px;
+      left: 12px;
+      padding: 9px 13px;
+      border-radius: 8px;
+      background: #fff;
+      color: #111827;
+      box-shadow: var(--shadow);
+      transform: translateY(-160%);
+    }
+
+    .skip-link:focus { transform: translateY(0); }
+
+    .report-shell {
+      width: min(1180px, calc(100% - 40px));
+      margin: 28px auto 56px;
+    }
+
+    .cover {
+      position: relative;
+      overflow: hidden;
+      min-height: 330px;
+      padding: 32px clamp(24px, 5vw, 58px) 44px;
+      border-radius: var(--radius-lg);
+      background: var(--navy);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .cover::after {
+      content: "";
+      position: absolute;
+      right: -70px;
+      bottom: -125px;
+      width: 300px;
+      height: 300px;
+      border: 46px solid var(--accent);
+      border-radius: 50%;
+      opacity: .38;
+    }
+
+    .brand-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: .92rem;
+      letter-spacing: .04em;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.38);
+      border-radius: 11px;
+      background: rgba(255,255,255,.09);
+    }
+
+    .brand-mark svg { width: 23px; height: 23px; }
+
+    .report-kicker {
+      padding: 7px 11px;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 999px;
+      color: #dbe4f6;
+      font-size: .78rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .cover-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin-top: 58px;
+    }
+
+    .cover h1 {
+      max-width: 760px;
+      margin: 0 0 15px;
+      font-size: clamp(2rem, 4.8vw, 4.2rem);
+      font-weight: 720;
+      line-height: 1.06;
+      letter-spacing: -.035em;
+    }
+
+    .cover-subtitle {
+      margin: 0;
+      color: #ced8eb;
+      font-size: clamp(1rem, 1.7vw, 1.18rem);
+    }
+
+    .cover-meta {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      margin-top: 34px;
+      color: #b7c4db;
+      font-size: .86rem;
+    }
+
+    .cover-meta span { display: inline-flex; align-items: center; gap: 7px; }
+    .cover-meta span::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+    main { display: block; }
+
+    .section {
+      margin-top: 26px;
+      padding: clamp(22px, 4vw, 38px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: 0 8px 26px rgba(20, 31, 56, .045);
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+    }
+
+    .section-index {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--accent);
+      font-size: .74rem;
+      font-weight: 760;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h2, h3, h4 { color: var(--ink); line-height: 1.25; }
+    h2 { margin: 0; font-size: clamp(1.48rem, 3vw, 2.1rem); letter-spacing: -.02em; }
+    h3 { margin: 0; font-size: 1.08rem; }
+    h4 { margin: 0; font-size: .94rem; }
+
+    .section-description {
+      max-width: 620px;
+      margin: 7px 0 0;
+      color: var(--ink-soft);
+      font-size: .93rem;
+    }
+
+    .summary-band {
+      margin-top: -42px;
+      position: relative;
+      z-index: 2;
+      border-top: 5px solid var(--accent);
+    }
+
+    .health-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .health-label { flex: 0 0 auto; color: var(--ink-soft); font-size: .86rem; white-space: nowrap; }
+    .health-value { min-width: 0; font-size: 1.12rem; font-weight: 740; }
+
+    .conclusion-grid,
+    .kpi-grid,
+    .lesson-grid,
+    .recommendation-grid,
+    .quality-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .conclusion-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .lesson-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .recommendation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .quality-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .conclusion-card,
+    .kpi-card,
+    .lesson-card,
+    .recommendation-card,
+    .quality-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+    }
+
+    .conclusion-card {
+      min-height: 142px;
+      padding: 18px;
+      background: #f9fafc;
+    }
+
+    .conclusion-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--accent);
+      font-size: .75rem;
+      letter-spacing: .08em;
+    }
+
+    .conclusion-card p { margin: 0; }
+
+    .limitation-callout,
+    .empty-state,
+    .privacy-callout {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border: 1px solid #e4d8bb;
+      border-radius: var(--radius-sm);
+      background: #fffaf0;
+      color: #624917;
+      font-size: .9rem;
+    }
+
+    .privacy-callout {
+      border-color: #cbe1db;
+      background: #f1faf7;
+      color: #205c4f;
+    }
+
+    .empty-state {
+      border-color: var(--line);
+      background: #f7f8fb;
+      color: var(--muted);
+    }
+
+    .kpi-card { padding: 17px; }
+    .kpi-label { color: var(--ink-soft); font-size: .82rem; }
+    .kpi-value { display: block; margin: 7px 0 4px; font-size: 1.82rem; font-weight: 760; letter-spacing: -.035em; }
+    .kpi-meta { color: var(--muted); font-size: .75rem; }
+    .proxy-fraction { display: block; margin: 2px 0 4px; color: var(--ink-soft); font-size: .76rem; font-weight: 650; }
+    .approx-tag { display: inline-block; margin-left: 5px; padding: 2px 6px; border-radius: 999px; background: #fff3d7; color: #80510b; font-size: .68rem; vertical-align: middle; }
+
+    .path-list { display: grid; gap: 12px; }
+    .path-row { display: grid; grid-template-columns: minmax(130px, .72fr) minmax(220px, 2fr) minmax(110px, .55fr); align-items: center; gap: 15px; }
+    .path-stage { font-weight: 660; }
+    .bar-track { position: relative; height: 18px; overflow: hidden; border-radius: 999px; background: #e9edf4; }
+    .bar-fill { min-width: 2px; height: 100%; border-radius: inherit; background: var(--accent); }
+    .bar-label { color: var(--ink-soft); font-size: .8rem; text-align: right; }
+    .path-note { grid-column: 2 / -1; margin-top: -7px; color: var(--muted); font-size: .78rem; }
+
+    .lesson-card { overflow: hidden; }
+    .lesson-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 17px 18px 14px; border-bottom: 1px solid var(--line); }
+    .lesson-order { color: var(--accent); font-size: .74rem; font-weight: 760; letter-spacing: .08em; }
+    .lesson-card-body { padding: 17px 18px 19px; }
+    .lesson-finding { margin: 0 0 15px; color: var(--ink-soft); font-size: .88rem; }
+
+    .status-pill,
+    .confidence-pill,
+    .priority-pill,
+    .quality-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      background: #f7f8fb;
+      color: var(--ink-soft);
+      font-size: .7rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-pill::before,
+    .confidence-pill::before,
+    .priority-pill::before,
+    .quality-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .is-healthy, .is-high { border-color: #badfd5; background: #f1faf7; color: var(--good); }
+    .is-watch, .is-medium { border-color: #ead7ac; background: #fffaf0; color: var(--watch); }
+    .is-attention { border-color: #ebc2c8; background: #fff5f6; color: var(--attention); }
+    .is-low, .is-insufficient_data { color: var(--muted); }
+
+    .metric-list { display: grid; gap: 9px; }
+    .metric-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; gap: 12px; padding-top: 9px; border-top: 1px dashed var(--line); }
+    .metric-row:first-child { padding-top: 0; border-top: 0; }
+    .metric-row dt { color: var(--ink-soft); font-size: .8rem; }
+    .metric-row dd { margin: 0; font-size: .84rem; font-weight: 670; text-align: right; }
+    .metric-context { display: block; margin-top: 3px; color: var(--muted); font-size: .7rem; font-weight: 400; }
+    .metric-details { grid-column: 1 / -1; margin-top: 0; }
+    .metric-details summary { padding: 7px 10px; color: var(--muted); font-size: .72rem; }
+    .metric-details .details-body { padding: 0 10px 9px; font-size: .74rem; }
+
+    .theme-list { display: grid; gap: 12px; }
+    .theme-row { display: grid; grid-template-columns: minmax(145px, .78fr) minmax(220px, 1.55fr) minmax(80px, .4fr); gap: 15px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); }
+    .theme-row:first-child { border-top: 0; }
+    .theme-intent { color: var(--ink-soft); font-size: .86rem; }
+    .theme-count { text-align: right; font-weight: 740; }
+    .sample-note { margin: 0 0 16px; color: var(--muted); font-size: .82rem; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    caption { padding: 0 0 10px; color: var(--ink-soft); font-weight: 650; text-align: left; }
+    th, td { padding: 11px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--ink-soft); font-size: .73rem; letter-spacing: .04em; text-transform: uppercase; }
+
+    .audience-dimension { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .audience-dimension:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+    .audience-implication { margin: 10px 0 0; color: var(--ink-soft); font-size: .87rem; }
+
+    .recommendation-card { position: relative; overflow: hidden; padding: 20px; }
+    .recommendation-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--accent); }
+    .recommendation-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .recommendation-card dl { display: grid; gap: 11px; margin: 0; }
+    .recommendation-card dt { color: var(--ink-soft); font-size: .72rem; font-weight: 740; letter-spacing: .06em; text-transform: uppercase; }
+    .recommendation-card dd { margin: 3px 0 0; font-size: .88rem; }
+    .evidence-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .evidence-ref { padding: 4px 8px; border-radius: 6px; background: #eef1f7; color: #4b5871; font-size: .72rem; }
+
+    .quality-card { padding: 18px; }
+    .quality-card ul { margin: 10px 0 0; padding-left: 19px; color: var(--ink-soft); font-size: .84rem; }
+    .quality-card li + li { margin-top: 6px; }
+
+    details { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fbfcfe; }
+    summary { padding: 12px 14px; cursor: pointer; font-size: .84rem; font-weight: 680; }
+    details .details-body { padding: 0 14px 14px; color: var(--ink-soft); font-size: .8rem; }
+
+    footer { padding: 24px 8px 0; color: var(--muted); font-size: .76rem; text-align: center; }
+
+    @media (max-width: 900px) {
+      .conclusion-grid, .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .lesson-grid, .recommendation-grid, .quality-grid { grid-template-columns: 1fr; }
+      .summary-band { margin-top: 18px; }
+    }
+
+    @media (max-width: 620px) {
+      .report-shell { width: min(100% - 20px, 1180px); margin-top: 10px; }
+      .cover { min-height: 390px; padding: 24px 21px 38px; border-radius: 18px; }
+      .brand-row, .section-heading { flex-direction: column; }
+      .cover-copy { margin-top: 48px; }
+      .section { padding: 21px 18px; border-radius: 18px; }
+      .health-line { flex-direction: column; align-items: flex-start; gap: 7px; }
+      .conclusion-grid, .kpi-grid { grid-template-columns: 1fr; }
+      .path-row { grid-template-columns: 1fr; gap: 7px; }
+      .path-note { grid-column: auto; margin-top: 0; }
+      .bar-label { text-align: left; }
+      .theme-row { grid-template-columns: 1fr; gap: 5px; }
+      .theme-count { text-align: left; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 12mm; }
+      html, body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .skip-link { display: none; }
+      .report-shell { width: 100%; margin: 0; }
+      .cover { min-height: 245px; padding: 24px 30px 32px; border-radius: 0; box-shadow: none; break-after: avoid-page; }
+      .cover-copy { margin-top: 36px; }
+      .cover h1 { font-size: 2.3rem; }
+      .summary-band { margin-top: 12px; }
+      .section { margin-top: 12px; padding: 22px; border-radius: 0; box-shadow: none; break-inside: auto; }
+      .section-heading { margin-bottom: 15px; }
+      .section-heading { break-after: avoid-page; }
+      .conclusion-card, .kpi-card, .path-row, .lesson-card, .recommendation-card, .quality-card, .limitation-callout,
+      .theme-row, .audience-dimension, table, tr, details { break-inside: avoid; }
+      .recommendation-grid, .lesson-grid { grid-template-columns: 1fr 1fr; }
+      details { display: block; }
+      details > summary { list-style: none; }
+      details:not([open]) > .details-body { display: block; }
+      footer { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#report-main">{{SKIP_TEXT}}</a>
+  <div class="report-shell">
+    <header class="cover" aria-labelledby="report-title">
+      <div class="brand-row">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" role="img">
+              <path d="M5 6.25 12 3l7 3.25v7.5L12 21l-7-3.25v-11.5Z" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M8.25 10.1 12 8.35l3.75 1.75L12 11.85 8.25 10.1Z" fill="currentColor"/>
+              <path d="M9.1 12.1v2.35c1.95 1.05 3.85 1.05 5.8 0V12.1" stroke="currentColor" stroke-width="1.25"/>
+            </svg>
+          </span>
+          <span>{{LOGO_TEXT}}</span>
+          <span aria-hidden="true">·</span>
+          <span>{{ORGANIZATION_NAME}}</span>
+        </div>
+        <span class="report-kicker">Learning Report · 1.0</span>
+      </div>
+      <div class="cover-copy">
+        <h1 id="report-title">{{COURSE_TITLE}}</h1>
+        <p class="cover-subtitle">{{REPORT_SUBTITLE}}</p>
+      </div>
+      <div class="cover-meta" aria-label="报告元数据">{{REPORT_META}}</div>
+    </header>
+
+    <main id="report-main">{{REPORT_BODY}}</main>
+
+    <footer>
+      {{FOOTER_TEXT}}
+    </footer>
+  </div>
+</body>
+</html>
