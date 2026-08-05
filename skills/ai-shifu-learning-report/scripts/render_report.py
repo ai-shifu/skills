@@ -619,7 +619,7 @@ def _relative_luminance(color: str) -> float:
 
 
 def _safe_accent(value: Any) -> str:
-    fallback = "#5B5BD6"
+    fallback = "#D6001C"
     if not isinstance(value, str) or VALID_ACCENT.fullmatch(value) is None:
         return fallback
     contrast_with_white = 1.05 / (_relative_luminance(value) + 0.05)
@@ -732,7 +732,7 @@ def render_summary(report: Mapping[str, Any], strings: Mapping[str, Any]) -> str
         + "</span></div>"
         + f'<div class="conclusion-grid">{conclusions}</div>'
         + limitation_html
-        + f'<h3 style="margin:26px 0 13px">{esc(strings["kpis"])}</h3>'
+        + f'<h3 class="subsection-heading">{esc(strings["kpis"])}</h3>'
         + f'<div class="kpi-grid">{kpis}</div>'
         + "</section>"
     )
@@ -1013,7 +1013,7 @@ def render_methods(report: Mapping[str, Any], strings: Mapping[str, Any], index:
             for item in unavailable
         )
         unavailable_html = (
-            f'<h3 style="margin:24px 0 8px">{esc(strings["unavailable_metrics"])}</h3>'
+            f'<h3 class="subsection-heading">{esc(strings["unavailable_metrics"])}</h3>'
             '<div class="table-wrap"><table><thead><tr>'
             f'<th>{esc(strings["metric"])}</th><th>{esc(strings["reason"])}</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div>'

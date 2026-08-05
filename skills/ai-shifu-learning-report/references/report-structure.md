@@ -38,13 +38,24 @@ For a metric whose `unit` is `%`, store the numeric `value` in percentage points
 
 ## Branding
 
-Use the AI-Shifu professional visual style by default. The optional `meta.brand` object accepts only these report-level overrides when supplied by the user or a trusted calling context:
+Use a Swiss International Style visual system by default: a disciplined 12-column grid, asymmetric composition, strong sans-serif typography, generous whitespace, left alignment, flat planes, hard-edged rules, and one restrained accent color. Prioritize information hierarchy and scanability over decoration. Do not use rounded cards, soft shadows, gradients, ornamental illustrations, skeuomorphic controls, or dashboard-style visual clutter.
+
+Apply the style consistently:
+
+- make the cover and every report section align to the same modular grid;
+- create hierarchy with scale, weight, position, spacing, and rules rather than ornamental containers;
+- keep charts geometric and directly labelled, using rectangular bars and exact values;
+- use black, white, and neutral grays as the base palette, with the primary accent reserved for navigation, emphasis, and priority signals;
+- use the bundled Helvetica-compatible system font stack so the report stays self-contained; never download a font;
+- preserve the same grid logic in responsive and print layouts, collapsing it deliberately on small screens rather than shrinking desktop cards.
+
+The optional `meta.brand` object accepts only these report-level overrides when supplied by the user or a trusted calling context:
 
 - `organization_name` — institution display name;
 - `accent_color` — primary accent color;
 - `logo_text` — short text mark rendered in the header.
 
-Do not promise or load an external or local logo image. Branding must not change metric meaning, hide data-quality warnings, or add external runtime dependencies. Treat invalid values as absent and fall back to the default brand.
+Do not promise or load an external or local logo image. Branding may replace the single accent color and text lockup, but must not introduce a second decorative palette, change metric meaning, hide data-quality warnings, or add external runtime dependencies. Treat invalid values as absent and fall back to the accessible Swiss red accent.
 
 ## Visible HTML Order
 
@@ -88,6 +99,7 @@ The generated HTML must:
 - label chart units, legends, sample sizes, time scopes, proxy metrics, and unavailable states directly in the visible report;
 - show `null` / unavailable values as localized empty states, never as numeric zero;
 - escape all user- or data-supplied text before interpolation.
+- visibly follow the Swiss International Style contract: modular grid, asymmetric hierarchy, sans-serif type, flat surfaces, square geometry, and restrained accent use.
 
 ## Final Consistency Gate
 

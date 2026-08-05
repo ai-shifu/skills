@@ -473,6 +473,17 @@ class LearningReportRendererTests(unittest.TestCase):
             r'<section class="section" aria-labelledby="path-heading">.*?<h2 id="path-heading">',
         )
 
+    def test_renderer_uses_swiss_international_visual_system(self):
+        _, html = self.assert_renderer_succeeds(minimal_valid_report())
+
+        self.assertIn('name="design-system" content="Swiss International Style"', html)
+        self.assertIn('grid-template-columns: repeat(12, minmax(0, 1fr))', html)
+        self.assertIn('font-family: "Helvetica Neue", Helvetica, Arial', html)
+        self.assertIn('--accent: #5B5CE2', html)
+        self.assertNotIn('border-radius:', html)
+        self.assertNotIn('box-shadow:', html)
+        self.assertNotIn('linear-gradient', html)
+
     def test_renderer_escapes_report_text_before_interpolation(self):
         report = minimal_valid_report()
         report["meta"]["course_title"] = '<b>管理复盘</b> & "试验"'
@@ -501,7 +512,7 @@ class LearningReportRendererTests(unittest.TestCase):
         low_contrast = minimal_valid_report()
         low_contrast["meta"]["brand"]["accent_color"] = "#FFFFFF"
         _, fallback_html = self.assert_renderer_succeeds(low_contrast)
-        self.assertIn("--accent: #5B5BD6", fallback_html)
+        self.assertIn("--accent: #D6001C", fallback_html)
         self.assertNotIn("--accent: #FFFFFF", fallback_html)
 
     def test_completion_proxy_renders_explicit_numerator_and_denominator(self):

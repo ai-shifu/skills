@@ -16,7 +16,7 @@
         "Follow-up content appears only as aggregate theme counts and paraphrased intent summaries; no raw follow-up text or learner-level record appears in either artifact.",
         "The report contains three to five recommendations, and every recommendation has an observation, interpretation, confidence, action, verification method, and concrete metric evidence.",
         "The first screen prioritizes conclusions for teaching managers, while the rest of the report remains actionable for teachers and explains metric definitions and data limitations.",
-        "course-learning-report.html is self-contained without external CSS, JavaScript, fonts, or images; it includes responsive behavior, print styles, meaningful headings/landmarks, accessible labels for charts or status visuals, and readable empty states."
+        "course-learning-report.html is self-contained without external CSS, JavaScript, fonts, or images; it uses a Swiss International Style modular grid, asymmetric hierarchy, sans-serif typography, flat square geometry, restrained accent color, responsive behavior, print styles, meaningful headings/landmarks, accessible labels, and readable empty states."
       ]
     },
     {
@@ -33,7 +33,7 @@
         "The interpretation also preserves counter-evidence: 45 of the 47 learners who reached L3 reached L4, and L4/L5 ratings are high; it does not claim causality or describe current progress positions as proven stuck learners.",
         "Duration, score, and retention remain unavailable. No new rates, cohorts, identities, or outcomes are fabricated from the snapshot.",
         "The three to five recommendations use the full observation, interpretation, confidence, action, verification method pattern and reference named metrics that can verify whether an L3 teaching change helps.",
-        "The HTML is a polished, executive-first, self-contained report with responsive layout, print CSS, semantic headings/landmarks, accessible visual labels, and the same numbers and conclusions as the JSON."
+        "The HTML is a polished, executive-first, self-contained Swiss International Style report with a modular grid, asymmetric hierarchy, flat square geometry, restrained accent color, responsive layout, print CSS, semantic headings/landmarks, accessible visual labels, and the same numbers and conclusions as the JSON."
       ]
     },
     {
@@ -51,7 +51,7 @@
         "Follow-up insights contain only aggregate theme counts and safely paraphrased intents such as course fit, practice-entry discovery, or branch-example needs; no quote or identifying detail survives.",
         "The unrequested order count and credit cost do not appear, and the optional operations section is absent.",
         "The report still provides three to five low-confidence, evidence-linked next actions appropriate for a new course, with a concrete verification method and no fabricated outcome claim.",
-        "course-learning-report.html remains self-contained, responsive, printable, semantically structured, accessible, and visibly explains unavailable metrics and privacy/data-quality limitations."
+        "course-learning-report.html remains self-contained, responsive, printable, semantically structured, accessible, and uses a Swiss International Style modular grid, sans-serif hierarchy, flat square geometry, and restrained accent color while visibly explaining unavailable metrics and privacy/data-quality limitations."
       ]
     }
   ]

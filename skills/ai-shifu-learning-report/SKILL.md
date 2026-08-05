@@ -47,11 +47,12 @@ Resolve every `## Required References` declaration in those files transitively b
 - Treat completion as an explicitly labelled proxy only when the course has a reliable final required lesson. Treat `进行中` / `In progress` as a recorded state, never proof that learners are stuck.
 - Keep orders, revenue, payment channels, and AI-Shifu credit consumption out of the teaching report unless the user explicitly requests an operations appendix.
 - The JSON is the factual contract and the HTML is its presentation. Do not add claims to HTML that are absent from JSON.
+- Present the HTML in the Swiss International Style defined by `report-structure.md`; preserve its modular grid, typographic hierarchy, flat square geometry, and restrained color system when applying brand overrides.
 
 ## Completion Checklist
 
 - `course-learning-report.json` passes the bundled validator for schema version 1.0.
-- `course-learning-report.html` is self-contained, responsive, accessible, printable, and generated from the validated JSON.
+- `course-learning-report.html` is self-contained, responsive, accessible, printable, generated from the validated JSON, and rendered with the required Swiss International Style system.
 - Every metric includes `key`, `label`, `value`, `unit`, `definition`, `time_scope`, `data_quality`, `is_approximate`, and `source_notes`.
 - The report contains 3–5 recommendations with cited evidence, confidence, an action, and a validation method.
 - Follow-up analysis discloses its recent-sample size and collection status; an opt-out produces an explicit not-collected state, not an empty-data inference.
