@@ -42,8 +42,8 @@ Collect the smallest set that supports the report. Preserve counts and display l
 
 | Signal | Safe report use | Important boundary |
 | --- | --- | --- |
-| Current course metadata and outline | Course title, lesson order, required final lesson assessment | Resolve through the course creator's current-title and outline workflow; never show course or lesson IDs. |
-| Distinct learners who entered | Overview denominator and lesson reach comparison | Use the course creator's canonical learner definition and state it in the metric definition. |
+| Current course metadata and published outline | Course title, visible lesson order, required final lesson assessment | Resolve the current published learner-facing outline through the course creator's workflow; never show course or lesson IDs. |
+| Distinct learners who entered an eligible lesson | Overview denominator and lesson reach comparison | Count distinct learners with progress in at least one published, visible teaching leaf lesson, using the course creator's canonical learner definition. |
 | Per-lesson distinct learner progress states | Learning-path reach and recorded in-progress distribution | Deduplicate learners as the analytics guidance requires. A recorded in-progress state is not proof of a blockage. |
 | Final required lesson completions | Approximate course completion | Calculate only when a reliable final required lesson exists; otherwise use `null`. |
 | Lesson feedback | Rating averages, sample sizes, and reading/listening mix | Always pair an average with its response count. Do not treat mode feedback as total mode usage unless the source actually measures usage. |
@@ -53,16 +53,28 @@ Collect the smallest set that supports the report. Preserve counts and display l
 
 Learning duration, grades, retention, attendance, or other familiar education metrics may be unavailable in current sources. Represent an unavailable metric with `value: null`, `data_quality: "unavailable"`, and a plain reason. Never infer one metric from an unrelated field.
 
+## Published Visible Lesson Gate
+
+Apply this gate before querying or aggregating any lesson-scoped signal:
+
+1. Confirm the course and outline source represent the current published, learner-facing version through the course creator's current workflow. A draft outline or a source with ambiguous publication state is not an acceptable fallback.
+2. Define the eligible lesson set as teaching leaf lessons that belong to that published outline and are visible to learners. Exclude hidden lessons, draft-only or otherwise unpublished lessons, and chapter/container nodes.
+3. Apply the same eligible set to lesson reach and progress, ratings, learning-mode feedback, follow-up counts and theme attribution, lesson health, recommendations, and the completion proxy. Do not render excluded lessons as zero-value or insufficient-data cards, and do not cite their historical records as evidence.
+4. Define course entrants as distinct learners with progress in at least one eligible lesson. Learners observed only on excluded lessons must not inflate the denominator.
+5. State in `data_quality.coverage_notes` that lesson analysis uses the current published-visible scope. Do not expose excluded lesson titles, IDs, records, or counts in the report.
+
+If the published outline or lesson visibility cannot be resolved reliably, set affected lesson-scoped metrics to `null` / unavailable and explain the scope gap. Do not silently use the authoring draft or mix historical lessons into the current report.
+
 ## Completion Proxy Gate
 
 Use a course completion percentage only when all of these are true:
 
-1. the outline identifies a final lesson that every learner is expected to complete;
+1. the eligible published-visible lesson set identifies a final lesson that every learner is expected to complete;
 2. branching, optional endings, or locked alternatives do not make that lesson an unreliable common endpoint;
 3. the source can count distinct learners who completed that lesson;
-4. the denominator is the stated canonical population, normally distinct learners who entered the course.
+4. the denominator is distinct learners who entered at least one eligible published-visible lesson.
 
-Then compute `distinct learners completing final required lesson / distinct learners who entered`, mark the metric as approximate, and put the numerator, denominator, proxy rationale, and any deduplication caveat in the metric definition or source notes. If any condition fails, leave the value `null` and explain why. Do not replace it with a count of completed lesson rows or with an order conversion rate.
+Then compute `distinct learners completing the final required eligible lesson / distinct learners who entered at least one eligible lesson`, mark the metric as approximate, and put the numerator, denominator, published-visible scope, proxy rationale, and any deduplication caveat in the metric definition or source notes. Ignoring hidden lessons does not make the last visible lesson automatically required: visible branches, optional endings, or locked alternatives can still invalidate the proxy. If any condition fails, leave the value `null` and explain why. Do not replace it with a count of completed lesson rows or with an order conversion rate.
 
 ## Follow-Up Theme Sampling
 

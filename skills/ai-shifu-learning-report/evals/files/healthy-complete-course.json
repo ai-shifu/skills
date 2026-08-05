@@ -40,6 +40,29 @@
         "display_name": "形成跟进闭环"
       }
     ],
+    "lesson_scope": {
+      "outline_source": "current_published_outline",
+      "eligible_lesson_keys": [
+        "L1",
+        "L2",
+        "L3",
+        "L4"
+      ],
+      "excluded_lessons": [
+        {
+          "lesson_key": "LH",
+          "display_name": "教师备课说明",
+          "publication_status": "published",
+          "hidden": true
+        },
+        {
+          "lesson_key": "LD",
+          "display_name": "下一版实验课",
+          "publication_status": "draft",
+          "hidden": false
+        }
+      ]
+    },
     "completion_proxy": {
       "eligible": true,
       "last_required_lesson_key": "L4",
@@ -71,6 +94,18 @@
         {
           "lesson_key": "L4",
           "learners_reached": 100
+        }
+      ],
+      "excluded_lesson_records": [
+        {
+          "lesson_key": "LH",
+          "learners_reached": 250,
+          "learners_completed": 240
+        },
+        {
+          "lesson_key": "LD",
+          "learners_reached": 180,
+          "learners_completed": 170
         }
       ]
     },

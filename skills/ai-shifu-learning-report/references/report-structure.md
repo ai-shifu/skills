@@ -25,7 +25,7 @@ Set `schema_version` to `"1.0"` and populate these top-level sections:
 | `meta` | `course_title`, `generated_at`, `language`, `timezone`, effective `period`, and optional `brand`. |
 | `metric_definitions` | An object mapping stable metric keys to exact definitions used by report metrics and recommendation evidence. |
 | `overview` | `executive_summary`, course-level `kpis`, and the `learning_path` view. |
-| `lesson_health` | An ordered array keyed with report-safe `lesson_key`, position, display title, lesson metrics, and calibrated findings. A `lesson_key` is a report-local key, never a platform ID. |
+| `lesson_health` | An ordered array of eligible published-visible teaching leaf lessons, keyed with report-safe `lesson_key`, position, display title, lesson metrics, and calibrated findings. A `lesson_key` is a report-local key, never a platform ID. |
 | `engagement` | `follow_up_analysis` sampling disclosure and themes, `ratings`, and `learning_modes`. |
 | `audience` | Named aggregate `dimensions` and a plain-language `note`, including unavailable mapping states. |
 | `recommendations` | Three to five prioritized records containing title, observation, interpretation, confidence, action, validation, and evidence. |
@@ -51,13 +51,13 @@ Do not promise or load an external or local logo image. Branding must not change
 Render the report in this decision sequence:
 
 1. **Cover and management conclusions** — course title, reporting window, generation time, core conclusions, and critical limitations.
-2. **Learning path** — ordered reach/progress view and completion-proxy explanation.
-3. **Lesson health** — lesson comparisons with sample sizes, evidence, and cautious interpretations.
+2. **Learning path** — ordered reach/progress view for published, visible teaching lessons and completion-proxy explanation.
+3. **Lesson health** — comparisons among eligible published-visible lessons with sample sizes, evidence, and cautious interpretations.
 4. **Follow-up themes** — latest-sample disclosure, aggregate themes, generalized intents, and lesson concentration.
 5. **Feedback and learning preference** — rating coverage and reading/listening feedback mix using the source's exact population.
 6. **Audience** — named aggregate profiles and implications, or a clear mapping/missing-data state.
 7. **Recommendations** — 3–5 prioritized cards containing observation, interpretation, confidence, action, validation, and evidence.
-8. **Methods and data quality** — metric definitions, time scopes, proxy notes, sampling rules, missing fields, and source coverage.
+8. **Methods and data quality** — metric definitions, time scopes, published-visible lesson scope, proxy notes, sampling rules, missing fields, and source coverage.
 9. **Operations appendix** — only when `operations` is present due to explicit user opt-in.
 
 Do not use decorative charts when the sample is absent or the comparison is invalid. A well-labelled empty state is more trustworthy than an empty graph or a zero created from missing data.
@@ -99,3 +99,4 @@ Before delivery, verify:
 4. the HTML contains no remote dependencies and prints without clipped or unreadable sections;
 5. privacy scanning passes for both artifacts, including source text and identifier traps supplied in synthetic input;
 6. file names remain exactly `course-learning-report.json` and `course-learning-report.html` unless the user explicitly requests different names.
+7. every lesson-scoped section uses only the same current published-visible teaching leaf set, and excluded lessons appear nowhere in the report.

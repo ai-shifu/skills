@@ -14,6 +14,9 @@ SKILL_DIR = REPO_ROOT / "skills" / "ai-shifu-learning-report"
 EVALS_PATH = SKILL_DIR / "evals" / "evals.json"
 RENDERER_PATH = SKILL_DIR / "scripts" / "render_report.py"
 SCHEMA_PATH = SKILL_DIR / "references" / "report-data.schema.json"
+SKILL_PATH = SKILL_DIR / "SKILL.md"
+DATA_COLLECTION_PATH = SKILL_DIR / "references" / "data-collection-and-privacy.md"
+ANALYSIS_GUIDELINES_PATH = SKILL_DIR / "references" / "analysis-guidelines.md"
 
 
 def load_json(path: Path) -> dict:
@@ -181,6 +184,19 @@ class LearningReportCatalogTests(unittest.TestCase):
                     re.search(r"\bMDF\b", path.read_text(encoding="utf-8"))
                 )
 
+    def test_skill_requires_current_published_visible_lesson_scope(self):
+        skill = SKILL_PATH.read_text(encoding="utf-8")
+        collection = DATA_COLLECTION_PATH.read_text(encoding="utf-8")
+        analysis = ANALYSIS_GUIDELINES_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("current published outline", skill)
+        self.assertIn("published, visible teaching leaf lessons", skill)
+        self.assertIn("Published Visible Lesson Gate", collection)
+        self.assertIn("Exclude hidden lessons", collection)
+        self.assertIn("Learners observed only on excluded lessons", collection)
+        self.assertIn("last visible lesson automatically required", collection)
+        self.assertIn("Omit hidden, unpublished, draft-only", analysis)
+
 
 class LearningReportEvaluationFixtureTests(unittest.TestCase):
     @classmethod
@@ -235,6 +251,7 @@ class LearningReportEvaluationFixtureTests(unittest.TestCase):
     def test_healthy_fixture_has_exact_usable_completion_proxy(self):
         fixture = self.fixtures["healthy-complete-course"]
         progress = fixture["analytics"]["progress"]
+        lesson_scope = fixture["course"]["lesson_scope"]
 
         self.assertTrue(fixture["course"]["completion_proxy"]["eligible"])
         self.assertEqual(120, progress["learners_started"])
@@ -243,6 +260,20 @@ class LearningReportEvaluationFixtureTests(unittest.TestCase):
         self.assertEqual(
             [120, 114, 108, 100],
             [item["learners_reached"] for item in progress["lesson_reach"]],
+        )
+        self.assertEqual(
+            ["L1", "L2", "L3", "L4"], lesson_scope["eligible_lesson_keys"]
+        )
+        excluded = {item["lesson_key"]: item for item in lesson_scope["excluded_lessons"]}
+        self.assertTrue(excluded["LH"]["hidden"])
+        self.assertEqual("draft", excluded["LD"]["publication_status"])
+        self.assertEqual(
+            {"LH", "LD"},
+            {item["lesson_key"] for item in progress["excluded_lesson_records"]},
+        )
+        self.assertGreater(
+            max(item["learners_reached"] for item in progress["excluded_lesson_records"]),
+            progress["learners_started"],
         )
 
     def test_conflicting_fixture_preserves_positive_and_negative_signals(self):

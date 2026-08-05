@@ -36,11 +36,13 @@ Do not turn correlation into causation. A reach drop can reflect difficulty, a b
 
 ## Learning Path and Lesson Health
 
+- Analyze only the eligible teaching lessons from the current published-visible lesson gate. Keep the same eligible set and order across the learning path, lesson health, follow-up attribution, and recommendation evidence.
+- Omit hidden, unpublished, draft-only, and container nodes completely. Do not display them as insufficient-data lessons or use their historical metrics to support a current-course conclusion.
 - Use distinct-learner reach and progress states to describe how learners move through the ordered lessons.
 - Describe `进行中` / `In progress` as the platform's recorded state. Call a lesson a “bottleneck candidate” only when several independent signals align, such as a sharp reach drop plus weak feedback or concentrated follow-ups.
 - Never label a lesson “stuck” from in-progress rows alone. Phrase the finding as an investigation priority and state the evidence.
 - Compare lesson metrics only when their definitions and time scopes match. Show sample sizes next to ratings and question themes.
-- Treat the final-required-lesson completion rate as a proxy, mark it approximate, and repeat the denominator in the visible explanation. If the proxy gate fails, show an unavailable state rather than an invented percentage.
+- Treat the final-required-lesson completion rate as a proxy, mark it approximate, and repeat the published-visible entrant denominator in the visible explanation. The last visible lesson is not necessarily a common required endpoint. If the proxy gate fails, show an unavailable state rather than an invented percentage.
 - When data is sparse, prefer a factual baseline and a plan to gather more evidence over a strong diagnosis.
 
 ## Engagement, Feedback, and Follow-Ups
@@ -83,6 +85,7 @@ Calibrate confidence as follows:
 - Use `null` and an explicit quality state for unavailable duration, grades, retention, ratings, audience mappings, or completion proxies.
 - Distinguish “zero observed” from “not collected,” “not supported,” and “query failed.” Only a successful query can justify zero.
 - Put cross-cutting limitations in `data_quality`; keep metric-specific caveats on the metric itself.
+- If the current published outline or lesson visibility is unavailable, describe that scope failure and leave the affected lesson metrics unavailable; never substitute draft or historical lesson data.
 - Surface contradictions in the management summary when they change the decision. Preserve both signals and recommend a test that can separate plausible explanations.
 - Do not calculate a rate when its numerator or denominator is missing or zero. Keep the value `null` and explain why.
 

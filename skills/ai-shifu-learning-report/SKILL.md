@@ -30,7 +30,7 @@ Resolve every `## Required References` declaration in those files transitively b
 ## Workflow
 
 1. **Resolve the request.** Identify exactly one course and any requested time range. Default to `zh-CN` and cumulative-to-date data. Use `en-US` only when the user explicitly asks for English; schema keys, enum values, commands, and file names stay unchanged.
-2. **Collect or validate.** Follow `data-collection-and-privacy.md`. Live collection delegates authentication, course resolution, outline resolution, analytics syntax, and platform privacy controls to the current `ai-shifu-course-creator`; never recreate those mechanisms here.
+2. **Collect or validate.** Follow `data-collection-and-privacy.md`. Live collection delegates authentication, course resolution, outline resolution, analytics syntax, and platform privacy controls to the current `ai-shifu-course-creator`; never recreate those mechanisms here. Resolve the current published outline and remove hidden, unpublished, and container nodes before normalizing any lesson-scoped signal.
 3. **Normalize.** Create a `schema_version: "1.0"` report object. Keep unavailable data as `null` with an explicit quality explanation instead of guessing or converting it to zero.
 4. **Analyze.** Follow `analysis-guidelines.md`. Separate observations from interpretations, preserve conflicting signals, and write 3–5 evidence-linked recommendations.
 5. **Write the data artifact.** Save the privacy-safe object as `course-learning-report.json`. This file is the single source for the rendered report.
@@ -43,6 +43,7 @@ Resolve every `## Required References` declaration in those files transitively b
 - Use the course creator skill's current CLI for live data. Never read a token, inspect its environment file, compose authentication headers, or call platform HTTP endpoints directly.
 - Do not copy or freeze the analytics query language in this skill. The course creator skill owns query syntax, table semantics, codes, and recipes.
 - Never place raw follow-up text, answers, phone numbers, emails, names, nicknames, learner labels, or any raw `*_bid` value in either final artifact.
+- Build every lesson-scoped analysis from the current published outline. Include only published, visible teaching leaf lessons, and use that same eligible set for the course entrant denominator, completion proxy, learning path, lesson health, follow-up attribution, and recommendations. If publication or visibility cannot be resolved reliably, mark the affected metrics unavailable instead of falling back to a draft outline.
 - Treat completion as an explicitly labelled proxy only when the course has a reliable final required lesson. Treat `进行中` / `In progress` as a recorded state, never proof that learners are stuck.
 - Keep orders, revenue, payment channels, and AI-Shifu credit consumption out of the teaching report unless the user explicitly requests an operations appendix.
 - The JSON is the factual contract and the HTML is its presentation. Do not add claims to HTML that are absent from JSON.
