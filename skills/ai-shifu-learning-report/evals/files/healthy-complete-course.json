@@ -63,11 +63,14 @@
         }
       ]
     },
-    "completion_proxy": {
+    "completion_rule": {
       "eligible": true,
       "last_required_lesson_key": "L4",
-      "numerator_definition": "累计完成最后一节必修课的去重学习者数（完成状态）",
-      "denominator_definition": "累计开始课程的去重学习者数",
+      "completion_requirement": "all_published_visible_required_lessons",
+      "cohort_definition": "截至报告时点首次进入任一有效课节的去重学习者",
+      "numerator_definition": "分母同一批学员中累计完成全部已发布可见必修课的去重学习者数",
+      "denominator_definition": "截至报告时点首次进入任一有效课节的去重学习者数",
+      "fixed_maturation_window_days": null,
       "is_approximation": true
     }
   },
@@ -78,6 +81,7 @@
       "learners_started": 120,
       "last_required_lesson_reached": 100,
       "last_required_lesson_completed": 96,
+      "required_path_completed": 96,
       "lesson_reach": [
         {
           "lesson_key": "L1",

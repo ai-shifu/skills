@@ -46,11 +46,13 @@
         "required_status": "branch"
       }
     ],
-    "completion_proxy": {
+    "completion_rule": {
       "eligible": false,
       "last_required_lesson_key": null,
+      "completion_requirement": "unresolved_required_paths",
+      "fixed_maturation_window_days": null,
       "is_approximation": true,
-      "reason": "课程仍在试学期，必修课节与分支终点尚未固定"
+      "reason": "课程仍在试学期，全部必修课节与有效分支完成路径尚未固定"
     }
   },
   "analytics": {

@@ -42,7 +42,7 @@ Do not turn correlation into causation. A reach drop can reflect difficulty, a b
 - Describe `进行中` / `In progress` as the platform's recorded state. Call a lesson a “bottleneck candidate” only when several independent signals align, such as a sharp reach drop plus weak feedback or concentrated follow-ups.
 - Never label a lesson “stuck” from in-progress rows alone. Phrase the finding as an investigation priority and state the evidence.
 - Compare lesson metrics only when their definitions and time scopes match. Show sample sizes next to ratings and question themes.
-- Present an eligible final-required-lesson calculation as `课程完成率` in Chinese reader-facing content. Do not append `代理` or `近似` to the label, value, management conclusion, or recommendation. Show the exact completed-learner numerator and published-visible entrant denominator, and keep the calculation boundary in the expandable definition and source notes. The last visible lesson is not necessarily a common required endpoint. If the completion gate fails, show an unavailable state rather than an invented percentage.
+- Present the same-cohort required-path calculation as `课程完成率` in Chinese reader-facing content. The denominator contains distinct learners who first entered an eligible lesson within the metric time scope; the numerator is the subset completing every required lesson or one valid required branch path by the report cutoff. Do not append `代理` or `近似` to the label, value, management conclusion, or recommendation. Show the exact numerator and denominator, and keep cohort dates, cutoff, required-path rule, and scope in the expandable definition and source notes. Use no fixed maturation window unless explicitly requested; keep late starters in the denominator. If the completion gate fails, show an unavailable state rather than an invented percentage.
 - When data is sparse, prefer a factual baseline and a plan to gather more evidence over a strong diagnosis.
 
 ## Engagement, Feedback, and Follow-Ups
@@ -82,7 +82,7 @@ Calibrate confidence as follows:
 
 ## Missing and Conflicting Data
 
-- Use `null` and an explicit quality state for unavailable duration, grades, retention, ratings, audience mappings, or completion proxies.
+- Use `null` and an explicit quality state for unavailable duration, grades, retention, ratings, audience mappings, or completion rates.
 - Distinguish “zero observed” from “not collected,” “not supported,” and “query failed.” Only a successful query can justify zero.
 - Put cross-cutting limitations in `data_quality`; keep metric-specific caveats on the metric itself.
 - If the current published outline or lesson visibility is unavailable, describe that scope failure and leave the affected lesson metrics unavailable; never substitute draft or historical lesson data.

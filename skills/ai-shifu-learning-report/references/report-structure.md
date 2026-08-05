@@ -68,12 +68,12 @@ Render the report in this decision sequence:
 5. **Feedback and learning preference** — rating coverage and reading/listening feedback mix using the source's exact population.
 6. **Audience** — named aggregate profiles and implications, or a clear mapping/missing-data state.
 7. **Recommendations** — 3–5 prioritized cards containing observation, interpretation, confidence, action, validation, and evidence.
-8. **Methods and data quality** — metric definitions, time scopes, published-visible lesson scope, proxy notes, sampling rules, missing fields, and source coverage.
+8. **Methods and data quality** — metric definitions, time scopes, published-visible lesson scope, completion calculation notes, sampling rules, missing fields, and source coverage.
 9. **Operations appendix** — only when `operations` is present due to explicit user opt-in.
 
 Do not use decorative charts when the sample is absent or the comparison is invalid. A well-labelled empty state is more trustworthy than an empty graph or a zero created from missing data.
 
-For Chinese reports, display the completion metric as `课程完成率` everywhere readers encounter it. Do not render `代理`, `近似`, or an approximation badge beside its label or value. Display the exact completed-learner numerator and started-learner denominator, while keeping eligibility and calculation caveats in the expandable metric definition and methods section.
+For Chinese reports, display the completion metric as `课程完成率` everywhere readers encounter it. Do not render `代理`, `近似`, or an approximation badge beside its label or value. Display the exact same-cohort completed-learner numerator and started-learner denominator. Keep cohort dates, report cutoff, required-path definition, eligible scope, and the absence of a fixed maturation window in the expandable metric definition and methods section.
 
 ## Renderer Workflow
 

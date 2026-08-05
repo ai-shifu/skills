@@ -95,9 +95,9 @@ def minimal_valid_report() -> dict:
             },
             "course_completion_proxy": {
                 "label": "课程完成率",
-                "definition": "完成最后一节必修课的去重学习者占开始学习者的比例。",
+                "definition": "同一批开始学习者中完成全部必修路径的去重学习者比例。",
                 "unit": "%",
-                "source_notes": ["课程终点尚不可靠，因此本指标不可用。"],
+                "source_notes": ["必修路径尚不可靠，因此本指标不可用。"],
             }
         },
         "overview": {
@@ -114,8 +114,8 @@ def minimal_valid_report() -> dict:
                     value=None,
                     unit="%",
                     data_quality="unavailable",
-                    definition="完成最后一节必修课的去重学习者占开始学习者的比例。",
-                    source_notes=["课程终点尚不可靠，因此本指标不可用。"],
+                    definition="同一批开始学习者中完成全部必修路径的去重学习者比例。",
+                    source_notes=["必修路径尚不可靠，因此本指标不可用。"],
                 ),
             ],
             "learning_path": [],
@@ -148,7 +148,7 @@ def minimal_valid_report() -> dict:
                 {
                     "key": "course_completion_proxy",
                     "label": "课程完成率",
-                    "reason": "课程终点尚不可靠。",
+                    "reason": "必修路径尚不可靠。",
                 }
             ],
             "limitations": ["该报告使用合成数据。"],
@@ -194,8 +194,21 @@ class LearningReportCatalogTests(unittest.TestCase):
         self.assertIn("Published Visible Lesson Gate", collection)
         self.assertIn("Exclude hidden lessons", collection)
         self.assertIn("Learners observed only on excluded lessons", collection)
-        self.assertIn("last visible lesson automatically required", collection)
+        self.assertIn("Do not replace it with final-lesson reach", collection)
         self.assertIn("Omit hidden, unpublished, draft-only", analysis)
+
+    def test_completion_rate_uses_same_cohort_without_fixed_maturation_window(self):
+        skill = SKILL_PATH.read_text(encoding="utf-8")
+        collection = DATA_COLLECTION_PATH.read_text(encoding="utf-8")
+        analysis = ANALYSIS_GUIDELINES_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("one consistent learner cohort", skill)
+        self.assertIn("Do not impose a fixed 30-day", skill)
+        self.assertIn("same-cohort distinct learners", collection)
+        self.assertIn("first entered during that period", collection)
+        self.assertIn("Learners who start near the cutoff remain", collection)
+        self.assertIn("every required lesson or one valid required branch path", analysis)
+        self.assertIn("keep late starters in the denominator", analysis)
 
 
 class LearningReportEvaluationFixtureTests(unittest.TestCase):
@@ -248,15 +261,23 @@ class LearningReportEvaluationFixtureTests(unittest.TestCase):
                 )
                 self.assertIsInstance(fixture["course"]["title"], str)
 
-    def test_healthy_fixture_has_exact_usable_completion_proxy(self):
+    def test_healthy_fixture_has_exact_same_cohort_completion_rate(self):
         fixture = self.fixtures["healthy-complete-course"]
         progress = fixture["analytics"]["progress"]
         lesson_scope = fixture["course"]["lesson_scope"]
 
-        self.assertTrue(fixture["course"]["completion_proxy"]["eligible"])
+        self.assertTrue(fixture["course"]["completion_rule"]["eligible"])
         self.assertEqual(120, progress["learners_started"])
         self.assertEqual(100, progress["last_required_lesson_reached"])
         self.assertEqual(96, progress["last_required_lesson_completed"])
+        self.assertEqual(96, progress["required_path_completed"])
+        completion = fixture["course"]["completion_rule"]
+        self.assertEqual(
+            "all_published_visible_required_lessons",
+            completion["completion_requirement"],
+        )
+        self.assertIsNone(completion["fixed_maturation_window_days"])
+        self.assertIn("同一批学员", completion["numerator_definition"])
         self.assertEqual(
             [120, 114, 108, 100],
             [item["learners_reached"] for item in progress["lesson_reach"]],
@@ -307,7 +328,7 @@ class LearningReportEvaluationFixtureTests(unittest.TestCase):
         follow_ups = analytics["audited_follow_ups"]
         source_text = json.dumps(fixture, ensure_ascii=False)
 
-        self.assertFalse(fixture["course"]["completion_proxy"]["eligible"])
+        self.assertFalse(fixture["course"]["completion_rule"]["eligible"])
         self.assertIsNone(analytics["progress"]["last_required_lesson_reached"])
         self.assertFalse(
             analytics["audience_variables"]["variable_name_mapping_available"]
@@ -525,7 +546,7 @@ class LearningReportRendererTests(unittest.TestCase):
                 "is_approximate": True,
                 "numerator": 96,
                 "denominator": 120,
-                "source_notes": ["按最后一节必修课的完成状态计算。"],
+                "source_notes": ["按同一批学员完成全部必修路径的状态计算。"],
             }
         )
         report["data_quality"]["unavailable_metrics"] = []
@@ -536,7 +557,7 @@ class LearningReportRendererTests(unittest.TestCase):
         self.assertIn("完成人数 / 开始学习人数", html)
         self.assertIn("课程完成率", html)
         self.assertIn("按必修课完成状态计算", html)
-        self.assertIn("按最后一节必修课的完成状态计算", html)
+        self.assertIn("按同一批学员完成全部必修路径的状态计算", html)
         self.assertNotIn("课程完成率代理", html)
         self.assertNotIn("课程完成率（近似）", html)
         self.assertNotRegex(html, r"80%\s*<span class=\"approx-tag\"")
