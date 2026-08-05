@@ -42,7 +42,7 @@ Do not turn correlation into causation. A reach drop can reflect difficulty, a b
 - Describe `进行中` / `In progress` as the platform's recorded state. Call a lesson a “bottleneck candidate” only when several independent signals align, such as a sharp reach drop plus weak feedback or concentrated follow-ups.
 - Never label a lesson “stuck” from in-progress rows alone. Phrase the finding as an investigation priority and state the evidence.
 - Compare lesson metrics only when their definitions and time scopes match. Show sample sizes next to ratings and question themes.
-- Treat the final-required-lesson completion rate as a proxy, mark it approximate, and repeat the published-visible entrant denominator in the visible explanation. The last visible lesson is not necessarily a common required endpoint. If the proxy gate fails, show an unavailable state rather than an invented percentage.
+- Present an eligible final-required-lesson calculation as `课程完成率` in Chinese reader-facing content. Do not append `代理` or `近似` to the label, value, management conclusion, or recommendation. Show the exact completed-learner numerator and published-visible entrant denominator, and keep the calculation boundary in the expandable definition and source notes. The last visible lesson is not necessarily a common required endpoint. If the completion gate fails, show an unavailable state rather than an invented percentage.
 - When data is sparse, prefer a factual baseline and a plan to gather more evidence over a strong diagnosis.
 
 ## Engagement, Feedback, and Follow-Ups
@@ -93,7 +93,7 @@ Calibrate confidence as follows:
 
 Lead with no more than three decision-relevant conclusions:
 
-1. overall course health and whether the completion proxy is usable;
+1. overall course health and whether the course completion rate is available;
 2. the highest-priority lesson or learner need, with evidence and confidence;
 3. the most useful next action or the most important data gap.
 

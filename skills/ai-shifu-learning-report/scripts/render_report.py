@@ -146,7 +146,10 @@ TEXT = {
         "unit": "单位",
         "source_notes": "来源与注意事项",
         "metric_details": "口径与来源",
-        "proxy_fraction": "代理分子 / 分母",
+        "proxy_fraction": "完成人数 / 开始学习人数",
+        "fraction": "计算分子 / 分母",
+        "completion_rate": "课程完成率",
+        "completion_calculation": "按必修课完成状态计算",
         "zero_followups": "查询成功：最近受审计样本中没有追问。",
         "operations": "经营与积分附录",
         "operations_desc": "仅因用户明确要求而包含，不作为教学效果证据。",
@@ -211,7 +214,10 @@ TEXT = {
         "unit": "Unit",
         "source_notes": "Source notes",
         "metric_details": "Definition and source",
-        "proxy_fraction": "Proxy numerator / denominator",
+        "proxy_fraction": "Completed / started learners",
+        "fraction": "Numerator / denominator",
+        "completion_rate": "Course completion rate",
+        "completion_calculation": "Calculated from required-lesson completion",
         "zero_followups": "Query succeeded: no follow-up questions were observed in the latest audited sample.",
         "operations": "Operations and credits appendix",
         "operations_desc": "Included only at the user's explicit request and not used as evidence of teaching effectiveness.",
@@ -676,9 +682,15 @@ def format_metric_value(metric: Mapping[str, Any], strings: Mapping[str, Any]) -
     if unit:
         separator = "" if unit in {"%", "分", "人", "次", "条", "节"} else " "
         rendered += separator + esc(unit)
-    if metric["is_approximate"]:
+    if metric["is_approximate"] and not metric["key"].endswith("completion_proxy"):
         rendered += f'<span class="approx-tag">{esc(DATA_QUALITY_LABELS["approximate"][0 if strings is TEXT["zh"] else 1])}</span>'
     return rendered
+
+
+def display_metric_label(metric: Mapping[str, Any], strings: Mapping[str, Any]) -> str:
+    if metric["key"].endswith("completion_proxy"):
+        return str(strings["completion_rate"])
+    return str(metric["label"])
 
 
 def _list_html(items: Iterable[str], empty_text: str) -> str:
@@ -739,21 +751,28 @@ def render_summary(report: Mapping[str, Any], strings: Mapping[str, Any]) -> str
 
 
 def render_kpi(metric: Mapping[str, Any], strings: Mapping[str, Any]) -> str:
-    quality = _enum_label(
-        DATA_QUALITY_LABELS, metric["data_quality"], strings is TEXT["zh"]
+    quality = (
+        strings["completion_calculation"]
+        if metric["key"].endswith("completion_proxy") and metric["value"] is not None
+        else _enum_label(DATA_QUALITY_LABELS, metric["data_quality"], strings is TEXT["zh"])
     )
     scope = metric["time_scope"]["label"]
     numerator = metric.get("numerator")
     denominator = metric.get("denominator")
     fraction = ""
     if numerator is not None and denominator is not None:
+        fraction_label = (
+            strings["proxy_fraction"]
+            if metric["key"].endswith("completion_proxy")
+            else strings["fraction"]
+        )
         fraction = (
-            f'<span class="proxy-fraction">{esc(strings["proxy_fraction"])}：'
+            f'<span class="proxy-fraction">{esc(fraction_label)}：'
             f'{esc(_format_number(numerator))} / {esc(_format_number(denominator))}</span>'
         )
     return (
         '<article class="kpi-card">'
-        f'<span class="kpi-label">{esc(metric["label"])}</span>'
+        f'<span class="kpi-label">{esc(display_metric_label(metric, strings))}</span>'
         f'<span class="kpi-value">{format_metric_value(metric, strings)}</span>'
         + fraction
         + f'<span class="kpi-meta">{esc(scope)} · {esc(quality)}</span>'
@@ -832,13 +851,15 @@ def _metric_rows(metrics: Sequence[Mapping[str, Any]], strings: Mapping[str, Any
 
 
 def _render_metric_row(metric: Mapping[str, Any], strings: Mapping[str, Any]) -> str:
-    quality = _enum_label(
-        DATA_QUALITY_LABELS, metric["data_quality"], strings is TEXT["zh"]
+    quality = (
+        strings["completion_calculation"]
+        if metric["key"].endswith("completion_proxy") and metric["value"] is not None
+        else _enum_label(DATA_QUALITY_LABELS, metric["data_quality"], strings is TEXT["zh"])
     )
     context = f'{metric["time_scope"]["label"]} · {quality}'
     return (
         '<div class="metric-row"><dt>'
-        + esc(metric["label"])
+        + esc(display_metric_label(metric, strings))
         + f'<span class="metric-context">{esc(context)}</span></dt>'
         + f'<dd>{format_metric_value(metric, strings)}</dd>'
         + render_metric_details(metric, strings)
@@ -853,7 +874,7 @@ def render_evidence_badges(
 ) -> str:
     return "".join(
         '<span class="evidence-ref">'
-        + esc(metrics[reference]["label"])
+        + esc(display_metric_label(metrics[reference], strings))
         + "："
         + format_metric_value(metrics[reference], strings)
         + "</span>"
@@ -1009,7 +1030,7 @@ def render_methods(report: Mapping[str, Any], strings: Mapping[str, Any], index:
     unavailable = quality["unavailable_metrics"]
     if unavailable:
         rows = "".join(
-            f'<tr><td>{esc(item["label"])}</td><td>{esc(item["reason"])}</td></tr>'
+            f'<tr><td>{esc(strings["completion_rate"] if item["key"].endswith("completion_proxy") else item["label"])}</td><td>{esc(item["reason"])}</td></tr>'
             for item in unavailable
         )
         unavailable_html = (
@@ -1022,10 +1043,10 @@ def render_methods(report: Mapping[str, Any], strings: Mapping[str, Any], index:
         unavailable_html = ""
 
     definition_rows = "".join(
-        f'<tr><td>{esc(item["label"])}</td>'
+        f'<tr><td>{esc(display_metric_label({**item, "key": key}, strings))}</td>'
         f'<td>{esc(item["definition"])}</td><td>{esc(item["unit"])}</td>'
         f'<td>{"；".join(esc(note) for note in item["source_notes"])}</td></tr>'
-        for _, item in sorted(report["metric_definitions"].items())
+        for key, item in sorted(report["metric_definitions"].items())
     )
     details = (
         '<details><summary>'

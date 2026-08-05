@@ -4,14 +4,14 @@
     {
       "id": 1,
       "prompt": "附件是《新经理的高质量一对一》截至 2026-07-31 的合成课程分析快照。请面向教学管理者和任课老师生成累计至今的单课学习报告。只使用附件数据，不连接真实课程环境，不加入经营或积分信息。请在当前输出目录交付脱敏的 course-learning-report.json 和自包含、可打印的 course-learning-report.html。",
-      "expected_output": "A management-first Chinese report that uses only the current published-visible lessons, accurately presents the healthy course signals, labels the completion proxy as approximate, keeps unavailable metrics empty, and provides privacy-safe evidence-linked actions in both required artifacts.",
+      "expected_output": "A management-first Chinese report that uses only the current published-visible lessons, accurately presents the healthy course signals, names the metric 课程完成率 without proxy wording, keeps unavailable metrics empty, and provides privacy-safe evidence-linked actions in both required artifacts.",
       "files": [
         "evals/files/healthy-complete-course.json"
       ],
       "expectations": [
         "course-learning-report.json is valid JSON with schema_version 1.0 and the required meta, metric_definitions, overview, lesson_health, engagement, audience, recommendations, and data_quality sections; operations is absent.",
-        "The report uses the cumulative-to-date scope as of 2026-07-31, states 120 learners started, 100 reached L4, and 96 completed the final required lesson; it represents 80% only as an approximate completion proxy whose numerator and denominator are explicit.",
-        "Only L1 through L4 are included in lesson-scoped analysis. The hidden published lesson and the visible draft lesson, including their deliberately larger historical reach and completion records, do not appear and do not change the 120-person entrant denominator or the 96-of-120 completion proxy.",
+        "The report uses the cumulative-to-date scope as of 2026-07-31, states 120 learners started, 100 reached L4, and 96 completed the final required lesson; it labels 80% exactly as 课程完成率, never 课程完成率代理 or 课程完成率（近似）, and shows the 96-of-120 numerator and denominator explicitly.",
+        "Only L1 through L4 are included in lesson-scoped analysis. The hidden published lesson and the visible draft lesson, including their deliberately larger historical reach and completion records, do not appear and do not change the 120-person entrant denominator or the 96-of-120 completion rate.",
         "Lesson reach, ratings, active status, and reading/listening/mixed values agree with the fixture; learning duration, assessment score, and retention remain unavailable rather than being invented.",
         "Follow-up content appears only as aggregate theme counts and paraphrased intent summaries; no raw follow-up text or learner-level record appears in either artifact.",
         "The report contains three to five recommendations, and every recommendation has an observation, interpretation, confidence, action, verification method, and concrete metric evidence.",
@@ -28,7 +28,7 @@
       ],
       "expectations": [
         "course-learning-report.json follows schema_version 1.0 and contains every required report section; operations is absent.",
-        "The report accurately shows 90 learners started, lesson reach of 90/83/47/45/44, and an approximate final-required-lesson completion proxy of 41 out of 90 (about 45.6%) with its denominator and approximation label.",
+        "The report accurately shows 90 learners started, lesson reach of 90/83/47/45/44, and a 课程完成率 of 41 out of 90 (about 45.6%) with its denominator; the reader-facing label does not append 代理 or 近似.",
         "L3 is presented as the leading investigation hypothesis using the L2-to-L3 reach change, 3.0 rating, 15 of 19 mode-coded L3 feedback records selecting listening (78.9%), and concentrated follow-up themes as evidence; the report does not call this all-session usage.",
         "The interpretation also preserves counter-evidence: 45 of the 47 learners who reached L3 reached L4, and L4/L5 ratings are high; it does not claim causality or describe current progress positions as proven stuck learners.",
         "Duration, score, and retention remain unavailable. No new rates, cohorts, identities, or outcomes are fabricated from the snapshot.",

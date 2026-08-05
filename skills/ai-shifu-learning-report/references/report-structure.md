@@ -62,7 +62,7 @@ Do not promise or load an external or local logo image. Branding may replace the
 Render the report in this decision sequence:
 
 1. **Cover and management conclusions** — course title, reporting window, generation time, core conclusions, and critical limitations.
-2. **Learning path** — ordered reach/progress view for published, visible teaching lessons and completion-proxy explanation.
+2. **Learning path** — ordered reach/progress view for published, visible teaching lessons and course completion-rate explanation.
 3. **Lesson health** — comparisons among eligible published-visible lessons with sample sizes, evidence, and cautious interpretations.
 4. **Follow-up themes** — latest-sample disclosure, aggregate themes, generalized intents, and lesson concentration.
 5. **Feedback and learning preference** — rating coverage and reading/listening feedback mix using the source's exact population.
@@ -72,6 +72,8 @@ Render the report in this decision sequence:
 9. **Operations appendix** — only when `operations` is present due to explicit user opt-in.
 
 Do not use decorative charts when the sample is absent or the comparison is invalid. A well-labelled empty state is more trustworthy than an empty graph or a zero created from missing data.
+
+For Chinese reports, display the completion metric as `课程完成率` everywhere readers encounter it. Do not render `代理`, `近似`, or an approximation badge beside its label or value. Display the exact completed-learner numerator and started-learner denominator, while keeping eligibility and calculation caveats in the expandable metric definition and methods section.
 
 ## Renderer Workflow
 

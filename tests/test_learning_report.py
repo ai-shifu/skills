@@ -94,7 +94,7 @@ def minimal_valid_report() -> dict:
                 "source_notes": ["合成数据，仅用于测试。"],
             },
             "course_completion_proxy": {
-                "label": "课程完成率（近似）",
+                "label": "课程完成率",
                 "definition": "完成最后一节必修课的去重学习者占开始学习者的比例。",
                 "unit": "%",
                 "source_notes": ["课程终点尚不可靠，因此本指标不可用。"],
@@ -110,7 +110,7 @@ def minimal_valid_report() -> dict:
                 report_metric(),
                 report_metric(
                     key="course_completion_proxy",
-                    label="课程完成率（近似）",
+                    label="课程完成率",
                     value=None,
                     unit="%",
                     data_quality="unavailable",
@@ -147,7 +147,7 @@ def minimal_valid_report() -> dict:
             "unavailable_metrics": [
                 {
                     "key": "course_completion_proxy",
-                    "label": "课程完成率（近似）",
+                    "label": "课程完成率",
                     "reason": "课程终点尚不可靠。",
                 }
             ],
@@ -515,7 +515,7 @@ class LearningReportRendererTests(unittest.TestCase):
         self.assertIn("--accent: #D6001C", fallback_html)
         self.assertNotIn("--accent: #FFFFFF", fallback_html)
 
-    def test_completion_proxy_renders_explicit_numerator_and_denominator(self):
+    def test_completion_rate_uses_direct_reader_facing_name_and_exact_fraction(self):
         report = minimal_valid_report()
         metric = report["overview"]["kpis"][1]
         metric.update(
@@ -525,7 +525,7 @@ class LearningReportRendererTests(unittest.TestCase):
                 "is_approximate": True,
                 "numerator": 96,
                 "denominator": 120,
-                "source_notes": ["以最后一节必修课的完成状态作为近似代理。"],
+                "source_notes": ["按最后一节必修课的完成状态计算。"],
             }
         )
         report["data_quality"]["unavailable_metrics"] = []
@@ -533,7 +533,46 @@ class LearningReportRendererTests(unittest.TestCase):
         _, html = self.assert_renderer_succeeds(report)
 
         self.assertIn("96 / 120", html)
-        self.assertIn("以最后一节必修课的完成状态作为近似代理", html)
+        self.assertIn("完成人数 / 开始学习人数", html)
+        self.assertIn("课程完成率", html)
+        self.assertIn("按必修课完成状态计算", html)
+        self.assertIn("按最后一节必修课的完成状态计算", html)
+        self.assertNotIn("课程完成率代理", html)
+        self.assertNotIn("课程完成率（近似）", html)
+        self.assertNotRegex(html, r"80%\s*<span class=\"approx-tag\"")
+
+        activity_metric = report_metric(
+            key="active_share",
+            label="活跃占比",
+            value=85,
+            unit="%",
+            data_quality="derived",
+        )
+        activity_metric.update({"numerator": 102, "denominator": 120})
+        report["metric_definitions"]["active_share"] = {
+            "label": activity_metric["label"],
+            "definition": activity_metric["definition"],
+            "unit": activity_metric["unit"],
+            "source_notes": activity_metric["source_notes"],
+        }
+        report["overview"]["kpis"].append(activity_metric)
+        _, html = self.assert_renderer_succeeds(report)
+        self.assertIn("计算分子 / 分母：102 / 120", html)
+
+    def test_legacy_completion_label_is_normalized_when_rendered(self):
+        report = minimal_valid_report()
+        report["metric_definitions"]["course_completion_proxy"]["label"] = (
+            "课程完成率代理"
+        )
+        report["overview"]["kpis"][1]["label"] = "课程完成率代理"
+        report["data_quality"]["unavailable_metrics"][0]["label"] = (
+            "课程完成率代理"
+        )
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertIn("课程完成率", html)
+        self.assertNotIn("课程完成率代理", html)
 
     def test_successful_zero_follow_up_query_has_observed_zero_state(self):
         _, html = self.assert_renderer_succeeds(minimal_valid_report())

@@ -65,7 +65,7 @@ Apply this gate before querying or aggregating any lesson-scoped signal:
 
 If the published outline or lesson visibility cannot be resolved reliably, set affected lesson-scoped metrics to `null` / unavailable and explain the scope gap. Do not silently use the authoring draft or mix historical lessons into the current report.
 
-## Completion Proxy Gate
+## Completion Rate Gate
 
 Use a course completion percentage only when all of these are true:
 
@@ -74,7 +74,7 @@ Use a course completion percentage only when all of these are true:
 3. the source can count distinct learners who completed that lesson;
 4. the denominator is distinct learners who entered at least one eligible published-visible lesson.
 
-Then compute `distinct learners completing the final required eligible lesson / distinct learners who entered at least one eligible lesson`, mark the metric as approximate, and put the numerator, denominator, published-visible scope, proxy rationale, and any deduplication caveat in the metric definition or source notes. Ignoring hidden lessons does not make the last visible lesson automatically required: visible branches, optional endings, or locked alternatives can still invalidate the proxy. If any condition fails, leave the value `null` and explain why. Do not replace it with a count of completed lesson rows or with an order conversion rate.
+Then compute `distinct learners completing the final required eligible lesson / distinct learners who entered at least one eligible lesson`. In Chinese reader-facing content, call the result `课程完成率` without an appended proxy or approximation qualifier. Put the numerator, denominator, published-visible scope, final-required-lesson calculation boundary, and any deduplication caveat in the metric definition or source notes. Ignoring hidden lessons does not make the last visible lesson automatically required: visible branches, optional endings, or locked alternatives can still invalidate the calculation. If any condition fails, leave the value `null` and explain why. Do not replace it with a count of completed lesson rows or with an order conversion rate.
 
 ## Follow-Up Theme Sampling
 
