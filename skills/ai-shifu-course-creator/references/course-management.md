@@ -35,7 +35,7 @@ Complete `authentication.md` first. Before mutating learner-facing metadata, com
 | Configure Listen Mode | `set-tts <shifu_bid> ...` | Confirm success output; with `--course-dir`, also inspect the refreshed `course-config.json`. |
 | Set teacher avatar | `set-avatar <shifu_bid> --file <image> [--course-dir <dir>]` | Confirm the command's readback succeeds and reports the resource URL; with `--course-dir`, inspect the refreshed `course-config.json`. |
 
-When this workflow follows `course-sync.md#pull-before-editing`, pass that same directory through `--course-dir` on every `update-meta` call so the recorded course revision protects the write. Omit `--course-dir` only for a standalone management request that did not pull or otherwise establish a local sync baseline.
+When this workflow follows `course-sync.md#pull-before-editing`, pass that same directory through `--course-dir` on every version-aware course-level management write, including `update-meta`, `set-tts`, and `set-avatar`, so the recorded course revision protects the write and the local course state is refreshed after success. This must be the pulled directory that established the sync baseline. Omit `--course-dir` only for a standalone management request that did not pull or otherwise establish a local sync baseline.
 
 For a teacher avatar, accept JPG or PNG. Recommend 1:1 because the avatar is shown in square frames on course cards and learning pages, but do not reject other aspect ratios; warn that they may be cropped. Let `set-avatar` compress files over 2 MB automatically and request a replacement only when preprocessing cannot reach the limit. Use this command directly; browser or Chrome control is not required.
 

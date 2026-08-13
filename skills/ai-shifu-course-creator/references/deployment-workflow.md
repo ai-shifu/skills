@@ -40,8 +40,8 @@ Existing-course edits and standalone platform-management operations are outside 
 1. Write the final authoring artifacts into the course directory without changing their defined filenames.
 2. Run `build --course-dir <dir>` to generate `<dir>/shifu-import.json` locally.
 3. Complete the payload checks in `language-policy.md#language-audit` against the generated import file. Stop before import if the payload fails.
-4. Run `import --new --json-file <dir>/shifu-import.json` and capture the returned Shifu BID. `import --new --course-dir <dir>` remains an equivalent one-step build-and-import CLI form, but a separate build is required when the payload must be inspected before mutation.
-5. Before first publication, apply only explicitly selected platform-attribute operations through the conditional management reference. This includes enabling Listen Mode when Course Design Intake selected it and running `set-avatar <shifu_bid> --file <course_author_avatar_source>` when an avatar source was accepted; leave every unspecified attribute unchanged.
+4. Run `import --new --json-file <dir>/shifu-import.json` and capture the returned Shifu BID, then run `pull <shifu_bid> --course-dir <dir>` to establish the synchronized course revision before any management write. `import --new --course-dir <dir>` remains an equivalent one-step build-and-import form that seeds the same synchronization state automatically, but a separate build is required when the payload must be inspected before mutation.
+5. Before first publication, apply only explicitly selected platform-attribute operations through the conditional management reference, always passing the synchronized `--course-dir <dir>`. This includes enabling Listen Mode by running `set-tts <shifu_bid> --enabled true --course-dir <dir>` when Course Design Intake selected it and running `set-avatar <shifu_bid> --file <course_author_avatar_source> --course-dir <dir>` when an avatar source was accepted; leave every unspecified attribute unchanged.
 6. Run `publish <shifu_bid>` to make the current draft available at the public learner URL.
 
 `import --new` creates the platform course but does not publish it. The public URL is expected to work only after `publish` succeeds.
@@ -55,7 +55,7 @@ Existing-course edits and standalone platform-management operations are outside 
 
 ## Completion Criteria
 
-- `build`, `import --new`, and `publish` complete without errors.
+- `build`, `import --new`, synchronization pull, and `publish` complete without errors.
 - The platform structure and content match the source directory.
 - Every accepted teacher avatar is bound and verified before publication; a skipped avatar leaves the platform default unchanged.
 - Preview and public verification succeed.
