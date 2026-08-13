@@ -45,7 +45,7 @@ On the first invocation in a session:
 | Deploy a new course | `references/authentication.md` → `references/course-target.md` → `references/deployment-workflow.md` |
 | Sync edited lesson content to an existing course draft | `references/authentication.md` → `references/course-target.md` → `references/course-sync.md` |
 | List platform courses without changing them | `references/authentication.md` → `references/course-management.md` |
-| Publish, preview, archive, reorder, or manage metadata, access, or Listen Mode for a specific course without changing prompt content | `references/authentication.md` → `references/course-target.md` → `references/course-management.md` |
+| Publish, preview, archive, reorder, or manage metadata, teacher avatar, access, or Listen Mode for a specific course without changing prompt content | `references/authentication.md` → `references/course-target.md` → `references/course-management.md` |
 | Query observed data about a live course: learners, completion, stuck lessons, orders, revenue, ratings, follow-ups, audience profiles, progress, or credit use | `references/authentication.md` → `references/analytics/workflow.md` |
 | Author or deploy, then query live-course data | Complete the relevant authoring/deployment route first, then `references/analytics/workflow.md` |
 

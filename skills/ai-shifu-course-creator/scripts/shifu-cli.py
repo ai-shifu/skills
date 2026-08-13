@@ -1653,6 +1653,72 @@ def cmd_set_tts(args):
                                            course_dir, manifest)
 
 
+def cmd_set_avatar(args):
+    """Upload and bind a JPG/PNG teacher avatar to a course."""
+    src_path = Path(args.file).expanduser().resolve()
+    if src_path.suffix.lower() not in {".jpg", ".jpeg", ".png"}:
+        print("Error: teacher avatar must be a JPG or PNG file.", file=sys.stderr)
+        sys.exit(1)
+
+    from image_utils import prepare_image  # local import keeps Pillow optional
+    try:
+        prepared = prepare_image(src_path)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if prepared.original_width != prepared.original_height:
+        print(
+            "Warning: teacher avatars are displayed in a square frame; "
+            f"this image is {prepared.original_width}x{prepared.original_height} "
+            "and may be cropped. A 1:1 image is recommended.",
+            file=sys.stderr,
+        )
+
+    base_url, token = resolve_auth(args)
+    shifu_bid = args.shifu_bid
+    course_dir = getattr(args, "course_dir", None)
+    manifest = _load_sync(course_dir) if course_dir else None
+
+    # Check the local revision before uploading so a known conflict does not
+    # leave an unused resource behind.
+    intended_meta = {"avatar": "<pending local upload>"}
+    _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
+                                intended_meta)
+
+    remote_url = api_upload(
+        base_url, token, prepared.filename, prepared.data, prepared.mime,
+    )
+    if not isinstance(remote_url, str) or not remote_url.startswith("https://"):
+        print("Error: image upload did not return a valid resource URL.",
+              file=sys.stderr)
+        sys.exit(1)
+
+    api(base_url, token, "post", f"/shifus/{shifu_bid}/detail",
+        json={"avatar": remote_url})
+    fresh_detail = api_safe(base_url, token, "get",
+                            f"/shifus/{shifu_bid}/detail")
+    if not isinstance(fresh_detail, dict) or fresh_detail.get("avatar") != remote_url:
+        print(
+            "Error: the image was uploaded, but the course avatar could not be "
+            "verified. The course may be unchanged; run `show` or check the "
+            "admin page before retrying.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    print(f"Set course {shifu_bid} teacher avatar")
+    print(f"  Resource URL: {remote_url}")
+    print(f"  Source: {prepared.original_width}x{prepared.original_height}, "
+          f"{prepared.original_bytes} bytes")
+    print(f"  Uploaded: {len(prepared.data)} bytes ({prepared.mime})")
+
+    if manifest and manifest.get("shifu_bid") == shifu_bid:
+        _write_course_config(course_dir, _course_config_from_detail(fresh_detail))
+        _update_course_manifest_after_push(base_url, token, shifu_bid,
+                                           course_dir, manifest)
+
+
 # ── Add Chapter ────────────────────────────────────────────────────────────────
 def cmd_add_chapter(args):
     """Add a new top-level chapter to a course."""
@@ -2873,6 +2939,15 @@ def build_parser():
     p.add_argument("--course-dir", default=None,
                    help=f"Also refresh local {COURSE_CONFIG_NAME} and sync manifest")
 
+    # ── set-avatar ──
+    p = sub.add_parser("set-avatar", parents=[parent_parser],
+                       help="Upload and set a course teacher avatar (JPG/PNG)")
+    p.add_argument("shifu_bid", help="Course BID")
+    p.add_argument("--file", required=True,
+                   help="Local JPG or PNG teacher-avatar path")
+    p.add_argument("--course-dir", default=None,
+                   help=f"Also refresh local {COURSE_CONFIG_NAME} and sync manifest")
+
     # ── delete-lesson ──
     p = sub.add_parser("delete-lesson", parents=[parent_parser],
                        help="Delete a lesson")
@@ -3008,6 +3083,7 @@ def main():
         "rename-lesson": cmd_rename_lesson,
         "set-access": cmd_set_access,
         "set-tts": cmd_set_tts,
+        "set-avatar": cmd_set_avatar,
         "delete-lesson": cmd_delete_lesson,
         "reorder": cmd_reorder,
         "import": cmd_import,

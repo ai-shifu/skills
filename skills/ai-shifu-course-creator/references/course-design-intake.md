@@ -26,6 +26,7 @@ Before every applicable question, give a concise effect preview in `resolved_tar
 4. Unless the course is slide-only, ask whether Listen Mode should be enabled. Explain that enabling it adds AI voice with slides and consumes more AI-Shifu credits, while disabling it leaves the course available without Listen Mode and avoids that additional credit consumption. An unanswered question defaults to disabled.
 5. Ask for the desired chapter and lesson counts. Explain that the chapter count controls how lessons are grouped into broader topics, while the lesson count controls course granularity and how much material each single-question lesson must resolve: fewer lessons concentrate more material into each lesson, while more lessons distribute it across more single-question units. Neither choice may drop required source material or break source order.
 6. When a Course Prompt is in scope, ask what name the author wants AI-Shifu's Teaching Agent to use as the teacher identity during course delivery. Explain that providing a name lets the Teaching Agent teach under that teacher identity, while leaving it blank does not affect course creation. Accept a free-form answer; an unanswered question defaults to no named teacher identity.
+7. After a non-empty teacher name is resolved, add one separate, optional avatar follow-up only when platform access is in scope and the course still has an empty or default avatar. Explain naturally that the teacher avatar appears on course cards and learning pages, and that the author can upload a JPG or PNG directly in the conversation for the Skill to set. State that 1:1 is recommended; files over 2 MB are compressed automatically, and a replacement file is requested only when compression cannot reach the limit. Accept an attached image or local file path as `course_author_avatar_source`; an explicit skip or unanswered follow-up leaves the current avatar unchanged and must not be asked again in the same run. Do not ask this follow-up when the current course already has a non-default avatar, the author already supplied an avatar, the route is explicitly local-only, or `course_author_name` is empty.
 
 ## Normalized Design Controls
 
@@ -37,6 +38,7 @@ Produce these controls once and pass them unchanged to downstream workflows:
 - **Listen Mode**: pure slides always disable it. Otherwise preserve the explicit answer or use disabled after a skipped/unanswered question.
 - **Chapter and lesson counts**: preserve the explicit numbers. If skipped, infer them from source volume and lesson granularity rather than using a fixed count.
 - **Course author name**: preserve the supplied free-form `course_author_name`. If the supplied value is blank, or the question is skipped or unanswered, use an empty string; an empty value means the Course Prompt has no named teacher identity.
+- **Course author avatar source**: preserve an accepted local JPG/PNG attachment or path as transient `course_author_avatar_source`. It is a platform-management handoff, not course content or a Course Prompt field. An empty value means leave the platform avatar unchanged.
 
 ## Validation
 
@@ -49,3 +51,4 @@ Produce these controls once and pass them unchanged to downstream workflows:
 - The normalized `teaching_prompt_personalization_level` passes `data-contracts.md#teaching-prompt-personalization-level`; invalid values are rejected rather than converted or treated as a skip.
 - The normalized interaction policy passes the data-contract invariants.
 - The selected delivery mode, Listen Mode, and structure constraints are internally consistent.
+- The optional avatar follow-up is asked only after a non-empty teacher name and only for a platform-bound course with an empty or default avatar; it never blocks course authoring when skipped.

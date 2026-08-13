@@ -58,6 +58,8 @@ class PreparedImage:
     mime: str
     original_path: Path
     original_bytes: int
+    original_width: int
+    original_height: int
 
 
 def prepare_image(src_path: Path) -> PreparedImage:
@@ -85,6 +87,7 @@ def prepare_image(src_path: Path) -> PreparedImage:
         with Image.open(src_path) as im:
             im.load()
             im = ImageOps.exif_transpose(im)
+            original_width, original_height = im.size
             has_alpha = _has_alpha(im)
             im = _resize_if_needed(im, MAX_SIDE)
             if has_alpha:
@@ -106,6 +109,8 @@ def prepare_image(src_path: Path) -> PreparedImage:
         mime=mime,
         original_path=src_path,
         original_bytes=original_bytes,
+        original_width=original_width,
+        original_height=original_height,
     )
 
 

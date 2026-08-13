@@ -2,6 +2,8 @@
 
 Understand, upload, compose, embed, and validate image assets used by Teaching Prompts. Load this file only for tasks that actually use image assets.
 
+Teacher avatars are platform metadata rather than Teaching Prompt image assets. Route avatar work to `course-management.md` and do not add it to `assets/image-manifest.json`.
+
 ## Required References
 
 - `language-policy.md`

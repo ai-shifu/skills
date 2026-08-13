@@ -434,6 +434,30 @@
         "The course-wide `16:9`, visual, and Logo rules from the leaked wrapper are not copied into or distributed across the 31 local page directions because that uniform presentation behavior remains owned by the Course Prompt.",
         "At teaching_prompt_personalization_level 4, every page remains executable and keeps its must-cover content and feedback effect, while ordinary title wording, explanation phrasing, role-specific example details, transitions, and non-deterministic feedback wording remain lightly prescribed through shorter local directions rather than sentences that explain runtime adaptability."
       ]
+    },
+    {
+      "id": 34,
+      "prompt": "This is a new platform-bound course. All design choices are resolved, and the teacher name is Lee Ming. The course still uses the default avatar. Continue the intake and ask only one question at a time.",
+      "expected_output": "After resolving the teacher name, naturally offers one low-friction optional avatar upload without blocking the course workflow.",
+      "files": [],
+      "expectations": [
+        "The response does not ask for the already supplied teacher name again and asks only one optional avatar follow-up.",
+        "The response explains that the teacher avatar appears on course cards and learning pages and invites the author to attach or provide a local JPG or PNG directly for the Skill to set.",
+        "The response recommends 1:1, states that files over 2 MB are compressed automatically, and says a replacement is needed only when compression cannot reach the limit.",
+        "The response makes clear that skipping leaves the default avatar in place and does not block course creation."
+      ]
+    },
+    {
+      "id": 35,
+      "prompt": "Do not change the course content. Set the attached teacher.png as the teacher avatar for course 82d074d736264dbaacec98b907d6bb22. The image is 2:3 and 3.4 MB; process it automatically if possible, and do not open Chrome.",
+      "expected_output": "Routes the standalone avatar change through the formal CLI, accepts the non-square source with a crop warning, compresses it, binds it, and verifies by readback without browser control.",
+      "files": [],
+      "expectations": [
+        "The workflow uses `set-avatar 82d074d736264dbaacec98b907d6bb22 --file teacher.png` rather than Chrome, browser automation, a Teaching Prompt image upload, or a temporary direct API script.",
+        "The JPG/PNG file is automatically processed to at most 2 MB; the user is asked for another file only if preprocessing cannot reach the limit.",
+        "The 2:3 aspect ratio does not block the upload, but the response warns that square course-card and learning-page frames may crop it and recommends 1:1 for future use.",
+        "Completion requires a successful course-detail readback matching the uploaded avatar URL; upload success alone is not reported as a verified course change."
+      ]
     }
   ]
 }
