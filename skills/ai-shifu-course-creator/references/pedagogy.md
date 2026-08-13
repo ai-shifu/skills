@@ -4,6 +4,7 @@ Authoritative source for **Teaching Prompt** pedagogy: interaction-policy effect
 
 ## Required References
 
+- `data-contracts.md#input-contract`
 - `data-contracts.md#interaction-policy`
 - `data-contracts.md#variable-table`
 - `prompt-contracts.md#prompt-semantics`
@@ -34,6 +35,20 @@ A `disabled` lesson is not incomplete merely because it has no interaction. All 
 
 ## Lesson Design
 
+### Course Entry
+
+Treat the first lesson of the first chapter in the approved course order as the course-entry lesson. Determine it from the approved chapter and lesson sequence rather than from a lesson-id naming convention.
+
+In standard one-on-one teaching, the standard teaching branch of combined delivery, and explicit text-only delivery, use the course-entry lesson's single brief direct-teaching lead-in to establish the first relationship before beginning lesson-specific teaching:
+
+- Open with a brief, natural greeting.
+- Introduce the course in terms of the learner problem it will help address, then connect that purpose directly to the first lesson's core question and objective.
+- When `course_author_name` is non-empty, briefly introduce that named teacher identity. Use only the supplied name and other author information explicitly verified in the approved source or author constraints; never invent a title, affiliation, experience, achievement, learner result, or other credential.
+- Keep the greeting, course introduction, optional teacher introduction, learner hook, and lesson objective inside one brief learner-visible lead-in. Do not turn them into a separate welcome sequence, biography, course outline, interaction, slide, or image, and do not impose a word-count or sentence-count quota.
+- Move immediately from that lead-in into the first lesson's resolved teaching action and preserve the selected lesson loop.
+
+In every later lesson, do not repeat the course greeting, course introduction, or teacher self-introduction. Begin with the lesson-specific direct teaching start below. Pure classroom slides remain instructor-paced and do not add Teaching Agent greeting or self-introduction; their first projected page follows the pure-slide rules in [Visual-Text Coordination](#visual-text-coordination).
+
 ### Lesson Loop
 
 Every lesson must satisfy one of these behavior-equivalent loops, as selected by the [Interaction Policy Precedence](#interaction-policy-precedence) matrix:
@@ -46,7 +61,7 @@ The default loop applies when `unspecified` leaves the baseline active or when a
 A lesson missing a phase required by its selected loop is incomplete. The following constraints apply to both loops:
 
 - **One core question per lesson**: each lesson resolves exactly one teachable question.
-- **Direct teaching start**: in standard one-on-one teaching and the standard teaching branch of combined delivery, begin with one brief text lead-in that establishes a scenario, asks a guiding question, activates prior experience, states the task, or starts a practice. Do not use a structural title, hierarchy label, ordering marker, copied source heading, slide, or image as the opening, and do not impose a word-count or sentence-count quota on the lead-in. Pure classroom slides instead begin with slide-facing content, while an explicit text-only constraint keeps the direct teaching start in text.
+- **Direct teaching start**: in standard one-on-one teaching and the standard teaching branch of combined delivery, begin with one brief text lead-in that establishes a scenario, asks a guiding question, activates prior experience, states the task, or starts a practice. For the course-entry lesson, incorporate the relationship-building behavior from [Course Entry](#course-entry) into that same lead-in. Do not use a structural title, hierarchy label, ordering marker, copied source heading, slide, or image as the opening, and do not impose a word-count or sentence-count quota on the lead-in. Pure classroom slides instead begin with slide-facing content, while an explicit text-only constraint keeps the direct teaching start in text.
 - **Opening frame**: in standard one-on-one teaching, the standard teaching branch of combined delivery, and explicit text-only delivery, establish the lesson objective within the direct teaching start.
 - **Reusable result**: each lesson produces at least one reusable deliverable.
 - **Action tasks** must be immediately executable by the learner or explicitly linked to a downstream lesson; do not create orphan actions.

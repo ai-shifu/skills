@@ -437,6 +437,19 @@
     },
     {
       "id": 34,
+      "prompt": "Course Design Intake 已完成。课程顺序为：第一章第一节‘找到最值得先改的课程问题’，第一章第二节‘整理课程上下文’，第二章第一节‘诊断一个章节’。course_author_name=崔晓玲，标准一对一授课，interaction_policy=unspecified，teaching_prompt_personalization_level=5。请只输出三节课各自的第一条 learner-time 授课指令，按课程顺序标注课节标题；不要输出完整课节、Course Prompt 或解释性审计报告。",
+      "expected_output": "Builds the relationship once in the true course-entry lesson, then starts later lessons directly with lesson-specific teaching while preserving level-5 freedom over ordinary wording.",
+      "files": [],
+      "expectations": [
+        "The first instruction for the first lesson begins with one brief learner-visible lead-in that includes a natural greeting, introduces the course through the learner problem it addresses, briefly identifies 崔晓玲 without inventing credentials, connects to that lesson's core question and objective, and moves immediately into teaching.",
+        "The first lesson's greeting, course introduction, optional teacher introduction, learner hook, and objective form one lead-in rather than a separate welcome sequence, biography, course outline, interaction, slide, or image.",
+        "The instructions for the second and third lessons contain no repeated course greeting, course introduction, or teacher self-introduction and instead begin with their own lesson-specific direct teaching starts.",
+        "Course-entry status is derived from the supplied chapter and lesson order rather than lesson title or lesson-id patterns.",
+        "At personalization level 5, all three instructions preserve the required message, boundary, and teaching outcome while leaving ordinary learner-visible wording and example identity or detail open."
+      ]
+    },
+    {
+      "id": 35,
       "prompt": "This is a new platform-bound course. All design choices are resolved, and the teacher name is Lee Ming. The course still uses the default avatar. Continue the intake and ask only one question at a time.",
       "expected_output": "After resolving the teacher name, naturally offers one low-friction optional avatar upload without blocking the course workflow.",
       "files": [],
@@ -448,7 +461,7 @@
       ]
     },
     {
-      "id": 35,
+      "id": 36,
       "prompt": "Do not change the course content. Set the attached teacher.png as the teacher avatar for course 82d074d736264dbaacec98b907d6bb22. The image is 2:3 and 3.4 MB; process it automatically if possible, and do not open Chrome.",
       "expected_output": "Routes the standalone avatar change through the formal CLI, accepts the non-square source with a crop warning, compresses it, binds it, and verifies by readback without browser control.",
       "files": [],

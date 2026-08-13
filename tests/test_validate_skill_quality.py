@@ -1798,6 +1798,40 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertNotIn("`viewpoint_check`", self.pedagogy)
 
+    def test_course_entry_is_a_single_order_derived_lead_in(self):
+        required = markdown_section(self.pedagogy, "Required References")
+        course_entry = markdown_section(self.pedagogy, "Course Entry")
+        lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
+        generation = markdown_section(self.teaching_prompt, "Generation")
+        materialization = markdown_section(
+            self.teaching_prompt, "Lesson Materialization"
+        )
+        validation = markdown_section(self.teaching_prompt, "Validation")
+
+        self.assertIn("data-contracts.md#input-contract", required)
+        self.assertIn("first lesson of the first chapter", course_entry)
+        self.assertIn("approved course order", course_entry)
+        self.assertIn("rather than from a lesson-id naming convention", course_entry)
+        self.assertIn("single brief direct-teaching lead-in", course_entry)
+        self.assertIn("Move immediately", course_entry)
+        self.assertIn("relationship-building behavior", lesson_loop)
+        self.assertIn("approved course order, not from its lesson id", generation)
+        self.assertIn("course-entry behavior", materialization)
+        self.assertIn("Course-entry status is derived", validation)
+
+    def test_course_entry_identity_and_delivery_boundaries_are_explicit(self):
+        course_entry = markdown_section(self.pedagogy, "Course Entry")
+        validation = markdown_section(self.teaching_prompt, "Validation")
+
+        self.assertIn("When `course_author_name` is non-empty", course_entry)
+        self.assertIn("never invent a title, affiliation, experience", course_entry)
+        self.assertIn("In every later lesson", course_entry)
+        self.assertIn("do not repeat the course greeting", course_entry)
+        self.assertIn("Pure classroom slides", course_entry)
+        self.assertIn("add no Teaching Agent greeting or self-introduction", validation)
+
+        self.assertIn("do not impose a word-count or sentence-count quota", course_entry)
+
     def test_teaching_prompt_owns_five_personalization_levels(self):
         lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
         visual_text = markdown_section(
