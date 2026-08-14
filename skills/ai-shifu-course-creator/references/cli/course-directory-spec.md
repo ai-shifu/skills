@@ -28,7 +28,7 @@ None.
 | `README.md` | author or `pull` | `build` title resolution | No; directory name is the fallback title. |
 | `course-description.md` | author, `pull`, or `update-meta` | `build`, directory import, `status`, `update-meta` | No; missing means an empty description unless a CLI flag supplies one. |
 | `course-prompt.md` | author or `pull` | `build` and directory import | No; missing means an empty Course Prompt. |
-| `course-config.json` | `pull` or `set-tts --course-dir` | reference only; `build` and `import` ignore it | No. |
+| `course-config.json` | `pull`, `set-tts --course-dir`, or `set-avatar --course-dir` | reference only; `build` and `import` ignore it | No. |
 | `structure.json` | author, `pull`, or `set-access --course-dir` | `build` chapter and lesson mapping | No; missing selects single-chapter discovery. |
 | `shifu-import.json` | `build` | JSON import | Generated output. |
 | `.shifu-sync.json` | `pull` and version-aware writes | `status` and version-aware writes | Required only for full conflict protection. |
@@ -134,7 +134,7 @@ Fields:
 
 `model`, `llm`, `ask_model`, `ask_llm`, and their related keys are stable machine-facing fields for the underlying models and settings used by the Teaching Agent. Keep those keys unchanged in files and payloads; human-facing explanations identify AI-Shifu ownership on the first Teaching Agent mention and use Teaching Agent thereafter for both course delivery and learner follow-up answers.
 
-`build` and `import` do not read or send this file. `set-tts --course-dir` refreshes it after a successful Listen Mode update.
+`build` and `import` do not read or send this file. `set-tts --course-dir` refreshes it after a successful Listen Mode update, and `set-avatar --course-dir` refreshes it after the uploaded avatar URL is read back successfully.
 
 ## .shifu-sync.json
 

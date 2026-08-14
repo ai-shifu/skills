@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Add a low-friction teacher-avatar follow-up after teacher identity intake and a version-aware `set-avatar` CLI path that accepts JPG/PNG, auto-compresses to 2 MB, warns on non-square images, binds without Chrome, and verifies the saved URL by readback.
 - Materialize Teaching Prompts directly as ordered learner-time teaching instructions, keeping fixed execution plans, personalization controls, and exact-preservation classifications in the authoring handoff while preserving page order, interactions, and exact content in place.
 - Make AI-Shifu contact mentions conditional on high-value task intent or meaningful journey milestones, place them after the primary response, suppress adjacent repeats, and keep them out of generated course content.
 - Add fail-open anonymous usage tracking to the CLI via the AI-Shifu umami instance, reporting command name, skill version, host agent, and platform info with a stable per-person id (platform user id when logged in, anonymous UUID otherwise); never sends course content or command arguments, and `AI_SHIFU_SKILL_TELEMETRY=off` disables it.

@@ -2634,6 +2634,29 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("enabling Listen Mode", deploy)
 
+    def test_version_aware_avatar_management_keeps_directory_state_current(self):
+        deploy = markdown_section(
+            self.deployment_workflow, "Deploy and Publish"
+        )
+        directory_layout = markdown_section(
+            self.course_directory_spec, "Directory Layout"
+        )
+
+        for command in ("`update-meta`", "`set-tts`", "`set-avatar`"):
+            self.assertIn(command, self.course_management)
+        self.assertIn(
+            "every version-aware course-level management write",
+            self.course_management,
+        )
+        self.assertIn("must be the pulled directory", self.course_management)
+        self.assertIn("`pull <shifu_bid> --course-dir <dir>`", deploy)
+        self.assertIn(
+            "`set-avatar <shifu_bid> --file <course_author_avatar_source> "
+            "--course-dir <dir>`",
+            deploy,
+        )
+        self.assertIn("set-avatar --course-dir", directory_layout)
+
     def test_optimization_report_names_each_prompt_type(self):
         report = markdown_section(self.report_template, "Optimization Report")
         self.assertIn("- Target Teaching Prompt(s):", report)

@@ -134,6 +134,8 @@ set-access <shifu_bid> <outline_bid> --access guest|trial|normal \
   [--hidden true|false] [--course-dir ./course-a/]
 set-tts <shifu_bid> --enabled true|false [--speed <number>] \
   [--course-dir ./course-a/]
+set-avatar <shifu_bid> --file <teacher.jpg|teacher.png> \
+  [--course-dir ./course-a/]
 reorder <shifu_bid> --order bid1,bid2,bid3
 ```
 
@@ -158,6 +160,12 @@ The command maps `guest`, `trial`, and `normal` to the platform learning-access 
 Disabling sends only `tts_enabled=false`. Enabling fetches the platform TTS configuration and selects the model option the platform declares as default (`is_default`), falling back to the first option on backends without the marker, plus the first voice compatible with that model. It sends provider, model, voice, speed, normalized pitch `0`, and empty emotion; `--speed` overrides the default. Invalid or incomplete settings exit `1`.
 
 With a matching sync manifest, the command checks the course revision before writing, then refreshes `course-config.json` and the manifest after success. On conflict it records the intended metadata, pulls the cloud course, and exits `2`.
+
+### `set-avatar`
+
+The command accepts a local JPG or PNG, corrects EXIF orientation, limits the longest side to 2048 px, and automatically compresses the upload to at most 2 MB. If it cannot reach the limit without excessive loss, it exits `1` so the Skill can request a replacement. A non-square image is accepted with a warning because course cards and learning pages display the avatar in a square frame; 1:1 is recommended.
+
+After upload, the command sends only the returned resource URL as `avatar`, reads course detail back, and exits `1` if the new URL cannot be verified. With a matching sync manifest, it checks the course revision before upload, then refreshes `course-config.json` and the manifest after success. This path uses the platform APIs directly and does not require browser or Chrome control.
 
 ### `reorder`
 

@@ -22,6 +22,7 @@ Provide one of:
 - Tone constraints.
 - Non-negotiable source fragments.
 - `course_author_name` (string): the optional name the author wants the Teaching Agent to use as the teacher identity during course delivery. A blank or unanswered value normalizes to an empty string, which produces no named teacher identity in the Course Prompt.
+- `course_author_avatar_source` (local path or attached-file reference): an optional, transient platform-management handoff. Accept only a JPG or PNG source. Do not serialize it into a Teaching Prompt, Course Prompt, course directory, import payload, or platform metadata; after the course exists, consume it through `set-avatar` and retain only the returned platform avatar URL in platform state and `course-config.json` when synchronized.
 - `course_profile` object.
 - `delivery_constraints` object.
 - `interaction_policy` object.
@@ -83,6 +84,7 @@ Pass the normalized value unchanged through the in-memory authoring handoff to T
 - When multiple files are provided, their order must be explicit.
 - `interaction_policy` must satisfy its mode and purpose invariants.
 - When present, `teaching_prompt_personalization_level` must be an integer from `1` through `5`. Reject booleans, floats, numeric strings, and out-of-range values rather than coercing them.
+- `course_author_avatar_source` never changes course content and never blocks authoring when absent or skipped.
 
 ## Output Contract
 
