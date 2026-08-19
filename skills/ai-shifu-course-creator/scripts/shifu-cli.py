@@ -29,6 +29,7 @@ except Exception:  # noqa: BLE001 - fail-open: any tracker breakage must not tak
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
+ENV_EXAMPLE_FILE = ENV_FILE.with_name(".env.example")
 
 DEFAULT_BASE_URL = "https://app.ai-shifu.cn"
 
@@ -61,10 +62,28 @@ MAX_COURSE_PAGES = 10
 
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
-def load_env():
-    """Load environment variables from the skill's .env file."""
+def ensure_env_file():
+    """Create the runtime .env from .env.example when it does not exist."""
     if ENV_FILE.exists():
-        load_dotenv(dotenv_path=ENV_FILE, override=False)
+        return
+    if not ENV_EXAMPLE_FILE.exists():
+        print(f"Error: missing environment template: {ENV_EXAMPLE_FILE}",
+              file=sys.stderr)
+        sys.exit(1)
+    shutil.copyfile(ENV_EXAMPLE_FILE, ENV_FILE)
+    os.chmod(ENV_FILE, 0o600)
+
+
+def load_env():
+    """Ensure and load environment variables from the skill's .env file."""
+    ensure_env_file()
+    load_dotenv(dotenv_path=ENV_FILE, override=False)
+
+
+def resolve_base_url():
+    """Resolve the AI-Shifu service URL with the production URL as fallback."""
+    value = os.environ.get("SHIFU_BASE_URL", "").strip().rstrip("/")
+    return value or DEFAULT_BASE_URL
 
 
 def save_env(token):
@@ -96,7 +115,7 @@ def _jwt_payload(token):
 
 
 def resolve_auth(args):
-    """Resolve token from CLI args or .env. Base URL is fixed to DEFAULT_BASE_URL.
+    """Resolve the service URL and token from CLI args or .env.
 
     When the JWT carries a ``time_stamp`` older than 7 days, a warning is printed
     to stderr (the authoritative expiry check is the backend's DB record, so this
@@ -117,7 +136,7 @@ def resolve_auth(args):
                   "to re-login.",
                   file=sys.stderr)
 
-    return DEFAULT_BASE_URL, token
+    return resolve_base_url(), token
 
 
 def api(base_url, token, method, path, **kwargs):
@@ -452,7 +471,7 @@ def _login_post(base_url, path, payload, error_prefix):
 
 def cmd_login(args):
     """SMS login and save token (non-interactive two-step flow)."""
-    base_url = DEFAULT_BASE_URL
+    base_url = resolve_base_url()
 
     phone = args.phone
     if not phone:
