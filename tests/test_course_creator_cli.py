@@ -134,7 +134,9 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
             )
 
     def test_default_base_url_is_used_for_missing_or_empty_configuration(self):
-        for configured in (None, "", "   ", "/", "///", "  ///  "):
+        for configured in (
+            None, "", "   ", "/", "///", "  ///  ", " / / ", "\t/\t/\n"
+        ):
             env = {} if configured is None else {"SHIFU_BASE_URL": configured}
             with self.subTest(configured=configured), mock.patch.dict(
                 course_creator_cli.os.environ, env, clear=True
@@ -145,14 +147,19 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
                 )
 
     def test_custom_base_url_is_trimmed_and_trailing_slashes_are_removed(self):
-        with mock.patch.dict(
-            course_creator_cli.os.environ,
-            {"SHIFU_BASE_URL": "  https://example.test///  "},
-            clear=True,
+        for configured in (
+            "  https://example.test///  ",
+            "https://example.test/ /",
+            "https://example.test/\t/\n",
         ):
-            self.assertEqual(
-                course_creator_cli.resolve_base_url(), "https://example.test"
-            )
+            with self.subTest(configured=configured), mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"SHIFU_BASE_URL": configured},
+                clear=True,
+            ):
+                self.assertEqual(
+                    course_creator_cli.resolve_base_url(), "https://example.test"
+                )
 
     def test_resolve_auth_returns_custom_base_url_and_existing_token(self):
         with mock.patch.dict(

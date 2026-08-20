@@ -82,7 +82,7 @@ def load_env():
 
 def resolve_base_url():
     """Resolve the AI-Shifu service URL with the production URL as fallback."""
-    value = os.environ.get("SHIFU_BASE_URL", "").strip().rstrip("/")
+    value = os.environ.get("SHIFU_BASE_URL", "").strip().rstrip(" /\t\r\n")
     return value or DEFAULT_BASE_URL
 
 
