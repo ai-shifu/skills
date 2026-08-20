@@ -31,6 +31,219 @@ course_creator_cli = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(course_creator_cli)
 
 
+class CourseCreatorCliBaseUrlTests(unittest.TestCase):
+    def test_env_example_documents_base_url_and_token(self):
+        env_example = SCRIPT_DIR.parent / ".env.example"
+        content = env_example.read_text(encoding="utf-8")
+
+        self.assertIn(
+            f"SHIFU_BASE_URL={course_creator_cli.DEFAULT_BASE_URL}", content
+        )
+        self.assertIn("SHIFU_TOKEN=", content)
+
+    def test_load_env_copies_the_template_when_env_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            env_file = root / ".env"
+            env_example = root / ".env.example"
+            template = (
+                "SHIFU_BASE_URL=https://app.ai-shifu.cn\n"
+                "SHIFU_TOKEN=\n"
+            )
+            env_example.write_text(template, encoding="utf-8")
+
+            with (
+                mock.patch.object(course_creator_cli, "ENV_FILE", env_file),
+                mock.patch.object(
+                    course_creator_cli, "ENV_EXAMPLE_FILE", env_example
+                ),
+                mock.patch.object(course_creator_cli, "load_dotenv") as load_dotenv,
+            ):
+                course_creator_cli.load_env()
+
+            self.assertEqual(env_file.read_text(encoding="utf-8"), template)
+            self.assertEqual(env_file.stat().st_mode & 0o777, 0o600)
+            load_dotenv.assert_called_once_with(
+                dotenv_path=env_file, override=False
+            )
+
+    def test_load_env_never_replaces_an_existing_env(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            env_file = root / ".env"
+            env_example = root / ".env.example"
+            existing = (
+                "SHIFU_BASE_URL=https://custom.example\n"
+                "SHIFU_TOKEN=existing-token\n"
+            )
+            env_file.write_text(existing, encoding="utf-8")
+            env_example.write_text(
+                "SHIFU_BASE_URL=https://app.ai-shifu.cn\nSHIFU_TOKEN=\n",
+                encoding="utf-8",
+            )
+
+            with (
+                mock.patch.object(course_creator_cli, "ENV_FILE", env_file),
+                mock.patch.object(
+                    course_creator_cli, "ENV_EXAMPLE_FILE", env_example
+                ),
+                mock.patch.object(course_creator_cli, "load_dotenv") as load_dotenv,
+            ):
+                course_creator_cli.load_env()
+
+            self.assertEqual(env_file.read_text(encoding="utf-8"), existing)
+            load_dotenv.assert_called_once_with(
+                dotenv_path=env_file, override=False
+            )
+
+    def test_load_env_fails_clearly_when_the_template_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            env_file = root / ".env"
+            env_example = root / ".env.example"
+
+            with (
+                mock.patch.object(course_creator_cli, "ENV_FILE", env_file),
+                mock.patch.object(
+                    course_creator_cli, "ENV_EXAMPLE_FILE", env_example
+                ),
+                self.assertRaises(SystemExit) as raised,
+                contextlib.redirect_stderr(io.StringIO()) as stderr,
+            ):
+                course_creator_cli.load_env()
+
+            self.assertEqual(raised.exception.code, 1)
+            self.assertIn("missing environment template", stderr.getvalue())
+
+    def test_save_env_updates_only_the_token_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / ".env"
+            env_file.write_text(
+                "SHIFU_BASE_URL=https://custom.example\nSHIFU_TOKEN=\n",
+                encoding="utf-8",
+            )
+
+            with (
+                mock.patch.object(course_creator_cli, "ENV_FILE", env_file),
+                mock.patch.object(course_creator_cli, "set_key") as set_key,
+            ):
+                course_creator_cli.save_env("new-token")
+
+            set_key.assert_called_once_with(
+                str(env_file), "SHIFU_TOKEN", "new-token"
+            )
+
+    def test_default_base_url_is_used_for_missing_or_empty_configuration(self):
+        for configured in (
+            None, "", "   ", "/", "///", "  ///  ", " / / ", "\t/\t/\n"
+        ):
+            env = {} if configured is None else {"SHIFU_BASE_URL": configured}
+            with self.subTest(configured=configured), mock.patch.dict(
+                course_creator_cli.os.environ, env, clear=True
+            ):
+                self.assertEqual(
+                    course_creator_cli.resolve_base_url(),
+                    course_creator_cli.DEFAULT_BASE_URL,
+                )
+
+    def test_custom_base_url_is_trimmed_and_trailing_slashes_are_removed(self):
+        for configured in (
+            "  https://example.test///  ",
+            "https://example.test/ /",
+            "https://example.test/\t/\n",
+        ):
+            with self.subTest(configured=configured), mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"SHIFU_BASE_URL": configured},
+                clear=True,
+            ):
+                self.assertEqual(
+                    course_creator_cli.resolve_base_url(), "https://example.test"
+                )
+
+    def test_resolve_auth_returns_custom_base_url_and_existing_token(self):
+        with mock.patch.dict(
+            course_creator_cli.os.environ,
+            {
+                "SHIFU_BASE_URL": "https://example.test/",
+                "SHIFU_TOKEN": "stored-token",
+            },
+            clear=True,
+        ):
+            self.assertEqual(
+                course_creator_cli.resolve_auth(types.SimpleNamespace(token=None)),
+                ("https://example.test", "stored-token"),
+            )
+
+    def test_explicit_token_still_overrides_the_stored_token(self):
+        with mock.patch.dict(
+            course_creator_cli.os.environ,
+            {
+                "SHIFU_BASE_URL": "https://example.test",
+                "SHIFU_TOKEN": "stored-token",
+            },
+            clear=True,
+        ):
+            self.assertEqual(
+                course_creator_cli.resolve_auth(
+                    types.SimpleNamespace(token="explicit-token")
+                ),
+                ("https://example.test", "explicit-token"),
+            )
+
+    def test_login_send_uses_custom_base_url(self):
+        args = types.SimpleNamespace(phone="13800138000", sms_code=None)
+        with (
+            mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"SHIFU_BASE_URL": "https://example.test/"},
+                clear=True,
+            ),
+            mock.patch.object(
+                course_creator_cli, "_login_post", return_value={"code": 0}
+            ) as login_post,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            course_creator_cli.cmd_login(args)
+
+        login_post.assert_called_once_with(
+            "https://example.test",
+            "/api/user/console_send_sms_code",
+            {"mobile": "13800138000"},
+            "Failed to send SMS",
+        )
+
+    def test_login_verification_uses_custom_base_url_and_saves_token(self):
+        args = types.SimpleNamespace(phone="13800138000", sms_code="1234")
+        with (
+            mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"SHIFU_BASE_URL": "https://example.test/"},
+                clear=True,
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_login_post",
+                return_value={"code": 0, "data": "new-token"},
+            ) as login_post,
+            mock.patch.object(course_creator_cli, "save_env") as save_env,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            course_creator_cli.cmd_login(args)
+
+        login_post.assert_called_once_with(
+            "https://example.test",
+            "/api/user/login_sms",
+            {
+                "mobile": "13800138000",
+                "sms_code": "1234",
+                "login_context": "admin",
+            },
+            "Verification failed",
+        )
+        save_env.assert_called_once_with("new-token")
+
+
 class CourseCreatorCliPaginationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.first_page = [

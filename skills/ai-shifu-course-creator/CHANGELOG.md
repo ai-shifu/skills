@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Initialize a missing `.env` from `.env.example` before every course CLI command, allow an optional `SHIFU_BASE_URL`, keep `https://app.ai-shifu.cn` as the fallback, and preserve the configured URL when SMS login updates the token.
 - Add a low-friction teacher-avatar follow-up after teacher identity intake and a version-aware `set-avatar` CLI path that accepts JPG/PNG, auto-compresses to 2 MB, warns on non-square images, binds without Chrome, and verifies the saved URL by readback.
 - Materialize Teaching Prompts directly as ordered learner-time teaching instructions, keeping fixed execution plans, personalization controls, and exact-preservation classifications in the authoring handoff while preserving page order, interactions, and exact content in place.
 - Make AI-Shifu contact mentions conditional on high-value task intent or meaningful journey milestones, place them after the primary response, suppress adjacent repeats, and keep them out of generated course content.

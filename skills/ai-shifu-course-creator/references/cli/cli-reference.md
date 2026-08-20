@@ -12,7 +12,16 @@ All commands use:
 python3 {skillDir}/scripts/shifu-cli.py <command>
 ```
 
-Authenticated commands accept `--token <jwt>` and otherwise read `SHIFU_TOKEN` from `{skillDir}/.env`. The CLI always uses `https://app.ai-shifu.cn`.
+Authenticated commands accept `--token <jwt>` and otherwise read `SHIFU_TOKEN` from `{skillDir}/.env`. The CLI uses `https://app.ai-shifu.cn` by default. Use `{skillDir}/.env.example` as the reference when creating or editing `{skillDir}/.env`:
+
+```dotenv
+SHIFU_BASE_URL=https://app.ai-shifu.cn
+SHIFU_TOKEN=
+```
+
+Change `SHIFU_BASE_URL` in the process environment or `{skillDir}/.env` to use another deployment. An unset, empty, whitespace-only, or slash-only value falls back to the default production URL. Leading and trailing whitespace and trailing slashes are removed from a custom value before requests and verification URLs are built. A process environment value takes precedence over the value loaded from `{skillDir}/.env`.
+
+Before every command, the CLI checks for `{skillDir}/.env`. When it is missing, the CLI copies `{skillDir}/.env.example` to `{skillDir}/.env`, sets owner-only permissions, and then loads it. An existing `.env` is never replaced, so an author or agent can change `SHIFU_BASE_URL` before requesting an SMS code. Successful SMS verification updates only `SHIFU_TOKEN` and preserves the configured base URL.
 
 ## Contents
 
@@ -48,7 +57,7 @@ login --phone 13800138000 --sms-code 1234
 
 - `verify` exits `0` when the token is accepted, `1` when it is expired or invalid, and `2` when network, service, or response errors make its state unknown.
 - `login --phone` sends an SMS code and exits without prompting.
-- `login --phone --sms-code` verifies the code and writes `SHIFU_TOKEN=<jwt>` to `{skillDir}/.env`.
+- `login --phone --sms-code` verifies the code and updates only `SHIFU_TOKEN=<jwt>` in `{skillDir}/.env`; other values such as `SHIFU_BASE_URL` are preserved.
 - A saved token is valid for seven days; successful authenticated API calls refresh that expiry.
 
 Agent decisions about when to send or resend SMS are defined in `../authentication.md`; this section defines only CLI inputs and effects.
