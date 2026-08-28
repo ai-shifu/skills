@@ -2387,7 +2387,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "pacing, required examples, interactions, exact material, slide count "
             "and order, and close unchanged",
             "empty, `UNKNOWN`, irrelevant, or unavailable",
-            "without quoting, summarizing, or mentioning the learner background",
+            "without quoting, summarizing, or mentioning the learner profile",
         ):
             self.assertIn(required_behavior, template)
 
@@ -2403,7 +2403,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertIn(adaptable_surface, template)
 
         self.assertIn("`course_profile`, topic-scope", checks)
-        self.assertIn("platform learner-background tags", checks)
+        self.assertIn("platform learner-profile tags", checks)
         self.assertIn("intended audience and course constraints are hard boundaries", semantics)
         self.assertIn("Platform-supplied learner context is additive", semantics)
         self.assertIn("platform supplies runtime learner context separately", responsibilities)
@@ -2414,13 +2414,13 @@ class CourseCreatorContractTests(unittest.TestCase):
         for leaked_runtime_name in (
             "sys_user_background",
             "sys_user_nickname",
-            "{{learner_background}}",
-            "<learner_background>",
+            "{{learner_profile}}",
+            "<learner_profile>",
         ):
             self.assertNotIn(leaked_runtime_name, template)
             self.assertNotIn(leaked_runtime_name, self.data_contracts)
 
-        self.assertNotIn("runtime learner background", self.data_contracts.casefold())
+        self.assertNotIn("runtime learner profile", self.data_contracts.casefold())
 
         evals_data = json.loads(
             (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
@@ -2434,10 +2434,10 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("workplace training organizers", eval_37)
         self.assertIn("every delivery mode", eval_37)
         self.assertIn("does not change or retarget", eval_38)
-        self.assertIn("internal learner-background variable", eval_38)
+        self.assertIn("internal learner-profile variable", eval_38)
 
         for source in (template, checks, semantics, responsibilities, eval_37, eval_38):
-            self.assertNotRegex(source.casefold(), r"learner[- ]profile")
+            self.assertNotRegex(source.casefold(), r"learner[- ]background")
 
     def test_course_prompt_owns_general_slide_rules_without_cover_handling(self):
         responsibilities = markdown_section(

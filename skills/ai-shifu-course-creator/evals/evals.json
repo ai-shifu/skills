@@ -474,23 +474,23 @@
     },
     {
       "id": 37,
-      "prompt": "课程设计、分段、course_index、授课提示词和交付模式都已批准。请分别为下面两门课程生成完整 Course Prompt，不要重新设计课节、不要部署：A 面向已有三年以上急诊经验的在岗医生，目标是规范多发伤初筛；B 面向需要组织内部培训的职场人，目标是掌握培训需求分析。两门课程都同时支持标准一对一授课和纯课堂幻灯片。平台会在授课时提供每位学习者的 learner background。对两门课程，都要叠加使用其中与当前内容相关的明确背景、经验、目标、限制和表达偏好，但不能用 learner background 改写课程作者定义的人群，也不能改变现有授课提示词已经确定的事实、教学方法、顺序、页面、互动和精确内容。不要把具体 learner background 值、平台内部变量、标签或变量表写进 Course Prompt。",
+      "prompt": "课程设计、分段、course_index、授课提示词和交付模式都已批准。请分别为下面两门课程生成完整 Course Prompt，不要重新设计课节、不要部署：A 面向已有三年以上急诊经验的在岗医生，目标是规范多发伤初筛；B 面向需要组织内部培训的职场人，目标是掌握培训需求分析。两门课程都同时支持标准一对一授课和纯课堂幻灯片。平台会在授课时提供每位学习者的 learner profile。对两门课程，都要叠加使用其中与当前内容相关的明确背景、经验、目标、限制和表达偏好，但不能用 learner profile 改写课程作者定义的人群，也不能改变现有授课提示词已经确定的事实、教学方法、顺序、页面、互动和精确内容。不要把具体 learner profile 值、平台内部变量、标签或变量表写进 Course Prompt。",
       "expected_output": "Produces two complete Course Prompts that preserve each author's intended audience while applying the same bounded runtime learner-context behavior across standard and pure-slide delivery.",
       "files": [],
       "expectations": [
         "Both Course Prompts retain all six canonical sections in order, resolve all five XXX placeholders, and contain no unresolved placeholder.",
-        "Course A preserves the author's intended audience of experienced emergency physicians and does not change or retarget the course because of an individual learner background.",
-        "Course B preserves the author's intended audience of workplace training organizers and does not retarget the course to one learner background.",
+        "Course A preserves the author's intended audience of experienced emergency physicians and does not change or retarget the course because of an individual learner profile.",
+        "Course B preserves the author's intended audience of workplace training organizers and does not retarget the course to one learner profile.",
         "In every delivery mode, both Course Prompts actively use relevant explicitly stated learner context only to shape open ordinary examples, terminology, prerequisite scaffolding, emphasis, explanation depth, language style, and non-deterministic feedback.",
         "Both Course Prompts preserve the existing Teaching Prompts' objectives, facts and boundaries, methods, sequence, pacing, required examples, interactions, exact material, slide count and order, and close.",
         "Pure classroom slides still contain no Teaching Agent narration or address to a single learner even while relevant learner context shapes open projected content.",
-        "Empty, UNKNOWN, unavailable, or irrelevant learner context falls back to neutral course-appropriate defaults without inferred facts or a summary or disclosure of the learner background.",
-        "Neither Course Prompt contains a concrete learner background value, platform learner-background tag, internal learner-background variable name, learner-background placeholder, or added global_variable_table entry."
+        "Empty, UNKNOWN, unavailable, or irrelevant learner context falls back to neutral course-appropriate defaults without inferred facts or a summary or disclosure of the learner profile.",
+        "Neither Course Prompt contains a concrete learner profile value, platform learner-profile tag, internal learner-profile variable name, learner-profile placeholder, or added global_variable_table entry."
       ]
     },
     {
       "id": 38,
-      "prompt": "请最小修复下面这份 Course Prompt，不重做课程结构、不生成授课提示词、不部署。课程作者已把目标人群限定为持证心理咨询师，现有授课提示词的目标、事实、顺序、4 页结构、互动和收束都已批准。当前 Course Prompt 错误地把 learner background 当成重新定位课程的依据，还泄露了平台内部变量：\n\n# Role\n\n- You are a professional counseling supervisor.\n\n# Task\n\n- The current course is _Crisis Intervention Supervision_. Your goal is to help licensed counselors master supervision decisions.\n- Follow the current user message's delivery mode.\n\n# Teaching Techniques\n\n- Read {{sys_user_background}}. If the learner says they are a beginner or work outside counseling, retarget the course to that new audience, replace the approved examples, add remedial pages, and ask extra diagnostic questions.\n- If no learner background exists, guess the learner's likely job from their language.\n\n# Writing Style\n\n- Be clear and warm.\n\n# Format\n\n- Output in Markdown format.\n\n# Slides\n\n- Follow the current user message's slide requirements.\n\n输出修复后的完整六段式 Course Prompt。保留持证心理咨询师这一作者人群边界，同时让平台运行时提供的相关 learner background 在标准一对一和纯课堂幻灯片中都能叠加发挥作用；不得增加 learner-background 变量、标签或变量表。",
+      "prompt": "请最小修复下面这份 Course Prompt，不重做课程结构、不生成授课提示词、不部署。课程作者已把目标人群限定为持证心理咨询师，现有授课提示词的目标、事实、顺序、4 页结构、互动和收束都已批准。当前 Course Prompt 错误地把 learner profile 当成重新定位课程的依据，还泄露了平台内部变量：\n\n# Role\n\n- You are a professional counseling supervisor.\n\n# Task\n\n- The current course is _Crisis Intervention Supervision_. Your goal is to help licensed counselors master supervision decisions.\n- Follow the current user message's delivery mode.\n\n# Teaching Techniques\n\n- Read {{sys_user_background}}. If the learner says they are a beginner or work outside counseling, retarget the course to that new audience, replace the approved examples, add remedial pages, and ask extra diagnostic questions.\n- If no learner profile exists, guess the learner's likely job from their language.\n\n# Writing Style\n\n- Be clear and warm.\n\n# Format\n\n- Output in Markdown format.\n\n# Slides\n\n- Follow the current user message's slide requirements.\n\n输出修复后的完整六段式 Course Prompt。保留持证心理咨询师这一作者人群边界，同时让平台运行时提供的相关 learner profile 在标准一对一和纯课堂幻灯片中都能叠加发挥作用；不得增加 learner-profile 变量、标签或变量表。",
       "expected_output": "Repairs the Course Prompt so runtime learner context personalizes open expression without retargeting the author's licensed-counselor audience or changing fixed lesson decisions.",
       "files": [],
       "expectations": [
@@ -499,8 +499,8 @@
         "Relevant explicitly stated learner context actively shapes only open ordinary examples, terminology, prerequisite scaffolding, emphasis, explanation depth, language style, and non-deterministic feedback in every delivery mode.",
         "The approved objectives, facts and boundaries, teaching method, sequence, pacing, required examples, interactions, exact material, four-page structure, and close remain unchanged.",
         "Pure classroom slides remain projection-ready without Teaching Agent narration or addressing a single learner.",
-        "The result removes `{{sys_user_background}}` and contains no other internal learner-background variable, platform learner-background tag, learner-background placeholder, concrete learner background value, or global_variable_table entry.",
-        "Empty, UNKNOWN, unavailable, or irrelevant context uses neutral course-appropriate defaults and the Course Prompt neither infers missing facts nor quotes, summarizes, or reveals the learner background."
+        "The result removes `{{sys_user_background}}` and contains no other internal learner-profile variable, platform learner-profile tag, learner-profile placeholder, concrete learner profile value, or global_variable_table entry.",
+        "Empty, UNKNOWN, unavailable, or irrelevant context uses neutral course-appropriate defaults and the Course Prompt neither infers missing facts nor quotes, summarizes, or reveals the learner profile."
       ]
     }
   ]
