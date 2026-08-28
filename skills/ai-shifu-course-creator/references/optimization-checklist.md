@@ -25,7 +25,7 @@ For a pasted content-only Prompt, run every check observable from the body and r
 
 ## Artifact Boundaries
 
-- Teaching Prompts contain lesson method and flow; the Course Prompt contributes only course-wide role and presentation behavior.
+- Teaching Prompts contain lesson method and flow; the Course Prompt contributes course-wide role, presentation behavior, and bounded cross-lesson personalization.
 - Chapter titles, numbering, hierarchy, and ordering remain in structure metadata rather than Teaching Prompt bodies.
 - No artifact relies on another artifact to supply behavior that its owner requires locally.
 - Every part of a Teaching Prompt body serves learner-time execution as a teaching, presentation, interaction, feedback, branch, or close instruction, or as learner-visible exact material. Internal execution plans and authoring controls remain in their owning handoff and references.
@@ -73,6 +73,8 @@ For a pasted content-only Prompt, run every check observable from the body and r
 
 - The existing Course Prompt keeps all six required sections in order and has no unresolved `XXX` placeholder.
 - Every non-placeholder instruction remains behaviorally represented after localization.
+- Relevant explicitly stated learner context actively shapes only ordinary examples, terminology, prerequisite scaffolding, emphasis, explanation depth, language style, and non-deterministic feedback that the current Teaching Prompt leaves open. Pure classroom slides retain their prohibition on Teaching Agent narration and addressing a single learner.
+- Empty, `UNKNOWN`, irrelevant, or unavailable learner context falls back to neutral course-appropriate defaults without inferred facts. The Course Prompt does not quote, summarize, or reveal the learner profile and contains no platform learner-profile tags or internal learner-profile variable names.
 - Standard and pure-slide delivery behavior matches `course-prompt.md`; its `# Slides` section contains the general presentation requirements applied uniformly to every slide, without special handling for a cover or any other slide position or teaching purpose and without duplicating or changing lesson pedagogy or lesson-specific slide structure.
 - The complete artifact passes `course-prompt.md#materialization-checks` and `prompt-contracts.md`.
 
