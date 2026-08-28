@@ -2356,10 +2356,6 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("standard one-on-one", self.course_prompt.casefold())
         self.assertIn("pure classroom slides", self.course_prompt.casefold())
-        self.assertIn(
-            "Course Prompt's teaching contribution to the presentation layer",
-            template,
-        )
         self.assertNotIn(
             "build interest → lower the barrier → understand the structure",
             template,
@@ -2373,6 +2369,75 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("prompt-contracts.md#prompt-semantics", required)
         self.assertIn("prompt-contracts.md#artifact-responsibilities", required)
+
+    def test_course_prompt_layers_learner_context_within_author_boundaries(self):
+        template = markdown_section(self.course_prompt, "Fillable Template")
+        checks = markdown_section(self.course_prompt, "Materialization Checks")
+        semantics = markdown_section(self.prompt_contracts, "Prompt Semantics")
+        responsibilities = markdown_section(
+            self.prompt_contracts, "Artifact Responsibilities"
+        )
+        generation = markdown_section(self.teaching_prompt, "Generation")
+        checklist = markdown_section(self.optimization_checklist, "Course Prompt")
+
+        for required_behavior in (
+            "In every delivery mode, actively use relevant learner context",
+            "only where the current user message leaves those details open",
+            "objectives, facts and boundaries, teaching method, content sequence, "
+            "pacing, required examples, interactions, exact material, slide count "
+            "and order, and close unchanged",
+            "empty, `UNKNOWN`, irrelevant, or unavailable",
+            "without quoting, summarizing, or mentioning the learner background",
+        ):
+            self.assertIn(required_behavior, template)
+
+        for adaptable_surface in (
+            "ordinary examples",
+            "terminology",
+            "prerequisite scaffolding",
+            "emphasis",
+            "explanation depth",
+            "language style",
+            "non-deterministic feedback",
+        ):
+            self.assertIn(adaptable_surface, template)
+
+        self.assertIn("`course_profile`, topic-scope", checks)
+        self.assertIn("platform learner-background tags", checks)
+        self.assertIn("intended audience and course constraints are hard boundaries", semantics)
+        self.assertIn("Platform-supplied learner context is additive", semantics)
+        self.assertIn("platform supplies runtime learner context separately", responsibilities)
+        self.assertIn("bounded cross-lesson personalization", generation)
+        self.assertIn("Pure classroom slides", checklist)
+        self.assertIn("neutral course-appropriate defaults", checklist)
+
+        for leaked_runtime_name in (
+            "sys_user_background",
+            "sys_user_nickname",
+            "{{learner_background}}",
+            "<learner_background>",
+        ):
+            self.assertNotIn(leaked_runtime_name, template)
+            self.assertNotIn(leaked_runtime_name, self.data_contracts)
+
+        self.assertNotIn("runtime learner background", self.data_contracts.casefold())
+
+        evals_data = json.loads(
+            (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
+        )
+        evals_by_id = {case["id"]: case for case in evals_data["evals"]}
+        self.assertIn(37, evals_by_id)
+        self.assertIn(38, evals_by_id)
+        eval_37 = " ".join(evals_by_id[37]["expectations"])
+        eval_38 = " ".join(evals_by_id[38]["expectations"])
+        self.assertIn("experienced emergency physicians", eval_37)
+        self.assertIn("workplace training organizers", eval_37)
+        self.assertIn("every delivery mode", eval_37)
+        self.assertIn("does not change or retarget", eval_38)
+        self.assertIn("internal learner-background variable", eval_38)
+
+        for source in (template, checks, semantics, responsibilities, eval_37, eval_38):
+            self.assertNotRegex(source.casefold(), r"learner[- ]profile")
 
     def test_course_prompt_owns_general_slide_rules_without_cover_handling(self):
         responsibilities = markdown_section(

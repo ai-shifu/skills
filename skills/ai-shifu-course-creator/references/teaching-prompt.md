@@ -28,7 +28,7 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 8. Apply `markdownflow-authoring.md` after those teaching decisions are complete.
 9. Load `image-authoring.md` only when the lesson actually uses an image asset.
 
-Every lesson must carry enough direction to run with the Course Prompt contributing only course-wide role and general presentation requirements shared by every slide. Do not rely on the Course Prompt to supply, repair, or override lesson pedagogy, lesson-specific slide structure, or treatment tied to a particular slide position or teaching purpose.
+Every lesson must carry enough direction to run with the Course Prompt contributing course-wide role, general presentation requirements shared by every slide, and bounded cross-lesson personalization. Do not duplicate the learner-context strategy in each lesson or rely on the Course Prompt to supply, repair, or override lesson pedagogy, lesson-specific slide structure, or treatment tied to a particular slide position or teaching purpose.
 
 Enough direction means that the ordered runtime instructions tell the Teaching Agent what to teach, show, ask, and respond at each point; why the required relationships and boundaries matter; what effect each interaction must have; and how the lesson completes. The selected personalization level decides how much ordinary learner-visible wording, already-required example identity and detail, transition wording, and feedback wording to include in those local instructions.
 
