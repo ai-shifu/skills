@@ -2354,8 +2354,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "MarkdownFlow runtime behavior",
             purpose,
         )
-        self.assertIn("standard one-on-one", self.course_prompt.casefold())
-        self.assertIn("pure classroom slides", self.course_prompt.casefold())
+        self.assertNotIn("delivery mode", template.casefold())
         self.assertNotIn(
             "build interest → lower the barrier → understand the structure",
             template,
@@ -2381,7 +2380,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         checklist = markdown_section(self.optimization_checklist, "Course Prompt")
 
         for required_behavior in (
-            "In every delivery mode, actively use relevant learner context",
+            "Actively use relevant learner context",
             "only where the current user message leaves those details open",
             "objectives, facts and boundaries, teaching method, content sequence, "
             "pacing, required examples, interactions, exact material, slide count "
@@ -2432,9 +2431,17 @@ class CourseCreatorContractTests(unittest.TestCase):
         eval_38 = " ".join(evals_by_id[38]["expectations"])
         self.assertIn("experienced emergency physicians", eval_37)
         self.assertIn("workplace training organizers", eval_37)
-        self.assertIn("every delivery mode", eval_37)
+        self.assertIn("resolved authoring delivery context", evals_by_id[37]["expected_output"])
         self.assertIn("does not change or retarget", eval_38)
         self.assertIn("internal learner-profile variable", eval_38)
+        self.assertIn(
+            "asks the Teaching Agent to select, infer, or switch delivery modes",
+            eval_37,
+        )
+        self.assertIn(
+            "removes the instruction to follow or determine delivery mode",
+            eval_38,
+        )
 
         for source in (template, checks, semantics, responsibilities, eval_37, eval_38):
             self.assertNotRegex(source.casefold(), r"learner[- ]background")

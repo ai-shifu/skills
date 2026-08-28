@@ -73,9 +73,9 @@ For a pasted content-only Prompt, run every check observable from the body and r
 
 - The existing Course Prompt keeps all six required sections in order and has no unresolved `XXX` placeholder.
 - Every non-placeholder instruction remains behaviorally represented after localization.
-- In every delivery mode, relevant explicitly stated learner context actively shapes only ordinary examples, terminology, prerequisite scaffolding, emphasis, explanation depth, language style, and non-deterministic feedback that the current Teaching Prompt leaves open. Pure classroom slides retain their prohibition on Teaching Agent narration and addressing a single learner.
+- Relevant explicitly stated learner context actively shapes only ordinary examples, terminology, prerequisite scaffolding, emphasis, explanation depth, language style, and non-deterministic feedback that the current Teaching Prompt leaves open. Pure classroom slides retain their prohibition on Teaching Agent narration and addressing a single learner.
 - Empty, `UNKNOWN`, irrelevant, or unavailable learner context falls back to neutral course-appropriate defaults without inferred facts. The Course Prompt does not quote, summarize, or reveal the learner profile and contains no platform learner-profile tags or internal learner-profile variable names.
-- Standard and pure-slide delivery behavior matches `course-prompt.md`; its `# Slides` section contains the general presentation requirements applied uniformly to every slide, without special handling for a cover or any other slide position or teaching purpose and without duplicating or changing lesson pedagogy or lesson-specific slide structure.
+- The resolved Course Design Intake delivery context is applied during materialization without instructing the Teaching Agent to select or infer a delivery mode at runtime. The Course Prompt's `# Slides` section contains the general presentation requirements applied uniformly to every slide, without special handling for a cover or any other slide position or teaching purpose and without duplicating or changing lesson pedagogy or lesson-specific slide structure.
 - The complete artifact passes `course-prompt.md#materialization-checks` and `prompt-contracts.md`.
 
 ## Course Description
