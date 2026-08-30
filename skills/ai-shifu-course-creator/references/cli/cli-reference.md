@@ -21,7 +21,7 @@ SHIFU_TOKEN=
 
 Change `SHIFU_BASE_URL` in the process environment or `{skillDir}/.env` to use another deployment. An unset, empty, whitespace-only, or slash-only value falls back to the default production URL. Leading and trailing whitespace and trailing slashes are removed from a custom value before requests and verification URLs are built. A process environment value takes precedence over the value loaded from `{skillDir}/.env`.
 
-Before every command, the CLI checks for `{skillDir}/.env`. When it is missing, the CLI copies `{skillDir}/.env.example` to `{skillDir}/.env`, sets owner-only permissions, and then loads it. An existing `.env` is never replaced, so an author or agent can change `SHIFU_BASE_URL` before requesting an SMS code. Successful SMS verification updates only `SHIFU_TOKEN` and preserves the configured base URL.
+Before every command, the CLI checks for `{skillDir}/.env`. When it is missing, the CLI copies `{skillDir}/.env.example` to `{skillDir}/.env`, sets owner-only permissions, and then loads it. An existing `.env` is never replaced, so an author or agent can change `SHIFU_BASE_URL` before starting an authorization request. The `.env` file holds configuration only; the issued token is stored separately under the user's config directory (see [Authentication](#authentication)).
 
 ## Contents
 
@@ -51,16 +51,18 @@ check-update [--force] [--dev-manifest-url <loopback-url>]
 
 ```bash
 verify
-login --phone 13800138000
-login --phone 13800138000 --sms-code 1234
+login
+login --wait [--timeout 120]
 ```
 
 - `verify` exits `0` when the token is accepted, `1` when it is expired or invalid, and `2` when network, service, or response errors make its state unknown.
-- `login --phone` sends an SMS code and exits without prompting.
-- `login --phone --sms-code` verifies the code and updates only `SHIFU_TOKEN=<jwt>` in `{skillDir}/.env`; other values such as `SHIFU_BASE_URL` are preserved.
-- A saved token is valid for seven days; successful authenticated API calls refresh that expiry.
+- `login` starts a browser authorization request and exits immediately. It prints the verification link and a pairing code, and opens a browser when the machine has one. The link already carries the pairing code, so the user normally does not type it.
+- `login --wait` polls the pending request. It exits `0` once the request is approved and the token is stored, `1` when the request was denied, expired, or never started, and `3` while the request is still valid but nobody has approved it yet. Exit `3` means the same command can simply be run again.
+- `--timeout` bounds a single `--wait` invocation in seconds; it does not shorten the request's own lifetime.
+- Credentials are stored in `${XDG_CONFIG_HOME:-~/.config}/ai-shifu/credentials.json` with owner-only permissions, so upgrading or reinstalling the skill no longer signs the user out. `AI_SHIFU_CONFIG_DIR` overrides that location. A token left in `{skillDir}/.env` by an older version is migrated on first run; an exported `SHIFU_TOKEN` is never rewritten and still takes precedence.
+- A stored token is valid for thirty days; successful authenticated API calls refresh that expiry.
 
-Agent decisions about when to send or resend SMS are defined in `../authentication.md`; this section defines only CLI inputs and effects.
+Agent behavior during a login session is defined in `../authentication.md`; this section defines only CLI inputs and effects.
 
 ## Query Commands
 
