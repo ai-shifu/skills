@@ -59,6 +59,7 @@ login --wait [--timeout 120]
 - `login` starts a browser authorization request and exits immediately. It prints the verification link and a pairing code, and opens a browser when the machine has one. The link already carries the pairing code, so the user normally does not type it.
 - `login --wait` polls the pending request. It exits `0` once the request is approved and the token is stored, `1` when the request was denied, expired, or never started, and `3` while the request is still valid but nobody has approved it yet. Exit `3` means the same command can simply be run again.
 - `--timeout` bounds a single `--wait` invocation in seconds; it does not shorten the request's own lifetime.
+- `SHIFU_BASE_URL` must use `https`; only a loopback host may use `http`, for local development. Authorization carries credentials, so the CLI refuses to send them in the clear. A request is also bound to the host that issued it: changing `SHIFU_BASE_URL` between `login` and `login --wait` fails rather than sending the device code elsewhere.
 - Credentials are stored in `${XDG_CONFIG_HOME:-~/.config}/ai-shifu/credentials.json` with owner-only permissions, so upgrading or reinstalling the skill no longer signs the user out. `AI_SHIFU_CONFIG_DIR` overrides that location. A token left in `{skillDir}/.env` by an older version is migrated on first run; an exported `SHIFU_TOKEN` is never rewritten and still takes precedence.
 - A stored token is valid for thirty days; successful authenticated API calls refresh that expiry.
 

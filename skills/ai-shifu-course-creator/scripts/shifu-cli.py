@@ -12,11 +12,13 @@ import platform
 import shutil
 import socket
 import sys
+import tempfile
 import time
 import uuid
 import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 import requests
 from dotenv import dotenv_values, load_dotenv, set_key
@@ -89,10 +91,29 @@ def load_env():
     migrate_legacy_token()
 
 
+# Loopback stays available over http so the CLI can be pointed at a local
+# development server; every other host must use TLS.
+LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+
+
 def resolve_base_url():
     """Resolve the AI-Shifu service URL with the production URL as fallback."""
     value = os.environ.get("SHIFU_BASE_URL", "").strip().rstrip(" /\t\r\n")
     return value or DEFAULT_BASE_URL
+
+
+def require_secure_base_url(base_url):
+    """Refuse to carry the device code or token over plaintext HTTP."""
+    parsed = urlparse(base_url)
+    if parsed.scheme == "https":
+        return base_url
+    if parsed.scheme == "http" and (parsed.hostname or "") in LOOPBACK_HOSTS:
+        return base_url
+    print(
+        f"Error: SHIFU_BASE_URL must use https, got '{base_url}'. "
+        "Authorization carries credentials and will not be sent in the clear."
+    )
+    sys.exit(1)
 
 
 def config_dir():
@@ -120,10 +141,24 @@ def pending_auth_path():
 
 
 def _write_private_json(path, payload):
-    """Write JSON readable only by the current user."""
+    """Write JSON readable only by the current user, atomically.
+
+    The content is written to a fresh 0600 temporary file and moved into place.
+    Writing directly would expose the credential twice: a permissive umask
+    leaves the new file readable until the chmod lands, and rewriting an
+    existing file keeps whatever mode it already had while it is truncated.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    os.chmod(path, 0o600)
+    fd, temp_name = tempfile.mkstemp(dir=str(path.parent), prefix=".tmp-")
+    try:
+        os.chmod(temp_name, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2)
+        os.replace(temp_name, path)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(temp_name)
+        raise
 
 
 def _read_json_file(path):
@@ -190,7 +225,8 @@ def _jwt_payload(token):
 def resolve_auth(args):
     """Resolve the service URL and token from CLI args or .env.
 
-    When the JWT carries a ``time_stamp`` older than 7 days, a warning is printed
+    When the JWT carries a ``time_stamp`` older than the token lifetime, a
+    warning is printed
     to stderr (the authoritative expiry check is the backend's DB record, so this
     is only a nudge — the call still proceeds).
     """
@@ -208,7 +244,8 @@ def resolve_auth(args):
     if isinstance(payload, dict):
         ts = payload.get("time_stamp")
         if isinstance(ts, (int, float)) and (time.time() - ts) > TOKEN_EXPIRE_SECONDS:
-            print("Warning: token may be expired (issued > 7 days ago). "
+            print("Warning: token may be expired "
+                  f"(issued > {TOKEN_EXPIRE_SECONDS // 86400} days ago). "
                   "Run `shifu-cli.py verify` to check, or `shifu-cli.py login` "
                   "to re-login.",
                   file=sys.stderr)
@@ -658,6 +695,10 @@ def _start_device_authorization(base_url):
         {
             "device_code": device_code,
             "user_code": user_code,
+            # Remember which host issued this code. Polling a different host
+            # after SHIFU_BASE_URL changed would hand the code to a service
+            # that never issued it.
+            "base_url": base_url,
             "interval": int(data.get("interval") or 5),
             "expires_at": time.time() + int(data.get("expires_in") or 600),
         },
@@ -682,6 +723,15 @@ def _wait_for_device_authorization(base_url, timeout_seconds):
     pending = _read_json_file(pending_auth_path())
     if not isinstance(pending, dict) or not pending.get("device_code"):
         print("No authorization is in progress. Run 'shifu-cli.py login' first.")
+        sys.exit(1)
+
+    issuing_base_url = str(pending.get("base_url") or "")
+    if issuing_base_url and issuing_base_url != base_url:
+        print(
+            "Error: SHIFU_BASE_URL changed since this authorization started "
+            f"('{issuing_base_url}' -> '{base_url}'). "
+            "Run 'shifu-cli.py login' again to start a new one."
+        )
         sys.exit(1)
 
     device_code = str(pending.get("device_code") or "")
@@ -725,7 +775,7 @@ def _wait_for_device_authorization(base_url, timeout_seconds):
 
 def cmd_login(args):
     """Authorize this device through the browser and store the issued token."""
-    base_url = resolve_base_url()
+    base_url = require_secure_base_url(resolve_base_url())
     if getattr(args, "wait", False):
         _wait_for_device_authorization(base_url, getattr(args, "timeout", 120))
         return

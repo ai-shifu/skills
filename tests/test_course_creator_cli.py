@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import json
 import sys
 import tempfile
 import types
@@ -223,6 +224,86 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
 
         self.assertEqual(exit_ctx.exception.code, 1)
         self.assertIn("login", stdout.getvalue())
+
+    def test_plaintext_base_url_is_refused(self):
+        """Authorization carries credentials, so it must not go over http."""
+        with self.assertRaises(SystemExit) as exit_ctx, contextlib.redirect_stdout(
+            io.StringIO()
+        ) as stdout:
+            course_creator_cli.require_secure_base_url("http://example.test")
+        self.assertEqual(exit_ctx.exception.code, 1)
+        self.assertIn("https", stdout.getvalue())
+
+    def test_loopback_may_stay_plaintext_for_local_development(self):
+        for url in ("http://localhost:5800", "http://127.0.0.1:5800"):
+            self.assertEqual(course_creator_cli.require_secure_base_url(url), url)
+
+    def test_https_base_url_is_accepted(self):
+        url = "https://app.ai-shifu.cn"
+        self.assertEqual(course_creator_cli.require_secure_base_url(url), url)
+
+    def test_wait_refuses_a_device_code_issued_by_another_host(self):
+        """The device code belongs to the host that issued it."""
+        args = types.SimpleNamespace(wait=True, timeout=30)
+        with (
+            mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"SHIFU_BASE_URL": "https://other.example"},
+                clear=True,
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_read_json_file",
+                return_value={
+                    "device_code": "secret",
+                    "base_url": "https://original.example",
+                    "interval": 1,
+                },
+            ),
+            mock.patch.object(
+                course_creator_cli, "_poll_device_authorization"
+            ) as poll,
+            contextlib.redirect_stdout(io.StringIO()),
+            self.assertRaises(SystemExit) as exit_ctx,
+        ):
+            course_creator_cli.cmd_login(args)
+
+        self.assertEqual(exit_ctx.exception.code, 1)
+        poll.assert_not_called()
+
+    def test_credentials_end_up_owner_only(self):
+        """The credential file is owner-only, however permissive the umask."""
+        original_umask = course_creator_cli.os.umask(0o000)
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                target = Path(tmp) / "credentials.json"
+                course_creator_cli._write_private_json(target, {"token": "secret"})
+                self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+                # Rewriting an existing file must not leave it wider either.
+                course_creator_cli._write_private_json(target, {"token": "second"})
+                self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+        finally:
+            course_creator_cli.os.umask(original_umask)
+
+    def test_credentials_are_moved_into_place_rather_than_written_in_situ(self):
+        """The mode is only safe if the file is private before it holds data.
+
+        Checking the final mode cannot show that: writing in place and then
+        chmod-ing also ends at 0600, while leaving the secret readable in
+        between. This asserts the implementation instead.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "credentials.json"
+            real_replace = course_creator_cli.os.replace
+            with mock.patch.object(
+                course_creator_cli.os, "replace", wraps=real_replace
+            ) as replace:
+                course_creator_cli._write_private_json(target, {"token": "secret"})
+
+            replace.assert_called_once()
+            source = replace.call_args[0][0]
+            self.assertNotEqual(str(source), str(target))
+            self.assertEqual(json.loads(target.read_text())["token"], "secret")
 
     def test_macos_is_named_the_way_its_owner_would(self):
         """The approval page must not show the Darwin kernel version."""
