@@ -224,6 +224,42 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertEqual(exit_ctx.exception.code, 1)
         self.assertIn("login", stdout.getvalue())
 
+    def test_macos_is_named_the_way_its_owner_would(self):
+        """The approval page must not show the Darwin kernel version."""
+        with (
+            mock.patch.object(course_creator_cli.platform, "system", return_value="Darwin"),
+            mock.patch.object(course_creator_cli.platform, "release", return_value="25.5.0"),
+            mock.patch.object(
+                course_creator_cli.platform, "mac_ver", return_value=("15.5", "", "")
+            ),
+        ):
+            self.assertEqual(course_creator_cli._friendly_os_name(), "macOS 15.5")
+
+    def test_linux_prefers_the_distribution_name(self):
+        with (
+            mock.patch.object(course_creator_cli.platform, "system", return_value="Linux"),
+            mock.patch.object(
+                course_creator_cli.platform,
+                "freedesktop_os_release",
+                return_value={"PRETTY_NAME": "Ubuntu 24.04.1 LTS"},
+            ),
+        ):
+            self.assertEqual(
+                course_creator_cli._friendly_os_name(), "Ubuntu 24.04.1 LTS"
+            )
+
+    def test_os_name_falls_back_without_failing_login(self):
+        with (
+            mock.patch.object(course_creator_cli.platform, "system", return_value="Linux"),
+            mock.patch.object(
+                course_creator_cli.platform,
+                "freedesktop_os_release",
+                side_effect=OSError("no os-release"),
+            ),
+            mock.patch.object(course_creator_cli.platform, "release", return_value="6.8.0"),
+        ):
+            self.assertEqual(course_creator_cli._friendly_os_name(), "Linux 6.8.0")
+
     def test_credentials_live_outside_the_skill_package(self):
         with tempfile.TemporaryDirectory() as tmp:
             with mock.patch.dict(

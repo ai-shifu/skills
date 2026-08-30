@@ -546,16 +546,42 @@ def _login_post(base_url, path, payload, error_prefix):
     return data
 
 
+def _friendly_os_name():
+    """Name the operating system the way its owner would.
+
+    The approval page exists so a person can recognise their own machine, so it
+    must not show what `platform.release()` returns on macOS: that is the Darwin
+    kernel version ("25.5.0"), which no Mac owner recognises.
+    """
+    system = (platform.system() or "").strip()
+    if system == "Darwin":
+        release = ""
+        try:
+            release = (platform.mac_ver()[0] or "").strip()
+        except Exception:  # noqa: BLE001 - display only, never fail login
+            release = ""
+        return f"macOS {release}".strip() if release else "macOS"
+    if system == "Linux":
+        pretty = ""
+        try:
+            pretty = (
+                platform.freedesktop_os_release().get("PRETTY_NAME", "") or ""
+            ).strip()
+        except Exception:  # noqa: BLE001 - not every distro ships os-release
+            pretty = ""
+        if pretty:
+            return pretty
+    release = (platform.release() or "").strip()
+    return f"{system} {release}".strip() or "unknown"
+
+
 def _device_description():
     """Describe this machine for the approval page. Display only."""
     try:
         device_name = socket.gethostname() or "unknown"
     except OSError:
         device_name = "unknown"
-    system = (platform.system() or "").strip()
-    release = (platform.release() or "").strip()
-    device_os = f"{system} {release}".strip() or "unknown"
-    return device_name[:64], device_os[:64]
+    return device_name[:64], _friendly_os_name()[:64]
 
 
 def _client_version():
