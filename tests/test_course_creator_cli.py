@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import json
 import sys
 import tempfile
 import types
@@ -22,6 +23,7 @@ if "dotenv" not in sys.modules:
     dotenv_stub = types.ModuleType("dotenv")
     dotenv_stub.load_dotenv = lambda **_kwargs: None
     dotenv_stub.set_key = lambda *_args, **_kwargs: None
+    dotenv_stub.dotenv_values = lambda *_args, **_kwargs: {}
     sys.modules["dotenv"] = dotenv_stub
 
 spec = importlib.util.spec_from_file_location("course_creator_cli", SCRIPT_PATH)
@@ -115,106 +117,8 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
             self.assertEqual(raised.exception.code, 1)
             self.assertIn("missing environment template", stderr.getvalue())
 
-    def test_save_env_updates_only_the_token_key(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            env_file = Path(tmp) / ".env"
-            env_file.write_text(
-                "SHIFU_BASE_URL=https://custom.example\nSHIFU_TOKEN=\n",
-                encoding="utf-8",
-            )
-
-            with (
-                mock.patch.object(course_creator_cli, "ENV_FILE", env_file),
-                mock.patch.object(course_creator_cli, "set_key") as set_key,
-            ):
-                course_creator_cli.save_env("new-token")
-
-            set_key.assert_called_once_with(
-                str(env_file), "SHIFU_TOKEN", "new-token"
-            )
-
-    def test_default_base_url_is_used_for_missing_or_empty_configuration(self):
-        for configured in (
-            None, "", "   ", "/", "///", "  ///  ", " / / ", "\t/\t/\n"
-        ):
-            env = {} if configured is None else {"SHIFU_BASE_URL": configured}
-            with self.subTest(configured=configured), mock.patch.dict(
-                course_creator_cli.os.environ, env, clear=True
-            ):
-                self.assertEqual(
-                    course_creator_cli.resolve_base_url(),
-                    course_creator_cli.DEFAULT_BASE_URL,
-                )
-
-    def test_custom_base_url_is_trimmed_and_trailing_slashes_are_removed(self):
-        for configured in (
-            "  https://example.test///  ",
-            "https://example.test/ /",
-            "https://example.test/\t/\n",
-        ):
-            with self.subTest(configured=configured), mock.patch.dict(
-                course_creator_cli.os.environ,
-                {"SHIFU_BASE_URL": configured},
-                clear=True,
-            ):
-                self.assertEqual(
-                    course_creator_cli.resolve_base_url(), "https://example.test"
-                )
-
-    def test_resolve_auth_returns_custom_base_url_and_existing_token(self):
-        with mock.patch.dict(
-            course_creator_cli.os.environ,
-            {
-                "SHIFU_BASE_URL": "https://example.test/",
-                "SHIFU_TOKEN": "stored-token",
-            },
-            clear=True,
-        ):
-            self.assertEqual(
-                course_creator_cli.resolve_auth(types.SimpleNamespace(token=None)),
-                ("https://example.test", "stored-token"),
-            )
-
-    def test_explicit_token_still_overrides_the_stored_token(self):
-        with mock.patch.dict(
-            course_creator_cli.os.environ,
-            {
-                "SHIFU_BASE_URL": "https://example.test",
-                "SHIFU_TOKEN": "stored-token",
-            },
-            clear=True,
-        ):
-            self.assertEqual(
-                course_creator_cli.resolve_auth(
-                    types.SimpleNamespace(token="explicit-token")
-                ),
-                ("https://example.test", "explicit-token"),
-            )
-
-    def test_login_send_uses_custom_base_url(self):
-        args = types.SimpleNamespace(phone="13800138000", sms_code=None)
-        with (
-            mock.patch.dict(
-                course_creator_cli.os.environ,
-                {"SHIFU_BASE_URL": "https://example.test/"},
-                clear=True,
-            ),
-            mock.patch.object(
-                course_creator_cli, "_login_post", return_value={"code": 0}
-            ) as login_post,
-            contextlib.redirect_stdout(io.StringIO()),
-        ):
-            course_creator_cli.cmd_login(args)
-
-        login_post.assert_called_once_with(
-            "https://example.test",
-            "/api/user/console_send_sms_code",
-            {"mobile": "13800138000"},
-            "Failed to send SMS",
-        )
-
-    def test_login_verification_uses_custom_base_url_and_saves_token(self):
-        args = types.SimpleNamespace(phone="13800138000", sms_code="1234")
+    def test_login_starts_device_authorization_on_custom_base_url(self):
+        args = types.SimpleNamespace(wait=False, timeout=120)
         with (
             mock.patch.dict(
                 course_creator_cli.os.environ,
@@ -224,24 +128,278 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
             mock.patch.object(
                 course_creator_cli,
                 "_login_post",
-                return_value={"code": 0, "data": "new-token"},
+                return_value={
+                    "code": 0,
+                    "data": {
+                        "device_code": "secret-device-code",
+                        "user_code": "AC4-7HK",
+                        "verification_uri_complete": "https://example.test/login/device?code=AC4-7HK",
+                        "interval": 5,
+                        "expires_in": 600,
+                    },
+                },
             ) as login_post,
-            mock.patch.object(course_creator_cli, "save_env") as save_env,
+            mock.patch.object(course_creator_cli, "_write_private_json") as write_json,
+            mock.patch.object(course_creator_cli.webbrowser, "open", return_value=False),
+            contextlib.redirect_stdout(io.StringIO()) as stdout,
+        ):
+            course_creator_cli.cmd_login(args)
+
+        called_base_url, called_path, payload, _ = login_post.call_args[0]
+        self.assertEqual(called_base_url, "https://example.test")
+        self.assertEqual(called_path, "/api/user/device/authorize")
+        self.assertIn("device_name", payload)
+
+        printed = stdout.getvalue()
+        self.assertIn("AC4-7HK", printed)
+        # The device code can be exchanged for a token, so it must stay on disk
+        # and out of the calling agent's transcript.
+        self.assertNotIn("secret-device-code", printed)
+        stored = write_json.call_args[0][1]
+        self.assertEqual(stored["device_code"], "secret-device-code")
+
+    def test_login_wait_saves_the_token_once_approved(self):
+        args = types.SimpleNamespace(wait=True, timeout=30)
+        with (
+            mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"SHIFU_BASE_URL": "https://example.test/"},
+                clear=True,
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_read_json_file",
+                return_value={
+                    "device_code": "secret-device-code",
+                    "user_code": "AC4-7HK",
+                    "interval": 1,
+                    "expires_at": course_creator_cli.time.time() + 600,
+                },
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_poll_device_authorization",
+                return_value=("approved", "new-token"),
+            ) as poll,
+            mock.patch.object(course_creator_cli, "save_token") as save_token,
+            mock.patch.object(course_creator_cli.Path, "unlink"),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             course_creator_cli.cmd_login(args)
 
-        login_post.assert_called_once_with(
-            "https://example.test",
-            "/api/user/login_sms",
-            {
-                "mobile": "13800138000",
-                "sms_code": "1234",
-                "login_context": "admin",
-            },
-            "Verification failed",
-        )
-        save_env.assert_called_once_with("new-token")
+        poll.assert_called_once_with("https://example.test", "secret-device-code")
+        save_token.assert_called_once_with("new-token")
+
+    def test_login_wait_reports_a_denied_request(self):
+        args = types.SimpleNamespace(wait=True, timeout=30)
+        with (
+            mock.patch.object(
+                course_creator_cli,
+                "_read_json_file",
+                return_value={"device_code": "secret", "interval": 1},
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_poll_device_authorization",
+                return_value=("denied", ""),
+            ),
+            mock.patch.object(course_creator_cli, "save_token") as save_token,
+            mock.patch.object(course_creator_cli.Path, "unlink"),
+            contextlib.redirect_stdout(io.StringIO()),
+            self.assertRaises(SystemExit) as exit_ctx,
+        ):
+            course_creator_cli.cmd_login(args)
+
+        self.assertEqual(exit_ctx.exception.code, 1)
+        save_token.assert_not_called()
+
+    def test_login_wait_without_a_pending_request_fails_clearly(self):
+        args = types.SimpleNamespace(wait=True, timeout=30)
+        with (
+            mock.patch.object(course_creator_cli, "_read_json_file", return_value=None),
+            contextlib.redirect_stdout(io.StringIO()) as stdout,
+            self.assertRaises(SystemExit) as exit_ctx,
+        ):
+            course_creator_cli.cmd_login(args)
+
+        self.assertEqual(exit_ctx.exception.code, 1)
+        self.assertIn("login", stdout.getvalue())
+
+    def test_plaintext_base_url_is_refused(self):
+        """Authorization carries credentials, so it must not go over http."""
+        with self.assertRaises(SystemExit) as exit_ctx, contextlib.redirect_stdout(
+            io.StringIO()
+        ) as stdout:
+            course_creator_cli.require_secure_base_url("http://example.test")
+        self.assertEqual(exit_ctx.exception.code, 1)
+        self.assertIn("https", stdout.getvalue())
+
+    def test_loopback_may_stay_plaintext_for_local_development(self):
+        for url in ("http://localhost:5800", "http://127.0.0.1:5800"):
+            self.assertEqual(course_creator_cli.require_secure_base_url(url), url)
+
+    def test_https_base_url_is_accepted(self):
+        url = "https://app.ai-shifu.cn"
+        self.assertEqual(course_creator_cli.require_secure_base_url(url), url)
+
+    def test_wait_refuses_a_device_code_issued_by_another_host(self):
+        """The device code belongs to the host that issued it."""
+        args = types.SimpleNamespace(wait=True, timeout=30)
+        with (
+            mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"SHIFU_BASE_URL": "https://other.example"},
+                clear=True,
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_read_json_file",
+                return_value={
+                    "device_code": "secret",
+                    "base_url": "https://original.example",
+                    "interval": 1,
+                },
+            ),
+            mock.patch.object(
+                course_creator_cli, "_poll_device_authorization"
+            ) as poll,
+            contextlib.redirect_stdout(io.StringIO()),
+            self.assertRaises(SystemExit) as exit_ctx,
+        ):
+            course_creator_cli.cmd_login(args)
+
+        self.assertEqual(exit_ctx.exception.code, 1)
+        poll.assert_not_called()
+
+    def test_credentials_end_up_owner_only(self):
+        """The credential file is owner-only, however permissive the umask."""
+        original_umask = course_creator_cli.os.umask(0o000)
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                target = Path(tmp) / "credentials.json"
+                course_creator_cli._write_private_json(target, {"token": "secret"})
+                self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+                # Rewriting an existing file must not leave it wider either.
+                course_creator_cli._write_private_json(target, {"token": "second"})
+                self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+        finally:
+            course_creator_cli.os.umask(original_umask)
+
+    def test_credentials_are_moved_into_place_rather_than_written_in_situ(self):
+        """The mode is only safe if the file is private before it holds data.
+
+        Checking the final mode cannot show that: writing in place and then
+        chmod-ing also ends at 0600, while leaving the secret readable in
+        between. This asserts the implementation instead.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "credentials.json"
+            real_replace = course_creator_cli.os.replace
+            with mock.patch.object(
+                course_creator_cli.os, "replace", wraps=real_replace
+            ) as replace:
+                course_creator_cli._write_private_json(target, {"token": "secret"})
+
+            replace.assert_called_once()
+            source = replace.call_args[0][0]
+            self.assertNotEqual(str(source), str(target))
+            self.assertEqual(json.loads(target.read_text())["token"], "secret")
+
+    def test_macos_is_named_the_way_its_owner_would(self):
+        """The approval page must not show the Darwin kernel version."""
+        with (
+            mock.patch.object(course_creator_cli.platform, "system", return_value="Darwin"),
+            mock.patch.object(course_creator_cli.platform, "release", return_value="25.5.0"),
+            mock.patch.object(
+                course_creator_cli.platform, "mac_ver", return_value=("15.5", "", "")
+            ),
+        ):
+            self.assertEqual(course_creator_cli._friendly_os_name(), "macOS 15.5")
+
+    def test_linux_prefers_the_distribution_name(self):
+        with (
+            mock.patch.object(course_creator_cli.platform, "system", return_value="Linux"),
+            mock.patch.object(
+                course_creator_cli.platform,
+                "freedesktop_os_release",
+                return_value={"PRETTY_NAME": "Ubuntu 24.04.1 LTS"},
+            ),
+        ):
+            self.assertEqual(
+                course_creator_cli._friendly_os_name(), "Ubuntu 24.04.1 LTS"
+            )
+
+    def test_os_name_falls_back_without_failing_login(self):
+        with (
+            mock.patch.object(course_creator_cli.platform, "system", return_value="Linux"),
+            mock.patch.object(
+                course_creator_cli.platform,
+                "freedesktop_os_release",
+                side_effect=OSError("no os-release"),
+            ),
+            mock.patch.object(course_creator_cli.platform, "release", return_value="6.8.0"),
+        ):
+            self.assertEqual(course_creator_cli._friendly_os_name(), "Linux 6.8.0")
+
+    def test_credentials_live_outside_the_skill_package(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"AI_SHIFU_CONFIG_DIR": tmp},
+                clear=True,
+            ):
+                course_creator_cli.save_token("stored-token")
+                self.assertEqual(course_creator_cli.load_saved_token(), "stored-token")
+                path = course_creator_cli.credentials_path()
+
+            self.assertTrue(str(path).startswith(tmp))
+            # Owner-only permissions: the file holds a live credential.
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+
+    def test_legacy_token_is_migrated_out_of_the_env_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / ".env"
+            env_file.write_text("SHIFU_TOKEN=legacy-token\n", encoding="utf-8")
+            config_dir = Path(tmp) / "config"
+
+            with (
+                mock.patch.dict(
+                    course_creator_cli.os.environ,
+                    {"AI_SHIFU_CONFIG_DIR": str(config_dir)},
+                    clear=True,
+                ),
+                mock.patch.object(course_creator_cli, "ENV_FILE", env_file),
+                mock.patch.object(
+                    course_creator_cli,
+                    "dotenv_values",
+                    return_value={"SHIFU_TOKEN": "legacy-token"},
+                ),
+                mock.patch.object(course_creator_cli, "set_key") as set_key,
+            ):
+                course_creator_cli.migrate_legacy_token()
+                self.assertEqual(course_creator_cli.load_saved_token(), "legacy-token")
+
+            set_key.assert_called_once_with(str(env_file), "SHIFU_TOKEN", "")
+
+    def test_migration_never_rewrites_an_exported_token(self):
+        """A SHIFU_TOKEN the user exported is theirs; only the .env is migrated."""
+        with tempfile.TemporaryDirectory() as tmp:
+            config_dir = Path(tmp) / "config"
+            missing_env = Path(tmp) / "absent.env"
+
+            with (
+                mock.patch.dict(
+                    course_creator_cli.os.environ,
+                    {
+                        "AI_SHIFU_CONFIG_DIR": str(config_dir),
+                        "SHIFU_TOKEN": "exported-token",
+                    },
+                    clear=True,
+                ),
+                mock.patch.object(course_creator_cli, "ENV_FILE", missing_env),
+            ):
+                course_creator_cli.migrate_legacy_token()
+                self.assertEqual(course_creator_cli.load_saved_token(), "")
 
 
 class CourseCreatorCliPaginationTests(unittest.TestCase):

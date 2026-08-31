@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Replace SMS login with a browser authorization flow: `login` prints a verification link and pairing code, `login --wait` collects the token once the user approves the request on the AI-Shifu approval page, and no command sends a text message any more. Credentials move from the skill's `.env` to `${XDG_CONFIG_HOME:-~/.config}/ai-shifu/credentials.json` so upgrading or reinstalling the skill no longer signs the user out, and a token left behind by an older version is migrated on first run.
 - Use platform-supplied learner context in Course Prompts to personalize open expression while preserving the course author's intended audience, each Teaching Prompt's fixed decisions, and neutral behavior when no relevant learner profile is available.
 - Initialize a missing `.env` from `.env.example` before every course CLI command, allow an optional `SHIFU_BASE_URL`, keep `https://app.ai-shifu.cn` as the fallback, and preserve the configured URL when SMS login updates the token.
 - Add a low-friction teacher-avatar follow-up after teacher identity intake and a version-aware `set-avatar` CLI path that accepts JPG/PNG, auto-compresses to 2 MB, warns on non-square images, binds without Chrome, and verifies the saved URL by readback.
