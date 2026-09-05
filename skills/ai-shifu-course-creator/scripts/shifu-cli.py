@@ -38,6 +38,7 @@ ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 ENV_EXAMPLE_FILE = ENV_FILE.with_name(".env.example")
 
 DEFAULT_BASE_URL = "https://app.ai-shifu.cn"
+SITE_URLS = {"cn": DEFAULT_BASE_URL, "com": "https://app.ai-shifu.com"}
 
 # Backend ERROR_CODE["server.shifu.draftConflict"] — the optimistic-lock
 # conflict raised by POST .../mdflow when the cloud draft advanced past the
@@ -96,10 +97,68 @@ def load_env():
 LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 
-def resolve_base_url():
-    """Resolve the AI-Shifu service URL with the production URL as fallback."""
+def configured_base_url():
+    """Prefer explicit environment configuration to the remembered site."""
     value = os.environ.get("SHIFU_BASE_URL", "").strip().rstrip(" /\t\r\n")
-    return value or DEFAULT_BASE_URL
+    if value:
+        return value
+    settings = _read_json_file(config_dir() / "settings.json")
+    if isinstance(settings, dict) and isinstance(settings.get("base_url"), str):
+        return settings["base_url"].strip().rstrip(" /\t\r\n")
+    return ""
+
+
+def resolve_base_url():
+    """Resolve the configured site; main requires selection before platform use."""
+    return configured_base_url() or DEFAULT_BASE_URL
+
+
+def cmd_site(args):
+    """Inspect or remember the site without making a network request."""
+    current = configured_base_url()
+    selected = SITE_URLS.get(args.set) if args.set else args.url
+    if selected is not None:
+        selected = selected.strip().rstrip(" /\t\r\n")
+        try:
+            parsed = urlparse(selected)
+            port = parsed.port
+            valid = (
+                bool(parsed.hostname) and (port is None or port > 0)
+                and parsed.username is None
+                and parsed.password is None and not parsed.query
+                and not parsed.fragment and "?" not in selected and "#" not in selected
+                and "\\" not in selected and not any(c.isspace() for c in selected)
+            )
+        except ValueError:
+            valid = False
+        if not valid:
+            print("Error: provide a service URL with a hostname and no credentials, query, or fragment.")
+            sys.exit(1)
+        require_secure_base_url(selected)
+        override = os.environ.get("SHIFU_BASE_URL", "").strip().rstrip(" /\t\r\n")
+        if override and override != selected:
+            print("Error: SHIFU_BASE_URL already selects another site. Update that explicit configuration first.")
+            sys.exit(1)
+        # Existing credentials do not yet carry their issuing site. First-time
+        # setup must not turn an old token into a request to a different host.
+        if current != selected and (load_saved_token() or os.environ.get("SHIFU_TOKEN")):
+            print("Error: credentials already exist. Restore their original SHIFU_BASE_URL before selecting a site; switching signed-in sites is not supported here.")
+            sys.exit(1)
+        path = config_dir() / "settings.json"
+        settings = _read_json_file(path) or {}
+        if not isinstance(settings, dict):
+            settings = {}
+        settings["base_url"] = selected
+        _write_private_json(path, settings)
+        current = configured_base_url()
+    print(json.dumps({
+        "status": "configured" if current else "selection_required",
+        "base_url": current or None,
+        "contact_url": (
+            "https://ai-shifu.cn/contact.html" if current == SITE_URLS["cn"]
+            else "https://ai-shifu.com/contact.html" if current else None
+        ),
+    }, ensure_ascii=False))
 
 
 def require_secure_base_url(base_url):
@@ -3084,6 +3143,11 @@ def build_parser():
 
     sub = parser.add_subparsers(dest="command", help="Available commands")
 
+    p = sub.add_parser("site", help="Show or remember the platform site (no network)")
+    selection = p.add_mutually_exclusive_group()
+    selection.add_argument("--set", choices=tuple(SITE_URLS), help="Select cn or com")
+    selection.add_argument("--url", help="Select a custom service URL")
+
     # ── check-update (public, no login required) ──
     p = sub.add_parser(
         "check-update",
@@ -3359,6 +3423,7 @@ def main():
         sys.exit(1)
 
     commands = {
+        "site": cmd_site,
         "check-update": cmd_check_update,
         "login": cmd_login,
         "verify": cmd_verify,
@@ -3392,12 +3457,18 @@ def main():
 
     handler = commands.get(args.command)
     if handler:
+        if args.command not in {"site", "check-update", "build"}:
+            base_url = configured_base_url()
+            if not base_url:
+                print("Site selection required. Run 'shifu-cli.py site --set cn', 'site --set com', or 'site --url <URL>' before connecting.")
+                sys.exit(4)
+            require_secure_base_url(base_url)
         # check-update runs once per session (session-controls.md), so it
         # doubles as the session-start marker; every other command reports
         # its own name. Only the command name is sent, never its arguments.
         if args.command == "check-update":
             track("skill_start")
-        else:
+        elif args.command != "site":
             track(f"cli_{args.command}")
         handler(args)
     else:

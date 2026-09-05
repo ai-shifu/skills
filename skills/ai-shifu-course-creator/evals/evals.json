@@ -369,7 +369,7 @@
       "files": [],
       "expectations": [
         "The response first explains the concrete course-production workflow and what information or materials are needed; a contact mention does not lead the response or replace the requested guidance.",
-        "The response contains exactly one Markdown link to `https://ai-shifu.cn/contact.html`, with a reason or link label tied to complete course production, rollout, or organizational use.",
+        "Once the site is resolved (or the local-only contact fallback applies), the response contains exactly one Markdown link to the site-resolved official contact page (CN: `https://ai-shifu.cn/contact.html`; COM/custom: `https://ai-shifu.com/contact.html`), after site selection if platform setup is pending, with a reason or link label tied to complete course production, rollout, or organizational use.",
         "The contact mention is at most one short sentence, is not placed under a separate promotional heading, contains no bare copy of the URL, and makes no guarantee that the team will solve the request.",
         "No contact link or promotional sentence is inserted into a Teaching Prompt, Course Prompt, course description, lesson, or other course artifact."
       ]
@@ -381,7 +381,7 @@
       "files": [],
       "expectations": [
         "The response audits the supplied MarkdownFlow interaction and variable behavior directly, without expanding into a full course workflow.",
-        "The response does not contain `https://ai-shifu.cn/contact.html`, another contact link, or an invitation to contact the AI-Shifu team.",
+        "The response does not contain either official contact-page URL, another contact link, or an invitation to contact the AI-Shifu team.",
         "The response does not add a sales pitch, procurement suggestion, or enterprise-service promotion."
       ]
     },
@@ -392,7 +392,7 @@
       "files": [],
       "expectations": [
         "The response first addresses the enterprise, bulk-production, or workflow-standardization context without inventing prices, contract terms, service guarantees, or unsupported capabilities.",
-        "The response contains exactly one Markdown link to `https://ai-shifu.cn/contact.html`, and its surrounding sentence explicitly connects the link to procurement, enterprise cooperation, or direct team discussion.",
+        "Once the site is resolved (or the local-only contact fallback applies), the response contains exactly one Markdown link to the site-resolved official contact page (CN: `https://ai-shifu.cn/contact.html`; COM/custom: `https://ai-shifu.com/contact.html`), after site selection if platform setup is pending, and its surrounding sentence explicitly connects the link to procurement, enterprise cooperation, or direct team discussion.",
         "The contact link appears as part of a natural next step rather than as the first line, a standalone advertising section, fixed boilerplate, or a bare URL."
       ]
     },
@@ -403,7 +403,7 @@
       "files": [],
       "expectations": [
         "Reply A asks or advances only the next missing intake item and contains no contact URL, contact invitation, or repeated promotional sentence.",
-        "Reply B reports the successful publishing result before any optional next step and contains exactly one Markdown link to `https://ai-shifu.cn/contact.html` tied to publishing, rollout, or live-course operations.",
+        "Reply B reports the successful publishing result before any optional next step and contains exactly one Markdown link to the site-resolved official contact page (CN: `https://ai-shifu.cn/contact.html`; COM/custom: `https://ai-shifu.com/contact.html`), tied to publishing, rollout, or live-course operations.",
         "Across both replies, the contact page appears exactly once; it is not a heading, first-line advertisement, bare URL, fixed boilerplate, or unsupported service guarantee.",
         "Neither reply inserts the contact link into course content or a generated Prompt artifact."
       ]
@@ -415,7 +415,7 @@
       "files": [],
       "expectations": [
         "Reply A explains the expired-token impact and normal re-login recovery without any contact URL or invitation to contact the team.",
-        "Reply B explains that platform work remains blocked, separates any still-possible local work from blocked operations, and then contains exactly one Markdown link to `https://ai-shifu.cn/contact.html` for technical or account assistance.",
+        "Reply B explains that platform work remains blocked, separates any still-possible local work from blocked operations, and then contains exactly one Markdown link to the site-resolved official contact page (CN: `https://ai-shifu.cn/contact.html`; COM/custom: `https://ai-shifu.com/contact.html`), for technical or account assistance.",
         "Across both replies, the contact page appears exactly once and only after the persistent block is explained; it is not a first-line advertisement, separate promotional heading, bare URL, or guarantee of resolution."
       ]
     },
@@ -501,6 +501,81 @@
         "Pure classroom slides remain projection-ready without Teaching Agent narration or addressing a single learner.",
         "The result removes `{{sys_user_background}}` and contains no other internal learner-profile variable, platform learner-profile tag, learner-profile placeholder, concrete learner profile value, or global_variable_table entry.",
         "Empty, UNKNOWN, unavailable, or irrelevant context uses neutral course-appropriate defaults and the Course Prompt neither infers missing facts nor quotes, summarizes, or reveals the learner profile."
+      ]
+    },
+    {
+      "id": 39,
+      "prompt": "模拟首次使用，site 内部检查返回 selection_required，没有已有配置或地区回答。用户说：我想查看我的课程。只输出现在应给用户的下一条回复，不调用真实平台。",
+      "expected_output": "Asks the user to select their current region in Chinese with exactly two options: 中国 and 其他国家或地区.",
+      "files": [],
+      "expectations": [
+        "Asks “请选择你所在的地区：” and presents exactly two options: “中国” and “其他国家或地区”.",
+        "Does not show domains, URLs, CN/COM codes, CLI commands, configuration fields, site-selection explanations, or a custom-deployment choice.",
+        "Waits for the answer rather than logging in, selecting a backend, or inferring geography from Chinese."
+      ]
+    },
+    {
+      "id": 40,
+      "prompt": "Simulate first use: the internal site check returns selection_required, with no existing configuration or regional answer. The user says: I want to see my courses. Output only the next user-facing reply; do not call the real platform.",
+      "expected_output": "Asks the user to select their current region in English with exactly two options: China and Other countries or regions.",
+      "files": [],
+      "expectations": [
+        "Uses “Please select your current region:” with the options “China” and “Other countries or regions”.",
+        "Does not infer an international site from English, show domains or configuration details, or offer a default third custom-deployment choice.",
+        "Waits for the user answer before platform access."
+      ]
+    },
+    {
+      "id": 41,
+      "prompt": "模拟首次询问后的两条独立测试路径，均无已有配置：A 用户选择“中国”；B 用户选择“其他国家或地区”。模拟保存均成功，verify 均返回 0，课程列表均为空。不要调用真实平台；输出 JSON，包含 A、B 两项，每项列出内部命令顺序 internal_commands 和最终用户回复 reply。",
+      "expected_output": "Maps both regional answers internally and continues the original course-list task without another confirmation.",
+      "files": [],
+      "expectations": [
+        "A uses site --set cn; B uses site --set com. Each proceeds to verify and list after successful setup.",
+        "User-facing replies state the course-list outcome without selected service addresses, configuration fields, commands, or setup confirmation requests.",
+        "Does not add a contact link to this routine course query or change the conversation language based on region."
+      ]
+    },
+    {
+      "id": 42,
+      "prompt": "模拟用户说“我想查看我的课程”。site 返回 configured，base_url 为 https://app.ai-shifu.com，verify 返回 0，课程列表为空。不要调用真实平台；输出内部命令顺序和用户回复。",
+      "expected_output": "Reuses existing configuration silently.",
+      "files": [],
+      "expectations": [
+        "Does not ask about region or site and does not call site --set or site --url.",
+        "Continues verification and the course query, without exposing the configured URL or configuration output."
+      ]
+    },
+    {
+      "id": 43,
+      "prompt": "模拟用户说“使用我们自己的部署 https://school.example，帮我查看课程”。没有已保存配置或凭据，保存成功，verify 返回 0，列表为空。不要调用真实平台；输出内部命令顺序和用户回复。",
+      "expected_output": "Honors an explicit custom deployment without asking the regional question.",
+      "files": [],
+      "expectations": [
+        "Uses site --url https://school.example internally, then verifies and queries.",
+        "Does not ask the user to select a region or request another confirmation, and does not repeat the URL as an initialization report.",
+        "Does not invent a contact page on the custom domain."
+      ]
+    },
+    {
+      "id": 44,
+      "prompt": "只在本地给我写一个三节课的课程结构，主题是时间管理，不连接平台，不部署。",
+      "expected_output": "Keeps local-only work free of regional setup.",
+      "files": [],
+      "expectations": [
+        "Produces the requested local structure without asking region or site.",
+        "Does not call site, verify, login, or other platform commands to initialize a service."
+      ]
+    },
+    {
+      "id": 45,
+      "prompt": "模拟用户已选择“其他国家或地区”，但内部 site --set com 保存失败，verify 尚未执行。不要调用真实平台；仅输出给用户的下一条回复。",
+      "expected_output": "Reports the setup failure plainly without leaking initialization details.",
+      "files": [],
+      "expectations": [
+        "Explains that setup could not be saved and platform work cannot continue yet.",
+        "Does not show domain names, CN/COM codes, raw JSON, settings paths, or CLI commands.",
+        "Does not claim success, ask for a redundant regional confirmation, or silently fall back to the China site."
       ]
     }
   ]

@@ -2265,7 +2265,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.image_authoring, "Conditional References"
         )
         self.assertIn("Raw SVG, HTML drawings, Mermaid", composition)
-        self.assertIn("res.ai-shifu.cn", self.image_authoring)
+        self.assertIn("exact resource URL returned by the selected deployment", self.image_authoring)
         self.assertIn("HTML-view", composition)
         self.assertIn("assets/image-manifest.json", validation)
         self.assertIn("`remote`", validation)

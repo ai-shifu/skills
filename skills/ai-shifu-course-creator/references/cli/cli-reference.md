@@ -12,20 +12,21 @@ All commands use:
 python3 {skillDir}/scripts/shifu-cli.py <command>
 ```
 
-Authenticated commands accept `--token <jwt>` and otherwise read `SHIFU_TOKEN` from `{skillDir}/.env`. The CLI uses `https://app.ai-shifu.cn` by default. Use `{skillDir}/.env.example` as the reference when creating or editing `{skillDir}/.env`:
+Authenticated commands accept `--token <jwt>` and otherwise use `SHIFU_TOKEN` or saved credentials. Select a site before the first platform command. Use `{skillDir}/.env.example` as the reference when creating or editing `{skillDir}/.env`:
 
 ```dotenv
-SHIFU_BASE_URL=https://app.ai-shifu.cn
+SHIFU_BASE_URL=
 SHIFU_TOKEN=
 ```
 
-Change `SHIFU_BASE_URL` in the process environment or `{skillDir}/.env` to use another deployment. An unset, empty, whitespace-only, or slash-only value falls back to the default production URL. Leading and trailing whitespace and trailing slashes are removed from a custom value before requests and verification URLs are built. A process environment value takes precedence over the value loaded from `{skillDir}/.env`.
+Resolution order: process `SHIFU_BASE_URL` → `{skillDir}/.env` (loaded only when the process variable is absent) → remembered site. An empty, whitespace-only, or slash-only environment value uses the remembered site. If none is configured, platform commands exit `4` without connecting. Leading and trailing whitespace and trailing slashes are removed. Existing non-empty `.env` configurations continue to work without a new selection.
 
 Before every command, the CLI checks for `{skillDir}/.env`. When it is missing, the CLI copies `{skillDir}/.env.example` to `{skillDir}/.env`, sets owner-only permissions, and then loads it. An existing `.env` is never replaced, so an author or agent can change `SHIFU_BASE_URL` before starting an authorization request. The `.env` file holds configuration only; the issued token is stored separately under the user's config directory (see [Authentication](#authentication)).
 
 ## Contents
 
 - [Update Check](#update-check)
+- [Site Selection](#site-selection)
 - [Authentication](#authentication)
 - [Query Commands](#query-commands)
 - [Analytics Query](#analytics-query)
@@ -46,6 +47,23 @@ check-update [--force] [--dev-manifest-url <loopback-url>]
 ```
 
 `check-update` reads the public Skill-version manifest and prints a compact JSON result. `--force` bypasses the local TTL. `--dev-manifest-url` accepts only a localhost or loopback URL and exists for end-to-end development checks.
+
+## Site Selection
+
+```bash
+site
+site --set cn
+site --set com
+site --url https://your-service.example
+```
+
+`site` prints JSON with `status=configured` and the effective `base_url`, plus the official `contact_url`, or `status=selection_required` with both URLs null. CN uses the Chinese official contact page; COM and custom deployments use the international official contact page. It does not make network requests or send usage events. `--set cn` selects `https://app.ai-shifu.cn`; `--set com` selects `https://app.ai-shifu.com`. `--url` accepts an HTTPS service address (HTTP is allowed only for loopback development), without embedded credentials, query parameters, or fragments. All API and course-page URLs use this service base.
+
+Selections are stored in `${XDG_CONFIG_HOME:-~/.config}/ai-shifu/settings.json`, alongside but separate from credentials; `AI_SHIFU_CONFIG_DIR` overrides the directory. An explicit environment or `.env` value still takes precedence. A conflicting explicit override is reported instead of silently saving an ineffective selection. The command does not switch signed-in accounts: if credentials exist and the effective site would change (or was unknown), it refuses before saving. Restore the original explicit service address in that case.
+
+`site` output and setup commands are internal control data. During normal setup, ask the user to select their current region with two options: China or Other countries or regions, then configure silently; do not present these URLs, fields, or commands. Custom deployment is used only when explicitly requested or already configured.
+
+`build`, `check-update`, and `site` do not require site selection. Agent intake behavior is defined in `../authentication.md#select-site-before-connecting`.
 
 ## Authentication
 
@@ -226,7 +244,7 @@ upload-image --url <http-or-https-url> [--course-dir <dir>] [--alt "<description
 
 - A local file is opened with Pillow, has EXIF orientation corrected, is downscaled to a maximum side of 2048 px, and is recompressed to at most 2 MB. Transparent images remain PNG; other accepted images are uploaded as JPEG. Invalid image input exits `1`.
 - A remote URL is sent to the backend for validation and re-hosting.
-- Stdout contains exactly the resulting `https://res.ai-shifu.cn/<uuid32>` URL; diagnostics and manifest messages go to stderr.
+- Stdout contains exactly the resource URL returned by the selected deployment (preserve its host and path); diagnostics and manifest messages go to stderr.
 - With `--course-dir`, the CLI upserts an entry in `assets/image-manifest.json`, keyed by `local` or `source_url`.
 - `--alt` is stored in the manifest.
 - `--no-process` skips local preprocessing and is a debug-only flag.
@@ -251,6 +269,8 @@ unarchive <shifu_bid>
 - `1`: validation, transport, file, authentication, or platform business error; `status --exit-code` also uses `1` for divergence.
 - `2`: `verify` could not determine token state, or a version-aware write found a conflict and auto-pulled the cloud baseline. Interpret the command context before handling this code.
 
+- `4`: platform site selection is required; no platform request was sent. Run `site` and resolve the choice before authentication.
+
 Commands print platform business error payloads before exiting when available.
 
 ## CLI Output & Encoding
@@ -261,4 +281,4 @@ CLI JSON uses UTF-8 and `ensure_ascii=False`. If an agent subprocess renders Chi
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '<json>' > /tmp/shifu-result.json
 ```
 
-The saved token remains in `{skillDir}/.env`; authenticated commands load it automatically.
+Saved credentials remain in the user configuration directory; authenticated commands load them automatically after site selection.

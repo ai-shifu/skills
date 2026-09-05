@@ -24,7 +24,7 @@ Understand every image before choosing its lesson, position, or alt text:
 - If the image is visible, identify in one sentence the concept, relation, or example it conveys.
 - If only an opaque path or URL is available, ask the author for a one-sentence description or a semantically meaningful filename. Do not guess from an opaque filename.
 
-When the selected route permits platform access, upload local or remote assets with `shifu-cli.py upload-image`, always passing `--course-dir` and an informative `--alt`. Use the returned `https://res.ai-shifu.cn/<uuid32>` URL and the stored manifest record as the authoritative asset identity.
+When the selected route permits platform access, upload local or remote assets with `shifu-cli.py upload-image`, always passing `--course-dir` and an informative `--alt`. Use the exact resource URL returned by the selected deployment and the stored manifest record as the authoritative asset identity.
 
 For explicitly local artifact-only work where upload is excluded, do not call `upload-image`. Use the authoritative URL and metadata supplied by the source record instead. Stop when that record lacks the remote URL, informative alt, or another field required by the selected image form; never invent a missing value from a filename.
 
@@ -48,7 +48,7 @@ Use this compact shape when authored output language is Simplified Chinese; loca
 ```markdown
 必须在此处以 HTML-view 方式插入一张带图注的图片，不得省略，并使用 HTML <figure>/<figcaption> 结构。
 
-- URL（必须原样保留）：https://res.ai-shifu.cn/<uuid32>
+- URL（必须原样保留）：<exact URL returned by upload-image>
 - 图片内容（必须用于生成语义化 alt，不得省略）：图片传达的具体概念或关系
 - 图注文字（必须原样输出，不要改写）：图注原文
 - 展示方式：居中，宽度不超过容器 70%，保持原始宽高比
