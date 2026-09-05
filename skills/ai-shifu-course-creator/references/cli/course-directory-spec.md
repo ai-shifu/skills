@@ -187,7 +187,7 @@ The course and lesson revisions are cloud baselines. `content_sha256` is the las
   "images": [
     {
       "local": "assets/raw/gradient-descent.heic",
-      "remote": "https://res.ai-shifu.cn/abcd",
+      "remote": "https://assets.example.com/abcd",
       "alt": "Image description",
       "uploaded_at": "2026-05-23T08:42:31Z",
       "bytes": 612345,
@@ -197,7 +197,7 @@ The course and lesson revisions are cloud baselines. `content_sha256` is the las
     },
     {
       "source_url": "https://example.com/diagram.png",
-      "remote": "https://res.ai-shifu.cn/efgh",
+      "remote": "https://assets.example.com/efgh",
       "alt": "Image description",
       "uploaded_at": "2026-05-23T08:45:02Z"
     }

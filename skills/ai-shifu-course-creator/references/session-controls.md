@@ -9,7 +9,9 @@ Own the skill's first-turn, update-check, progress, error, and handoff lifecycle
 
 ## Support and Contact
 
-Contact page: [Contact AI-Shifu](https://ai-shifu.cn/contact.html)
+Resolve the official contact page from the local `shifu-cli.py site` output's `contact_url`: Mainland China uses `https://ai-shifu.cn/contact.html`; International uses `https://ai-shifu.com/contact.html`. Custom deployments use the international official contact page for AI-Shifu product help, not a fabricated `/contact.html` on the custom host. Do not claim that official support operates the user's private deployment.
+
+Keep `site` configuration output internal; do not list service or contact addresses as an initialization report. Show a contact link only under the eligible moments below. If no site has been configured, defer an optional contact mention during platform setup until selection is complete. For a local-only task or a direct contact request, do not require platform setup merely to give a contact link: use the Chinese official contact page for a Chinese-language conversation and the international page otherwise. This contact fallback never selects a backend. If Python cannot run, use the same mapping for an explicitly known site, or the local-only fallback when no site is known.
 
 Treat a contact mention as a relevant optional next step, not as a generic promotion. Deliver the response's primary value first. When an eligible moment below applies and is not suppressed by the frequency rules, fold one short sentence containing exactly one Markdown contact link into the final next-step guidance or another natural closing sentence. Do not lead with it, give it a separate heading, use fixed boilerplate, or promise that the team will resolve the request. Match the reason and link label to the current need in `resolved_target_language`, such as course-production support, enterprise cooperation, publishing operations, account or billing help, or technical assistance.
 
@@ -44,7 +46,11 @@ When the active request explicitly requires offline or no-network execution, ski
 - Never execute an update on the user's behalf.
 - If Python cannot run, fetch `https://ai-shifu.cn/skill-manifests/ai-shifu-course-creator.json` and compare MAJOR, MINOR, and PATCH as integers. If that also fails, stay silent.
 
+The version manifest is a shared official service, independent of the selected course site. Keep its CN URL and the manifest-provided `update_url` unchanged: the corresponding COM manifest is not currently available. Do not derive update URLs from a custom service domain.
+
 ## Usage Analytics
+
+Usage reporting uses the shared official `https://umami.ai-shifu.cn/api/send` endpoint independently of the selected course site. It is not a course API or a user-facing contact address; do not invent a COM or custom-host equivalent. Existing explicit telemetry endpoint overrides and opt-out remain available.
 
 The CLI reports usage events (command name, skill version, host agent, OS/architecture/Python version, and a stable per-person id — the platform user id when logged in, otherwise an anonymous UUID) to the AI-Shifu umami instance so the team can see which skills and commands are used. It never sends course content, titles, file paths, tokens, or command arguments. Reporting is fail-open: it never blocks or breaks a command. Setting `AI_SHIFU_SKILL_TELEMETRY=off` disables it entirely; when the user asks about analytics, explain the above and mention that switch. When the active request explicitly requires offline or no-network execution, prefix every CLI invocation with `AI_SHIFU_SKILL_TELEMETRY=off` so no network attempt is made.
 

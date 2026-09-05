@@ -33,14 +33,142 @@ course_creator_cli = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(course_creator_cli)
 
 
+class CourseCreatorSiteTests(unittest.TestCase):
+    def setUp(self):
+        tmp = self.enterContext(tempfile.TemporaryDirectory())
+        self.root = Path(tmp)
+        self.enterContext(mock.patch.dict(
+            course_creator_cli.os.environ,
+            {"AI_SHIFU_CONFIG_DIR": tmp}, clear=True,
+        ))
+        self.enterContext(mock.patch.object(course_creator_cli, "load_env"))
+        self.track = self.enterContext(mock.patch.object(course_creator_cli, "track"))
+        self.get = self.enterContext(mock.patch.object(course_creator_cli.requests, "get"))
+        self.post = self.enterContext(mock.patch.object(course_creator_cli.requests, "post"))
+
+    def run_cli(self, *arguments):
+        with (
+            mock.patch.object(sys, "argv", ["shifu-cli.py", *arguments]),
+            contextlib.redirect_stdout(io.StringIO()) as output,
+        ):
+            course_creator_cli.main()
+        return output.getvalue()
+
+    def test_first_run_requires_choice_without_network_or_credentials(self):
+        result = json.loads(self.run_cli("site"))
+        self.assertEqual(result, {
+            "status": "selection_required", "base_url": None, "contact_url": None,
+        })
+        self.assertFalse((self.root / "settings.json").exists())
+        self.get.assert_not_called()
+        self.post.assert_not_called()
+        self.track.assert_not_called()
+
+    def test_official_choices_persist_and_drive_platform_and_contact_urls(self):
+        for site in ("cn", "com"):
+            with self.subTest(site=site):
+                result = json.loads(self.run_cli("site", "--set", site))
+                self.assertEqual(result["base_url"], f"https://app.ai-shifu.{site}")
+                self.assertEqual(result["contact_url"], f"https://ai-shifu.{site}/contact.html")
+                self.assertEqual(json.loads(self.run_cli("site")), result)
+                with (
+                    mock.patch.object(course_creator_cli, "cmd_verify") as verify,
+                    mock.patch.object(course_creator_cli, "cmd_login") as login,
+                ):
+                    self.run_cli("verify")
+                    verify.assert_called_once()
+                    login.assert_not_called()
+                with contextlib.redirect_stdout(io.StringIO()) as output:
+                    course_creator_cli._print_verification_urls(
+                        course_creator_cli.resolve_base_url(), "course", True,
+                    )
+                self.assertIn(f"https://app.ai-shifu.{site}/c/course", output.getvalue())
+        self.assertEqual((self.root / "settings.json").stat().st_mode & 0o777, 0o600)
+        self.get.assert_not_called()
+        self.post.assert_not_called()
+
+    def test_custom_url_is_normalized_and_uses_official_contact(self):
+        result = json.loads(self.run_cli("site", "--url", " https://school.example:8443/ "))
+        self.assertEqual(result["base_url"], "https://school.example:8443")
+        self.assertEqual(result["contact_url"], "https://ai-shifu.com/contact.html")
+        self.assertEqual(course_creator_cli.resolve_base_url(), result["base_url"])
+
+    def test_explicit_configuration_is_reused_and_cannot_be_silently_overridden(self):
+        self.run_cli("site", "--set", "com")
+        original = (self.root / "settings.json").read_bytes()
+        with mock.patch.dict(course_creator_cli.os.environ, {"SHIFU_BASE_URL": "https://app.ai-shifu.cn/"}):
+            self.assertEqual(json.loads(self.run_cli("site"))["base_url"], course_creator_cli.SITE_URLS["cn"])
+            with self.assertRaises(SystemExit) as error:
+                self.run_cli("site", "--set", "com")
+            self.assertEqual(error.exception.code, 1)
+        self.assertEqual((self.root / "settings.json").read_bytes(), original)
+
+    def test_blank_override_uses_remembered_site(self):
+        self.run_cli("site", "--set", "com")
+        for value in ("", "   ", "///"):
+            with mock.patch.dict(course_creator_cli.os.environ, {"SHIFU_BASE_URL": value}):
+                self.assertEqual(course_creator_cli.configured_base_url(), course_creator_cli.SITE_URLS["com"])
+
+    def test_invalid_custom_addresses_are_rejected_without_saving(self):
+        for url in ("", "school.example", "https://", "http://school.example", "https://user:secret@school.example", "https://school.example?q=1", "https://school.example#x", "https://school.example:bad", "https://school.example?", "https://school.example#", "https://school.example:0", "https://school example"):
+            with self.subTest(url=url), self.assertRaises(SystemExit) as error:
+                self.run_cli("site", "--url", url)
+            self.assertEqual(error.exception.code, 1)
+            self.assertFalse((self.root / "settings.json").exists())
+        self.get.assert_not_called()
+        self.post.assert_not_called()
+
+    def test_loopback_development_address_is_allowed(self):
+        result = json.loads(self.run_cli("site", "--url", "http://127.0.0.1:5000/"))
+        self.assertEqual(result["base_url"], "http://127.0.0.1:5000")
+
+    def test_all_platform_commands_stop_before_dispatch_without_site(self):
+        for command in ("verify", "login", "list", "publish"):
+            arguments = (command, "course") if command == "publish" else (command,)
+            with self.subTest(command=command), self.assertRaises(SystemExit) as error:
+                self.run_cli(*arguments)
+            self.assertEqual(error.exception.code, 4)
+        self.get.assert_not_called()
+        self.post.assert_not_called()
+        self.track.assert_not_called()
+
+    def test_local_build_and_update_check_do_not_require_selection(self):
+        with (
+            mock.patch.object(course_creator_cli, "cmd_build") as build,
+            mock.patch.object(course_creator_cli, "cmd_check_update") as update,
+        ):
+            self.run_cli("build", "--course-dir", str(self.root))
+            self.run_cli("check-update")
+        build.assert_called_once()
+        update.assert_called_once()
+        self.assertFalse((self.root / "settings.json").exists())
+
+    def test_existing_unbound_credentials_are_not_sent_to_new_site(self):
+        course_creator_cli.save_token("test-token")
+        with self.assertRaises(SystemExit) as error:
+            self.run_cli("site", "--set", "com")
+        self.assertEqual(error.exception.code, 1)
+        self.assertFalse((self.root / "settings.json").exists())
+        self.assertEqual(course_creator_cli.load_saved_token(), "test-token")
+        self.get.assert_not_called()
+        self.post.assert_not_called()
+
+    def test_same_site_setup_preserves_existing_credentials_and_settings(self):
+        self.run_cli("site", "--set", "cn")
+        course_creator_cli.save_token("test-token")
+        self.run_cli("site", "--set", "cn")
+        with self.assertRaises(SystemExit):
+            self.run_cli("site", "--set", "com")
+        self.assertEqual(course_creator_cli.configured_base_url(), course_creator_cli.SITE_URLS["cn"])
+        self.assertEqual(course_creator_cli.load_saved_token(), "test-token")
+
+
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
     def test_env_example_documents_base_url_and_token(self):
         env_example = SCRIPT_DIR.parent / ".env.example"
         content = env_example.read_text(encoding="utf-8")
 
-        self.assertIn(
-            f"SHIFU_BASE_URL={course_creator_cli.DEFAULT_BASE_URL}", content
-        )
+        self.assertIn("\nSHIFU_BASE_URL=\n", content)
         self.assertIn("SHIFU_TOKEN=", content)
 
     def test_load_env_copies_the_template_when_env_is_missing(self):
