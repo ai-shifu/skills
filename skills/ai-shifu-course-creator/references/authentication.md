@@ -35,9 +35,10 @@ If any authenticated command returns token error `1001`, `1004`, or `1005`, run 
 ## Agent Browser Authorization Flow
 
 1. Run `login` exactly once.
-2. In one short turn, give the user the verification link exactly as printed and explain that opening it signs this device in, that the page shows which device is asking, and that they must press the approve button there. Mention that the link already carries the pairing code, that an account is created on first use, and that a browser session already signed in will not have to sign in again.
-3. Run `login --wait`.
-4. Act on the exit code:
+2. Open the verification link exactly as printed in the Agent's built-in browser. In Codex, use a visible in-app browser tab (`cua.createBrowserTab("iab", url, { visible: true })`, following the tool's initialization instructions); in other Agents, use their available built-in browser capability. Do not use the system browser or shell commands to open it. If the built-in browser is unavailable or opening fails, keep the same pending request and give the user the original clickable link to open manually; do not run `login` again for a browser failure.
+3. In one short turn, give the user the verification link exactly as printed and explain that approving it signs this device in, that the page shows which device is asking, and that they must press the approve button there themselves. Never click approve for the user. The CLI prefers `verification_uri_complete`, which carries the pairing code, but can fall back to `verification_uri`, which may require manual code entry. Include the separately printed pairing code and tell the user to enter it if the page asks; do not claim every link already carries it or modify the returned URL. Mention that an account is created on first use and that a browser session already signed in will not have to sign in again.
+4. Run `login --wait`.
+5. Act on the exit code:
    - `0`: authorized and stored. Run `verify` once, then continue the original operation.
    - `3`: still waiting. Ask the user to finish approving, then run `login --wait` again.
    - `1`: denied, expired, or never started. Explain what happened, and start over with `login` only if the user wants to retry.
@@ -48,7 +49,8 @@ Do not insert readiness checks, account-status questions, acknowledgements, reca
 
 | Result | Agent action |
 | --- | --- |
-| `login` printed a link | Hand the link to the user unchanged and wait. Do not start a second request. |
+| `login` printed a link | Open it in the Agent's built-in browser, hand the link to the user unchanged, and wait. Do not start a second request. |
+| Built-in browser unavailable or opening failed | Provide the original clickable link for manual opening and wait on the same request. Do not fall back to the system browser or run `login` again. |
 | `login --wait` exits `3` | Ask the user to approve in the browser, then run `login --wait` again. |
 | User says the page reports an invalid or expired code | Run `login` once more to issue a fresh link. |
 | User denied the request by mistake | Run `login` once more to issue a fresh link. |
