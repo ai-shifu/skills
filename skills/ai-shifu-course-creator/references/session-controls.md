@@ -60,3 +60,15 @@ The CLI reports usage events (command name, skill version, host agent, OS/archit
 - When an error occurs, state the attempted operation, its impact, whether it blocks the run, and the safest recovery action. Continue past non-blocking errors when the active workflow permits it.
 - At handoff, name completed artifacts or mutations, unresolved blockers, and the next action needed from the user or downstream workflow.
 - Apply the language policy and URL formatting dependency to every message in this lifecycle.
+
+## Course Admin Handoff
+
+Course authors use the admin console to inspect and debug drafts. Keep course and lesson preview links out of CLI output and user-facing reports; direct preview requests to the admin console instead, without constructing a preview URL.
+
+For each course being delivered in the current user request, retain the exact `Admin console:` URL from that target course's CLI `Verification URLs:` block. After the requested operations and their required verification have completed successfully, open this URL once in the host's visible embedded browser, immediately before the final handoff. Intermediate `pull`, `show`, import output, and conflict retries are not handoffs. Wait for the entire command to exit successfully: an import can print URLs before its final synchronization step finishes. Do not open another course found incidentally, invent a missing URL, or open a browser for local-only work. Follow an explicit user request not to open a page.
+
+In Codex, prefer the available `open_in_codex` tool with `target: {"type": "browser", "url": "<exact CLI admin URL>"}`. In another host, or when that tool is absent, use an available tool that explicitly supports its visible embedded browser. Do not substitute a generic browser tool, an external browser, or an operating-system opener. This is an agent handoff action; the Python CLI only prints URLs and does not open a browser.
+
+If no embedded-browser tool is available, or opening fails, briefly explain that the admin page could not be opened in the app and keep the link available. Do not automatically retry the opening or change the success status of the completed course operation. Report that the page opened only when the tool confirms success; opening a page does not verify its content or publication state.
+
+Always retain the admin link in the final report, even after a successful opening, so the author can reopen or copy it. Retain any CLI-supplied public learner link as well. Use the three-line URL format and exact purpose hints from `report-template.md#formatting-rules` for both.

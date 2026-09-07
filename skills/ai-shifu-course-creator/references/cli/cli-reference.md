@@ -100,7 +100,7 @@ find-title <keyword>
 - `export` writes course JSON to stdout or the path passed with `-o`.
 - `find-title` requires at least two non-whitespace characters, then matches the keyword case-insensitively after whitespace normalization against current draft and published titles. It does not match historical or renamed titles.
 
-`show` without an outline BID prints a `Verification URLs:` block containing admin and preview URLs plus the published URL when available. `create`, `import`, `pull`, and `publish` also print command-appropriate verification URL blocks. Per-lesson preview URLs are not printed.
+`show` without an outline BID and with a non-empty outline tree prints a `Verification URLs:` block containing the admin and public learner URLs. It does not check publication state before printing the latter. `create`, `import`, and `pull` print the admin URL; `publish` prints both admin and public learner URLs. Neither course nor lesson preview URLs are printed. These commands only print URLs; the skill-running agent handles opening the admin page in the embedded browser at the final handoff. An import's URL block can precede its final synchronization step, so wait for the command's successful exit before treating it as complete.
 
 ## Analytics Query
 
@@ -259,7 +259,7 @@ archive <shifu_bid>
 unarchive <shifu_bid>
 ```
 
-- `publish` publishes the current draft and prints admin, preview, and public verification URLs.
+- `publish` publishes the current draft and prints admin and public learner verification URLs.
 - `archive` archives the course.
 - `unarchive` restores an archived course.
 

@@ -163,6 +163,97 @@ class CourseCreatorSiteTests(unittest.TestCase):
         self.assertEqual(course_creator_cli.load_saved_token(), "test-token")
 
 
+class CourseCreatorVerificationUrlTests(unittest.TestCase):
+    def setUp(self):
+        self.base_url = "https://school.example/academy"
+        self.enterContext(mock.patch.object(
+            course_creator_cli, "resolve_auth",
+            return_value=(self.base_url, "test-token"),
+        ))
+        self.api = self.enterContext(mock.patch.object(course_creator_cli, "api"))
+        self.api_safe = self.enterContext(mock.patch.object(course_creator_cli, "api_safe"))
+
+    def test_exact_admin_and_optional_learner_output_never_contains_preview(self):
+        admin_hint = (
+            "    # 点击会跳转到 AI 师傅管理后台，用于设置章节状态、收费与否，以及手工调整课程细节、"
+            "调试 AI 一对一授课的效果。调试时会消耗课程创建者在 AI 师傅的积分。\n"
+        )
+        learner_hint = (
+            "    # 点击会跳转到 AI 师傅课程学习页，可以发送给学员使用且仅在课程已发布后有效；"
+            "任何人学习都会消耗课程创建者在 AI 师傅的积分。\n"
+        )
+        for base_url in (
+            "https://app.ai-shifu.cn",
+            "https://app.ai-shifu.com",
+            self.base_url,
+        ):
+            for published in (False, True):
+                with self.subTest(base_url=base_url, published=published):
+                    with contextlib.redirect_stdout(io.StringIO()) as output:
+                        course_creator_cli._print_verification_urls(
+                            base_url, "course", include_published=published,
+                        )
+                    expected = (
+                        "\nVerification URLs:\n"
+                        f"  Admin console:    {base_url}/shifu/course\n"
+                        + admin_hint
+                    )
+                    if published:
+                        expected += f"  Published URL:    {base_url}/c/course\n" + learner_hint
+                    self.assertEqual(output.getvalue(), expected)
+        self.api.assert_not_called()
+        self.api_safe.assert_not_called()
+
+    def test_whole_course_show_still_includes_learner_url_without_publish_check(self):
+        self.api_safe.return_value = {"name": "Draft course"}
+        self.api.return_value = [{"bid": "lesson", "name": "First lesson"}]
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            course_creator_cli.cmd_show(types.SimpleNamespace(
+                shifu_bid="course", outline_bid=None,
+            ))
+        result = output.getvalue()
+        self.assertIn("Outline tree:\n- [lesson] First lesson\n", result)
+        self.assertIn(f"Admin console:    {self.base_url}/shifu/course\n", result)
+        self.assertIn(f"Published URL:    {self.base_url}/c/course\n", result)
+        self.assertNotIn("preview", result.lower())
+
+    def test_empty_course_show_does_not_print_verification_urls(self):
+        self.api_safe.return_value = {"name": "Empty course"}
+        self.api.return_value = []
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            course_creator_cli.cmd_show(types.SimpleNamespace(
+                shifu_bid="course", outline_bid=None,
+            ))
+        self.assertIn("No outlines found.", output.getvalue())
+        self.assertNotIn("Verification URLs:", output.getvalue())
+
+    def test_lesson_show_prints_only_revision_and_content(self):
+        self.api.return_value = {"revision": 7, "data": "Lesson content"}
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            course_creator_cli.cmd_show(types.SimpleNamespace(
+                shifu_bid="course", outline_bid="lesson",
+            ))
+        self.assertEqual(output.getvalue(), "# Revision: 7\n\nLesson content\n")
+        self.api_safe.assert_not_called()
+
+    def test_publish_prints_learner_url_only_after_success(self):
+        for succeeds in (False, True):
+            with self.subTest(succeeds=succeeds):
+                self.api.side_effect = None if succeeds else RuntimeError("Publish failed")
+                with contextlib.redirect_stdout(io.StringIO()) as output:
+                    if succeeds:
+                        course_creator_cli.cmd_publish(types.SimpleNamespace(shifu_bid="course"))
+                    else:
+                        with self.assertRaisesRegex(RuntimeError, "Publish failed"):
+                            course_creator_cli.cmd_publish(types.SimpleNamespace(shifu_bid="course"))
+                if succeeds:
+                    self.assertIn("Published: course\n", output.getvalue())
+                    self.assertIn(f"Published URL:    {self.base_url}/c/course\n", output.getvalue())
+                    self.assertNotIn("preview", output.getvalue().lower())
+                else:
+                    self.assertEqual(output.getvalue(), "")
+
+
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
     def test_env_example_documents_base_url_and_token(self):
         env_example = SCRIPT_DIR.parent / ".env.example"

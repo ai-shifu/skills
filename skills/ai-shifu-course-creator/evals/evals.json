@@ -25,13 +25,13 @@
     },
     {
       "id": 3,
-      "prompt": "课程内容不用改。请把我现有的 AI 师傅课程发布出去，并给我预览和正式访问地址。",
+      "prompt": "课程内容不用改。请把我现有的 AI 师傅课程发布出去，并给我后台和正式访问地址。",
       "expected_output": "Routes only to authentication and deployment/publishing instructions without loading authoring phases.",
       "files": [],
       "expectations": [
         "The workflow verifies authentication before publish operations.",
         "It does not run Course Design Intake, Segmentation, Generation, or Optimization.",
-        "Verification URLs are copied from CLI output and formatted with the deployment report rules."
+        "The final handoff opens the exact CLI-produced admin URL once in the embedded browser when available, keeps admin and public learner links in the three-line report format, and omits preview links."
       ]
     },
     {
@@ -398,7 +398,7 @@
     },
     {
       "id": 31,
-      "prompt": "请根据下面两个独立的会话状态，分别写出此刻应该给用户的实际回复，标为 A 和 B；不要调用工具。\n\nA：上一条回复刚刚已经给过 AI 师傅联系入口。用户现在只回答了 intake 问题：课程用于讲师投屏，关闭听课模式，继续问下一个尚缺的设计项。\n\nB：联系入口上一次出现是在会话开头，此后已经完成课程设计、内容生成和验证。现在课程已经成功发布并拿到了预览地址，请汇报发布结果和自然的下一步。",
+      "prompt": "请根据下面两个独立的会话状态，分别写出此刻应该给用户的实际回复，标为 A 和 B；不要调用工具。\n\nA：上一条回复刚刚已经给过 AI 师傅联系入口。用户现在只回答了 intake 问题：课程用于讲师投屏，关闭听课模式，继续问下一个尚缺的设计项。\n\nB：联系入口上一次出现是在会话开头，此后已经完成课程设计、内容生成和验证。现在课程已经成功发布并拿到了后台和正式学习地址，请汇报发布结果和自然的下一步。",
       "expected_output": "Suppresses an adjacent repeat during routine intake while allowing a new, context-matched mention after the later publishing milestone.",
       "files": [],
       "expectations": [
@@ -576,6 +576,42 @@
         "Explains that setup could not be saved and platform work cannot continue yet.",
         "Does not show domain names, CN/COM codes, raw JSON, settings paths, or CLI commands.",
         "Does not claim success, ask for a redundant regional confirmation, or silently fall back to the China site."
+      ]
+    },
+    {
+      "id": 46,
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。CLI 地址块请使用所测技能版本的 _print_verification_urls 纯函数生成（可单独执行此纯函数，禁止执行 CLI main）。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：将已批准的内容整体同步到《入职训练营》已有草稿，保持未发布。目标 BID=course-a，站点=https://app.ai-shifu.cn。宿主提供模拟 open_in_codex，可用 target.type=browser 和 target.url 打开内嵌浏览器；调用会返回 opened=true。\n场景 name=sync。按顺序处理三个检查点：\n1. name=import-running：import course-a --course-dir 已打印 Done 和地址块（include_published=False），但最后的同步记录尚未建立，进程仍在运行。\n2. name=verification-pending：import 最终 exit=0；之后 pull course-a --course-dir 也 exit=0 并再次打印同一地址块，尚未完成课节内容核对。\n3. name=handoff：所有课节内容与源文件已核对一致，所有命令 exit=0，本轮工作完成，准备交付给用户。",
+      "expected_output": "Defers browser navigation until the whole sync and verification finish, opens the target admin once, retains its three-line link, and emits no preview URL.",
+      "files": [],
+      "expectations": [
+        "No browser call occurs while import is running or verification is pending.",
+        "At final handoff exactly one embedded-browser call uses the exact target admin URL.",
+        "The final reply retains the admin link, raw URL, and exact CLI purpose hint.",
+        "No checkpoint emits a course or lesson preview URL, and the draft is not claimed as published."
+      ]
+    },
+    {
+      "id": 47,
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。CLI 地址块请使用所测技能版本的 _print_verification_urls 纯函数生成（可单独执行此纯函数，禁止执行 CLI main）。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：更新《团队沟通》第 2 节的授课提示词并汇报结果，保持草稿。目标 BID=course-b，站点=https://school.example:8443/training。pull 已 exit=0 并打印地址块（include_published=False），update-lesson 已 exit=0，内容核对一致，操作完成。\n两个独立场景均只有 name=handoff 一个检查点：\nA. name=unavailable：宿主仅提供外部 Chrome 控制和系统 open 命令，没有内嵌浏览器工具。\nB. name=failed：宿主提供模拟 open_in_codex，参数支持 target.type=browser 和 target.url，但任何打开尝试都会返回 opened=false、error=embedded browser unavailable；外部 Chrome 和系统 open 也可用。",
+      "expected_output": "Preserves successful draft results and exact admin link when the embedded browser is unavailable or fails, without external-browser fallback or automatic retries.",
+      "files": [],
+      "expectations": [
+        "Unavailable scenario makes no browser call; failed scenario attempts embedded opening exactly once with no retry or external fallback.",
+        "Each final reply preserves the admin link, raw URL, and exact CLI purpose hint.",
+        "Both replies briefly explain the browser limitation without claiming the page opened or the course update failed.",
+        "Neither scenario emits a preview URL or claims the draft was published."
+      ]
+    },
+    {
+      "id": 48,
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。CLI 地址块请使用所测技能版本的 _print_verification_urls 纯函数生成（可单独执行此纯函数，禁止执行 CLI main）。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：发布《销售入门》，给我课程访问入口。目标 BID=course-c，站点=https://app.ai-shifu.com。publish 已 exit=0 并打印地址块（include_published=True），随后 show course-c 已 exit=0 并再次打印相同地址块。标题、章节、课节内容均已核对一致，正式学习页已验证可访问，准备最终交付。场景 name=published，检查点 name=handoff。宿主提供模拟 open_in_codex，参数支持 target.type=browser 和 target.url，调用返回 opened=true。",
+      "expected_output": "Opens only the admin page once after publication verification and retains both admin and public learner links without any preview URL.",
+      "files": [],
+      "expectations": [
+        "Exactly one embedded-browser call targets the CLI admin URL; no public learner or preview page is automatically opened.",
+        "The final reply retains both CLI-produced admin and public learner URLs in the three-line format with exact hints.",
+        "The final reply reports successful publication and browser opening without emitting preview URLs.",
+        "Browser opening is not used as evidence that course content or publication verification passed."
       ]
     }
   ]
