@@ -11,11 +11,12 @@ Use the section matching the executed phase. Omit sections for phases not run.
 These rules apply to every report produced from this template and to any other user-visible chat output that includes URLs.
 
 - **Report language.** Apply the required Language Policy to every human-readable report value and preserve its excluded literals.
-- **Links must be Markdown, never bare URLs.** Whenever you show a URL to the user (admin console, course preview, contact page, etc.), wrap it in Markdown link syntax `[descriptive text](URL)`. Never emit a bare `https://...` on its own line.
+- **Links must be Markdown, never bare URLs.** Whenever you show a URL to the user (admin console, public learner page, contact page, etc.), wrap it in Markdown link syntax `[descriptive text](URL)`. Never emit a bare `https://...` on its own line.
 - **Why:** the AI-Shifu chat client only treats Markdown links as clickable / copy-on-tap. A bare URL renders as plain text — the user cannot click it and cannot copy it cleanly on mobile.
 - **Where this applies:** phase reports below, the opening introduction, contact mentions, and any ad-hoc message that surfaces a URL to the user.
 - **Where this does NOT apply:** URLs inside Teaching Prompts (those follow MarkdownFlow image / link rules) and URLs shown inside fenced code blocks for reference.
-- **Exception — deployment / management Verification URLs.** When transcribing a `Verification URLs:` block supplied by the active workflow, emit each URL as **three lines**:
+- **Course links.** Report only the active target's CLI-supplied admin and public learner links. An admin-only handoff lookup contributes only its admin entry, not any incidental public learner entry; the same applies to internal target-resolution lookups. Retain learner links supplied by a user-requested course-view or publish operation under the existing workflow rules. Omit course and lesson preview URLs, including any supplied by older CLI output, and do not reconstruct them. Keep the admin link even when the embedded browser opened successfully.
+- **Exception — deployment / management Verification URLs.** When transcribing the admin and public learner entries from a `Verification URLs:` block supplied by the active workflow, emit each URL as **three lines**:
   1. A Markdown link — `[<course name> - <localized purpose label>](<URL>)`
   2. The same URL again on its own line (intentionally bare), indented two spaces — so the user can long-press / select to copy it cleanly.
   3. The script's following Chinese `# ...` hint, copied verbatim without the leading `#`. The bare URL on line 2 is the only place a bare URL is allowed; it exists because copying out of a rendered Markdown link is unreliable on some clients. The script-owned Chinese hint on line 3 is a verbatim-output exception to the report-language rule; do not translate or rewrite it.
@@ -141,11 +142,11 @@ Validation:
 - Import without errors: `pass|fail`
 - Course accessible via URL: `pass|fail`
 - Lesson count matches source: `pass|fail`
-- Preview mode reachable: `pass|fail`
+- Admin browser handoff: `opened|queued|unavailable|failed|skipped`
 
 Verification URLs:
 
-Use exactly the entries supplied by the active workflow's `Verification URLs:` block. Do not add, omit, reconstruct, or edit any URL. Render each supplied URL as three lines per the Formatting Rules exception; use the supplied purpose to choose the localized link label, and copy the following `# ...` hint without the leading `#` or surrounding indentation.
+Use the admin and public learner entries supplied by the active workflow's `Verification URLs:` block. Omit any course or lesson preview entry. Do not invent, reconstruct, or edit URLs. Render each retained URL as three lines per the Formatting Rules exception; use the supplied purpose to choose the localized link label, and copy the following `# ...` hint without the leading `#` or surrounding indentation. Always retain the admin entry after opening it in the embedded browser. Browser handoff status is separate from course verification results.
 
 The fenced snippets below are illustrative templates only. In the generated report, emit their three content lines as ordinary Markdown without the surrounding fence so the first line remains clickable.
 
@@ -154,15 +155,6 @@ The fenced snippets below are illustrative templates only. In the generated repo
   <!-- prettier-ignore -->
   ```md
   - [<course name> - <localized admin-console label>](<URL from script>)
-    <URL from script>
-    <Chinese hint copied verbatim from the script output, without "#">
-  ```
-
-- `Course preview:`
-
-  <!-- prettier-ignore -->
-  ```md
-  - [<course name> - <localized course-preview label>](<URL from script>)
     <URL from script>
     <Chinese hint copied verbatim from the script output, without "#">
   ```

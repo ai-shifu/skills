@@ -501,25 +501,20 @@ def fmt_time(ts):
 
 
 def _print_verification_urls(base_url, shifu_bid, include_published=False):
-    """Print admin + course preview, and (when published) the public URL.
+    """Print the admin URL and optionally the public learner URL.
 
-    Skill docs instruct the Skill-running agent to transcribe these lines
-    verbatim. Do not let that agent reconstruct URLs from a template — that
-    has historically led to wrong path (/shifu vs /c) and wrong param name
-    (outline_bid vs lessonid).
+    The skill-running agent uses the exact admin URL for its browser handoff
+    and copies any reported URLs and hints from this output. Keeping URL
+    construction here avoids confusing the /shifu and /c routes.
 
-    `include_published=True` adds the public student-facing URL (no preview
-    query param). Callers should set it only when the course is known to be
-    in a published state (e.g. right after `publish`, or in `show` which
-    queries existing courses that are typically already published).
-    Lesson-level URLs are intentionally not printed — they bloat reports for
-    multi-lesson courses; build one on demand via `show <shifu_bid>` if needed.
+    `include_published=True` adds the learner URL. Whole-course `show` with
+    outlines requests it without checking publication status, so its presence does
+    not establish that learners can access the course. Preview URLs are not
+    printed. Browser navigation is handled by the host agent, not this CLI.
     """
     print("\nVerification URLs:")
     print(f"  Admin console:    {base_url}/shifu/{shifu_bid}")
     print("    # 点击会跳转到 AI 师傅管理后台，用于设置章节状态、收费与否，以及手工调整课程细节、调试 AI 一对一授课的效果。调试时会消耗课程创建者在 AI 师傅的积分。")
-    print(f"  Course preview:   {base_url}/c/{shifu_bid}?preview=true")
-    print("    # 点击会跳转到 AI 师傅课程预览页，仅课程作者本人可见，用于正式发布前自测课程草稿的效果；预览会消耗课程创建者在 AI 师傅的积分。")
     if include_published:
         print(f"  Published URL:    {base_url}/c/{shifu_bid}")
         print("    # 点击会跳转到 AI 师傅课程学习页，可以发送给学员使用且仅在课程已发布后有效；任何人学习都会消耗课程创建者在 AI 师傅的积分。")
@@ -1063,6 +1058,7 @@ def cmd_show(args):
         tree = api(base_url, token, "get", f"/shifus/{shifu_bid}/outlines")
         if not tree:
             print("No outlines found.")
+            _print_verification_urls(base_url, shifu_bid)
             return
 
         def print_tree(items, indent=0):

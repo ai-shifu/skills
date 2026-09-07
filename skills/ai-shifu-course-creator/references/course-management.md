@@ -25,8 +25,8 @@ Complete `authentication.md` first. Before mutating learner-facing metadata, com
 | Intent | Command | Required result check |
 | --- | --- | --- |
 | List courses | `list` | Confirm the intended title and Shifu BID from current results. |
-| Preview course | `show <shifu_bid>` | Copy the CLI-produced admin and preview URLs. |
-| Preview one lesson | `show <shifu_bid>` to obtain its `outline_bid`, then use the lesson URL only when requested | Confirm the requested lesson BID before reporting the URL. |
+| Preview course | `show <shifu_bid>` | Use the CLI-produced admin URL for the final handoff; the author can debug the draft there. |
+| Preview one lesson | `show <shifu_bid>` to identify the requested lesson | Direct the author to that lesson in the admin console; do not generate a lesson preview URL. |
 | Publish current draft | `publish <shifu_bid>` | Confirm the CLI-produced public learner URL works. |
 | Archive or restore | `archive <shifu_bid>` / `unarchive <shifu_bid>` | Re-run `list` or `show` as appropriate to confirm state. |
 | Reorder lessons | `reorder <shifu_bid> --order bid1,bid2,...` | Run `show <shifu_bid>` and confirm the returned order. |
@@ -43,4 +43,4 @@ When `update-meta --course-dir`, `set-tts --course-dir`, or `set-avatar --course
 
 ## Verification URLs
 
-Copy every URL and its following Chinese `# ...` hint verbatim from CLI output and use the layout in `report-template.md`. Do not reconstruct platform URLs. The CLI intentionally omits lesson-level preview URLs. When the user explicitly requests one, first obtain the lesson's `outline_bid` from `show`, then form the documented exception `<base>/c/<bid>?preview=true&lessonid=<outline_bid>`.
+Copy the target course's CLI-produced admin and public learner URLs and their following Chinese `# ...` hints using the layout in `report-template.md`. Do not reconstruct platform URLs or supply course or lesson preview links. At the final handoff, apply the Course Admin Handoff rule from the startup-loaded `session-controls.md`: obtain a missing admin URL with `show <shifu_bid>`, open the admin page once in the embedded browser, and retain its link in the report.

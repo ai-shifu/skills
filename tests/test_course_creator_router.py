@@ -410,7 +410,6 @@ class CourseCreatorRouterTests(unittest.TestCase):
 
         for purpose_label in (
             "localized admin-console label",
-            "localized course-preview label",
             "localized published-course label",
         ):
             with self.subTest(purpose_label=purpose_label):
@@ -422,6 +421,43 @@ class CourseCreatorRouterTests(unittest.TestCase):
                     'without "#">',
                     verification_templates,
                 )
+
+        self.assertNotIn("localized course-preview label", verification_templates)
+        self.assertNotIn("Preview mode reachable", report)
+        self.assertIn("opened|queued|unavailable|failed|skipped", report)
+        self.assertIn("including any supplied by older CLI output", report)
+        self.assertIn("Keep the admin link even when", report)
+        self.assertIn("An admin-only handoff lookup contributes only its admin entry", report)
+
+    def test_course_admin_handoff_is_shared_and_waits_for_completion(self):
+        controls = (REFERENCES / "session-controls.md").read_text(encoding="utf-8")
+        handoff = controls.split("## Course Admin Handoff", 1)[1]
+        for rule in (
+            "open this URL once",
+            "immediately before the final handoff",
+            "Wait for the entire command to exit successfully",
+            "run `show <shifu_bid>` once",
+            "even for an empty course",
+            "Capture only the admin entry from this admin-only lookup",
+            "Apply this at target resolution",
+            "Public learner links from a user-requested course-view or publish operation remain eligible",
+            "open_in_codex",
+            '"type": "browser"',
+            "Do not substitute a generic browser tool",
+            "Do not automatically retry",
+            "If the host returns `status=queued`",
+            "does not verify its content or publication state",
+            "Always retain the admin link",
+        ):
+            with self.subTest(rule=rule):
+                self.assertIn(rule, handoff)
+
+        for filename in ("course-management.md", "deployment-workflow.md"):
+            workflow = (REFERENCES / filename).read_text(encoding="utf-8")
+            with self.subTest(workflow=filename):
+                self.assertIn("Course Admin Handoff", workflow)
+                self.assertNotIn("?preview=true", workflow)
+                self.assertNotIn("preview URL and", workflow)
 
     def test_removed_identifiers_and_section_references_do_not_return(self):
         stale_phrases = (
