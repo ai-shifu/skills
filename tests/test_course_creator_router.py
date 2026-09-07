@@ -427,6 +427,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("opened|queued|unavailable|failed|skipped", report)
         self.assertIn("including any supplied by older CLI output", report)
         self.assertIn("Keep the admin link even when", report)
+        self.assertIn("An admin-only handoff lookup contributes only its admin entry", report)
 
     def test_course_admin_handoff_is_shared_and_waits_for_completion(self):
         controls = (REFERENCES / "session-controls.md").read_text(encoding="utf-8")
@@ -437,6 +438,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "Wait for the entire command to exit successfully",
             "run `show <shifu_bid>` once",
             "even for an empty course",
+            "Capture only the admin entry from this admin-only lookup",
             "open_in_codex",
             '"type": "browser"',
             "Do not substitute a generic browser tool",
