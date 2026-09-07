@@ -142,7 +142,7 @@ Validation:
 - Import without errors: `pass|fail`
 - Course accessible via URL: `pass|fail`
 - Lesson count matches source: `pass|fail`
-- Admin browser handoff: `opened|unavailable|failed|skipped`
+- Admin browser handoff: `opened|queued|unavailable|failed|skipped`
 
 Verification URLs:
 

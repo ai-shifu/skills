@@ -424,6 +424,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
 
         self.assertNotIn("localized course-preview label", verification_templates)
         self.assertNotIn("Preview mode reachable", report)
+        self.assertIn("opened|queued|unavailable|failed|skipped", report)
         self.assertIn("including any supplied by older CLI output", report)
         self.assertIn("Keep the admin link even when", report)
 
@@ -438,6 +439,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
             '"type": "browser"',
             "Do not substitute a generic browser tool",
             "Do not automatically retry",
+            "If the host returns `status=queued`",
             "does not verify its content or publication state",
             "Always retain the admin link",
         ):

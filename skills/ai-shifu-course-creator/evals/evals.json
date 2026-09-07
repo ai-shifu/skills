@@ -592,14 +592,14 @@
     },
     {
       "id": 47,
-      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。CLI 地址块请使用所测技能版本的 _print_verification_urls 纯函数生成（可单独执行此纯函数，禁止执行 CLI main）。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：更新《团队沟通》第 2 节的授课提示词并汇报结果，保持草稿。目标 BID=course-b，站点=https://school.example:8443/training。pull 已 exit=0 并打印地址块（include_published=False），update-lesson 已 exit=0，内容核对一致，操作完成。\n两个独立场景均只有 name=handoff 一个检查点：\nA. name=unavailable：宿主仅提供外部 Chrome 控制和系统 open 命令，没有内嵌浏览器工具。\nB. name=failed：宿主提供模拟 open_in_codex，参数支持 target.type=browser 和 target.url，但任何打开尝试都会返回 opened=false、error=embedded browser unavailable；外部 Chrome 和系统 open 也可用。",
-      "expected_output": "Preserves successful draft results and exact admin link when the embedded browser is unavailable or fails, without external-browser fallback or automatic retries.",
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。CLI 地址块请使用所测技能版本的 _print_verification_urls 纯函数生成（可单独执行此纯函数，禁止执行 CLI main）。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：更新《团队沟通》第 2 节的授课提示词并汇报结果，保持草稿。目标 BID=course-b，站点=https://school.example:8443/training。pull 已 exit=0 并打印地址块（include_published=False），update-lesson 已 exit=0，内容核对一致，操作完成。\n三个独立场景均只有 name=handoff 一个检查点：\nA. name=unavailable：宿主仅提供外部 Chrome 控制和系统 open 命令，没有内嵌浏览器工具。\nB. name=failed：宿主提供模拟 open_in_codex，参数支持 target.type=browser 和 target.url，但任何打开尝试都会返回 opened=false、error=embedded browser unavailable；外部 Chrome 和系统 open 也可用。\nC. name=queued：宿主提供相同的模拟 open_in_codex，调用返回 status=queued、threadId=task-a；页面会在用户切回该任务后显示。",
+      "expected_output": "Preserves successful draft results and exact admin link when the embedded browser is unavailable, fails, or queues navigation, without external-browser fallback, retries, or a false claim of opening.",
       "files": [],
       "expectations": [
-        "Unavailable scenario makes no browser call; failed scenario attempts embedded opening exactly once with no retry or external fallback.",
+        "Unavailable scenario makes no browser call; failed and queued scenarios each attempt embedded opening exactly once with no retry, forced task navigation, or external fallback.",
         "Each final reply preserves the admin link, raw URL, and exact CLI purpose hint.",
-        "Both replies briefly explain the browser limitation without claiming the page opened or the course update failed.",
-        "Neither scenario emits a preview URL or claims the draft was published."
+        "Unavailable/failed replies briefly explain the browser limitation, and the queued reply accurately reports pending opening; none claims the page is already open or the course update failed.",
+        "No scenario emits a preview URL or claims the draft was published."
       ]
     },
     {
