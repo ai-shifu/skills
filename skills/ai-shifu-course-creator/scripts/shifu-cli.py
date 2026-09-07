@@ -15,7 +15,6 @@ import sys
 import tempfile
 import time
 import uuid
-import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
@@ -763,15 +762,9 @@ def _start_device_authorization(base_url):
         },
     )
 
-    opened = False
-    with contextlib.suppress(Exception):
-        opened = bool(webbrowser.open(url))
-
     print("Open this link in a browser to authorize this device:")
     print(f"  {url}")
     print(f"Pairing code: {user_code}")
-    if opened:
-        print("A browser window was opened on this machine.")
     print(
         "After approving it there, run 'shifu-cli.py login --wait' "
         "to finish signing in."

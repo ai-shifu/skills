@@ -74,7 +74,7 @@ login --wait [--timeout 120]
 ```
 
 - `verify` exits `0` when the token is accepted, `1` when it is expired or invalid, and `2` when network, service, or response errors make its state unknown.
-- `login` starts a browser authorization request and exits immediately. It prints the verification link and a pairing code, and opens a browser when the machine has one. The link already carries the pairing code, so the user normally does not type it.
+- `login` starts a browser authorization request, saves the pending request, prints the verification link and a pairing code, and exits immediately. It does not open a browser. The Agent opens the link in its built-in browser; terminal users open the printed link manually. The link already carries the pairing code, so the user normally does not type it.
 - `login --wait` polls the pending request. It exits `0` once the request is approved and the token is stored, `1` when the request was denied, expired, or never started, and `3` while the request is still valid but nobody has approved it yet. Exit `3` means the same command can simply be run again.
 - `--timeout` bounds a single `--wait` invocation in seconds; it does not shorten the request's own lifetime.
 - `SHIFU_BASE_URL` must use `https`; only a loopback host may use `http`, for local development. Authorization carries credentials, so the CLI refuses to send them in the clear. A request is also bound to the host that issued it: changing `SHIFU_BASE_URL` between `login` and `login --wait` fails rather than sending the device code elsewhere.

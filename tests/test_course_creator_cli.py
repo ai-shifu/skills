@@ -268,7 +268,7 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
                 },
             ) as login_post,
             mock.patch.object(course_creator_cli, "_write_private_json") as write_json,
-            mock.patch.object(course_creator_cli.webbrowser, "open", return_value=False),
+            mock.patch("webbrowser.open") as open_browser,
             contextlib.redirect_stdout(io.StringIO()) as stdout,
         ):
             course_creator_cli.cmd_login(args)
@@ -279,6 +279,8 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertIn("device_name", payload)
 
         printed = stdout.getvalue()
+        open_browser.assert_not_called()
+        self.assertIn("https://example.test/login/device?code=AC4-7HK", printed)
         self.assertIn("AC4-7HK", printed)
         # The device code can be exchanged for a token, so it must stay on disk
         # and out of the calling agent's transcript.
