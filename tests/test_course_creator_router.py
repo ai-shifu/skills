@@ -435,6 +435,8 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "open this URL once",
             "immediately before the final handoff",
             "Wait for the entire command to exit successfully",
+            "run `show <shifu_bid>` once",
+            "even for an empty course",
             "open_in_codex",
             '"type": "browser"',
             "Do not substitute a generic browser tool",

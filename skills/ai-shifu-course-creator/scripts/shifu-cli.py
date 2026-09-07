@@ -507,8 +507,8 @@ def _print_verification_urls(base_url, shifu_bid, include_published=False):
     and copies any reported URLs and hints from this output. Keeping URL
     construction here avoids confusing the /shifu and /c routes.
 
-    `include_published=True` adds the learner URL. Whole-course `show` also
-    requests it without checking publication status, so its presence does
+    `include_published=True` adds the learner URL. Whole-course `show` with
+    outlines requests it without checking publication status, so its presence does
     not establish that learners can access the course. Preview URLs are not
     printed. Browser navigation is handled by the host agent, not this CLI.
     """
@@ -1058,6 +1058,7 @@ def cmd_show(args):
         tree = api(base_url, token, "get", f"/shifus/{shifu_bid}/outlines")
         if not tree:
             print("No outlines found.")
+            _print_verification_urls(base_url, shifu_bid)
             return
 
         def print_tree(items, indent=0):

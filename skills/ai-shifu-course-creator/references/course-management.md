@@ -43,4 +43,4 @@ When `update-meta --course-dir`, `set-tts --course-dir`, or `set-avatar --course
 
 ## Verification URLs
 
-Copy the target course's CLI-produced admin and public learner URLs and their following Chinese `# ...` hints using the layout in `report-template.md`. Do not reconstruct platform URLs or supply course or lesson preview links. At the final handoff, apply the Course Admin Handoff rule from the startup-loaded `session-controls.md`: open the admin page once in the embedded browser and retain its link in the report.
+Copy the target course's CLI-produced admin and public learner URLs and their following Chinese `# ...` hints using the layout in `report-template.md`. Do not reconstruct platform URLs or supply course or lesson preview links. At the final handoff, apply the Course Admin Handoff rule from the startup-loaded `session-controls.md`: obtain a missing admin URL with `show <shifu_bid>`, open the admin page once in the embedded browser, and retain its link in the report.

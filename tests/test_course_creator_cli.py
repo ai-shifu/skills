@@ -217,15 +217,23 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
         self.assertIn(f"Published URL:    {self.base_url}/c/course\n", result)
         self.assertNotIn("preview", result.lower())
 
-    def test_empty_course_show_does_not_print_verification_urls(self):
+    def test_empty_course_show_prints_admin_url_without_learner_or_preview_urls(self):
         self.api_safe.return_value = {"name": "Empty course"}
         self.api.return_value = []
         with contextlib.redirect_stdout(io.StringIO()) as output:
             course_creator_cli.cmd_show(types.SimpleNamespace(
                 shifu_bid="course", outline_bid=None,
             ))
-        self.assertIn("No outlines found.", output.getvalue())
-        self.assertNotIn("Verification URLs:", output.getvalue())
+        self.assertEqual(
+            output.getvalue(),
+            "Course: Empty course\n"
+            "BID:    course\n\n"
+            "No outlines found.\n\n"
+            "Verification URLs:\n"
+            f"  Admin console:    {self.base_url}/shifu/course\n"
+            "    # 点击会跳转到 AI 师傅管理后台，用于设置章节状态、收费与否，以及手工调整课程细节、"
+            "调试 AI 一对一授课的效果。调试时会消耗课程创建者在 AI 师傅的积分。\n",
+        )
 
     def test_lesson_show_prints_only_revision_and_content(self):
         self.api.return_value = {"revision": 7, "data": "Lesson content"}
