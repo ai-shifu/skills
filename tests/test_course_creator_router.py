@@ -439,6 +439,8 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "run `show <shifu_bid>` once",
             "even for an empty course",
             "Capture only the admin entry from this admin-only lookup",
+            "Apply this at target resolution",
+            "Public learner links from a user-requested course-view or publish operation remain eligible",
             "open_in_codex",
             '"type": "browser"',
             "Do not substitute a generic browser tool",
