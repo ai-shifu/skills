@@ -288,6 +288,31 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         stored = write_json.call_args[0][1]
         self.assertEqual(stored["device_code"], "secret-device-code")
 
+    def test_login_prints_plain_verification_uri_and_pairing_code(self):
+        with (
+            mock.patch.object(
+                course_creator_cli,
+                "_login_post",
+                return_value={"data": {
+                    "device_code": "secret-device-code",
+                    "user_code": "AC4-7HK",
+                    "verification_uri": "https://example.test/login/device",
+                }},
+            ) as login_post,
+            mock.patch.object(course_creator_cli, "_write_private_json") as write_json,
+            mock.patch("webbrowser.open") as open_browser,
+            contextlib.redirect_stdout(io.StringIO()) as stdout,
+        ):
+            course_creator_cli._start_device_authorization("https://example.test")
+
+        printed = stdout.getvalue()
+        self.assertIn("  https://example.test/login/device\n", printed)
+        self.assertIn("Pairing code: AC4-7HK", printed)
+        self.assertNotIn("secret-device-code", printed)
+        self.assertEqual(login_post.call_count, 1)
+        self.assertEqual(write_json.call_args[0][1]["device_code"], "secret-device-code")
+        open_browser.assert_not_called()
+
     def test_login_wait_saves_the_token_once_approved(self):
         args = types.SimpleNamespace(wait=True, timeout=30)
         with (
