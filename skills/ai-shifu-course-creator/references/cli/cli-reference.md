@@ -259,7 +259,7 @@ archive <shifu_bid>
 unarchive <shifu_bid>
 ```
 
-- `publish` publishes the current draft and prints admin and public learner verification URLs.
+- `publish` publishes the current draft and prints the course links described in [Query Commands](#query-commands).
 - `archive` archives the course.
 - `unarchive` restores an archived course.
 
