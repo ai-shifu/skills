@@ -75,7 +75,7 @@ Use the current host's available browser tools and keep the page open for the us
 
 | Host | Opening guidance |
 | --- | --- |
-| Codex | Use `open_in_codex` with `target={"type":"browser","url":<admin_url>}`, or CUA's `cua.createBrowserTab("iab", admin_url, { visible: true })`. |
+| Codex | If available, use `open_in_codex`: set `target.type` to `browser` and `target.url` to the admin URL. Otherwise, if CUA is available, set `admin_url` to that URL and call `cua.createBrowserTab("iab", admin_url, { visible: true })` after its required initialization. |
 | Claude Code Desktop | Open the admin URL in the **Code → Browser** pane. For manual opening, click the reply link and choose **Open in app**. |
 | WorkBuddy | Open the admin URL in **概览 → 浏览器** in the right-side results area. |
 | 豆包工作 / Doubao Work | Open the admin URL in **豆包浏览器** on desktop; on the web, use a live remote browser the user can view and take over. |
