@@ -435,6 +435,10 @@ class CourseCreatorRouterTests(unittest.TestCase):
     def test_course_admin_handoff_is_shared_and_waits_for_completion(self):
         controls = (REFERENCES / "session-controls.md").read_text(encoding="utf-8")
         handoff = controls.split("## Course Admin Handoff", 1)[1]
+        journey = controls.split("## Explain the Journey", 1)[1].split("## Support and Contact", 1)[0]
+        self.assertIn("only when a supported embedded-browser tool is available", journey)
+        self.assertIn("the user has not asked to avoid opening pages", journey)
+        self.assertIn("if availability is not yet known, describe opening as conditional", journey)
         for rule in (
             "open this URL once",
             "immediately before the final handoff",

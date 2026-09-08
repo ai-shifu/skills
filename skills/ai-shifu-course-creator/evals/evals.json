@@ -622,7 +622,7 @@
       "expected_output": "Introduces the real creation journey, asks the same required usage and five-level personalization questions in order, and explains learner-visible effects in ordinary language.",
       "files": [],
       "expectations": [
-        "The usage checkpoint introduces the actual course-creation steps and their purposes, including final admin handoff, without exposing internal phase names or promising draft-only delivery.",
+        "The usage checkpoint introduces the actual course-creation steps and their purposes, including final admin handoff with browser opening conditional on supported tool availability and the user's no-open limits, without exposing internal phase names or promising draft-only delivery.",
         "The only question at usage is usage_scenario with the original three options; the only question at personalization is personalization with levels 1 through 5 in order. Neither checkpoint starts authoring or chooses a fallback.",
         "Both questions explain practical consequences; the five levels retain fixed lesson and slide structure, required examples and questions, and vary only allowed expression using already-known learner context.",
         "Ordinary replies use AI 师傅的 AI 老师 at its first role mention and understandable option wording, without teaching the author about prompts, variables, gates, or internal content slots.",
