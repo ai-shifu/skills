@@ -410,14 +410,20 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "configured `base_url` from `site`",
             "<base_url>/shifu/<shifu_bid>",
             "?lessonid=<outline_bid>",
-            "host application's built-in browser",
-            "user can directly click, type into, and continue using",
             "Always show the same admin URL as a clickable Markdown link in the final reply",
             "start debugging the course there",
-            "keep the link available for manual opening",
         ):
             with self.subTest(rule=rule):
                 self.assertIn(rule, handoff)
+
+        browser = (REFERENCES / "open-in-app-browser.md").read_text(encoding="utf-8")
+        for rule in (
+            "host application's built-in browser",
+            "user can directly click, type into, and continue using",
+            "keep the link available for manual opening",
+        ):
+            with self.subTest(rule=rule):
+                self.assertIn(rule, browser)
 
         self.assertNotIn("run `show <shifu_bid>`", handoff)
 

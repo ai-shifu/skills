@@ -5,6 +5,10 @@
 - `language-policy.md`
 - `cli/cli-reference.md#authentication`
 
+## Conditional References
+
+- When opening a browser authorization link: `open-in-app-browser.md`
+
 ## Select Site Before Connecting
 
 Only apply this step when the active route needs platform access. Local/artifact-only authoring does not ask for a site.
@@ -35,7 +39,7 @@ If any authenticated command returns token error `1001`, `1004`, or `1005`, run 
 ## Agent Browser Authorization Flow
 
 1. Run `login` exactly once.
-2. Open the verification link exactly as printed in the Agent's built-in browser. In Codex, use a visible in-app browser tab (`cua.createBrowserTab("iab", url, { visible: true })`, following the tool's initialization instructions); in other Agents, use their available built-in browser capability. Do not use the system browser or shell commands to open it. If the built-in browser is unavailable or opening fails, keep the same pending request and give the user the original clickable link to open manually; do not run `login` again for a browser failure.
+2. Open the verification link exactly as printed using the shared browser reference. If opening is unavailable, failed, queued, or skipped at the user's request, keep the same pending authorization request and continue with the original clickable link; do not run `login` again for a browser outcome.
 3. In one short turn, give the user the verification link exactly as printed and explain that approving it signs this device in, that the page shows which device is asking, and that they must press the approve button there themselves. Never click approve for the user. The CLI prefers `verification_uri_complete`, which carries the pairing code, but can fall back to `verification_uri`, which may require manual code entry. Include the separately printed pairing code and tell the user to enter it if the page asks; do not claim every link already carries it or modify the returned URL. Mention that an account is created on first use and that a browser session already signed in will not have to sign in again.
 4. Run `login --wait`.
 5. Act on the exit code:
@@ -49,8 +53,8 @@ Do not insert readiness checks, account-status questions, acknowledgements, reca
 
 | Result | Agent action |
 | --- | --- |
-| `login` printed a link | Open it in the Agent's built-in browser, hand the link to the user unchanged, and wait. Do not start a second request. |
-| Built-in browser unavailable or opening failed | Provide the original clickable link for manual opening and wait on the same request. Do not fall back to the system browser or run `login` again. |
+| `login` printed a link | Use the shared browser reference, hand the link to the user unchanged, and wait. Do not start a second request. |
+| Browser opening did not complete | Follow the shared browser result handling and wait on the same authorization request. Do not run `login` again. |
 | `login --wait` exits `3` | Ask the user to approve in the browser, then run `login --wait` again. |
 | User says the page reports an invalid or expired code | Run `login` once more to issue a fresh link. |
 | User denied the request by mistake | Run `login` once more to issue a fresh link. |
