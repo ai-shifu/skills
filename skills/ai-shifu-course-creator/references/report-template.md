@@ -10,6 +10,8 @@ Use the section matching the executed phase. Omit sections for phases not run.
 
 These rules apply to every report produced from this template and to any other user-visible chat output that includes URLs.
 
+- **Outcome first.** Use each phase's User-facing summary for normal conversation. Give the completed result, its practical value, any unresolved issue, and the next action in a short paragraph or compact list. If work continues automatically, say what comes next without asking for approval. Omit irrelevant or empty items instead of filling a technical form.
+- **Checks remain required.** The Internal detail checklists below retain the existing reporting details for internal handoffs and user-requested technical reports. They do not replace or weaken any workflow check, completion criterion, or artifact schema. Do not paste the whole checklist into ordinary conversation. Translate relevant failures and unassessed checks into concrete limitations; never hide a blocker or convert an unchecked item into a success claim. When a workflow explicitly requires a fact or identifier in its final report, retain it as concise secondary reference information with an everyday label, such as course reference; do not silently drop it from that report. Keep other internal details available without making them the summary's main content.
 - **Report language.** Apply the required Language Policy to every human-readable report value and preserve its excluded literals.
 - **Links must be Markdown, never bare URLs.** Whenever you show a URL to the user (admin console, public learner page, contact page, etc.), wrap it in Markdown link syntax `[descriptive text](URL)`. Never emit a bare `https://...` on its own line.
 - **Why:** the AI-Shifu chat client only treats Markdown links as clickable / copy-on-tap. A bare URL renders as plain text — the user cannot click it and cannot copy it cleanly on mobile.
@@ -22,6 +24,12 @@ These rules apply to every report produced from this template and to any other u
   3. The script's following Chinese `# ...` hint, copied verbatim without the leading `#`. The bare URL on line 2 is the only place a bare URL is allowed; it exists because copying out of a rendered Markdown link is unreliable on some clients. The script-owned Chinese hint on line 3 is a verbatim-output exception to the report-language rule; do not translate or rewrite it.
 
 ## Segmentation Report
+
+### User-facing summary
+
+Describe which material was organized, the proposed lesson topics and count, and whether required content was retained. Explain any missing or unclear material and how it affects the course. Name the next work, such as preparing each lesson's teaching, only when it belongs to the active route. Use lesson topics rather than internal segment identifiers.
+
+### Internal detail checklist
 
 - Source files:
 - Processing mode: `standard|fallback`
@@ -46,6 +54,12 @@ Next actions:
 - Downstream handoff notes:
 
 ## Orchestration Report
+
+### User-facing summary
+
+Explain how the lessons fit together and which lessons are ready. Summarize whether the course covers the supplied material, gives each lesson a clear question to answer, and uses learner answers consistently. If a lesson needs more work, name it and the practical reason. Describe the next already-planned step without adding a confirmation.
+
+### Internal detail checklist
 
 - Input set:
 - Execution mode: `standard|fallback`
@@ -73,6 +87,12 @@ Rerun plan:
 
 ## Generation Report
 
+### User-facing summary
+
+Name the lesson and explain what it helps the learner understand or do. Describe the prepared explanation, examples, and any selected activities. Report the actual checking result in everyday terms, including any part still needing work, then state the next step when applicable. Creating lesson instructions alone does not prove the live learning experience works.
+
+### Internal detail checklist
+
 - Lesson id:
 - Execution mode: `standard|fallback`
 - Constraints:
@@ -98,6 +118,12 @@ Follow-up:
 - Upstream dependency notes:
 
 ## Optimization Report
+
+### User-facing summary
+
+Explain which lesson teaching, course-wide guidance, or course introduction was checked and what improved. Describe concrete changes such as restoring an omitted topic or fixing what happens after an answer. Summarize checks actually completed and limitations that remain. Keep precise file references available when the user needs to inspect the changes, without making internal fields the report's main content.
+
+### Internal detail checklist
 
 - Target Teaching Prompt(s):
 - Target Course Prompt:
@@ -130,6 +156,14 @@ Validation:
 
 ## Deployment Report
 
+### User-facing summary
+
+Lead with the course name, lesson count, and actual saved or published result. Distinguish an updated draft from the version available to learners. Summarize the completed content checks and unresolved problems without listing build/import flags or internal course identifiers as the default report body. Include the workflow-supplied links in the exact format below.
+
+State the actual embedded-browser handoff outcome in ordinary language. If opened, explain that the author can inspect the course and try the teaching there; if queued, explain when it will appear; if unavailable or failed, explain that the page did not open in the app and retain the link. Do not claim the browser opened when it was skipped. These descriptions do not trigger navigation or change the handoff rules. Keep the script-owned purpose and credit-use hints verbatim.
+
+### Internal detail checklist
+
 - Course directory:
 - Build result: `success|fail`
 - Import result: `success|fail`
@@ -143,6 +177,8 @@ Validation:
 - Course accessible via URL: `pass|fail`
 - Lesson count matches source: `pass|fail`
 - Admin browser handoff: `opened|queued|unavailable|failed|skipped`
+
+### Verification URLs
 
 Verification URLs:
 

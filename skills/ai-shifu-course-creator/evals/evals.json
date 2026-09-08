@@ -224,12 +224,12 @@
     {
       "id": 18,
       "prompt": "course_author_name=李明。我要把一份门店新人培训材料做成标准 AI 一对一自学课程。使用场景已经确定为标准一对一授课，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有 teaching_prompt_personalization_level 还没决定。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Pauses authoring to ask one localized, effect-aware five-level Teaching Prompt personalization question, first identifying the role as AI 师傅的授课智能体, instead of guessing a level or starting downstream work.",
+      "expected_output": "Pauses authoring to ask one localized, effect-aware five-level Teaching Prompt personalization question, first identifying the role as AI 师傅的 AI 老师, instead of guessing a level or starting downstream work.",
       "files": [],
       "expectations": [
         "The response asks for the missing teaching_prompt_personalization_level before Segmentation, Orchestration, Teaching Prompt generation, or deployment.",
         "The question presents exactly five ordered choices numbered 1 through 5, with level 1 described as the most deterministic or concrete and level 5 as the most personalized or adaptive.",
-        "Before requesting the choice, the response explains that this answer controls how much learner-facing expression the author fixes in advance versus how much the Teaching Agent may adapt to available learner context; its first mention identifies the role as AI 师傅的授课智能体 before any shortened 授课智能体 reference, and every level description states its practical author- or learner-visible effect rather than showing only a number and name.",
+        "Before requesting the choice, the response explains that this answer controls how much learner-facing expression the author fixes in advance versus how much the Teaching Agent may adapt to available learner context; its first mention identifies the role as AI 师傅的 AI 老师 before any shortened AI 老师 reference, and every level description states its practical author- or learner-visible effect rather than showing only a number and name.",
         "The explanation says that the level uses only learner context already available and never authorizes new context collection, interactions, variables, or branches.",
         "The choices make the progression observable only in content expression: higher levels emphasize intent for the same title, ordinary explanation, already-required example identity and detail, transition, and feedback slots while every level keeps the same teaching sequence, slide count, slide order and placement, the teaching purpose of each slide and content slot, required example-slot presence and placement, content grouping, semantic layout, and interaction, image, and close placement.",
         "The localized question describes the invariant meaning as each slide's and content slot's 教学目的, and does not call it instructional role or 教学角色.",
@@ -288,11 +288,11 @@
     {
       "id": 22,
       "prompt": "course_author_name=李明。我要把一份门店新人培训材料做成课程。teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；只有使用场景还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Asks only for the missing usage scenario, first identifies the one-on-one role as AI 师傅的授课智能体, and explains the learner-visible effect of personalized one-on-one study, instructor-paced classroom slides, and supporting both experiences.",
+      "expected_output": "Asks only for the missing usage scenario, first identifies the one-on-one role as AI 师傅的 AI 老师, and explains the learner-visible effect of personalized one-on-one study, instructor-paced classroom slides, and supporting both experiences.",
       "files": [],
       "expectations": [
         "The response asks exactly one current intake question about the usage scenario before any downstream authoring or deployment work.",
-        "Personalized AI one-on-one self-study is described by its concrete effect: the first mention identifies the role as AI 师傅的授课智能体 before any shortened 授课智能体 reference, and the role guides one learner directly and may adapt ordinary explanation or feedback to learner context already available.",
+        "Personalized AI one-on-one self-study is described by its concrete effect: the first mention identifies the role as AI 师傅的 AI 老师 before any shortened AI 老师 reference, and the role guides one learner directly and may adapt ordinary explanation or feedback to learner context already available.",
         "Interactive classroom slides are described as projection-ready content paced by a human instructor, and the combined option explicitly prepares the course for both learner experiences.",
         "The response does not show only the three option names, add a separate sales pitch, or promise an unsupported outcome.",
         "The supplied personalization, interaction, Listen Mode, and structure answers are reused without being asked again."
@@ -301,13 +301,13 @@
     {
       "id": 23,
       "prompt": "course_author_name=李明。我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，Listen Mode 关闭，结构固定为 1 章 3 节；只有互动用途还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Asks only what interactions should accomplish, first identifies the relevant role as AI 师傅的授课智能体, and explains the teaching effect of learner-context collection, pre-content thinking, lesson-end self-check, and choosing no interactions.",
+      "expected_output": "Asks only what interactions should accomplish, first identifies the relevant role as AI 师傅的 AI 老师, and explains the teaching effect of learner-context collection, pre-content thinking, lesson-end self-check, and choosing no interactions.",
       "files": [],
       "expectations": [
         "The response asks exactly one current intake question about interaction purpose before any downstream authoring or deployment work.",
         "Learner-context collection is explained as occurring at an early course or module point and giving later teaching selected context to use; pre-content thinking or misconception activation is explained as giving the following explanation an initial judgment to refine.",
         "Lesson-end self-check is explained as helping the learner check or consolidate core understanding.",
-        "Choosing no interactions is explained as replacing learner-answer controls with worked applications, demonstrations by the Teaching Agent, or consolidation rather than leaving a teaching gap; the first mention identifies the role as AI 师傅的授课智能体 before any shortened 授课智能体 reference.",
+        "Choosing no interactions is explained as replacing learner-answer controls with worked applications, demonstrations by the Teaching Agent, or consolidation rather than leaving a teaching gap; the first mention identifies the role as AI 师傅的 AI 老师 before any shortened AI 老师 reference.",
         "Every option has a practical effect description, and the supplied scenario, personalization, Listen Mode, and structure answers are reused without being asked again."
       ]
     },
@@ -358,7 +358,7 @@
       "files": [],
       "expectations": [
         "The response asks exactly one normal Course Design Intake question for the author's name before Course Prompt generation.",
-        "Before asking, it tells the teacher that providing the name lets AI 师傅的授课智能体 teach under that teacher identity, while leaving it blank does not affect course creation.",
+        "Before asking, it tells the teacher that providing the name lets AI 师傅的 AI 老师 teach under that teacher identity, while leaving it blank does not affect course creation.",
         "It accepts a free-form answer, explicitly allows the teacher to leave it blank, asks no unrelated design question, and does not generate the Course Prompt in the same turn."
       ]
     },
@@ -614,6 +614,45 @@
         "The final reply retains both CLI-produced admin and public learner URLs in the three-line format with exact hints.",
         "The final reply reports successful publication and browser opening without emitting preview URLs.",
         "Browser opening is not used as evidence that course content or publication verification passed."
+      ]
+    },
+    {
+      "id": 49,
+      "prompt": "只做对话和操作决策模拟，不连接真实平台、网络或浏览器，不实际制作或修改课程。读取所测版本的 skill 和相关参考文件。模拟状态提供的已完成步骤无需重做；没有提供的工具结果不得编造。每个独立场景重置会话状态。输出 result.json，包含 checkpoints 数组；每项含 name、reply（此刻真正给用户的自然语言回复）、question_key（usage_scenario、personalization 或 null）、choice_values（原选项的规范值数组）、actions（此刻至下一个必须等用户回答的位置所需操作，按顺序写简短命令或阶段名）、browser_calls（tool 和 arguments）、publication（not_reached、draft、published 或 unchanged）。另写 conversation.md，按检查点展示 reply，不展示内部决策字段。两份文件须表达一致，不写总结代替实际回复。\n\n用户：“我第一次做 AI 师傅课程。请把门店新人接待培训材料做成一门互动课，带我完成。”材料足够且顺序明确。初始化、鉴权和课程查重已完成，已确认是新课程；还没介绍任务步骤。站点 https://app.ai-shifu.cn，可选联系入口 https://ai-shifu.cn/contact.html。除授课方式和个性化程度外，其他选择都已从用户提供的信息确认：互动只用于课末自检，听课模式关闭，1 章 3 节，老师署名为空，无头像。\n按顺序处理两个检查点：\nA name=usage：现在给出下一条回复和需要等待的选择。\nB name=personalization：用户回答“让学员自己跟 AI 一对一学习”；其他情况不变，只剩个性化程度未定。现在给出下一条回复和需要等待的选择。不得提前替用户选择或开始制作。",
+      "expected_output": "Introduces the real creation journey, asks the same required usage and five-level personalization questions in order, and explains learner-visible effects in ordinary language.",
+      "files": [],
+      "expectations": [
+        "The usage checkpoint introduces the actual course-creation steps and their purposes, including final admin handoff, without exposing internal phase names or promising draft-only delivery.",
+        "The only question at usage is usage_scenario with the original three options; the only question at personalization is personalization with levels 1 through 5 in order. Neither checkpoint starts authoring or chooses a fallback.",
+        "Both questions explain practical consequences; the five levels retain fixed lesson and slide structure, required examples and questions, and vary only allowed expression using already-known learner context.",
+        "Ordinary replies use AI 师傅的 AI 老师 at its first role mention and understandable option wording, without teaching the author about prompts, variables, gates, or internal content slots.",
+        "No additional approval, readiness check, repeated known question, or adjacent contact mention is introduced."
+      ]
+    },
+    {
+      "id": 50,
+      "prompt": "只做对话和操作决策模拟，不连接真实平台、网络或浏览器，不实际制作或修改课程。读取所测版本的 skill 和相关参考文件。模拟状态提供的已完成步骤无需重做；没有提供的工具结果不得编造。每个独立场景重置会话状态。输出 result.json，包含 checkpoints 数组；每项含 name、reply（此刻真正给用户的自然语言回复）、question_key（usage_scenario、personalization 或 null）、choice_values（原选项的规范值数组）、actions（此刻至下一个必须等用户回答的位置所需操作，按顺序写简短命令或阶段名）、browser_calls（tool 和 arguments）、publication（not_reached、draft、published 或 unchanged）。另写 conversation.md，按检查点展示 reply，不展示内部决策字段。两份文件须表达一致，不写总结代替实际回复。\n\n用户：“把《门店接待》的第 2 节换成我给你的新版，其他不动，还是先存草稿。”初始化、鉴权、目标确认、pull、旧内容读取和必要内容检查均已完成；课程 BID=course-edit，课节 BID=lesson-2，本地同步目录 /tmp/course-edit。课程原本未发布，新增内容已提供完整且通过检查，无需课程设计提问。之前已向用户说明会修改并核对该课节，上条回复含联系入口。\n按顺序处理两个检查点：\nA name=ready-to-save：新版已在本地准备好，尚未保存到平台。输出一句阶段说明和接下来需要执行的操作；不要假定保存成功。\nB name=saved：update-lesson course-edit lesson-2 --teaching-prompt-file /tmp/course-edit/lessons/lesson-02.md --course-dir /tmp/course-edit 最终 exit=0，回读已确认该课节与提供的内容一致且其他课节和属性保持原样。当前草稿状态已确认。已获得 CLI 地址块：\nVerification URLs:\n  Admin console:    https://app.ai-shifu.cn/shifu/course-edit\n    # 点击会跳转到 AI 师傅管理后台，用于设置章节状态、收费与否，以及手工调整课程细节、调试 AI 一对一授课的效果。调试时会消耗课程创建者在 AI 师傅的积分。\n宿主模拟 open_in_codex 支持 target.type=browser 和 target.url，返回 opened=true。输出交付回复和此刻的调用决定。",
+      "expected_output": "Explains the requested lesson change and saved result plainly while preserving granular draft sync and opening the verified admin page exactly once.",
+      "files": [],
+      "expectations": [
+        "At ready-to-save it continues with a granular update-lesson using the established course directory, without new design questions, confirmation requests, whole-course import, or publication.",
+        "At saved it reports only lesson 2 updated with the other content preserved and the course still a draft; it opens the exact supplied admin URL once and does not publish or add a learner link.",
+        "User-facing progress and handoff lead with the practical lesson result and next work or author action rather than internal modes, gates, BID, JSON, or pass/fail fields.",
+        "The final reply truthfully states the browser opened, explains inspecting or trying the lesson, retains the exact three-line admin link and credit-use hint, and does not claim a learner-time trial already occurred."
+      ]
+    },
+    {
+      "id": 51,
+      "prompt": "只做对话和操作决策模拟，不连接真实平台、网络或浏览器，不实际制作或修改课程。读取所测版本的 skill 和相关参考文件。模拟状态提供的已完成步骤无需重做；没有提供的工具结果不得编造。每个独立场景重置会话状态。输出 result.json，包含 checkpoints 数组；每项含 name、reply（此刻真正给用户的自然语言回复）、question_key（usage_scenario、personalization 或 null）、choice_values（原选项的规范值数组）、actions（此刻至下一个必须等用户回答的位置所需操作，按顺序写简短命令或阶段名）、browser_calls（tool 和 arguments）、publication（not_reached、draft、published 或 unchanged）。另写 conversation.md，按检查点展示 reply，不展示内部决策字段。两份文件须表达一致，不写总结代替实际回复。\n\n分别处理以下独立场景。除明确说明的首次步骤外，初始化、鉴权和目标确认均已完成，上一条回复含联系入口。所有课程地址只使用下面给出的 CLI 地址块；open_in_codex 是唯一内置浏览器工具。\nA name=new-default：用户原话“把培训资料做成完整的 AI 师傅课程”，没有草稿或不发布限制。已完成全部必答设计项、内容制作和优化，合规的完整课程目录 /tmp/course-new 已就绪。尚未 build 或写入平台，最终 BID 未知。输出此刻进度回复及接下来计划执行的步骤，不能提前声称成功或编造链接。\nB name=published：独立用户要求“发布《接待训练》，把访问入口给我”。publish 和全部内容核对、正式学习页可访问检查已成功，准备最终交付。CLI 输出：\nVerification URLs:\n  Admin console:    https://app.ai-shifu.cn/shifu/course-live\n    # 点击会跳转到 AI 师傅管理后台，用于设置章节状态、收费与否，以及手工调整课程细节、调试 AI 一对一授课的效果。调试时会消耗课程创建者在 AI 师傅的积分。\n  Published URL:    https://app.ai-shifu.cn/c/course-live\n    # 点击会跳转到 AI 师傅课程学习页，可以发送给学员使用且仅在课程已发布后有效；任何人学习都会消耗课程创建者在 AI 师傅的积分。\nopen_in_codex 返回 opened=true。\nC name=queued：用户“给《接待训练》换好头像，保持草稿。”set-avatar 已成功并回读核对，取得后台地址和上面同样的后台用途说明（只有后台链接，没有学习链接），准备交付。open_in_codex 返回 status=queued。\nD name=failed：与 C 相同，但 open_in_codex 返回 opened=false、error=embedded browser unavailable。\nE name=local：用户“只在本地检查这段授课内容，不要联网、上传或打开页面”。检查已经完成，修复一处选择题后缺少反馈的问题，其余内容未变，准备交付；未访问平台且没有课程地址。\nF name=analytics：用户“《接待训练》目前有多少学员？”已通过正式查询确认当前课程有 12 名学员，仅汇报这个结果；没有创作或管理课程的要求。\nG name=region：独立首次使用，用户“我想查看我的课程”，site 返回 selection_required，无任何地区回答。版本检查已完成。不提供任何任务路线来覆盖当前技能对这条地区选择问题的原有要求。",
+      "expected_output": "Keeps automatic full-course publication and existing management, local, analytics, region, and browser outcomes unchanged while making progress and delivery replies understandable.",
+      "files": [],
+      "expectations": [
+        "New-default continues the existing full-course build, new import, synchronized pull, publication and verification workflow without another approval question, a new draft default, or premature success claims.",
+        "Published opens only the exact admin URL once and retains both original three-line admin and learner links, exact purpose hints and credit explanations; the reply accurately reports publication and opening.",
+        "Queued and failed each attempt admin opening once, retain the successful avatar update and draft status, preserve the supplied admin link, and truthfully distinguish queued from failed without retrying or claiming the page opened.",
+        "Local and analytics perform no platform mutation, authentication, or browser opening; analytics reports the confirmed count of 12 without inventing extra findings.",
+        "Region asks exactly 请选择你所在的地区： with 中国 and 其他国家或地区; it does not add domains, setup explanation, a roadmap, or another question.",
+        "Progress and result replies use ordinary task language and actionable next-step guidance without default technical checklists, while keeping required exact CLI hints intact."
       ]
     }
   ]

@@ -23,7 +23,7 @@ Determine `resolved_target_language` with these two rules:
 
 ## Canonical Term Translation Table
 
-Use this table for human-facing skill concepts. Use the matching language column when available; otherwise localize the term naturally in `resolved_target_language`. Apply the exclusions below to machine-facing identifiers that happen to contain the same words.
+Use this table when naming technical artifacts or explaining implementation at the user's request. In ordinary task guidance, use the everyday expressions below instead. Use the matching language column when available; otherwise localize naturally in `resolved_target_language`. Apply the exclusions below to machine-facing identifiers that happen to contain the same words.
 
 | Canonical term | English | 简体中文 | Français | Usage |
 | --- | --- | --- | --- | --- |
@@ -38,9 +38,27 @@ Use this table for human-facing skill concepts. Use the matching language column
 
 ## Teaching Agent First Mention
 
-At this skill's first user-facing mention of the Teaching Agent concept in a conversation, identify its product ownership explicitly. Use `AI-Shifu's Teaching Agent` in English, `AI 师傅的授课智能体` in Simplified Chinese, and `l'Agent pédagogique d'AI Shifu` in French. For another language, localize an equally explicit phrase that identifies the role as AI-Shifu's. After that introduction in the same conversation, use the canonical short form from the table.
+At this skill's first user-facing mention of the Teaching Agent concept in a conversation, identify its product ownership explicitly. In ordinary guidance, use `AI-Shifu's AI teacher` in English, `AI 师傅的 AI 老师` in Simplified Chinese, and `l'enseignant IA d'AI Shifu` in French; later mentions may use AI teacher, AI 老师, or enseignant IA. When the user requests technical explanations, use `AI-Shifu's Teaching Agent` in English, `AI 师傅的授课智能体` in Simplified Chinese, and `l'Agent pédagogique d'AI Shifu` in French. For another language, localize an equally explicit phrase that identifies the role as AI-Shifu's. After that introduction in the same conversation, use the canonical short form for technical discussion or the everyday short form for ordinary guidance.
 
 For direct user-facing text that has no conversation context, such as a CLI label, always use the product-qualified form. This rule governs explanations to the user; do not add an ownership introduction to Teaching Prompt or Course Prompt content solely to satisfy it, and do not change preserved source wording or machine-facing fields.
+
+## Everyday Task Guidance
+
+Users need to understand their choices and results without learning how the skill or platform is implemented. Apply this distinction to introductions, questions and options, progress, errors, reports, and analytics. Explain the consequence for the author or learner rather than merely translating internal jargon.
+
+| Concept | English guidance | 简体中文说明 |
+| --- | --- | --- |
+| Teaching Prompt | How each lesson will be taught | 每节课的授课安排 |
+| Course Prompt | Guidelines for the whole course | 整门课的统一要求 |
+| Teaching Agent | AI teacher | AI 老师 |
+| Segmentation and orchestration | Organize the material into lessons | 把资料整理成课节 |
+| Variables and interaction checks | Check that answers are used correctly in later teaching | 检查学员回答能否正确用于后续讲解 |
+| Deployment | Save the course to AI-Shifu | 把课程保存到 AI 师傅 |
+| Publication | Make the course available to learners | 发布课程，让学员可以学习 |
+
+These are wording examples, not replacement identifiers or additional operations. Use the first-mention ownership rule for the AI teacher. Localize equally concrete expressions in other languages. Keep saving and publishing distinct and report only the actual completed state. Do not claim that syntax or content checks prove the learner experience was tested.
+
+Keep required decision information, limitations, source fidelity, and credit-use explanations. Put the useful result first; leave raw fields, command output, execution modes, gates, and internal identifiers out of normal prose unless the user requests technical detail or a required exact-output rule applies. Technical artifacts, machine-readable outputs, preserved source text, and script-owned Verification URL hints retain their existing contracts. These presentation rules do not change workflow selection, required questions, defaults, checks, or course content.
 
 ## Localization Scope
 
@@ -87,4 +105,4 @@ Resolve `resolved_target_language`, then inspect every applicable surface below 
 - Inspect every phase report's headings, field labels, findings, issue explanations, suggestions, validation explanations, next actions, and handoff notes.
 - Inspect analytics headings, narrative findings, interpretations, refusals, and drill-down offers.
 - Confirm that the skill's first user-facing Teaching Agent mention in each conversation follows [Teaching Agent First Mention](#teaching-agent-first-mention), and that direct user-facing text without conversation context always uses the product-qualified form.
-- Confirm that canonical concepts use the terminology table and every excluded literal remains unchanged.
+- Confirm that ordinary guidance uses everyday task language, requested technical explanations use the canonical terminology table, and every excluded literal remains unchanged.

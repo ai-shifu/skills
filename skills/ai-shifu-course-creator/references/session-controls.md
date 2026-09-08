@@ -7,6 +7,14 @@ Own the skill's first-turn, update-check, progress, error, and handoff lifecycle
 - `language-policy.md`
 - `report-template.md#formatting-rules`
 
+## Explain the Journey
+
+At the first task introduction permitted by the active workflow, briefly describe the actual path ahead in everyday language. For a multi-step task, use a short list of steps with a purpose for each; for a simple request, one sentence is enough. This is a preview of the selected route, not a new route or a request to approve a plan. Do not expose reference loading, internal phase names, or command sequences.
+
+For full-course creation, describe understanding the course and material, choosing the learning experience, preparing lessons and activities, checking and delivering the course, and opening its admin page so the author can inspect and try it. Describe saving or publishing according to the existing route and the user's explicit limits; this introduction never changes publication defaults. For an existing-course edit, describe finding the right course, making the requested change, checking the saved result, and opening its admin page. For local work or analytics, describe only the relevant work and result, without promising a platform write or browser opening.
+
+Keep the roadmap in the same response as the next already-required question or useful action, then continue. Reuse known answers and preserve all existing question order, required choices, defaults, authorization, contact, and handoff conditions. Do not add a confirmation, readiness question, or pause between phases. When an active startup step requires exact wording or forbids extra explanation, such as regional selection or the uninterrupted login sequence, follow that step and defer the roadmap until the next permitted task introduction; do not insert an extra turn.
+
 ## Support and Contact
 
 Resolve the official contact page from the local `shifu-cli.py site` output's `contact_url`: Mainland China uses `https://ai-shifu.cn/contact.html`; International uses `https://ai-shifu.com/contact.html`. Custom deployments use the international official contact page for AI-Shifu product help, not a fabricated `/contact.html` on the custom host. Do not claim that official support operates the user's private deployment.
@@ -57,8 +65,11 @@ The CLI reports usage events (command name, skill version, host agent, OS/archit
 ## Progress, Errors, and Handoffs
 
 - Give a concise progress update at meaningful phase boundaries during work that continues across multiple steps. State what completed and what comes next.
+- Describe those boundaries using the task steps already introduced, explaining the practical purpose of the next work. For example, after checking course material, explain that arranging it into lessons helps learners tackle one question at a time. Do not turn each internal substep into a separate report or repeat the full roadmap.
 - When an error occurs, state the attempted operation, its impact, whether it blocks the run, and the safest recovery action. Continue past non-blocking errors when the active workflow permits it.
+- Express errors through their effect on the user's task, such as a lesson not yet saved or a page not opened. Keep raw error codes and retry machinery internal unless requested; preserve the workflow's recovery and stopping rules, and never describe an unverified result as successful.
 - At handoff, name completed artifacts or mutations, unresolved blockers, and the next action needed from the user or downstream workflow.
+- Lead with the course result and actual saved or published state. When the existing Course Admin Handoff applies, explain that the author can inspect the course and try its teaching in the admin page. Match the opening claim to the tool result; a page queued to open is not already open. Keep required links and their exact purpose and credit-use hints.
 - Apply the language policy and URL formatting dependency to every message in this lifecycle.
 
 ## Course Admin Handoff

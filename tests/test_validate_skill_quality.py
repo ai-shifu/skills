@@ -959,7 +959,7 @@ class CourseCreatorContractTests(unittest.TestCase):
                 f"Prompt semantics must be owned only by prompt-contracts.md: {path}",
             )
 
-    def test_teaching_agent_is_the_canonical_human_facing_term(self):
+    def test_teaching_agent_keeps_technical_terms_and_plain_guidance(self):
         self.assertIn(
             "| `Teaching Agent` | Teaching Agent | 授课智能体 |",
             self.language_policy,
@@ -974,6 +974,9 @@ class CourseCreatorContractTests(unittest.TestCase):
             "in a conversation",
             "`AI-Shifu's Teaching Agent`",
             "`AI 师傅的授课智能体`",
+            "`AI-Shifu's AI teacher`",
+            "`AI 师傅的 AI 老师`",
+            "When the user requests technical explanations",
             "After that introduction in the same conversation",
             "canonical short form",
             "no conversation context",
@@ -1016,7 +1019,7 @@ class CourseCreatorContractTests(unittest.TestCase):
                     *evals_by_id[case_id].get("expectations", []),
                 ]
             )
-            self.assertIn("AI 师傅的授课智能体", skill_owned_text)
+            self.assertIn("AI 师傅的 AI 老师", skill_owned_text)
         for case in evals_data["evals"]:
             skill_owned_text = "\n".join(
                 [case.get("expected_output", ""), *case.get("expectations", [])]
@@ -1042,8 +1045,8 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.course_directory_spec,
         )
         self.assertIn(
-            "human-facing explanations identify AI-Shifu ownership on the first "
-            "Teaching Agent mention and use Teaching Agent thereafter",
+            "human-facing explanations follow the language policy's ownership "
+            "and everyday-versus-technical wording rules",
             self.course_directory_spec,
         )
         cli_script = (
