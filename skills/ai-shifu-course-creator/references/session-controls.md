@@ -64,7 +64,18 @@ The CLI reports usage events (command name, skill version, host agent, OS/archit
 For a uniquely identified course or lesson, apply this handoff after the requested creation, synchronization, publication, or management work and verification complete, or for a direct preview/debug request. Listing and analytics-only requests do not trigger it.
 
 1. Reuse the configured `base_url` from `site` and the known BIDs to build `<base_url>/shifu/<shifu_bid>`. For a target lesson, append `?lessonid=<outline_bid>` using that lesson's BID.
-2. Open the resulting link in the Agent's visible built-in browser unless the user asked not to open the page or browser.
-3. Show the same link to the user and explain that they can start debugging the course there. If this task published the course, also show the public learner URL returned by `publish`.
+2. Unless the user asked not to open the page or browser, open the resulting link in the host application's built-in browser, in a visible tab or panel that the user can directly click, type into, and continue using. Use the matching host guidance below and the current tool schema. Do not substitute a web fetch, hidden or headless browser, external browser, or system `open` command.
+3. Always show the same admin URL as a clickable Markdown link in the final reply and explain that the user can start debugging the course there, whether opening succeeded, failed, is queued, is unavailable, or was skipped at the user's request. A browser panel or tool result does not replace the link in the reply. If this task published the course, also show the public learner URL returned by `publish` as a Markdown link.
 
 Only report that the page opened after the browser confirms success. For `status=queued`, say that opening is pending and do not retry. If the built-in browser cannot open the page, briefly explain that and keep the link available for manual opening.
+
+### Host Browser Guidance
+
+Use the current host's available browser tools and keep the page open for the user. If unavailable, provide the manual link.
+
+| Host | Opening guidance |
+| --- | --- |
+| Codex | If available, use `open_in_codex`: set `target.type` to `browser` and `target.url` to the admin URL. Otherwise, if CUA is available, set `admin_url` to that URL and call `cua.createBrowserTab("iab", admin_url, { visible: true })` after its required initialization. |
+| Claude Code Desktop | Open the admin URL in the **Code → Browser** pane. For manual opening, click the reply link and choose **Open in app**. |
+| WorkBuddy | Open the admin URL in **概览 → 浏览器** in the right-side results area. |
+| 豆包工作 / Doubao Work | Open the admin URL in **豆包浏览器** on desktop; on the web, use a live remote browser the user can view and take over. |
