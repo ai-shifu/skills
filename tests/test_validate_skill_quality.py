@@ -1715,6 +1715,13 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("make no promotional or unsupported promise", normalized_validation)
 
     def test_slide_only_intake_uses_high_determinism_without_asking(self):
+        evals = json.loads((self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8"))
+        slide_only = next(case for case in evals["evals"] if case["id"] == 21)
+        expectations = " ".join(slide_only["expectations"])
+        self.assertIn("internally normalizes teaching_prompt_personalization_level to the integer 1", expectations)
+        self.assertIn("does not present the five personalization options", expectations)
+        self.assertIn("without exposing the canonical level name", expectations)
+        self.assertNotIn("High determinism", slide_only["expected_output"] + expectations)
         scope = markdown_section(self.course_design_intake, "Intake Scope")
         normalized_scope = " ".join(scope.split())
         self.assertRegex(

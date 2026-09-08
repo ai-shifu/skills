@@ -276,11 +276,11 @@
     {
       "id": 21,
       "prompt": "course_author_name=李明。我要把一份门店新人培训材料做成纯课堂幻灯片课程。使用场景已经确定为 slide-only，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；没有提供 teaching_prompt_personalization_level。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Completes intake without asking a personalization question and normalizes the missing Teaching Prompt personalization level to level 1 High determinism for slide-only delivery, where the level controls only content-expression prescription inside an invariant course and slide structure.",
+      "expected_output": "Completes intake without asking a personalization question and internally normalizes the missing level to integer 1 for slide-only delivery. Any user-facing summary uses everyday language; the level controls only content-expression prescription inside an invariant course and slide structure.",
       "files": [],
       "expectations": [
         "The response does not ask the author to choose a teaching_prompt_personalization_level and does not present the five personalization options.",
-        "Because delivery is slide-only and no level was provided, the response normalizes teaching_prompt_personalization_level to the integer 1 and identifies it as High determinism for content expression, not as permission to change teaching sequence, slide count, slide order or placement, the teaching purpose of any slide or content slot, content grouping, semantic layout, or interaction, image, and close placement.",
+        "Because delivery is slide-only and no level was provided, the workflow internally normalizes teaching_prompt_personalization_level to the integer 1, preserving the same prepared-wording semantics. Any user-facing summary uses everyday language without exposing the canonical level name. The choice does not permit changes to teaching sequence, slide count, slide order or placement, the teaching purpose of any slide or content slot, content grouping, semantic layout, or interaction, image, and close placement.",
         "The response reuses the supplied usage scenario, interaction policy, Listen Mode, and structure choices without asking them again.",
         "The workflow does not start Segmentation, Orchestration, Teaching Prompt generation, or deployment."
       ]
