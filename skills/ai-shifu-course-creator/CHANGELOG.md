@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Open browser URLs in new visible tabs, reusing only exact URL matches so existing pages and unfinished work are preserved.
 - Share built-in browser URL opening across authorization and course handoffs, including host selection, visible interaction, user opt-outs, and opening result handling.
 
 - Print course links with `Admin console`, `Preview URL`, and optional `Published URL` labels, without explanatory text. Open each delivered course or lesson's admin page in the Agent's built-in browser after successful operations and verification, respecting browser opt-outs. Report queued navigation as pending and keep course results intact when the browser is unavailable or opening fails.
