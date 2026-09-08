@@ -404,6 +404,8 @@ class CourseCreatorRouterTests(unittest.TestCase):
 
     def test_course_admin_handoff_is_shared_and_uses_known_ids(self):
         controls = (REFERENCES / "session-controls.md").read_text(encoding="utf-8")
+        conditional = controls.split("## Conditional References\n", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("`open-in-app-browser.md`", conditional)
         handoff = controls.split("## Course Admin Handoff", 1)[1]
         for rule in (
             "work and verification complete",
