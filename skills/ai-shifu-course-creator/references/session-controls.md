@@ -67,4 +67,4 @@ For a uniquely identified course or lesson, apply this handoff after the request
 2. Open the resulting link in the Agent's visible built-in browser.
 3. Show the same link to the user and explain that they can start debugging the course there.
 
-If the built-in browser cannot open the page, briefly explain that and keep the link available for manual opening.
+Only report that the page opened after the browser confirms success. For `status=queued`, say that opening is pending and do not retry. If the built-in browser cannot open the page, briefly explain that and keep the link available for manual opening.

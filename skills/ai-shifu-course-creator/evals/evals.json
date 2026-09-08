@@ -598,7 +598,7 @@
       "expectations": [
         "No scenario calls the CLI solely to obtain an admin URL or repeats a completed write.",
         "Course scenarios use https://school.example:8443/training/shifu/course-b; the lesson scenario uses https://school.example:8443/training/shifu/course-b?lessonid=lesson-b.",
-        "Opening uses only the available built-in browser. Unavailable and failed cases retain a manual link; queued does not claim the page already opened.",
+        "Opening uses only the available built-in browser. Unavailable and failed cases retain a manual link; queued reports that opening is pending, retains the link, does not retry, and does not claim the page already opened.",
         "Every reply shows the target URL as a Markdown link and explains that the author can start debugging the course there.",
         "All replies preserve the completed operation result and unpublished state."
       ]
