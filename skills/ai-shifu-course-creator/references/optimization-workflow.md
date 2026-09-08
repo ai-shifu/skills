@@ -59,7 +59,7 @@ Apply these priorities throughout:
 
 Return the minimally repaired existing artifacts plus the Optimization report, applying `language-policy.md` to every changed or reported value.
 
-Start the report with the conclusion and overall risk (`low|medium|high`). Name each target Teaching Prompt, Course Prompt, or course description in the declared audit scope, along with the source materials and execution mode. Group findings using [Issue Taxonomy](#issue-taxonomy); for each change, include the file reference and minimal-edit rationale. Summarize the results of [Validation](#validation), including checks not assessed.
+Start the report with the conclusion and overall risk (`low|medium|high`). Name each target Teaching Prompt, Course Prompt, or course description in the declared audit scope, along with the source materials and execution mode. Group findings using [Issue Taxonomy](#issue-taxonomy); for each change, include the file reference and minimal-edit rationale. Summarize the results of [Validation](#validation), including checks not assessed. For unresolved findings, distinguish blockers from non-blocking suggestions and name the affected artifacts or checks to rerun.
 
 Under fallback mode, add only the Optimization extensions defined in `data-contracts.md#optimization-fallback-fields`.
 
