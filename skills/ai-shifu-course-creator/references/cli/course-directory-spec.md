@@ -132,7 +132,7 @@ Fields:
 }
 ```
 
-`model`, `llm`, `ask_model`, `ask_llm`, and their related keys are stable machine-facing fields for the underlying models and settings used by the Teaching Agent. Keep those keys unchanged in files and payloads; human-facing explanations follow the language policy's ownership and everyday-versus-technical wording rules for both course delivery and learner follow-up answers.
+`model`, `llm`, `ask_model`, `ask_llm`, and their related keys are stable machine-facing fields for the underlying models and settings used by the Teaching Agent. Keep those keys unchanged in files and payloads; human-facing explanations follow the language policy's ownership and everyday-versus-technical wording rules: ordinary guidance first uses `AI-Shifu's AI teacher`, then `AI teacher`; technical explanations first use `AI-Shifu's Teaching Agent`, then `Teaching Agent`. Localize these forms through the language policy for both course delivery and learner follow-up answers.
 
 `build` and `import` do not read or send this file. `set-tts --course-dir` refreshes it after a successful Listen Mode update, and `set-avatar --course-dir` refreshes it after the uploaded avatar URL is read back successfully.
 

@@ -1044,11 +1044,19 @@ class CourseCreatorContractTests(unittest.TestCase):
             "used by the Teaching Agent",
             self.course_directory_spec,
         )
+        configuration = markdown_section(self.course_directory_spec, "course-config.json")
+        for first, later, wording in (
+            ("AI-Shifu's AI teacher", "AI teacher", "ordinary guidance first uses"),
+            ("AI-Shifu's Teaching Agent", "Teaching Agent", "technical explanations first use"),
+        ):
+            with self.subTest(context=wording):
+                self.assertIn(f"{wording} `{first}`, then `{later}`", configuration)
+                self.assertIn(f"`{first}`", first_mention)
         self.assertIn(
-            "human-facing explanations follow the language policy's ownership "
-            "and everyday-versus-technical wording rules",
-            self.course_directory_spec,
+            "later mentions may use AI teacher, AI 老师, or enseignant IA",
+            first_mention,
         )
+        self.assertIn("Localize these forms through the language policy", configuration)
         cli_script = (
             self.skill_root / "scripts" / "shifu-cli.py"
         ).read_text(encoding="utf-8")
