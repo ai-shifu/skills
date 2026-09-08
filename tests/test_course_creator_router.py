@@ -404,20 +404,29 @@ class CourseCreatorRouterTests(unittest.TestCase):
 
     def test_course_admin_handoff_is_shared_and_uses_known_ids(self):
         controls = (REFERENCES / "session-controls.md").read_text(encoding="utf-8")
+        conditional = controls.split("## Conditional References\n", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("`open-in-app-browser.md`", conditional)
         handoff = controls.split("## Course Admin Handoff", 1)[1]
         for rule in (
             "work and verification complete",
             "configured `base_url` from `site`",
             "<base_url>/shifu/<shifu_bid>",
             "?lessonid=<outline_bid>",
-            "host application's built-in browser",
-            "user can directly click, type into, and continue using",
+            "Open the resulting link using the shared browser reference",
             "Always show the same admin URL as a clickable Markdown link in the final reply",
             "start debugging the course there",
-            "keep the link available for manual opening",
         ):
             with self.subTest(rule=rule):
                 self.assertIn(rule, handoff)
+
+        browser = (REFERENCES / "open-in-app-browser.md").read_text(encoding="utf-8")
+        for rule in (
+            "host application's built-in browser",
+            "user can directly click, type into, and continue using",
+            "keep the link available for manual opening",
+        ):
+            with self.subTest(rule=rule):
+                self.assertIn(rule, browser)
 
         self.assertNotIn("run `show <shifu_bid>`", handoff)
 

@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Open browser URLs in new visible tabs, reusing only exact URL matches so existing pages and unfinished work are preserved.
+- Share built-in browser URL opening across authorization and course handoffs, including host selection, visible interaction, user opt-outs, and opening result handling.
+
 - Print course links with `Admin console`, `Preview URL`, and optional `Published URL` labels, without explanatory text. Open each delivered course or lesson's admin page in the Agent's built-in browser after successful operations and verification, respecting browser opt-outs. Report queued navigation as pending and keep course results intact when the browser is unavailable or opening fails.
 - Ask new platform users to choose their current region (China or Other countries or regions), initialize the matching service silently, and remember it outside the Skill package. Preserve explicit service configuration, support custom deployments on request, and block platform calls until configured. Match official contact links to the selected service and preserve resource URLs returned by image uploads without assuming a CN domain.
 - Replace SMS login with a browser authorization flow: `login` prints a verification link and pairing code, `login --wait` collects the token once the user approves the request on the AI-Shifu approval page, and no command sends a text message any more. Credentials move from the skill's `.env` to `${XDG_CONFIG_HOME:-~/.config}/ai-shifu/credentials.json` so upgrading or reinstalling the skill no longer signs the user out, and a token left behind by an older version is migrated on first run.
