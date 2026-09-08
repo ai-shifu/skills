@@ -592,7 +592,7 @@
     },
     {
       "id": 47,
-      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个场景独立开始，技能初始化、鉴权和目标确认已完成，上一条回复已给过联系入口。输出 JSON：scenarios 数组，每项含 name、browser_calls（元素含 tool 和 arguments）、cli_calls（模拟命令字符串数组）及 reply。\n\n用户要求：为《团队沟通》开启听课模式并汇报结果，保持草稿。目标课程 BID=course-b，已配置站点的 base_url=https://school.example:8443/training。set-tts 和回读验证已经成功，本轮工作完成，尚无任何 CLI 地址块。以下三个场景分别给出此刻的调用和回复：\nA. name=unavailable：只有外部 Chrome 控制和系统 open 命令，没有内置浏览器。\nB. name=failed：提供模拟 open_in_codex，支持 target.type=browser 和 target.url；打开返回 opened=false、error=embedded browser unavailable。\nC. name=queued：提供相同的模拟 open_in_codex，返回 status=queued，页面等待用户切回任务后显示。\nD. name=lesson：改为另一项已完成的请求：修改这门课的“冲突沟通”课节，课程 BID=course-b、课节 BID=lesson-b 已知，内容同步和核对均成功，保持未发布。站点同上，模拟 open_in_codex 返回 opened=true。",
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个场景独立开始，技能初始化、鉴权和目标确认已完成，上一条回复已给过联系入口。输出 JSON：scenarios 数组，每项含 name、browser_calls（元素含 tool 和 arguments）、cli_calls（模拟命令字符串数组）及 reply。\n\n用户要求：为《团队沟通》开启听课模式并汇报结果，保持草稿。目标课程 BID=course-b，已配置站点的 base_url=https://school.example:8443/training。set-tts 和回读验证已经成功，本轮工作完成，尚无任何 CLI 地址块。以下场景分别给出此刻的调用和回复：\nA. name=unavailable：只有外部 Chrome 控制和系统 open 命令，没有内置浏览器。\nB. name=failed：提供模拟 open_in_codex，支持 target.type=browser 和 target.url；打开返回 opened=false、error=embedded browser unavailable。\nC. name=queued：提供相同的模拟 open_in_codex，返回 status=queued，页面等待用户切回任务后显示。\nD. name=lesson：改为另一项已完成的请求：修改这门课的“冲突沟通”课节，课程 BID=course-b、课节 BID=lesson-b 已知，内容同步和核对均成功，保持未发布。站点同上，模拟 open_in_codex 返回 opened=true。\nE. name=opt-out：与开启听课模式的已完成请求相同，用户另有明确要求：“不要打开任何页面或浏览器，只把链接给我。”提供可用的模拟 open_in_codex。",
       "expected_output": "Builds course and lesson admin links from known IDs without an extra CLI lookup, preserves the custom site address, and presents a debugging entry with accurate browser status.",
       "files": [],
       "expectations": [
@@ -600,7 +600,8 @@
         "Course scenarios use https://school.example:8443/training/shifu/course-b; the lesson scenario uses https://school.example:8443/training/shifu/course-b?lessonid=lesson-b.",
         "Opening uses only the available built-in browser. Unavailable and failed cases retain a manual link; queued reports that opening is pending, retains the link, does not retry, and does not claim the page already opened.",
         "Every reply shows the target URL as a Markdown link and explains that the author can start debugging the course there.",
-        "All replies preserve the completed operation result and unpublished state."
+        "All replies preserve the completed operation result and unpublished state.",
+        "The opt-out scenario makes no browser call and retains the course admin Markdown link for manual opening, without claiming the page opened."
       ]
     },
     {
