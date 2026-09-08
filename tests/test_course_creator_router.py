@@ -411,7 +411,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "<base_url>/shifu/<shifu_bid>",
             "?lessonid=<outline_bid>",
             "host application's built-in browser",
-            "user can directly click, type in, and continue using",
+            "user can directly click, type into, and continue using",
             "Always show the same admin URL as a clickable Markdown link in the final reply",
             "start debugging the course there",
             "keep the link available for manual opening",
