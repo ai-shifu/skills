@@ -649,7 +649,7 @@
       "expectations": [
         "New-default continues the existing full-course build, new import, synchronized pull, publication and verification workflow without another approval question, a new draft default, or premature success claims.",
         "Published opens only the exact admin URL once and retains both original three-line admin and learner links, exact purpose hints and credit explanations; the reply accurately reports publication and opening.",
-        "Queued and failed each attempt admin opening once, retain the successful avatar update and draft status, preserve the supplied admin link, and truthfully distinguish queued from failed without retrying or claiming the page opened.",
+        "Queued and failed each attempt admin opening once, retain the successful avatar update and draft status, preserve the supplied admin link, and truthfully distinguish queued from failed without retrying or claiming the page opened. The queued reply does not invent a completion time or an appearance condition absent from the supplied host result.",
         "Local and analytics perform no platform mutation, authentication, or browser opening; analytics reports the confirmed count of 12 without inventing extra findings.",
         "Region asks exactly 请选择你所在的地区： with 中国 and 其他国家或地区; it does not add domains, setup explanation, a roadmap, or another question.",
         "Progress and result replies use ordinary task language and actionable next-step guidance without default technical checklists, while keeping required exact CLI hints intact."

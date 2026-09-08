@@ -160,7 +160,7 @@ Validation:
 
 Lead with the course name, lesson count, and actual saved or published result. Distinguish an updated draft from the version available to learners. Summarize the completed content checks and unresolved problems without listing build/import flags or internal course identifiers as the default report body. Include the workflow-supplied links in the exact format below.
 
-State the actual embedded-browser handoff outcome in ordinary language. If opened, explain that the author can inspect the course and try the teaching there; if queued, explain when it will appear; if unavailable or failed, explain that the page did not open in the app and retain the link. Do not claim the browser opened when it was skipped. These descriptions do not trigger navigation or change the handoff rules. Keep the script-owned purpose and credit-use hints verbatim.
+State the actual embedded-browser handoff outcome in ordinary language. If opened, explain that the author can inspect the course and try the teaching there; if queued, report that opening is queued and retain the link; state a timing or appearance condition only when the host explicitly supplies it, without inventing an ETA; if unavailable or failed, explain that the page did not open in the app and retain the link. Do not claim the browser opened when it was skipped. These descriptions do not trigger navigation or change the handoff rules. Keep the script-owned purpose and credit-use hints verbatim.
 
 ### Internal detail checklist
 
