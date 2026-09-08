@@ -227,7 +227,7 @@
       "expected_output": "Pauses authoring to ask one localized, effect-aware five-level Teaching Prompt personalization question, first identifying the role as AI 师傅的 AI 老师, instead of guessing a level or starting downstream work.",
       "files": [],
       "expectations": [
-        "The response asks for the missing teaching_prompt_personalization_level before Segmentation, Orchestration, Teaching Prompt generation, or deployment.",
+        "The response asks for the missing teaching_prompt_personalization_level before Segmentation, Orchestration, Teaching Prompt generation, or deployment. The five options use only the everyday display labels; canonical labels and Teaching Prompt terminology remain internal, while values 1 through 5 and their meanings are unchanged.",
         "The question presents exactly five ordered choices numbered 1 through 5, with level 1 described as the most deterministic or concrete and level 5 as the most personalized or adaptive.",
         "Before requesting the choice, the response explains that this answer controls how much learner-facing expression the author fixes in advance versus how much the Teaching Agent may adapt to available learner context; its first mention identifies the role as AI 师傅的 AI 老师 before any shortened AI 老师 reference, and every level description states its practical author- or learner-visible effect rather than showing only a number and name.",
         "The explanation says that the level uses only learner context already available and never authorizes new context collection, interactions, variables, or branches.",

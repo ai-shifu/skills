@@ -1582,13 +1582,26 @@ class CourseCreatorContractTests(unittest.TestCase):
             r"`([1-5])`\s+—\s+([^,.;\n]+)", personalization_block
         )
         self.assertEqual(["1", "2", "3", "4", "5"], [n for n, _ in choices])
-        self.assertRegex(choices[0][1], r"(?i)certainty|determin")
-        self.assertRegex(choices[2][1], r"(?i)balanced")
-        self.assertRegex(choices[4][1], r"(?i)personalization|personalisation")
+        self.assertEqual(
+            [
+                "Mostly prepared wording",
+                "Prepared main wording with some flexibility",
+                "Fixed key points with balanced flexibility",
+                "More learner-tailored explanation",
+                "The most flexibility around fixed teaching goals and facts",
+            ],
+            [label for _, label in choices],
+        )
+        self.assertIn("using only these everyday display labels", personalization_block)
+        self.assertIn("Keep the canonical names", personalization_block)
+        self.assertIn("internal; the display paraphrases preserve the same integer values", personalization_block)
+        self.assertIn("or show a second set of canonical labels", personalization_block)
+        for label in ("High determinism", "Determinism-leaning", "Balanced", "Personalization-leaning", "High personalization"):
+            self.assertNotIn(label, personalization_block)
         self.assertRegex(normalized_scope, r"(?i)higher.*intent.*key points")
         self.assertRegex(
             normalized_scope,
-            r"(?i)fixing less.*wording.*example identity and detail.*feedback wording",
+            r"(?i)leaves more.*wording.*example identity and detail.*feedback wording",
         )
         self.assertRegex(
             normalized_scope,
@@ -1698,7 +1711,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertRegex(
             normalized_scope,
             r"(?i)slide-only delivery with no already-provided level, "
-            r"do not ask it and use level `1` \(High determinism\)",
+            r"do not ask it and use level `1`\.",
         )
         self.assertIn(
             "Do not silently skip this question for standard or combined delivery",
