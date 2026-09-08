@@ -1020,6 +1020,7 @@ class CourseCreatorContractTests(unittest.TestCase):
                 ]
             )
             self.assertIn("AI 师傅的 AI 老师", skill_owned_text)
+            self.assertNotIn("Teaching Agent", skill_owned_text)
         for case in evals_data["evals"]:
             skill_owned_text = "\n".join(
                 [case.get("expected_output", ""), *case.get("expectations", [])]
