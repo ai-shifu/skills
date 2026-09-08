@@ -8,7 +8,6 @@ Audit an existing, substantially complete course artifact set and apply the smal
 - `authoring-mode.md#mode-selection`
 - `data-contracts.md#optimization-fallback-fields`
 - `optimization-checklist.md`
-- `report-template.md#optimization-report`
 
 ## Conditional References
 
@@ -29,7 +28,7 @@ A pasted Prompt body may be audited as a content-only artifact. Apply every chec
 3. Classify each finding and rank it by learner risk and runtime risk.
 4. Repair blockers first with the narrowest coherent edit.
 5. Revalidate the changed artifact and every directly affected consumer.
-6. Record each change, its rationale, and any remaining issue in the Optimization report.
+6. Return the [Outputs](#outputs).
 
 Apply these priorities throughout:
 
@@ -60,13 +59,14 @@ Apply these priorities throughout:
 
 Return the minimally repaired existing artifacts plus the Optimization report, applying `language-policy.md` to every changed or reported value.
 
+Start the report with the conclusion and overall risk (`low|medium|high`). Name each target Teaching Prompt, Course Prompt, or course description in the declared audit scope, along with the source materials and execution mode. Group findings using [Issue Taxonomy](#issue-taxonomy); for each change, include the file reference and minimal-edit rationale. Summarize the results of [Validation](#validation), including checks not assessed.
+
 Under fallback mode, add only the Optimization extensions defined in `data-contracts.md#optimization-fallback-fields`.
 
 Optimization must not create a Course Prompt, course description, or Teaching Prompt from scratch, choose new preservation scope on behalf of an earlier phase, build a course directory, or publish a course.
 
 ## Validation
 
-- The conclusion and overall risk appear first in the report.
 - Every applicable item in `optimization-checklist.md` passes, or the remaining gap is explicitly reported.
 - Each repair is the smallest coherent change and retains the meaning and density observable in the supplied scope. When source material is in scope, it also retains source coverage and immutable content.
 - Repaired artifacts still satisfy their owning contracts.

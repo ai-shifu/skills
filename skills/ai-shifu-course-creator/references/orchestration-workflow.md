@@ -66,6 +66,8 @@ Produce `lesson_teaching_prompts`, `course_index`, and `global_variable_table` e
 
 Keep these as structured phase-handoff data. When a local course directory is materialized, follow the closed artifact set owned by `cli/course-directory-spec.md`.
 
+In the Orchestration report, summarize the input materials, execution mode, constraints, and completion status of the outputs above. Report the results of [Validation](#validation) and [Mandatory Gates](#mandatory-gates). If issues remain, include blockers and suggestions, and identify the lessons and dependencies requiring reruns under [Rerun Rules](#rerun-rules).
+
 ## Validation
 
 - All three Orchestration outputs are present and mutually consistent.

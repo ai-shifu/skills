@@ -503,10 +503,6 @@ def fmt_time(ts):
 def _print_verification_urls(base_url, shifu_bid, include_published=False):
     """Print the admin URL and optionally the public learner URL.
 
-    The skill-running agent uses the exact admin URL for its browser handoff
-    and copies any reported URLs and hints from this output. Keeping URL
-    construction here avoids confusing the /shifu and /c routes.
-
     `include_published=True` adds the learner URL. Whole-course `show` with
     outlines requests it without checking publication status, so its presence does
     not establish that learners can access the course. Preview URLs are not

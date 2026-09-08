@@ -860,7 +860,6 @@ class CourseCreatorContractTests(unittest.TestCase):
         cls.deployment_workflow = load("deployment-workflow.md")
         cls.course_sync = load("course-sync.md")
         cls.course_management = load("course-management.md")
-        cls.report_template = load("report-template.md")
         cls.course_directory_spec = load("cli/course-directory-spec.md")
         cls.cli_reference = load("cli/cli-reference.md")
 
@@ -2722,16 +2721,18 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("set-avatar --course-dir", directory_layout)
 
-    def test_optimization_report_names_each_prompt_type(self):
-        report = markdown_section(self.report_template, "Optimization Report")
-        self.assertIn("- Target Teaching Prompt(s):", report)
-        self.assertIn("- Target Course Prompt:", report)
-        self.assertIn("- Target course description:", report)
+    def test_optimization_report_names_each_artifact_type_and_unassessed_checks(self):
+        report = markdown_section(self.optimization_workflow, "Outputs")
+        for artifact_type in ("Teaching Prompt", "Course Prompt", "course description"):
+            with self.subTest(artifact_type=artifact_type):
+                self.assertIn(artifact_type, report)
+        self.assertIn("declared audit scope", report)
+        self.assertIn("[Validation](#validation)", report)
+        self.assertIn("checks not assessed", report)
         self.assertIn(
-            "- Artifact envelope/schema check: `pass|fail|not-assessed`",
-            report,
+            "`not-assessed`",
+            markdown_section(self.optimization_workflow, "Validation"),
         )
-        self.assertNotIn("- Target Prompt(s):", report)
 
     def test_orchestration_handoffs_do_not_expand_directory_contract(self):
         self.assertIn("structured phase-handoff data", self.orchestration_workflow)
