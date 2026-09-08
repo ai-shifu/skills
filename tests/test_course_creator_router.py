@@ -410,6 +410,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "configured `base_url` from `site`",
             "<base_url>/shifu/<shifu_bid>",
             "?lessonid=<outline_bid>",
+            "Open the resulting link using the shared browser reference",
             "Always show the same admin URL as a clickable Markdown link in the final reply",
             "start debugging the course there",
         ):
