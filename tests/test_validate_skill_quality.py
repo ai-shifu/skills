@@ -1638,7 +1638,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         question_effects = {
             1: (
                 "controls the learner's delivery experience",
-                "lets the Teaching Agent guide one learner directly",
+                "lets the AI teacher guide one learner directly",
                 "projection-ready content paced by a human instructor",
                 "both experiences",
             ),
@@ -1646,14 +1646,14 @@ class CourseCreatorContractTests(unittest.TestCase):
                 "uses only learner context already available",
                 "never authorizes new context collection, interactions, variables, or branches",
                 "what the author will see fixed in advance",
-                "what the Teaching Agent may adapt for the learner",
+                "what the AI teacher may adapt for the learner",
             ),
             3: (
                 "at an early course or module point",
                 "later teaching selected context to use",
                 "initial judgment to refine",
                 "check or consolidate the lesson's core understanding",
-                "worked applications, demonstrations by the Teaching Agent, "
+                "worked applications, demonstrations by the AI teacher, "
                 "or consolidation",
             ),
             4: (
@@ -1669,7 +1669,7 @@ class CourseCreatorContractTests(unittest.TestCase):
                 "more lessons distribute it across more single-question units",
             ),
             6: (
-                "AI-Shifu's Teaching Agent",
+                "AI-Shifu's AI teacher",
                 "teacher identity during course delivery",
                 "leaving it blank does not affect course creation",
                 "unanswered question defaults to no named teacher identity",
@@ -1683,6 +1683,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         for number, fragments in question_effects.items():
             end = step_starts.get(number + 1, len(scope))
             step = " ".join(scope[step_starts[number] : end].split())
+            self.assertNotIn("Teaching Agent", step)
             for fragment in fragments:
                 self.assertIn(fragment, step, f"missing effect for intake question {number}")
 
