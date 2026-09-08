@@ -9,7 +9,6 @@
 - `cli/cli-reference.md#bulk-import`
 - `cli/cli-reference.md#state-management`
 - `cli/course-directory-spec.md`
-- `report-template.md`
 
 ## Conditional References
 
@@ -48,11 +47,10 @@ Existing-course edits and standalone platform-management operations are outside 
 
 ## Verify
 
-1. Retain the target course's admin and public learner URLs and their following Chinese `# ...` hints exactly from CLI output; do not reconstruct URLs or supply preview links. Format them according to `report-template.md` at the final handoff.
-2. Run `show <shifu_bid>` and compare the platform title, description, chapter structure, lesson count, and lesson titles with the local course directory. Run `export <shifu_bid>` and compare the exported Course Prompt with `course-prompt.md`.
-3. For each lesson, use its returned `outline_bid` with `show <shifu_bid> <outline_bid>` and confirm that the deployed Teaching Prompt, variables, and interaction syntax match the local file.
-4. After publication, confirm the public learner URL is reachable. Do not generate a separate preview URL for verification.
-5. Once the deployment and required verification have succeeded, apply the Course Admin Handoff rule from the startup-loaded `session-controls.md`: open the admin page once in the embedded browser and retain the admin and public learner links in the final report. Browser availability or opening failure does not undo a successful deployment.
+1. Run `show <shifu_bid>` and compare the platform title, description, chapter structure, lesson count, and lesson titles with the local course directory. Run `export <shifu_bid>` and compare the exported Course Prompt with `course-prompt.md`.
+2. For each lesson, use its returned `outline_bid` with `show <shifu_bid> <outline_bid>` and confirm that the deployed Teaching Prompt, variables, and interaction syntax match the local file.
+3. Confirm the public learner URL returned by `publish` is reachable.
+4. Apply the Course Admin Handoff from the startup-loaded `session-controls.md#course-admin-handoff`.
 
 ## Completion Criteria
 
@@ -60,4 +58,4 @@ Existing-course edits and standalone platform-management operations are outside 
 - The platform structure and content match the source directory.
 - Every accepted teacher avatar is bound and verified before publication; a skipped avatar leaves the platform default unchanged.
 - Public learner URL verification succeeds.
-- The final report contains the exact Shifu BID, CLI-produced admin and public learner URLs, and an accurate browser handoff status.
+- The final report names the course directory and exact Shifu BID, summarizes results for the build, import, and publication steps actually executed, gives the imported lesson count, and reports the results of [Verify](#verify), including the browser handoff status.

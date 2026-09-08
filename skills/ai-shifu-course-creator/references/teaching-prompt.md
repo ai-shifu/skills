@@ -92,6 +92,8 @@ Produce one `lesson_teaching_prompts` item per lesson using `data-contracts.md#l
 
 Under fallback mode, add only the Generation extensions defined in `data-contracts.md#generation-fallback-fields`.
 
+In the Generation report, identify the lesson and summarize generation status, execution mode, constraints, interaction count, and variables used. Report the results of [Validation](#validation). If issues remain, include blockers, suggestions, whether a rerun is needed, and upstream dependencies.
+
 ## Validation
 
 - Every `teaching_prompt` is valid runnable MarkdownFlow.

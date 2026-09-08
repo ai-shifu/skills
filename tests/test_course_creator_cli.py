@@ -173,15 +173,7 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
         self.api = self.enterContext(mock.patch.object(course_creator_cli, "api"))
         self.api_safe = self.enterContext(mock.patch.object(course_creator_cli, "api_safe"))
 
-    def test_exact_admin_and_optional_learner_output_never_contains_preview(self):
-        admin_hint = (
-            "    # 点击会跳转到 AI 师傅管理后台，用于设置章节状态、收费与否，以及手工调整课程细节、"
-            "调试 AI 一对一授课的效果。调试时会消耗课程创建者在 AI 师傅的积分。\n"
-        )
-        learner_hint = (
-            "    # 点击会跳转到 AI 师傅课程学习页，可以发送给学员使用且仅在课程已发布后有效；"
-            "任何人学习都会消耗课程创建者在 AI 师傅的积分。\n"
-        )
+    def test_link_output_has_labels_and_course_preview_without_explanations(self):
         for base_url in (
             "https://app.ai-shifu.cn",
             "https://app.ai-shifu.com",
@@ -194,12 +186,11 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
                             base_url, "course", include_published=published,
                         )
                     expected = (
-                        "\nVerification URLs:\n"
                         f"  Admin console:    {base_url}/shifu/course\n"
-                        + admin_hint
+                        f"  Preview URL:      {base_url}/c/course?preview=true\n"
                     )
                     if published:
-                        expected += f"  Published URL:    {base_url}/c/course\n" + learner_hint
+                        expected += f"  Published URL:    {base_url}/c/course\n"
                     self.assertEqual(output.getvalue(), expected)
         self.api.assert_not_called()
         self.api_safe.assert_not_called()
@@ -213,11 +204,11 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
             ))
         result = output.getvalue()
         self.assertIn("Outline tree:\n- [lesson] First lesson\n", result)
-        self.assertIn(f"Admin console:    {self.base_url}/shifu/course\n", result)
-        self.assertIn(f"Published URL:    {self.base_url}/c/course\n", result)
-        self.assertNotIn("preview", result.lower())
+        self.assertIn(f"  Admin console:    {self.base_url}/shifu/course\n", result)
+        self.assertIn(f"  Preview URL:      {self.base_url}/c/course?preview=true\n", result)
+        self.assertIn(f"  Published URL:    {self.base_url}/c/course\n", result)
 
-    def test_empty_course_show_prints_admin_url_without_learner_or_preview_urls(self):
+    def test_empty_course_show_prints_admin_and_preview_urls_without_learner_url(self):
         self.api_safe.return_value = {"name": "Empty course"}
         self.api.return_value = []
         with contextlib.redirect_stdout(io.StringIO()) as output:
@@ -228,11 +219,9 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
             output.getvalue(),
             "Course: Empty course\n"
             "BID:    course\n\n"
-            "No outlines found.\n\n"
-            "Verification URLs:\n"
+            "No outlines found.\n"
             f"  Admin console:    {self.base_url}/shifu/course\n"
-            "    # 点击会跳转到 AI 师傅管理后台，用于设置章节状态、收费与否，以及手工调整课程细节、"
-            "调试 AI 一对一授课的效果。调试时会消耗课程创建者在 AI 师傅的积分。\n",
+            f"  Preview URL:      {self.base_url}/c/course?preview=true\n",
         )
 
     def test_lesson_show_prints_only_revision_and_content(self):
@@ -255,9 +244,13 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
                         with self.assertRaisesRegex(RuntimeError, "Publish failed"):
                             course_creator_cli.cmd_publish(types.SimpleNamespace(shifu_bid="course"))
                 if succeeds:
-                    self.assertIn("Published: course\n", output.getvalue())
-                    self.assertIn(f"Published URL:    {self.base_url}/c/course\n", output.getvalue())
-                    self.assertNotIn("preview", output.getvalue().lower())
+                    self.assertEqual(
+                        output.getvalue(),
+                        "Published: course\n"
+                        f"  Admin console:    {self.base_url}/shifu/course\n"
+                        f"  Preview URL:      {self.base_url}/c/course?preview=true\n"
+                        f"  Published URL:    {self.base_url}/c/course\n",
+                    )
                 else:
                     self.assertEqual(output.getvalue(), "")
 

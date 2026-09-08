@@ -31,7 +31,7 @@
       "expectations": [
         "The workflow verifies authentication before publish operations.",
         "It does not run Course Design Intake, Segmentation, Generation, or Optimization.",
-        "The final handoff opens the exact CLI-produced admin URL once in the embedded browser when available, keeps admin and public learner links in the three-line report format, and omits preview links."
+        "The final handoff builds the admin URL from the configured site and course BID, opens it in the built-in browser, and shows a Markdown link explaining that course debugging starts there. The requested public learner URL is also shown as a Markdown link."
       ]
     },
     {
@@ -580,40 +580,52 @@
     },
     {
       "id": 46,
-      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。CLI 地址块请使用所测技能版本的 _print_verification_urls 纯函数生成（可单独执行此纯函数，禁止执行 CLI main）。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：将已批准的内容整体同步到《入职训练营》已有草稿，保持未发布。目标 BID=course-a，站点=https://app.ai-shifu.cn。宿主提供模拟 open_in_codex，可用 target.type=browser 和 target.url 打开内嵌浏览器；调用会返回 opened=true。\n场景 name=sync。按顺序处理三个检查点：\n1. name=import-running：import course-a --course-dir 已打印 Done 和地址块（include_published=False），但最后的同步记录尚未建立，进程仍在运行。\n2. name=verification-pending：import 最终 exit=0；之后 pull course-a --course-dir 也 exit=0 并再次打印同一地址块，尚未完成课节内容核对。\n3. name=handoff：所有课节内容与源文件已核对一致，所有命令 exit=0，本轮工作完成，准备交付给用户。",
-      "expected_output": "Defers browser navigation until the whole sync and verification finish, opens the target admin once, retains its three-line link, and emits no preview URL.",
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：将已批准的内容整体同步到《入职训练营》已有草稿，保持未发布。目标 BID=course-a，站点=https://app.ai-shifu.cn。宿主提供模拟 open_in_codex，可用 target.type=browser 和 target.url 打开内嵌浏览器；调用会返回 opened=true。\n场景 name=sync。按顺序处理三个检查点：\n1. name=import-running：import course-a --course-dir 已打印 Done 和地址块（include_published=False），但最后的同步记录尚未建立，进程仍在运行。\n2. name=verification-pending：import 最终 exit=0；之后 pull course-a --course-dir 也 exit=0 并再次打印同一地址块，尚未完成课节内容核对。\n3. name=handoff：所有课节内容与源文件已核对一致，所有命令 exit=0，本轮工作完成，准备交付给用户。",
+      "expected_output": "Waits for sync and verification to finish, builds the admin link from the configured site and course BID, opens it in the built-in browser, and presents the same link as the course debugging entry.",
       "files": [],
       "expectations": [
         "No browser call occurs while import is running or verification is pending.",
-        "At final handoff exactly one embedded-browser call uses the exact target admin URL.",
-        "The final reply retains the admin link, raw URL, and exact CLI purpose hint.",
-        "No checkpoint emits a course or lesson preview URL, and the draft is not claimed as published."
+        "At final handoff the built-in browser opens https://app.ai-shifu.cn/shifu/course-a.",
+        "The final reply shows the same URL as a Markdown link and explains that the author can start debugging the course there.",
+        "The draft is not claimed as published."
       ]
     },
     {
       "id": 47,
-      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。CLI 地址块请使用所测技能版本的 _print_verification_urls 纯函数生成（可单独执行此纯函数，禁止执行 CLI main）。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）、cli_calls 数组（元素为模拟命令字符串）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：为《团队沟通》开启听课模式并汇报结果，保持草稿。目标 BID=course-b，站点=https://school.example:8443/training。课程由 find-title 按标题确认；set-tts 已 exit=0 且命令内回读确认设置生效。此前没有运行 pull 或 show，尚无任何 CLI 地址块。模拟 CLI 可按需执行 show course-b：课程详情读取成功且明确保持未发布；A 场景大纲为空，B 和 C 场景大纲非空（有一节课）；命令按所测技能版本 cmd_show 的行为输出（只模拟控制流与纯函数输出，禁止真实 API）。请记录是否需要额外 CLI 调用；不要自行假定已有后台地址。\n前三个独立场景均只有 name=handoff 一个检查点：\nA. name=unavailable：宿主仅提供外部 Chrome 控制和系统 open 命令，没有内嵌浏览器工具。\nB. name=failed：宿主提供模拟 open_in_codex，参数支持 target.type=browser 和 target.url，但任何打开尝试都会返回 opened=false、error=embedded browser unavailable；外部 Chrome 和系统 open 也可用。\nC. name=queued：宿主提供相同的模拟 open_in_codex，调用返回 status=queued、threadId=task-a；页面会在用户切回该任务后显示。\nD. name=target-resolution：独立用户请求明确给出 BID=course-b，为这门课开启听课模式并保持未发布。初始化为定位目标已经运行 show course-b，明确课程未发布且大纲非空，并按所测 CLI 的行为打印了地址块（include_published=True）。之后 set-tts 成功且回读验证完成。此刻只有 name=handoff 一个检查点，cli_calls 只记录此刻追加的调用，之前的目标定位调用不记入该数组。宿主有模拟 open_in_codex，调用返回 opened=true。",
-      "expected_output": "Retrieves a missing CLI admin URL after successful standalone management, including empty and nonempty drafts, without retaining incidental public learner links from the admin-only lookup, and preserves the result and link when the embedded browser is unavailable, fails, or queues navigation.",
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个场景独立开始，技能初始化、鉴权和目标确认已完成，上一条回复已给过联系入口。输出 JSON：scenarios 数组，每项含 name、browser_calls（元素含 tool 和 arguments）、cli_calls（模拟命令字符串数组）及 reply。\n\n用户要求：为《团队沟通》开启听课模式并汇报结果，保持草稿。目标课程 BID=course-b，已配置站点的 base_url=https://school.example:8443/training。set-tts 和回读验证已经成功，本轮工作完成，尚无任何 CLI 地址块。以下场景分别给出此刻的调用和回复：\nA. name=unavailable：只有外部 Chrome 控制和系统 open 命令，没有内置浏览器。\nB. name=failed：提供模拟 open_in_codex，支持 target.type=browser 和 target.url；打开返回 opened=false、error=embedded browser unavailable。\nC. name=queued：提供相同的模拟 open_in_codex，返回 status=queued，页面等待用户切回任务后显示。\nD. name=lesson：改为另一项已完成的请求：修改这门课的“冲突沟通”课节，课程 BID=course-b、课节 BID=lesson-b 已知，内容同步和核对均成功，保持未发布。站点同上，模拟 open_in_codex 返回 opened=true。\nE. name=opt-out：与开启听课模式的已完成请求相同，用户另有明确要求：“不要打开任何页面或浏览器，只把链接给我。”提供可用的模拟 open_in_codex。",
+      "expected_output": "Builds course and lesson admin links from known IDs without an extra CLI lookup, preserves the custom site address, and presents a debugging entry with accurate browser status.",
       "files": [],
       "expectations": [
-        "Unavailable, failed, and queued scenarios each retrieve the missing admin URL with exactly one show course-b call; target-resolution reuses its captured admin URL without an additional CLI call. No management write is repeated.",
-        "Unavailable scenario makes no browser call; failed, queued, and target-resolution scenarios each attempt embedded opening exactly once with no retry, forced task navigation, or external fallback.",
-        "Each final reply preserves the admin link, raw URL, and exact CLI purpose hint.",
-        "Unavailable/failed replies explain the limitation, queued reports pending opening, and target-resolution reports the confirmed opening; all preserve the successful course operation and draft status.",
-        "No scenario emits a preview URL or claims the draft was published.",
-        "No final reply includes the public learner URL emitted incidentally by an admin-only or target-resolution lookup, including the nonempty unpublished course."
+        "No scenario calls the CLI solely to obtain an admin URL or repeats a completed write.",
+        "Course scenarios use https://school.example:8443/training/shifu/course-b; the lesson scenario uses https://school.example:8443/training/shifu/course-b?lessonid=lesson-b.",
+        "Opening uses only the available built-in browser. Unavailable and failed cases retain a manual link; queued reports that opening is pending, retains the link, does not retry, and does not claim the page already opened.",
+        "Every reply shows the target URL as a Markdown link and explains that the author can start debugging the course there.",
+        "All replies preserve the completed operation result and unpublished state.",
+        "The opt-out scenario makes no browser call and retains the course admin Markdown link for manual opening, without claiming the page opened."
       ]
     },
     {
       "id": 48,
-      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。CLI 地址块请使用所测技能版本的 _print_verification_urls 纯函数生成（可单独执行此纯函数，禁止执行 CLI main）。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：发布《销售入门》，给我课程访问入口。目标 BID=course-c，站点=https://app.ai-shifu.com。publish 已 exit=0 并打印地址块（include_published=True），随后 show course-c 已 exit=0 并再次打印相同地址块。标题、章节、课节内容均已核对一致，正式学习页已验证可访问，准备最终交付。场景 name=published，检查点 name=handoff。宿主提供模拟 open_in_codex，参数支持 target.type=browser 和 target.url，调用返回 opened=true。",
-      "expected_output": "Opens only the admin page once after publication verification and retains both admin and public learner links without any preview URL.",
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：把《销售入门》的已完成课程目录部署为一门新课程。build、import --new、同步 pull 和 publish 都已 exit=0，新课程 BID=course-c，站点=https://app.ai-shifu.com。publish 打印的 Published URL 为 https://app.ai-shifu.com/c/course-c，随后 show course-c 已 exit=0。用户没有另外索要链接。标题、章节、课节内容均已核对一致，正式学习页已验证可访问，准备最终交付。场景 name=published，检查点 name=handoff。宿主提供模拟 open_in_codex，参数支持 target.type=browser 和 target.url，调用返回 opened=true。",
+      "expected_output": "Opens the admin page after new-course deployment verification and includes the published learner link without requiring a separate request for it.",
       "files": [],
       "expectations": [
-        "Exactly one embedded-browser call targets the CLI admin URL; no public learner or preview page is automatically opened.",
-        "The final reply retains both CLI-produced admin and public learner URLs in the three-line format with exact hints.",
-        "The final reply reports successful publication and browser opening without emitting preview URLs.",
+        "The built-in browser opens the admin URL built from the known site and course BID: https://app.ai-shifu.com/shifu/course-c.",
+        "The final reply shows Markdown links to the admin page and the public learner URL returned by publish (https://app.ai-shifu.com/c/course-c), explaining that debugging starts at the admin page.",
+        "The final reply reports successful publication and the confirmed browser result.",
         "Browser opening is not used as evidence that course content or publication verification passed."
+      ]
+    },
+    {
+      "id": 49,
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。技能初始化、鉴权和查询都已完成；上一条回复已给过联系入口。每个场景独立开始。宿主均提供模拟 open_in_codex，支持打开内置浏览器。输出 JSON：scenarios 数组，每项含 name、browser_calls 和 reply。\n\nA. name=list-only：用户只要求列出自己的课程。查询返回《团队沟通》（BID=course-b）和《销售入门》（BID=course-c），用户没有选择课程，也没有要求打开或调试。\nB. name=analytics-only：用户只要求查询《团队沟通》的昨日学习人数。目标 BID=course-b 已知，查询结果为 12 人，用户没有要求打开或调试。",
+      "expected_output": "Returns the requested list or analytics result without initiating a course debugging handoff.",
+      "files": [],
+      "expectations": [
+        "Both scenarios have an empty browser_calls array.",
+        "The list-only reply shows both returned courses without selecting an arbitrary course for a handoff.",
+        "The analytics-only reply reports 12 learners without opening the admin page merely because the course BID is known.",
+        "Neither reply adds unsolicited debugging guidance."
       ]
     }
   ]

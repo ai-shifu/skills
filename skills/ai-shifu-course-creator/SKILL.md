@@ -9,6 +9,10 @@ version_management: standalone
 
 Route each request to the smallest complete instruction set needed to create, edit, optimize, deploy, manage, or analyze an AI-Shifu course. Teaching Prompts and Course Prompts use MarkdownFlow.
 
+## User-Facing Links
+
+Use Markdown links `[descriptive text](URL)` for URLs in every user-visible message. URLs inside Teaching Prompts follow MarkdownFlow rules, and URLs shown inside fenced code blocks are exempt.
+
 ## Startup Sequence
 
 On the first invocation in a session:
@@ -17,9 +21,9 @@ On the first invocation in a session:
 2. Read `references/session-controls.md` completely before the first user-visible response.
 3. Apply its contact, version-check, progress/error, and handoff rules.
 4. Classify the request with the routing table below.
-5. Read every file or anchored section listed for the selected Task Router row, then execute the listed stages in order. When one file appears at multiple anchored stages, read it once and apply each named section at its listed point. The Task Router and Reporting map are the only root loading declarations in this file.
+5. Read every file or anchored section listed for the selected Task Router row, then execute the listed stages in order. When one file appears at multiple anchored stages, read it once and apply each named section at its listed point. The Task Router declares the required workflow stages.
 6. In each selected reference, read the ordered bullets under `## Required References` before applying that reference. Resolve those strong dependencies transitively.
-7. Load a reference's `## Conditional References` only when its stated condition applies. Outside the Task Router, Reporting map, `## Required References`, and applicable `## Conditional References`, every file-path mention is navigation only and never changes the selected stages.
+7. Load a reference's `## Conditional References` only when its stated condition applies. Outside the Task Router, `## Required References`, and applicable `## Conditional References`, every file-path mention is navigation only and never changes the selected stages.
 8. For mixed requests, combine the relevant rows and preserve their dependency order.
 
 ## Task Router
@@ -55,15 +59,3 @@ On the first invocation in a session:
 - For platform-bound authoring, do not propose an outline or write lesson content until the target is resolved. Explicit local and artifact-only routes have no platform target.
 - Compare the resolved target kind with the kind assumed by the active row. If it changes from new to existing or existing to new, stop that row, reclassify the remaining work against the Task Router, and never enter an incompatible new-only or existing-only stage.
 - Full-course authoring continues through new-course deployment and publication by default. Select the explicit local/artifact-only row only when the user requests that boundary.
-
-## Reporting
-
-At the end of each completed phase, use the matching section of `references/report-template.md`:
-
-- Segmentation → `#segmentation-report`
-- Orchestration → `#orchestration-report`
-- Generation → `#generation-report`
-- Optimization → `#optimization-report`
-- Deployment → `#deployment-report`
-
-Apply `references/report-template.md#formatting-rules` to every user-facing phase report.

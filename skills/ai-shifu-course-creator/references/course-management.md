@@ -7,7 +7,6 @@
 - `cli/cli-reference.md#query-commands`
 - `cli/cli-reference.md#update-commands`
 - `cli/cli-reference.md#state-management`
-- `report-template.md`
 
 ## Conditional References
 
@@ -25,8 +24,8 @@ Complete `authentication.md` first. Before mutating learner-facing metadata, com
 | Intent | Command | Required result check |
 | --- | --- | --- |
 | List courses | `list` | Confirm the intended title and Shifu BID from current results. |
-| Preview course | `show <shifu_bid>` | Use the CLI-produced admin URL for the final handoff; the author can debug the draft there. |
-| Preview one lesson | `show <shifu_bid>` to identify the requested lesson | Direct the author to that lesson in the admin console; do not generate a lesson preview URL. |
+| Preview course | Reuse the resolved course BID | Apply the Course Admin Handoff below. |
+| Preview one lesson | Reuse the known lesson BID; use `show <shifu_bid>` only if it still needs to be identified | Apply the Course Admin Handoff below for that lesson. |
 | Publish current draft | `publish <shifu_bid>` | Confirm the CLI-produced public learner URL works. |
 | Archive or restore | `archive <shifu_bid>` / `unarchive <shifu_bid>` | Re-run `list` or `show` as appropriate to confirm state. |
 | Reorder lessons | `reorder <shifu_bid> --order bid1,bid2,...` | Run `show <shifu_bid>` and confirm the returned order. |
@@ -41,6 +40,6 @@ For a teacher avatar, accept JPG or PNG. Recommend 1:1 because the avatar is sho
 
 When `update-meta --course-dir`, `set-tts --course-dir`, or `set-avatar --course-dir` exits `2`, apply `course-sync.md#conflict-convergence` to the intended management change and retry on the freshly pulled baseline.
 
-## Verification URLs
+## Course Admin Handoff
 
-Copy the target course's CLI-produced admin and public learner URLs and their following Chinese `# ...` hints using the layout in `report-template.md`. Do not reconstruct platform URLs or supply course or lesson preview links. At the final handoff, apply the Course Admin Handoff rule from the startup-loaded `session-controls.md`: obtain a missing admin URL with `show <shifu_bid>`, open the admin page once in the embedded browser, and retain its link in the report.
+Apply the startup-loaded `session-controls.md#course-admin-handoff`.

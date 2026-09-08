@@ -5,7 +5,6 @@ Own the skill's first-turn, update-check, progress, error, and handoff lifecycle
 ## Required References
 
 - `language-policy.md`
-- `report-template.md#formatting-rules`
 
 ## Support and Contact
 
@@ -59,20 +58,13 @@ The CLI reports usage events (command name, skill version, host agent, OS/archit
 - Give a concise progress update at meaningful phase boundaries during work that continues across multiple steps. State what completed and what comes next.
 - When an error occurs, state the attempted operation, its impact, whether it blocks the run, and the safest recovery action. Continue past non-blocking errors when the active workflow permits it.
 - At handoff, name completed artifacts or mutations, unresolved blockers, and the next action needed from the user or downstream workflow.
-- Apply the language policy and URL formatting dependency to every message in this lifecycle.
 
 ## Course Admin Handoff
 
-Course authors use the admin console to inspect and debug drafts. Keep course and lesson preview links out of CLI output and user-facing reports; direct preview requests to the admin console instead, without constructing a preview URL.
+For a uniquely identified course or lesson, apply this handoff after the requested creation, synchronization, publication, or management work and verification complete, or for a direct preview/debug request. Listing and analytics-only requests do not trigger it.
 
-For internal `show` calls used to resolve the course target or obtain its admin page, retain only the admin entry, even when the CLI also prints a public learner entry. Apply this at target resolution, before any later fallback is considered: an explicit-BID lookup may already supply the admin URL and therefore skip the fallback entirely. These internal lookups do not establish publication state. Public learner links from a user-requested course-view or publish operation remain eligible for the report under the existing workflow rules.
+1. Reuse the configured `base_url` from `site` and the known BIDs to build `<base_url>/shifu/<shifu_bid>`. For a target lesson, append `?lessonid=<outline_bid>` using that lesson's BID.
+2. Open the resulting link in the Agent's visible built-in browser unless the user asked not to open the page or browser.
+3. Show the same link to the user and explain that they can start debugging the course there. If this task published the course, also show the public learner URL returned by `publish`.
 
-For each course being delivered in the current user request, retain the exact `Admin console:` URL from that target course's CLI `Verification URLs:` block. After the requested operations and their required verification have completed successfully, open this URL once in the host's visible embedded browser, immediately before the final handoff. Intermediate `pull`, `show`, import output, and conflict retries are not handoffs. Wait for the entire command to exit successfully: an import can print URLs before its final synchronization step finishes. Do not open another course found incidentally, invent a missing URL, or open a browser for local-only work. Follow an explicit user request not to open a page.
-
-If no admin URL has been captured for a successfully delivered target, run `show <shifu_bid>` once to obtain its CLI-produced URL before the handoff. This covers standalone management commands such as `set-access`, `set-tts`, and `set-avatar` that do not print URLs; course-level `show` supplies the admin URL even for an empty course. Capture only the admin entry from this admin-only lookup, ignoring any public learner entry it also prints: `show` does not verify publication state, and looking up an admin page should not add an unverified learner link to a draft handoff. If this lookup fails, report that the admin link could not be retrieved without changing the completed operation's result or fabricating a URL. A course listing or analytics-only report does not by itself deliver a course and does not trigger this lookup or browser opening.
-
-In Codex, prefer the available `open_in_codex` tool with `target: {"type": "browser", "url": "<exact CLI admin URL>"}`. In another host, or when that tool is absent, use an available tool that explicitly supports its visible embedded browser. Do not substitute a generic browser tool, an external browser, or an operating-system opener. This is an agent handoff action; the Python CLI only prints URLs and does not open a browser.
-
-If no embedded-browser tool is available, or opening fails, briefly explain that the admin page could not be opened in the app and keep the link available. Do not automatically retry the opening or change the success status of the completed course operation. If the host returns `status=queued`, report that opening is queued; do not retry, force navigation to the task, or claim the page is already open. Report that the page opened only when the tool confirms success; opening a page does not verify its content or publication state.
-
-Always retain the admin link in the final report, even after a successful opening, so the author can reopen or copy it. Retain public learner links supplied by the requested workflow as well, excluding entries emitted incidentally by internal target-resolution or admin-only lookups. Use the three-line URL format and exact purpose hints from `report-template.md#formatting-rules` for both.
+Only report that the page opened after the browser confirms success. For `status=queued`, say that opening is pending and do not retry. If the built-in browser cannot open the page, briefly explain that and keep the link available for manual opening.

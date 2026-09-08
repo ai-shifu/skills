@@ -34,6 +34,8 @@ If structure is weak, output a fallback segmentation, mark uncertain spans, and 
 
 Produce a segment list that conforms to `data-contracts.md#segment-schema`, including its canonical segment types and transfer signals, plus workflow-local lesson-boundary candidates with one core question each.
 
+At Segmentation handoff, summarize the source files, execution mode, total segment count, and lesson-boundary candidates. Summarize the results of [Validation](#validation), including immutable-block preservation. If issues remain, include blockers, non-blocking suggestions, focused rerun hints, and downstream handoff notes.
+
 Apply `language-policy.md` to the complete Segmentation output.
 
 ### Validation
