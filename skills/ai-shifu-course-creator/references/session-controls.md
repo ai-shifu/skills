@@ -61,7 +61,7 @@ The CLI reports usage events (command name, skill version, host agent, OS/archit
 
 ## Course Admin Handoff
 
-After the requested platform-course work and verification complete, or for a direct preview/debug request:
+For a uniquely identified course or lesson, apply this handoff after the requested creation, synchronization, publication, or management work and verification complete, or for a direct preview/debug request. Listing and analytics-only requests do not trigger it.
 
 1. Reuse the configured `base_url` from `site` and the known BIDs to build `<base_url>/shifu/<shifu_bid>`. For a target lesson, append `?lessonid=<outline_bid>` using that lesson's BID.
 2. Open the resulting link in the Agent's visible built-in browser.

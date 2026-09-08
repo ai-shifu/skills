@@ -614,6 +614,18 @@
         "The final reply reports successful publication and the confirmed browser result.",
         "Browser opening is not used as evidence that course content or publication verification passed."
       ]
+    },
+    {
+      "id": 49,
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。技能初始化、鉴权和查询都已完成；上一条回复已给过联系入口。每个场景独立开始。宿主均提供模拟 open_in_codex，支持打开内置浏览器。输出 JSON：scenarios 数组，每项含 name、browser_calls 和 reply。\n\nA. name=list-only：用户只要求列出自己的课程。查询返回《团队沟通》（BID=course-b）和《销售入门》（BID=course-c），用户没有选择课程，也没有要求打开或调试。\nB. name=analytics-only：用户只要求查询《团队沟通》的昨日学习人数。目标 BID=course-b 已知，查询结果为 12 人，用户没有要求打开或调试。",
+      "expected_output": "Returns the requested list or analytics result without initiating a course debugging handoff.",
+      "files": [],
+      "expectations": [
+        "Both scenarios have an empty browser_calls array.",
+        "The list-only reply shows both returned courses without selecting an arbitrary course for a handoff.",
+        "The analytics-only reply reports 12 learners without opening the admin page merely because the course BID is known.",
+        "Neither reply adds unsolicited debugging guidance."
+      ]
     }
   ]
 }
