@@ -100,7 +100,7 @@ find-title <keyword>
 - `export` writes course JSON to stdout or the path passed with `-o`.
 - `find-title` requires at least two non-whitespace characters, then matches the keyword case-insensitively after whitespace normalization against current draft and published titles. It does not match historical or renamed titles.
 
-`show` without an outline BID prints a `Verification URLs:` block containing the admin URL even when the outline tree is empty. A non-empty tree also includes the public learner URL, without checking publication state. `create`, `import`, and `pull` print the admin URL; `publish` prints both admin and public learner URLs. Neither course nor lesson preview URLs are printed. These commands only print URLs; Agent browser handoff follows `../session-controls.md#course-admin-handoff`.
+Course links are printed as plain URLs, one per line, without headings, labels, or explanations. `show` without an outline BID prints the admin URL even when the outline tree is empty. A non-empty tree also includes the public learner URL, without checking publication state. `create`, `import`, and `pull` print the admin URL; `publish` prints both admin and public learner URLs. Neither course nor lesson preview URLs are printed. Agent browser handoff follows `../session-controls.md#course-admin-handoff`.
 
 ## Analytics Query
 
