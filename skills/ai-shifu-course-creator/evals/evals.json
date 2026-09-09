@@ -438,8 +438,7 @@
         "The semantic repair does not treat isolated words such as structure, order, or teaching purpose as forbidden when they are genuinely needed in local teaching content; failure depends on whether a passage explains the authoring process rather than instructing learner-time teaching.",
         "The course-wide `16:9`, visual, and Logo rules from the leaked wrapper are not copied into or distributed across the 31 local page directions because that uniform presentation behavior remains owned by the Course Prompt.",
         "At teaching_prompt_personalization_level 4, every page remains executable and keeps its must-cover content and feedback effect, while ordinary title wording, explanation phrasing, role-specific example details, transitions, and non-deterministic feedback wording remain lightly prescribed through shorter local directions rather than sentences that explain runtime adaptability.",
-        "The repaired Prompt uses localized standalone teaching-stage HTML comments and one teaching-block HTML comment for each of the 31 page units; every ordinary page or explanation instruction is a top-level unordered-list item, and each question instruction, unchanged standalone control, and immediate feedback stay together inside one block.",
-        "Navigation comments contain only short stage or block labels. Removing those comments and the ordinary-instruction list markers leaves all 31 page directions, exact content, interactions, feedback, and close in the same order."
+        "Because this request is limited to repairing leaked authoring wrappers rather than explicitly rewriting the Prompt's layout, the result does not add navigation comments, convert all ordinary directions into unordered-list items, or otherwise normalize the 31 page units solely to adopt the new source format."
       ]
     },
     {
@@ -633,6 +632,21 @@
         "The list-only reply shows both returned courses without selecting an arbitrary course for a handoff.",
         "The analytics-only reply reports 12 learners without opening the admin page merely because the course BID is known.",
         "Neither reply adds unsolicited debugging guidance."
+      ]
+    },
+    {
+      "id": 50,
+      "prompt": "teaching_prompt_personalization_level=3。请明确重写下面这份已经批准的标准一对一授课提示词的源文件编排格式，只添加本技能规定的中文教学阶段、教学块 HTML 导航注释和普通指令无序列表标记。不要改写、删减、增加或调换任何原正文字符，不要改变页码、教学动作、互动位置、反馈或收束。现有四个阶段边界分别在第 1、8、19、28 页之前。每一页是一个教学块。lesson_id 固定为 L50，used_variables 和 global_variable_table 都为空；不连接平台，不生成 Course Prompt。只输出字段为 lesson_teaching_prompts 和 global_variable_table 的可解析 JSON 对象。\n\n原授课提示词：\n第 1 页：创建课程封面。\n随后介绍本节主题。\n第 2 页：呈现真实问题。\n随后解释问题背景。\n第 3 页：呈现学习目标。\n随后说明完成标准。\n第 4 页：呈现全课地图。\n随后解释各部分关系。\n第 5 页：呈现核心术语。\n随后解释术语边界。\n第 6 页：呈现一个反例。\n随后解释反例为何失败。\n第 7 页：呈现阶段小结。\n随后连接到第一次选择。\n第 8 页：只显示问题“先从哪条路径开始？”。\n?[先看案例 | 先看原则]\n回答后立即说明所选路径如何影响后续讲解。\n第 9 页：呈现判断矩阵。\n随后解释两个坐标轴。\n第 10 页：呈现案例一。\n随后应用判断矩阵。\n第 11 页：呈现适用边界。\n随后解释何时不能套用。\n第 12 页：呈现分析模型。\n随后解释模型步骤。\n第 13 页：呈现两种做法。\n随后比较它们的代价。\n第 14 页：呈现案例二。\n随后指出关键证据。\n第 15 页：呈现练习任务。\n随后说明作答标准。\n第 16 页：呈现参考答案。\n随后解释判断依据。\n第 17 页：呈现常见误区。\n随后给出修正方法。\n第 18 页：呈现阶段小结。\n随后连接到实际应用。\n第 19 页：只显示问题“当前最需要解决哪类障碍？”。\n?[信息不足 | 判断不稳 | 执行受阻]\n回答后立即回应所选障碍并选择对应案例。\n第 20 页：呈现场景 A。\n随后分析第一项决策。\n第 21 页：呈现场景 B。\n随后分析第二项决策。\n第 22 页：呈现决策树。\n随后解释分支条件。\n第 23 页：呈现失败案例。\n随后定位失败原因。\n第 24 页：呈现修复方案。\n随后解释修改取舍。\n第 25 页：呈现检查清单。\n随后演示一次检查。\n第 26 页：呈现行动模板。\n随后说明填写方法。\n第 27 页：呈现迁移练习。\n随后提示迁移边界。\n第 28 页：只显示问题“接下来先落实哪一步？”。\n?[整理证据 | 完成判断 | 开始行动]\n回答后立即把选择转成一个具体下一步。\n第 29 页：呈现七天计划。\n随后解释每日节奏。\n第 30 页：呈现风险提醒。\n随后说明停止条件。\n第 31 页：呈现最终结论。\n随后回扣三次选择并完成全课收束。",
+      "expected_output": "Rewrites only the source layout of a 31-page Teaching Prompt while preserving every approved runtime instruction and interaction in place.",
+      "files": [],
+      "expectations": [
+        "The output is a parseable JSON object containing exactly one L50 lesson item with all required lesson-schema fields, empty used_variables, and an empty global_variable_table; it contains no Course Prompt or platform work.",
+        "The Teaching Prompt uses localized standalone teaching-stage and teaching-block HTML comments, with four stage comments at the supplied boundaries and exactly one teaching-block comment for each of the 31 page units.",
+        "Every ordinary page and explanation instruction begins with a top-level unordered-list marker, source order remains execution order, and existing page numbers remain content rather than becoming ordered-list layout.",
+        "The question instruction, unchanged standalone control, and immediate feedback remain adjacent for pages 8, 19, and 28, with no navigation comment inserted inside any interaction triplet.",
+        "Comments contain navigation labels only and cannot carry any page instruction, question, option, feedback, variable, or close requirement.",
+        "After removing navigation comments and ordinary-instruction list markers, every original non-formatting character and line remains in exactly the supplied order from page 1 through page 31.",
+        "No teaching action, page, interaction, feedback behavior, stage boundary, or final close is added, removed, rewritten, split, merged, or reordered."
       ]
     }
   ]
