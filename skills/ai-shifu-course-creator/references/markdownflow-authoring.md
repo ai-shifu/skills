@@ -15,6 +15,16 @@ Encode already-resolved teaching, interaction, variable, and preservation decisi
 
 - When immutable source spans were selected for encoding: `source-preservation.md`
 
+## Teaching Prompt Layout Encoding
+
+When `teaching-prompt.md#author-editable-layout` applies, encode its already-resolved stages and teaching units without changing their content or order:
+
+- Put each localized teaching-stage and teaching-block HTML comment on its own line. Keep comments limited to short navigation labels because `markdownflow.md#preprocessing` removes them before runtime.
+- Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `- ` and keep one action in each item. Preserve source order as execution order. Use nested unordered items only for already-required parallel subitems, and do not introduce an ordered list solely for layout.
+- Do not prefix standalone `?[]` controls, standalone `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, tables, or another exact structure with a list marker.
+- Put a block comment before an interaction's question instruction, then keep the question list item, unchanged standalone control, and feedback list item together with no intervening comment.
+- Keep every fact, teaching requirement, variable, option, URL, command, exact span, feedback rule, and branch rule outside the comments. Removing comments and ordinary-instruction list markers must preserve the non-formatting text and its order.
+
 ## Interaction Encoding
 
 - Encode the complete learner-facing question in the block immediately before every question-bearing interaction control, and put the unchanged `?[]` control on its own line.
@@ -30,17 +40,22 @@ Encode already-resolved teaching, interaction, variable, and preservation decisi
 Standard visual-text shapes:
 
 ```markdown
-Create a question-only slide whose complete central question is "Which path best matches the current case?" Do not show option labels, simulated controls, or the answer.
+<!-- Teaching phase: Check understanding -->
+<!-- Teaching block: Choose a path -->
+
+- Create a question-only slide whose complete central question is "Which path best matches the current case?" Do not show option labels, simulated controls, or the answer.
 
 ?[Path A | Path B]
 
-After the learner answers, explain the selected path and contrast it with the other path.
+- After the learner answers, explain the selected path and contrast it with the other path.
 
-Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.
+<!-- Teaching block: Set a course-wide goal -->
+
+- Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.
 
 ?[%{{learning_goal}} ...One-sentence goal]
 
-After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.
+- After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.
 ```
 
 ## Variable and Branch Encoding
@@ -65,7 +80,10 @@ Image composition is owned by `image-authoring.md` and is loaded conditionally b
 
 ## Validation
 
+- When the Teaching Prompt layout applies, every ordinary instruction uses its top-level unordered-list marker, each navigation comment is standalone and non-semantic, and every syntax-owned or exact structure remains unprefixed and unchanged.
 - Every interaction control is on its own line and matches the preceding question or options. Standard question-bearing controls immediately follow their question-only visual instructions and precede their feedback or explanatory effects.
+- No teaching-stage or teaching-block comment interrupts an interaction's question instruction, control, and feedback sequence.
+- Removing navigation comments and ordinary-instruction list markers preserves all non-formatting text and its order.
 - Every named variable passes collection, reference, and metadata invariants.
 - Branch instructions use natural language and literal `UNKNOWN` where required.
 - Each immutable span uses the runtime form matching its selected preservation scope.

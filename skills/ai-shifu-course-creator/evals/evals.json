@@ -115,6 +115,7 @@
         "The matrix explanation develops how probability and impact jointly determine risk, while the author-image explanation supplies the context, inference, or practical application needed to interpret the team's annotations; neither merely repeats visible labels or the caption, and the final explanation also closes with a summary, decision checkpoint, or action.",
         "The standard result's emitted learner-time directions visibly follow the fixed lead-in → matrix → matrix explanation → author image → image explanation and close sequence independently of teaching_prompt_personalization_level; it conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
         "The pure classroom-slide result begins directly with projection-ready page directions, includes both required visuals in a complete ordered deck with a close, and adds no Teaching Agent narration or required paired explanatory text after each visual.",
+        "Both Teaching Prompts use localized standalone teaching-stage and teaching-block HTML comments for source navigation, and every ordinary Teaching Agent instruction is a top-level unordered-list item in execution order. The standard result keeps each visual-and-explanation pair in one editable block, while the pure-slide result keeps each slide in its own block.",
         "Neither Teaching Prompt substitutes an author-facing description of its skeleton, personalization policy, or content-slot model for the concrete runtime sequence.",
         "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
       ]
@@ -168,7 +169,9 @@
         "image-authoring.md is not loaded because neither the source nor the request contains an image task.",
         "No platform authentication, target resolution, image search, upload-image command, image manifest, deployment, sync, or course-management operation is attempted.",
         "The explicit text-only request remains exempt from the standard visual minimum and visual-explanation alternation: it begins with brief direct teaching text, adds no slide, image, diagram, or visual instruction, and still completes its explanation, interaction, feedback, and close.",
-        "The generated interaction follows the existing MarkdownFlow syntax and uses a variable only if the answer must be reused later."
+        "The generated interaction follows the existing MarkdownFlow syntax and uses a variable only if the answer must be reused later.",
+        "The text-only Teaching Prompt uses localized standalone teaching-stage and teaching-block HTML comments, with each ordinary teaching action written as a top-level unordered-list item in execution order.",
+        "The interaction keeps its question instruction as a list item, its unchanged ?[] control on a standalone unprefixed line, and its immediate feedback as the next list item, with no navigation comment between them."
       ]
     },
     {
@@ -186,7 +189,9 @@
         "The standard runtime sequence is a brief lead-in followed by one slide and its concise complete explanation at a time; the question-only slide is immediately followed by the exact control and answer-specific feedback, and the final explanation performs the close.",
         "At teaching_prompt_personalization_level 5, ordinary titles, explanations, example details, transitions, and feedback remain executable without becoming a transcript, and the result adds no concrete typography, color, coordinates, animation, or uniform point quota.",
         "Open ordinary expression appears as shorter local directions containing only the required content and effect; no sentence is present solely to announce that wording, example identity or detail, transitions, or feedback phrasing may be chosen or adapted at runtime.",
-        "The no-variable decision is fully represented by the exact no-assignment `?[]` control, empty used_variables, and empty global_variable_table; Teaching Prompt prose performs the immediate feedback but does not explain the named-variable encoding choice."
+        "The no-variable decision is fully represented by the exact no-assignment `?[]` control, empty used_variables, and empty global_variable_table; Teaching Prompt prose performs the immediate feedback but does not explain the named-variable encoding choice.",
+        "The Teaching Prompt uses localized standalone teaching-stage and teaching-block HTML comments, and every ordinary Teaching Agent instruction is a top-level unordered-list item in execution order.",
+        "The two standalone deterministic lines and the unchanged interaction control have no list marker, remain byte-for-byte intact, and do not appear inside a navigation comment; the question and immediate feedback instructions remain adjacent list items around the control."
       ]
     },
     {
@@ -432,7 +437,9 @@
         "The repaired artifact starts with the first runtime teaching direction and contains no global passage whose only function is to explain the authoring skeleton, personalization policy, internal labels, or categories of text to preserve; runtime behavior that had been encoded in the leaked wrappers is instead observable at the relevant pages and interactions.",
         "The semantic repair does not treat isolated words such as structure, order, or teaching purpose as forbidden when they are genuinely needed in local teaching content; failure depends on whether a passage explains the authoring process rather than instructing learner-time teaching.",
         "The course-wide `16:9`, visual, and Logo rules from the leaked wrapper are not copied into or distributed across the 31 local page directions because that uniform presentation behavior remains owned by the Course Prompt.",
-        "At teaching_prompt_personalization_level 4, every page remains executable and keeps its must-cover content and feedback effect, while ordinary title wording, explanation phrasing, role-specific example details, transitions, and non-deterministic feedback wording remain lightly prescribed through shorter local directions rather than sentences that explain runtime adaptability."
+        "At teaching_prompt_personalization_level 4, every page remains executable and keeps its must-cover content and feedback effect, while ordinary title wording, explanation phrasing, role-specific example details, transitions, and non-deterministic feedback wording remain lightly prescribed through shorter local directions rather than sentences that explain runtime adaptability.",
+        "The repaired Prompt uses localized standalone teaching-stage HTML comments and one teaching-block HTML comment for each of the 31 page units; every ordinary page or explanation instruction is a top-level unordered-list item, and each question instruction, unchanged standalone control, and immediate feedback stay together inside one block.",
+        "Navigation comments contain only short stage or block labels. Removing those comments and the ordinary-instruction list markers leaves all 31 page directions, exact content, interactions, feedback, and close in the same order."
       ]
     },
     {
