@@ -1865,7 +1865,7 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         normalized_lines = []
         for raw_line in shape.splitlines():
-            line = raw_line.rstrip()
+            line = raw_line.strip()
             if not line or re.fullmatch(r"<!--.*-->", line):
                 continue
             if line.startswith("- "):
