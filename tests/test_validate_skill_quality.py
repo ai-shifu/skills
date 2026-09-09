@@ -1775,7 +1775,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("## Interaction Encoding", self.pedagogy)
         self.assertNotIn("## Interaction Encoding", self.teaching_prompt)
 
-    def test_teaching_prompt_layout_is_author_editable_and_runtime_neutral(self):
+    def test_teaching_prompt_layout_is_author_editable_and_content_equivalent(self):
         layout = markdown_section(
             self.teaching_prompt, "Author-Editable Layout"
         )
@@ -1827,11 +1827,16 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertIn(encoding_form, layout_encoding)
 
         self.assertIn("HTML comments are removed", preprocessing)
+        self.assertNotIn("unordered-list", preprocessing)
+        self.assertIn(
+            "unordered-list markers remain ordinary Markdown", layout
+        )
+        self.assertIn("validation-only comparison", layout)
         self.assertIn(
             "comments limited to short navigation labels", layout_encoding
         )
         self.assertIn(
-            "Removing comments and ordinary-instruction list markers must "
+            "removing comments and ordinary-instruction list markers must "
             "preserve the non-formatting text and its order",
             layout_encoding,
         )
@@ -1863,14 +1868,14 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertNotIn("- ?[", shape)
 
-        normalized_lines = []
+        content_equivalent_lines = []
         for raw_line in shape.splitlines():
             line = raw_line.strip()
             if not line or re.fullmatch(r"<!--.*-->", line):
                 continue
             if line.startswith("- "):
                 line = line[2:]
-            normalized_lines.append(line)
+            content_equivalent_lines.append(line)
 
         self.assertEqual(
             [
@@ -1881,7 +1886,7 @@ class CourseCreatorContractTests(unittest.TestCase):
                 "?[%{{learning_goal}} ...One-sentence goal]",
                 "After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.",
             ],
-            normalized_lines,
+            content_equivalent_lines,
         )
 
         for owner in (self.prompt_contracts, self.pedagogy, self.course_prompt):
