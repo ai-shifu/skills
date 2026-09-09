@@ -1893,7 +1893,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             )
         )
         evals_by_id = {case["id"]: case for case in evals_data["evals"]}
-        for case_id in (10, 14, 15, 33):
+        for case_id in (10, 14, 15, 50):
             expectations = " ".join(evals_by_id[case_id]["expectations"])
             self.assertIn("HTML comments", expectations)
             self.assertIn("unordered-list", expectations)
@@ -1902,7 +1902,11 @@ class CourseCreatorContractTests(unittest.TestCase):
             " ".join(evals_by_id[15]["expectations"]),
         )
         self.assertIn(
-            "31 page units", " ".join(evals_by_id[33]["expectations"])
+            "31 page units", " ".join(evals_by_id[50]["expectations"])
+        )
+        self.assertIn(
+            "limited to repairing leaked authoring wrappers",
+            " ".join(evals_by_id[33]["expectations"]),
         )
 
     def test_pedagogy_resolves_explicit_text_only_delivery(self):
