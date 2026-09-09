@@ -1804,7 +1804,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "`<!-- 教学阶段：<阶段名称> -->`",
             "`<!-- 教学块：<简短用途> -->`",
             "`resolved_target_language`",
-            "top-level unordered-list item beginning with `- `",
+            "top-level unordered-list item beginning with `-` followed by one space",
             "one teaching action per item",
             "source order remains the learner-time execution order",
             "nested unordered lists only",
