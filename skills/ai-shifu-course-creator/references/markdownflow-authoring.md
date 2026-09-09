@@ -20,10 +20,10 @@ Encode already-resolved teaching, interaction, variable, and preservation decisi
 When `teaching-prompt.md#author-editable-layout` applies, encode its already-resolved stages and teaching units without changing their content or order:
 
 - Put each localized teaching-stage and teaching-block HTML comment on its own line. Keep comments limited to short navigation labels because `markdownflow.md#preprocessing` removes them before runtime.
-- Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order. Use nested unordered items only for already-required parallel subitems, and do not introduce an ordered list solely for layout.
+- Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order. Use nested unordered items only for already-required parallel subitems, and do not introduce an ordered list solely for layout. The marker remains ordinary Markdown in the content sent to the Teaching Agent; MarkdownFlow preprocessing does not remove it.
 - Do not prefix standalone `?[]` controls, standalone `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, tables, or another exact structure with a list marker.
 - Put a block comment before an interaction's question instruction, then keep the question list item, unchanged standalone control, and feedback list item together with no intervening comment.
-- Keep every fact, teaching requirement, variable, option, URL, command, exact span, feedback rule, and branch rule outside the comments. Removing comments and ordinary-instruction list markers must preserve the non-formatting text and its order.
+- Keep every fact, teaching requirement, variable, option, URL, command, exact span, feedback rule, and branch rule outside the comments. For a validation-only content-equivalence comparison, removing comments and ordinary-instruction list markers must preserve the non-formatting text and its order; this comparison is not runtime preprocessing.
 
 ## Interaction Encoding
 
@@ -83,7 +83,7 @@ Image composition is owned by `image-authoring.md` and is loaded conditionally b
 - When the Teaching Prompt layout applies, every ordinary instruction uses its top-level unordered-list marker, each navigation comment is standalone and non-semantic, and every syntax-owned or exact structure remains unprefixed and unchanged.
 - Every interaction control is on its own line and matches the preceding question or options. Standard question-bearing controls immediately follow their question-only visual instructions and precede their feedback or explanatory effects.
 - No teaching-stage or teaching-block comment interrupts an interaction's question instruction, control, and feedback sequence.
-- Removing navigation comments and ordinary-instruction list markers preserves all non-formatting text and its order.
+- In the validation-only content-equivalence comparison, removing navigation comments and ordinary-instruction list markers preserves all non-formatting text and its order.
 - Every named variable passes collection, reference, and metadata invariants.
 - Branch instructions use natural language and literal `UNKNOWN` where required.
 - Each immutable span uses the runtime form matching its selected preservation scope.

@@ -645,7 +645,7 @@
         "Every ordinary page and explanation instruction begins with a top-level unordered-list marker, source order remains execution order, and existing page numbers remain content rather than becoming ordered-list layout.",
         "The question instruction, unchanged standalone control, and immediate feedback remain adjacent for pages 8, 19, and 28, with no navigation comment inserted inside any interaction triplet.",
         "Comments contain navigation labels only and cannot carry any page instruction, question, option, feedback, variable, or close requirement.",
-        "After removing navigation comments and ordinary-instruction list markers, every original non-formatting character and line remains in exactly the supplied order from page 1 through page 31.",
+        "In a validation-only content-equivalence comparison, removing navigation comments and ordinary-instruction list markers leaves every original non-formatting character and line in exactly the supplied order from page 1 through page 31; the list markers otherwise remain ordinary Markdown sent to the Teaching Agent.",
         "No teaching action, page, interaction, feedback behavior, stage boundary, or final close is added, removed, rewritten, split, merged, or reordered."
       ]
     }

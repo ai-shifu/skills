@@ -86,6 +86,8 @@ Place one teaching-stage comment before the first block of each already-resolved
 
 Write every ordinary Teaching Agent instruction as a top-level unordered-list item beginning with `-` followed by one space, with one teaching action per item. The list's source order remains the learner-time execution order. Use a flat list by default; use nested unordered lists only when the already-required content contains parallel subitems. Do not use an ordered list merely as layout. Preserve any required number, step label, or page number as content inside the applicable item or exact structure.
 
+Only the navigation comments are removed by MarkdownFlow preprocessing. The unordered-list markers remain ordinary Markdown in the content sent to the Teaching Agent; they format instruction boundaries without replacing or carrying any required instruction text. Removing list markers is a validation-only comparison for confirming that non-formatting text and order are unchanged, not a runtime preprocessing step.
+
 Keep these forms outside unordered-list markers so their syntax and exact content remain intact:
 
 - standalone `?[]` interaction controls;
@@ -101,7 +103,7 @@ Comments only name the existing stage or block purpose. Never put a fact, teachi
 
 Each Teaching Prompt must:
 
-- Begin its runtime body, after HTML comment removal, with an unordered-list instruction that produces the teaching-start behavior defined in `pedagogy.md#lesson-loop`.
+- Place the first unordered-list instruction immediately after any leading navigation comments. Its item text produces the teaching-start behavior defined in `pedagogy.md#lesson-loop`.
 - When it is the first lesson of the first chapter, materialize the applicable course-entry behavior from `pedagogy.md#course-entry` inside that first direct-teaching lead-in. Every later lesson omits the course greeting, course introduction, and teacher self-introduction.
 - For standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint, express the lesson as one brief learner-visible text lead-in followed by the ordered local instructions for at least one substantive visual-and-explanation pair. Place every explanation instruction before the next visual instruction and make the final explanation perform the close, exactly as defined in `pedagogy.md#visual-text-coordination`.
 - Resolve exactly one core question through the selected teaching pattern.
@@ -133,7 +135,7 @@ In the Generation report, identify the lesson and summarize generation status, e
 - The normalized personalization level is an integer from `1` through `5`, and the Teaching Prompt's content-expression specificity matches that level.
 - The internal lesson execution plan is resolved before the level is applied. Recover the execution signature from the Teaching Prompt's actual ordered instructions and verify that it matches the plan: teaching actions, slide count and order, content grouping and hierarchy, interaction and feedback adjacency, images, and the close all occur at their resolved positions with their resolved effects.
 - When multiple level variants are generated from the same approved design and controls, compare their actual ordered runtime instructions. They have identical execution signatures, including the presence, position, and teaching function of every required example; only ordinary content-expression specificity may differ.
-- After ignoring navigation comments and ordinary-instruction list markers, the Teaching Prompt's non-formatting body begins with the first learner-time teaching instruction for the selected delivery mode, and every following instruction performs a learner-time teaching, presentation, interaction, feedback, or close function.
+- After MarkdownFlow strips navigation comments, the first remaining block is an unordered-list item whose instruction text is the first learner-time teaching instruction for the selected delivery mode, and every following instruction performs a learner-time teaching, presentation, interaction, feedback, or close function.
 - Course-entry status is derived from the approved chapter and lesson order rather than a lesson-id pattern. In applicable delivery modes, the first lesson of the first chapter places its brief greeting, learner-centered course introduction, optional verified named-teacher introduction, learner hook, and lesson objective inside one lead-in before moving directly into teaching; later lessons do not repeat those elements. Pure classroom slides add no Teaching Agent greeting or self-introduction.
 - In standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint, the first instruction makes the first learner-visible block a brief text lead-in; the actual instruction sequence contains at least one substantive visual unit, no consecutive visual units, one concise but complete explanation after every visual and before the next, no unpaired learner-visible text turn after the lead-in, and a final explanation that also performs the close.
 - A standard question-bearing interaction uses the question-only visual, unchanged `?[]` control, and immediate feedback or explanation sequence defined by `pedagogy.md#visual-text-coordination`; pure classroom slides and explicit text-only delivery retain their respective overrides.
@@ -148,7 +150,7 @@ In the Generation report, identify the lesson and summarize generation status, e
 - Level `3` preserves the balanced division defined in the level table rather than silently behaving like either endpoint.
 - Every item selected for exact preservation appears in its required form at its resolved runtime position at every level.
 - Interaction and variable lifecycle decisions appear through their resolved MarkdownFlow syntax and schema fields; related Prompt prose performs only the required feedback, branch, or carryover behavior.
-- No navigation comment interrupts a question instruction, unchanged `?[]` control, and immediate feedback sequence. Removing comments and ordinary-instruction list markers preserves the non-formatting text, exact structures, and their order.
+- No navigation comment interrupts a question instruction, unchanged `?[]` control, and immediate feedback sequence. For the validation-only format-equivalence check, removing comments and ordinary-instruction list markers preserves the non-formatting text, exact structures, and their order.
 - Interaction, variable, branch, and preservation encoding pass `markdownflow-authoring.md`.
 - Image-specific validation runs only for lessons that use image assets.
 - Authored human-facing content passes `language-policy.md`.
