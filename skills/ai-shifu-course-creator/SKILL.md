@@ -55,6 +55,6 @@ On the first invocation in a session:
 ## Routing Guardrails
 
 - Route to analytics only for observed facts, metrics, records, or trends from an existing live course. Design questions such as “how many lessons should this material become?” remain authoring tasks.
-- For platform-bound authoring, do not propose an outline or write lesson content until the target is resolved. Remaining local Teaching Prompt, local Course Prompt or description, and paste-audit routes have no platform target.
+- For platform-bound authoring, do not propose an outline or write lesson content until the target is resolved. Remaining local Teaching Prompt, local Course Prompt, local course description, and paste-audit routes have no platform target.
 - Compare the resolved target kind with the kind assumed by the active row. If it changes from new to existing or existing to new, stop that row, reclassify the remaining work against the Task Router, and never enter an incompatible new-only or existing-only stage.
 - Full-course authoring continues through new-course deployment and publication by default.
