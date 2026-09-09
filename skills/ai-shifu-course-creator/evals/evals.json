@@ -106,7 +106,7 @@
     },
     {
       "id": 10,
-      "prompt": "Course Design Intake 已完成，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled。同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。请直接给出两种结构化生成结果：标准 AI 一对一授课与纯课堂幻灯片，并说明已提供图片的理解、上传和嵌入处理（无需真实上传）。标准结果不是纯文字模式，必须保留概念图和作者图片这两个实质视觉单元。两种结果都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
+      "prompt": "Course Design Intake 已完成，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled。同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。请直接给出两种结构化生成结果：标准 AI 一对一授课与纯课堂幻灯片，并说明已提供图片的理解、上传和嵌入处理（无需真实上传）。标准结果不是纯文字模式，必须保留概念图和作者图片这两个实质视觉单元。除授课提示词格式所需的导航注释外，两种结果都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
       "expected_output": "Applies the standard brief-text and alternating visual-explanation cadence to the two required visuals while preserving the separate slide-only contract and keeping raw graphics code out of both prompts.",
       "files": [],
       "expectations": [
@@ -117,7 +117,7 @@
         "The pure classroom-slide result begins directly with projection-ready page directions, includes both required visuals in a complete ordered deck with a close, and adds no Teaching Agent narration or required paired explanatory text after each visual.",
         "Both Teaching Prompts use localized standalone teaching-stage and teaching-block HTML comments for source navigation, and every ordinary Teaching Agent instruction is a top-level unordered-list item in execution order. The standard result keeps each visual-and-explanation pair in one editable block, while the pure-slide result keeps each slide in its own block.",
         "Neither Teaching Prompt substitutes an author-facing description of its skeleton, personalization policy, or content-slot model for the concrete runtime sequence.",
-        "Neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
+        "Other than the required navigation comments, neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
       ]
     },
     {
