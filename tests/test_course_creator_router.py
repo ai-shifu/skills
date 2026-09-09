@@ -232,7 +232,12 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("skip this automatic check", session_controls)
 
     def test_complete_local_only_course_route_is_removed(self):
-        self.assertNotIn("Produce a complete course locally", self.router)
+        self.assertFalse(
+            any(
+                line.startswith("| Produce a complete course locally")
+                for line in self.router.splitlines()
+            )
+        )
         self.assertNotIn(
             "Select the explicit local/artifact-only row",
             self.router,
@@ -253,6 +258,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
             with self.subTest(prefix=prefix):
                 route = self.route_line(prefix)
                 self.assertNotIn("authentication.md", route)
+                self.assertNotIn("course-target.md", route)
                 self.assertNotIn("deployment-workflow.md", route)
 
     def test_pure_analytics_does_not_load_authoring_guides(self):
