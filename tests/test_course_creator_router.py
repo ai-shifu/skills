@@ -231,17 +231,29 @@ class CourseCreatorRouterTests(unittest.TestCase):
         )
         self.assertIn("skip this automatic check", session_controls)
 
-    def test_explicit_local_only_authoring_skips_platform_setup(self):
-        route = self.route_line("Produce a complete course locally")
-        self.assertIn("references/orchestration-workflow.md", route)
-        for filename in (
-            "authentication.md",
-            "course-target.md",
-            "deployment-workflow.md",
-            "course-sync.md",
-            "course-management.md",
-        ):
-            self.assertNotIn(filename, route)
+    def test_complete_local_only_course_route_is_removed(self):
+        self.assertNotIn("Produce a complete course locally", self.router)
+        self.assertNotIn(
+            "Select the explicit local/artifact-only row",
+            self.router,
+        )
+        self.assertIn(
+            "Full-course authoring continues through new-course deployment "
+            "and publication by default.",
+            self.router,
+        )
+        remaining_local_prefixes = (
+            "Produce local Teaching Prompts from existing segments",
+            "Produce local Teaching Prompts from raw supplied material",
+            "Create or revise a Course Prompt from approved local",
+            "Create or revise a course description from approved local",
+            "Review or audit pasted",
+        )
+        for prefix in remaining_local_prefixes:
+            with self.subTest(prefix=prefix):
+                route = self.route_line(prefix)
+                self.assertNotIn("authentication.md", route)
+                self.assertNotIn("deployment-workflow.md", route)
 
     def test_pure_analytics_does_not_load_authoring_guides(self):
         route = self.route_line("Query observed data")

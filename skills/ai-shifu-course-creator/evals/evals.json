@@ -559,11 +559,11 @@
     },
     {
       "id": 44,
-      "prompt": "只在本地给我写一个三节课的课程结构，主题是时间管理，不连接平台，不部署。",
-      "expected_output": "Keeps local-only work free of regional setup.",
+      "prompt": "只在本地根据已有分段写一节授课提示词，主题是时间管理，不连接平台，不部署。",
+      "expected_output": "Keeps local Teaching Prompt authoring free of regional setup.",
       "files": [],
       "expectations": [
-        "Produces the requested local structure without asking region or site.",
+        "Produces the requested local Teaching Prompt without asking region or site.",
         "Does not call site, verify, login, or other platform commands to initialize a service."
       ]
     },
