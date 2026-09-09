@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Remove the complete local, artifact-only, author-only course path so a full-course request continues through deployment and publication by default.
 - Open browser URLs in new visible tabs, reusing only exact URL matches so existing pages and unfinished work are preserved.
 - Share built-in browser URL opening across authorization and course handoffs, including host selection, visible interaction, user opt-outs, and opening result handling.
 

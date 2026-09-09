@@ -361,35 +361,6 @@ class CourseCreatorDependencyTests(unittest.TestCase):
             }.isdisjoint(relative_paths)
         )
 
-    def test_local_full_course_closure_excludes_platform_access(self):
-        graph = dependency_graph()
-        closure = transitive_closure(
-            self.route_roots("Produce a complete course locally"), graph
-        )
-        relative_paths = {
-            str(path.relative_to(REFERENCES)) for path in closure
-        }
-        self.assertTrue(
-            {
-                "segmentation-workflow.md",
-                "orchestration-workflow.md",
-                "teaching-prompt.md",
-                "course-prompt.md",
-                "course-description.md",
-                "optimization-workflow.md",
-                "cli/course-directory-spec.md",
-            }.issubset(relative_paths)
-        )
-        self.assertTrue(
-            {
-                "authentication.md",
-                "course-target.md",
-                "deployment-workflow.md",
-                "course-sync.md",
-                "course-management.md",
-            }.isdisjoint(relative_paths)
-        )
-
     def test_existing_structural_edit_uses_sync_not_new_deployment(self):
         graph = dependency_graph()
         closure = transitive_closure(

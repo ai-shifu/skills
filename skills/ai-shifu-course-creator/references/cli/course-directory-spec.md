@@ -36,7 +36,7 @@ None.
 | `assets/image-manifest.json` | `upload-image --course-dir` | asset lookup | No. |
 | `assets/raw/` | user | no direct build consumer | No; conventional storage only. |
 
-The directory contract above is the complete set of recognized and managed course-directory paths. An author-only run writes only the relevant author-owned inputs; it must not synthesize CLI-managed outputs. Do not add an `authoring-manifest.json` or another root-level file to persist Segmentation or Orchestration handoffs; retain that phase data in the active handoff or report instead. New directory artifacts require an explicit CLI specification update.
+The directory contract above is the complete set of recognized and managed course-directory paths. When writing only author-owned inputs, write only the relevant author-owned files; those writes must not synthesize CLI-managed outputs. Do not add an `authoring-manifest.json` or another root-level file to persist Segmentation or Orchestration handoffs; retain that phase data in the active handoff or report instead. New directory artifacts require an explicit CLI specification update.
 
 ## Build Precedence
 

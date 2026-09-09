@@ -54,9 +54,9 @@ Expected artifacts:
 - Optimized lesson prompts and risk report
 - Live course on the AI-Shifu platform
 
-### Path B: Author Only
+### Path B: Focused Authoring Steps
 
-Use when you need optimized MarkdownFlow scripts without deploying. Sub-paths:
+Use when you need one authoring step rather than a complete course:
 
 - **Segment only**: Phase 1 for semantic segments and manual review.
 - **Generate only**: Phase 3 on pre-existing segments.
