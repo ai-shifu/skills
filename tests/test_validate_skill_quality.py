@@ -1775,6 +1775,145 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("## Interaction Encoding", self.pedagogy)
         self.assertNotIn("## Interaction Encoding", self.teaching_prompt)
 
+    def test_teaching_prompt_layout_is_author_editable_and_content_equivalent(self):
+        layout = markdown_section(
+            self.teaching_prompt, "Author-Editable Layout"
+        )
+        layout_encoding = markdown_section(
+            self.markdownflow_authoring, "Teaching Prompt Layout Encoding"
+        )
+        interaction = markdown_section(
+            self.markdownflow_authoring, "Interaction Encoding"
+        )
+        authoring_validation = markdown_section(
+            self.markdownflow_authoring, "Validation"
+        )
+        teaching_validation = markdown_section(
+            self.teaching_prompt, "Validation"
+        )
+        checklist = markdown_section(
+            self.optimization_checklist, "Teaching Prompt Behavior"
+        )
+        preprocessing = markdown_section(self.markdownflow, "Preprocessing")
+
+        for fragment in (
+            "every newly generated Teaching Prompt",
+            "explicitly asks to rewrite a Teaching Prompt",
+            "audit-only request",
+            "do not backfill existing courses",
+            "`<!-- 教学阶段：<阶段名称> -->`",
+            "`<!-- 教学块：<简短用途> -->`",
+            "`resolved_target_language`",
+            "top-level unordered-list item beginning with `-` followed by one space",
+            "one teaching action per item",
+            "source order remains the learner-time execution order",
+            "nested unordered lists only",
+            "Do not use an ordered list merely as layout",
+            "question instruction list item, standalone unchanged control, and "
+            "immediate feedback list item",
+            "Removing every navigation comment",
+        ):
+            self.assertIn(fragment, layout)
+
+        for layout_form, encoding_form in (
+            ("standalone `?[]` interaction controls", "standalone `?[]` controls"),
+            ("standalone `===...===` lines", "standalone `===...===` lines"),
+            ("complete `!===...!===` fences", "complete `!===...!===` fences"),
+            ("fenced code", "fenced code"),
+            ("Markdown image syntax", "Markdown images"),
+            ("tables", "tables"),
+        ):
+            self.assertIn(layout_form, layout)
+            self.assertIn(encoding_form, layout_encoding)
+
+        self.assertIn("HTML comments are removed", preprocessing)
+        self.assertNotIn("unordered-list", preprocessing)
+        self.assertIn(
+            "unordered-list markers remain ordinary Markdown", layout
+        )
+        self.assertIn("validation-only comparison", layout)
+        self.assertIn(
+            "comments limited to short navigation labels", layout_encoding
+        )
+        self.assertIn(
+            "removing comments and ordinary-instruction list markers must "
+            "preserve the non-formatting text and its order",
+            layout_encoding,
+        )
+        self.assertIn("every ordinary instruction uses", authoring_validation)
+        self.assertIn("exact structure remains unprefixed", authoring_validation)
+        self.assertIn(
+            "Strip them before validating runtime content", teaching_validation
+        )
+        self.assertIn("cannot satisfy any teaching", teaching_validation)
+        self.assertIn("record this layout check as `not-assessed`", checklist)
+        self.assertIn("do not reformat the existing Prompt", checklist)
+
+        shape_match = re.search(
+            r"```markdown\n(?P<body>.*?)\n```",
+            interaction,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(shape_match)
+        shape = shape_match.group("body")
+        self.assertIn("<!-- Teaching phase: Check understanding -->", shape)
+        self.assertIn("<!-- Teaching block: Choose a path -->", shape)
+        self.assertIn(
+            "- Create a question-only slide whose complete central question",
+            shape,
+        )
+        self.assertIn(
+            "- After the learner answers, explain the selected path",
+            shape,
+        )
+        self.assertNotIn("- ?[", shape)
+
+        content_equivalent_lines = []
+        for raw_line in shape.splitlines():
+            line = raw_line.strip()
+            if not line or re.fullmatch(r"<!--.*-->", line):
+                continue
+            if line.startswith("- "):
+                line = line[2:]
+            content_equivalent_lines.append(line)
+
+        self.assertEqual(
+            [
+                'Create a question-only slide whose complete central question is "Which path best matches the current case?" Do not show option labels, simulated controls, or the answer.',
+                "?[Path A | Path B]",
+                "After the learner answers, explain the selected path and contrast it with the other path.",
+                'Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.',
+                "?[%{{learning_goal}} ...One-sentence goal]",
+                "After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.",
+            ],
+            content_equivalent_lines,
+        )
+
+        for owner in (self.prompt_contracts, self.pedagogy, self.course_prompt):
+            self.assertNotIn("## Author-Editable Layout", owner)
+
+        evals_data = json.loads(
+            (self.skill_root / "evals" / "evals.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        evals_by_id = {case["id"]: case for case in evals_data["evals"]}
+        for case_id in (10, 14, 15, 50):
+            expectations = " ".join(evals_by_id[case_id]["expectations"])
+            self.assertIn("HTML comments", expectations)
+            self.assertIn("unordered-list", expectations)
+        self.assertIn(
+            "standalone deterministic lines",
+            " ".join(evals_by_id[15]["expectations"]),
+        )
+        self.assertIn(
+            "31 page units", " ".join(evals_by_id[50]["expectations"])
+        )
+        self.assertIn(
+            "limited to repairing leaked authoring wrappers",
+            " ".join(evals_by_id[33]["expectations"]),
+        )
+
     def test_pedagogy_resolves_explicit_text_only_delivery(self):
         lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
         visual_text = markdown_section(
