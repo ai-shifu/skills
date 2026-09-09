@@ -559,11 +559,11 @@
     },
     {
       "id": 44,
-      "prompt": "只在本地根据已有分段写一节授课提示词，主题是时间管理，不连接平台，不部署。",
+      "prompt": "Course Design Intake 已完成：标准一对一授课，teaching_prompt_personalization_level=3，interaction_policy=disabled，Listen Mode 关闭。下面这一段分段结果已批准。请只在本地根据该分段写一节授课提示词，不连接平台，不部署。\n\nsegment_id: S01\nsegment_type: concept\ncore_point: 先写下真正占用时间的事，再对照原计划，才能分辨计划中的工作和实际占用时间的工作。\npreserve_block: false\nsource_span: source_id=time-management-notes, start=0, end=48\ntransfer_signals: learner_hook=一天结束后总觉得很忙却说不清时间去哪了；evidence_type=操作定义；boundary_cue=会议、临时插单和等待回复都算占用时间；action_cue=把一天里实际占用时间的事项记下来再对照原计划。",
       "expected_output": "Keeps local Teaching Prompt authoring free of regional setup.",
       "files": [],
       "expectations": [
-        "Produces the requested local Teaching Prompt without asking region or site.",
+        "Uses the supplied approved segment and completed intake to produce the requested local Teaching Prompt without asking region or site.",
         "Does not call site, verify, login, or other platform commands to initialize a service."
       ]
     },
