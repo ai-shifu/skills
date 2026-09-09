@@ -84,7 +84,7 @@ Place one teaching-stage comment before the first block of each already-resolved
 - In pure classroom slides, make each slide one block.
 - Under an explicit text-only constraint, make each teaching action one block.
 
-Write every ordinary Teaching Agent instruction as a top-level unordered-list item beginning with `- `, with one teaching action per item. The list's source order remains the learner-time execution order. Use a flat list by default; use nested unordered lists only when the already-required content contains parallel subitems. Do not use an ordered list merely as layout. Preserve any required number, step label, or page number as content inside the applicable item or exact structure.
+Write every ordinary Teaching Agent instruction as a top-level unordered-list item beginning with `-` followed by one space, with one teaching action per item. The list's source order remains the learner-time execution order. Use a flat list by default; use nested unordered lists only when the already-required content contains parallel subitems. Do not use an ordered list merely as layout. Preserve any required number, step label, or page number as content inside the applicable item or exact structure.
 
 Keep these forms outside unordered-list markers so their syntax and exact content remain intact:
 
@@ -129,7 +129,7 @@ In the Generation report, identify the lesson and summarize generation status, e
 - Every item passes `data-contracts.md#lesson-schema`.
 - Every newly generated or explicitly rewritten Teaching Prompt follows [Author-Editable Layout](#author-editable-layout). Audit-only review of an existing Prompt does not add or normalize this layout.
 - Teaching-stage and teaching-block comments are localized, standalone, placed only at resolved boundaries, and contain navigation text only. Strip them before validating runtime content; they cannot satisfy any teaching, interaction, variable, preservation, or close requirement.
-- Every ordinary Teaching Agent instruction is a top-level `- ` list item in execution order, with nested unordered items used only for already-required parallel subitems. Interaction controls, deterministic forms, fenced code, images, tables, and other exact structures keep their owning syntax without an added list marker.
+- Every ordinary Teaching Agent instruction is a top-level list item beginning with `-` followed by one space in execution order, with nested unordered items used only for already-required parallel subitems. Interaction controls, deterministic forms, fenced code, images, tables, and other exact structures keep their owning syntax without an added list marker.
 - The normalized personalization level is an integer from `1` through `5`, and the Teaching Prompt's content-expression specificity matches that level.
 - The internal lesson execution plan is resolved before the level is applied. Recover the execution signature from the Teaching Prompt's actual ordered instructions and verify that it matches the plan: teaching actions, slide count and order, content grouping and hierarchy, interaction and feedback adjacency, images, and the close all occur at their resolved positions with their resolved effects.
 - When multiple level variants are generated from the same approved design and controls, compare their actual ordered runtime instructions. They have identical execution signatures, including the presence, position, and teaching function of every required example; only ordinary content-expression specificity may differ.

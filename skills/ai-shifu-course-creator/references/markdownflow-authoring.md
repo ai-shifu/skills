@@ -20,7 +20,7 @@ Encode already-resolved teaching, interaction, variable, and preservation decisi
 When `teaching-prompt.md#author-editable-layout` applies, encode its already-resolved stages and teaching units without changing their content or order:
 
 - Put each localized teaching-stage and teaching-block HTML comment on its own line. Keep comments limited to short navigation labels because `markdownflow.md#preprocessing` removes them before runtime.
-- Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `- ` and keep one action in each item. Preserve source order as execution order. Use nested unordered items only for already-required parallel subitems, and do not introduce an ordered list solely for layout.
+- Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order. Use nested unordered items only for already-required parallel subitems, and do not introduce an ordered list solely for layout.
 - Do not prefix standalone `?[]` controls, standalone `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, tables, or another exact structure with a list marker.
 - Put a block comment before an interaction's question instruction, then keep the question list item, unchanged standalone control, and feedback list item together with no intervening comment.
 - Keep every fact, teaching requirement, variable, option, URL, command, exact span, feedback rule, and branch rule outside the comments. Removing comments and ordinary-instruction list markers must preserve the non-formatting text and its order.
