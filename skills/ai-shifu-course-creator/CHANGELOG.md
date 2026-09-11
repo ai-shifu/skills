@@ -12,6 +12,10 @@
 - Format newly generated or explicitly rewritten Teaching Prompts with one runtime-invisible, freely worded learning-result comment per teaching block, using concise and naturally varied result phrases that keep adjacent blocks distinguishable, plus hierarchical unordered-list instructions wherever actions have separable supporting details, while preserving every existing teaching requirement and exact MarkdownFlow structure.
 - Define one canonical responsibility for every Course Creator package file and route cross-file maintenance through the owning reference.
 - Route current-title and draft-versus-published title questions through analytics metadata resolution.
+- Attribute new registrations and courses created by `create` or `import
+  --new` to the Lobster AI-assisted workflow with a generated cross-system
+  handoff identifier, without reclassifying existing users or existing-course
+  imports.
 - Remove the complete local, artifact-only, author-only course path so a full-course request continues through deployment and publication by default.
 - Open browser URLs in new visible tabs, reusing only exact URL matches so existing pages and unfinished work are preserved.
 - Share built-in browser URL opening across authorization and course handoffs, including host selection, visible interaction, user opt-outs, and opening result handling.
