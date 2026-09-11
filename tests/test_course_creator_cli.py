@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
@@ -433,6 +434,97 @@ class CourseCreationAttributionTests(unittest.TestCase):
 
         self.assertEqual(original["handoff_id"], handoff_id)
         self.assertNotEqual(independent["handoff_id"], handoff_id)
+
+    def test_failed_operations_with_same_fingerprint_are_isolated_by_token(self):
+        operation_key = "same-operation"
+
+        with self.assertRaisesRegex(RuntimeError, "token A response lost"):
+            with course_creator_cli._course_creation_attribution(
+                "token-a", operation_key
+            ) as first_a:
+                raise RuntimeError("token A response lost")
+        with self.assertRaisesRegex(RuntimeError, "token B response lost"):
+            with course_creator_cli._course_creation_attribution(
+                "token-b", operation_key
+            ) as first_b:
+                raise RuntimeError("token B response lost")
+        with course_creator_cli._course_creation_attribution(
+            "token-a", operation_key
+        ) as retried_a:
+            pass
+
+        self.assertNotEqual(first_a["handoff_id"], first_b["handoff_id"])
+        self.assertEqual(retried_a["handoff_id"], first_a["handoff_id"])
+
+    def test_legacy_pending_operation_is_migrated_for_its_token(self):
+        operation_key = "legacy-operation"
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        token_digest = hashlib.sha256(b"test-token").hexdigest()
+        course_creator_cli._write_private_json(
+            course_creator_cli.pending_course_creations_path(),
+            {
+                operation_key: {
+                    "token_digest": token_digest,
+                    "handoff_id": handoff_id,
+                }
+            },
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "response remains unknown"):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", operation_key
+            ) as retried:
+                raise RuntimeError("response remains unknown")
+
+        pending = course_creator_cli._read_json_file(
+            course_creator_cli.pending_course_creations_path()
+        )
+        self.assertEqual(retried["handoff_id"], handoff_id)
+        self.assertNotIn(operation_key, pending)
+        self.assertIn(f"{token_digest}:{operation_key}", pending)
+
+    def test_directory_import_operation_key_ignores_generated_export_data(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            course_dir = Path(tmp)
+            lessons_dir = course_dir / "lessons"
+            lessons_dir.mkdir()
+            (course_dir / "README.md").write_text("# Stable course\n", encoding="utf-8")
+            (course_dir / "course-prompt.md").write_text(
+                "Teach clearly.\n", encoding="utf-8"
+            )
+            lesson = lessons_dir / "lesson-01.md"
+            lesson.write_text("Lesson content\n", encoding="utf-8")
+            options = {
+                "title": None,
+                "description": None,
+                "keywords": None,
+                "chapter_name": None,
+            }
+
+            first_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, **options
+            )
+            first_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            first_export_bytes = Path(first_export).read_bytes()
+            second_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            second_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, **options
+            )
+
+            self.assertNotEqual(
+                first_export_bytes, Path(second_export).read_bytes()
+            )
+            self.assertEqual(second_key, first_key)
+
+            lesson.write_text("Changed content\n", encoding="utf-8")
+            changed_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, **options
+            )
+            self.assertNotEqual(changed_key, first_key)
 
 
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):

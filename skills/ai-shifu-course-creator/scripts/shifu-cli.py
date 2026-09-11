@@ -2380,6 +2380,35 @@ def _course_creation_operation_key(command, payload):
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _course_directory_import_operation_key(course_dir, **build_options):
+    """Identify a directory import without generated IDs or export timestamps."""
+    root = Path(course_dir).resolve()
+    source_files = []
+    for relative_path in ("README.md", "course-prompt.md", "structure.json"):
+        path = root / relative_path
+        if path.is_file():
+            source_files.append(path)
+    lessons_dir = root / "lessons"
+    if lessons_dir.is_dir():
+        source_files.extend(
+            path
+            for path in sorted(lessons_dir.glob("lesson-*.md"))
+            if path.is_file()
+        )
+    semantic_input = {
+        "path": str(root),
+        "options": build_options,
+        "files": [
+            {
+                "path": str(path.relative_to(root)),
+                "content_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+            for path in source_files
+        ],
+    }
+    return _course_creation_operation_key("import-new-directory", semantic_input)
+
+
 @contextlib.contextmanager
 def _course_creation_attribution(active_token, operation_key):
     """Bind one handoff to one operation until creation is confirmed."""
@@ -2388,7 +2417,18 @@ def _course_creation_attribution(active_token, operation_key):
         pending = _read_json_file(pending_course_creations_path())
         if not isinstance(pending, dict):
             pending = {}
-        existing_operation = pending.get(operation_key)
+        journal_key = f"{token_digest}:{operation_key}"
+        existing_operation = pending.get(journal_key)
+        legacy_operation = pending.get(operation_key)
+        if (
+            not isinstance(existing_operation, dict)
+            and isinstance(legacy_operation, dict)
+            and legacy_operation.get("token_digest") == token_digest
+        ):
+            existing_operation = legacy_operation
+            pending.pop(operation_key, None)
+            pending[journal_key] = legacy_operation
+            _write_private_json(pending_course_creations_path(), pending)
         reserved_handoff_id = ""
         if (
             isinstance(existing_operation, dict)
@@ -2405,7 +2445,7 @@ def _course_creation_attribution(active_token, operation_key):
                 if reserved_handoff_id:
                     _write_private_json(credentials_path(), {"token": active_token})
             reserved_handoff_id = reserved_handoff_id or str(uuid.uuid4())
-            pending[operation_key] = {
+            pending[journal_key] = {
                 "token_digest": token_digest,
                 "handoff_id": reserved_handoff_id,
             }
@@ -2418,17 +2458,23 @@ def _course_creation_attribution(active_token, operation_key):
         yield attribution
         latest_pending = _read_json_file(pending_course_creations_path())
         if isinstance(latest_pending, dict):
-            current = latest_pending.get(operation_key)
+            current = latest_pending.get(journal_key)
             if (
                 isinstance(current, dict)
                 and current.get("token_digest") == token_digest
                 and current.get("handoff_id") == reserved_handoff_id
             ):
-                latest_pending.pop(operation_key, None)
+                latest_pending.pop(journal_key, None)
                 _write_private_json(pending_course_creations_path(), latest_pending)
 
 
-def _import_flat(base_url, token, json_file, shifu_bid):
+def _import_flat(
+    base_url,
+    token,
+    json_file,
+    shifu_bid,
+    creation_operation_key=None,
+):
     """Import from flat JSON file (original shifu-api-import.py logic)."""
     with open(json_file, "r", encoding="utf-8") as f:
         import_data = json.load(f)
@@ -2441,13 +2487,11 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         print(f"Using existing shifu: {shifu_bid}")
     else:
         print(f"Creating new shifu: {shifu_info['title']}")
-        operation_key = _course_creation_operation_key(
-            "import-new",
+        operation_key = creation_operation_key or _course_creation_operation_key(
+            "import-new-json",
             {
                 "path": str(Path(json_file).resolve()),
-                "content_sha256": hashlib.sha256(
-                    Path(json_file).read_bytes()
-                ).hexdigest(),
+                "content_sha256": hashlib.sha256(Path(json_file).read_bytes()).hexdigest(),
             },
         )
         with _course_creation_attribution(
@@ -2605,14 +2649,27 @@ def cmd_import(args):
     result_bid = None
     if args.course_dir:
         # Build JSON first, then import
+        build_options = {
+            "title": getattr(args, "title", None),
+            "description": getattr(args, "description", None),
+            "keywords": getattr(args, "keywords", None),
+            "chapter_name": getattr(args, "chapter_name", None),
+        }
+        creation_operation_key = _course_directory_import_operation_key(
+            args.course_dir,
+            **build_options,
+        )
         json_file = _build_import_json(
             course_dir=args.course_dir,
-            title=getattr(args, "title", None),
-            description=getattr(args, "description", None),
-            keywords=getattr(args, "keywords", None),
-            chapter_name=getattr(args, "chapter_name", None),
+            **build_options,
         )
-        result_bid = _import_flat(base_url, token, json_file, shifu_bid)
+        result_bid = _import_flat(
+            base_url,
+            token,
+            json_file,
+            shifu_bid,
+            creation_operation_key=creation_operation_key,
+        )
     elif args.json_file:
         result_bid = _import_flat(base_url, token, args.json_file, shifu_bid)
     else:
