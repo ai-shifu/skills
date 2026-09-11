@@ -526,6 +526,44 @@ class CourseCreationAttributionTests(unittest.TestCase):
             )
             self.assertNotEqual(changed_key, first_key)
 
+    def test_durable_reservation_prevents_credential_handoff_reuse(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token("test-token", course_handoff_id=handoff_id)
+        real_write = course_creator_cli._write_private_json
+        write_count = 0
+
+        def interrupt_after_journal(path, payload):
+            nonlocal write_count
+            write_count += 1
+            if write_count == 2:
+                raise RuntimeError("process interrupted before credential cleanup")
+            return real_write(path, payload)
+
+        with (
+            mock.patch.object(
+                course_creator_cli,
+                "_write_private_json",
+                side_effect=interrupt_after_journal,
+            ),
+            self.assertRaisesRegex(RuntimeError, "process interrupted"),
+        ):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "original-operation"
+            ):
+                pass
+
+        with course_creator_cli._course_creation_attribution(
+            "test-token", "independent-operation"
+        ) as independent:
+            pass
+        with course_creator_cli._course_creation_attribution(
+            "test-token", "original-operation"
+        ) as retried:
+            pass
+
+        self.assertNotEqual(independent["handoff_id"], handoff_id)
+        self.assertEqual(retried["handoff_id"], handoff_id)
+
 
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
     def test_env_example_documents_base_url_and_token(self):

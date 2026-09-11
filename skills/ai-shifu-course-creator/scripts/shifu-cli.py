@@ -2437,19 +2437,32 @@ def _course_creation_attribution(active_token, operation_key):
             reserved_handoff_id = str(existing_operation.get("handoff_id") or "")
         if not reserved_handoff_id:
             credentials = _read_json_file(credentials_path())
+            credential_handoff_id = ""
             if (
                 isinstance(credentials, dict)
                 and credentials.get("token") == active_token
             ):
-                reserved_handoff_id = str(credentials.get("course_handoff_id") or "")
-                if reserved_handoff_id:
-                    _write_private_json(credentials_path(), {"token": active_token})
+                credential_handoff_id = str(
+                    credentials.get("course_handoff_id") or ""
+                )
+            handoffs_already_reserved = {
+                str(record.get("handoff_id") or "")
+                for record in pending.values()
+                if isinstance(record, dict)
+            }
+            if credential_handoff_id not in handoffs_already_reserved:
+                reserved_handoff_id = credential_handoff_id
             reserved_handoff_id = reserved_handoff_id or str(uuid.uuid4())
             pending[journal_key] = {
                 "token_digest": token_digest,
                 "handoff_id": reserved_handoff_id,
             }
+            # Persist the reservation first. If the process exits before the
+            # credential slot is cleared, other operations still see this
+            # handoff in the journal and cannot consume it again.
             _write_private_json(pending_course_creations_path(), pending)
+            if credential_handoff_id == reserved_handoff_id:
+                _write_private_json(credentials_path(), {"token": active_token})
         attribution = {
             "creation_source": COURSE_CREATION_SOURCE,
             "source_product": COURSE_SOURCE_PRODUCT,
