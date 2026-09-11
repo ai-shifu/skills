@@ -72,8 +72,7 @@ MAX_COURSE_PAGES = 10
 
 COURSE_CREATION_SOURCE = "ai_assistant"
 COURSE_SOURCE_PRODUCT = "lobster"
-COURSE_HANDOFF_LOCK_TIMEOUT_SECONDS = 5
-COURSE_HANDOFF_LOCK_STALE_SECONDS = 30
+COURSE_HANDOFF_LOCK_TIMEOUT_SECONDS = 30
 
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
@@ -250,42 +249,55 @@ def save_token(token, *, course_handoff_id=""):
     payload = {"token": token}
     if course_handoff_id:
         payload["course_handoff_id"] = course_handoff_id
-    _write_private_json(credentials_path(), payload)
+    with _course_handoff_lock():
+        _write_private_json(credentials_path(), payload)
 
 
 @contextlib.contextmanager
 def _course_handoff_lock():
-    """Serialize the short read-and-reserve credentials operation."""
+    """Serialize credential and course-handoff mutations across processes."""
     path = course_handoff_lock_path()
     path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch(mode=0o600, exist_ok=True)
     deadline = time.monotonic() + COURSE_HANDOFF_LOCK_TIMEOUT_SECONDS
-    fd = None
-    while fd is None:
+    handle = path.open("r+b")
+    if os.name == "nt":
+        import msvcrt
+
+        handle.seek(0, os.SEEK_END)
+        if handle.tell() == 0:
+            handle.write(b"0")
+            handle.flush()
+        def lock():
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+
+        def unlock():
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+
+        def lock():
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+        def unlock():
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    acquired = False
+    while not acquired:
         try:
-            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.write(fd, str(os.getpid()).encode("ascii"))
-        except FileExistsError:
-            try:
-                stale_stat = path.stat()
-                if time.time() - stale_stat.st_mtime > COURSE_HANDOFF_LOCK_STALE_SECONDS:
-                    current_stat = path.stat()
-                    if (
-                        current_stat.st_dev == stale_stat.st_dev
-                        and current_stat.st_ino == stale_stat.st_ino
-                    ):
-                        path.unlink()
-                        continue
-            except FileNotFoundError:
-                continue
+            handle.seek(0)
+            lock()
+            acquired = True
+        except OSError:
             if time.monotonic() >= deadline:
+                handle.close()
                 raise RuntimeError("Timed out reserving the course attribution handoff")
             time.sleep(0.05)
     try:
         yield
     finally:
-        os.close(fd)
-        with contextlib.suppress(FileNotFoundError):
-            path.unlink()
+        handle.seek(0)
+        unlock()
+        handle.close()
 
 
 def migrate_legacy_token():
@@ -2350,8 +2362,8 @@ def _outline_create_payload(item, parent_bid=None):
 @contextlib.contextmanager
 def _course_creation_attribution(active_token):
     """Reserve one handoff for one course request and restore it on failure."""
-    reserved_handoff_id = ""
     with _course_handoff_lock():
+        reserved_handoff_id = ""
         credentials = _read_json_file(credentials_path())
         if (
             isinstance(credentials, dict)
@@ -2360,27 +2372,36 @@ def _course_creation_attribution(active_token):
             reserved_handoff_id = str(credentials.get("course_handoff_id") or "")
             if reserved_handoff_id:
                 _write_private_json(credentials_path(), {"token": active_token})
-    attribution = {
-        "creation_source": COURSE_CREATION_SOURCE,
-        "source_product": COURSE_SOURCE_PRODUCT,
-        "handoff_id": reserved_handoff_id or str(uuid.uuid4()),
-    }
-    try:
-        yield attribution
-    except BaseException:
-        if reserved_handoff_id:
-            with _course_handoff_lock():
+        attribution = {
+            "creation_source": COURSE_CREATION_SOURCE,
+            "source_product": COURSE_SOURCE_PRODUCT,
+            "handoff_id": reserved_handoff_id or str(uuid.uuid4()),
+        }
+        try:
+            yield attribution
+        except BaseException:
+            if reserved_handoff_id:
                 credentials = _read_json_file(credentials_path())
                 if (
                     isinstance(credentials, dict)
                     and credentials.get("token") == active_token
                     and not credentials.get("course_handoff_id")
                 ):
-                    _write_private_json(
-                        credentials_path(),
-                        {"token": active_token, "course_handoff_id": reserved_handoff_id},
-                    )
-        raise
+                    try:
+                        _write_private_json(
+                            credentials_path(),
+                            {
+                                "token": active_token,
+                                "course_handoff_id": reserved_handoff_id,
+                            },
+                        )
+                    except OSError as restore_error:
+                        print(
+                            "Warning: could not restore the course attribution "
+                            f"handoff: {restore_error}",
+                            file=sys.stderr,
+                        )
+            raise
 
 
 def _import_flat(base_url, token, json_file, shifu_bid):

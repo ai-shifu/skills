@@ -6,6 +6,7 @@ import io
 import json
 import sys
 import tempfile
+import threading
 import types
 import unittest
 from pathlib import Path
@@ -343,12 +344,37 @@ class CourseCreationAttributionTests(unittest.TestCase):
             "test-token", course_handoff_id=handoff_id
         )
 
-        with course_creator_cli._course_creation_attribution("test-token") as first:
-            with course_creator_cli._course_creation_attribution("test-token") as second:
-                pass
+        first_reserved = threading.Event()
+        release_first = threading.Event()
+        second_finished = threading.Event()
+        values = []
 
-        self.assertEqual(first["handoff_id"], handoff_id)
-        self.assertNotEqual(second["handoff_id"], handoff_id)
+        def reserve_first():
+            with course_creator_cli._course_creation_attribution("test-token") as value:
+                values.append(value)
+                first_reserved.set()
+                release_first.wait(timeout=2)
+
+        def reserve_second():
+            first_reserved.wait(timeout=2)
+            with course_creator_cli._course_creation_attribution("test-token") as value:
+                values.append(value)
+            second_finished.set()
+
+        first_thread = threading.Thread(target=reserve_first)
+        second_thread = threading.Thread(target=reserve_second)
+        first_thread.start()
+        second_thread.start()
+        self.assertTrue(first_reserved.wait(timeout=2))
+        self.assertFalse(second_finished.wait(timeout=0.1))
+        release_first.set()
+        first_thread.join(timeout=2)
+        second_thread.join(timeout=2)
+        self.assertFalse(first_thread.is_alive())
+        self.assertFalse(second_thread.is_alive())
+
+        self.assertEqual(values[0]["handoff_id"], handoff_id)
+        self.assertNotEqual(values[1]["handoff_id"], handoff_id)
         self.assertEqual(course_creator_cli.load_saved_token(), "test-token")
 
     def test_explicit_token_does_not_consume_another_accounts_handoff(self):
@@ -376,6 +402,32 @@ class CourseCreationAttributionTests(unittest.TestCase):
             course_creator_cli.credentials_path()
         )
         self.assertEqual(saved["course_handoff_id"], handoff_id)
+
+    def test_restore_failure_does_not_replace_the_creation_failure(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token("test-token", course_handoff_id=handoff_id)
+        original_error = RuntimeError("request failed")
+        write_private_json = course_creator_cli._write_private_json
+
+        def fail_restore(path, payload):
+            if payload.get("course_handoff_id"):
+                raise OSError("disk unavailable")
+            write_private_json(path, payload)
+
+        with (
+            mock.patch.object(
+                course_creator_cli,
+                "_write_private_json",
+                side_effect=fail_restore,
+            ),
+            contextlib.redirect_stderr(io.StringIO()) as stderr,
+            self.assertRaises(RuntimeError) as raised,
+        ):
+            with course_creator_cli._course_creation_attribution("test-token"):
+                raise original_error
+
+        self.assertIs(raised.exception, original_error)
+        self.assertIn("could not restore", stderr.getvalue())
 
 
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
