@@ -202,6 +202,10 @@ def course_handoff_lock_path():
     return config_dir() / "course-handoff.lock"
 
 
+def pending_course_creations_path():
+    return config_dir() / "pending-course-creations.json"
+
+
 def pending_auth_path():
     return config_dir() / "pending-device-auth.json"
 
@@ -1732,7 +1736,13 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
 def cmd_create(args):
     """Create a new empty course."""
     base_url, token = resolve_auth(args)
-    with _course_creation_attribution(token) as creation_attribution:
+    operation_key = _course_creation_operation_key(
+        "create",
+        {"name": args.name, "description": args.description or ""},
+    )
+    with _course_creation_attribution(
+        token, operation_key
+    ) as creation_attribution:
         result = api(
             base_url,
             token,
@@ -2359,49 +2369,63 @@ def _outline_create_payload(item, parent_bid=None):
     return payload
 
 
+def _course_creation_operation_key(command, payload):
+    """Return a non-sensitive stable identity for retrying one course operation."""
+    encoded = json.dumps(
+        {"command": command, "payload": payload},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 @contextlib.contextmanager
-def _course_creation_attribution(active_token):
-    """Reserve one handoff for one course request and restore it on failure."""
+def _course_creation_attribution(active_token, operation_key):
+    """Bind one handoff to one operation until creation is confirmed."""
     with _course_handoff_lock():
+        token_digest = hashlib.sha256(active_token.encode("utf-8")).hexdigest()
+        pending = _read_json_file(pending_course_creations_path())
+        if not isinstance(pending, dict):
+            pending = {}
+        existing_operation = pending.get(operation_key)
         reserved_handoff_id = ""
-        credentials = _read_json_file(credentials_path())
         if (
-            isinstance(credentials, dict)
-            and credentials.get("token") == active_token
+            isinstance(existing_operation, dict)
+            and existing_operation.get("token_digest") == token_digest
         ):
-            reserved_handoff_id = str(credentials.get("course_handoff_id") or "")
-            if reserved_handoff_id:
-                _write_private_json(credentials_path(), {"token": active_token})
+            reserved_handoff_id = str(existing_operation.get("handoff_id") or "")
+        if not reserved_handoff_id:
+            credentials = _read_json_file(credentials_path())
+            if (
+                isinstance(credentials, dict)
+                and credentials.get("token") == active_token
+            ):
+                reserved_handoff_id = str(credentials.get("course_handoff_id") or "")
+                if reserved_handoff_id:
+                    _write_private_json(credentials_path(), {"token": active_token})
+            reserved_handoff_id = reserved_handoff_id or str(uuid.uuid4())
+            pending[operation_key] = {
+                "token_digest": token_digest,
+                "handoff_id": reserved_handoff_id,
+            }
+            _write_private_json(pending_course_creations_path(), pending)
         attribution = {
             "creation_source": COURSE_CREATION_SOURCE,
             "source_product": COURSE_SOURCE_PRODUCT,
-            "handoff_id": reserved_handoff_id or str(uuid.uuid4()),
+            "handoff_id": reserved_handoff_id,
         }
-        try:
-            yield attribution
-        except BaseException:
-            if reserved_handoff_id:
-                credentials = _read_json_file(credentials_path())
-                if (
-                    isinstance(credentials, dict)
-                    and credentials.get("token") == active_token
-                    and not credentials.get("course_handoff_id")
-                ):
-                    try:
-                        _write_private_json(
-                            credentials_path(),
-                            {
-                                "token": active_token,
-                                "course_handoff_id": reserved_handoff_id,
-                            },
-                        )
-                    except OSError as restore_error:
-                        print(
-                            "Warning: could not restore the course attribution "
-                            f"handoff: {restore_error}",
-                            file=sys.stderr,
-                        )
-            raise
+        yield attribution
+        latest_pending = _read_json_file(pending_course_creations_path())
+        if isinstance(latest_pending, dict):
+            current = latest_pending.get(operation_key)
+            if (
+                isinstance(current, dict)
+                and current.get("token_digest") == token_digest
+                and current.get("handoff_id") == reserved_handoff_id
+            ):
+                latest_pending.pop(operation_key, None)
+                _write_private_json(pending_course_creations_path(), latest_pending)
 
 
 def _import_flat(base_url, token, json_file, shifu_bid):
@@ -2417,7 +2441,18 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         print(f"Using existing shifu: {shifu_bid}")
     else:
         print(f"Creating new shifu: {shifu_info['title']}")
-        with _course_creation_attribution(token) as creation_attribution:
+        operation_key = _course_creation_operation_key(
+            "import-new",
+            {
+                "path": str(Path(json_file).resolve()),
+                "content_sha256": hashlib.sha256(
+                    Path(json_file).read_bytes()
+                ).hexdigest(),
+            },
+        )
+        with _course_creation_attribution(
+            token, operation_key
+        ) as creation_attribution:
             result = api(
                 base_url,
                 token,

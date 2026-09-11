@@ -350,14 +350,18 @@ class CourseCreationAttributionTests(unittest.TestCase):
         values = []
 
         def reserve_first():
-            with course_creator_cli._course_creation_attribution("test-token") as value:
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "operation-one"
+            ) as value:
                 values.append(value)
                 first_reserved.set()
                 release_first.wait(timeout=2)
 
         def reserve_second():
             first_reserved.wait(timeout=2)
-            with course_creator_cli._course_creation_attribution("test-token") as value:
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "operation-two"
+            ) as value:
                 values.append(value)
             second_finished.set()
 
@@ -381,7 +385,9 @@ class CourseCreationAttributionTests(unittest.TestCase):
         handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
         course_creator_cli.save_token("saved-token", course_handoff_id=handoff_id)
 
-        with course_creator_cli._course_creation_attribution("explicit-token") as value:
+        with course_creator_cli._course_creation_attribution(
+            "explicit-token", "explicit-operation"
+        ) as value:
             self.assertNotEqual(value["handoff_id"], handoff_id)
 
         saved = course_creator_cli._read_json_file(
@@ -390,44 +396,43 @@ class CourseCreationAttributionTests(unittest.TestCase):
         self.assertEqual(saved["token"], "saved-token")
         self.assertEqual(saved["course_handoff_id"], handoff_id)
 
-    def test_failed_course_creation_restores_reserved_handoff(self):
+    def test_failed_course_creation_keeps_handoff_with_the_same_operation(self):
         handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
         course_creator_cli.save_token("test-token", course_handoff_id=handoff_id)
 
         with self.assertRaisesRegex(RuntimeError, "request failed"):
-            with course_creator_cli._course_creation_attribution("test-token"):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "failed-operation"
+            ) as failed:
                 raise RuntimeError("request failed")
 
         saved = course_creator_cli._read_json_file(
             course_creator_cli.credentials_path()
         )
-        self.assertEqual(saved["course_handoff_id"], handoff_id)
+        self.assertNotIn("course_handoff_id", saved)
+        with course_creator_cli._course_creation_attribution(
+            "test-token", "failed-operation"
+        ) as retried:
+            pass
+        self.assertEqual(failed["handoff_id"], handoff_id)
+        self.assertEqual(retried["handoff_id"], handoff_id)
 
-    def test_restore_failure_does_not_replace_the_creation_failure(self):
+    def test_failed_handoff_is_not_assigned_to_another_operation(self):
         handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
         course_creator_cli.save_token("test-token", course_handoff_id=handoff_id)
-        original_error = RuntimeError("request failed")
-        write_private_json = course_creator_cli._write_private_json
 
-        def fail_restore(path, payload):
-            if payload.get("course_handoff_id"):
-                raise OSError("disk unavailable")
-            write_private_json(path, payload)
+        with self.assertRaisesRegex(RuntimeError, "response lost"):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "original-operation"
+            ) as original:
+                raise RuntimeError("response lost")
+        with course_creator_cli._course_creation_attribution(
+            "test-token", "independent-operation"
+        ) as independent:
+            pass
 
-        with (
-            mock.patch.object(
-                course_creator_cli,
-                "_write_private_json",
-                side_effect=fail_restore,
-            ),
-            contextlib.redirect_stderr(io.StringIO()) as stderr,
-            self.assertRaises(RuntimeError) as raised,
-        ):
-            with course_creator_cli._course_creation_attribution("test-token"):
-                raise original_error
-
-        self.assertIs(raised.exception, original_error)
-        self.assertIn("could not restore", stderr.getvalue())
+        self.assertEqual(original["handoff_id"], handoff_id)
+        self.assertNotEqual(independent["handoff_id"], handoff_id)
 
 
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):

@@ -54,6 +54,11 @@ creation-only attribution is not written into local course content or reused
 when an existing course is synchronized. The public URL is expected to work
 only after `publish` succeeds.
 
+If a create response is lost, the CLI keeps that handoff bound to the exact
+command and payload fingerprint. Repeating the same operation safely asks the
+platform for the same idempotent course result; a different course operation
+receives a new handoff and cannot accidentally claim the earlier course.
+
 ## Verify
 
 1. Run `show <shifu_bid>` and compare the platform title, description, chapter structure, lesson count, and lesson titles with the local course directory. Run `export <shifu_bid>` and compare the exported Course Prompt with `course-prompt.md`.
