@@ -343,13 +343,39 @@ class CourseCreationAttributionTests(unittest.TestCase):
             "test-token", course_handoff_id=handoff_id
         )
 
-        first = course_creator_cli._new_course_creation_attribution()
-        course_creator_cli._consume_course_handoff_id(first["handoff_id"])
-        second = course_creator_cli._new_course_creation_attribution()
+        with course_creator_cli._course_creation_attribution("test-token") as first:
+            with course_creator_cli._course_creation_attribution("test-token") as second:
+                pass
 
         self.assertEqual(first["handoff_id"], handoff_id)
         self.assertNotEqual(second["handoff_id"], handoff_id)
         self.assertEqual(course_creator_cli.load_saved_token(), "test-token")
+
+    def test_explicit_token_does_not_consume_another_accounts_handoff(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token("saved-token", course_handoff_id=handoff_id)
+
+        with course_creator_cli._course_creation_attribution("explicit-token") as value:
+            self.assertNotEqual(value["handoff_id"], handoff_id)
+
+        saved = course_creator_cli._read_json_file(
+            course_creator_cli.credentials_path()
+        )
+        self.assertEqual(saved["token"], "saved-token")
+        self.assertEqual(saved["course_handoff_id"], handoff_id)
+
+    def test_failed_course_creation_restores_reserved_handoff(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token("test-token", course_handoff_id=handoff_id)
+
+        with self.assertRaisesRegex(RuntimeError, "request failed"):
+            with course_creator_cli._course_creation_attribution("test-token"):
+                raise RuntimeError("request failed")
+
+        saved = course_creator_cli._read_json_file(
+            course_creator_cli.credentials_path()
+        )
+        self.assertEqual(saved["course_handoff_id"], handoff_id)
 
 
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
@@ -537,6 +563,40 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
 
         poll.assert_called_once_with("https://example.test", "secret-device-code")
         save_token.assert_called_once_with("new-token")
+
+    def test_login_wait_transfers_the_registration_handoff(self):
+        args = types.SimpleNamespace(wait=True, timeout=30)
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        with (
+            mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"SHIFU_BASE_URL": "https://example.test/"},
+                clear=True,
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_read_json_file",
+                return_value={
+                    "device_code": "secret-device-code",
+                    "interval": 1,
+                    "expires_at": course_creator_cli.time.time() + 600,
+                    "course_handoff_id": handoff_id,
+                },
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_poll_device_authorization",
+                return_value=("approved", "new-token"),
+            ),
+            mock.patch.object(course_creator_cli, "save_token") as save_token,
+            mock.patch.object(course_creator_cli.Path, "unlink"),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            course_creator_cli.cmd_login(args)
+
+        save_token.assert_called_once_with(
+            "new-token", course_handoff_id=handoff_id
+        )
 
     def test_login_wait_reports_a_denied_request(self):
         args = types.SimpleNamespace(wait=True, timeout=30)

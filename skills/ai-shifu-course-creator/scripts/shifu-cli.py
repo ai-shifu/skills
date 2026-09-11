@@ -72,6 +72,8 @@ MAX_COURSE_PAGES = 10
 
 COURSE_CREATION_SOURCE = "ai_assistant"
 COURSE_SOURCE_PRODUCT = "lobster"
+COURSE_HANDOFF_LOCK_TIMEOUT_SECONDS = 5
+COURSE_HANDOFF_LOCK_STALE_SECONDS = 30
 
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
@@ -197,6 +199,10 @@ def credentials_path():
     return config_dir() / "credentials.json"
 
 
+def course_handoff_lock_path():
+    return config_dir() / "course-handoff.lock"
+
+
 def pending_auth_path():
     return config_dir() / "pending-device-auth.json"
 
@@ -245,6 +251,41 @@ def save_token(token, *, course_handoff_id=""):
     if course_handoff_id:
         payload["course_handoff_id"] = course_handoff_id
     _write_private_json(credentials_path(), payload)
+
+
+@contextlib.contextmanager
+def _course_handoff_lock():
+    """Serialize the short read-and-reserve credentials operation."""
+    path = course_handoff_lock_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    deadline = time.monotonic() + COURSE_HANDOFF_LOCK_TIMEOUT_SECONDS
+    fd = None
+    while fd is None:
+        try:
+            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            os.write(fd, str(os.getpid()).encode("ascii"))
+        except FileExistsError:
+            try:
+                stale_stat = path.stat()
+                if time.time() - stale_stat.st_mtime > COURSE_HANDOFF_LOCK_STALE_SECONDS:
+                    current_stat = path.stat()
+                    if (
+                        current_stat.st_dev == stale_stat.st_dev
+                        and current_stat.st_ino == stale_stat.st_ino
+                    ):
+                        path.unlink()
+                        continue
+            except FileNotFoundError:
+                continue
+            if time.monotonic() >= deadline:
+                raise RuntimeError("Timed out reserving the course attribution handoff")
+            time.sleep(0.05)
+    try:
+        yield
+    finally:
+        os.close(fd)
+        with contextlib.suppress(FileNotFoundError):
+            path.unlink()
 
 
 def migrate_legacy_token():
@@ -1679,19 +1720,18 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
 def cmd_create(args):
     """Create a new empty course."""
     base_url, token = resolve_auth(args)
-    creation_attribution = _new_course_creation_attribution()
-    result = api(
-        base_url,
-        token,
-        "put",
-        "/shifus",
-        json={
-            "name": args.name,
-            "description": args.description or "",
-            "creation_attribution": creation_attribution,
-        },
-    )
-    _consume_course_handoff_id(creation_attribution["handoff_id"])
+    with _course_creation_attribution(token) as creation_attribution:
+        result = api(
+            base_url,
+            token,
+            "put",
+            "/shifus",
+            json={
+                "name": args.name,
+                "description": args.description or "",
+                "creation_attribution": creation_attribution,
+            },
+        )
     bid = result.get("bid") or result.get("shifu_bid")
     print(f"Created course: {bid}")
     print(f"  Name: {args.name}")
@@ -2307,29 +2347,40 @@ def _outline_create_payload(item, parent_bid=None):
     return payload
 
 
-def _new_course_creation_attribution():
-    """Build the stable source-of-truth attribution for one new course."""
-    credentials = _read_json_file(credentials_path())
-    saved_handoff_id = ""
-    if isinstance(credentials, dict):
-        saved_handoff_id = str(credentials.get("course_handoff_id") or "")
-    return {
+@contextlib.contextmanager
+def _course_creation_attribution(active_token):
+    """Reserve one handoff for one course request and restore it on failure."""
+    reserved_handoff_id = ""
+    with _course_handoff_lock():
+        credentials = _read_json_file(credentials_path())
+        if (
+            isinstance(credentials, dict)
+            and credentials.get("token") == active_token
+        ):
+            reserved_handoff_id = str(credentials.get("course_handoff_id") or "")
+            if reserved_handoff_id:
+                _write_private_json(credentials_path(), {"token": active_token})
+    attribution = {
         "creation_source": COURSE_CREATION_SOURCE,
         "source_product": COURSE_SOURCE_PRODUCT,
-        "handoff_id": saved_handoff_id or str(uuid.uuid4()),
+        "handoff_id": reserved_handoff_id or str(uuid.uuid4()),
     }
-
-
-def _consume_course_handoff_id(expected_handoff_id):
-    """Clear a registration handoff only after its first course was created."""
-    credentials = _read_json_file(credentials_path())
-    if not isinstance(credentials, dict):
-        return
-    if credentials.get("course_handoff_id") != expected_handoff_id:
-        return
-    token = credentials.get("token")
-    if isinstance(token, str) and token:
-        save_token(token)
+    try:
+        yield attribution
+    except BaseException:
+        if reserved_handoff_id:
+            with _course_handoff_lock():
+                credentials = _read_json_file(credentials_path())
+                if (
+                    isinstance(credentials, dict)
+                    and credentials.get("token") == active_token
+                    and not credentials.get("course_handoff_id")
+                ):
+                    _write_private_json(
+                        credentials_path(),
+                        {"token": active_token, "course_handoff_id": reserved_handoff_id},
+                    )
+        raise
 
 
 def _import_flat(base_url, token, json_file, shifu_bid):
@@ -2345,19 +2396,18 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         print(f"Using existing shifu: {shifu_bid}")
     else:
         print(f"Creating new shifu: {shifu_info['title']}")
-        creation_attribution = _new_course_creation_attribution()
-        result = api(
-            base_url,
-            token,
-            "put",
-            "/shifus",
-            json={
-                "name": shifu_info["title"],
-                "description": shifu_info.get("description", ""),
-                "creation_attribution": creation_attribution,
-            },
-        )
-        _consume_course_handoff_id(creation_attribution["handoff_id"])
+        with _course_creation_attribution(token) as creation_attribution:
+            result = api(
+                base_url,
+                token,
+                "put",
+                "/shifus",
+                json={
+                    "name": shifu_info["title"],
+                    "description": shifu_info.get("description", ""),
+                    "creation_attribution": creation_attribution,
+                },
+            )
         shifu_bid = result.get("bid") or result.get("shifu_bid")
         print(f"  Created shifu: {shifu_bid}")
 
