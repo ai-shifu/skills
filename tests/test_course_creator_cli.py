@@ -255,6 +255,103 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
                     self.assertEqual(output.getvalue(), "")
 
 
+class CourseCreationAttributionTests(unittest.TestCase):
+    def setUp(self):
+        tmp = self.enterContext(tempfile.TemporaryDirectory())
+        self.base_url = "https://app.ai-shifu.cn"
+        self.enterContext(
+            mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"AI_SHIFU_CONFIG_DIR": tmp},
+                clear=True,
+            )
+        )
+        self.enterContext(
+            mock.patch.object(
+                course_creator_cli,
+                "resolve_auth",
+                return_value=(self.base_url, "test-token"),
+            )
+        )
+
+    def test_create_sends_lobster_attribution(self):
+        with mock.patch.object(
+            course_creator_cli, "api", return_value={"bid": "course-new"}
+        ) as api_call:
+            course_creator_cli.cmd_create(
+                types.SimpleNamespace(name="New course", description="Description")
+            )
+
+        payload = api_call.call_args.kwargs["json"]
+        self.assertEqual(
+            payload["creation_attribution"]["creation_source"], "ai_assistant"
+        )
+        self.assertEqual(
+            payload["creation_attribution"]["source_product"], "lobster"
+        )
+        self.assertRegex(
+            payload["creation_attribution"]["handoff_id"],
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        )
+
+    def test_new_import_sends_attribution_but_existing_import_does_not(self):
+        import_data = {
+            "shifu": {"title": "Imported course", "description": "Description"},
+            "outline_items": [],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            import_file = Path(tmp) / "course.json"
+            import_file.write_text(json.dumps(import_data), encoding="utf-8")
+
+            for existing_bid in (None, "existing-course"):
+                with self.subTest(existing_bid=existing_bid):
+                    calls = []
+
+                    def fake_api(_base_url, _token, method, path, **kwargs):
+                        calls.append((method, path, kwargs.get("json")))
+                        if method == "put" and path == "/shifus":
+                            return {"bid": "course-new"}
+                        return []
+
+                    with (
+                        mock.patch.object(course_creator_cli, "api", side_effect=fake_api),
+                        mock.patch.object(
+                            course_creator_cli, "api_safe", return_value=[]
+                        ),
+                        contextlib.redirect_stdout(io.StringIO()),
+                    ):
+                        course_creator_cli._import_flat(
+                            self.base_url,
+                            "test-token",
+                            import_file,
+                            existing_bid,
+                        )
+
+                    create_calls = [call for call in calls if call[1] == "/shifus"]
+                    if existing_bid is None:
+                        self.assertEqual(len(create_calls), 1)
+                        self.assertEqual(
+                            create_calls[0][2]["creation_attribution"]["source_product"],
+                            "lobster",
+                        )
+                    else:
+                        self.assertEqual(create_calls, [])
+
+    def test_first_course_reuses_registration_handoff_once(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token(
+            "test-token", course_handoff_id=handoff_id
+        )
+
+        first = course_creator_cli._new_course_creation_attribution()
+        course_creator_cli._consume_course_handoff_id(first["handoff_id"])
+        second = course_creator_cli._new_course_creation_attribution()
+
+        self.assertEqual(first["handoff_id"], handoff_id)
+        self.assertNotEqual(second["handoff_id"], handoff_id)
+        self.assertEqual(course_creator_cli.load_saved_token(), "test-token")
+
+
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
     def test_env_example_documents_base_url_and_token(self):
         env_example = SCRIPT_DIR.parent / ".env.example"
@@ -369,6 +466,9 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertEqual(called_base_url, "https://example.test")
         self.assertEqual(called_path, "/api/user/device/authorize")
         self.assertIn("device_name", payload)
+        attribution = payload["registration_attribution"]
+        self.assertEqual(attribution["creation_source"], "ai_assistant")
+        self.assertEqual(attribution["source_product"], "lobster")
 
         printed = stdout.getvalue()
         open_browser.assert_not_called()
@@ -379,6 +479,7 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertNotIn("secret-device-code", printed)
         stored = write_json.call_args[0][1]
         self.assertEqual(stored["device_code"], "secret-device-code")
+        self.assertEqual(stored["course_handoff_id"], attribution["handoff_id"])
 
     def test_login_prints_plain_verification_uri_and_pairing_code(self):
         with (

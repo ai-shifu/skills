@@ -70,6 +70,9 @@ _TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
 COURSE_LIST_PAGE_SIZE = 50
 MAX_COURSE_PAGES = 10
 
+COURSE_CREATION_SOURCE = "ai_assistant"
+COURSE_SOURCE_PRODUCT = "lobster"
+
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
 def ensure_env_file():
@@ -236,9 +239,12 @@ def load_saved_token():
     return ""
 
 
-def save_token(token):
+def save_token(token, *, course_handoff_id=""):
     """Persist the issued token to the user's config directory."""
-    _write_private_json(credentials_path(), {"token": token})
+    payload = {"token": token}
+    if course_handoff_id:
+        payload["course_handoff_id"] = course_handoff_id
+    _write_private_json(credentials_path(), payload)
 
 
 def migrate_legacy_token():
@@ -710,6 +716,7 @@ def _poll_device_authorization(base_url, device_code):
 
 def _start_device_authorization(base_url):
     device_name, device_os = _device_description()
+    handoff_id = str(uuid.uuid4())
     response = _login_post(
         base_url,
         "/api/user/device/authorize",
@@ -717,6 +724,11 @@ def _start_device_authorization(base_url):
             "device_name": device_name,
             "device_os": device_os,
             "client_version": _client_version(),
+            "registration_attribution": {
+                "creation_source": COURSE_CREATION_SOURCE,
+                "source_product": COURSE_SOURCE_PRODUCT,
+                "handoff_id": handoff_id,
+            },
         },
         "Failed to start authorization",
     )
@@ -748,6 +760,7 @@ def _start_device_authorization(base_url):
             "base_url": base_url,
             "interval": int(data.get("interval") or 5),
             "expires_at": time.time() + int(data.get("expires_in") or 600),
+            "course_handoff_id": handoff_id,
         },
     )
 
@@ -785,7 +798,11 @@ def _wait_for_device_authorization(base_url, timeout_seconds):
     while True:
         status, token = _poll_device_authorization(base_url, device_code)
         if status == "approved" and token:
-            save_token(token)
+            course_handoff_id = str(pending.get("course_handoff_id") or "")
+            if course_handoff_id:
+                save_token(token, course_handoff_id=course_handoff_id)
+            else:
+                save_token(token)
             with contextlib.suppress(OSError):
                 pending_auth_path().unlink()
             print(f"Authorization complete. Credentials saved to {credentials_path()}")
@@ -1662,9 +1679,19 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
 def cmd_create(args):
     """Create a new empty course."""
     base_url, token = resolve_auth(args)
-    result = api(base_url, token, "put", "/shifus",
-                 json={"name": args.name,
-                       "description": args.description or ""})
+    creation_attribution = _new_course_creation_attribution()
+    result = api(
+        base_url,
+        token,
+        "put",
+        "/shifus",
+        json={
+            "name": args.name,
+            "description": args.description or "",
+            "creation_attribution": creation_attribution,
+        },
+    )
+    _consume_course_handoff_id(creation_attribution["handoff_id"])
     bid = result.get("bid") or result.get("shifu_bid")
     print(f"Created course: {bid}")
     print(f"  Name: {args.name}")
@@ -2280,6 +2307,31 @@ def _outline_create_payload(item, parent_bid=None):
     return payload
 
 
+def _new_course_creation_attribution():
+    """Build the stable source-of-truth attribution for one new course."""
+    credentials = _read_json_file(credentials_path())
+    saved_handoff_id = ""
+    if isinstance(credentials, dict):
+        saved_handoff_id = str(credentials.get("course_handoff_id") or "")
+    return {
+        "creation_source": COURSE_CREATION_SOURCE,
+        "source_product": COURSE_SOURCE_PRODUCT,
+        "handoff_id": saved_handoff_id or str(uuid.uuid4()),
+    }
+
+
+def _consume_course_handoff_id(expected_handoff_id):
+    """Clear a registration handoff only after its first course was created."""
+    credentials = _read_json_file(credentials_path())
+    if not isinstance(credentials, dict):
+        return
+    if credentials.get("course_handoff_id") != expected_handoff_id:
+        return
+    token = credentials.get("token")
+    if isinstance(token, str) and token:
+        save_token(token)
+
+
 def _import_flat(base_url, token, json_file, shifu_bid):
     """Import from flat JSON file (original shifu-api-import.py logic)."""
     with open(json_file, "r", encoding="utf-8") as f:
@@ -2293,9 +2345,19 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         print(f"Using existing shifu: {shifu_bid}")
     else:
         print(f"Creating new shifu: {shifu_info['title']}")
-        result = api(base_url, token, "put", "/shifus",
-                     json={"name": shifu_info["title"],
-                           "description": shifu_info.get("description", "")})
+        creation_attribution = _new_course_creation_attribution()
+        result = api(
+            base_url,
+            token,
+            "put",
+            "/shifus",
+            json={
+                "name": shifu_info["title"],
+                "description": shifu_info.get("description", ""),
+                "creation_attribution": creation_attribution,
+            },
+        )
+        _consume_course_handoff_id(creation_attribution["handoff_id"])
         shifu_bid = result.get("bid") or result.get("shifu_bid")
         print(f"  Created shifu: {shifu_bid}")
 
