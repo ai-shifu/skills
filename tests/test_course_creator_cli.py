@@ -456,6 +456,27 @@ class CourseCreationAttributionTests(unittest.TestCase):
         self.assertNotEqual(first_a["handoff_id"], first_b["handoff_id"])
         self.assertEqual(retried_a["handoff_id"], first_a["handoff_id"])
 
+    def test_concurrent_success_does_not_clear_failed_requests_retry(self):
+        operation_key = "concurrent-operation"
+
+        with self.assertRaisesRegex(RuntimeError, "response lost"):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", operation_key
+            ) as first:
+                with course_creator_cli._course_creation_attribution(
+                    "test-token", operation_key
+                ) as second:
+                    pass
+                raise RuntimeError("response lost")
+
+        with course_creator_cli._course_creation_attribution(
+            "test-token", operation_key
+        ) as retried:
+            pass
+
+        self.assertEqual(second["handoff_id"], first["handoff_id"])
+        self.assertEqual(retried["handoff_id"], first["handoff_id"])
+
     def test_legacy_pending_operation_is_migrated_for_its_token(self):
         operation_key = "legacy-operation"
         handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"

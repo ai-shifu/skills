@@ -2452,6 +2452,12 @@ def _course_creation_attribution(active_token, operation_key):
             and existing_operation.get("token_digest") == token_digest
         ):
             reserved_handoff_id = str(existing_operation.get("handoff_id") or "")
+            if reserved_handoff_id:
+                existing_operation["in_flight_count"] = max(
+                    int(existing_operation.get("in_flight_count") or 0), 0
+                ) + 1
+                pending[journal_key] = existing_operation
+                _write_private_json(pending_course_creations_path(), pending)
         if not reserved_handoff_id:
             credentials = _read_json_file(credentials_path())
             credential_handoff_id = ""
@@ -2473,6 +2479,7 @@ def _course_creation_attribution(active_token, operation_key):
             pending[journal_key] = {
                 "token_digest": token_digest,
                 "handoff_id": reserved_handoff_id,
+                "in_flight_count": 1,
             }
             # Persist the reservation first. If the process exits before the
             # credential slot is cleared, other operations still see this
@@ -2492,27 +2499,32 @@ def _course_creation_attribution(active_token, operation_key):
             "source_product": COURSE_SOURCE_PRODUCT,
             "handoff_id": reserved_handoff_id,
         }
+    succeeded = False
     try:
         yield attribution
-    except BaseException:
-        # Keep the reservation for an exact retry when the server result is
-        # unknown. The network request runs without holding the global lock.
-        raise
-    else:
+        succeeded = True
+    finally:
         with _course_handoff_lock():
             latest_pending = _read_json_file(pending_course_creations_path())
-            if not isinstance(latest_pending, dict):
-                return
-            current = latest_pending.get(journal_key)
-            if (
-                isinstance(current, dict)
-                and current.get("token_digest") == token_digest
-                and current.get("handoff_id") == reserved_handoff_id
-            ):
-                latest_pending.pop(journal_key, None)
-                _write_private_json(
-                    pending_course_creations_path(), latest_pending
-                )
+            if isinstance(latest_pending, dict):
+                current = latest_pending.get(journal_key)
+                if (
+                    isinstance(current, dict)
+                    and current.get("token_digest") == token_digest
+                    and current.get("handoff_id") == reserved_handoff_id
+                ):
+                    remaining = max(
+                        int(current.get("in_flight_count") or 1) - 1,
+                        0,
+                    )
+                    if succeeded and remaining == 0:
+                        latest_pending.pop(journal_key, None)
+                    else:
+                        current["in_flight_count"] = remaining
+                        latest_pending[journal_key] = current
+                    _write_private_json(
+                        pending_course_creations_path(), latest_pending
+                    )
 
 
 def _import_flat(
