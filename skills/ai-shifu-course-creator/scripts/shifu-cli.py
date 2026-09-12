@@ -2380,31 +2380,35 @@ def _course_creation_operation_key(command, payload):
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _course_directory_import_operation_key(course_dir, **build_options):
-    """Identify a directory import without generated IDs or export timestamps."""
+def _course_directory_import_operation_key(course_dir, json_file):
+    """Identify the built course semantics without generated IDs or timestamps."""
     root = Path(course_dir).resolve()
-    source_files = []
-    for relative_path in ("README.md", "course-prompt.md", "structure.json"):
-        path = root / relative_path
-        if path.is_file():
-            source_files.append(path)
-    lessons_dir = root / "lessons"
-    if lessons_dir.is_dir():
-        source_files.extend(
-            path
-            for path in sorted(lessons_dir.glob("lesson-*.md"))
-            if path.is_file()
-        )
+    import_data = json.loads(Path(json_file).read_text(encoding="utf-8"))
+    outline_items = import_data.get("outline_items") or []
+    outline_id_map = {
+        str(item.get("outline_item_bid") or ""): f"outline-{index}"
+        for index, item in enumerate(outline_items)
+        if item.get("outline_item_bid")
+    }
+    normalized_outlines = []
+    for item in outline_items:
+        normalized = {
+            key: value
+            for key, value in item.items()
+            if key != "outline_item_bid"
+        }
+        parent_bid = str(normalized.get("parent_bid") or "")
+        normalized["parent_bid"] = outline_id_map.get(parent_bid, parent_bid)
+        normalized_outlines.append(normalized)
+    shifu = {
+        key: value
+        for key, value in (import_data.get("shifu") or {}).items()
+        if key not in {"bid", "shifu_bid", "exported_at"}
+    }
     semantic_input = {
         "path": str(root),
-        "options": build_options,
-        "files": [
-            {
-                "path": str(path.relative_to(root)),
-                "content_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-            }
-            for path in source_files
-        ],
+        "shifu": shifu,
+        "outline_items": normalized_outlines,
     }
     return _course_creation_operation_key("import-new-directory", semantic_input)
 
@@ -2461,8 +2465,15 @@ def _course_creation_attribution(active_token, operation_key):
             # credential slot is cleared, other operations still see this
             # handoff in the journal and cannot consume it again.
             _write_private_json(pending_course_creations_path(), pending)
-            if credential_handoff_id == reserved_handoff_id:
-                _write_private_json(credentials_path(), {"token": active_token})
+        credentials = _read_json_file(credentials_path())
+        if (
+            isinstance(credentials, dict)
+            and credentials.get("token") == active_token
+            and credentials.get("course_handoff_id") == reserved_handoff_id
+        ):
+            # This also handles recovery after interruption between the journal
+            # write and the original credential cleanup.
+            _write_private_json(credentials_path(), {"token": active_token})
         attribution = {
             "creation_source": COURSE_CREATION_SOURCE,
             "source_product": COURSE_SOURCE_PRODUCT,
@@ -2668,13 +2679,13 @@ def cmd_import(args):
             "keywords": getattr(args, "keywords", None),
             "chapter_name": getattr(args, "chapter_name", None),
         }
-        creation_operation_key = _course_directory_import_operation_key(
-            args.course_dir,
-            **build_options,
-        )
         json_file = _build_import_json(
             course_dir=args.course_dir,
             **build_options,
+        )
+        creation_operation_key = _course_directory_import_operation_key(
+            args.course_dir,
+            json_file,
         )
         result_bid = _import_flat(
             base_url,

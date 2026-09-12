@@ -501,18 +501,18 @@ class CourseCreationAttributionTests(unittest.TestCase):
                 "chapter_name": None,
             }
 
-            first_key = course_creator_cli._course_directory_import_operation_key(
-                course_dir, **options
-            )
             first_export = course_creator_cli._build_import_json(
                 course_dir, **options
+            )
+            first_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, first_export
             )
             first_export_bytes = Path(first_export).read_bytes()
             second_export = course_creator_cli._build_import_json(
                 course_dir, **options
             )
             second_key = course_creator_cli._course_directory_import_operation_key(
-                course_dir, **options
+                course_dir, second_export
             )
 
             self.assertNotEqual(
@@ -521,10 +521,73 @@ class CourseCreationAttributionTests(unittest.TestCase):
             self.assertEqual(second_key, first_key)
 
             lesson.write_text("Changed content\n", encoding="utf-8")
-            changed_key = course_creator_cli._course_directory_import_operation_key(
+            changed_export = course_creator_cli._build_import_json(
                 course_dir, **options
             )
+            changed_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, changed_export
+            )
             self.assertNotEqual(changed_key, first_key)
+
+    def test_directory_import_operation_key_covers_all_built_content(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            course_dir = Path(tmp)
+            lessons_dir = course_dir / "lessons"
+            lessons_dir.mkdir()
+            (lessons_dir / "lesson-placeholder.md").write_text(
+                "Required discovery file\n", encoding="utf-8"
+            )
+            custom_lesson = lessons_dir / "custom.md"
+            custom_lesson.write_text("Custom lesson\n", encoding="utf-8")
+            (course_dir / "course-description.md").write_text(
+                "Original description\n", encoding="utf-8"
+            )
+            (course_dir / "structure.json").write_text(
+                json.dumps(
+                    {
+                        "chapters": [
+                            {
+                                "title": "Chapter",
+                                "lessons": [{"file": "custom.md", "title": "Custom"}],
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            options = {
+                "title": None,
+                "description": None,
+                "keywords": None,
+                "chapter_name": None,
+            }
+
+            original_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            original_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, original_export
+            )
+
+            (course_dir / "course-description.md").write_text(
+                "Changed description\n", encoding="utf-8"
+            )
+            description_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            description_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, description_export
+            )
+            self.assertNotEqual(description_key, original_key)
+
+            custom_lesson.write_text("Changed custom lesson\n", encoding="utf-8")
+            content_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            content_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, content_export
+            )
+            self.assertNotEqual(content_key, description_key)
 
     def test_durable_reservation_prevents_credential_handoff_reuse(self):
         handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
@@ -553,16 +616,16 @@ class CourseCreationAttributionTests(unittest.TestCase):
                 pass
 
         with course_creator_cli._course_creation_attribution(
-            "test-token", "independent-operation"
-        ) as independent:
-            pass
-        with course_creator_cli._course_creation_attribution(
             "test-token", "original-operation"
         ) as retried:
             pass
+        with course_creator_cli._course_creation_attribution(
+            "test-token", "independent-operation"
+        ) as independent:
+            pass
 
-        self.assertNotEqual(independent["handoff_id"], handoff_id)
         self.assertEqual(retried["handoff_id"], handoff_id)
+        self.assertNotEqual(independent["handoff_id"], handoff_id)
 
 
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
