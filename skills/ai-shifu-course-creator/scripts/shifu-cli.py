@@ -2416,12 +2416,12 @@ def _course_directory_import_operation_key(course_dir, json_file):
 @contextlib.contextmanager
 def _course_creation_attribution(active_token, operation_key):
     """Bind one handoff to one operation until creation is confirmed."""
+    token_digest = hashlib.sha256(active_token.encode("utf-8")).hexdigest()
+    journal_key = f"{token_digest}:{operation_key}"
     with _course_handoff_lock():
-        token_digest = hashlib.sha256(active_token.encode("utf-8")).hexdigest()
         pending = _read_json_file(pending_course_creations_path())
         if not isinstance(pending, dict):
             pending = {}
-        journal_key = f"{token_digest}:{operation_key}"
         existing_operation = pending.get(journal_key)
         legacy_operation = pending.get(operation_key)
         if (
@@ -2479,9 +2479,17 @@ def _course_creation_attribution(active_token, operation_key):
             "source_product": COURSE_SOURCE_PRODUCT,
             "handoff_id": reserved_handoff_id,
         }
+    try:
         yield attribution
-        latest_pending = _read_json_file(pending_course_creations_path())
-        if isinstance(latest_pending, dict):
+    except BaseException:
+        # Keep the reservation for an exact retry when the server result is
+        # unknown. The network request runs without holding the global lock.
+        raise
+    else:
+        with _course_handoff_lock():
+            latest_pending = _read_json_file(pending_course_creations_path())
+            if not isinstance(latest_pending, dict):
+                return
             current = latest_pending.get(journal_key)
             if (
                 isinstance(current, dict)
@@ -2489,7 +2497,9 @@ def _course_creation_attribution(active_token, operation_key):
                 and current.get("handoff_id") == reserved_handoff_id
             ):
                 latest_pending.pop(journal_key, None)
-                _write_private_json(pending_course_creations_path(), latest_pending)
+                _write_private_json(
+                    pending_course_creations_path(), latest_pending
+                )
 
 
 def _import_flat(

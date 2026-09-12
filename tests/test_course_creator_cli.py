@@ -339,7 +339,7 @@ class CourseCreationAttributionTests(unittest.TestCase):
                     else:
                         self.assertEqual(create_calls, [])
 
-    def test_first_course_reuses_registration_handoff_once(self):
+    def test_concurrent_course_reservations_do_not_hold_lock_during_request(self):
         handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
         course_creator_cli.save_token(
             "test-token", course_handoff_id=handoff_id
@@ -371,7 +371,7 @@ class CourseCreationAttributionTests(unittest.TestCase):
         first_thread.start()
         second_thread.start()
         self.assertTrue(first_reserved.wait(timeout=2))
-        self.assertFalse(second_finished.wait(timeout=0.1))
+        self.assertTrue(second_finished.wait(timeout=0.5))
         release_first.set()
         first_thread.join(timeout=2)
         second_thread.join(timeout=2)
