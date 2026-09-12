@@ -30,6 +30,10 @@ Existing-course edits and standalone platform-management operations are outside 
 ## Preconditions
 
 - Complete `authentication.md`.
+- Browser authorization carries a generated Lobster handoff identifier. The
+  platform records it as registration attribution only when authorization
+  results in a newly registered account; signing an existing account into the
+  CLI does not change that account's registration source.
 - Confirm the resolved target is `new`.
 - Provide a course directory that conforms to `cli/course-directory-spec.md`, including lesson files. Require a completed `course-prompt.md` for a content-complete deployment; when it is missing, complete the applicable conditional authoring reference before building. A missing course description keeps the CLI's existing empty-description fallback unless the author requests non-empty listing copy. This workflow consumes final artifacts; it does not define their content.
 - Complete the source-file checks in `language-policy.md#language-audit` before the first platform mutation.
@@ -43,7 +47,17 @@ Existing-course edits and standalone platform-management operations are outside 
 5. Before first publication, apply only explicitly selected platform-attribute operations through the conditional management reference, always passing the synchronized `--course-dir <dir>`. This includes enabling Listen Mode by running `set-tts <shifu_bid> --enabled true --course-dir <dir>` when Course Design Intake selected it and running `set-avatar <shifu_bid> --file <course_author_avatar_source> --course-dir <dir>` when an avatar source was accepted; leave every unspecified attribute unchanged.
 6. Run `publish <shifu_bid>` to make the current draft available at the public learner URL.
 
-`import --new` creates the platform course but does not publish it. The public URL is expected to work only after `publish` succeeds.
+`import --new` creates the platform course but does not publish it. The CLI also
+attaches an immutable, generated handoff identifier and the stable
+`ai_assistant` / `lobster` source classification to that new course. This
+creation-only attribution is not written into local course content or reused
+when an existing course is synchronized. The public URL is expected to work
+only after `publish` succeeds.
+
+If a create response is lost, the CLI keeps that handoff bound to the exact
+command and payload fingerprint. Repeating the same operation safely asks the
+platform for the same idempotent course result; a different course operation
+receives a new handoff and cannot accidentally claim the earlier course.
 
 ## Verify
 

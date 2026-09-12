@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
 import sys
 import tempfile
+import threading
+import time
 import types
 import unittest
 from pathlib import Path
@@ -255,6 +258,481 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
                     self.assertEqual(output.getvalue(), "")
 
 
+class CourseCreationAttributionTests(unittest.TestCase):
+    def setUp(self):
+        tmp = self.enterContext(tempfile.TemporaryDirectory())
+        self.base_url = "https://app.ai-shifu.cn"
+        self.enterContext(
+            mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"AI_SHIFU_CONFIG_DIR": tmp},
+                clear=True,
+            )
+        )
+        self.enterContext(
+            mock.patch.object(
+                course_creator_cli,
+                "resolve_auth",
+                return_value=(self.base_url, "test-token"),
+            )
+        )
+
+    def test_create_sends_lobster_attribution(self):
+        with mock.patch.object(
+            course_creator_cli, "api", return_value={"bid": "course-new"}
+        ) as api_call:
+            course_creator_cli.cmd_create(
+                types.SimpleNamespace(name="New course", description="Description")
+            )
+
+        payload = api_call.call_args.kwargs["json"]
+        self.assertEqual(
+            payload["creation_attribution"]["creation_source"], "ai_assistant"
+        )
+        self.assertEqual(
+            payload["creation_attribution"]["source_product"], "lobster"
+        )
+        self.assertRegex(
+            payload["creation_attribution"]["handoff_id"],
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        )
+
+    def test_new_import_sends_attribution_but_existing_import_does_not(self):
+        import_data = {
+            "shifu": {"title": "Imported course", "description": "Description"},
+            "outline_items": [],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            import_file = Path(tmp) / "course.json"
+            import_file.write_text(json.dumps(import_data), encoding="utf-8")
+
+            for existing_bid in (None, "existing-course"):
+                with self.subTest(existing_bid=existing_bid):
+                    calls = []
+
+                    def fake_api(_base_url, _token, method, path, **kwargs):
+                        calls.append((method, path, kwargs.get("json")))
+                        if method == "put" and path == "/shifus":
+                            return {"bid": "course-new"}
+                        return []
+
+                    with (
+                        mock.patch.object(course_creator_cli, "api", side_effect=fake_api),
+                        mock.patch.object(
+                            course_creator_cli, "api_safe", return_value=[]
+                        ),
+                        contextlib.redirect_stdout(io.StringIO()),
+                    ):
+                        course_creator_cli._import_flat(
+                            self.base_url,
+                            "test-token",
+                            import_file,
+                            existing_bid,
+                        )
+
+                    create_calls = [call for call in calls if call[1] == "/shifus"]
+                    if existing_bid is None:
+                        self.assertEqual(len(create_calls), 1)
+                        self.assertEqual(
+                            create_calls[0][2]["creation_attribution"]["source_product"],
+                            "lobster",
+                        )
+                    else:
+                        self.assertEqual(create_calls, [])
+
+    def test_concurrent_course_reservations_do_not_hold_lock_during_request(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token(
+            "test-token", course_handoff_id=handoff_id
+        )
+
+        first_reserved = threading.Event()
+        release_first = threading.Event()
+        second_finished = threading.Event()
+        values = []
+
+        def reserve_first():
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "operation-one"
+            ) as value:
+                values.append(value)
+                first_reserved.set()
+                release_first.wait(timeout=2)
+
+        def reserve_second():
+            first_reserved.wait(timeout=2)
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "operation-two"
+            ) as value:
+                values.append(value)
+            second_finished.set()
+
+        first_thread = threading.Thread(target=reserve_first)
+        second_thread = threading.Thread(target=reserve_second)
+        first_thread.start()
+        second_thread.start()
+        self.assertTrue(first_reserved.wait(timeout=2))
+        self.assertTrue(second_finished.wait(timeout=0.5))
+        release_first.set()
+        first_thread.join(timeout=2)
+        second_thread.join(timeout=2)
+        self.assertFalse(first_thread.is_alive())
+        self.assertFalse(second_thread.is_alive())
+
+        self.assertEqual(values[0]["handoff_id"], handoff_id)
+        self.assertNotEqual(values[1]["handoff_id"], handoff_id)
+        self.assertEqual(course_creator_cli.load_saved_token(), "test-token")
+
+    def test_explicit_token_does_not_consume_another_accounts_handoff(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token("saved-token", course_handoff_id=handoff_id)
+
+        with course_creator_cli._course_creation_attribution(
+            "explicit-token", "explicit-operation"
+        ) as value:
+            self.assertNotEqual(value["handoff_id"], handoff_id)
+
+        saved = course_creator_cli._read_json_file(
+            course_creator_cli.credentials_path()
+        )
+        self.assertEqual(saved["token"], "saved-token")
+        self.assertEqual(saved["course_handoff_id"], handoff_id)
+
+    def test_failed_course_creation_keeps_handoff_with_the_same_operation(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token("test-token", course_handoff_id=handoff_id)
+
+        with self.assertRaisesRegex(RuntimeError, "request failed"):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "failed-operation"
+            ) as failed:
+                raise RuntimeError("request failed")
+
+        saved = course_creator_cli._read_json_file(
+            course_creator_cli.credentials_path()
+        )
+        self.assertNotIn("course_handoff_id", saved)
+        with course_creator_cli._course_creation_attribution(
+            "test-token", "failed-operation"
+        ) as retried:
+            pass
+        self.assertEqual(failed["handoff_id"], handoff_id)
+        self.assertEqual(retried["handoff_id"], handoff_id)
+
+    def test_failed_handoff_is_not_assigned_to_another_operation(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token("test-token", course_handoff_id=handoff_id)
+
+        with self.assertRaisesRegex(RuntimeError, "response lost"):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "original-operation"
+            ) as original:
+                raise RuntimeError("response lost")
+        with course_creator_cli._course_creation_attribution(
+            "test-token", "independent-operation"
+        ) as independent:
+            pass
+
+        self.assertEqual(original["handoff_id"], handoff_id)
+        self.assertNotEqual(independent["handoff_id"], handoff_id)
+
+    def test_failed_operations_with_same_fingerprint_are_isolated_by_token(self):
+        operation_key = "same-operation"
+
+        with self.assertRaisesRegex(RuntimeError, "token A response lost"):
+            with course_creator_cli._course_creation_attribution(
+                "token-a", operation_key
+            ) as first_a:
+                raise RuntimeError("token A response lost")
+        with self.assertRaisesRegex(RuntimeError, "token B response lost"):
+            with course_creator_cli._course_creation_attribution(
+                "token-b", operation_key
+            ) as first_b:
+                raise RuntimeError("token B response lost")
+        with course_creator_cli._course_creation_attribution(
+            "token-a", operation_key
+        ) as retried_a:
+            pass
+
+        self.assertNotEqual(first_a["handoff_id"], first_b["handoff_id"])
+        self.assertEqual(retried_a["handoff_id"], first_a["handoff_id"])
+
+    def test_concurrent_success_does_not_clear_failed_requests_retry(self):
+        operation_key = "concurrent-operation"
+
+        with self.assertRaisesRegex(RuntimeError, "response lost"):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", operation_key
+            ) as first:
+                with course_creator_cli._course_creation_attribution(
+                    "test-token", operation_key
+                ) as second:
+                    pass
+                raise RuntimeError("response lost")
+
+        with course_creator_cli._course_creation_attribution(
+            "test-token", operation_key
+        ) as retried:
+            pass
+
+        self.assertEqual(second["handoff_id"], first["handoff_id"])
+        self.assertEqual(retried["handoff_id"], first["handoff_id"])
+
+    def test_matching_imports_serialize_the_complete_destructive_update(self):
+        import_data = {
+            "shifu": {"title": "Imported course", "description": "Description"},
+            "outline_items": [],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            import_file = Path(tmp) / "course.json"
+            import_file.write_text(json.dumps(import_data), encoding="utf-8")
+            first_create_started = threading.Event()
+            release_first_create = threading.Event()
+            create_handoffs = []
+            errors = []
+
+            def fake_api(_base_url, _token, method, path, **kwargs):
+                if method == "put" and path == "/shifus":
+                    create_handoffs.append(
+                        kwargs["json"]["creation_attribution"]["handoff_id"]
+                    )
+                    if len(create_handoffs) == 1:
+                        first_create_started.set()
+                        release_first_create.wait(timeout=2)
+                    return {"bid": "course-new"}
+                return []
+
+            def run_import():
+                try:
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        course_creator_cli._import_flat(
+                            self.base_url,
+                            "test-token",
+                            import_file,
+                            None,
+                        )
+                except BaseException as exc:
+                    errors.append(exc)
+
+            with (
+                mock.patch.object(course_creator_cli, "api", side_effect=fake_api),
+                mock.patch.object(course_creator_cli, "api_safe", return_value=[]),
+            ):
+                first_thread = threading.Thread(target=run_import)
+                second_thread = threading.Thread(target=run_import)
+                first_thread.start()
+                self.assertTrue(first_create_started.wait(timeout=2))
+                second_thread.start()
+                deadline = time.monotonic() + 1
+                while time.monotonic() < deadline:
+                    pending = course_creator_cli._read_json_file(
+                        course_creator_cli.pending_course_creations_path()
+                    ) or {}
+                    if any(
+                        len(record.get("leases") or []) == 2
+                        for record in pending.values()
+                        if isinstance(record, dict)
+                    ):
+                        break
+                    time.sleep(0.01)
+                self.assertEqual(len(create_handoffs), 1)
+                release_first_create.set()
+                first_thread.join(timeout=2)
+                second_thread.join(timeout=2)
+
+            self.assertEqual(errors, [])
+            self.assertEqual(len(create_handoffs), 2)
+            self.assertEqual(create_handoffs[1], create_handoffs[0])
+
+    def test_legacy_pending_operation_is_migrated_for_its_token(self):
+        operation_key = "legacy-operation"
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        token_digest = hashlib.sha256(b"test-token").hexdigest()
+        course_creator_cli._write_private_json(
+            course_creator_cli.pending_course_creations_path(),
+            {
+                operation_key: {
+                    "token_digest": token_digest,
+                    "handoff_id": handoff_id,
+                }
+            },
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "response remains unknown"):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", operation_key
+            ) as retried:
+                raise RuntimeError("response remains unknown")
+
+        pending = course_creator_cli._read_json_file(
+            course_creator_cli.pending_course_creations_path()
+        )
+        self.assertEqual(retried["handoff_id"], handoff_id)
+        self.assertNotIn(operation_key, pending)
+        self.assertIn(f"{token_digest}:{operation_key}", pending)
+
+    def test_directory_import_operation_key_ignores_generated_export_data(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            course_dir = Path(tmp)
+            lessons_dir = course_dir / "lessons"
+            lessons_dir.mkdir()
+            (course_dir / "README.md").write_text("# Stable course\n", encoding="utf-8")
+            (course_dir / "course-prompt.md").write_text(
+                "Teach clearly.\n", encoding="utf-8"
+            )
+            lesson = lessons_dir / "lesson-01.md"
+            lesson.write_text("Lesson content\n", encoding="utf-8")
+            options = {
+                "title": None,
+                "description": None,
+                "keywords": None,
+                "chapter_name": None,
+            }
+
+            first_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            first_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, first_export
+            )
+            first_json_key = course_creator_cli._course_import_operation_key(
+                "import-new-json", first_export, first_export
+            )
+            first_export_bytes = Path(first_export).read_bytes()
+            second_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            second_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, second_export
+            )
+            second_json_key = course_creator_cli._course_import_operation_key(
+                "import-new-json", second_export, second_export
+            )
+
+            self.assertNotEqual(
+                first_export_bytes, Path(second_export).read_bytes()
+            )
+            self.assertEqual(second_key, first_key)
+            self.assertEqual(second_json_key, first_json_key)
+
+            lesson.write_text("Changed content\n", encoding="utf-8")
+            changed_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            changed_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, changed_export
+            )
+            self.assertNotEqual(changed_key, first_key)
+
+    def test_directory_import_operation_key_covers_all_built_content(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            course_dir = Path(tmp)
+            lessons_dir = course_dir / "lessons"
+            lessons_dir.mkdir()
+            (lessons_dir / "lesson-placeholder.md").write_text(
+                "Required discovery file\n", encoding="utf-8"
+            )
+            custom_lesson = lessons_dir / "custom.md"
+            custom_lesson.write_text("Custom lesson\n", encoding="utf-8")
+            (course_dir / "course-description.md").write_text(
+                "Original description\n", encoding="utf-8"
+            )
+            (course_dir / "structure.json").write_text(
+                json.dumps(
+                    {
+                        "chapters": [
+                            {
+                                "title": "Chapter",
+                                "lessons": [{"file": "custom.md", "title": "Custom"}],
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            options = {
+                "title": None,
+                "description": None,
+                "keywords": None,
+                "chapter_name": None,
+            }
+
+            original_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            original_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, original_export
+            )
+
+            (course_dir / "course-description.md").write_text(
+                "Changed description\n", encoding="utf-8"
+            )
+            description_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            description_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, description_export
+            )
+            self.assertNotEqual(description_key, original_key)
+
+            custom_lesson.write_text("Changed custom lesson\n", encoding="utf-8")
+            content_export = course_creator_cli._build_import_json(
+                course_dir, **options
+            )
+            content_key = course_creator_cli._course_directory_import_operation_key(
+                course_dir, content_export
+            )
+            self.assertNotEqual(content_key, description_key)
+
+    def test_durable_reservation_prevents_credential_handoff_reuse(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token("test-token", course_handoff_id=handoff_id)
+        real_write = course_creator_cli._write_private_json
+        write_count = 0
+
+        def interrupt_after_journal(path, payload):
+            nonlocal write_count
+            write_count += 1
+            if write_count == 2:
+                raise RuntimeError("process interrupted before credential cleanup")
+            return real_write(path, payload)
+
+        with (
+            mock.patch.object(
+                course_creator_cli,
+                "_write_private_json",
+                side_effect=interrupt_after_journal,
+            ),
+            self.assertRaisesRegex(RuntimeError, "process interrupted"),
+        ):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "original-operation"
+            ):
+                pass
+
+        with course_creator_cli._course_creation_attribution(
+            "test-token", "original-operation"
+        ) as retried:
+            pass
+        with course_creator_cli._course_creation_attribution(
+            "test-token", "independent-operation"
+        ) as independent:
+            pass
+
+        self.assertEqual(retried["handoff_id"], handoff_id)
+        self.assertNotEqual(independent["handoff_id"], handoff_id)
+        pending = course_creator_cli._read_json_file(
+            course_creator_cli.pending_course_creations_path()
+        )
+        self.assertFalse(
+            any(
+                record.get("handoff_id") == handoff_id
+                for record in (pending or {}).values()
+                if isinstance(record, dict)
+            )
+        )
+
+
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
     def test_env_example_documents_base_url_and_token(self):
         env_example = SCRIPT_DIR.parent / ".env.example"
@@ -369,6 +847,9 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertEqual(called_base_url, "https://example.test")
         self.assertEqual(called_path, "/api/user/device/authorize")
         self.assertIn("device_name", payload)
+        attribution = payload["registration_attribution"]
+        self.assertEqual(attribution["creation_source"], "ai_assistant")
+        self.assertEqual(attribution["source_product"], "lobster")
 
         printed = stdout.getvalue()
         open_browser.assert_not_called()
@@ -379,6 +860,7 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertNotIn("secret-device-code", printed)
         stored = write_json.call_args[0][1]
         self.assertEqual(stored["device_code"], "secret-device-code")
+        self.assertEqual(stored["course_handoff_id"], attribution["handoff_id"])
 
     def test_login_prints_plain_verification_uri_and_pairing_code(self):
         with (
@@ -436,6 +918,40 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
 
         poll.assert_called_once_with("https://example.test", "secret-device-code")
         save_token.assert_called_once_with("new-token")
+
+    def test_login_wait_transfers_the_registration_handoff(self):
+        args = types.SimpleNamespace(wait=True, timeout=30)
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        with (
+            mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"SHIFU_BASE_URL": "https://example.test/"},
+                clear=True,
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_read_json_file",
+                return_value={
+                    "device_code": "secret-device-code",
+                    "interval": 1,
+                    "expires_at": course_creator_cli.time.time() + 600,
+                    "course_handoff_id": handoff_id,
+                },
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_poll_device_authorization",
+                return_value=("approved", "new-token"),
+            ),
+            mock.patch.object(course_creator_cli, "save_token") as save_token,
+            mock.patch.object(course_creator_cli.Path, "unlink"),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            course_creator_cli.cmd_login(args)
+
+        save_token.assert_called_once_with(
+            "new-token", course_handoff_id=handoff_id
+        )
 
     def test_login_wait_reports_a_denied_request(self):
         args = types.SimpleNamespace(wait=True, timeout=30)
