@@ -8,6 +8,7 @@ import json
 import sys
 import tempfile
 import threading
+import time
 import types
 import unittest
 from pathlib import Path
@@ -477,6 +478,72 @@ class CourseCreationAttributionTests(unittest.TestCase):
         self.assertEqual(second["handoff_id"], first["handoff_id"])
         self.assertEqual(retried["handoff_id"], first["handoff_id"])
 
+    def test_matching_imports_serialize_the_complete_destructive_update(self):
+        import_data = {
+            "shifu": {"title": "Imported course", "description": "Description"},
+            "outline_items": [],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            import_file = Path(tmp) / "course.json"
+            import_file.write_text(json.dumps(import_data), encoding="utf-8")
+            first_create_started = threading.Event()
+            release_first_create = threading.Event()
+            create_handoffs = []
+            errors = []
+
+            def fake_api(_base_url, _token, method, path, **kwargs):
+                if method == "put" and path == "/shifus":
+                    create_handoffs.append(
+                        kwargs["json"]["creation_attribution"]["handoff_id"]
+                    )
+                    if len(create_handoffs) == 1:
+                        first_create_started.set()
+                        release_first_create.wait(timeout=2)
+                    return {"bid": "course-new"}
+                return []
+
+            def run_import():
+                try:
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        course_creator_cli._import_flat(
+                            self.base_url,
+                            "test-token",
+                            import_file,
+                            None,
+                        )
+                except BaseException as exc:
+                    errors.append(exc)
+
+            with (
+                mock.patch.object(course_creator_cli, "api", side_effect=fake_api),
+                mock.patch.object(course_creator_cli, "api_safe", return_value=[]),
+            ):
+                first_thread = threading.Thread(target=run_import)
+                second_thread = threading.Thread(target=run_import)
+                first_thread.start()
+                self.assertTrue(first_create_started.wait(timeout=2))
+                second_thread.start()
+                deadline = time.monotonic() + 1
+                while time.monotonic() < deadline:
+                    pending = course_creator_cli._read_json_file(
+                        course_creator_cli.pending_course_creations_path()
+                    ) or {}
+                    if any(
+                        len(record.get("leases") or []) == 2
+                        for record in pending.values()
+                        if isinstance(record, dict)
+                    ):
+                        break
+                    time.sleep(0.01)
+                self.assertEqual(len(create_handoffs), 1)
+                release_first_create.set()
+                first_thread.join(timeout=2)
+                second_thread.join(timeout=2)
+
+            self.assertEqual(errors, [])
+            self.assertEqual(len(create_handoffs), 2)
+            self.assertEqual(create_handoffs[1], create_handoffs[0])
+
     def test_legacy_pending_operation_is_migrated_for_its_token(self):
         operation_key = "legacy-operation"
         handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
@@ -654,6 +721,16 @@ class CourseCreationAttributionTests(unittest.TestCase):
 
         self.assertEqual(retried["handoff_id"], handoff_id)
         self.assertNotEqual(independent["handoff_id"], handoff_id)
+        pending = course_creator_cli._read_json_file(
+            course_creator_cli.pending_course_creations_path()
+        )
+        self.assertFalse(
+            any(
+                record.get("handoff_id") == handoff_id
+                for record in (pending or {}).values()
+                if isinstance(record, dict)
+            )
+        )
 
 
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):

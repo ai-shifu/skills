@@ -73,6 +73,7 @@ MAX_COURSE_PAGES = 10
 COURSE_CREATION_SOURCE = "ai_assistant"
 COURSE_SOURCE_PRODUCT = "lobster"
 COURSE_HANDOFF_LOCK_TIMEOUT_SECONDS = 30
+_ACTIVE_COURSE_CREATION_LEASES = set()
 
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
@@ -258,12 +259,16 @@ def save_token(token, *, course_handoff_id=""):
 
 
 @contextlib.contextmanager
-def _course_handoff_lock():
+def _course_handoff_lock(
+    path=None,
+    timeout_seconds=COURSE_HANDOFF_LOCK_TIMEOUT_SECONDS,
+    timeout_message="Timed out reserving the course attribution handoff",
+):
     """Serialize credential and course-handoff mutations across processes."""
-    path = course_handoff_lock_path()
+    path = path or course_handoff_lock_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.touch(mode=0o600, exist_ok=True)
-    deadline = time.monotonic() + COURSE_HANDOFF_LOCK_TIMEOUT_SECONDS
+    deadline = time.monotonic() + timeout_seconds
     handle = path.open("r+b")
     if os.name == "nt":
         import msvcrt
@@ -294,7 +299,7 @@ def _course_handoff_lock():
         except OSError:
             if time.monotonic() >= deadline:
                 handle.close()
-                raise RuntimeError("Timed out reserving the course attribution handoff")
+                raise RuntimeError(timeout_message)
             time.sleep(0.05)
     try:
         yield
@@ -2426,11 +2431,34 @@ def _course_directory_import_operation_key(course_dir, json_file):
     )
 
 
+def _course_creation_lease_is_alive(lease):
+    """Return whether a journal lease still belongs to a live invocation."""
+    if not isinstance(lease, dict):
+        return False
+    lease_id = str(lease.get("id") or "")
+    try:
+        process_id = int(lease.get("pid"))
+    except (TypeError, ValueError):
+        return False
+    if not lease_id or process_id <= 0:
+        return False
+    if process_id == os.getpid():
+        return lease_id in _ACTIVE_COURSE_CREATION_LEASES
+    try:
+        os.kill(process_id, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
 @contextlib.contextmanager
 def _course_creation_attribution(active_token, operation_key):
     """Bind one handoff to one operation until creation is confirmed."""
     token_digest = hashlib.sha256(active_token.encode("utf-8")).hexdigest()
     journal_key = f"{token_digest}:{operation_key}"
+    lease_id = str(uuid.uuid4())
     with _course_handoff_lock():
         pending = _read_json_file(pending_course_creations_path())
         if not isinstance(pending, dict):
@@ -2453,9 +2481,14 @@ def _course_creation_attribution(active_token, operation_key):
         ):
             reserved_handoff_id = str(existing_operation.get("handoff_id") or "")
             if reserved_handoff_id:
-                existing_operation["in_flight_count"] = max(
-                    int(existing_operation.get("in_flight_count") or 0), 0
-                ) + 1
+                existing_operation["leases"] = [
+                    lease
+                    for lease in existing_operation.get("leases") or []
+                    if _course_creation_lease_is_alive(lease)
+                ]
+                existing_operation["leases"].append(
+                    {"id": lease_id, "pid": os.getpid()}
+                )
                 pending[journal_key] = existing_operation
                 _write_private_json(pending_course_creations_path(), pending)
         if not reserved_handoff_id:
@@ -2479,7 +2512,7 @@ def _course_creation_attribution(active_token, operation_key):
             pending[journal_key] = {
                 "token_digest": token_digest,
                 "handoff_id": reserved_handoff_id,
-                "in_flight_count": 1,
+                "leases": [{"id": lease_id, "pid": os.getpid()}],
             }
             # Persist the reservation first. If the process exits before the
             # credential slot is cleared, other operations still see this
@@ -2494,6 +2527,7 @@ def _course_creation_attribution(active_token, operation_key):
             # This also handles recovery after interruption between the journal
             # write and the original credential cleanup.
             _write_private_json(credentials_path(), {"token": active_token})
+        _ACTIVE_COURSE_CREATION_LEASES.add(lease_id)
         attribution = {
             "creation_source": COURSE_CREATION_SOURCE,
             "source_product": COURSE_SOURCE_PRODUCT,
@@ -2505,6 +2539,7 @@ def _course_creation_attribution(active_token, operation_key):
         succeeded = True
     finally:
         with _course_handoff_lock():
+            _ACTIVE_COURSE_CREATION_LEASES.discard(lease_id)
             latest_pending = _read_json_file(pending_course_creations_path())
             if isinstance(latest_pending, dict):
                 current = latest_pending.get(journal_key)
@@ -2513,18 +2548,37 @@ def _course_creation_attribution(active_token, operation_key):
                     and current.get("token_digest") == token_digest
                     and current.get("handoff_id") == reserved_handoff_id
                 ):
-                    remaining = max(
-                        int(current.get("in_flight_count") or 1) - 1,
-                        0,
-                    )
-                    if succeeded and remaining == 0:
+                    remaining_leases = [
+                        lease
+                        for lease in current.get("leases") or []
+                        if str(lease.get("id") or "") != lease_id
+                        and _course_creation_lease_is_alive(lease)
+                    ]
+                    if succeeded and not remaining_leases:
                         latest_pending.pop(journal_key, None)
                     else:
-                        current["in_flight_count"] = remaining
+                        current["leases"] = remaining_leases
                         latest_pending[journal_key] = current
                     _write_private_json(
                         pending_course_creations_path(), latest_pending
                     )
+
+
+@contextlib.contextmanager
+def _course_import_operation_lock(token, operation_key):
+    """Serialize destructive writes for one account and import identity."""
+    lock_identity = hashlib.sha256(
+        f"{hashlib.sha256(token.encode('utf-8')).hexdigest()}:{operation_key}".encode(
+            "utf-8"
+        )
+    ).hexdigest()
+    lock_path = config_dir() / "course-import-locks" / f"{lock_identity}.lock"
+    with _course_handoff_lock(
+        path=lock_path,
+        timeout_seconds=600,
+        timeout_message="Timed out waiting for the matching course import",
+    ):
+        yield
 
 
 def _import_flat(
@@ -2533,6 +2587,32 @@ def _import_flat(
     json_file,
     shifu_bid,
     creation_operation_key=None,
+):
+    """Coordinate a complete import for each new-course operation identity."""
+    if shifu_bid:
+        return _import_flat_apply(base_url, token, json_file, shifu_bid)
+    operation_key = creation_operation_key or _course_import_operation_key(
+        "import-new-json",
+        json_file,
+        json_file,
+    )
+    with _course_creation_attribution(token, operation_key) as attribution:
+        with _course_import_operation_lock(token, operation_key):
+            return _import_flat_apply(
+                base_url,
+                token,
+                json_file,
+                None,
+                creation_attribution=attribution,
+            )
+
+
+def _import_flat_apply(
+    base_url,
+    token,
+    json_file,
+    shifu_bid,
+    creation_attribution=None,
 ):
     """Import from flat JSON file (original shifu-api-import.py logic)."""
     with open(json_file, "r", encoding="utf-8") as f:
@@ -2546,25 +2626,17 @@ def _import_flat(
         print(f"Using existing shifu: {shifu_bid}")
     else:
         print(f"Creating new shifu: {shifu_info['title']}")
-        operation_key = creation_operation_key or _course_import_operation_key(
-            "import-new-json",
-            json_file,
-            json_file,
+        result = api(
+            base_url,
+            token,
+            "put",
+            "/shifus",
+            json={
+                "name": shifu_info["title"],
+                "description": shifu_info.get("description", ""),
+                "creation_attribution": creation_attribution,
+            },
         )
-        with _course_creation_attribution(
-            token, operation_key
-        ) as creation_attribution:
-            result = api(
-                base_url,
-                token,
-                "put",
-                "/shifus",
-                json={
-                    "name": shifu_info["title"],
-                    "description": shifu_info.get("description", ""),
-                    "creation_attribution": creation_attribution,
-                },
-            )
         shifu_bid = result.get("bid") or result.get("shifu_bid")
         print(f"  Created shifu: {shifu_bid}")
 
