@@ -507,6 +507,9 @@ class CourseCreationAttributionTests(unittest.TestCase):
             first_key = course_creator_cli._course_directory_import_operation_key(
                 course_dir, first_export
             )
+            first_json_key = course_creator_cli._course_import_operation_key(
+                "import-new-json", first_export, first_export
+            )
             first_export_bytes = Path(first_export).read_bytes()
             second_export = course_creator_cli._build_import_json(
                 course_dir, **options
@@ -514,11 +517,15 @@ class CourseCreationAttributionTests(unittest.TestCase):
             second_key = course_creator_cli._course_directory_import_operation_key(
                 course_dir, second_export
             )
+            second_json_key = course_creator_cli._course_import_operation_key(
+                "import-new-json", second_export, second_export
+            )
 
             self.assertNotEqual(
                 first_export_bytes, Path(second_export).read_bytes()
             )
             self.assertEqual(second_key, first_key)
+            self.assertEqual(second_json_key, first_json_key)
 
             lesson.write_text("Changed content\n", encoding="utf-8")
             changed_export = course_creator_cli._build_import_json(

@@ -2380,9 +2380,8 @@ def _course_creation_operation_key(command, payload):
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _course_directory_import_operation_key(course_dir, json_file):
-    """Identify the built course semantics without generated IDs or timestamps."""
-    root = Path(course_dir).resolve()
+def _normalized_course_import_semantics(json_file):
+    """Return effective import content without generated IDs or timestamps."""
     import_data = json.loads(Path(json_file).read_text(encoding="utf-8"))
     outline_items = import_data.get("outline_items") or []
     outline_id_map = {
@@ -2405,12 +2404,26 @@ def _course_directory_import_operation_key(course_dir, json_file):
         for key, value in (import_data.get("shifu") or {}).items()
         if key not in {"bid", "shifu_bid", "exported_at"}
     }
-    semantic_input = {
-        "path": str(root),
+    return {
         "shifu": shifu,
         "outline_items": normalized_outlines,
     }
-    return _course_creation_operation_key("import-new-directory", semantic_input)
+
+
+def _course_import_operation_key(command, source_path, json_file):
+    """Identify one import from its stable source and effective content."""
+    semantic_input = {
+        "path": str(Path(source_path).resolve()),
+        "course": _normalized_course_import_semantics(json_file),
+    }
+    return _course_creation_operation_key(command, semantic_input)
+
+
+def _course_directory_import_operation_key(course_dir, json_file):
+    """Identify a directory import without generated IDs or timestamps."""
+    return _course_import_operation_key(
+        "import-new-directory", course_dir, json_file
+    )
 
 
 @contextlib.contextmanager
@@ -2521,12 +2534,10 @@ def _import_flat(
         print(f"Using existing shifu: {shifu_bid}")
     else:
         print(f"Creating new shifu: {shifu_info['title']}")
-        operation_key = creation_operation_key or _course_creation_operation_key(
+        operation_key = creation_operation_key or _course_import_operation_key(
             "import-new-json",
-            {
-                "path": str(Path(json_file).resolve()),
-                "content_sha256": hashlib.sha256(Path(json_file).read_bytes()).hexdigest(),
-            },
+            json_file,
+            json_file,
         )
         with _course_creation_attribution(
             token, operation_key
