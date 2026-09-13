@@ -616,6 +616,37 @@ class CourseCreationAttributionTests(unittest.TestCase):
         pending = course_creator_cli._read_pending_course_creations()
         self.assertNotIn("handoff_id", pending[journal_key])
 
+    def test_invalid_failure_generation_fails_closed(self):
+        operation_key = "new-operation"
+        token_digest = hashlib.sha256(b"test-token").hexdigest()
+        journal_key = f"{token_digest}:{operation_key}"
+
+        for invalid_generation in (-1, True):
+            with self.subTest(failure_generation=invalid_generation):
+                course_creator_cli._write_private_json(
+                    course_creator_cli.pending_course_creations_path(),
+                    {
+                        journal_key: {
+                            "token_digest": token_digest,
+                            "handoff_id": "52cefd54-930a-4c06-b62d-00de456cd56f",
+                            "leases": [],
+                            "retry_required": True,
+                            "failure_generation": invalid_generation,
+                        }
+                    },
+                )
+
+                with self.assertRaisesRegex(RuntimeError, "invalid retry state"):
+                    with course_creator_cli._course_creation_attribution(
+                        "test-token", operation_key
+                    ):
+                        pass
+
+                pending = course_creator_cli._read_pending_course_creations()
+                self.assertEqual(
+                    pending[journal_key]["failure_generation"], invalid_generation
+                )
+
     def test_new_import_sends_attribution_but_existing_import_does_not(self):
         import_data = {
             "shifu": {"title": "Imported course", "description": "Description"},

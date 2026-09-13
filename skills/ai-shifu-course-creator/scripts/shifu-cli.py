@@ -2533,9 +2533,14 @@ def _validate_pending_course_creation(record, token_digest):
         raise RuntimeError("Pending course creation record has invalid leases")
     retry_required = record.get("retry_required", False)
     failure_generation = record.get("failure_generation", 0)
-    if not isinstance(retry_required, bool) or not isinstance(failure_generation, int):
+    if (
+        not isinstance(retry_required, bool)
+        or isinstance(failure_generation, bool)
+        or not isinstance(failure_generation, int)
+        or failure_generation < 0
+    ):
         raise RuntimeError("Pending course creation record has invalid retry state")
-    return handoff_id, leases, retry_required, max(failure_generation, 0)
+    return handoff_id, leases, retry_required, failure_generation
 
 
 @contextlib.contextmanager
@@ -2647,13 +2652,18 @@ def _course_creation_attribution(active_token, operation_key):
                 and current.get("token_digest") == token_digest
                 and current.get("handoff_id") == reserved_handoff_id
             ):
-                current_retry_required = bool(current.get("retry_required", False))
-                current_generation = max(
-                    int(current.get("failure_generation", 0)), 0
+                (
+                    _,
+                    current_leases,
+                    current_retry_required,
+                    current_generation,
+                ) = _validate_pending_course_creation(
+                    current,
+                    token_digest,
                 )
                 remaining_leases = [
                     lease
-                    for lease in current.get("leases") or []
+                    for lease in current_leases
                     if str(lease.get("id") or "") != lease_id
                     and _course_creation_lease_is_alive(lease)
                 ]
