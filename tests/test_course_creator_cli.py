@@ -297,6 +297,24 @@ class CourseCreationAttributionTests(unittest.TestCase):
             r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
         )
 
+    def test_corrupt_pending_journal_fails_before_consuming_handoff(self):
+        handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        course_creator_cli.save_token("test-token", course_handoff_id=handoff_id)
+        course_creator_cli.pending_course_creations_path().write_text(
+            "{not-json", encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "Cannot safely read"):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", "new-operation"
+            ):
+                pass
+
+        credentials = course_creator_cli._read_json_file(
+            course_creator_cli.credentials_path()
+        )
+        self.assertEqual(credentials["course_handoff_id"], handoff_id)
+
     def test_new_import_sends_attribution_but_existing_import_does_not(self):
         import_data = {
             "shifu": {"title": "Imported course", "description": "Description"},

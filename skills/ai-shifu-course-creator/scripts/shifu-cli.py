@@ -239,6 +239,22 @@ def _read_json_file(path):
         return None
 
 
+def _read_pending_course_creations():
+    """Read the handoff journal, failing closed when existing data is unsafe."""
+    path = pending_course_creations_path()
+    if not path.exists():
+        return {}
+    try:
+        pending = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise RuntimeError(
+            "Cannot safely read the pending course creation journal"
+        ) from exc
+    if not isinstance(pending, dict):
+        raise RuntimeError("Pending course creation journal has an invalid format")
+    return pending
+
+
 def load_saved_token():
     """Return the stored token, or an empty string when there is none."""
     data = _read_json_file(credentials_path())
@@ -2460,9 +2476,7 @@ def _course_creation_attribution(active_token, operation_key):
     journal_key = f"{token_digest}:{operation_key}"
     lease_id = str(uuid.uuid4())
     with _course_handoff_lock():
-        pending = _read_json_file(pending_course_creations_path())
-        if not isinstance(pending, dict):
-            pending = {}
+        pending = _read_pending_course_creations()
         existing_operation = pending.get(journal_key)
         legacy_operation = pending.get(operation_key)
         if (
@@ -2540,28 +2554,25 @@ def _course_creation_attribution(active_token, operation_key):
     finally:
         with _course_handoff_lock():
             _ACTIVE_COURSE_CREATION_LEASES.discard(lease_id)
-            latest_pending = _read_json_file(pending_course_creations_path())
-            if isinstance(latest_pending, dict):
-                current = latest_pending.get(journal_key)
-                if (
-                    isinstance(current, dict)
-                    and current.get("token_digest") == token_digest
-                    and current.get("handoff_id") == reserved_handoff_id
-                ):
-                    remaining_leases = [
-                        lease
-                        for lease in current.get("leases") or []
-                        if str(lease.get("id") or "") != lease_id
-                        and _course_creation_lease_is_alive(lease)
-                    ]
-                    if succeeded and not remaining_leases:
-                        latest_pending.pop(journal_key, None)
-                    else:
-                        current["leases"] = remaining_leases
-                        latest_pending[journal_key] = current
-                    _write_private_json(
-                        pending_course_creations_path(), latest_pending
-                    )
+            latest_pending = _read_pending_course_creations()
+            current = latest_pending.get(journal_key)
+            if (
+                isinstance(current, dict)
+                and current.get("token_digest") == token_digest
+                and current.get("handoff_id") == reserved_handoff_id
+            ):
+                remaining_leases = [
+                    lease
+                    for lease in current.get("leases") or []
+                    if str(lease.get("id") or "") != lease_id
+                    and _course_creation_lease_is_alive(lease)
+                ]
+                if succeeded and not remaining_leases:
+                    latest_pending.pop(journal_key, None)
+                else:
+                    current["leases"] = remaining_leases
+                    latest_pending[journal_key] = current
+                _write_private_json(pending_course_creations_path(), latest_pending)
 
 
 @contextlib.contextmanager
