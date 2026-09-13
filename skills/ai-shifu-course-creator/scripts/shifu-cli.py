@@ -2469,6 +2469,33 @@ def _course_creation_lease_is_alive(lease):
     return True
 
 
+def _validate_pending_course_creation(record, token_digest):
+    """Validate one matching retry record before it can be reused or replaced."""
+    if not isinstance(record, dict) or record.get("token_digest") != token_digest:
+        raise RuntimeError("Pending course creation record has an invalid identity")
+    handoff_id = str(record.get("handoff_id") or "")
+    try:
+        if str(uuid.UUID(handoff_id)) != handoff_id:
+            raise ValueError
+    except ValueError as exc:
+        raise RuntimeError(
+            "Pending course creation record has an invalid handoff"
+        ) from exc
+    leases = record.get("leases", [])
+    if not isinstance(leases, list) or any(
+        not isinstance(lease, dict)
+        or not str(lease.get("id") or "")
+        or not isinstance(lease.get("pid"), int)
+        for lease in leases
+    ):
+        raise RuntimeError("Pending course creation record has invalid leases")
+    retry_required = record.get("retry_required", False)
+    failure_generation = record.get("failure_generation", 0)
+    if not isinstance(retry_required, bool) or not isinstance(failure_generation, int):
+        raise RuntimeError("Pending course creation record has invalid retry state")
+    return handoff_id, leases, retry_required, max(failure_generation, 0)
+
+
 @contextlib.contextmanager
 def _course_creation_attribution(active_token, operation_key):
     """Bind one handoff to one operation until creation is confirmed."""
@@ -2478,6 +2505,8 @@ def _course_creation_attribution(active_token, operation_key):
     with _course_handoff_lock():
         pending = _read_pending_course_creations()
         existing_operation = pending.get(journal_key)
+        if existing_operation is not None:
+            _validate_pending_course_creation(existing_operation, token_digest)
         legacy_operation = pending.get(operation_key)
         if (
             not isinstance(existing_operation, dict)
@@ -2489,20 +2518,29 @@ def _course_creation_attribution(active_token, operation_key):
             pending[journal_key] = legacy_operation
             _write_private_json(pending_course_creations_path(), pending)
         reserved_handoff_id = ""
+        retry_generation = None
         if (
             isinstance(existing_operation, dict)
             and existing_operation.get("token_digest") == token_digest
         ):
-            reserved_handoff_id = str(existing_operation.get("handoff_id") or "")
+            (
+                reserved_handoff_id,
+                existing_leases,
+                retry_required,
+                failure_generation,
+            ) = _validate_pending_course_creation(existing_operation, token_digest)
             if reserved_handoff_id:
                 existing_operation["leases"] = [
                     lease
-                    for lease in existing_operation.get("leases") or []
+                    for lease in existing_leases
                     if _course_creation_lease_is_alive(lease)
                 ]
-                existing_operation["leases"].append(
-                    {"id": lease_id, "pid": os.getpid()}
-                )
+                retry_generation = failure_generation if retry_required else None
+                existing_operation["leases"].append({
+                    "id": lease_id,
+                    "pid": os.getpid(),
+                    "retry_generation": retry_generation,
+                })
                 pending[journal_key] = existing_operation
                 _write_private_json(pending_course_creations_path(), pending)
         if not reserved_handoff_id:
@@ -2526,7 +2564,13 @@ def _course_creation_attribution(active_token, operation_key):
             pending[journal_key] = {
                 "token_digest": token_digest,
                 "handoff_id": reserved_handoff_id,
-                "leases": [{"id": lease_id, "pid": os.getpid()}],
+                "leases": [{
+                    "id": lease_id,
+                    "pid": os.getpid(),
+                    "retry_generation": None,
+                }],
+                "retry_required": False,
+                "failure_generation": 0,
             }
             # Persist the reservation first. If the process exits before the
             # credential slot is cleared, other operations still see this
@@ -2561,16 +2605,30 @@ def _course_creation_attribution(active_token, operation_key):
                 and current.get("token_digest") == token_digest
                 and current.get("handoff_id") == reserved_handoff_id
             ):
+                current_retry_required = bool(current.get("retry_required", False))
+                current_generation = max(
+                    int(current.get("failure_generation", 0)), 0
+                )
                 remaining_leases = [
                     lease
                     for lease in current.get("leases") or []
                     if str(lease.get("id") or "") != lease_id
                     and _course_creation_lease_is_alive(lease)
                 ]
-                if succeeded and not remaining_leases:
+                if not succeeded:
+                    current_retry_required = True
+                    current_generation += 1
+                elif (
+                    retry_generation is not None
+                    and retry_generation == current_generation
+                ):
+                    current_retry_required = False
+                if succeeded and not current_retry_required and not remaining_leases:
                     latest_pending.pop(journal_key, None)
                 else:
                     current["leases"] = remaining_leases
+                    current["retry_required"] = current_retry_required
+                    current["failure_generation"] = current_generation
                     latest_pending[journal_key] = current
                 _write_private_json(pending_course_creations_path(), latest_pending)
 
