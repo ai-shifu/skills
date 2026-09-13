@@ -1808,7 +1808,9 @@ def cmd_create(args):
                 "creation_attribution": creation_attribution,
             },
         )
-    bid = result.get("bid") or result.get("shifu_bid")
+        bid = (result or {}).get("bid") or (result or {}).get("shifu_bid")
+        if not bid:
+            raise RuntimeError("Course creation response did not include a course ID")
     print(f"Created course: {bid}")
     print(f"  Name: {args.name}")
     _print_verification_urls(base_url, bid)
@@ -2440,9 +2442,8 @@ def _course_creation_operation_key(command, payload):
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _normalized_course_import_semantics(json_file):
+def _normalized_course_import_semantics(import_data):
     """Return effective import content without generated IDs or timestamps."""
-    import_data = json.loads(Path(json_file).read_text(encoding="utf-8"))
     outline_items = import_data.get("outline_items") or []
     outline_id_map = {
         str(item.get("outline_item_bid") or ""): f"outline-{index}"
@@ -2451,18 +2452,19 @@ def _normalized_course_import_semantics(json_file):
     }
     normalized_outlines = []
     for item in outline_items:
-        normalized = {
-            key: value
-            for key, value in item.items()
-            if key != "outline_item_bid"
-        }
-        parent_bid = str(normalized.get("parent_bid") or "")
-        normalized["parent_bid"] = outline_id_map.get(parent_bid, parent_bid)
-        normalized_outlines.append(normalized)
+        parent_bid = str(item.get("parent_bid") or "")
+        normalized_outlines.append(
+            {
+                "title": item.get("title"),
+                "content": item.get("content", ""),
+                "parent_bid": outline_id_map.get(parent_bid, parent_bid),
+            }
+        )
+    source_shifu = import_data.get("shifu") or {}
     shifu = {
-        key: value
-        for key, value in (import_data.get("shifu") or {}).items()
-        if key not in {"bid", "shifu_bid", "exported_at"}
+        "title": source_shifu.get("title"),
+        "description": source_shifu.get("description", ""),
+        "course_prompt": source_shifu.get("course_prompt", ""),
     }
     return {
         "shifu": shifu,
@@ -2470,19 +2472,20 @@ def _normalized_course_import_semantics(json_file):
     }
 
 
-def _course_import_operation_key(command, source_path, json_file):
+def _course_import_operation_key(command, source_path, import_data):
     """Identify one import from its stable source and effective content."""
     semantic_input = {
         "path": str(Path(source_path).resolve()),
-        "course": _normalized_course_import_semantics(json_file),
+        "course": _normalized_course_import_semantics(import_data),
     }
     return _course_creation_operation_key(command, semantic_input)
 
 
 def _course_directory_import_operation_key(course_dir, json_file):
     """Identify a directory import without generated IDs or timestamps."""
+    import_data = json.loads(Path(json_file).read_text(encoding="utf-8"))
     return _course_import_operation_key(
-        "import-new-directory", course_dir, json_file
+        "import-new-directory", course_dir, import_data
     )
 
 
@@ -2695,37 +2698,43 @@ def _import_flat(
     json_file,
     shifu_bid,
     creation_operation_key=None,
+    creation_source_path=None,
+    after_import=None,
 ):
     """Coordinate a complete import for each new-course operation identity."""
+    import_data = json.loads(Path(json_file).read_text(encoding="utf-8"))
     if shifu_bid:
-        return _import_flat_apply(base_url, token, json_file, shifu_bid)
+        result_bid = _import_flat_apply(base_url, token, import_data, shifu_bid)
+        if after_import:
+            after_import(result_bid)
+        return result_bid
     operation_key = creation_operation_key or _course_import_operation_key(
-        "import-new-json",
-        json_file,
-        json_file,
+        "import-new-directory" if creation_source_path else "import-new-json",
+        creation_source_path or json_file,
+        import_data,
     )
     with _course_creation_attribution(token, operation_key) as attribution:
         with _course_import_operation_lock(token, operation_key):
-            return _import_flat_apply(
+            result_bid = _import_flat_apply(
                 base_url,
                 token,
-                json_file,
+                import_data,
                 None,
                 creation_attribution=attribution,
             )
+            if after_import:
+                after_import(result_bid)
+            return result_bid
 
 
 def _import_flat_apply(
     base_url,
     token,
-    json_file,
+    import_data,
     shifu_bid,
     creation_attribution=None,
 ):
     """Import from flat JSON file (original shifu-api-import.py logic)."""
-    with open(json_file, "r", encoding="utf-8") as f:
-        import_data = json.load(f)
-
     shifu_info = import_data["shifu"]
     outline_items = import_data["outline_items"]
 
@@ -2897,16 +2906,24 @@ def cmd_import(args):
             course_dir=args.course_dir,
             **build_options,
         )
-        creation_operation_key = _course_directory_import_operation_key(
-            args.course_dir,
-            json_file,
-        )
+        def seed_sync_manifest(imported_bid):
+            _pull_into_dir(
+                base_url,
+                token,
+                imported_bid,
+                args.course_dir,
+                backup=False,
+                force=False,
+            )
+            print(f"  Sync manifest seeded: {_sync_path(args.course_dir)}")
+
         result_bid = _import_flat(
             base_url,
             token,
             json_file,
             shifu_bid,
-            creation_operation_key=creation_operation_key,
+            creation_source_path=args.course_dir,
+            after_import=seed_sync_manifest,
         )
     elif args.json_file:
         result_bid = _import_flat(base_url, token, args.json_file, shifu_bid)
