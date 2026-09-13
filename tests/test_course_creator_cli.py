@@ -580,6 +580,29 @@ class CourseCreationAttributionTests(unittest.TestCase):
         )
         self.assertEqual(credentials["course_handoff_id"], handoff_id)
 
+    def test_malformed_matching_record_fails_before_allocating_handoff(self):
+        operation_key = "new-operation"
+        token_digest = hashlib.sha256(b"test-token").hexdigest()
+        journal_key = f"{token_digest}:{operation_key}"
+        course_creator_cli._write_private_json(
+            course_creator_cli.pending_course_creations_path(),
+            {
+                journal_key: {
+                    "token_digest": token_digest,
+                    "leases": [],
+                }
+            },
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "invalid handoff"):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", operation_key
+            ):
+                pass
+
+        pending = course_creator_cli._read_pending_course_creations()
+        self.assertNotIn("handoff_id", pending[journal_key])
+
     def test_new_import_sends_attribution_but_existing_import_does_not(self):
         import_data = {
             "shifu": {"title": "Imported course", "description": "Description"},
