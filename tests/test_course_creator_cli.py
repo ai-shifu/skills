@@ -425,6 +425,28 @@ class CourseCreationAttributionTests(unittest.TestCase):
                     else:
                         self.assertEqual(create_calls, [])
 
+    def test_new_import_keeps_retry_reservation_when_response_has_no_course_id(self):
+        import_data = {
+            "shifu": {"title": "Imported course", "description": "Description"},
+            "outline_items": [],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            import_file = Path(tmp) / "course.json"
+            import_file.write_text(json.dumps(import_data), encoding="utf-8")
+
+            with (
+                mock.patch.object(course_creator_cli, "api", return_value={}),
+                contextlib.redirect_stdout(io.StringIO()),
+                self.assertRaisesRegex(RuntimeError, "did not include a course ID"),
+            ):
+                course_creator_cli._import_flat(
+                    self.base_url, "test-token", import_file, None
+                )
+
+        pending = course_creator_cli._read_pending_course_creations()
+        self.assertEqual(len(pending), 1)
+        self.assertTrue(next(iter(pending.values()))["retry_required"])
+
     def test_new_import_uses_one_file_snapshot_for_identity_and_payload(self):
         original = {
             "shifu": {"title": "Original", "description": "Description"},

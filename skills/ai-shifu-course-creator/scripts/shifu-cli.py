@@ -1775,9 +1775,7 @@ def cmd_create(args):
                 "creation_attribution": creation_attribution,
             },
         )
-        bid = (result or {}).get("bid") or (result or {}).get("shifu_bid")
-        if not bid:
-            raise RuntimeError("Course creation response did not include a course ID")
+        bid = _course_bid_from_create_response(result)
     print(f"Created course: {bid}")
     print(f"  Name: {args.name}")
     _print_verification_urls(base_url, bid)
@@ -2403,6 +2401,14 @@ def _course_creation_operation_key(command, payload):
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _course_bid_from_create_response(result):
+    """Return a confirmed course ID before a retry reservation can complete."""
+    bid = (result or {}).get("bid") or (result or {}).get("shifu_bid")
+    if not bid:
+        raise RuntimeError("Course creation response did not include a course ID")
+    return bid
+
+
 def _normalized_course_import_semantics(import_data):
     """Return effective import content without generated IDs or timestamps."""
     outline_items = import_data.get("outline_items") or []
@@ -2725,7 +2731,7 @@ def _import_flat_apply(
                 "creation_attribution": creation_attribution,
             },
         )
-        shifu_bid = result.get("bid") or result.get("shifu_bid")
+        shifu_bid = _course_bid_from_create_response(result)
         print(f"  Created shifu: {shifu_bid}")
 
     # Update shifu detail — send ONLY the content fields. The backend uses PATCH
