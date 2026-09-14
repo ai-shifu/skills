@@ -1877,7 +1877,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "when splitting would alter preserved wording or structure",
             "HTML-view image block",
             "ordinary insertion instruction as the top-level item",
-            "required URL, image-content, caption, layout, ordering, and aspect-ratio fields as nested unordered items",
+            "required position, URL, image-content, caption, layout, ordering, and aspect-ratio fields as nested unordered items",
             "each URL on its own labeled nested line",
             "prefix or newly indent standalone `?[]` controls",
             "source-required or learner-visible Markdown list markers are exact content",
@@ -2266,7 +2266,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             image_layout_expectations,
         )
         self.assertIn(
-            "required URL, image-content, caption, layout, ordering, and "
+            "required position, URL, image-content, caption, layout, ordering, and "
             "aspect-ratio fields are nested unordered items",
             image_layout_expectations,
         )
