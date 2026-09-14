@@ -1851,6 +1851,8 @@ class CourseCreatorContractTests(unittest.TestCase):
             "using `<!-- ... -->`",
             "already-resolved free-form learner outcome",
             "The wrapper is the only fixed form",
+            "literal delimiter sequences `<!--` or `-->`",
+            "Rephrase the learner outcome",
             "Do not add a separate teaching-phase comment",
             "label, prefix, punctuation pattern, numbering scheme, or sentence form",
             "Do not reuse one comment for adjacent blocks or add more than one comment to a block",
@@ -1924,6 +1926,14 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("every ordinary instruction uses", authoring_validation)
         self.assertIn("exact structure remains unprefixed", authoring_validation)
+        self.assertIn(
+            "navigation comment body contains neither `<!--` nor `-->`",
+            authoring_validation,
+        )
+        self.assertIn(
+            "without leaking source text into runtime content",
+            authoring_validation,
+        )
         self.assertIn(
             "every smallest useful teaching block has exactly one navigation comment",
             teaching_validation,
@@ -2120,6 +2130,19 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn(
             "limited to repairing leaked authoring wrappers",
             " ".join(evals_by_id[33]["expectations"]),
+        )
+        delimiter_expectations = " ".join(
+            evals_by_id[51]["expectations"]
+        )
+        self.assertIn("A --> B", evals_by_id[51]["prompt"])
+        self.assertIn(
+            "contains neither the literal `<!--` sequence nor the literal "
+            "`-->` sequence",
+            delimiter_expectations,
+        )
+        self.assertIn(
+            "character-for-character unchanged",
+            delimiter_expectations,
         )
 
     def test_pedagogy_resolves_explicit_text_only_delivery(self):

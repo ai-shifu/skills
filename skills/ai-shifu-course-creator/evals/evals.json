@@ -648,6 +648,19 @@
         "In a validation-only content-equivalence comparison, removing navigation comments and ordinary-instruction list markers leaves every original non-formatting character and line in exactly the supplied order from page 1 through page 31; the list markers otherwise remain ordinary Markdown sent to the Teaching Agent.",
         "No teaching action, page, interaction, feedback behavior, or final close is added, removed, rewritten, split, merged, or reordered."
       ]
+    },
+    {
+      "id": 51,
+      "prompt": "teaching_prompt_personalization_level=3。请只重写下面授课提示词的源文件编排格式：添加一条中文学习结果导航注释，并把普通指令改为无序列表项。除新增格式外，原正文字符和顺序必须保持不变。不要连接平台或生成 Course Prompt。只输出 teaching_prompt。\n\n第 1 页：展示状态迁移 A --> B。\n随后解释从 A 到 B 的触发条件。",
+      "expected_output": "Applies the author-editable layout without allowing an ASCII transition to terminate its HTML navigation comment.",
+      "files": [],
+      "expectations": [
+        "The output contains exactly one standalone localized HTML navigation comment immediately before one teaching block, followed by both ordinary instructions as top-level unordered-list items in their original order.",
+        "The navigation comment body states the immediate learner outcome but contains neither the literal `<!--` sequence nor the literal `-->` sequence.",
+        "The original text `第 1 页：展示状态迁移 A --> B。` remains unchanged and appears exactly once as list-item content outside the navigation comment.",
+        "Removing the navigation comment and the two ordinary-instruction list markers leaves both original lines character-for-character unchanged and in their supplied order.",
+        "The response does not escape, delete, rewrite, or move the ASCII transition in the runtime instruction, and it performs no platform or Course Prompt work."
+      ]
     }
   ]
 }

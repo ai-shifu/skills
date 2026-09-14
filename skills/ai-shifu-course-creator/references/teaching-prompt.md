@@ -114,6 +114,7 @@ Encode the already-resolved lesson teaching, interaction, variable, preservation
 This section owns the exact source serialization of an already-resolved author-editable layout. Encode its teaching blocks and ordinary instructions without changing their content or order:
 
 - Put exactly one standalone HTML comment immediately before each resolved teaching block using `<!-- ... -->`, with the already-resolved free-form learner outcome as its body. The wrapper is the only fixed form. Do not add a separate teaching-phase comment or require a label, prefix, punctuation pattern, numbering scheme, or sentence form. Do not reuse one comment for adjacent blocks or add more than one comment to a block.
+- Do not place the literal delimiter sequences `<!--` or `-->` inside a comment body. Rephrase the learner outcome if either sequence would otherwise appear.
 - Keep each comment concise and limited to its resolved learner outcome because `markdownflow.md#preprocessing` removes it before runtime.
 - Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order and use nested unordered items only for already-required parallel subitems.
 - For an HTML-view image block, encode its ordinary insertion instruction as the top-level item and its already-required URL, image-content, caption, layout, ordering, and aspect-ratio fields as nested unordered items. Keep each URL on its own labeled nested line. Fixed-display image lines and other exact image structures remain unprefixed under the next rule.
@@ -216,6 +217,7 @@ In the Generation report, identify the lesson and summarize generation status, e
 ### Source Encoding Validation
 
 - When the Teaching Prompt layout applies, every resolved teaching block has exactly one standalone outcome comment immediately before it, every ordinary instruction uses its top-level unordered-list marker, and every syntax-owned or exact structure remains unprefixed and unchanged.
+- Every navigation comment body contains neither `<!--` nor `-->`, so preprocessing removes the complete comment without leaking source text into runtime content.
 - Every interaction control is on its own line and matches the preceding question or options. Standard question-bearing controls immediately follow their question-only visual instructions and precede their feedback or explanatory effects.
 - No navigation comment interrupts an interaction's question instruction, control, and feedback sequence.
 - In the validation-only content-equivalence comparison, removing navigation comments and ordinary-instruction list markers preserves all non-formatting text and its order.
