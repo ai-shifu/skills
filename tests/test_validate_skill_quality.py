@@ -1775,7 +1775,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("## Interaction Encoding", self.pedagogy)
         self.assertNotIn("## Interaction Encoding", self.teaching_prompt)
 
-    def test_teaching_prompt_layout_is_author_editable_and_content_equivalent(self):
+    def test_teaching_prompt_layout_owners_are_separate_and_content_equivalent(self):
         layout = markdown_section(
             self.teaching_prompt, "Author-Editable Layout"
         )
@@ -1809,41 +1809,70 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("Course Prompt", self.teaching_prompt_encoding)
 
         for fragment in (
+            "owns when the source layout applies",
             "every newly generated Teaching Prompt",
             "explicitly asks to rewrite a Teaching Prompt",
             "audit-only request",
             "do not backfill existing courses",
-            "`<!-- 教学阶段：<阶段名称> -->`",
-            "`<!-- 教学块：<简短用途> -->`",
-            "`resolved_target_language`",
-            "top-level unordered-list item beginning with `-` followed by one space",
+            "a teaching phase for each already-resolved stage",
+            "a teaching block for each smallest useful editing unit",
+            "each visual-and-explanation pair one block",
+            "make each slide one block",
+            "make each teaching action one block",
+            "as an unordered-list item",
             "one teaching action per item",
-            "source order remains the learner-time execution order",
-            "nested unordered lists only",
-            "Do not use an ordered list merely as layout",
-            "question instruction list item, standalone unchanged control, and "
-            "immediate feedback list item",
-            "Removing every navigation comment",
+            "learner-time execution order",
+            "Preserve any required number, step label, or page number as content",
+            "exact HTML comment shapes",
+            "list-marker syntax",
         ):
             self.assertIn(fragment, layout)
 
-        for layout_form, encoding_form in (
-            ("standalone `?[]` interaction controls", "standalone `?[]` controls"),
-            ("standalone `===...===` lines", "standalone `===...===` lines"),
-            ("complete `!===...!===` fences", "complete `!===...!===` fences"),
-            ("fenced code", "fenced code"),
-            ("Markdown image syntax", "Markdown images"),
-            ("tables", "tables"),
+        for fragment in (
+            "owns the exact source serialization",
+            "`<!-- Teaching phase: <stage name> -->`",
+            "`<!-- Teaching block: <brief purpose> -->`",
+            "top-level unordered-list marker `-` followed by one space",
+            "nested unordered items only",
+            "standalone `?[]` controls",
+            "standalone `===...===` lines",
+            "complete `!===...!===` fences",
+            "fenced code",
+            "Markdown images",
+            "tables",
+            "question list item, unchanged standalone control, and feedback list item",
+            "validation-only content-equivalence comparison",
         ):
-            self.assertIn(layout_form, layout)
-            self.assertIn(encoding_form, layout_encoding)
+            self.assertIn(fragment, layout_encoding)
+
+        for fragment in (
+            "<!--",
+            "top-level unordered-list marker",
+            "standalone `?[]` controls",
+            "validation-only content-equivalence comparison",
+        ):
+            self.assertNotIn(fragment, layout)
+
+        for fragment in (
+            "every newly generated Teaching Prompt",
+            "audit-only request",
+            "standard visual-text teaching",
+            "pure classroom slides",
+            "explicit text-only constraint",
+        ):
+            self.assertNotIn(fragment, layout_encoding)
+
+        for owner in (layout, layout_encoding):
+            self.assertNotIn("resolved_target_language", owner)
+            self.assertNotIn("ordered list", owner)
+            self.assertNotIn("教学阶段", owner)
+            self.assertNotIn("教学块", owner)
 
         self.assertIn("HTML comments are removed", preprocessing)
         self.assertNotIn("unordered-list", preprocessing)
         self.assertIn(
-            "unordered-list markers remain ordinary Markdown", layout
+            "unordered-list marker as ordinary Markdown", layout_encoding
         )
-        self.assertIn("validation-only comparison", layout)
         self.assertIn(
             "comments limited to short navigation labels", layout_encoding
         )
@@ -1855,11 +1884,25 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("every ordinary instruction uses", authoring_validation)
         self.assertIn("exact structure remains unprefixed", authoring_validation)
         self.assertIn(
-            "Strip them before validating runtime content", teaching_validation
+            "Navigation units correspond to the resolved teaching stages",
+            teaching_validation,
         )
-        self.assertIn("cannot satisfy any teaching", teaching_validation)
+        self.assertIn(
+            "Every ordinary Teaching Agent instruction is an unordered-list item",
+            teaching_validation,
+        )
+        self.assertIn(
+            "Author-editable layout, interaction, variable, branch, and "
+            "preservation encoding pass `teaching-prompt-encoding.md`",
+            teaching_validation,
+        )
         self.assertIn("record this layout check as `not-assessed`", checklist)
         self.assertIn("do not reformat the existing Prompt", checklist)
+        self.assertIn(
+            "exact source serialization passes "
+            "`teaching-prompt-encoding.md#validation`",
+            checklist,
+        )
         self.assertIn(
             "after navigation comments are removed, the first remaining instruction",
             checklist,
@@ -1934,6 +1977,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             expectations = " ".join(evals_by_id[case_id]["expectations"])
             self.assertIn("HTML comments", expectations)
             self.assertIn("unordered-list", expectations)
+            self.assertIn("localized", expectations)
         for case_id in (14, 15, 17, 19, 20):
             expectations = " ".join(evals_by_id[case_id]["expectations"])
             self.assertIn("navigation comments are removed", expectations)

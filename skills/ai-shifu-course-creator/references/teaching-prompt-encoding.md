@@ -17,10 +17,14 @@ Encode already-resolved lesson teaching, interaction, variable, preservation, an
 
 ## Author-Editable Layout Encoding
 
-When the author-editable layout applies, encode the already-resolved stages and teaching units without changing their content or order:
+This section owns the exact source serialization of an already-resolved author-editable layout. Encode its teaching phases, teaching blocks, and ordinary instructions without changing their content or order:
 
-- Put each localized teaching-stage and teaching-block HTML comment on its own line. Keep comments limited to short navigation labels because `markdownflow.md#preprocessing` removes them before runtime.
-- Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order. Use nested unordered items only for already-required parallel subitems, and do not introduce an ordered list solely for layout. The marker remains ordinary Markdown in the content sent to the Teaching Agent; MarkdownFlow preprocessing does not remove it.
+- Put each navigation comment on its own line using the applicable shape:
+  - `<!-- Teaching phase: <stage name> -->`
+  - `<!-- Teaching block: <brief purpose> -->`
+- Keep comments limited to short navigation labels because `markdownflow.md#preprocessing` removes them before runtime.
+- Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order and use nested unordered items only for already-required parallel subitems.
+- Treat the unordered-list marker as ordinary Markdown in the content sent to the Teaching Agent; MarkdownFlow preprocessing does not remove it.
 - Do not prefix standalone `?[]` controls, standalone `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, tables, or another exact structure with a list marker.
 - Put a block comment before an interaction's question instruction, then keep the question list item, unchanged standalone control, and feedback list item together with no intervening comment.
 - Keep every fact, teaching requirement, variable, option, URL, command, exact span, feedback rule, and branch rule outside the comments. For a validation-only content-equivalence comparison, removing comments and ordinary-instruction list markers must preserve the non-formatting text and its order; this comparison is not runtime preprocessing.

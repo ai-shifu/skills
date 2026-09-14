@@ -25,8 +25,8 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 5. Apply the normalized `teaching_prompt_personalization_level` only to how much ordinary wording and example detail generation includes at each position in that plan through [Personalization Levels](#personalization-levels).
 6. Materialize the plan as direct local instructions to the Teaching Agent in learner-time execution order. Source-only navigation comments may precede the runtime body and are removed before execution. Begin with the first teaching action for the selected delivery mode. At each position, combine the action with the content, relationship, boundary, or intended effect needed there; the resulting sequence and adjacency carry the lesson structure. When the level leaves ordinary expression open, write only those required runtime elements and end the instruction there.
 7. Insert every selected interaction, deterministic block, required code or source span, and image instruction directly at its resolved learner-time position using its owning syntax. Express variable lifecycle through the MarkdownFlow control and schema fields; write only the feedback, branch, or carryover behavior the Teaching Agent performs into the Prompt body.
-8. Apply [Author-Editable Layout](#author-editable-layout) after all teaching content and runtime syntax are resolved. This step changes only source formatting.
-9. Apply `teaching-prompt-encoding.md` after those teaching decisions are complete.
+8. Resolve whether [Author-Editable Layout](#author-editable-layout) applies and map the already-resolved teaching stages and actions into its semantic editing units. This step changes only source formatting.
+9. Serialize the complete Prompt through `teaching-prompt-encoding.md` after those teaching and layout decisions are complete.
 10. Load `image-authoring.md` only when the lesson actually uses an image asset.
 
 Every lesson must carry enough direction to run with the Course Prompt contributing course-wide role, general presentation requirements shared by every slide, and bounded cross-lesson personalization. Do not duplicate the learner-context strategy in each lesson or rely on the Course Prompt to supply, repair, or override lesson pedagogy, lesson-specific slide structure, or treatment tied to a particular slide position or teaching purpose.
@@ -71,33 +71,17 @@ Apply each item through its owning MarkdownFlow authoring, source-preservation, 
 
 ## Author-Editable Layout
 
-Apply this source layout to every newly generated Teaching Prompt and whenever the user explicitly asks to rewrite a Teaching Prompt. Do not normalize an existing Prompt during an audit-only request, and do not backfill existing courses solely to adopt this layout.
+This section owns when the source layout applies and how its editing units map to the already-resolved teaching structure. Apply it to every newly generated Teaching Prompt and whenever the user explicitly asks to rewrite a Teaching Prompt. Do not normalize an existing Prompt during an audit-only request, and do not backfill existing courses solely to adopt this layout.
 
-Use two levels of localized, standalone HTML comments for navigation. Render the labels and values in `resolved_target_language`; for Simplified Chinese, use these exact shapes:
-
-- `<!-- 教学阶段：<阶段名称> -->`
-- `<!-- 教学块：<简短用途> -->`
-
-Place one teaching-stage comment before the first block of each already-resolved stage, and place one teaching-block comment immediately before each smallest useful editing unit. These comments are source-only navigation removed by `markdownflow.md#preprocessing`; they do not count as runtime instructions. Group units without changing the selected teaching sequence:
+Organize each Prompt with two levels of source-only navigation: a teaching phase for each already-resolved stage and a teaching block for each smallest useful editing unit. Group those units without changing the selected teaching sequence:
 
 - In standard visual-text teaching, make the lead-in one block, each visual-and-explanation pair one block, and each question instruction, interaction control, and immediate feedback sequence one block.
 - In pure classroom slides, make each slide one block.
 - Under an explicit text-only constraint, make each teaching action one block.
 
-Write every ordinary Teaching Agent instruction as a top-level unordered-list item beginning with `-` followed by one space, with one teaching action per item. The list's source order remains the learner-time execution order. Use a flat list by default; use nested unordered lists only when the already-required content contains parallel subitems. Do not use an ordered list merely as layout. Preserve any required number, step label, or page number as content inside the applicable item or exact structure.
+Write every ordinary Teaching Agent instruction as an unordered-list item in learner-time execution order, with one teaching action per item. Preserve any required number, step label, or page number as content.
 
-Only the navigation comments are removed by MarkdownFlow preprocessing. The unordered-list markers remain ordinary Markdown in the content sent to the Teaching Agent; they format instruction boundaries without replacing or carrying any required instruction text. Removing list markers is a validation-only comparison for confirming that non-formatting text and order are unchanged, not a runtime preprocessing step.
-
-Keep these forms outside unordered-list markers so their syntax and exact content remain intact:
-
-- standalone `?[]` interaction controls;
-- standalone `===...===` lines and complete `!===...!===` fences;
-- fenced code, Markdown image syntax, tables, and any other author- or source-required exact structure; and
-- the teaching-stage and teaching-block HTML comments themselves.
-
-Within an interaction block, keep the question instruction list item, standalone unchanged control, and immediate feedback list item adjacent. Insert no navigation comment between them.
-
-Comments only name the existing stage or block purpose. Never put a fact, teaching requirement, variable or option, URL, command, exact source span, feedback rule, or branch rule only inside a comment. Removing every navigation comment must leave all previously required teaching content and runtime behavior complete and in the same order.
+Apply `teaching-prompt-encoding.md#author-editable-layout-encoding` to serialize this resolved structure. That reference owns the exact HTML comment shapes, list-marker syntax, syntax-owned structures that remain outside list items, interaction adjacency, and format-equivalence validation.
 
 ## Lesson Materialization
 
@@ -130,8 +114,7 @@ In the Generation report, identify the lesson and summarize generation status, e
 - Every `teaching_prompt` is valid runnable MarkdownFlow.
 - Every item passes `data-contracts.md#lesson-schema`.
 - Every newly generated or explicitly rewritten Teaching Prompt follows [Author-Editable Layout](#author-editable-layout). Audit-only review of an existing Prompt does not add or normalize this layout.
-- Teaching-stage and teaching-block comments are localized, standalone, placed only at resolved boundaries, and contain navigation text only. Strip them before validating runtime content; they cannot satisfy any teaching, interaction, variable, preservation, or close requirement.
-- Every ordinary Teaching Agent instruction is a top-level list item beginning with `-` followed by one space in execution order, with nested unordered items used only for already-required parallel subitems. Interaction controls, deterministic forms, fenced code, images, tables, and other exact structures keep their owning syntax without an added list marker.
+- Navigation units correspond to the resolved teaching stages and editing blocks for the selected delivery mode without changing their grouping or execution order. Every ordinary Teaching Agent instruction is an unordered-list item in learner-time order.
 - The normalized personalization level is an integer from `1` through `5`, and the Teaching Prompt's content-expression specificity matches that level.
 - The internal lesson execution plan is resolved before the level is applied. Recover the execution signature from the Teaching Prompt's actual ordered instructions and verify that it matches the plan: teaching actions, slide count and order, content grouping and hierarchy, interaction and feedback adjacency, images, and the close all occur at their resolved positions with their resolved effects.
 - When multiple level variants are generated from the same approved design and controls, compare their actual ordered runtime instructions. They have identical execution signatures, including the presence, position, and teaching function of every required example; only ordinary content-expression specificity may differ.
@@ -150,7 +133,6 @@ In the Generation report, identify the lesson and summarize generation status, e
 - Level `3` preserves the balanced division defined in the level table rather than silently behaving like either endpoint.
 - Every item selected for exact preservation appears in its required form at its resolved runtime position at every level.
 - Interaction and variable lifecycle decisions appear through their resolved MarkdownFlow syntax and schema fields; related Prompt prose performs only the required feedback, branch, or carryover behavior.
-- No navigation comment interrupts a question instruction, unchanged `?[]` control, and immediate feedback sequence. For the validation-only format-equivalence check, removing comments and ordinary-instruction list markers preserves the non-formatting text, exact structures, and their order.
-- Interaction, variable, branch, and preservation encoding pass `teaching-prompt-encoding.md`.
+- Author-editable layout, interaction, variable, branch, and preservation encoding pass `teaching-prompt-encoding.md`.
 - Image-specific validation runs only for lessons that use image assets.
 - Authored human-facing content passes `language-policy.md`.
