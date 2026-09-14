@@ -221,7 +221,7 @@ In the Generation report, identify the lesson and summarize generation status, e
 - Level `3` preserves the balanced division defined in the level table rather than silently behaving like either endpoint.
 - Every item selected for exact preservation appears in its required form at its resolved runtime position at every level.
 - Interaction and variable lifecycle decisions appear through their resolved MarkdownFlow syntax and schema fields; related Prompt prose performs only the required feedback, branch, or carryover behavior.
-- Author-editable layout, interaction, variable, branch, and preservation encoding pass [Source Encoding Validation](#source-encoding-validation).
+- When [Author-Editable Layout](#author-editable-layout) applies, its layout encoding passes [Source Encoding Validation](#source-encoding-validation). Interaction, variable, branch, and preservation encoding pass that validation in every Teaching Prompt, including an audit-only existing Prompt whose layout check is `not-assessed`.
 - Image-specific validation runs only for lessons that use image assets.
 - Authored human-facing content passes `language-policy.md`.
 

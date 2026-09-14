@@ -1181,6 +1181,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "保持原始宽高比",
             "Raw SVG, HTML drawings, Mermaid",
             "pedagogy.md",
+            "markdownflow-authoring.md",
             "teaching-prompt-encoding.md",
             "image-authoring.md",
             "data-contracts.md",
@@ -1996,6 +1997,16 @@ class CourseCreatorContractTests(unittest.TestCase):
             teaching_validation,
         )
         self.assertIn(
+            "When [Author-Editable Layout](#author-editable-layout) applies, "
+            "its layout encoding passes",
+            teaching_validation,
+        )
+        self.assertIn(
+            "including an audit-only existing Prompt whose layout check is "
+            "`not-assessed`",
+            teaching_validation,
+        )
+        self.assertIn(
             "Place the teaching-start instruction's unordered-list item "
             "immediately after any leading navigation comments",
             lesson_materialization,
@@ -2019,11 +2030,6 @@ class CourseCreatorContractTests(unittest.TestCase):
             "When [Author-Editable Layout](#author-editable-layout) applies, "
             "the first remaining block after MarkdownFlow strips navigation "
             "comments is that instruction's unordered-list item",
-            teaching_validation,
-        )
-        self.assertIn(
-            "Author-editable layout, interaction, variable, branch, and "
-            "preservation encoding pass [Source Encoding Validation]",
             teaching_validation,
         )
         self.assertIn("record this layout check as `not-assessed`", checklist)
