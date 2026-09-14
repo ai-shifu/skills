@@ -2128,32 +2128,49 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertIn(f"  - {expected_content_lines[index]}", shape_lines)
         self.assertNotIn("- ?[", shape)
 
-        def content_equivalent_lines(source: str) -> list[str]:
+        def content_equivalent_lines(
+            source: str,
+            *,
+            layout_item_lines: set[int],
+            layout_comment_lines: set[int],
+        ) -> list[str]:
             result = []
-            in_exact_fence = False
-            for raw_line in source.splitlines():
+            for line_index, raw_line in enumerate(source.splitlines()):
                 stripped = raw_line.strip()
-                if stripped == "!===":
-                    result.append(raw_line.rstrip())
-                    in_exact_fence = not in_exact_fence
+                if not stripped:
                     continue
-                if in_exact_fence:
-                    result.append(raw_line.rstrip())
-                    continue
-                if not stripped or re.fullmatch(r"<!--.*-->", stripped):
+                if line_index in layout_comment_lines:
+                    self.assertIsNotNone(
+                        re.fullmatch(r"<!--.*-->", stripped)
+                    )
                     continue
                 line = raw_line.rstrip()
-                list_item = re.fullmatch(
-                    r"[ \t]*- (?P<content>.*)", line
-                )
-                if list_item:
+                if line_index in layout_item_lines:
+                    list_item = re.fullmatch(
+                        r"[ \t]*- (?P<content>.*)", line
+                    )
+                    self.assertIsNotNone(list_item)
                     line = list_item.group("content")
                 result.append(line)
             return result
 
+        shape_layout_item_lines = {
+            line_index
+            for line_index, line in enumerate(shape_lines)
+            if re.fullmatch(r"[ \t]*- .*", line)
+        }
+        shape_layout_comment_lines = {
+            line_index
+            for line_index, line in enumerate(shape_lines)
+            if re.fullmatch(r"<!--.*-->", line.strip())
+        }
         self.assertEqual(
             expected_content_lines,
-            content_equivalent_lines(shape),
+            content_equivalent_lines(
+                shape,
+                layout_item_lines=shape_layout_item_lines,
+                layout_comment_lines=shape_layout_comment_lines,
+            ),
         )
         self.assertEqual(
             [
@@ -2164,7 +2181,9 @@ class CourseCreatorContractTests(unittest.TestCase):
             content_equivalent_lines(
                 "- Compare the two already-required cases.\n"
                 "  - Case A\n"
-                "    - Required evidence"
+                "    - Required evidence",
+                layout_item_lines={0, 1, 2},
+                layout_comment_lines=set(),
             ),
         )
         self.assertEqual(
@@ -2182,7 +2201,35 @@ class CourseCreatorContractTests(unittest.TestCase):
                 "- Verify identity\n"
                 "  - Check the ID\n"
                 "!===\n"
-                "- Explain the checklist."
+                "- Explain the checklist.",
+                layout_item_lines={0, 5},
+                layout_comment_lines=set(),
+            ),
+        )
+        self.assertEqual(
+            [
+                "Introduce protected examples.",
+                "```markdown",
+                "- code item",
+                "<!-- preserved in code -->",
+                "```",
+                "<!-- source-required comment -->",
+                "- Source checklist item",
+                "  - Source nested item",
+                "Explain protected examples.",
+            ],
+            content_equivalent_lines(
+                "- Introduce protected examples.\n"
+                "```markdown\n"
+                "- code item\n"
+                "<!-- preserved in code -->\n"
+                "```\n"
+                "<!-- source-required comment -->\n"
+                "- Source checklist item\n"
+                "  - Source nested item\n"
+                "- Explain protected examples.",
+                layout_item_lines={0, 8},
+                layout_comment_lines=set(),
             ),
         )
 
