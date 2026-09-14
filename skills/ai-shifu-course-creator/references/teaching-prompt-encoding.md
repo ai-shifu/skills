@@ -83,7 +83,7 @@ Image composition is owned by `image-authoring.md` and is loaded conditionally b
 
 ## Validation
 
-- When the Teaching Prompt layout applies, every resolved teaching block has exactly one standalone outcome comment immediately before it, there is no separate teaching-stage comment, every ordinary instruction uses its top-level unordered-list marker, and every syntax-owned or exact structure remains unprefixed and unchanged.
+- When the Teaching Prompt layout applies, every resolved teaching block has exactly one standalone outcome comment immediately before it, every ordinary instruction uses its top-level unordered-list marker, and every syntax-owned or exact structure remains unprefixed and unchanged.
 - Every interaction control is on its own line and matches the preceding question or options. Standard question-bearing controls immediately follow their question-only visual instructions and precede their feedback or explanatory effects.
 - No navigation comment interrupts an interaction's question instruction, control, and feedback sequence.
 - In the validation-only content-equivalence comparison, removing navigation comments and ordinary-instruction list markers preserves all non-formatting text and its order.
