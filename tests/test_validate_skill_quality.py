@@ -1780,7 +1780,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.teaching_prompt, "Author-Editable Layout"
         )
         layout_encoding = markdown_section(
-            self.markdownflow_authoring, "Teaching Prompt Layout Encoding"
+            self.markdownflow_authoring, "Author-Editable Layout Encoding"
         )
         interaction = markdown_section(
             self.markdownflow_authoring, "Interaction Encoding"
@@ -1795,6 +1795,19 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.optimization_checklist, "Teaching Prompt Behavior"
         )
         preprocessing = markdown_section(self.markdownflow, "Preprocessing")
+        course_prompt_required = markdown_section(
+            self.course_prompt, "Required References"
+        )
+
+        self.assertIn(
+            "This reference serves Teaching Prompt materialization",
+            self.markdownflow_authoring,
+        )
+        self.assertIn(
+            "Course Prompt authoring remains owned by `course-prompt.md`",
+            self.markdownflow_authoring,
+        )
+        self.assertNotIn("markdownflow-authoring.md", course_prompt_required)
 
         for fragment in (
             "every newly generated Teaching Prompt",

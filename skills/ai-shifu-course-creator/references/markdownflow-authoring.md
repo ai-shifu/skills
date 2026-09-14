@@ -1,6 +1,6 @@
 # MarkdownFlow Authoring
 
-Encode already-resolved teaching, interaction, variable, and preservation decisions into MarkdownFlow. Parser recognition and runtime effects remain defined only in `markdownflow.md`.
+Encode already-resolved per-lesson teaching, interaction, variable, and preservation decisions into MarkdownFlow. This reference serves Teaching Prompt materialization; Course Prompt authoring remains owned by `course-prompt.md`. Their common MarkdownFlow syntax and runtime behavior remain defined only in `markdownflow.md`.
 
 ## Required References
 
@@ -15,7 +15,7 @@ Encode already-resolved teaching, interaction, variable, and preservation decisi
 
 - When immutable source spans were selected for encoding: `source-preservation.md`
 
-## Teaching Prompt Layout Encoding
+## Author-Editable Layout Encoding
 
 When `teaching-prompt.md#author-editable-layout` applies, encode its already-resolved stages and teaching units without changing their content or order:
 
