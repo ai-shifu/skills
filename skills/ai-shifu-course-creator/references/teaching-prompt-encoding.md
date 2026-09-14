@@ -1,6 +1,6 @@
-# MarkdownFlow Authoring
+# Teaching Prompt Encoding
 
-Encode already-resolved per-lesson teaching, interaction, variable, and preservation decisions into MarkdownFlow. This reference serves Teaching Prompt materialization; Course Prompt authoring remains owned by `course-prompt.md`. Their common MarkdownFlow syntax and runtime behavior remain defined only in `markdownflow.md`.
+Encode already-resolved lesson teaching, interaction, variable, preservation, and source-layout decisions into MarkdownFlow without changing their content or order. Parser recognition and runtime effects remain defined only in `markdownflow.md`.
 
 ## Required References
 
@@ -17,7 +17,7 @@ Encode already-resolved per-lesson teaching, interaction, variable, and preserva
 
 ## Author-Editable Layout Encoding
 
-When `teaching-prompt.md#author-editable-layout` applies, encode its already-resolved stages and teaching units without changing their content or order:
+When the author-editable layout applies, encode the already-resolved stages and teaching units without changing their content or order:
 
 - Put each localized teaching-stage and teaching-block HTML comment on its own line. Keep comments limited to short navigation labels because `markdownflow.md#preprocessing` removes them before runtime.
 - Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order. Use nested unordered items only for already-required parallel subitems, and do not introduce an ordered list solely for layout. The marker remains ordinary Markdown in the content sent to the Teaching Agent; MarkdownFlow preprocessing does not remove it.

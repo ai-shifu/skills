@@ -290,7 +290,7 @@ class CourseCreatorDependencyTests(unittest.TestCase):
                 "teaching-prompt.md",
                 "prompt-contracts.md",
                 "pedagogy.md",
-                "markdownflow-authoring.md",
+                "teaching-prompt-encoding.md",
                 "markdownflow.md",
             }.issubset(relative_paths)
         )
@@ -347,7 +347,7 @@ class CourseCreatorDependencyTests(unittest.TestCase):
                 "segmentation-workflow.md",
                 "teaching-prompt.md",
                 "pedagogy.md",
-                "markdownflow-authoring.md",
+                "teaching-prompt-encoding.md",
             }.issubset(relative_paths)
         )
         self.assertTrue(
@@ -432,7 +432,7 @@ class CourseCreatorDependencyTests(unittest.TestCase):
                 "course-prompt.md",
                 "course-description.md",
                 "pedagogy.md",
-                "markdownflow-authoring.md",
+                "teaching-prompt-encoding.md",
             }.isdisjoint(required_names)
         )
         conditional_names = set()

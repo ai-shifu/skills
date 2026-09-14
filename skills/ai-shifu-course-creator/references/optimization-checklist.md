@@ -59,7 +59,7 @@ For a pasted content-only Prompt, run every check observable from the body and r
 ## Interaction and Variable Safety
 
 - Every interaction has the observable instructional effect and branch behavior selected by `pedagogy.md`.
-- Each control, option set, input hint, assignment, and branch instruction passes `markdownflow-authoring.md#validation`.
+- Each control, option set, input hint, assignment, and branch instruction passes `teaching-prompt-encoding.md#validation`.
 - Variable lifecycle is represented by the resolved control syntax, `used_variables`, and `global_variable_table`; adjacent Teaching Prompt prose states only feedback, branch, or carryover behavior performed during delivery.
 - Every named variable has exactly one valid collection, complete supplied metadata, and a cross-lesson or Course Prompt consumer; lesson-local answers remain unnamed. Metadata checks are `not-assessed` when a content-only input does not supply the required table.
 - The observed interaction and variable counts stay within `pedagogy.md` and `data-contracts.md`.

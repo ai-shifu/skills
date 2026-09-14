@@ -848,7 +848,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         cls.prompt_contracts = load("prompt-contracts.md")
         cls.pedagogy = load("pedagogy.md")
         cls.markdownflow = load("markdownflow.md")
-        cls.markdownflow_authoring = load("markdownflow-authoring.md")
+        cls.teaching_prompt_encoding = load("teaching-prompt-encoding.md")
         cls.source_preservation = load("source-preservation.md")
         cls.teaching_prompt = load("teaching-prompt.md")
         cls.image_authoring = load("image-authoring.md")
@@ -1182,7 +1182,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "保持原始宽高比",
             "Raw SVG, HTML drawings, Mermaid",
             "pedagogy.md",
-            "markdownflow-authoring.md",
+            "teaching-prompt-encoding.md",
             "image-authoring.md",
             "data-contracts.md",
         }
@@ -1744,15 +1744,15 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("## Teaching Patterns", self.prompt_contracts)
         self.assertNotIn("## Teaching Patterns", self.course_prompt)
 
-    def test_markdownflow_authoring_owns_encoding(self):
+    def test_teaching_prompt_encoding_owns_encoding(self):
         interaction = markdown_section(
-            self.markdownflow_authoring, "Interaction Encoding"
+            self.teaching_prompt_encoding, "Interaction Encoding"
         )
         variables = markdown_section(
-            self.markdownflow_authoring, "Variable and Branch Encoding"
+            self.teaching_prompt_encoding, "Variable and Branch Encoding"
         )
         preservation = markdown_section(
-            self.markdownflow_authoring, "Preservation Encoding"
+            self.teaching_prompt_encoding, "Preservation Encoding"
         )
 
         self.assertIn("`?[]` control on its own line", interaction)
@@ -1765,10 +1765,10 @@ class CourseCreatorContractTests(unittest.TestCase):
             preservation,
         )
         required = markdown_section(
-            self.markdownflow_authoring, "Required References"
+            self.teaching_prompt_encoding, "Required References"
         )
         conditional = markdown_section(
-            self.markdownflow_authoring, "Conditional References"
+            self.teaching_prompt_encoding, "Conditional References"
         )
         self.assertNotIn("source-preservation.md", required)
         self.assertIn("source-preservation.md", conditional)
@@ -1780,13 +1780,13 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.teaching_prompt, "Author-Editable Layout"
         )
         layout_encoding = markdown_section(
-            self.markdownflow_authoring, "Author-Editable Layout Encoding"
+            self.teaching_prompt_encoding, "Author-Editable Layout Encoding"
         )
         interaction = markdown_section(
-            self.markdownflow_authoring, "Interaction Encoding"
+            self.teaching_prompt_encoding, "Interaction Encoding"
         )
         authoring_validation = markdown_section(
-            self.markdownflow_authoring, "Validation"
+            self.teaching_prompt_encoding, "Validation"
         )
         teaching_validation = markdown_section(
             self.teaching_prompt, "Validation"
@@ -1798,22 +1798,15 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.optimization_checklist, "Artifact Boundaries"
         )
         preprocessing = markdown_section(self.markdownflow, "Preprocessing")
-        course_prompt_required = markdown_section(
-            self.course_prompt, "Required References"
-        )
         orchestration = markdown_section(
             self.orchestration_workflow, "Workflow"
         )
 
-        self.assertIn(
-            "This reference serves Teaching Prompt materialization",
-            self.markdownflow_authoring,
+        self.assertTrue(
+            self.teaching_prompt_encoding.startswith("# Teaching Prompt Encoding\n")
         )
-        self.assertIn(
-            "Course Prompt authoring remains owned by `course-prompt.md`",
-            self.markdownflow_authoring,
-        )
-        self.assertNotIn("markdownflow-authoring.md", course_prompt_required)
+        self.assertNotIn("teaching-prompt.md", self.teaching_prompt_encoding)
+        self.assertNotIn("Course Prompt", self.teaching_prompt_encoding)
 
         for fragment in (
             "every newly generated Teaching Prompt",
@@ -2056,7 +2049,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertLess(
             generation.index("Materialize the plan as direct local instructions"),
-            generation.index("`markdownflow-authoring.md`"),
+            generation.index("`teaching-prompt-encoding.md`"),
         )
         self.assertIn(
             "Begin with the first teaching action for the selected delivery mode",
@@ -2209,9 +2202,9 @@ class CourseCreatorContractTests(unittest.TestCase):
             markdown_section(self.pedagogy, "Variable Strategy"),
             markdown_section(self.markdownflow, "Interactions"),
             markdown_section(self.markdownflow, "Variables"),
-            markdown_section(self.markdownflow_authoring, "Interaction Encoding"),
+            markdown_section(self.teaching_prompt_encoding, "Interaction Encoding"),
             markdown_section(
-                self.markdownflow_authoring, "Variable and Branch Encoding"
+                self.teaching_prompt_encoding, "Variable and Branch Encoding"
             ),
         ):
             self.assertNotIn(field, owner_section)
@@ -2232,11 +2225,11 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         interaction_encoding = " ".join(
             markdown_section(
-                self.markdownflow_authoring, "Interaction Encoding"
+                self.teaching_prompt_encoding, "Interaction Encoding"
             ).split()
         )
         authoring_validation = " ".join(
-            markdown_section(self.markdownflow_authoring, "Validation").split()
+            markdown_section(self.teaching_prompt_encoding, "Validation").split()
         )
         checklist = " ".join(
             markdown_section(

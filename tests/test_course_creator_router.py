@@ -49,7 +49,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "segmentation-workflow.md",
             "orchestration-workflow.md",
             "teaching-prompt.md",
-            "markdownflow-authoring.md",
+            "teaching-prompt-encoding.md",
             "image-authoring.md",
             "course-description.md",
             "optimization-checklist.md",

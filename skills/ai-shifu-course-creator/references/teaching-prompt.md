@@ -10,7 +10,7 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 - `data-contracts.md#lesson-schema`
 - `data-contracts.md#generation-fallback-fields`
 - `pedagogy.md`
-- `markdownflow-authoring.md`
+- `teaching-prompt-encoding.md`
 
 ## Conditional References
 
@@ -26,7 +26,7 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 6. Materialize the plan as direct local instructions to the Teaching Agent in learner-time execution order. Source-only navigation comments may precede the runtime body and are removed before execution. Begin with the first teaching action for the selected delivery mode. At each position, combine the action with the content, relationship, boundary, or intended effect needed there; the resulting sequence and adjacency carry the lesson structure. When the level leaves ordinary expression open, write only those required runtime elements and end the instruction there.
 7. Insert every selected interaction, deterministic block, required code or source span, and image instruction directly at its resolved learner-time position using its owning syntax. Express variable lifecycle through the MarkdownFlow control and schema fields; write only the feedback, branch, or carryover behavior the Teaching Agent performs into the Prompt body.
 8. Apply [Author-Editable Layout](#author-editable-layout) after all teaching content and runtime syntax are resolved. This step changes only source formatting.
-9. Apply `markdownflow-authoring.md` after those teaching decisions are complete.
+9. Apply `teaching-prompt-encoding.md` after those teaching decisions are complete.
 10. Load `image-authoring.md` only when the lesson actually uses an image asset.
 
 Every lesson must carry enough direction to run with the Course Prompt contributing course-wide role, general presentation requirements shared by every slide, and bounded cross-lesson personalization. Do not duplicate the learner-context strategy in each lesson or rely on the Course Prompt to supply, repair, or override lesson pedagogy, lesson-specific slide structure, or treatment tied to a particular slide position or teaching purpose.
@@ -151,6 +151,6 @@ In the Generation report, identify the lesson and summarize generation status, e
 - Every item selected for exact preservation appears in its required form at its resolved runtime position at every level.
 - Interaction and variable lifecycle decisions appear through their resolved MarkdownFlow syntax and schema fields; related Prompt prose performs only the required feedback, branch, or carryover behavior.
 - No navigation comment interrupts a question instruction, unchanged `?[]` control, and immediate feedback sequence. For the validation-only format-equivalence check, removing comments and ordinary-instruction list markers preserves the non-formatting text, exact structures, and their order.
-- Interaction, variable, branch, and preservation encoding pass `markdownflow-authoring.md`.
+- Interaction, variable, branch, and preservation encoding pass `teaching-prompt-encoding.md`.
 - Image-specific validation runs only for lessons that use image assets.
 - Authored human-facing content passes `language-policy.md`.
