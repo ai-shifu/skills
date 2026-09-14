@@ -1890,9 +1890,10 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         content_equivalent_lines = []
         for raw_line in shape.splitlines():
-            line = raw_line.strip()
-            if not line or re.fullmatch(r"<!--.*-->", line):
+            stripped = raw_line.strip()
+            if not stripped or re.fullmatch(r"<!--.*-->", stripped):
                 continue
+            line = raw_line.rstrip()
             if line.startswith("- "):
                 line = line[2:]
             content_equivalent_lines.append(line)
