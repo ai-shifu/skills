@@ -1801,6 +1801,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         course_prompt_required = markdown_section(
             self.course_prompt, "Required References"
         )
+        orchestration = markdown_section(
+            self.orchestration_workflow, "Workflow"
+        )
 
         self.assertIn(
             "This reference serves Teaching Prompt materialization",
@@ -1865,8 +1868,16 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("record this layout check as `not-assessed`", checklist)
         self.assertIn("do not reformat the existing Prompt", checklist)
         self.assertIn(
+            "after navigation comments are removed, the first remaining instruction",
+            checklist,
+        )
+        self.assertIn(
             "After MarkdownFlow removes source-only navigation comments",
             artifact_boundaries,
+        )
+        self.assertIn(
+            "after those comments are removed the first remaining item",
+            orchestration,
         )
 
         shape_match = re.search(
@@ -1923,6 +1934,9 @@ class CourseCreatorContractTests(unittest.TestCase):
             expectations = " ".join(evals_by_id[case_id]["expectations"])
             self.assertIn("HTML comments", expectations)
             self.assertIn("unordered-list", expectations)
+        for case_id in (14, 15, 17, 19, 20):
+            expectations = " ".join(evals_by_id[case_id]["expectations"])
+            self.assertIn("navigation comments are removed", expectations)
         self.assertIn(
             "standalone deterministic lines",
             " ".join(evals_by_id[15]["expectations"]),
