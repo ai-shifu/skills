@@ -1801,6 +1801,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         checklist = markdown_section(
             self.optimization_checklist, "Teaching Prompt Behavior"
         )
+        checklist_dependencies = markdown_section(
+            self.optimization_checklist, "Conditional References"
+        )
         artifact_boundaries = markdown_section(
             self.optimization_checklist, "Artifact Boundaries"
         )
@@ -1961,6 +1964,16 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("record this layout check as `not-assessed`", checklist)
         self.assertIn("do not reformat the existing Prompt", checklist)
+        self.assertIn(
+            "without an explicit rewrite or layout normalization: "
+            "`teaching-prompt.md#validation`",
+            checklist_dependencies,
+        )
+        self.assertIn(
+            "explicit Teaching Prompt rewrite or layout normalization is in "
+            "scope: `teaching-prompt.md`",
+            checklist_dependencies,
+        )
         self.assertIn(
             "exact source serialization passes "
             "`teaching-prompt.md#source-encoding-validation`",
