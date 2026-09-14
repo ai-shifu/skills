@@ -1887,38 +1887,45 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIsNotNone(shape_match)
         shape = shape_match.group("body")
+        expected_content_lines = [
+            'Create a question-only slide whose complete central question is "Which path best matches the current case?" Do not show option labels, simulated controls, or the answer.',
+            "?[Path A | Path B]",
+            "After the learner answers, explain the selected path and contrast it with the other path.",
+            'Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.',
+            "?[%{{learning_goal}} ...One-sentence goal]",
+            "After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.",
+        ]
+        shape_lines = shape.splitlines()
         self.assertIn("<!-- Teaching phase: Check understanding -->", shape)
         self.assertIn("<!-- Teaching block: Choose a path -->", shape)
-        self.assertIn(
-            "- Create a question-only slide whose complete central question",
-            shape,
-        )
-        self.assertIn(
-            "- After the learner answers, explain the selected path",
-            shape,
-        )
+        for index in (0, 2, 3, 5):
+            self.assertIn(f"- {expected_content_lines[index]}", shape_lines)
         self.assertNotIn("- ?[", shape)
 
-        content_equivalent_lines = []
-        for raw_line in shape.splitlines():
-            stripped = raw_line.strip()
-            if not stripped or re.fullmatch(r"<!--.*-->", stripped):
-                continue
-            line = raw_line.rstrip()
-            if line.startswith("- "):
-                line = line[2:]
-            content_equivalent_lines.append(line)
+        def content_equivalent_lines(source: str) -> list[str]:
+            result = []
+            for raw_line in source.splitlines():
+                stripped = raw_line.strip()
+                if not stripped or re.fullmatch(r"<!--.*-->", stripped):
+                    continue
+                line = raw_line.rstrip()
+                list_item = re.fullmatch(
+                    r"[ \t]*- (?P<content>.*)", line
+                )
+                if list_item:
+                    line = list_item.group("content")
+                result.append(line)
+            return result
 
         self.assertEqual(
-            [
-                'Create a question-only slide whose complete central question is "Which path best matches the current case?" Do not show option labels, simulated controls, or the answer.',
-                "?[Path A | Path B]",
-                "After the learner answers, explain the selected path and contrast it with the other path.",
-                'Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.',
-                "?[%{{learning_goal}} ...One-sentence goal]",
-                "After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.",
-            ],
-            content_equivalent_lines,
+            expected_content_lines,
+            content_equivalent_lines(shape),
+        )
+        self.assertEqual(
+            ["Compare the two already-required parallel cases."],
+            content_equivalent_lines(
+                "  - Compare the two already-required parallel cases."
+            ),
         )
 
         for owner in (self.prompt_contracts, self.pedagogy, self.course_prompt):
