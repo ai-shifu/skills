@@ -2296,6 +2296,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "position",
             "layout constraints",
             "ordering",
+            "aspect-ratio behavior",
         ):
             self.assertIn(required_field, validation)
         self.assertIn("Stop before generation", validation)

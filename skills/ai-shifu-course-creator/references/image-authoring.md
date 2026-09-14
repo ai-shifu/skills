@@ -57,8 +57,8 @@ The preservation wording constrains the Teaching Agent but is not parser-level l
 
 ## Image Output Validation
 
-1. Build an expected-image record from `assets/image-manifest.json`, adding the selected form, caption, position, layout constraints, and ordering. For explicitly local artifact-only work where upload is excluded, use the authoritative source record instead.
+1. Build an expected-image record from `assets/image-manifest.json`, adding the selected form, caption, position, layout constraints, ordering, and aspect-ratio behavior. For explicitly local artifact-only work where upload is excluded, use the authoritative source record instead.
 2. Stop before generation when the authoritative record lacks `remote`, informative `alt`, or a field required by the selected form.
-3. Compare the generated Teaching Prompt with every expected record. Verify URL, description or alt, caption, position, layout constraints, ordering, and form.
+3. Compare the generated Teaching Prompt with every expected record. Verify URL, description or alt, caption, position, layout constraints, ordering, aspect-ratio behavior, and form.
 4. Regenerate only the affected image instruction or lesson when a field is missing, changed, duplicated, or reordered.
 5. If the second comparison still fails, stop that lesson and report the mismatched fields as blocking. Do not finalize or hand off the Teaching Prompt.
