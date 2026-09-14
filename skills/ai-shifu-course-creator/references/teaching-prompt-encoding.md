@@ -19,9 +19,9 @@ Encode already-resolved lesson teaching, interaction, variable, preservation, an
 
 This section owns the exact source serialization of an already-resolved author-editable layout. Encode its teaching phases, teaching blocks, and ordinary instructions without changing their content or order:
 
-- Put each navigation comment on its own line using the applicable shape:
-  - `<!-- Teaching phase: <stage name> -->`
-  - `<!-- Teaching block: <brief purpose> -->`
+- Put each navigation comment on its own line using the applicable structural reference form:
+  - Teaching phase: `<!-- <teaching-phase label>: <stage name> -->`
+  - Teaching block: `<!-- <teaching-block label>: <brief purpose> -->`
 - Keep comments limited to short navigation labels because `markdownflow.md#preprocessing` removes them before runtime.
 - Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order and use nested unordered items only for already-required parallel subitems.
 - Treat the unordered-list marker as ordinary Markdown in the content sent to the Teaching Agent; MarkdownFlow preprocessing does not remove it.
@@ -41,7 +41,7 @@ This section owns the exact source serialization of an already-resolved author-e
 - Keep the complete option set, order, and wording only in the interaction control. In the standard visual-text scope, do not duplicate those labels on the question-only visual.
 - After the control, encode the feedback or visible instructional effect selected by `pedagogy.md#interaction-design`.
 
-Standard visual-text shapes:
+Standard visual-text example:
 
 ```markdown
 <!-- Teaching phase: Check understanding -->

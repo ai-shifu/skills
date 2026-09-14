@@ -1833,8 +1833,8 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         for fragment in (
             "owns the exact source serialization",
-            "`<!-- Teaching phase: <stage name> -->`",
-            "`<!-- Teaching block: <brief purpose> -->`",
+            "Teaching phase: `<!-- <teaching-phase label>: <stage name> -->`",
+            "Teaching block: `<!-- <teaching-block label>: <brief purpose> -->`",
             "top-level unordered-list marker `-` followed by one space",
             "nested unordered items only",
             "standalone `?[]` controls",
@@ -1887,11 +1887,15 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("every ordinary instruction uses", authoring_validation)
         self.assertIn("exact structure remains unprefixed", authoring_validation)
         self.assertIn(
-            "Navigation units correspond to the resolved teaching stages",
+            "navigation units correspond to the resolved teaching stages",
             teaching_validation,
         )
         self.assertIn(
-            "Every ordinary Teaching Agent instruction is an unordered-list item",
+            "When [Author-Editable Layout](#author-editable-layout) applies",
+            teaching_validation,
+        )
+        self.assertIn(
+            "every ordinary Teaching Agent instruction is an unordered-list item",
             teaching_validation,
         )
         self.assertIn(
@@ -1912,6 +1916,12 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn(
             "no syntax-owned or exact structure occupies an earlier "
             "learner-time position",
+            teaching_validation,
+        )
+        self.assertIn(
+            "When [Author-Editable Layout](#author-editable-layout) applies, "
+            "the first remaining block after MarkdownFlow strips navigation "
+            "comments is that instruction's unordered-list item",
             teaching_validation,
         )
         self.assertIn(
