@@ -11,6 +11,7 @@ For a pasted content-only Prompt, run every check observable from the body and r
 ## Conditional References
 
 - When authoritative source material or selected immutable spans are in the audit scope: `source-preservation.md#verification`
+- When a Teaching Prompt is audited without an explicit rewrite or layout normalization: `teaching-prompt.md#source-encoding`
 - When a Teaching Prompt is audited without an explicit rewrite or layout normalization: `teaching-prompt.md#validation`
 - When an explicit Teaching Prompt rewrite or layout normalization is in scope: `teaching-prompt.md`
 - When a Course Prompt is in scope: `course-prompt.md#materialization-checks`

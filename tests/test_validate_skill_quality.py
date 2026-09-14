@@ -1966,6 +1966,11 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("do not reformat the existing Prompt", checklist)
         self.assertIn(
             "without an explicit rewrite or layout normalization: "
+            "`teaching-prompt.md#source-encoding`",
+            checklist_dependencies,
+        )
+        self.assertIn(
+            "without an explicit rewrite or layout normalization: "
             "`teaching-prompt.md#validation`",
             checklist_dependencies,
         )
