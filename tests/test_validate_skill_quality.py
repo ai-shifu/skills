@@ -2266,6 +2266,27 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("Raw SVG, HTML drawings, Mermaid", composition)
         self.assertIn("exact resource URL returned by the selected deployment", self.image_authoring)
         self.assertIn("HTML-view", composition)
+        self.assertIn(
+            "HTML `<figure>` element",
+            composition,
+        )
+        self.assertIn(
+            "when a caption is selected, a `<figcaption>` element",
+            composition,
+        )
+        for image_property in (
+            "Position",
+            "Resource",
+            "Semantic content",
+            "Caption",
+            "Layout",
+            "Ordering",
+            "Aspect ratio",
+        ):
+            self.assertIn(f"| {image_property} |", composition)
+        self.assertNotIn("author-editable layout", composition)
+        self.assertNotIn("unordered-list", composition)
+        self.assertNotIn("Simplified Chinese", composition)
         self.assertIn("assets/image-manifest.json", validation)
         self.assertIn("`remote`", validation)
         self.assertIn("`alt`", validation)
@@ -2275,6 +2296,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "position",
             "layout constraints",
             "ordering",
+            "aspect-ratio behavior",
         ):
             self.assertIn(required_field, validation)
         self.assertIn("Stop before generation", validation)
