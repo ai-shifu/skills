@@ -1791,6 +1791,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         teaching_validation = markdown_section(
             self.teaching_prompt, "Validation"
         )
+        lesson_materialization = markdown_section(
+            self.teaching_prompt, "Lesson Materialization"
+        )
         checklist = markdown_section(
             self.optimization_checklist, "Teaching Prompt Behavior"
         )
@@ -1889,6 +1892,26 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn(
             "Every ordinary Teaching Agent instruction is an unordered-list item",
+            teaching_validation,
+        )
+        self.assertIn(
+            "Place the teaching-start instruction's unordered-list item "
+            "immediately after any leading navigation comments",
+            lesson_materialization,
+        )
+        self.assertIn(
+            "No syntax-owned or exact structure occupies an earlier "
+            "learner-time position",
+            lesson_materialization,
+        )
+        self.assertIn(
+            "The first learner-time position is the ordinary teaching-start "
+            "instruction",
+            teaching_validation,
+        )
+        self.assertIn(
+            "no syntax-owned or exact structure occupies an earlier "
+            "learner-time position",
             teaching_validation,
         )
         self.assertIn(
