@@ -40,7 +40,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("## Pull Before Editing", course_sync)
         self.assertNotIn("always author from the freshly pulled", self.router)
 
-    def test_single_purpose_reference_set_replaces_combined_guides(self):
+    def test_reference_set_contains_current_guides_and_retires_old_files(self):
         expected_files = {
             "language-policy.md",
             "authoring-mode.md",
@@ -49,7 +49,6 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "segmentation-workflow.md",
             "orchestration-workflow.md",
             "teaching-prompt.md",
-            "teaching-prompt-encoding.md",
             "image-authoring.md",
             "course-description.md",
             "optimization-checklist.md",
@@ -64,6 +63,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "review-checklist.md",
             "authoring-workflow.md",
             "report-template.md",
+            "teaching-prompt-encoding.md",
         }
 
         for filename in expected_files:

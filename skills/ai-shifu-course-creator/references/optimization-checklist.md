@@ -34,7 +34,7 @@ For a pasted content-only Prompt, run every check observable from the body and r
 
 - Each lesson resolves one core question through a complete loop and valid teaching pattern under `pedagogy.md`.
 - A newly generated or explicitly rewritten Teaching Prompt uses the source-layout applicability, teaching-block grouping, and learner-outcome navigation from `teaching-prompt.md#author-editable-layout`. For an audit-only request that does not ask for rewriting or layout normalization, record this layout check as `not-assessed` and do not reformat the existing Prompt.
-- Its exact source serialization passes `teaching-prompt-encoding.md#validation`, including navigation comments, unordered-list instructions, syntax-owned structures, interaction adjacency, and format equivalence.
+- Its exact source serialization passes `teaching-prompt.md#source-encoding-validation`, including navigation comments, unordered-list instructions, syntax-owned structures, interaction adjacency, and format equivalence.
 - When `teaching_prompt_personalization_level` is supplied, the Teaching Prompt's ordinary title and explanation wording, transition wording, example detail, and non-deterministic feedback wording match `teaching-prompt.md#personalization-levels`.
 - When that level is absent from a content-only audit or supplied metadata, record personalization-level alignment as `not-assessed`; do not infer a level from the Prompt body or rewrite it toward a preferred level.
 - Flag ordinary content as overly specific when it fixes wording or example or feedback detail that the selected level leaves open. Flag it as overly abstract when it remains at the empty-outline level of "explain the concept", "add an example", or "ask a question" without the content, purpose, boundaries, or expected effect needed to execute it.
@@ -58,7 +58,7 @@ For a pasted content-only Prompt, run every check observable from the body and r
 ## Interaction and Variable Safety
 
 - Every interaction has the observable instructional effect and branch behavior selected by `pedagogy.md`.
-- Each control, option set, input hint, assignment, and branch instruction passes `teaching-prompt-encoding.md#validation`.
+- Each control, option set, input hint, assignment, and branch instruction passes `teaching-prompt.md#source-encoding-validation`.
 - Variable lifecycle is represented by the resolved control syntax, `used_variables`, and `global_variable_table`; adjacent Teaching Prompt prose states only feedback, branch, or carryover behavior performed during delivery.
 - Every named variable has exactly one valid collection, complete supplied metadata, and a cross-lesson or Course Prompt consumer; lesson-local answers remain unnamed. Metadata checks are `not-assessed` when a content-only input does not supply the required table.
 - The observed interaction and variable counts stay within `pedagogy.md` and `data-contracts.md`.

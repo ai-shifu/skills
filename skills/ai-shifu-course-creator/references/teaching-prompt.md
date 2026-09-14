@@ -1,6 +1,6 @@
 # Teaching Prompt
 
-Generate one runnable per-lesson Teaching Prompt from approved segments and design controls. This file materializes teaching decisions; it does not define pedagogy, MarkdownFlow runtime behavior, or image handling.
+Generate one runnable per-lesson Teaching Prompt from approved segments and design controls. This file materializes teaching decisions and owns their source encoding; it does not define pedagogy, MarkdownFlow runtime behavior, or image handling.
 
 ## Required References
 
@@ -9,12 +9,14 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 - `data-contracts.md#teaching-prompt-personalization-level`
 - `data-contracts.md#lesson-schema`
 - `data-contracts.md#generation-fallback-fields`
+- `data-contracts.md#variable-table`
 - `pedagogy.md`
-- `teaching-prompt-encoding.md`
+- `markdownflow.md`
 
 ## Conditional References
 
 - When an image asset must be understood, uploaded, embedded, or validated: `image-authoring.md`
+- When immutable source spans were selected for encoding: `source-preservation.md`
 
 ## Generation
 
@@ -26,7 +28,7 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 6. Materialize the plan as direct local instructions to the Teaching Agent in learner-time execution order. Source-only navigation comments may precede the runtime body and are removed before execution. Begin with the first teaching action for the selected delivery mode. At each position, combine the action with the content, relationship, boundary, or intended effect needed there; the resulting sequence and adjacency carry the lesson structure. When the level leaves ordinary expression open, write only those required runtime elements and end the instruction there.
 7. Insert every selected interaction, deterministic block, required code or source span, and image instruction directly at its resolved learner-time position using its owning syntax. Express variable lifecycle through the MarkdownFlow control and schema fields; write only the feedback, branch, or carryover behavior the Teaching Agent performs into the Prompt body.
 8. Resolve whether [Author-Editable Layout](#author-editable-layout) applies and map the already-resolved teaching actions into its semantic editing units. This step changes only source formatting.
-9. Serialize the complete Prompt through `teaching-prompt-encoding.md` after those teaching and layout decisions are complete.
+9. Serialize the complete Prompt through [Source Encoding](#source-encoding) after those teaching and layout decisions are complete.
 10. Load `image-authoring.md` only when the lesson actually uses an image asset.
 
 Every lesson must carry enough direction to run with the Course Prompt contributing course-wide role, general presentation requirements shared by every slide, and bounded cross-lesson personalization. Do not duplicate the learner-context strategy in each lesson or rely on the Course Prompt to supply, repair, or override lesson pedagogy, lesson-specific slide structure, or treatment tied to a particular slide position or teaching purpose.
@@ -83,7 +85,7 @@ Group the blocks without changing the selected teaching sequence:
 
 Write every ordinary Teaching Agent instruction as an unordered-list item in learner-time execution order, with one teaching action per item. Preserve any required number, step label, or page number as content.
 
-Apply `teaching-prompt-encoding.md#author-editable-layout-encoding` to serialize this resolved structure. That reference owns the HTML comment wrapper, one-comment-per-block placement, list-marker syntax, syntax-owned structures that remain outside list items, interaction adjacency, and format-equivalence validation.
+Apply [Author-Editable Layout Encoding](#author-editable-layout-encoding) to serialize this resolved structure. That section owns the HTML comment wrapper, one-comment-per-block placement, list-marker syntax, syntax-owned structures that remain outside list items, interaction adjacency, and format-equivalence validation.
 
 ## Lesson Materialization
 
@@ -102,6 +104,76 @@ Each Teaching Prompt must:
 Whenever a Teaching Prompt creates one or more slides, give slide 1 a clear cover-page visual treatment with lesson title and author information. Apply every other slide and explanation rule normally for the selected delivery mode.
 
 For pure classroom slides, write the complete ordered sequence of direct slide-creation instructions needed by `pedagogy.md#visual-text-coordination`. Each instruction supplies that slide's required visible content, teaching function, content grouping, visual hierarchy, and semantic layout at the specificity selected by the personalization level. General slide presentation and delivery-mode behavior remain owned by `course-prompt.md`.
+
+## Source Encoding
+
+Encode the already-resolved lesson teaching, interaction, variable, preservation, and source-layout decisions into MarkdownFlow without changing their content or order. Parser recognition and runtime effects remain defined only in `markdownflow.md`.
+
+### Author-Editable Layout Encoding
+
+This section owns the exact source serialization of an already-resolved author-editable layout. Encode its teaching blocks and ordinary instructions without changing their content or order:
+
+- Put exactly one standalone HTML comment immediately before each resolved teaching block using `<!-- ... -->`, with the already-resolved free-form learner outcome as its body. The wrapper is the only fixed form. Do not add a separate teaching-phase comment or require a label, prefix, punctuation pattern, numbering scheme, or sentence form. Do not reuse one comment for adjacent blocks or add more than one comment to a block.
+- Keep each comment concise and limited to its resolved learner outcome because `markdownflow.md#preprocessing` removes it before runtime.
+- Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order and use nested unordered items only for already-required parallel subitems.
+- Treat the unordered-list marker as ordinary Markdown in the content sent to the Teaching Agent; MarkdownFlow preprocessing does not remove it.
+- Do not prefix standalone `?[]` controls, standalone `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, tables, or another exact structure with a list marker.
+- Put a block comment before an interaction's question instruction, then keep the question list item, unchanged standalone control, and feedback list item together with no intervening comment.
+- A comment may repeat concepts already present in its block to make the outcome recognizable, but keep every fact, teaching requirement, variable, option, URL, command, exact span, feedback rule, and branch rule outside the comments. For a validation-only content-equivalence comparison, removing comments and ordinary-instruction list markers must preserve the non-formatting text and its order; this comparison is not runtime preprocessing.
+
+### Interaction Encoding
+
+- Encode the complete learner-facing question in the block immediately before every question-bearing interaction control, and put the unchanged `?[]` control on its own line.
+- In standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint, make that preceding block a question-only visual instruction and place the control immediately after it. Make the complete question the visual's central content, without option labels, input hints, simulated controls, or answers. Pure classroom slides retain their projection behavior, and explicit text-only delivery uses ordinary question text as the preceding block, as defined in `pedagogy.md#visual-text-coordination`.
+- Keep only option labels, the optional `%{{name}}` assignment prefix, and any free-text marker plus short hint inside `?[]`.
+- For an action-only control such as `?[Continue]`, do not invent a learner question or question slide; put the control on its own line after the content or instruction it advances.
+- Use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label.
+- Use `%{{name}}` only when the answer must leave the current lesson. Lesson-local answers use the no-variable form; a blank variable name is invalid.
+- For input interactions, use a specific question in the preceding block and a shorter hint after `...` in the control; in standard visual-text delivery, that preceding block is the question-only visual. For select-plus-input, put `...` at the start of the custom-answer option.
+- Keep the complete option set, order, and wording only in the interaction control. In the standard visual-text scope, do not duplicate those labels on the question-only visual.
+- After the control, encode the feedback or visible instructional effect selected by `pedagogy.md#interaction-design`.
+
+Standard visual-text example:
+
+The two comments below deliberately use different sentence forms; neither is a template.
+
+```markdown
+<!-- The learner can choose a path that fits the current case -->
+
+- Create a question-only slide whose complete central question is "Which path best matches the current case?" Do not show option labels, simulated controls, or the answer.
+
+?[Path A | Path B]
+
+- After the learner answers, explain the selected path and contrast it with the other path.
+
+<!-- A course-wide goal is ready to guide later examples and emphasis -->
+
+- Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.
+
+?[%{{learning_goal}} ...One-sentence goal]
+
+- After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.
+```
+
+### Variable and Branch Encoding
+
+- Write branch behavior as natural-language instructions; MarkdownFlow has no programmatic conditional syntax.
+- Refer to lesson-local answers naturally rather than inventing a variable.
+- For a named value, first bind the substituted value in a natural sentence such as `The learner goal is {{learning_goal}}.`, then describe branches against that value.
+- When a named value can be read before collection, branch on the literal substituted value `UNKNOWN`; do not test readiness or marker existence.
+- Every named learner-answer reference must have a matching variable-backed collection and pass `data-contracts.md#variable-table`.
+- Compose newly authored variable names under `language-policy.md` using only letters, numbers, and underscores. Preserve existing names when changing them would break the contract.
+
+### Preservation Encoding
+
+When immutable source spans were selected, load `source-preservation.md` and encode only those spans:
+
+- Put a complete standalone single-line span that must bypass the Teaching Agent inside `===...===`.
+- Put a complete multi-line span that must bypass the Teaching Agent inside `!===...!===`; include the full code fence and language tag when exact fenced output is required.
+- In otherwise generated content, wrap only the position- and formatting-sensitive span inline with `===...===`. Inline preservation remains mediated by the Teaching Agent and may be translated.
+- Encode each selected span independently and leave adaptive content outside deterministic markers.
+
+Image composition is owned by `image-authoring.md` and is loaded conditionally by the selected workflow.
 
 ## Outputs
 
@@ -136,6 +208,16 @@ In the Generation report, identify the lesson and summarize generation status, e
 - Level `3` preserves the balanced division defined in the level table rather than silently behaving like either endpoint.
 - Every item selected for exact preservation appears in its required form at its resolved runtime position at every level.
 - Interaction and variable lifecycle decisions appear through their resolved MarkdownFlow syntax and schema fields; related Prompt prose performs only the required feedback, branch, or carryover behavior.
-- Author-editable layout, interaction, variable, branch, and preservation encoding pass `teaching-prompt-encoding.md`.
+- Author-editable layout, interaction, variable, branch, and preservation encoding pass [Source Encoding Validation](#source-encoding-validation).
 - Image-specific validation runs only for lessons that use image assets.
 - Authored human-facing content passes `language-policy.md`.
+
+### Source Encoding Validation
+
+- When the Teaching Prompt layout applies, every resolved teaching block has exactly one standalone outcome comment immediately before it, every ordinary instruction uses its top-level unordered-list marker, and every syntax-owned or exact structure remains unprefixed and unchanged.
+- Every interaction control is on its own line and matches the preceding question or options. Standard question-bearing controls immediately follow their question-only visual instructions and precede their feedback or explanatory effects.
+- No navigation comment interrupts an interaction's question instruction, control, and feedback sequence.
+- In the validation-only content-equivalence comparison, removing navigation comments and ordinary-instruction list markers preserves all non-formatting text and its order.
+- Every named variable passes collection, reference, and metadata invariants.
+- Branch instructions use natural language and literal `UNKNOWN` where required.
+- Each immutable span uses the runtime form matching its selected preservation scope.

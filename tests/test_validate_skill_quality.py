@@ -848,7 +848,6 @@ class CourseCreatorContractTests(unittest.TestCase):
         cls.prompt_contracts = load("prompt-contracts.md")
         cls.pedagogy = load("pedagogy.md")
         cls.markdownflow = load("markdownflow.md")
-        cls.teaching_prompt_encoding = load("teaching-prompt-encoding.md")
         cls.source_preservation = load("source-preservation.md")
         cls.teaching_prompt = load("teaching-prompt.md")
         cls.image_authoring = load("image-authoring.md")
@@ -1744,15 +1743,15 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("## Teaching Patterns", self.prompt_contracts)
         self.assertNotIn("## Teaching Patterns", self.course_prompt)
 
-    def test_teaching_prompt_encoding_owns_encoding(self):
+    def test_teaching_prompt_contains_source_encoding_contract(self):
         interaction = markdown_section(
-            self.teaching_prompt_encoding, "Interaction Encoding"
+            self.teaching_prompt, "Interaction Encoding"
         )
         variables = markdown_section(
-            self.teaching_prompt_encoding, "Variable and Branch Encoding"
+            self.teaching_prompt, "Variable and Branch Encoding"
         )
         preservation = markdown_section(
-            self.teaching_prompt_encoding, "Preservation Encoding"
+            self.teaching_prompt, "Preservation Encoding"
         )
 
         self.assertIn("`?[]` control on its own line", interaction)
@@ -1765,28 +1764,33 @@ class CourseCreatorContractTests(unittest.TestCase):
             preservation,
         )
         required = markdown_section(
-            self.teaching_prompt_encoding, "Required References"
+            self.teaching_prompt, "Required References"
         )
         conditional = markdown_section(
-            self.teaching_prompt_encoding, "Conditional References"
+            self.teaching_prompt, "Conditional References"
         )
         self.assertNotIn("source-preservation.md", required)
         self.assertIn("source-preservation.md", conditional)
+        self.assertIn("data-contracts.md#variable-table", required)
+        self.assertIn("markdownflow.md", required)
         self.assertNotIn("## Interaction Encoding", self.pedagogy)
-        self.assertNotIn("## Interaction Encoding", self.teaching_prompt)
+        self.assertIn("### Interaction Encoding", self.teaching_prompt)
+        self.assertFalse(
+            (COURSE_CREATOR_REFERENCES / "teaching-prompt-encoding.md").exists()
+        )
 
-    def test_teaching_prompt_layout_owners_are_separate_and_content_equivalent(self):
+    def test_teaching_prompt_separates_layout_decisions_from_source_encoding(self):
         layout = markdown_section(
             self.teaching_prompt, "Author-Editable Layout"
         )
         layout_encoding = markdown_section(
-            self.teaching_prompt_encoding, "Author-Editable Layout Encoding"
+            self.teaching_prompt, "Author-Editable Layout Encoding"
         )
         interaction = markdown_section(
-            self.teaching_prompt_encoding, "Interaction Encoding"
+            self.teaching_prompt, "Interaction Encoding"
         )
         authoring_validation = markdown_section(
-            self.teaching_prompt_encoding, "Validation"
+            self.teaching_prompt, "Source Encoding Validation"
         )
         teaching_validation = markdown_section(
             self.teaching_prompt, "Validation"
@@ -1805,11 +1809,9 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.orchestration_workflow, "Workflow"
         )
 
-        self.assertTrue(
-            self.teaching_prompt_encoding.startswith("# Teaching Prompt Encoding\n")
-        )
-        self.assertNotIn("teaching-prompt.md", self.teaching_prompt_encoding)
-        self.assertNotIn("Course Prompt", self.teaching_prompt_encoding)
+        self.assertTrue(self.teaching_prompt.startswith("# Teaching Prompt\n"))
+        self.assertIn("\n## Source Encoding\n", self.teaching_prompt)
+        self.assertNotIn("Course Prompt", layout_encoding)
 
         for fragment in (
             "owns when the source layout applies",
@@ -1954,14 +1956,14 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn(
             "Author-editable layout, interaction, variable, branch, and "
-            "preservation encoding pass `teaching-prompt-encoding.md`",
+            "preservation encoding pass [Source Encoding Validation]",
             teaching_validation,
         )
         self.assertIn("record this layout check as `not-assessed`", checklist)
         self.assertIn("do not reformat the existing Prompt", checklist)
         self.assertIn(
             "exact source serialization passes "
-            "`teaching-prompt-encoding.md#validation`",
+            "`teaching-prompt.md#source-encoding-validation`",
             checklist,
         )
         self.assertIn(
@@ -2168,7 +2170,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertLess(
             generation.index("Materialize the plan as direct local instructions"),
-            generation.index("`teaching-prompt-encoding.md`"),
+            generation.index("[Source Encoding](#source-encoding)"),
         )
         self.assertIn(
             "Begin with the first teaching action for the selected delivery mode",
@@ -2321,9 +2323,9 @@ class CourseCreatorContractTests(unittest.TestCase):
             markdown_section(self.pedagogy, "Variable Strategy"),
             markdown_section(self.markdownflow, "Interactions"),
             markdown_section(self.markdownflow, "Variables"),
-            markdown_section(self.teaching_prompt_encoding, "Interaction Encoding"),
+            markdown_section(self.teaching_prompt, "Interaction Encoding"),
             markdown_section(
-                self.teaching_prompt_encoding, "Variable and Branch Encoding"
+                self.teaching_prompt, "Variable and Branch Encoding"
             ),
         ):
             self.assertNotIn(field, owner_section)
@@ -2344,11 +2346,13 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         interaction_encoding = " ".join(
             markdown_section(
-                self.teaching_prompt_encoding, "Interaction Encoding"
+                self.teaching_prompt, "Interaction Encoding"
             ).split()
         )
         authoring_validation = " ".join(
-            markdown_section(self.teaching_prompt_encoding, "Validation").split()
+            markdown_section(
+                self.teaching_prompt, "Source Encoding Validation"
+            ).split()
         )
         checklist = " ".join(
             markdown_section(
