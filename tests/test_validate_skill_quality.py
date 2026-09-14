@@ -1817,8 +1817,13 @@ class CourseCreatorContractTests(unittest.TestCase):
             "explicitly asks to rewrite a Teaching Prompt",
             "audit-only request",
             "do not backfill existing courses",
-            "a teaching phase for each already-resolved stage",
-            "a teaching block for each smallest useful editing unit",
+            "one source-only navigation comment for every smallest useful teaching block",
+            "immediate learner outcome of the block that follows",
+            "concise, freely worded text",
+            "scanning the comments alone",
+            "without requiring a label, prefix, punctuation pattern, numbering scheme, or sentence form",
+            'Generic text such as "Continue", "Teaching block", or "Explain content"',
+            "what the Teaching Agent will do is not a learner outcome",
             "each visual-and-explanation pair one block",
             "make each slide one block",
             "make each teaching action one block",
@@ -1826,15 +1831,21 @@ class CourseCreatorContractTests(unittest.TestCase):
             "one teaching action per item",
             "learner-time execution order",
             "Preserve any required number, step label, or page number as content",
-            "exact HTML comment shapes",
+            "HTML comment wrapper",
+            "one-comment-per-block placement",
             "list-marker syntax",
         ):
             self.assertIn(fragment, layout)
 
         for fragment in (
             "owns the exact source serialization",
-            "Teaching phase: `<!-- <teaching-phase label>: <stage name> -->`",
-            "Teaching block: `<!-- <teaching-block label>: <brief purpose> -->`",
+            "exactly one standalone HTML comment immediately before each resolved teaching block",
+            "using `<!-- ... -->`",
+            "already-resolved free-form learner outcome",
+            "The wrapper is the only fixed form",
+            "Do not add a separate teaching-phase comment",
+            "label, prefix, punctuation pattern, numbering scheme, or sentence form",
+            "Do not reuse one comment for adjacent blocks or add more than one comment to a block",
             "top-level unordered-list marker `-` followed by one space",
             "nested unordered items only",
             "standalone `?[]` controls",
@@ -1871,13 +1882,28 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertNotIn("教学阶段", owner)
             self.assertNotIn("教学块", owner)
 
+        for old_shape in (
+            "Teaching phase:",
+            "Teaching block:",
+            "<teaching-phase label>",
+            "<teaching-block label>",
+        ):
+            self.assertNotIn(old_shape, layout)
+            self.assertNotIn(old_shape, layout_encoding)
+
         self.assertIn("HTML comments are removed", preprocessing)
         self.assertNotIn("unordered-list", preprocessing)
         self.assertIn(
             "unordered-list marker as ordinary Markdown", layout_encoding
         )
         self.assertIn(
-            "comments limited to short navigation labels", layout_encoding
+            "comment concise and limited to its resolved learner outcome",
+            layout_encoding,
+        )
+        self.assertIn("may repeat concepts already present", layout_encoding)
+        self.assertIn(
+            "different sentence forms; neither is a template",
+            interaction,
         )
         self.assertIn(
             "removing comments and ordinary-instruction list markers must "
@@ -1887,9 +1913,11 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("every ordinary instruction uses", authoring_validation)
         self.assertIn("exact structure remains unprefixed", authoring_validation)
         self.assertIn(
-            "navigation units correspond to the resolved teaching stages",
+            "every smallest useful teaching block has exactly one navigation comment",
             teaching_validation,
         )
+        self.assertIn("Scanning the comments in source order", teaching_validation)
+        self.assertIn("no separate teaching-stage comments", teaching_validation)
         self.assertIn(
             "When [Author-Editable Layout](#author-editable-layout) applies",
             teaching_validation,
@@ -1965,8 +1993,17 @@ class CourseCreatorContractTests(unittest.TestCase):
             "After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.",
         ]
         shape_lines = shape.splitlines()
-        self.assertIn("<!-- Teaching phase: Check understanding -->", shape)
-        self.assertIn("<!-- Teaching block: Choose a path -->", shape)
+        self.assertIn(
+            "<!-- The learner can choose a path that fits the current case -->",
+            shape,
+        )
+        self.assertIn(
+            "<!-- A course-wide goal is ready to guide later examples and emphasis -->",
+            shape,
+        )
+        self.assertEqual(2, len(re.findall(r"<!--.*?-->", shape)))
+        self.assertNotIn("Teaching phase:", shape)
+        self.assertNotIn("Teaching block:", shape)
         for index in (0, 2, 3, 5):
             self.assertIn(f"- {expected_content_lines[index]}", shape_lines)
         self.assertNotIn("- ?[", shape)
@@ -2011,6 +2048,8 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertIn("HTML comments", expectations)
             self.assertIn("unordered-list", expectations)
             self.assertIn("localized", expectations)
+            self.assertIn("learner outcome", expectations)
+            self.assertIn("no separate teaching-stage comments", expectations)
         for case_id in (14, 15, 17, 19, 20):
             expectations = " ".join(evals_by_id[case_id]["expectations"])
             self.assertIn("navigation comments are removed", expectations)
@@ -2024,6 +2063,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn(
             "31 page units", " ".join(evals_by_id[50]["expectations"])
+        )
+        self.assertNotIn(
+            "four stage comments", " ".join(evals_by_id[50]["expectations"])
         )
         self.assertIn(
             "limited to repairing leaked authoring wrappers",

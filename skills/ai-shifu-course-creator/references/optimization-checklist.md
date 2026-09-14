@@ -33,7 +33,7 @@ For a pasted content-only Prompt, run every check observable from the body and r
 ## Teaching Prompt Behavior
 
 - Each lesson resolves one core question through a complete loop and valid teaching pattern under `pedagogy.md`.
-- A newly generated or explicitly rewritten Teaching Prompt uses the source-layout applicability and semantic grouping from `teaching-prompt.md#author-editable-layout`. For an audit-only request that does not ask for rewriting or layout normalization, record this layout check as `not-assessed` and do not reformat the existing Prompt.
+- A newly generated or explicitly rewritten Teaching Prompt uses the source-layout applicability, teaching-block grouping, and learner-outcome navigation from `teaching-prompt.md#author-editable-layout`. For an audit-only request that does not ask for rewriting or layout normalization, record this layout check as `not-assessed` and do not reformat the existing Prompt.
 - Its exact source serialization passes `teaching-prompt-encoding.md#validation`, including navigation comments, unordered-list instructions, syntax-owned structures, interaction adjacency, and format equivalence.
 - When `teaching_prompt_personalization_level` is supplied, the Teaching Prompt's ordinary title and explanation wording, transition wording, example detail, and non-deterministic feedback wording match `teaching-prompt.md#personalization-levels`.
 - When that level is absent from a content-only audit or supplied metadata, record personalization-level alignment as `not-assessed`; do not infer a level from the Prompt body or rewrite it toward a preferred level.

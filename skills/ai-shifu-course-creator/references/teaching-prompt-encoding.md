@@ -17,17 +17,15 @@ Encode already-resolved lesson teaching, interaction, variable, preservation, an
 
 ## Author-Editable Layout Encoding
 
-This section owns the exact source serialization of an already-resolved author-editable layout. Encode its teaching phases, teaching blocks, and ordinary instructions without changing their content or order:
+This section owns the exact source serialization of an already-resolved author-editable layout. Encode its teaching blocks and ordinary instructions without changing their content or order:
 
-- Put each navigation comment on its own line using the applicable structural reference form:
-  - Teaching phase: `<!-- <teaching-phase label>: <stage name> -->`
-  - Teaching block: `<!-- <teaching-block label>: <brief purpose> -->`
-- Keep comments limited to short navigation labels because `markdownflow.md#preprocessing` removes them before runtime.
+- Put exactly one standalone HTML comment immediately before each resolved teaching block using `<!-- ... -->`, with the already-resolved free-form learner outcome as its body. The wrapper is the only fixed form. Do not add a separate teaching-phase comment or require a label, prefix, punctuation pattern, numbering scheme, or sentence form. Do not reuse one comment for adjacent blocks or add more than one comment to a block.
+- Keep each comment concise and limited to its resolved learner outcome because `markdownflow.md#preprocessing` removes it before runtime.
 - Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order and use nested unordered items only for already-required parallel subitems.
 - Treat the unordered-list marker as ordinary Markdown in the content sent to the Teaching Agent; MarkdownFlow preprocessing does not remove it.
 - Do not prefix standalone `?[]` controls, standalone `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, tables, or another exact structure with a list marker.
 - Put a block comment before an interaction's question instruction, then keep the question list item, unchanged standalone control, and feedback list item together with no intervening comment.
-- Keep every fact, teaching requirement, variable, option, URL, command, exact span, feedback rule, and branch rule outside the comments. For a validation-only content-equivalence comparison, removing comments and ordinary-instruction list markers must preserve the non-formatting text and its order; this comparison is not runtime preprocessing.
+- A comment may repeat concepts already present in its block to make the outcome recognizable, but keep every fact, teaching requirement, variable, option, URL, command, exact span, feedback rule, and branch rule outside the comments. For a validation-only content-equivalence comparison, removing comments and ordinary-instruction list markers must preserve the non-formatting text and its order; this comparison is not runtime preprocessing.
 
 ## Interaction Encoding
 
@@ -43,9 +41,10 @@ This section owns the exact source serialization of an already-resolved author-e
 
 Standard visual-text example:
 
+The two comments below deliberately use different sentence forms; neither is a template.
+
 ```markdown
-<!-- Teaching phase: Check understanding -->
-<!-- Teaching block: Choose a path -->
+<!-- The learner can choose a path that fits the current case -->
 
 - Create a question-only slide whose complete central question is "Which path best matches the current case?" Do not show option labels, simulated controls, or the answer.
 
@@ -53,7 +52,7 @@ Standard visual-text example:
 
 - After the learner answers, explain the selected path and contrast it with the other path.
 
-<!-- Teaching block: Set a course-wide goal -->
+<!-- A course-wide goal is ready to guide later examples and emphasis -->
 
 - Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.
 
@@ -84,9 +83,9 @@ Image composition is owned by `image-authoring.md` and is loaded conditionally b
 
 ## Validation
 
-- When the Teaching Prompt layout applies, every ordinary instruction uses its top-level unordered-list marker, each navigation comment is standalone and non-semantic, and every syntax-owned or exact structure remains unprefixed and unchanged.
+- When the Teaching Prompt layout applies, every resolved teaching block has exactly one standalone outcome comment immediately before it, there is no separate teaching-stage comment, every ordinary instruction uses its top-level unordered-list marker, and every syntax-owned or exact structure remains unprefixed and unchanged.
 - Every interaction control is on its own line and matches the preceding question or options. Standard question-bearing controls immediately follow their question-only visual instructions and precede their feedback or explanatory effects.
-- No teaching-stage or teaching-block comment interrupts an interaction's question instruction, control, and feedback sequence.
+- No navigation comment interrupts an interaction's question instruction, control, and feedback sequence.
 - In the validation-only content-equivalence comparison, removing navigation comments and ordinary-instruction list markers preserves all non-formatting text and its order.
 - Every named variable passes collection, reference, and metadata invariants.
 - Branch instructions use natural language and literal `UNKNOWN` where required.
