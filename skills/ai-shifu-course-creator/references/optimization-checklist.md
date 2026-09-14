@@ -28,7 +28,7 @@ For a pasted content-only Prompt, run every check observable from the body and r
 - Teaching Prompts contain lesson method and flow; the Course Prompt contributes course-wide role, presentation behavior, and bounded cross-lesson personalization.
 - Chapter titles, numbering, hierarchy, and ordering remain in structure metadata rather than Teaching Prompt bodies.
 - No artifact relies on another artifact to supply behavior that its owner requires locally.
-- Every part of a Teaching Prompt body serves learner-time execution as a teaching, presentation, interaction, feedback, branch, or close instruction, or as learner-visible exact material. Internal execution plans and authoring controls remain in their owning handoff and references.
+- After MarkdownFlow removes source-only navigation comments, every remaining part of a Teaching Prompt body serves learner-time execution as a teaching, presentation, interaction, feedback, branch, or close instruction, or as learner-visible exact material. Internal execution plans and authoring controls remain in their owning handoff and references.
 
 ## Teaching Prompt Behavior
 

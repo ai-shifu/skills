@@ -1794,6 +1794,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         checklist = markdown_section(
             self.optimization_checklist, "Teaching Prompt Behavior"
         )
+        artifact_boundaries = markdown_section(
+            self.optimization_checklist, "Artifact Boundaries"
+        )
         preprocessing = markdown_section(self.markdownflow, "Preprocessing")
         course_prompt_required = markdown_section(
             self.course_prompt, "Required References"
@@ -1861,6 +1864,10 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("cannot satisfy any teaching", teaching_validation)
         self.assertIn("record this layout check as `not-assessed`", checklist)
         self.assertIn("do not reformat the existing Prompt", checklist)
+        self.assertIn(
+            "After MarkdownFlow removes source-only navigation comments",
+            artifact_boundaries,
+        )
 
         shape_match = re.search(
             r"```markdown\n(?P<body>.*?)\n```",
@@ -1917,6 +1924,10 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertIn("unordered-list", expectations)
         self.assertIn(
             "standalone deterministic lines",
+            " ".join(evals_by_id[15]["expectations"]),
+        )
+        self.assertIn(
+            "After navigation comments are removed, the first remaining item",
             " ".join(evals_by_id[15]["expectations"]),
         )
         self.assertIn(
