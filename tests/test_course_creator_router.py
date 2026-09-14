@@ -63,6 +63,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
             "review-checklist.md",
             "authoring-workflow.md",
             "report-template.md",
+            "markdownflow-authoring.md",
             "teaching-prompt-encoding.md",
         }
 

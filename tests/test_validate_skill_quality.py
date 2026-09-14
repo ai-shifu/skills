@@ -1778,6 +1778,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertFalse(
             (COURSE_CREATOR_REFERENCES / "teaching-prompt-encoding.md").exists()
         )
+        self.assertFalse(
+            (COURSE_CREATOR_REFERENCES / "markdownflow-authoring.md").exists()
+        )
 
     def test_teaching_prompt_separates_layout_decisions_from_source_encoding(self):
         layout = markdown_section(
@@ -1853,6 +1856,10 @@ class CourseCreatorContractTests(unittest.TestCase):
             "Do not reuse one comment for adjacent blocks or add more than one comment to a block",
             "top-level unordered-list marker `-` followed by one space",
             "nested unordered items only",
+            "HTML-view image block",
+            "ordinary insertion instruction as the top-level item",
+            "required URL, image-content, caption, layout, ordering, and aspect-ratio fields as nested unordered items",
+            "each URL on its own labeled nested line",
             "standalone `?[]` controls",
             "standalone `===...===` lines",
             "complete `!===...!===` fences",
@@ -1980,8 +1987,19 @@ class CourseCreatorContractTests(unittest.TestCase):
             checklist_dependencies,
         )
         self.assertIn(
-            "exact source serialization passes "
+            "When the author-editable layout applies, its exact source "
+            "serialization passes "
             "`teaching-prompt.md#source-encoding-validation`",
+            checklist,
+        )
+        self.assertIn(
+            "record the navigation-comment, unordered-list, and "
+            "format-equivalence portions as `not-assessed`",
+            checklist,
+        )
+        self.assertIn(
+            "continue auditing observable interaction, variable, branch, "
+            "preservation, and runtime syntax without reformatting",
             checklist,
         )
         self.assertIn(
@@ -2073,6 +2091,18 @@ class CourseCreatorContractTests(unittest.TestCase):
         for case_id in (14, 15, 17, 19, 20):
             expectations = " ".join(evals_by_id[case_id]["expectations"])
             self.assertIn("navigation comments are removed", expectations)
+        image_layout_expectations = " ".join(
+            evals_by_id[10]["expectations"]
+        )
+        self.assertIn(
+            "ordinary insertion instruction is the top-level item",
+            image_layout_expectations,
+        )
+        self.assertIn(
+            "required URL, image-content, caption, layout, ordering, and "
+            "aspect-ratio fields are nested unordered items",
+            image_layout_expectations,
+        )
         self.assertIn(
             "standalone deterministic lines",
             " ".join(evals_by_id[15]["expectations"]),
