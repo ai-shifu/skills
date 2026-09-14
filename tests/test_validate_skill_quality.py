@@ -1834,10 +1834,18 @@ class CourseCreatorContractTests(unittest.TestCase):
             "what the Teaching Agent will do is not a learner outcome",
             "each visual-and-explanation pair one block",
             "make each slide one block",
-            "make each teaching action one block",
+            "make each primary teaching action together with its supporting details and subordinate actions one block",
             "as an unordered-list item",
-            "one teaching action per item",
             "learner-time execution order",
+            "Prefer a meaningful hierarchy",
+            "one or more separable details or subordinate actions",
+            "concise parent item",
+            "required content, ordered substeps, parallel cases, comparisons, visual elements, constraints, or feedback variants",
+            "another nested level",
+            "Within each parent, sibling order remains execution order",
+            "Start a new top-level item only for an independent action",
+            "keep an instruction flat only",
+            "never permits dropping, merging, rewriting, or reordering teaching content",
             "Preserve any required number, step label, or page number as content",
             "HTML comment wrapper",
             "one-comment-per-block placement",
@@ -1856,13 +1864,23 @@ class CourseCreatorContractTests(unittest.TestCase):
             "Do not add a separate teaching-phase comment",
             "label, prefix, punctuation pattern, numbering scheme, or sentence form",
             "Do not reuse one comment for adjacent blocks or add more than one comment to a block",
-            "top-level unordered-list marker `-` followed by one space",
-            "nested unordered items only",
+            "top-level unordered-list item beginning with `-` followed by one space",
+            "indenting each level by two additional spaces",
+            "using `-` followed by one space at every level",
+            "Prefer nested items over a long compound paragraph or a flat run of related items",
+            "another level when a nested item itself owns multiple distinct subparts",
+            "Preserve sibling source order as execution order at every level",
+            "Nesting expresses ownership, not reordering",
+            "Start a sibling top-level item for an independent action",
+            "do not force an unrelated action under the prior parent",
+            "when splitting would alter preserved wording or structure",
             "HTML-view image block",
             "ordinary insertion instruction as the top-level item",
             "required URL, image-content, caption, layout, ordering, and aspect-ratio fields as nested unordered items",
             "each URL on its own labeled nested line",
-            "standalone `?[]` controls",
+            "prefix or newly indent standalone `?[]` controls",
+            "source-required or learner-visible Markdown list markers are exact content",
+            "do not treat them as author-editable layout markers",
             "standalone `===...===` lines",
             "complete `!===...!===` fences",
             "fenced code",
@@ -1908,7 +1926,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("HTML comments are removed", preprocessing)
         self.assertNotIn("unordered-list", preprocessing)
         self.assertIn(
-            "unordered-list marker as ordinary Markdown", layout_encoding
+            "unordered-list markers and their hierarchy as ordinary Markdown",
+            layout_encoding,
         )
         self.assertIn(
             "comment concise and limited to its resolved learner outcome",
@@ -1920,11 +1939,29 @@ class CourseCreatorContractTests(unittest.TestCase):
             interaction,
         )
         self.assertIn(
-            "removing comments and ordinary-instruction list markers must "
-            "preserve the non-formatting text and its order",
+            "removing comments plus only the unordered-list markers and "
+            "indentation introduced by Author-Editable Layout must preserve "
+            "the non-formatting text and its order",
             layout_encoding,
         )
-        self.assertIn("every ordinary instruction uses", authoring_validation)
+        self.assertIn(
+            "source-required list markers remain content",
+            layout_encoding,
+        )
+        self.assertIn(
+            "Each block's primary teaching action uses a top-level unordered-list marker",
+            authoring_validation,
+        )
+        self.assertIn(
+            "separable supporting details and subordinate actions use nested "
+            "unordered items with two additional spaces per level",
+            authoring_validation,
+        )
+        self.assertIn(
+            "independent actions and actions separated by syntax-owned or exact "
+            "structures remain top-level siblings",
+            authoring_validation,
+        )
         self.assertIn("exact structure remains unprefixed", authoring_validation)
         self.assertIn(
             "navigation comment body contains neither `<!--` nor `-->`",
@@ -1945,7 +1982,17 @@ class CourseCreatorContractTests(unittest.TestCase):
             teaching_validation,
         )
         self.assertIn(
-            "every ordinary Teaching Agent instruction is an unordered-list item",
+            "Each block's primary teaching action is a top-level unordered-list item",
+            teaching_validation,
+        )
+        self.assertIn(
+            "separable supporting details and subordinate actions use nested "
+            "unordered items wherever content and preservation allow",
+            teaching_validation,
+        )
+        self.assertIn(
+            "independent actions and actions separated by syntax-owned or exact "
+            "structures remain top-level siblings",
             teaching_validation,
         )
         self.assertIn(
@@ -2003,8 +2050,17 @@ class CourseCreatorContractTests(unittest.TestCase):
             checklist,
         )
         self.assertIn(
-            "record the navigation-comment, unordered-list, and "
+            "record the navigation-comment, unordered-list hierarchy, and "
             "format-equivalence portions as `not-assessed`",
+            checklist,
+        )
+        self.assertIn(
+            "dense compound item or a flat run of related items",
+            checklist,
+        )
+        self.assertIn(
+            "standalone or independent action, a syntax-separated action, or "
+            "preserved text that cannot be split",
             checklist,
         )
         self.assertIn(
@@ -2033,12 +2089,20 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIsNotNone(shape_match)
         shape = shape_match.group("body")
         expected_content_lines = [
-            'Create a question-only slide whose complete central question is "Which path best matches the current case?" Do not show option labels, simulated controls, or the answer.',
+            "Create a question-only slide.",
+            'Make "Which path best matches the current case?" its complete central question.',
+            "Do not show option labels, simulated controls, or the answer.",
             "?[Path A | Path B]",
-            "After the learner answers, explain the selected path and contrast it with the other path.",
-            'Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.',
+            "After the learner answers:",
+            "Explain the selected path.",
+            "Contrast it with the other path.",
+            "Create a question-only slide.",
+            'Make "What course-wide goal should later lessons use?" its complete central question.',
+            "Do not show an input hint or simulated input field.",
             "?[%{{learning_goal}} ...One-sentence goal]",
-            "After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.",
+            "After the learner responds:",
+            "Acknowledge the goal.",
+            "Explain that later lessons will use it to adapt examples and emphasis.",
         ]
         shape_lines = shape.splitlines()
         self.assertIn(
@@ -2052,14 +2116,24 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertEqual(2, len(re.findall(r"<!--.*?-->", shape)))
         self.assertNotIn("Teaching phase:", shape)
         self.assertNotIn("Teaching block:", shape)
-        for index in (0, 2, 3, 5):
+        for index in (0, 4, 7, 11):
             self.assertIn(f"- {expected_content_lines[index]}", shape_lines)
+        for index in (1, 2, 5, 6, 8, 9, 12, 13):
+            self.assertIn(f"  - {expected_content_lines[index]}", shape_lines)
         self.assertNotIn("- ?[", shape)
 
         def content_equivalent_lines(source: str) -> list[str]:
             result = []
+            in_exact_fence = False
             for raw_line in source.splitlines():
                 stripped = raw_line.strip()
+                if stripped == "!===":
+                    result.append(raw_line.rstrip())
+                    in_exact_fence = not in_exact_fence
+                    continue
+                if in_exact_fence:
+                    result.append(raw_line.rstrip())
+                    continue
                 if not stripped or re.fullmatch(r"<!--.*-->", stripped):
                     continue
                 line = raw_line.rstrip()
@@ -2076,9 +2150,33 @@ class CourseCreatorContractTests(unittest.TestCase):
             content_equivalent_lines(shape),
         )
         self.assertEqual(
-            ["Compare the two already-required parallel cases."],
+            [
+                "Compare the two already-required cases.",
+                "Case A",
+                "Required evidence",
+            ],
             content_equivalent_lines(
-                "  - Compare the two already-required parallel cases."
+                "- Compare the two already-required cases.\n"
+                "  - Case A\n"
+                "    - Required evidence"
+            ),
+        )
+        self.assertEqual(
+            [
+                "Show the exact checklist.",
+                "!===",
+                "- Verify identity",
+                "  - Check the ID",
+                "!===",
+                "Explain the checklist.",
+            ],
+            content_equivalent_lines(
+                "- Show the exact checklist.\n"
+                "!===\n"
+                "- Verify identity\n"
+                "  - Check the ID\n"
+                "!===\n"
+                "- Explain the checklist."
             ),
         )
 
@@ -2098,6 +2196,12 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertIn("localized", expectations)
             self.assertIn("learner outcome", expectations)
             self.assertIn("no separate teaching-stage comments", expectations)
+        for case_id in (10, 14, 15):
+            expectations = " ".join(evals_by_id[case_id]["expectations"])
+            self.assertIn("separable", expectations)
+            self.assertIn("nested unordered items", expectations)
+            self.assertIn("sibling top-level items", expectations)
+            self.assertRegex(expectations, r"dense (?:compound item|paragraph)")
         for case_id in (14, 15, 17, 19, 20):
             expectations = " ".join(evals_by_id[case_id]["expectations"])
             self.assertIn("navigation comments are removed", expectations)
@@ -2124,6 +2228,10 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn(
             "31 page units", " ".join(evals_by_id[50]["expectations"])
         )
+        self.assertIn(
+            "its supplied `随后...` instruction is indented beneath it",
+            " ".join(evals_by_id[50]["expectations"]),
+        )
         self.assertNotIn(
             "four stage comments", " ".join(evals_by_id[50]["expectations"])
         )
@@ -2136,6 +2244,10 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("A --> B", evals_by_id[51]["prompt"])
         self.assertIn(
+            "`随后解释...` instruction is a nested subordinate action",
+            delimiter_expectations,
+        )
+        self.assertIn(
             "contains neither the literal `<!--` sequence nor the literal "
             "`-->` sequence",
             delimiter_expectations,
@@ -2143,6 +2255,19 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn(
             "character-for-character unchanged",
             delimiter_expectations,
+        )
+        exact_list_expectations = " ".join(
+            evals_by_id[52]["expectations"]
+        )
+        self.assertIn("!===", evals_by_id[52]["prompt"])
+        self.assertIn("- 核验身份", evals_by_id[52]["prompt"])
+        self.assertIn(
+            "remain byte-for-byte unchanged",
+            exact_list_expectations,
+        )
+        self.assertIn(
+            "retains every list marker and indentation inside the exact fence",
+            exact_list_expectations,
         )
 
     def test_pedagogy_resolves_explicit_text_only_delivery(self):
@@ -2512,7 +2637,15 @@ class CourseCreatorContractTests(unittest.TestCase):
             interaction_encoding,
         )
         self.assertIn(
-            "After the learner responds, acknowledge the goal and explain",
+            "After the learner responds:",
+            interaction_encoding,
+        )
+        self.assertIn(
+            "Acknowledge the goal.",
+            interaction_encoding,
+        )
+        self.assertIn(
+            "Explain that later lessons will use it to adapt examples and emphasis",
             interaction_encoding,
         )
         self.assertIn(

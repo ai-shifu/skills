@@ -1,7 +1,7 @@
 ## Unreleased
 
 - Consolidate Teaching Prompt generation and source-encoding guidance into one reference while preserving anchor-level audit access and existing behavior.
-- Format newly generated or explicitly rewritten Teaching Prompts with one runtime-invisible, freely worded learner-outcome comment per teaching block plus unordered-list instructions, while preserving every existing teaching requirement and exact MarkdownFlow structure.
+- Format newly generated or explicitly rewritten Teaching Prompts with one runtime-invisible, freely worded learner-outcome comment per teaching block plus hierarchical unordered-list instructions wherever actions have separable supporting details, while preserving every existing teaching requirement and exact MarkdownFlow structure.
 - Remove the complete local, artifact-only, author-only course path so a full-course request continues through deployment and publication by default.
 - Open browser URLs in new visible tabs, reusing only exact URL matches so existing pages and unfinished work are preserved.
 - Share built-in browser URL opening across authorization and course handoffs, including host selection, visible interaction, user opt-outs, and opening result handling.

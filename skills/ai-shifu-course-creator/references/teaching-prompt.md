@@ -81,9 +81,9 @@ Group the blocks without changing the selected teaching sequence:
 
 - In standard visual-text teaching, make the lead-in one block, each visual-and-explanation pair one block, and each question instruction, interaction control, and immediate feedback sequence one block.
 - In pure classroom slides, make each slide one block.
-- Under an explicit text-only constraint, make each teaching action one block.
+- Under an explicit text-only constraint, make each primary teaching action together with its supporting details and subordinate actions one block.
 
-Write every ordinary Teaching Agent instruction as an unordered-list item in learner-time execution order, with one teaching action per item. Preserve any required number, step label, or page number as content.
+Write every ordinary Teaching Agent instruction as an unordered-list item in learner-time execution order. Prefer a meaningful hierarchy whenever a teaching block has a primary action with one or more separable details or subordinate actions: state the primary action in a concise parent item, then place its required content, ordered substeps, parallel cases, comparisons, visual elements, constraints, or feedback variants in nested items. If a nested item owns distinct subparts, use another nested level. Within each parent, sibling order remains execution order. Start a new top-level item only for an independent action or when a syntax-owned or exact structure separates it from the prior parent, and keep an instruction flat only when it has no meaningful children or exact preservation prevents splitting. The hierarchy changes only source presentation; it never permits dropping, merging, rewriting, or reordering teaching content. Preserve any required number, step label, or page number as content.
 
 Apply [Author-Editable Layout Encoding](#author-editable-layout-encoding) to serialize this resolved structure. That section owns the HTML comment wrapper, one-comment-per-block placement, list-marker syntax, syntax-owned structures that remain outside list items, interaction adjacency, and format-equivalence validation.
 
@@ -116,12 +116,15 @@ This section owns the exact source serialization of an already-resolved author-e
 - Put exactly one standalone HTML comment immediately before each resolved teaching block using `<!-- ... -->`, with the already-resolved free-form learner outcome as its body. The wrapper is the only fixed form. Do not add a separate teaching-phase comment or require a label, prefix, punctuation pattern, numbering scheme, or sentence form. Do not reuse one comment for adjacent blocks or add more than one comment to a block.
 - Do not place the literal delimiter sequences `<!--` or `-->` inside a comment body. Rephrase the learner outcome if either sequence would otherwise appear.
 - Keep each comment concise and limited to its resolved learner outcome because `markdownflow.md#preprocessing` removes it before runtime.
-- Begin every ordinary Teaching Agent instruction with the top-level unordered-list marker `-` followed by one space and keep one action in each item. Preserve source order as execution order and use nested unordered items only for already-required parallel subitems.
+- Encode each primary ordinary teaching action as a top-level unordered-list item beginning with `-` followed by one space. When it has separable supporting details, place them directly beneath it as nested unordered items, indenting each level by two additional spaces and using `-` followed by one space at every level.
+- Prefer nested items over a long compound paragraph or a flat run of related items for required content, ordered substeps, parallel cases, comparisons, visual elements, constraints, and feedback variants. Use another level when a nested item itself owns multiple distinct subparts.
+- Preserve sibling source order as execution order at every level. Nesting expresses ownership, not reordering. Start a sibling top-level item for an independent action or after a syntax-owned or exact structure that cannot belong inside the list; do not force an unrelated action under the prior parent merely to create nesting. Keep an item flat when it has no meaningful children or when splitting would alter preserved wording or structure.
 - For an HTML-view image block, encode its ordinary insertion instruction as the top-level item and its already-required URL, image-content, caption, layout, ordering, and aspect-ratio fields as nested unordered items. Keep each URL on its own labeled nested line. Fixed-display image lines and other exact image structures remain unprefixed under the next rule.
-- Treat the unordered-list marker as ordinary Markdown in the content sent to the Teaching Agent; MarkdownFlow preprocessing does not remove it.
-- Do not prefix standalone `?[]` controls, standalone `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, tables, or another exact structure with a list marker.
+- Treat unordered-list markers and their hierarchy as ordinary Markdown in the content sent to the Teaching Agent; MarkdownFlow preprocessing does not remove them.
+- Do not prefix or newly indent standalone `?[]` controls, standalone `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, tables, or another exact structure merely to fit the list hierarchy.
+- When source-required or learner-visible Markdown list markers are exact content, preserve their markers and indentation unchanged and do not treat them as author-editable layout markers.
 - Put a block comment before an interaction's question instruction, then keep the question list item, unchanged standalone control, and feedback list item together with no intervening comment.
-- A comment may repeat concepts already present in its block to make the outcome recognizable, but keep every fact, teaching requirement, variable, option, URL, command, exact span, feedback rule, and branch rule outside the comments. For a validation-only content-equivalence comparison, removing comments and ordinary-instruction list markers must preserve the non-formatting text and its order; this comparison is not runtime preprocessing.
+- A comment may repeat concepts already present in its block to make the outcome recognizable, but keep every fact, teaching requirement, variable, option, URL, command, exact span, feedback rule, and branch rule outside the comments. For a validation-only content-equivalence comparison, removing comments plus only the unordered-list markers and indentation introduced by Author-Editable Layout must preserve the non-formatting text and its order; source-required list markers remain content. This comparison is not runtime preprocessing.
 
 ### Interaction Encoding
 
@@ -137,24 +140,32 @@ This section owns the exact source serialization of an already-resolved author-e
 
 Standard visual-text example:
 
-The two comments below deliberately use different sentence forms; neither is a template.
+The two comments below deliberately use different sentence forms; neither is a template. The list hierarchy separates requirements that were previously combined without adding a teaching action or changing its effect.
 
 ```markdown
 <!-- The learner can choose a path that fits the current case -->
 
-- Create a question-only slide whose complete central question is "Which path best matches the current case?" Do not show option labels, simulated controls, or the answer.
+- Create a question-only slide.
+  - Make "Which path best matches the current case?" its complete central question.
+  - Do not show option labels, simulated controls, or the answer.
 
 ?[Path A | Path B]
 
-- After the learner answers, explain the selected path and contrast it with the other path.
+- After the learner answers:
+  - Explain the selected path.
+  - Contrast it with the other path.
 
 <!-- A course-wide goal is ready to guide later examples and emphasis -->
 
-- Create a question-only slide whose complete central question is "What course-wide goal should later lessons use?" Do not show an input hint or simulated input field.
+- Create a question-only slide.
+  - Make "What course-wide goal should later lessons use?" its complete central question.
+  - Do not show an input hint or simulated input field.
 
 ?[%{{learning_goal}} ...One-sentence goal]
 
-- After the learner responds, acknowledge the goal and explain that later lessons will use it to adapt examples and emphasis.
+- After the learner responds:
+  - Acknowledge the goal.
+  - Explain that later lessons will use it to adapt examples and emphasis.
 ```
 
 ### Variable and Branch Encoding
@@ -190,7 +201,7 @@ In the Generation report, identify the lesson and summarize generation status, e
 - Every `teaching_prompt` is valid runnable MarkdownFlow.
 - Every item passes `data-contracts.md#lesson-schema`.
 - Every newly generated or explicitly rewritten Teaching Prompt follows [Author-Editable Layout](#author-editable-layout). Audit-only review of an existing Prompt does not add or normalize this layout.
-- When [Author-Editable Layout](#author-editable-layout) applies, every smallest useful teaching block has exactly one navigation comment whose freely worded text states only its immediate, specific learner outcome. Scanning the comments in source order reveals the lesson's learning progression, with no separate teaching-stage comments. The blocks retain their resolved grouping and execution order, and every ordinary Teaching Agent instruction is an unordered-list item in learner-time order.
+- When [Author-Editable Layout](#author-editable-layout) applies, every smallest useful teaching block has exactly one navigation comment whose freely worded text states only its immediate, specific learner outcome. Scanning the comments in source order reveals the lesson's learning progression, with no separate teaching-stage comments. The blocks retain their resolved grouping and execution order. Each block's primary teaching action is a top-level unordered-list item; separable supporting details and subordinate actions use nested unordered items wherever content and preservation allow; independent actions and actions separated by syntax-owned or exact structures remain top-level siblings.
 - The normalized personalization level is an integer from `1` through `5`, and the Teaching Prompt's content-expression specificity matches that level.
 - The internal lesson execution plan is resolved before the level is applied. Recover the execution signature from the Teaching Prompt's actual ordered instructions and verify that it matches the plan: teaching actions, slide count and order, content grouping and hierarchy, interaction and feedback adjacency, images, and the close all occur at their resolved positions with their resolved effects.
 - When multiple level variants are generated from the same approved design and controls, compare their actual ordered runtime instructions. They have identical execution signatures, including the presence, position, and teaching function of every required example; only ordinary content-expression specificity may differ.
@@ -216,11 +227,11 @@ In the Generation report, identify the lesson and summarize generation status, e
 
 ### Source Encoding Validation
 
-- When the Teaching Prompt layout applies, every resolved teaching block has exactly one standalone outcome comment immediately before it, every ordinary instruction uses its top-level unordered-list marker, and every syntax-owned or exact structure remains unprefixed and unchanged.
+- When the Teaching Prompt layout applies, every resolved teaching block has exactly one standalone outcome comment immediately before it. Each block's primary teaching action uses a top-level unordered-list marker; separable supporting details and subordinate actions use nested unordered items with two additional spaces per level whenever a meaningful hierarchy is available; independent actions and actions separated by syntax-owned or exact structures remain top-level siblings; and every syntax-owned or exact structure remains unprefixed, receives no new indentation, and stays unchanged.
 - Every navigation comment body contains neither `<!--` nor `-->`, so preprocessing removes the complete comment without leaking source text into runtime content.
 - Every interaction control is on its own line and matches the preceding question or options. Standard question-bearing controls immediately follow their question-only visual instructions and precede their feedback or explanatory effects.
 - No navigation comment interrupts an interaction's question instruction, control, and feedback sequence.
-- In the validation-only content-equivalence comparison, removing navigation comments and ordinary-instruction list markers preserves all non-formatting text and its order.
+- In the validation-only content-equivalence comparison, removing navigation comments plus only the unordered-list markers and indentation introduced by Author-Editable Layout preserves all non-formatting text and its order. Source-required list markers and indentation remain unchanged content.
 - Every named variable passes collection, reference, and metadata invariants.
 - Branch instructions use natural language and literal `UNKNOWN` where required.
 - Each immutable span uses the runtime form matching its selected preservation scope.
