@@ -39,7 +39,7 @@ Apply the execution contract in `workflow.md#cli-only-rule`. Use this overview t
 
 ## Error Codes the CLI May Surface
 
-The CLI prints the full response on every call. When the response carries a non-zero `code`, react as follows:
+When an analytics response carries a non-zero business `code`, interpret it as follows:
 
 | Code | Meaning | Action |
 | --- | --- | --- |
@@ -53,8 +53,6 @@ The CLI prints the full response on every call. When the response carries a non-
 | `11007` | `limit` or `offset` out of range | `limit ∈ [1, 1000]`, `offset ≥ 0` |
 | `1001` | User not found / token expired | Run `shifu-cli.py login` again to refresh the token |
 | `1004` / `1005` | Token not logged in / expired | Same as `1001` — re-login |
-
-The CLI exits non-zero on any of the above except `code == 0`, but the full payload is always printed first — read it, fix the DSL or guide the user to re-login, then retry.
 
 ## Scope Reminder
 
