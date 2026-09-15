@@ -88,4 +88,4 @@
 - Put shared Course Prompt and Teaching Prompt meaning or ownership boundaries in `prompt-contracts.md`; put artifact-specific construction in `course-prompt.md` or `teaching-prompt.md`.
 - Put MarkdownFlow parser facts in `markdownflow.md`, authoring-time encoding instructions in `markdownflow-authoring.md`, and learning-effect requirements in `pedagogy.md`.
 - Put executable command behavior in `shifu-cli.py`, its stable public interface in `cli/cli-reference.md`, and the workflow decision to invoke it in the relevant platform or analytics workflow.
-- Put validation criteria in the owning artifact reference or `optimization-checklist.md`, then add regression evidence in evals or repository tests. Tests and evals enforce contracts; they do not become the only statement of a requirement.
+- Put validation criteria in the owning reference or `optimization-checklist.md`, then add regression evidence in evals or repository tests. Tests and evals enforce contracts; they do not become the only statement of a requirement.

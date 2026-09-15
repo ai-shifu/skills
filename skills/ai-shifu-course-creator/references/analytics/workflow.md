@@ -41,7 +41,7 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 ### Validation
 
 - Token resolved through `../authentication.md`, not a hand-rolled lookup.
-- When the user mentioned a course by title, the current `shifu_bid → title` was confirmed via Course Metadata Recipe 0a / 0b before the downstream query ran. Historical titles were never substituted for current ones.
+- When the user mentioned a course by title, the current `shifu_bid → title` was confirmed via Course Metadata Recipes 0a–0c before the downstream query ran. Historical titles were never substituted for current ones.
 - `shifu_bid` and outline mappings established before any course-level query.
 - DSL body matches grammar in `dsl.md`; filters reflect the user's intent (e.g. `status = 502` for "paid", not `>= 502`).
 - Credit consumption queries used `shifu-cli.py credit-detail` per the CLI-Only Rule above — never a DSL query against `bill_daily_usage_metrics`.
