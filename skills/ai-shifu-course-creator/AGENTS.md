@@ -66,7 +66,7 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `references/analytics/workflow.md` | Own the router-facing end-to-end analytics execution path: required authentication and references, CLI-only execution, query handoff, and completion behavior. |
-| `references/analytics/overview.md` | Own analytics intent orientation: supported question families, question-to-query planning, choosing the correct table or recipe, common query-selection pitfalls, and navigation to deeper references. |
+| `references/analytics/overview.md` | Own analytics intent orientation: supported question families, question-to-query planning, choosing the correct table or recipe, analytics response and error-code interpretation, common query-selection pitfalls, and navigation to deeper references. CLI output conventions and process exit codes remain with `cli/cli-reference.md`. |
 | `references/analytics/dsl.md` | Own the analytics query language: JSON body shape, operators, aggregates, limits, auto-filters, and server-enforced query-shape constraints. Field-access policy, refusals, masking, and user-facing handling remain with `privacy-and-presentation.md`. |
 | `references/analytics/tables.md` | Own queryable table and field semantics, enum and code translations, identifier relationships, known data traps, and distinctions among independently measured amounts. |
 | `references/analytics/recipes.md` | Own ready-to-run query and `credit-detail` templates for supported analytics scenarios. Grammar and field meaning remain in `dsl.md` and `tables.md`. |
