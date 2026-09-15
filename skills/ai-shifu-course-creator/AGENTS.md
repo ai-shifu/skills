@@ -14,7 +14,7 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `AGENTS.md` | Define this skill's maintenance-time ownership map and cross-file editing rules. It guides contributors and does not define learner-time or authoring behavior. |
-| `SKILL.md` | Define skill discovery metadata, startup requirements, the task router, and routing guardrails. It selects the smallest complete reference set and leaves domain behavior to those references. |
+| `SKILL.md` | Define skill discovery metadata, the package-wide user-facing Markdown link contract, startup requirements, the task router, and routing guardrails. It selects the smallest complete reference set and leaves domain behavior to those references. |
 | `.env.example` | Document supported service-selection and token environment variables with safe empty defaults and credential-storage guidance. |
 | `CHANGELOG.md` | Record user-visible and maintainer-relevant changes in chronological release history. Current behavior remains defined by `SKILL.md`, references, and scripts. |
 | `evals/evals.json` | Hold end-to-end behavioral scenarios and expectations for routing, authoring, platform, analytics, and boundary regressions. Every expectation must trace to a canonical contract file. |
@@ -28,7 +28,7 @@
 | `references/session-controls.md` | Own session lifecycle behavior: official contact timing, version checks, usage reporting, progress and error communication, handoffs, and first-session operational controls. |
 | `references/authentication.md` | Own platform site selection, credential verification, browser authorization, login continuation, and authentication failure handling. It establishes access and does not select a course. |
 | `references/open-in-app-browser.md` | Own the host-application mechanics for opening a supplied URL in a visible built-in browser and reporting the opening result. The calling workflow owns URL selection and next steps. |
-| `references/course-target.md` | Own resolution of new versus existing course intent, title and BID matching, ambiguity handling, and the resolved target record. |
+| `references/course-target.md` | Own new-versus-existing resolution, title and BID matching, ambiguity handling, and the resolved target record for authoring and platform-management routes. Analytics title resolution remains with `analytics/recipes.md` and `analytics/tables.md`. |
 | `references/authoring-mode.md` | Own selection between standard and fallback execution modes for authoring phases. Phase-specific fallback fields remain in `data-contracts.md`. |
 | `references/course-design-intake.md` | Own collection and normalization of unresolved author choices, the effect preview shown before each question, and the resulting design-control handoff. Downstream owners define the controls' actual teaching and artifact effects. |
 | `references/data-contracts.md` | Own schemas, required and optional fields, enum values, output envelopes, variable-table structure, and cross-field invariants exchanged between authoring phases. |
@@ -45,7 +45,7 @@
 | --- | --- |
 | `references/segmentation-workflow.md` | Own transformation of source material into traceable semantic segments and lesson-boundary candidates, including segmentation validation and fallback output. |
 | `references/orchestration-workflow.md` | Own phase coordination from segmentation through lesson-structure finalization and Teaching Prompt generation, then build the course index and global variable table and enforce cross-phase gates. It calls phase owners without redefining their rules. |
-| `references/teaching-prompt.md` | Own materialization of one runnable per-lesson Teaching Prompt from approved segments and controls, including personalization levels, source encoding, output shape, and artifact-specific validation. |
+| `references/teaching-prompt.md` | Own materialization of one runnable per-lesson Teaching Prompt from approved segments and controls, including personalization levels, output shape, and artifact-specific validation. It routes interaction, variable, branch, and preservation encoding to `markdownflow-authoring.md`. |
 | `references/course-prompt.md` | Own materialization of the six-section course-wide Course Prompt, including fill sources and uniform presentation requirements. Lesson pedagogy, sequence, interactions, and position-specific slide decisions remain Teaching Prompt concerns. |
 | `references/course-description.md` | Own the learner-facing course listing and SEO description artifact, its supported source claims, output form, and validation. |
 | `references/optimization-workflow.md` | Own entry conditions and execution for auditing substantially complete artifacts, applying minimal repairs, classifying findings, and producing the Optimization report. It consumes acceptance criteria from the checklist. |
@@ -57,7 +57,7 @@
 | --- | --- |
 | `references/course-sync.md` | Own existing-course cloud-to-local pulls, divergence status, content pushes, version checks, and conflict convergence. It does not author content or manage publication metadata. |
 | `references/deployment-workflow.md` | Own new-course deployment from an already-authored course directory through import, publication, readback verification, and completion reporting. |
-| `references/course-management.md` | Own non-authoring platform operations: list, preview, publish, archive or restore, reorder, course metadata, teacher avatar, access, visibility, Listen Mode, and admin handoff. |
+| `references/course-management.md` | Own non-authoring platform operations: list, preview, publish, archive or restore, reorder, course metadata, teacher avatar, access, visibility, and Listen Mode. It invokes the Course Admin Handoff owned by `session-controls.md`. |
 | `references/cli/cli-reference.md` | Own the public `shifu-cli.py` command surface: invocation, flags, command groups, authentication inputs, output conventions, state behavior, and exit codes. Workflow references decide when commands run. |
 | `references/cli/course-directory-spec.md` | Own the local course-directory layout, artifact meanings, build precedence, sync and image manifests, generated import shape, and which files each CLI operation reads or writes. |
 
@@ -67,7 +67,7 @@
 | --- | --- |
 | `references/analytics/workflow.md` | Own the router-facing end-to-end analytics execution path: required authentication and references, CLI-only execution, query handoff, and completion behavior. |
 | `references/analytics/overview.md` | Own analytics intent orientation: supported question families, choosing the correct table or recipe, the three-step conceptual flow, common query-selection pitfalls, and navigation to deeper references. |
-| `references/analytics/dsl.md` | Own the analytics query language: JSON body shape, operators, aggregates, limits, auto-filters, protected-field rules, and construction constraints. |
+| `references/analytics/dsl.md` | Own the analytics query language: JSON body shape, operators, aggregates, limits, auto-filters, and server-enforced query-shape constraints. Field-access policy, refusals, masking, and user-facing handling remain with `privacy-and-presentation.md`. |
 | `references/analytics/tables.md` | Own queryable table and field semantics, enum and code translations, identifier relationships, known data traps, and distinctions among independently measured amounts. |
 | `references/analytics/recipes.md` | Own ready-to-run query and `credit-detail` templates for supported analytics scenarios. Grammar and field meaning remain in `dsl.md` and `tables.md`. |
 | `references/analytics/privacy-and-presentation.md` | Own analytics access restrictions, refusal boundaries, masking and aggregation requirements, UTC-to-local presentation, the translation gate, and user-facing answer structure. |
