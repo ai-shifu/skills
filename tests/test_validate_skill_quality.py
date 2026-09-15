@@ -2272,6 +2272,12 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         image_expectations = " ".join(evals_by_id[10]["expectations"])
         self.assertIn(
+            "After navigation comments are removed, the pure "
+            "classroom-slide result's first remaining item is a "
+            "projection-ready page direction",
+            image_expectations,
+        )
+        self.assertIn(
             "ordinary insertion instruction is the top-level item",
             image_expectations,
         )
