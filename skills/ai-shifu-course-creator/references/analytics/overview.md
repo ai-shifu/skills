@@ -25,64 +25,11 @@ Enter the analytics path when a course author or admin asks about:
 
 Do **not** enter the analytics path when the user asks only "how many courses do I have?" — that is a `shifu-cli.py list` call. **But** if the user names a course by title (e.g. "show me the data on 跟 AI 学 AI 通识"), resolve the current `shifu_bid → title` via Course Metadata recipes first, _then_ run the downstream analytics — `shifu-cli.py list` is a draft snapshot and can leak historical / renamed titles.
 
-## CLI-Only Rule
+## Execution Contract
 
 Apply the execution contract in `workflow.md#cli-only-rule`. Use this overview to translate the user's question into the appropriate CLI command and DSL query plan.
 
-## Workflow (3 Steps)
-
-### Step 1 — Resolve the course
-
-Run once per session to map `shifu_bid` ↔ course name:
-
-```bash
-python3 scripts/shifu-cli.py list
-```
-
-Cache the `shifu_bid → name` mapping in your context. The CLI's `list` output already exists for this purpose; do not call any analytics API for course metadata.
-
-### Step 2 — Resolve the outline (only for course-level analysis)
-
-When the query involves lesson-level dimensions (stuck lessons, lowest-rated lesson, lesson-by-lesson breakdown), fetch the outline tree:
-
-```bash
-python3 scripts/shifu-cli.py show <shifu_bid>
-```
-
-Cache `outline_item_bid → name` and `outline_item_bid → position` from the outline tree. Whenever a DSL result contains `outline_item_bid`, render it as "Lesson X.Y: <title>" before presenting. Skipping this makes outline-dimension numbers unreadable.
-
-### Step 3 — Run the DSL query
-
-```bash
-python3 scripts/shifu-cli.py analytics-query <shifu_bid> --dsl '<json-body>'
-```
-
-Or, when the body is long or you want to reuse it:
-
-```bash
-python3 scripts/shifu-cli.py analytics-query <shifu_bid> --dsl-file query.json
-```
-
-The CLI injects `shifu_bid` into the body, handles authentication, and prints the full JSON response. The response shape on success is:
-
-```json
-{
-  "code": 0,
-  "data": {
-    "columns": ["status", "n"],
-    "rows": [
-      [602, 124],
-      [603, 87]
-    ],
-    "limit": 100,
-    "offset": 0
-  }
-}
-```
-
-Cross-course analysis: send one `analytics-query` per `shifu_bid` and merge results in the agent context (the endpoint does not support cross-course joins).
-
-## Picking the Right DSL
+## Query Planning
 
 1. Translate the user's question into a DSL body using `dsl.md` (syntax), `tables.md` (which table answers which question + which fields exist), and `recipes.md` (Course Metadata 0a–0c, Course Overview 0d, + 23 numbered scenario recipes).
 2. Apply the privacy rules in `privacy-and-presentation.md` if the query touches `user_users`, `generated_content`, or `var_variable_values.value`.
