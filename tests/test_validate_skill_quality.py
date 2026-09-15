@@ -848,7 +848,6 @@ class CourseCreatorContractTests(unittest.TestCase):
         cls.prompt_contracts = load("prompt-contracts.md")
         cls.pedagogy = load("pedagogy.md")
         cls.markdownflow = load("markdownflow.md")
-        cls.markdownflow_authoring = load("markdownflow-authoring.md")
         cls.source_preservation = load("source-preservation.md")
         cls.teaching_prompt = load("teaching-prompt.md")
         cls.image_authoring = load("image-authoring.md")
@@ -1183,6 +1182,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "Raw SVG, HTML drawings, Mermaid",
             "pedagogy.md",
             "markdownflow-authoring.md",
+            "teaching-prompt-encoding.md",
             "image-authoring.md",
             "data-contracts.md",
         }
@@ -1358,8 +1358,18 @@ class CourseCreatorContractTests(unittest.TestCase):
         semantics = " ".join(
             markdown_section(self.prompt_contracts, "Prompt Semantics").split()
         )
-        generation = " ".join(
-            markdown_section(self.teaching_prompt, "Generation").split()
+        workflow = " ".join(
+            markdown_section(self.teaching_prompt, "Workflow").split()
+        )
+        materialization = " ".join(
+            markdown_section(
+                self.teaching_prompt, "Lesson Materialization"
+            ).split()
+        )
+        levels = " ".join(
+            markdown_section(
+                self.teaching_prompt, "Personalization Levels"
+            ).split()
         )
         validation = " ".join(
             markdown_section(self.teaching_prompt, "Validation").split()
@@ -1381,32 +1391,37 @@ class CourseCreatorContractTests(unittest.TestCase):
             semantics,
         )
         self.assertIn(
-            "Materialize the plan as direct local instructions to the Teaching "
-            "Agent in learner-time execution order",
-            generation,
+            "Materialize that plan through [Lesson Materialization]",
+            workflow,
         )
         self.assertIn(
-            "Begin with the first teaching action for the selected delivery mode",
-            generation,
+            "Give every lesson enough direct local instruction to run",
+            materialization,
         )
         self.assertIn(
-            "Insert every selected interaction, deterministic block, required "
-            "code or source span, and image instruction directly at its resolved "
+            "Insert each selected interaction, deterministic block, required "
+            "code or source span, and image instruction at its resolved "
             "learner-time position",
-            generation,
+            workflow,
         )
         self.assertIn(
-            "When the level leaves ordinary expression open, write only those "
-            "required runtime elements and end the instruction there",
-            generation,
+            "write only the required runtime elements and end the instruction there",
+            levels,
         )
         self.assertIn(
-            "Recover the execution signature from the Teaching Prompt's actual "
-            "ordered instructions",
+            "omitted, left open, adaptable, or not prewritten",
+            levels,
+        )
+        self.assertIn(
+            "Its recovered signature matches the actual instruction order",
             validation,
         )
         self.assertIn(
-            "open ordinary expression is visible as a shorter local instruction",
+            "open expression appears as a shorter local instruction",
+            validation,
+        )
+        self.assertIn(
+            "omitted, left open, or not prewritten",
             validation,
         )
         self.assertIn(
@@ -1734,8 +1749,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         ):
             self.assertIn(pattern, patterns)
         self.assertIn(
-            "do not force every lesson into Evidence Chain",
-            self.teaching_prompt,
+            "rather than forcing Evidence Chain",
+            markdown_section(self.teaching_prompt, "Workflow"),
         )
         self.assertNotRegex(
             self.teaching_prompt,
@@ -1744,36 +1759,584 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("## Teaching Patterns", self.prompt_contracts)
         self.assertNotIn("## Teaching Patterns", self.course_prompt)
 
-    def test_markdownflow_authoring_owns_encoding(self):
+    def test_teaching_prompt_contains_source_encoding_contract(self):
         interaction = markdown_section(
-            self.markdownflow_authoring, "Interaction Encoding"
+            self.teaching_prompt, "Interaction Encoding"
         )
         variables = markdown_section(
-            self.markdownflow_authoring, "Variable and Branch Encoding"
+            self.teaching_prompt, "Variable and Branch Encoding"
         )
         preservation = markdown_section(
-            self.markdownflow_authoring, "Preservation Encoding"
+            self.teaching_prompt, "Preservation Encoding"
         )
 
         self.assertIn("`?[]` control on its own line", interaction)
         self.assertIn("`|` for single-select", interaction)
         self.assertIn("`||` for multi-select", interaction)
-        self.assertIn("literal substituted value `UNKNOWN`", variables)
+        self.assertIn("literal `UNKNOWN`", variables)
+        self.assertIn(
+            "do not explain that encoding decision in Prompt prose",
+            variables,
+        )
         self.assertIn("wrap only the position- and formatting-sensitive span", preservation)
         self.assertIn(
             "Inline preservation remains mediated by the Teaching Agent",
             preservation,
         )
         required = markdown_section(
-            self.markdownflow_authoring, "Required References"
+            self.teaching_prompt, "Required References"
         )
         conditional = markdown_section(
-            self.markdownflow_authoring, "Conditional References"
+            self.teaching_prompt, "Conditional References"
         )
         self.assertNotIn("source-preservation.md", required)
         self.assertIn("source-preservation.md", conditional)
+        self.assertIn("data-contracts.md#variable-table", required)
+        self.assertIn("markdownflow.md", required)
         self.assertNotIn("## Interaction Encoding", self.pedagogy)
-        self.assertNotIn("## Interaction Encoding", self.teaching_prompt)
+        self.assertIn("### Interaction Encoding", self.teaching_prompt)
+        self.assertFalse(
+            (COURSE_CREATOR_REFERENCES / "teaching-prompt-encoding.md").exists()
+        )
+        self.assertFalse(
+            (COURSE_CREATOR_REFERENCES / "markdownflow-authoring.md").exists()
+        )
+
+    def test_teaching_prompt_has_compact_layout_ownership(self):
+        workflow = markdown_section(self.teaching_prompt, "Workflow")
+        source_encoding = markdown_section(
+            self.teaching_prompt, "Source Encoding"
+        )
+        layout = markdown_section(
+            self.teaching_prompt, "Author-Editable Layout"
+        )
+        layout_encoding = markdown_section(
+            self.teaching_prompt, "Layout Encoding"
+        )
+        validation = markdown_section(self.teaching_prompt, "Validation")
+        encoding_checks = markdown_section(
+            self.teaching_prompt, "Encoding Checks"
+        )
+        lesson_materialization = markdown_section(
+            self.teaching_prompt, "Lesson Materialization"
+        )
+        preprocessing = markdown_section(self.markdownflow, "Preprocessing")
+
+        self.assertEqual(
+            [
+                "Required References",
+                "Conditional References",
+                "Generation",
+                "Source Encoding",
+                "Outputs and Validation",
+            ],
+            re.findall(r"(?m)^## (.+)$", self.teaching_prompt),
+        )
+        ordered_headings = (
+            "### Workflow",
+            "### Lesson Materialization",
+            "### Personalization Levels",
+            "#### Cross-Level Constraints",
+            "### Author-Editable Layout",
+            "## Source Encoding",
+            "### Layout Encoding",
+            "### Interaction Encoding",
+            "#### Example",
+            "### Variable and Branch Encoding",
+            "### Preservation Encoding",
+            "## Outputs and Validation",
+            "### Outputs",
+            "### Validation",
+            "#### Encoding Checks",
+        )
+        self.assertEqual(
+            [
+                heading.lstrip("# ")
+                for heading in ordered_headings
+                if heading.startswith(("### ", "#### "))
+            ],
+            re.findall(r"(?m)^#{3,4} (.+)$", self.teaching_prompt),
+        )
+        heading_positions = [
+            self.teaching_prompt.index(heading) for heading in ordered_headings
+        ]
+        self.assertEqual(sorted(heading_positions), heading_positions)
+
+        for fragment in (
+            "approved design",
+            "internal lesson execution plan",
+            "[Lesson Materialization](#lesson-materialization)",
+            "[Personalization Levels](#personalization-levels)",
+            "[Author-Editable Layout](#author-editable-layout)",
+            "[Source Encoding](#source-encoding)",
+            "[Outputs](#outputs)",
+            "[Validation](#validation)",
+        ):
+            self.assertIn(fragment, workflow)
+
+        for fragment in (
+            "every newly generated Teaching Prompt",
+            "explicitly requests a rewrite",
+            "audit-only request",
+            "one source-only navigation comment for every smallest useful "
+            "teaching block",
+            "immediate change in understanding, judgment, capability, or "
+            "next-step readiness",
+            "concise result phrases with natural wording and varied openings",
+            "enough specificity to distinguish it from neighboring blocks",
+            "reveal the learning progression when the comments are scanned "
+            "together",
+            "Choose the label, prefix, punctuation, numbering, and sentence "
+            "form that makes each result easiest to scan",
+            "Standard visual-text teaching",
+            "each visual and its immediately following complete explanation in "
+            "one block under one comment",
+            "Pure classroom slides",
+            "Explicit text-only delivery",
+            "unordered-list items in learner-time execution order",
+            "nested items for separable teaching purpose, title intent, required "
+            "content",
+            "sibling order remains execution order",
+            "never permits dropping, merging, rewriting, or reordering teaching "
+            "content",
+            "[Layout Encoding](#layout-encoding)",
+        ):
+            self.assertIn(fragment, layout)
+
+        for fragment in (
+            "exactly one standalone `<!-- ... -->` comment immediately before "
+            "each resolved teaching block",
+            "resolved free-form result text inside the wrapper without "
+            "rewriting it",
+            "wrapper is the only fixed form",
+            "literal delimiter `<!--` or `-->`",
+            "top-level item beginning with `-` followed by one space",
+            "indenting every nested level by two additional spaces",
+            "Preserve sibling source order as execution order",
+            "HTML-view image block",
+            "position, URL, image-content, caption, layout, ordering, and "
+            "aspect-ratio fields",
+            "each URL on its own labeled nested line",
+            "standalone `?[]` controls",
+            "standalone `===...===` lines",
+            "complete `!===...!===` fences",
+            "fenced code",
+            "Markdown images",
+            "tables",
+            "question item, unchanged standalone control, and feedback item",
+            "removing navigation comments plus only the list markers and "
+            "indentation introduced by Author-Editable Layout",
+            "Source-required list markers remain content",
+        ):
+            self.assertIn(fragment, layout_encoding)
+
+        for fragment in (
+            "every newly generated Teaching Prompt",
+            "audit-only request",
+            "Standard visual-text teaching",
+            "Pure classroom slides",
+            "Explicit text-only delivery",
+            "Course Prompt",
+        ):
+            self.assertNotIn(fragment, layout_encoding)
+        self.assertNotIn("Course Prompt", source_encoding)
+        self.assertEqual(
+            1,
+            self.teaching_prompt.count(
+                "one source-only navigation comment for every smallest useful "
+                "teaching block"
+            ),
+        )
+        self.assertEqual(
+            1,
+            self.teaching_prompt.count(
+                "exactly one standalone `<!-- ... -->` comment"
+            ),
+        )
+
+        for fragment in (
+            "`<!-- ... -->`",
+            "standalone `?[]` controls",
+            "For validation only",
+        ):
+            self.assertNotIn(fragment, layout)
+
+        for owner in (layout, layout_encoding):
+            self.assertNotIn("resolved_target_language", owner)
+            self.assertNotIn("ordered list", owner)
+            self.assertNotIn("教学阶段", owner)
+            self.assertNotIn("教学块", owner)
+
+        self.assertIn("HTML comments are removed", preprocessing)
+        self.assertNotIn("unordered-list", preprocessing)
+        self.assertIn(
+            "exactly one standalone outcome comment immediately before it",
+            encoding_checks,
+        )
+        self.assertIn(
+            "number and order of navigation comments match the resolved "
+            "teaching blocks",
+            encoding_checks,
+        )
+        self.assertIn(
+            "concise, naturally varied result phrases",
+            encoding_checks,
+        )
+        self.assertIn(
+            "keep adjacent results immediately distinguishable",
+            encoding_checks,
+        )
+        self.assertIn(
+            "nested items indented by two additional spaces per level",
+            encoding_checks,
+        )
+        self.assertIn(
+            "Syntax-owned and exact structures remain unprefixed",
+            encoding_checks,
+        )
+        self.assertIn(
+            "Every comment body excludes `<!--` and `-->`",
+            encoding_checks,
+        )
+        self.assertIn(
+            "without leaking source text",
+            encoding_checks,
+        )
+        self.assertIn(
+            "New and explicitly rewritten Prompts apply",
+            validation,
+        )
+        self.assertIn(
+            "audit-only review of an existing Prompt does not add or normalize",
+            validation,
+        )
+        self.assertIn(
+            "layout checks are `not-assessed`",
+            validation,
+        )
+        self.assertIn(
+            "teaching-start instruction's unordered-list item immediately "
+            "after any leading navigation comments",
+            lesson_materialization,
+        )
+        self.assertIn(
+            "no syntax-owned or exact structure occupies an earlier "
+            "learner-time position",
+            lesson_materialization,
+        )
+
+    def test_teaching_prompt_layout_example_preserves_content(self):
+        interaction = markdown_section(
+            self.teaching_prompt, "Interaction Encoding"
+        )
+        self.assertIn(
+            "demonstrate free-form variation through a noun phrase and a "
+            "result clause",
+            interaction,
+        )
+        shape_match = re.search(
+            r"```markdown\n(?P<body>.*?)\n```",
+            interaction,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(shape_match)
+        shape = shape_match.group("body")
+        self.assertIn("<!-- A fitting path for the current case -->", shape)
+        self.assertIn(
+            "<!-- One course-wide goal now guides later examples and "
+            "emphasis -->",
+            shape,
+        )
+        expected_content_lines = [
+            "Create a question-only slide.",
+            'Make "Which path best matches the current case?" its complete central question.',
+            "Do not show option labels, simulated controls, or the answer.",
+            "?[Path A | Path B]",
+            "After the learner answers:",
+            "Explain the selected path.",
+            "Contrast it with the other path.",
+            "Create a question-only slide.",
+            'Make "What course-wide goal should later lessons use?" its complete central question.',
+            "Do not show an input hint or simulated input field.",
+            "?[%{{learning_goal}} ...One-sentence goal]",
+            "After the learner responds:",
+            "Acknowledge the goal.",
+            "Explain that later lessons will use it to adapt examples and emphasis.",
+        ]
+        shape_lines = shape.splitlines()
+        self.assertEqual(2, len(re.findall(r"<!--.*?-->", shape)))
+        for index in (0, 4, 7, 11):
+            self.assertIn(f"- {expected_content_lines[index]}", shape_lines)
+        for index in (1, 2, 5, 6, 8, 9, 12, 13):
+            self.assertIn(f"  - {expected_content_lines[index]}", shape_lines)
+        self.assertNotIn("- ?[", shape)
+
+        def content_equivalent_lines(
+            source: str,
+            *,
+            layout_item_lines: set[int],
+            layout_comment_lines: set[int],
+        ) -> list[str]:
+            result = []
+            for line_index, raw_line in enumerate(source.splitlines()):
+                stripped = raw_line.strip()
+                if not stripped:
+                    continue
+                if line_index in layout_comment_lines:
+                    self.assertIsNotNone(re.fullmatch(r"<!--.*-->", stripped))
+                    continue
+                line = raw_line.rstrip()
+                if line_index in layout_item_lines:
+                    list_item = re.fullmatch(
+                        r"[ \t]*- (?P<content>.*)", line
+                    )
+                    self.assertIsNotNone(list_item)
+                    line = list_item.group("content")
+                result.append(line)
+            return result
+
+        shape_layout_item_lines = {
+            line_index
+            for line_index, line in enumerate(shape_lines)
+            if re.fullmatch(r"[ \t]*- .*", line)
+        }
+        shape_layout_comment_lines = {
+            line_index
+            for line_index, line in enumerate(shape_lines)
+            if re.fullmatch(r"<!--.*-->", line.strip())
+        }
+        self.assertEqual(
+            expected_content_lines,
+            content_equivalent_lines(
+                shape,
+                layout_item_lines=shape_layout_item_lines,
+                layout_comment_lines=shape_layout_comment_lines,
+            ),
+        )
+        self.assertEqual(
+            [
+                "Compare the two already-required cases.",
+                "Case A",
+                "Required evidence",
+            ],
+            content_equivalent_lines(
+                "- Compare the two already-required cases.\n"
+                "  - Case A\n"
+                "    - Required evidence",
+                layout_item_lines={0, 1, 2},
+                layout_comment_lines=set(),
+            ),
+        )
+        self.assertEqual(
+            [
+                "Show the exact checklist.",
+                "!===",
+                "- Verify identity",
+                "  - Check the ID",
+                "!===",
+                "Explain the checklist.",
+            ],
+            content_equivalent_lines(
+                "- Show the exact checklist.\n"
+                "!===\n"
+                "- Verify identity\n"
+                "  - Check the ID\n"
+                "!===\n"
+                "- Explain the checklist.",
+                layout_item_lines={0, 5},
+                layout_comment_lines=set(),
+            ),
+        )
+        self.assertEqual(
+            [
+                "Introduce protected examples.",
+                "```markdown",
+                "- code item",
+                "<!-- preserved in code -->",
+                "```",
+                "<!-- source-required comment -->",
+                "- Source checklist item",
+                "  - Source nested item",
+                "Explain protected examples.",
+            ],
+            content_equivalent_lines(
+                "- Introduce protected examples.\n"
+                "```markdown\n"
+                "- code item\n"
+                "<!-- preserved in code -->\n"
+                "```\n"
+                "<!-- source-required comment -->\n"
+                "- Source checklist item\n"
+                "  - Source nested item\n"
+                "- Explain protected examples.",
+                layout_item_lines={0, 8},
+                layout_comment_lines=set(),
+            ),
+        )
+
+    def test_teaching_prompt_layout_consumers_cover_required_cases(self):
+        checklist = markdown_section(
+            self.optimization_checklist, "Teaching Prompt Behavior"
+        )
+        checklist_dependencies = markdown_section(
+            self.optimization_checklist, "Conditional References"
+        )
+        artifact_boundaries = markdown_section(
+            self.optimization_checklist, "Artifact Boundaries"
+        )
+        orchestration = markdown_section(
+            self.orchestration_workflow, "Workflow"
+        )
+
+        self.assertIn(
+            "without an explicit rewrite or layout normalization: "
+            "`teaching-prompt.md#source-encoding`",
+            checklist_dependencies,
+        )
+        self.assertIn(
+            "without an explicit rewrite or layout normalization: "
+            "`teaching-prompt.md#validation`",
+            checklist_dependencies,
+        )
+        self.assertIn(
+            "explicit Teaching Prompt rewrite or layout normalization is in "
+            "scope: `teaching-prompt.md`",
+            checklist_dependencies,
+        )
+        self.assertIn(
+            "`teaching-prompt.md#encoding-checks`",
+            checklist,
+        )
+        self.assertIn("record this layout check as `not-assessed`", checklist)
+        self.assertIn("do not reformat the existing Prompt", checklist)
+        self.assertIn(
+            "record the navigation-comment, unordered-list hierarchy, and "
+            "format-equivalence portions as `not-assessed`",
+            checklist,
+        )
+        self.assertIn(
+            "continue auditing observable interaction, variable, branch, "
+            "preservation, and runtime syntax without reformatting",
+            checklist,
+        )
+        self.assertIn(
+            "after navigation comments are removed, the first remaining "
+            "instruction",
+            checklist,
+        )
+        self.assertIn(
+            "After MarkdownFlow removes source-only navigation comments",
+            artifact_boundaries,
+        )
+        self.assertIn(
+            "after those comments are removed the first remaining item",
+            orchestration,
+        )
+
+        for owner in (
+            self.prompt_contracts,
+            self.pedagogy,
+            self.course_prompt,
+        ):
+            self.assertNotIn("## Author-Editable Layout", owner)
+
+        evals_data = json.loads(
+            (self.skill_root / "evals" / "evals.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        evals_by_id = {case["id"]: case for case in evals_data["evals"]}
+        for case_id in (10, 14, 15, 50):
+            expectations = " ".join(evals_by_id[case_id]["expectations"])
+            for fragment in (
+                "HTML comments",
+                "unordered-list",
+                "localized",
+                "immediate change in understanding",
+                "naturally varied result phrases",
+                "openings keep adjacent",
+                "no extra navigation comments",
+            ):
+                self.assertIn(fragment, expectations)
+
+        for case_id in (10, 14, 15):
+            expectations = " ".join(evals_by_id[case_id]["expectations"])
+            self.assertIn("separable", expectations)
+            self.assertIn("nested unordered items", expectations)
+            self.assertIn("sibling top-level items", expectations)
+            self.assertRegex(expectations, r"dense (?:compound item|paragraph)")
+
+        for case_id in (14, 15, 17, 19, 20):
+            expectations = " ".join(evals_by_id[case_id]["expectations"])
+            self.assertIn("navigation comments are removed", expectations)
+
+        image_expectations = " ".join(evals_by_id[10]["expectations"])
+        self.assertIn(
+            "After navigation comments are removed, the pure "
+            "classroom-slide result's first remaining item is a "
+            "projection-ready page direction",
+            image_expectations,
+        )
+        self.assertIn(
+            "ordinary insertion instruction is the top-level item",
+            image_expectations,
+        )
+        self.assertIn(
+            "required position, URL, image-content, caption, layout, ordering, "
+            "and aspect-ratio fields are nested unordered items",
+            image_expectations,
+        )
+        exact_expectations = " ".join(evals_by_id[15]["expectations"])
+        self.assertIn("standalone deterministic lines", exact_expectations)
+        self.assertIn(
+            "After navigation comments are removed, the first remaining item",
+            exact_expectations,
+        )
+        long_rewrite_expectations = " ".join(
+            evals_by_id[50]["expectations"]
+        )
+        self.assertIn("31 page units", long_rewrite_expectations)
+        self.assertIn(
+            "its supplied `随后...` instruction is indented beneath it",
+            long_rewrite_expectations,
+        )
+        self.assertNotIn("four stage comments", long_rewrite_expectations)
+        self.assertIn(
+            "limited to repairing leaked authoring wrappers",
+            " ".join(evals_by_id[33]["expectations"]),
+        )
+
+        delimiter_expectations = " ".join(
+            evals_by_id[51]["expectations"]
+        )
+        self.assertIn("A --> B", evals_by_id[51]["prompt"])
+        self.assertIn(
+            "`随后解释...` instruction is a nested subordinate action",
+            delimiter_expectations,
+        )
+        self.assertIn(
+            "contains neither the literal `<!--` sequence nor the literal "
+            "`-->` sequence",
+            delimiter_expectations,
+        )
+        self.assertIn(
+            "character-for-character unchanged",
+            delimiter_expectations,
+        )
+
+        exact_list_expectations = " ".join(
+            evals_by_id[52]["expectations"]
+        )
+        self.assertIn("!===", evals_by_id[52]["prompt"])
+        self.assertIn("- 核验身份", evals_by_id[52]["prompt"])
+        self.assertIn(
+            "remain byte-for-byte unchanged",
+            exact_list_expectations,
+        )
+        self.assertIn(
+            "retains every list marker and indentation inside the exact fence",
+            exact_list_expectations,
+        )
 
     def test_pedagogy_resolves_explicit_text_only_delivery(self):
         lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
@@ -1801,7 +2364,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         required = markdown_section(self.pedagogy, "Required References")
         course_entry = markdown_section(self.pedagogy, "Course Entry")
         lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
-        generation = markdown_section(self.teaching_prompt, "Generation")
+        workflow = markdown_section(self.teaching_prompt, "Workflow")
         materialization = markdown_section(
             self.teaching_prompt, "Lesson Materialization"
         )
@@ -1814,9 +2377,15 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("single brief direct-teaching lead-in", course_entry)
         self.assertIn("Move immediately", course_entry)
         self.assertIn("relationship-building behavior", lesson_loop)
-        self.assertIn("approved course order, not from its lesson id", generation)
-        self.assertIn("course-entry behavior", materialization)
-        self.assertIn("Course-entry status is derived", validation)
+        self.assertIn(
+            "approved chapter and lesson order rather than the lesson id",
+            workflow,
+        )
+        self.assertIn("include `pedagogy.md#course-entry`", materialization)
+        self.assertIn(
+            "Course-entry status comes from approved course order",
+            validation,
+        )
 
     def test_course_entry_identity_and_delivery_boundaries_are_explicit(self):
         course_entry = markdown_section(self.pedagogy, "Course Entry")
@@ -1832,13 +2401,15 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("do not impose a word-count or sentence-count quota", course_entry)
 
     def test_teaching_prompt_owns_five_personalization_levels(self):
-        lesson_loop = markdown_section(self.pedagogy, "Lesson Loop")
         visual_text = markdown_section(
             self.pedagogy, "Visual-Text Coordination"
         )
-        generation = markdown_section(self.teaching_prompt, "Generation")
+        workflow = markdown_section(self.teaching_prompt, "Workflow")
         levels = markdown_section(
             self.teaching_prompt, "Personalization Levels"
+        )
+        constraints = markdown_section(
+            self.teaching_prompt, "Cross-Level Constraints"
         )
         validation = markdown_section(self.teaching_prompt, "Validation")
         checklist = markdown_section(
@@ -1853,33 +2424,33 @@ class CourseCreatorContractTests(unittest.TestCase):
             )
         self.assertIn("teaching purpose", visual_text)
         self.assertIn("classroom-ready deck", visual_text)
-        self.assertIn("must-cover evidence and boundaries", generation)
-        self.assertIn("`teaching_prompt_personalization_level`", generation)
+        self.assertIn("must-cover evidence and boundaries", workflow)
+        self.assertIn(
+            "`teaching_prompt_personalization_level`",
+            levels,
+        )
+
+        authoring_headings = (
+            "### Workflow",
+            "### Lesson Materialization",
+            "### Personalization Levels",
+            "### Author-Editable Layout",
+            "## Source Encoding",
+        )
+        heading_positions = [
+            self.teaching_prompt.index(heading)
+            for heading in authoring_headings
+        ]
+        self.assertEqual(sorted(heading_positions), heading_positions)
         self.assertLess(
-            generation.index("Select the teaching pattern"),
-            generation.index("`teaching_prompt_personalization_level`"),
+            workflow.index("Resolve the lesson's teaching decisions"),
+            workflow.index("Build one internal lesson execution plan"),
         )
         self.assertLess(
-            generation.index("Build one internal lesson execution plan"),
-            generation.index("`teaching_prompt_personalization_level`"),
-        )
-        self.assertLess(
-            generation.index("`teaching_prompt_personalization_level`"),
-            generation.index(
-                "Materialize the plan as direct local instructions"
+            workflow.index("Build one internal lesson execution plan"),
+            workflow.index(
+                "applying [Personalization Levels](#personalization-levels)"
             ),
-        )
-        self.assertLess(
-            generation.index("Materialize the plan as direct local instructions"),
-            generation.index("`markdownflow-authoring.md`"),
-        )
-        self.assertIn(
-            "Begin with the first teaching action for the selected delivery mode",
-            generation,
-        )
-        self.assertIn(
-            "the resulting sequence and adjacency carry the lesson structure",
-            generation,
         )
 
         self.assertEqual(
@@ -1887,33 +2458,17 @@ class CourseCreatorContractTests(unittest.TestCase):
             markdown_table_first_column(levels, "Level"),
         )
         normalized_levels = " ".join(levels.split())
-        for structural_fragment in (
-            "internal lesson execution plan",
-            "required presence, position, and teaching effect of titles, ordinary "
-            "explanations, examples, transitions, interactions, images, feedback "
-            "states, and the close",
-            "teaching sequence",
-            "exact slide count",
-            "each slide's ordinal position and teaching function",
-            "content groups",
-            "visual hierarchy",
-            "semantic layout",
-            "Apply the level only while writing the local runtime instructions",
-            "Every level materializes the same teaching actions, slide order and "
-            "grouping, interactions, images, feedback states, and close",
-            "The level itself and this authoring rationale remain in the in-memory "
-            "handoff",
+        for fragment in (
+            "already-fixed execution plan",
+            "A higher value predetermines less ordinary title, explanation, "
+            "transition, example-detail, and non-deterministic feedback wording",
+            "write only the required runtime elements and end the instruction there",
+            "omitted, left open, adaptable, or not prewritten",
+            "in the in-memory handoff",
+            "an empty outline",
         ):
-            self.assertIn(structural_fragment, normalized_levels)
-        self.assertIn(
-            "The level changes only content-expression specificity",
-            normalized_levels,
-        )
-        self.assertIn(
-            "The actual ordered runtime instructions at every level implement "
-            "the same structural decisions",
-            normalized_levels,
-        )
+            self.assertIn(fragment, normalized_levels)
+
         level_rows = {}
         for line in levels.splitlines():
             if not line.lstrip().startswith("|"):
@@ -1924,7 +2479,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             ]
             if cells and cells[0].strip("`") in {"1", "2", "3", "4", "5"}:
                 level_rows[cells[0].strip("`")] = " ".join(cells[1:])
-
+        self.assertEqual({"1", "2", "3", "4", "5"}, set(level_rows))
         for level, row in level_rows.items():
             self.assertIn("Write", row, level)
 
@@ -1948,39 +2503,40 @@ class CourseCreatorContractTests(unittest.TestCase):
             "Omit all other ordinary wording and example identity or detail",
         ):
             self.assertIn(fragment, level_5)
-        self.assertIn("an empty outline", levels)
 
-        common_constraints = normalized_levels
+        normalized_constraints = " ".join(constraints.split())
         for fragment in (
-            "complete learner-facing interaction question",
-            "`?[]`",
+            "factual and source fidelity",
+            "selected teaching pattern and loop",
+            "interaction policy",
             "variable lifecycle",
-            "deterministic output",
-            "regulated wording",
-            "fixed numeric",
-            "selected image URLs",
-            "caption",
-            "ordering",
-            "wording or layout the author explicitly requires",
-        ):
-            self.assertIn(fragment, common_constraints)
-        self.assertRegex(
-            common_constraints,
-            r"(?i)factual or source fidelity.*selected teaching pattern and "
-            r"loop, interaction policy",
-        )
-        self.assertIn(
+            "delivery mode",
+            "Course Prompt responsibility",
+            "same execution signature",
+            "complete teaching sequence",
+            "exact slide count",
+            "content grouping",
+            "visual hierarchy",
+            "semantic layout",
             "The level adds no learner-context collection, interactions, "
             "variables, or branches",
-            common_constraints,
-        )
-        self.assertIn(
-            "Insert material selected for exact preservation directly at its "
-            "resolved runtime position",
-            common_constraints,
-        )
+            "complete interaction question",
+            "`?[]`",
+            "literal `UNKNOWN` behavior",
+            "Deterministic output",
+            "Regulated wording",
+            "fixed numeric thresholds",
+            "Selected image URLs",
+            "Wording or layout explicitly required by the author",
+            "Personalization changes ordinary expression only",
+        ):
+            self.assertIn(fragment, normalized_constraints)
 
-        self.assertIn("normalized personalization level", validation)
+        self.assertIn("normalized level is an integer", validation)
+        self.assertIn(
+            "identical execution signatures",
+            validation,
+        )
         self.assertIn("`teaching_prompt_personalization_level`", checklist)
         self.assertIn("ordinary title and explanation wording", checklist)
         self.assertIn("overly specific", checklist)
@@ -1997,21 +2553,21 @@ class CourseCreatorContractTests(unittest.TestCase):
             checklist,
         )
         self.assertIn(
-            "compare the actual instruction sequences explicitly", checklist
+            "compare the actual instruction sequences explicitly",
+            checklist,
         )
         self.assertIn(
             "record cross-level structural consistency as `not-assessed`",
             checklist,
         )
-        self.assertIn("`not-assessed`", checklist)
         self.assertRegex(checklist, r"(?i)do not infer")
 
         for path in COURSE_CREATOR_REFERENCES.rglob("*.md"):
             if path.name == "teaching-prompt.md":
                 continue
-            self.assertNotIn(
-                "\n## Personalization Levels\n",
+            self.assertNotRegex(
                 path.read_text(encoding="utf-8"),
+                r"(?m)^#{2,6} Personalization Levels$",
                 f"five-level behavior table belongs only in teaching-prompt.md: {path}",
             )
 
@@ -2024,9 +2580,9 @@ class CourseCreatorContractTests(unittest.TestCase):
             markdown_section(self.pedagogy, "Variable Strategy"),
             markdown_section(self.markdownflow, "Interactions"),
             markdown_section(self.markdownflow, "Variables"),
-            markdown_section(self.markdownflow_authoring, "Interaction Encoding"),
+            markdown_section(self.teaching_prompt, "Interaction Encoding"),
             markdown_section(
-                self.markdownflow_authoring, "Variable and Branch Encoding"
+                self.teaching_prompt, "Variable and Branch Encoding"
             ),
         ):
             self.assertNotIn(field, owner_section)
@@ -2047,11 +2603,13 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         interaction_encoding = " ".join(
             markdown_section(
-                self.markdownflow_authoring, "Interaction Encoding"
+                self.teaching_prompt, "Interaction Encoding"
             ).split()
         )
         authoring_validation = " ".join(
-            markdown_section(self.markdownflow_authoring, "Validation").split()
+            markdown_section(
+                self.teaching_prompt, "Encoding Checks"
+            ).split()
         )
         checklist = " ".join(
             markdown_section(
@@ -2061,7 +2619,10 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         self.assertIn("brief text lead-in", lesson_loop)
         self.assertIn("standard teaching branch of combined delivery", lesson_loop)
-        self.assertIn("first learner-visible block", validation)
+        self.assertIn(
+            "Standard visual-text delivery begins with a brief text lead-in",
+            validation,
+        )
         self.assertIn("slide, or image as the opening", lesson_loop)
         self.assertIn("word-count or sentence-count quota", lesson_loop)
 
@@ -2119,28 +2680,51 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("one brief learner-visible text lead-in", materialization)
         self.assertIn("at least one substantive visual-and-explanation pair", materialization)
         self.assertIn("make the final explanation perform the close", materialization)
-        self.assertIn("no consecutive visual units", validation)
         self.assertIn(
-            "one concise but complete explanation after every visual and before "
-            "the next",
+            "does not replace the paired explanation",
+            materialization,
+        )
+        self.assertIn(
+            "leave no learner-visible block after the final closing explanation",
+            materialization,
+        )
+        self.assertIn("never places visuals consecutively", validation)
+        self.assertIn(
+            "or delays their explanations",
             validation,
         )
-        self.assertIn("final explanation that also performs the close", validation)
+        self.assertIn(
+            "final concise but complete explanation perform the close",
+            validation,
+        )
+        self.assertIn(
+            "do not replace a paired explanation or follow the final closing "
+            "explanation",
+            validation,
+        )
         self.assertIn("question-only visual", validation)
         self.assertIn("unchanged `?[]` control", validation)
 
-        self.assertIn("question-only visual instruction", interaction_encoding)
-        self.assertIn("without option labels", interaction_encoding)
+        self.assertIn("question-only visual", interaction_encoding)
+        self.assertIn("Put no option labels", interaction_encoding)
         self.assertIn("unchanged `?[]` control", interaction_encoding)
         self.assertIn("`?[Continue]`", interaction_encoding)
-        self.assertIn("do not invent a learner question", interaction_encoding)
-        self.assertIn("only in the interaction control", interaction_encoding)
+        self.assertIn("add no invented learner question", interaction_encoding)
+        self.assertIn("only in the control", interaction_encoding)
         self.assertIn(
-            "do not duplicate those labels on the question-only visual",
+            "whose central content is the complete question",
             interaction_encoding,
         )
         self.assertIn(
-            "After the learner responds, acknowledge the goal and explain",
+            "After the learner responds:",
+            interaction_encoding,
+        )
+        self.assertIn(
+            "Acknowledge the goal.",
+            interaction_encoding,
+        )
+        self.assertIn(
+            "Explain that later lessons will use it to adapt examples and emphasis",
             interaction_encoding,
         )
         self.assertIn(
@@ -2148,8 +2732,8 @@ class CourseCreatorContractTests(unittest.TestCase):
             interaction_encoding,
         )
         self.assertNotIn("Course Prompt", interaction_encoding)
-        self.assertIn("question-only visual instructions", authoring_validation)
-        self.assertIn("feedback or explanatory effects", authoring_validation)
+        self.assertIn("question-only visual", authoring_validation)
+        self.assertIn("feedback or explanatory effect", authoring_validation)
 
         for defect in (
             "visual opening",
@@ -2488,7 +3072,12 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         self.assertIn("slide 1 a clear cover-page visual treatment", materialization)
         self.assertIn("with lesson title and author information", materialization)
-        self.assertIn("clear cover-page visual treatment", validation)
+        self.assertIn(
+            "already-resolved first slide without adding a teaching action or "
+            "changing the plan's slide count or order",
+            materialization,
+        )
+        self.assertIn("clear cover-page treatment", validation)
         self.assertIn("with lesson title and author information", validation)
         self.assertNotIn("rather than adding a cover", self.pedagogy)
         self.assertNotIn("rather than serve as a cover", self.pedagogy)
@@ -2502,7 +3091,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertNotIn(removed_page_rule, self.pedagogy)
             self.assertNotIn(removed_page_rule, self.optimization_checklist)
         self.assertIn(
-            "without restating the general presentation requirements",
+            "without restating general presentation requirements",
             validation,
         )
         self.assertIn(
