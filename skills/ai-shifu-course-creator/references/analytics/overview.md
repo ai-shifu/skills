@@ -34,7 +34,7 @@ Apply the execution contract in `workflow.md#cli-only-rule`. Use this overview t
 1. For a DSL-backed question, translate the user's request into a DSL body using `dsl.md` (syntax), `tables.md` (which table answers which question + which fields exist), and `recipes.md` (Course Metadata 0a–0c, Course Overview 0d, + 23 numbered scenario recipes).
 2. Apply the privacy rules in `privacy-and-presentation.md` if the query touches `user_users`, `generated_content`, or `var_variable_values.value`.
 3. Apply the Translation Gate in `privacy-and-presentation.md` before presenting any result.
-4. **If the user mentioned a course by title**, run Course Metadata Recipe 0a / 0b first and interpret the result through `tables.md#course-title-is-current-published-not-history`.
+4. **If the user mentioned a course by title**, run Course Metadata Recipes 0a–0c and interpret the result through `tables.md#course-title-is-current-published-not-history`.
 5. **If the user asks about credit consumption**, use `shifu-cli.py credit-detail` instead of issuing a DSL query against `bill_daily_usage_metrics` — that table is empty in production pending the daily aggregation cron.
 
 ## Error Codes the CLI May Surface
