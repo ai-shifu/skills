@@ -23,7 +23,7 @@ Enter the analytics path when a course author or admin asks about:
 
 > Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits — query via `shifu-cli.py credit-detail`.
 
-Do **not** enter the analytics path when the user asks only "how many courses do I have?" — that is a `shifu-cli.py list` call. When the user names a course by title, plan the applicable Course Metadata recipe before the downstream query and apply the current-title semantics in `tables.md#course-title-is-current-published-not-history`.
+Do **not** enter the analytics path when the user asks only "how many courses do I have?" — that is a `shifu-cli.py list` call.
 
 ## Execution Contract
 
@@ -39,7 +39,7 @@ Apply the execution contract in `workflow.md#cli-only-rule`. Use this overview t
 
 ## Error Codes the CLI May Surface
 
-When an analytics response carries a non-zero business `code`, interpret it as follows:
+When an analytics response carries a business `code`, interpret it as follows:
 
 | Code | Meaning | Action |
 | --- | --- | --- |
