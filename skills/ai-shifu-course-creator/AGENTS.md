@@ -17,7 +17,7 @@
 | `SKILL.md` | Define skill discovery metadata, the package-wide user-facing Markdown link contract, startup requirements, the task router, and routing guardrails. It selects the smallest complete reference set and leaves domain behavior to those references. |
 | `.env.example` | Document supported service-selection and token environment variables with safe empty defaults and credential-storage guidance. |
 | `CHANGELOG.md` | Record user-visible and maintainer-relevant changes in chronological release history. Current behavior remains defined by `SKILL.md`, references, and scripts. |
-| `evals/evals.json` | Hold end-to-end behavioral scenarios and expectations for routing, authoring, platform, analytics, and boundary regressions. Every expectation must trace to a canonical contract file. |
+| `evals/evals.json` | Hold end-to-end behavioral scenarios, optional input fixtures, and expected outcomes for routing, authoring, platform, analytics, and boundary regressions. Canonical guidance remains the source of behavior. |
 | `evals/trigger_eval.json` | Test whether representative requests should or should not discover this skill. Keep capability and trigger wording canonical in `SKILL.md` frontmatter. |
 
 ## Core Reference Responsibilities
@@ -25,10 +25,10 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `references/language-policy.md` | Own target-language resolution, canonical human-facing terminology, localization boundaries, first-mention wording, and the final language audit across artifacts and messages. |
-| `references/session-controls.md` | Own session lifecycle behavior: official contact timing, version checks, usage reporting, progress and error communication, handoffs, and first-session operational controls. |
+| `references/session-controls.md` | Own session lifecycle behavior: official contact timing, skill-version update checks, usage reporting, progress and error communication, handoffs, and first-session operational controls. |
 | `references/authentication.md` | Own platform site selection, credential verification, browser authorization, login continuation, and authentication failure handling. It establishes access and does not select a course. |
 | `references/open-in-app-browser.md` | Own the host-application mechanics for opening a supplied URL in a visible built-in browser and reporting the opening result. The calling workflow owns URL selection and next steps. |
-| `references/course-target.md` | Own new-versus-existing resolution, title and BID matching, ambiguity handling, and the resolved target record for authoring and platform-management routes. Analytics title resolution remains with `analytics/recipes.md` and `analytics/tables.md`. |
+| `references/course-target.md` | Own new-versus-existing resolution, title and BID matching, ambiguity handling, and the resolved target record for authoring and platform-management routes. For analytics, `analytics/tables.md` owns current-title semantics and `analytics/recipes.md` applies them through lookup templates. |
 | `references/authoring-mode.md` | Own selection between standard and fallback execution modes for authoring phases. Phase-specific fallback fields remain in `data-contracts.md`. |
 | `references/course-design-intake.md` | Own collection and normalization of unresolved author choices, the effect preview shown before each question, and the resulting design-control handoff. Downstream owners define the controls' actual teaching and artifact effects. |
 | `references/data-contracts.md` | Own schemas, required and optional fields, enum values, output envelopes, variable-table structure, and cross-field invariants exchanged between authoring phases. |
@@ -66,7 +66,7 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `references/analytics/workflow.md` | Own the router-facing end-to-end analytics execution path: required authentication and references, CLI-only execution, query handoff, and completion behavior. |
-| `references/analytics/overview.md` | Own analytics intent orientation: supported question families, choosing the correct table or recipe, the three-step conceptual flow, common query-selection pitfalls, and navigation to deeper references. |
+| `references/analytics/overview.md` | Own analytics intent orientation: supported question families, question-to-query planning, choosing the correct table or recipe, common query-selection pitfalls, and navigation to deeper references. |
 | `references/analytics/dsl.md` | Own the analytics query language: JSON body shape, operators, aggregates, limits, auto-filters, and server-enforced query-shape constraints. Field-access policy, refusals, masking, and user-facing handling remain with `privacy-and-presentation.md`. |
 | `references/analytics/tables.md` | Own queryable table and field semantics, enum and code translations, identifier relationships, known data traps, and distinctions among independently measured amounts. |
 | `references/analytics/recipes.md` | Own ready-to-run query and `credit-detail` templates for supported analytics scenarios. Grammar and field meaning remain in `dsl.md` and `tables.md`. |

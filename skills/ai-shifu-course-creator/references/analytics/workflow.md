@@ -32,7 +32,7 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 
 ### References
 
-- `overview.md` — entry point, full workflow, question→table quick-lookup, error codes
+- `overview.md` — intent orientation, question→table quick-lookup, query planning, and error codes
 - `dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)
 - `tables.md` — the 10 tables, fields, all code/enum translation tables, ID translation rules, data traps, "course title is not history" rule
 - `recipes.md` — Course Metadata 0a–0c, Course Overview 0d, + 23 numbered scenario recipes (including four-key follow-up pairing and follow-ups per lesson)

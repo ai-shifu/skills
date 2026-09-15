@@ -27,9 +27,7 @@ Do **not** enter the analytics path when the user asks only "how many courses do
 
 ## CLI-Only Rule
 
-**All analytics operations go through `scripts/shifu-cli.py`. Never write raw HTTP, never read tokens directly, never handle the analytics endpoint's auth headers by hand.** The CLI is the single source of truth for authentication and transport; the agent's job is to translate a user question into a DSL JSON body and hand it to the CLI.
-
-If you find yourself drafting a `POST` request or composing `Authorization: Bearer` / `Token:` headers, stop — use `analytics-query` instead.
+Apply the execution contract in `workflow.md#cli-only-rule`. Use this overview to translate the user's question into the appropriate CLI command and DSL query plan.
 
 ## Workflow (3 Steps)
 
