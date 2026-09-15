@@ -1,6 +1,6 @@
 # Analytics Overview
 
-Use this page as the entry point for any analytics task. The deeper references on this page are read on demand.
+Use this page to classify analytics intent and plan the query after `workflow.md` selects the analytics path. Read the deeper references on demand.
 
 ## Required References
 
@@ -23,7 +23,7 @@ Enter the analytics path when a course author or admin asks about:
 
 > Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits — query via `shifu-cli.py credit-detail`.
 
-Do **not** enter the analytics path when the user asks only "how many courses do I have?" — that is a `shifu-cli.py list` call. **But** if the user names a course by title (e.g. "show me the data on 跟 AI 学 AI 通识"), resolve the current `shifu_bid → title` via Course Metadata recipes first, _then_ run the downstream analytics — `shifu-cli.py list` is a draft snapshot and can leak historical / renamed titles.
+Do **not** enter the analytics path when the user asks only "how many courses do I have?" — that is a `shifu-cli.py list` call. When the user names a course by title, plan the applicable Course Metadata recipe before the downstream query and apply the current-title semantics in `tables.md#course-title-is-current-published-not-history`.
 
 ## Execution Contract
 
@@ -34,7 +34,7 @@ Apply the execution contract in `workflow.md#cli-only-rule`. Use this overview t
 1. For a DSL-backed question, translate the user's request into a DSL body using `dsl.md` (syntax), `tables.md` (which table answers which question + which fields exist), and `recipes.md` (Course Metadata 0a–0c, Course Overview 0d, + 23 numbered scenario recipes).
 2. Apply the privacy rules in `privacy-and-presentation.md` if the query touches `user_users`, `generated_content`, or `var_variable_values.value`.
 3. Apply the Translation Gate in `privacy-and-presentation.md` before presenting any result.
-4. **If the user mentioned a course by title**, run Course Metadata Recipe 0a / 0b first to confirm the current `shifu_bid → title` mapping. Never report a historical title as the course's current name.
+4. **If the user mentioned a course by title**, run Course Metadata Recipe 0a / 0b first and interpret the result through `tables.md#course-title-is-current-published-not-history`.
 5. **If the user asks about credit consumption**, use `shifu-cli.py credit-detail` instead of issuing a DSL query against `bill_daily_usage_metrics` — that table is empty in production pending the daily aggregation cron.
 
 ## Error Codes the CLI May Surface
