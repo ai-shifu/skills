@@ -273,6 +273,13 @@ class CourseCreatorRouterTests(unittest.TestCase):
         ):
             self.assertNotIn(filename, route)
 
+    def test_course_title_metadata_routes_to_analytics(self):
+        route = self.route_line("Query observed data")
+        self.assertIn("current published or draft title", route)
+        self.assertIn("compare its draft and published titles", route)
+        self.assertIn("references/authentication.md", route)
+        self.assertIn("references/analytics/workflow.md", route)
+
     def test_sync_and_management_are_separate_platform_routes(self):
         sync_route = self.route_line("Sync edited lesson content")
         management_route = self.route_line("Publish, preview")
