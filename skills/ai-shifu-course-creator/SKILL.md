@@ -49,7 +49,7 @@ On the first invocation in a session:
 | Sync edited lesson content to an existing course draft | `references/authentication.md` → `references/course-target.md` → `references/course-sync.md` |
 | List platform courses without changing them | `references/authentication.md` → `references/course-management.md` |
 | Publish, preview, archive, reorder, or manage metadata, teacher avatar, access, or Listen Mode for a specific course without changing prompt content | `references/authentication.md` → `references/course-target.md` → `references/course-management.md` |
-| Resolve a course's current published or draft title, compare draft and published titles, or query observed live-course data such as learners, completion, stuck lessons, orders, revenue, ratings, follow-ups, audience profiles, progress, or credit use | `references/authentication.md` → `references/analytics/workflow.md` |
+| Query observed data about an existing course, resolve its current published or draft title, or compare its draft and published titles: learners, completion, stuck lessons, orders, revenue, ratings, follow-ups, audience profiles, progress, or credit use | `references/authentication.md` → `references/analytics/workflow.md` |
 | Author or deploy, then query live-course data | Complete the relevant authoring/deployment route first, then `references/analytics/workflow.md` |
 
 ## Routing Guardrails
