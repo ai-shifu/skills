@@ -25,7 +25,7 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 ### Workflow
 
 1. **Resolve credentials** — complete `../authentication.md`.
-2. **Resolve the course** — run `shifu-cli.py list` (or `shifu-cli.py find-title <keyword>`) to map `shifu_bid ↔ course name`. **If the user mentioned a course by title**, always resolve the _current_ `shifu_bid → title` via Course Metadata recipes 0a–0c in `recipes.md` before issuing downstream queries — `list` is a draft snapshot and can show stale or historical titles. Never report a historical title as the course's current name.
+2. **Resolve the course** — run `shifu-cli.py list` (or `shifu-cli.py find-title <keyword>`) to map `shifu_bid ↔ course name`. **If the user mentioned a course by title**, follow the Course Metadata path in `recipes.md`, which selects the published-title lookup from the available context and uses the draft fallback only when no current published row exists. Complete this resolution before downstream queries because `list` is a draft snapshot and can show stale or historical titles.
 3. **Resolve the outline** (only for lesson-level dimensions) — run `shifu-cli.py show <shifu_bid>` to map `outline_item_bid → name / position`. Skipping this makes outline-dimension numbers unreadable.
 4. **Run DSL queries** — `shifu-cli.py analytics-query <shifu_bid> --dsl '<json-body>'` (or `--dsl-file query.json` for long bodies).
 5. **Translate before presenting** — pass every result through the Translation Gate in `privacy-and-presentation.md`. Never paste raw codes (`601`, `502`, `1101`), raw `*_bid` strings, or raw `user_bid` values in user-facing output.
@@ -35,13 +35,13 @@ Post-deployment data queries on live courses. Trigger this section whenever a co
 - `overview.md` — intent orientation, question→table quick-lookup, query planning, and error codes
 - `dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)
 - `tables.md` — the 10 tables, fields, all code/enum translation tables, ID translation rules, data traps, "course title is not history" rule
-- `recipes.md` — Course Metadata 0a–0c, Course Overview 0d, + 23 numbered scenario recipes (including four-key follow-up pairing and follow-ups per lesson)
+- `recipes.md` — Course Metadata resolution, Course Overview 0d, + 23 numbered scenario recipes (including four-key follow-up pairing and follow-ups per lesson)
 - `privacy-and-presentation.md` — `user_users` restricted access, `generated_content` whitelist, `var_variable_values.value` aggregate-only rule, Translation Gate, refusal rules
 
 ### Validation
 
 - Token resolved through `../authentication.md`, not a hand-rolled lookup.
-- When the user mentioned a course by title, the current `shifu_bid → title` was confirmed via Course Metadata Recipes 0a–0c before the downstream query ran. Historical titles were never substituted for current ones.
+- When the user mentioned a course by title, the applicable Course Metadata path completed before the downstream query, including its conditional draft fallback. The reported name reflects the current published title or an explicitly identified draft title.
 - `shifu_bid` and outline mappings established before any course-level query.
 - DSL body matches grammar in `dsl.md`; filters reflect the user's intent (e.g. `status = 502` for "paid", not `>= 502`).
 - Credit consumption queries used `shifu-cli.py credit-detail` per the CLI-Only Rule above — never a DSL query against `bill_daily_usage_metrics`.

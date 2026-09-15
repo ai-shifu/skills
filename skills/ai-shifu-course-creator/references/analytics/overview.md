@@ -19,7 +19,7 @@ Enter the analytics path when a course author or admin asks about:
 - which wallet absorbed the deduction for a given course
 - audience profile distribution (goals, level, preferences)
 - individual learner tracking — with the privacy rules in `privacy-and-presentation.md`
-- **course title resolution** — "what is my course `<title>` currently called", "did I rename it", "is the draft title diverging from the published title" (use the Course Metadata recipes 0a–0c in `recipes.md`)
+- **course title resolution** — "what is my course `<title>` currently called", "did I rename it", "is the draft title diverging from the published title" (follow the Course Metadata path in `recipes.md`)
 
 > Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits — query via `shifu-cli.py credit-detail`.
 
@@ -31,10 +31,10 @@ Apply the execution contract in `workflow.md#cli-only-rule`. Use this overview t
 
 ## Query Planning
 
-1. For a DSL-backed question, translate the user's request into a DSL body using `dsl.md` (syntax), `tables.md` (which table answers which question + which fields exist), and `recipes.md` (Course Metadata 0a–0c, Course Overview 0d, + 23 numbered scenario recipes).
+1. For a DSL-backed question, translate the user's request into a DSL body using `dsl.md` (syntax), `tables.md` (which table answers which question + which fields exist), and `recipes.md` (Course Metadata resolution, Course Overview 0d, + 23 numbered scenario recipes).
 2. Apply the privacy rules in `privacy-and-presentation.md` if the query touches `user_users`, `generated_content`, or `var_variable_values.value`.
 3. Apply the Translation Gate in `privacy-and-presentation.md` before presenting any result.
-4. **If the user mentioned a course by title**, run Course Metadata Recipes 0a–0c and interpret the result through `tables.md#course-title-is-current-published-not-history`.
+4. **If the user mentioned a course by title**, follow the Course Metadata resolution path in `recipes.md` and interpret the result through `tables.md#course-title-is-current-published-not-history`.
 5. **If the user asks about credit consumption**, use `shifu-cli.py credit-detail` instead of issuing a DSL query against `bill_daily_usage_metrics` — that table is empty in production pending the daily aggregation cron.
 
 ## Error Codes the CLI May Surface
@@ -112,5 +112,5 @@ When querying lesson-level data (stuck lessons, follow-ups per lesson, ratings),
 
 - `dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)
 - `tables.md` — the 10 tables, their fields, all code/enum translation tables, ID translation rules, the duplicate-row trap, the `role = 2 ≠ follow-up` trap, and the "course title is not history" rule
-- `recipes.md` — ready-to-run DSL templates by scenario (Course Metadata 0a–0c, Course Overview 0d, then 23 numbered scenario recipes including follow-up four-key pairing and follow-up per lesson)
+- `recipes.md` — ready-to-run DSL templates by scenario (Course Metadata resolution, Course Overview 0d, then 23 numbered scenario recipes including follow-up four-key pairing and follow-up per lesson)
 - `privacy-and-presentation.md` — `user_users` / `generated_content` / `var_variable_values` privacy rules, plus the Translation Gate for user-facing output
