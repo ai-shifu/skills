@@ -49,12 +49,12 @@ On the first invocation in a session:
 | Sync edited lesson content to an existing course draft | `references/authentication.md` → `references/course-target.md` → `references/course-sync.md` |
 | List platform courses without changing them | `references/authentication.md` → `references/course-management.md` |
 | Publish, preview, archive, reorder, or manage metadata, teacher avatar, access, or Listen Mode for a specific course without changing prompt content | `references/authentication.md` → `references/course-target.md` → `references/course-management.md` |
-| Query observed data about a live course: learners, completion, stuck lessons, orders, revenue, ratings, follow-ups, audience profiles, progress, or credit use | `references/authentication.md` → `references/analytics/workflow.md` |
+| Resolve a course's current published or draft title, compare draft and published titles, or query observed live-course data such as learners, completion, stuck lessons, orders, revenue, ratings, follow-ups, audience profiles, progress, or credit use | `references/authentication.md` → `references/analytics/workflow.md` |
 | Author or deploy, then query live-course data | Complete the relevant authoring/deployment route first, then `references/analytics/workflow.md` |
 
 ## Routing Guardrails
 
-- Route to analytics only for observed facts, metrics, records, or trends from an existing live course. Design questions such as “how many lessons should this material become?” remain authoring tasks.
+- Route to analytics for current course-title metadata or observed facts, metrics, records, and trends from an existing course. Design questions such as “how many lessons should this material become?” remain authoring tasks.
 - For platform-bound authoring, do not propose an outline or write lesson content until the target is resolved. Remaining local Teaching Prompt, local Course Prompt, local course description, and paste-audit routes have no platform target.
 - Compare the resolved target kind with the kind assumed by the active row. If it changes from new to existing or existing to new, stop that row, reclassify the remaining work against the Task Router, and never enter an incompatible new-only or existing-only stage.
 - Full-course authoring continues through new-course deployment and publication by default.

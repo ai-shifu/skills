@@ -1,6 +1,6 @@
 # Analytics Overview
 
-Use this page to classify analytics intent and plan the query after `workflow.md` selects the analytics path. Read the deeper references on demand.
+Use this page to classify analytics intent and plan the query after `SKILL.md` selects the analytics route. Apply the execution path owned by `workflow.md` and read deeper references on demand.
 
 ## Required References
 
