@@ -104,9 +104,10 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
   - Do not normalize an existing Prompt during an audit-only request.
   - Do not backfill existing courses solely to adopt the layout.
 - Organize each Prompt with one source-only navigation comment for every smallest useful teaching block.
-  - Summarize only the immediate learner outcome of the following block.
-  - Use concise, freely worded text so scanning the comments alone reveals the learning progression, without requiring a label, prefix, punctuation pattern, numbering scheme, or sentence form.
-  - Make adjacent outcomes distinguishable. Generic text such as "Continue", "Teaching block", or "Explain content", or a description of what the Teaching Agent will do, is not a learner outcome.
+  - Name the immediate change in understanding, judgment, capability, or next-step readiness established by the following block.
+  - Use concise result phrases with natural wording and varied openings across adjacent comments.
+  - Give each result enough specificity to distinguish it from neighboring blocks and reveal the learning progression when the comments are scanned together.
+  - Choose the label, prefix, punctuation, numbering, and sentence form that makes each result easiest to scan.
 - Map one block to each smallest useful editing unit without changing the teaching sequence:
   - Standard visual-text teaching:
     - Keep the lead-in in one block.
@@ -130,7 +131,7 @@ Encode the already-resolved lesson teaching, interaction, variable, preservation
 Encode the already-resolved author-editable layout without changing teaching content or order:
 
 - Put exactly one standalone `<!-- ... -->` comment immediately before each resolved teaching block; do not reuse a comment across blocks or add another navigation comment to a block.
-  - Use the resolved free-form learner outcome as the body; the wrapper is the only fixed form.
+  - Put the resolved free-form result text inside the wrapper without rewriting it; the wrapper is the only fixed form.
   - Keep the body concise because `markdownflow.md#preprocessing` removes it before runtime.
   - If the body would contain the literal delimiter `<!--` or `-->`, rephrase the outcome.
 - Encode each primary ordinary action as a top-level item beginning with `-` followed by one space.
@@ -163,10 +164,10 @@ Encode the already-resolved author-editable layout without changing teaching con
 
 #### Example
 
-The comments deliberately use different sentence forms; neither is a template. The hierarchy separates existing requirements without adding or changing a teaching action.
+The comments demonstrate free-form variation through a noun phrase and a result clause. The hierarchy separates existing requirements without adding or changing a teaching action.
 
 ```markdown
-<!-- The learner can choose a path that fits the current case -->
+<!-- A fitting path for the current case -->
 
 - Create a question-only slide.
   - Make "Which path best matches the current case?" its complete central question.
@@ -178,7 +179,7 @@ The comments deliberately use different sentence forms; neither is a template. T
   - Explain the selected path.
   - Contrast it with the other path.
 
-<!-- A course-wide goal is ready to guide later examples and emphasis -->
+<!-- One course-wide goal now guides later examples and emphasis -->
 
 - Create a question-only slide.
   - Make "What course-wide goal should later lessons use?" its complete central question.
@@ -259,6 +260,7 @@ Image composition is owned by `image-authoring.md` and is loaded conditionally b
 
 - When Author-Editable Layout applies:
   - Every resolved block has exactly one standalone outcome comment immediately before it, so the number and order of navigation comments match the resolved teaching blocks.
+  - Comments use concise, naturally varied result phrases that keep adjacent results immediately distinguishable and make the learning progression scannable.
   - Each primary action is a top-level unordered-list item; meaningful supporting details use nested items indented by two additional spaces per level; independent or syntax-separated actions remain top-level siblings.
   - Syntax-owned and exact structures remain unprefixed, receive no new indentation, and stay unchanged.
   - Every comment body excludes `<!--` and `-->`, allowing preprocessing to remove the complete comment without leaking source text.

@@ -1880,12 +1880,14 @@ class CourseCreatorContractTests(unittest.TestCase):
             "audit-only request",
             "one source-only navigation comment for every smallest useful "
             "teaching block",
-            "immediate learner outcome",
-            "scanning the comments alone reveals the learning progression",
-            "without requiring a label, prefix, punctuation pattern, numbering "
-            "scheme, or sentence form",
-            'Generic text such as "Continue", "Teaching block", or '
-            '"Explain content"',
+            "immediate change in understanding, judgment, capability, or "
+            "next-step readiness",
+            "concise result phrases with natural wording and varied openings",
+            "enough specificity to distinguish it from neighboring blocks",
+            "reveal the learning progression when the comments are scanned "
+            "together",
+            "Choose the label, prefix, punctuation, numbering, and sentence "
+            "form that makes each result easiest to scan",
             "Standard visual-text teaching",
             "each visual and its immediately following complete explanation in "
             "one block under one comment",
@@ -1904,6 +1906,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         for fragment in (
             "exactly one standalone `<!-- ... -->` comment immediately before "
             "each resolved teaching block",
+            "resolved free-form result text inside the wrapper without "
+            "rewriting it",
             "wrapper is the only fixed form",
             "literal delimiter `<!--` or `-->`",
             "top-level item beginning with `-` followed by one space",
@@ -1975,6 +1979,14 @@ class CourseCreatorContractTests(unittest.TestCase):
             encoding_checks,
         )
         self.assertIn(
+            "concise, naturally varied result phrases",
+            encoding_checks,
+        )
+        self.assertIn(
+            "keep adjacent results immediately distinguishable",
+            encoding_checks,
+        )
+        self.assertIn(
             "nested items indented by two additional spaces per level",
             encoding_checks,
         )
@@ -2018,7 +2030,8 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.teaching_prompt, "Interaction Encoding"
         )
         self.assertIn(
-            "different sentence forms; neither is a template",
+            "demonstrate free-form variation through a noun phrase and a "
+            "result clause",
             interaction,
         )
         shape_match = re.search(
@@ -2028,6 +2041,12 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIsNotNone(shape_match)
         shape = shape_match.group("body")
+        self.assertIn("<!-- A fitting path for the current case -->", shape)
+        self.assertIn(
+            "<!-- One course-wide goal now guides later examples and "
+            "emphasis -->",
+            shape,
+        )
         expected_content_lines = [
             "Create a question-only slide.",
             'Make "Which path best matches the current case?" its complete central question.',
@@ -2233,7 +2252,9 @@ class CourseCreatorContractTests(unittest.TestCase):
                 "HTML comments",
                 "unordered-list",
                 "localized",
-                "learner outcome",
+                "immediate change in understanding",
+                "naturally varied result phrases",
+                "openings keep adjacent",
                 "no extra navigation comments",
             ):
                 self.assertIn(fragment, expectations)
