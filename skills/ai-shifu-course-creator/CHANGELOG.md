@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Keep task routing in the entrypoint, existing-course lookup in its reference, image-block recovery scheduling in orchestration, and link handoffs based on actual publication results. Preserve the original edit-title no-match choice to create a new course only after user confirmation.
+- Preserve the full-course authoring sequence for name-only creation requests instead of inferring an empty platform record and starting authentication before intake.
+- Start new-course authoring without platform login or duplicate-title lookup; authenticate only at the first platform operation, while existing-course edits still authenticate, resolve a unique target, and pull the latest content first.
+- Require a completed content preview and explicit confirmation before new-course deployment while retaining default creation and publication; only an explicit user request skips publication. Deliver course preview, published learner, and editor links after verified publication. Keep existing-course editing and conflict handling unchanged.
 - Consolidate Teaching Prompt generation and source-encoding guidance into one compact, hierarchical reference while preserving precise audit anchors and existing behavior.
 - Format newly generated or explicitly rewritten Teaching Prompts with one runtime-invisible, freely worded learning-result comment per teaching block, using concise and naturally varied result phrases that keep adjacent blocks distinguishable, plus hierarchical unordered-list instructions wherever actions have separable supporting details, while preserving every existing teaching requirement and exact MarkdownFlow structure.
 - Define one canonical responsibility for every Course Creator package file and route cross-file maintenance through the owning reference.

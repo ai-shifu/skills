@@ -141,11 +141,12 @@ class CourseCreatorRouterTests(unittest.TestCase):
             self.router,
         )
 
-    def test_platform_routes_require_authentication(self):
+    def test_existing_platform_routes_require_authentication(self):
         for prefix in (
-            "Create a full course",
+            "Restructure an existing platform course",
+            "Replace an existing lesson Teaching Prompt",
             "Optimize Teaching Prompt content in an existing platform course",
-            "Deploy a new course",
+            "Sync edited lesson content",
             "Publish, preview",
             "Query observed data",
         ):
@@ -153,6 +154,42 @@ class CourseCreatorRouterTests(unittest.TestCase):
                 self.assertIn(
                     "references/authentication.md", self.route_line(prefix)
                 )
+
+    def test_new_course_routes_defer_platform_access_to_deployment(self):
+        for prefix in ("Create a full course", "Deploy a new course"):
+            with self.subTest(prefix=prefix):
+                route = self.route_line(prefix)
+                deployment = "references/deployment-workflow.md"
+                self.assertIn(deployment, route)
+                self.assertNotIn("references/course-target.md", route)
+                self.assertNotIn("references/authentication.md", route)
+
+    def test_name_only_creation_routes_through_intake_and_authoring(self):
+        route = self.route_line("Create a full course")
+        self.assertIn("name or topic", route)
+        ordered = (
+            "references/authoring-mode.md",
+            "references/course-design-intake.md",
+            "references/orchestration-workflow.md",
+            "references/optimization-workflow.md",
+            "references/deployment-workflow.md",
+        )
+        positions = [route.index(path) for path in ordered]
+        self.assertEqual(sorted(positions), positions)
+        self.assertNotIn("references/authentication.md", route)
+        self.assertNotIn("references/course-target.md", route)
+        self.assertNotIn("references/course-management.md", route)
+
+    def test_supplied_material_routes_do_not_resolve_platform_target(self):
+        for prefix in (
+            "Plan course structure",
+            "Segment supplied material only",
+            "Generate Teaching Prompts from existing segments",
+        ):
+            with self.subTest(prefix=prefix):
+                route = self.route_line(prefix)
+                self.assertNotIn("authentication.md", route)
+                self.assertNotIn("course-target.md", route)
 
     def test_generation_runs_design_intake_before_teaching_prompt(self):
         route = self.route_line("Generate Teaching Prompts")
@@ -188,9 +225,10 @@ class CourseCreatorRouterTests(unittest.TestCase):
         self.assertIn("resolved target kind", self.router)
         self.assertIn("reclassify the remaining work", self.router)
         self.assertIn("new-only or existing-only", self.router)
-        self.assertIn("Create intent with one or more matches", target_contract)
-        self.assertIn("Edit intent with no match", target_contract)
-        self.assertIn("explicitly confirms creation", target_contract)
+        self.assertIn("ask whether to create a new course", self.router)
+        self.assertIn("explicitly confirms creation", self.router)
+        self.assertIn("## Resolve Existing Course", target_contract)
+        self.assertIn("leave the target unresolved", target_contract)
         self.assertIn("explicit Shifu BID", target_contract)
         self.assertIn("run `show <shifu_bid>`", target_contract)
 
@@ -245,7 +283,7 @@ class CourseCreatorRouterTests(unittest.TestCase):
         )
         self.assertIn(
             "Full-course authoring continues through new-course deployment "
-            "and publication by default.",
+            "and publication by default",
             self.router,
         )
         remaining_local_prefixes = (

@@ -16,6 +16,7 @@ Teacher avatars are platform metadata rather than Teaching Prompt image assets. 
 ## Conditional References
 
 - When an image URL, alt, caption, or ordering was selected as immutable source content: `source-preservation.md`
+- Immediately before uploading an image to the platform: `authentication.md`
 
 ## Asset Intake
 
@@ -24,7 +25,7 @@ Understand every image before choosing its lesson, position, or alt text:
 - If the image is visible, identify in one sentence the concept, relation, or example it conveys.
 - If only an opaque path or URL is available, ask the author for a one-sentence description or a semantically meaningful filename. Do not guess from an opaque filename.
 
-When the selected route permits platform access, upload local or remote assets with `shifu-cli.py upload-image`, always passing `--course-dir` and an informative `--alt`. Use the exact resource URL returned by the selected deployment and the stored manifest record as the authoritative asset identity.
+When the selected route permits platform access and an upload is needed, complete `authentication.md` at this boundary, then upload local or remote assets with `shifu-cli.py upload-image`, always passing `--course-dir` and an informative `--alt`. An upload needs neither a course BID nor a title lookup or course creation. Use the exact resource URL returned by the selected deployment and the stored manifest record as the authoritative asset identity. If authentication or upload is deferred or fails, preserve local assets and report the blocked image and missing resource URL to the caller; do not fabricate a URL or pass Image Output Validation.
 
 For explicitly local artifact-only work where upload is excluded, do not call `upload-image`. Use the authoritative URL and metadata supplied by the source record instead. Stop when that record lacks the remote URL, informative alt, or another field required by the selected image form; never invent a missing value from a filename.
 
