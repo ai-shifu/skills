@@ -259,7 +259,64 @@ class CourseCreatorDependencyTests(unittest.TestCase):
                 "course-sync.md",
                 "course-management.md",
                 "image-authoring.md",
+                "authentication.md",
+                "course-target.md",
             }.isdisjoint(relative_paths)
+        )
+
+    def test_local_planning_and_generation_closures_exclude_authentication(self):
+        graph = dependency_graph()
+        forbidden = {
+            "authentication.md",
+            "course-target.md",
+            "course-sync.md",
+            "course-management.md",
+            "deployment-workflow.md",
+        }
+        for prefix in (
+            "Plan course structure",
+            "Segment supplied material only",
+            "Generate Teaching Prompts from existing segments",
+        ):
+            with self.subTest(prefix=prefix):
+                closure = transitive_closure(self.route_roots(prefix), graph)
+                self.assertTrue(forbidden.isdisjoint(path.name for path in closure))
+
+    def test_existing_sync_does_not_load_new_course_deployment(self):
+        graph = dependency_graph()
+        for filename in ("course-sync.md", "course-management.md"):
+            with self.subTest(filename=filename):
+                closure = transitive_closure([REFERENCES / filename], graph)
+                self.assertNotIn("deployment-workflow.md", {path.name for path in closure})
+
+    def test_authentication_is_conditional_at_new_course_platform_boundaries(self):
+        graph = dependency_graph()
+        authentication = (REFERENCES / "authentication.md").resolve()
+        for filename in (
+            "deployment-workflow.md",
+            "image-authoring.md",
+        ):
+            with self.subTest(filename=filename):
+                owner = REFERENCES / filename
+                self.assertNotIn(authentication, graph[owner.resolve()])
+                self.assertIn(
+                    "authentication.md",
+                    declared_paths(owner.read_text(encoding="utf-8"), "Conditional References"),
+                )
+
+    def test_existing_course_lookup_depends_only_on_access_and_query_guides(self):
+        graph = dependency_graph()
+        lookup = (REFERENCES / "course-target.md").resolve()
+        self.assertIn((REFERENCES / "authentication.md").resolve(), graph[lookup])
+        closure = transitive_closure([lookup], graph)
+        self.assertTrue(
+            {
+                "authoring-mode.md",
+                "course-design-intake.md",
+                "orchestration-workflow.md",
+                "deployment-workflow.md",
+                "course-sync.md",
+            }.isdisjoint(path.name for path in closure)
         )
 
     def test_offline_prompt_audit_closure_excludes_platform_access(self):

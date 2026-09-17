@@ -2,6 +2,7 @@
 
 ## Ownership Rules
 
+- Apply the [repository workflow ownership rules](../../AGENTS.md#workflow-ownership-and-change-scope); the ownership map below specializes them for this skill.
 - Give each behavior, schema, workflow step, and validation criterion one canonical owner in the map below. Other files route to or cite that owner and add only their own local application.
 - Keep `SKILL.md` focused on discovery, startup, and task routing. Put conditional detail in the routed reference that owns the topic.
 - Separate decisions from representations: `pedagogy.md` owns teaching decisions, `markdownflow.md` owns runtime syntax and effects, and `teaching-prompt.md` owns translation of resolved lesson decisions into a runnable, author-editable Teaching Prompt.
@@ -26,9 +27,9 @@
 | --- | --- |
 | `references/language-policy.md` | Own target-language resolution, canonical human-facing terminology, localization boundaries, first-mention wording, and the final language audit across artifacts and messages. |
 | `references/session-controls.md` | Own session lifecycle behavior: official contact timing, skill-version update checks, usage reporting, progress and error communication, handoffs, and first-session operational controls. |
-| `references/authentication.md` | Own platform site selection, credential verification, browser authorization, login continuation, and authentication failure handling. It establishes access and does not select a course. |
+| `references/authentication.md` | Own platform site selection, credential verification, browser authorization, login continuation, and authentication failure handling. It establishes access and does not select a course. Callers own when authentication runs. |
 | `references/open-in-app-browser.md` | Own the host-application mechanics for opening a supplied URL in a visible built-in browser and reporting the opening result. The calling workflow owns URL selection and next steps. |
-| `references/course-target.md` | Own new-versus-existing resolution, title and BID matching, ambiguity handling, and the resolved target record for authoring and platform-management routes. For analytics, `analytics/tables.md` owns current-title semantics and `analytics/recipes.md` applies them through lookup templates. |
+| `references/course-target.md` | Own existing-course title and BID matching, ambiguity handling, and resolved or unresolved lookup results. The Task Router owns new-versus-existing intent and any transition after a no-match result. For analytics, `analytics/tables.md` owns current-title semantics and `analytics/recipes.md` applies them through lookup templates. |
 | `references/authoring-mode.md` | Own selection between standard and fallback execution modes for authoring phases. Phase-specific fallback fields remain in `data-contracts.md`. |
 | `references/course-design-intake.md` | Own collection and normalization of unresolved author choices, the effect preview shown before each question, and the resulting design-control handoff. Downstream owners define the controls' actual teaching and artifact effects. |
 | `references/data-contracts.md` | Own schemas, required and optional fields, enum values, output envelopes, variable-table structure, and cross-field invariants exchanged between authoring phases. |
@@ -55,7 +56,7 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `references/course-sync.md` | Own existing-course cloud-to-local pulls, divergence status, content pushes, version checks, and conflict convergence. It does not author content or manage publication metadata. |
-| `references/deployment-workflow.md` | Own new-course deployment from an already-authored course directory through import, publication, readback verification, and completion reporting. |
+| `references/deployment-workflow.md` | Own new-course deployment from an already-authored course directory through local build, preview and user confirmation, authentication, import, approved publication, readback verification, and completion reporting. |
 | `references/course-management.md` | Own non-authoring platform operations: list, preview, publish, archive or restore, reorder, course metadata, teacher avatar, access, visibility, and Listen Mode. It invokes the Course Admin Handoff owned by `session-controls.md`. |
 | `references/cli/cli-reference.md` | Own the public `shifu-cli.py` command surface: invocation, flags, command groups, authentication inputs, output conventions, state behavior, and exit codes. Workflow references decide when commands run. |
 | `references/cli/course-directory-spec.md` | Own the local course-directory layout, artifact meanings, build precedence, sync and image manifests, generated import shape, and which files each CLI operation reads or writes. |

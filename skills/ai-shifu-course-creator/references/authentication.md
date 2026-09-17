@@ -11,8 +11,6 @@
 
 ## Select Site Before Connecting
 
-Only apply this step when the active route needs platform access. Local/artifact-only authoring does not ask for a site.
-
 1. Run `python3 scripts/shifu-cli.py site` internally. Its output is configuration control data, not user-facing content.
 2. If `status=configured`, silently reuse the returned address without asking again. An existing explicit `SHIFU_BASE_URL` takes precedence over the remembered selection.
 3. If `status=selection_required`, ask the user to select their current region, in the resolved conversation language. In Chinese, use “请选择你所在的地区：” with exactly two options: “中国” and “其他国家或地区”. In English, use “Please select your current region:” with exactly two options: “China” and “Other countries or regions”. Do not display domains, CN/COM codes, CLI commands, configuration fields, or a site-selection explanation. Do not offer custom deployment as a default third choice. Do not infer the answer from conversation language or IP. An explicit answer already provided in the conversation does not need to be asked again; otherwise wait for the answer before connecting.
