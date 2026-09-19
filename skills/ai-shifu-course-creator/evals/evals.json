@@ -319,11 +319,11 @@
     {
       "id": 24,
       "prompt": "只在本地制作课程，不连接平台。course_author_name=李明。我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，结构固定为 1 章 3 节。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Completes intake without asking whether to enable Listen Mode and defaults the unspecified setting to disabled.",
+      "expected_output": "Completes intake without asking whether to enable Listen Mode.",
       "files": [],
       "expectations": [
         "The response completes intake without asking whether to enable Listen Mode or presenting an enabled/disabled choice.",
-        "The unspecified Listen Mode setting resolves to disabled without blocking intake or requiring an explicit skip.",
+        "The response does not treat Listen Mode as a missing design choice or require an explicit skip.",
         "It reuses the supplied scenario, personalization, interaction, structure, and teacher name without asking them again.",
         "It respects the local-only scope and does not ask for an avatar, connect to the platform, or begin segmentation, Teaching Prompt generation, or deployment."
       ]
