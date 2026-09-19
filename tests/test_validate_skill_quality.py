@@ -1668,18 +1668,12 @@ class CourseCreatorContractTests(unittest.TestCase):
                 "or consolidation",
             ),
             4: (
-                "adds AI voice with slides",
-                "consumes more AI-Shifu credits",
-                "leaves the course available without Listen Mode",
-                "avoids that additional credit consumption",
-            ),
-            5: (
                 "chapter count controls how lessons are grouped into broader topics",
                 "lesson count controls course granularity",
                 "fewer lessons concentrate more material into each lesson",
                 "more lessons distribute it across more single-question units",
             ),
-            6: (
+            5: (
                 "AI-Shifu's Teaching Agent",
                 "teacher identity during course delivery",
                 "leaving it blank does not affect course creation",
@@ -3176,7 +3170,7 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         self.assertIn("`course_author_name` (string)", input_contract)
         self.assertIn("blank or unanswered value", input_contract)
-        self.assertRegex(intake_scope, r"(?m)^6\. When a Course Prompt is in scope")
+        self.assertRegex(intake_scope, r"(?m)^5\. When a Course Prompt is in scope")
         self.assertIn("leaving it blank does not affect course creation", intake_scope)
         self.assertIn("**Course author name**", normalized_controls)
         self.assertIn(
