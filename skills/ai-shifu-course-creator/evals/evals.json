@@ -318,26 +318,26 @@
     },
     {
       "id": 24,
-      "prompt": "course_author_name=李明。我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，结构固定为 1 章 3 节；只有 Listen Mode 还没决定。请先继续 Course Design Intake，这一轮请询问我，不要直接采用默认值，也不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Asks only whether to enable Listen Mode and explains both the AI voice with slides experience and its additional AI-Shifu credit consumption.",
+      "prompt": "只在本地制作课程，不连接平台。course_author_name=李明。我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，结构固定为 1 章 3 节。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
+      "expected_output": "Completes intake without asking whether to enable Listen Mode.",
       "files": [],
       "expectations": [
-        "The response asks exactly one current intake question about Listen Mode before any downstream authoring or deployment work.",
-        "Enabling Listen Mode is explained as adding AI voice with slides and consuming more AI-Shifu credits.",
-        "Disabling Listen Mode is explained as leaving the course available without Listen Mode and avoiding that additional credit consumption.",
-        "The response does not show only enabled and disabled labels or silently apply the fallback, and it reuses the supplied scenario, personalization, interaction, and structure answers."
+        "The response completes intake without asking whether to enable Listen Mode or presenting an enabled/disabled choice.",
+        "The response does not treat Listen Mode as a missing design choice or require an explicit skip.",
+        "It reuses the supplied scenario, personalization, interaction, structure, and teacher name without asking them again.",
+        "It respects the local-only scope and does not ask for an avatar, connect to the platform, or begin segmentation, Teaching Prompt generation, or deployment."
       ]
     },
     {
       "id": 25,
-      "prompt": "course_author_name=李明。我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled，Listen Mode 关闭；只有章数和节数还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
+      "prompt": "course_author_name=李明。我要做标准 AI 一对一自学课程，teaching_prompt_personalization_level=3，interaction_policy 已选择 disabled；章数和节数还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
       "expected_output": "Asks only for chapter and lesson counts after explaining how the answer changes lesson grouping, course granularity, and the amount of material each single-question lesson must resolve without changing required source coverage.",
       "files": [],
       "expectations": [
         "The response asks exactly one current intake question about chapter and lesson counts before any downstream authoring or deployment work.",
         "Before asking for numbers, it explains that chapter count changes how lessons are grouped into broader topics, while fewer lessons concentrate more material into each single-question lesson and more lessons distribute it across more single-question units.",
         "The response does not invent fixed count options or imply that either choice may drop required material or break source order.",
-        "The supplied scenario, personalization, interaction, and Listen Mode answers are reused without being asked again."
+        "The supplied scenario, personalization, and interaction answers are reused without being asked again, and the missing Listen Mode setting does not trigger a question before or alongside the structure question."
       ]
     },
     {
