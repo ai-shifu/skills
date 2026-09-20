@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Preserve finalized example and analogy decisions during Teaching Prompt generation; resolve teaching aids before orchestration freezes the plan, while standalone generation from approved segments still builds its plan locally.
+- Generate purposeful examples and analogies for difficult concepts, with clear explanatory relationships and limits. Use relevant known learner background at every personalization level, progressing from concrete prewritten scenarios to executable selection requirements while preserving the lesson's teaching structure and effect.
 - Keep task routing in the entrypoint, existing-course lookup in its reference, image-block recovery scheduling in orchestration, and link handoffs based on actual publication results. Preserve the original edit-title no-match choice to create a new course only after user confirmation.
 - Preserve the full-course authoring sequence for name-only creation requests instead of inferring an empty platform record and starting authentication before intake.
 - Start new-course authoring without platform login or duplicate-title lookup; authenticate only at the first platform operation, while existing-course edits still authenticate, resolve a unique target, and pull the latest content first.

@@ -202,6 +202,7 @@
       "expectations": [
         "The output is a parseable JSON object containing exactly one L16 lesson item, with empty used_variables and global_variable_table.",
         "The repaired Teaching Prompt preserves that a missing or damaged label is only a risk signal and keeps the operational order: isolate in place, record the container number and current time, then report to the duty supervisor.",
+        "The repair removes or corrects the grenade analogy's implication that danger has already been established; any replacement example or analogy preserves the distinction between a signal that requires verification and a confirmed conclusion.",
         "The exact deterministic line and the complete multi-line mnemonic block each occur exactly once without wording or marker changes.",
         "The exact question and `?[立即打开确认 | 原地隔离并上报 | 继续使用]` control each occur exactly once, preserve option order, and retain immediate answer-specific feedback without a named variable.",
         "The repaired artifact retains exactly three slides in the supplied order and keeps each slide's teaching purpose, semantic grouping, and sequence: orientation, risk-signal explanation, then the operational sequence followed by deterministic content, interaction, feedback, and close.",
@@ -863,6 +864,77 @@
         "It reports creation succeeded but publication failed or remains unverified, and does not call the entire deployment complete.",
         "It provides preview and editor links based on actual results despite the user never requesting draft-only behavior.",
         "It neither treats the show public URL as proof of publication nor claims the user chose a draft; it does not publish again during this reporting-only request."
+      ]
+    },
+    {
+      "id": 71,
+      "prompt": "课程设计已批准。面向需要处理系统告警的普通职场人，标准一对一授课，不设互动；核心问题是‘收到异常提醒，为什么不能马上下结论？’。来源事实：告警只说明监测信号达到阈值；告警可能误报；应先独立核验，再判断原因和处置。固定计划为：简短文字引入；第 1 页呈现告警与结论的区别并解释；第 2 页先用一个完整案例展示从告警到核验的过程，再用一个类比帮助理解两者的关系，随后讲解；第 3 页呈现核验后作判断的路径并收束。三页的顺序、教学功能和这两个理解辅助环节都已批准，具体案例与类比素材尚未指定。请分别按 teaching_prompt_personalization_level=1、2、3、4、5 生成五份授课提示词。只在本地输出 JSON，顶层为 variants，每项含 level 和 teaching_prompt；不要生成课程提示词或连接平台。",
+      "expected_output": "Produces five runnable variants of the same approved lesson, with invariant example and analogy functions and progressively less prewritten ordinary expression.",
+      "files": [],
+      "expectations": [
+        "The output contains exactly five variants ordered by levels 1 through 5, each with a non-empty runnable Teaching Prompt.",
+        "All five actual instruction sequences preserve the same lead-in, three-page order, content grouping, example-before-analogy placement on page 2, visual-and-explanation cadence, and close; personalization adds no page, learner question, control, variable, or answer-dependent branch.",
+        "Every variant makes the example demonstrate the alert-to-independent-verification relationship and makes the analogy illuminate why a signal is not a conclusion, rather than merely requesting an interesting story or analogy.",
+        "The case and analogy preserve the source facts. Each analogy has an intelligible correspondence, and any limitation needed to prevent it from implying a confirmed cause, certain danger, or certain false alarm is taught at its use point.",
+        "Levels 1 and 2 prewrite a selected example and analogy with concrete key details; level 1 is near-final while level 2 leaves incidental elaboration open. Level 3 specifies type, teaching point, and the essential correspondence without fixing unnecessary identity or detail.",
+        "Levels 4 and 5 retain executable selection or material requirements, intended understanding, correspondence, and necessary limits while leaving unnecessary example and analogy identity and wording unwritten; neither variant drops either required teaching move.",
+        "Differences among levels appear in local runtime instructions, not in author-facing explanations about how personalization works or generic statements that the Teaching Agent may choose anything suitable."
+      ]
+    },
+    {
+      "id": 72,
+      "prompt": "课程面向会使用 AI 的普通职场人，讲‘检查 AI 结果前先明确验收标准’，采用纯文字授课，互动关闭，教学结构已定。现在只生成其中一个教学块：用一个工作案例展示同一份看似流畅的 AI 结果，怎样按照任务目标和可核验证据来判断是否合格，然后点明判断依据。请分别为四种学习者信息生成 teaching_prompt_personalization_level=1 和 5 的版本，共八个简短教学块：A 初中历史教师，正在准备课堂史料，希望避免把无法核实的材料给学生；B 产品经理，正在整理用户访谈，希望避免把个别人的意见写成所有用户的需求；C 无学习者信息；D 只知道喜欢爵士乐。每种情况下，作者在生成授课提示词时已经知道这里列出的信息，但课程目标人群保持不变。每份可附一段简短试讲，便于我比较效果。只输出 JSON：variants 数组，每项含 context、level、teaching_prompt 和可选的 delivery；不连接平台，不生成完整课程。",
+      "expected_output": "Uses relevant context already available during authoring at both personalization levels, while varying how much of the selected example is prewritten.",
+      "files": [],
+      "expectations": [
+        "The output contains all eight context-and-level combinations. Every variant keeps one example-based teaching block with the same objective, evidence relationship, and conclusion; none solicits learner input or adds controls, variables, diagnostic questions, remedial blocks, or another lesson structure.",
+        "Level 1 uses the relevant author-known context to prewrite a concrete near-final case: A involves historical-source selection or verification, while B involves interview evidence and the scope of an inferred need. Low personalization does not cause either context to be ignored.",
+        "For A and B, level 5 carries background-relevant material-selection requirements, evidence, decisions, and the intended takeaway without prewriting unnecessary case identity or story details. The two roles change meaningful task relationships or consequences rather than merely substituting a job title.",
+        "The teacher's role is not treated as proof of subject, technical, or AI knowledge beyond the supplied facts; the product manager's role is not treated as proof of statistical expertise. Explanations introduce any needed unfamiliar concept without assuming familiarity from occupation alone.",
+        "For C and D, both levels use neutral course-appropriate work examples or executable selection requirements at the corresponding specificity. Jazz preference does not cause an unrelated music analogy, a guessed occupation, or a new question asking for background.",
+        "Every Prompt and any included trial delivery preserve the author's workplace audience and teach acceptance against the task goal and verifiable evidence; no role adaptation replaces that objective, quotes a learner profile, or presents invented case details as facts about the learner.",
+        "The level-5 local instruction carries concrete material-selection needs and teaching effects rather than a generic instruction to personalize; it does not repeat course-wide learner-profile policy or serialize internal learner-profile tags."
+      ]
+    },
+    {
+      "id": 73,
+      "prompt": "以下三个微课任务彼此独立，设计信息均已确定：普通成年学习者，纯文字授课，无互动，teaching_prompt_personalization_level=3。请分别给出可执行的授课提示词片段，不输出设计说明或连接平台。A：学习者总把‘下降 10 个百分点’和‘下降 10%’混为一谈。材料只有两条：百分点是两个比例之差；相对变化率是这个差值除以原比例。请让这个区别容易理解。B：只训练识别提交结果。现有材料已用完整例子说明：状态只有‘草稿’和‘已提交’，前者表示尚未提交，后者表示提交完成；本例页面显示‘已提交’，所以本次已经完成提交。把这些内容整理成简短教学块即可。C：请在原有的一个教学块内修好这段容易误导的讲解：‘AI 像图书馆管理员，每个回答都是从真实书籍里找出来的，给出的出处可以直接引用。’本课事实是：AI 可能生成不存在的出处，引用前必须找到原文并核对原文是否支持相关说法。只输出一个 JSON 对象，以 A、B、C 为键，值为对应授课提示词。",
+      "expected_output": "Selects explanatory support for an actual difficulty, avoids unnecessary additions to an already concrete task, and corrects a misleading analogy without changing the lesson structure.",
+      "files": [],
+      "expectations": [
+        "A uses an executable numerical contrast or worked example that reveals the different denominators and correctly distinguishes percentage-point change from relative percentage change; it does not stop at repeating the two abstract definitions.",
+        "A specifies what the example should help the learner distinguish and reconnects the concrete quantities to both definitions; any supplementary analogy reduces rather than adds conceptual difficulty.",
+        "B preserves and uses the already sufficient status-identification example, remains concise, and does not add an unrelated story, analogy, exercise, or extra teaching block merely to increase technique variety or count.",
+        "C removes or repairs the librarian analogy's false implication that generated answers and citations necessarily come from real books. It may choose a direct example instead; any retained analogy states the relevant correspondence and the limitation needed to preserve the source-verification requirement.",
+        "C distinguishes locating an original source from checking whether that source supports the specific claim, and preserves both verification steps rather than treating a real-looking citation as sufficient.",
+        "All three artifacts keep their stated teaching purpose, text-only mode, and no-interaction policy; none asks for learner background, invents a learner profession, or adds named variables.",
+        "The outputs express the selected technique through local executable teaching actions with necessary facts, relationships, and learning effects, without an empty instruction such as add a suitable example or a new global teaching policy."
+      ]
+    },
+    {
+      "id": 74,
+      "prompt": "Orchestration 已完成，下面是交给 Generation 的 finalized internal lesson execution plan。课程面向普通职场人，这是第二节，lesson_id=L74；纯文字授课，interaction_policy=disabled，teaching_prompt_personalization_level=5。核心问题：‘同样提高 10 个百分点，为什么相对增长率不同？’。完整教学动作按顺序为：1. 用简短文字引出核心问题与目标；2. 做一次并列计算的直接演示，A 组从 20% 提高到 30%，B 组从 40% 提高到 50%，分别算出都提高 10 个百分点、相对增长率分别为 50% 和 25%，解释分母不同造成差异；3. 用‘百分点看比例之差，相对增长率还要看原比例’回扣问题并完成收束。辅助方式已定为这一次直接演示，数值和计算关系是必需内容；计划未设置类比、额外案例或练习。请把这个计划生成可运行的授课提示词。只输出 JSON，字段为 lesson_teaching_prompts 和 global_variable_table，不输出过程或连接平台。",
+      "expected_output": "Materializes the supplied finalized plan without reopening teaching-aid selection or replacing its approved direct demonstration.",
+      "files": [],
+      "expectations": [
+        "The output contains one runnable L74 Teaching Prompt with empty used_variables and global_variable_table, and preserves text-only delivery with no learner-response control.",
+        "The actual teaching sequence contains exactly the supplied lead-in, one parallel-calculation demonstration, and the closing distinction in that order; it adds no analogy, replacement scenario, separate example, practice, or extra teaching action.",
+        "The demonstration retains both supplied baselines and endpoints, the shared 10-percentage-point change, the respective 50% and 25% relative changes, and the explanation that the denominators differ.",
+        "Level 5 leaves ordinary phrasing open while retaining these executable content requirements; it does not treat personalization as permission to substitute new numbers or replace the direct demonstration with another teaching technique.",
+        "The result conforms to the supplied plan itself, not a revised plan invented during generation, and contains no author-facing design discussion or request to rerun orchestration."
+      ]
+    },
+    {
+      "id": 75,
+      "prompt": "请只在本地把下面已批准的分段生成一节授课提示词。课程面向普通成年学习者，这是第二节，lesson_id=L75；纯文字授课，interaction_policy=disabled，teaching_prompt_personalization_level=3。课前已经讲过总量和人数的含义，本节核心问题是‘两组平均数相同，为什么实际情况还可能不同？’。设计选项已经确定，但没有现成的逐步教学安排或执行计划。已批准分段：S01（concept）：平均数等于总量除以数量；S02（concept）：平均数相同的两组数据，各个数值的分布仍可能不同，不能据此认定每个人的情况相同。材料没有具体案例。请直接给出完整、容易理解的授课提示词，JSON 字段为 lesson_teaching_prompts 和 global_variable_table；不部署，不生成课程提示词。",
+      "expected_output": "Builds the missing lesson plan locally from approved segments and controls, selects useful explanatory support, and completes generation without an orchestration prerequisite.",
+      "files": [],
+      "expectations": [
+        "The response directly produces one runnable L75 lesson and does not demand a preexisting execution plan, ask for a separate orchestration run, or stop at a design proposal.",
+        "The generated lesson has a coherent teaching path from the core question through explanation and application or demonstration to a close that answers why equal means can conceal different distributions.",
+        "It selects an executable example or direct comparison of two different distributions with the same mean and uses it to expose the missing information; the aid includes the necessary quantities or selection conditions, reasoning, and intended takeaway rather than a bare add an example instruction.",
+        "The material remains mathematically correct and does not imply that equal means always indicate unequal distributions or that a mean is useless; an analogy is optional and cannot replace the required understanding of the actual quantities.",
+        "The lesson applies level 3 to the locally resolved plan without creating learner input, named variables, answer-dependent branches, slides, or an author-facing explanation of its planning process."
       ]
     }
   ]

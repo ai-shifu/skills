@@ -2394,6 +2394,36 @@ class CourseCreatorContractTests(unittest.TestCase):
 
         self.assertIn("do not impose a word-count or sentence-count quota", course_entry)
 
+    def test_generation_reuses_supplied_plans_and_builds_only_missing_plans(self):
+        workflow = markdown_section(self.teaching_prompt, "Workflow")
+        entry_conditions = workflow.split("\n1. ", 1)[0]
+        self.assertRegex(
+            entry_conditions,
+            r"finalized internal lesson execution plan is supplied, "
+            r"retain it unchanged and start at step 3",
+        )
+        self.assertRegex(
+            entry_conditions,
+            r"only approved segments and design controls are supplied, "
+            r"resolve the missing plan locally with steps 1 and 2",
+        )
+        self.assertIn("a separate orchestration run is not required", entry_conditions)
+        self.assertIn("Do not reselect teaching aids", entry_conditions)
+        self.assertIn("report that unresolved design dependency", entry_conditions)
+
+        orchestration = markdown_section(self.orchestration_workflow, "Workflow")
+        plan_step = orchestration.split("\n4. ", 1)[1].split("\n5. ", 1)[0]
+        self.assertIn("pedagogy.md#examples-and-analogies", plan_step)
+        self.assertIn("Before finalizing the plan", plan_step)
+        self.assertIn("part of the finalized plan to generation", plan_step)
+
+        validation = markdown_section(self.teaching_prompt, "Validation")
+        self.assertIn(
+            "compare the generated artifact with that original plan, "
+            "not a replacement plan",
+            validation,
+        )
+
     def test_teaching_prompt_owns_five_personalization_levels(self):
         visual_text = markdown_section(
             self.pedagogy, "Visual-Text Coordination"
