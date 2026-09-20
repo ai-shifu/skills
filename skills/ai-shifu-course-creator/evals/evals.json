@@ -910,6 +910,32 @@
         "All three artifacts keep their stated teaching purpose, text-only mode, and no-interaction policy; none asks for learner background, invents a learner profession, or adds named variables.",
         "The outputs express the selected technique through local executable teaching actions with necessary facts, relationships, and learning effects, without an empty instruction such as add a suitable example or a new global teaching policy."
       ]
+    },
+    {
+      "id": 74,
+      "prompt": "Orchestration 已完成，下面是交给 Generation 的 finalized internal lesson execution plan。课程面向普通职场人，这是第二节，lesson_id=L74；纯文字授课，interaction_policy=disabled，teaching_prompt_personalization_level=5。核心问题：‘同样提高 10 个百分点，为什么相对增长率不同？’。完整教学动作按顺序为：1. 用简短文字引出核心问题与目标；2. 做一次并列计算的直接演示，A 组从 20% 提高到 30%，B 组从 40% 提高到 50%，分别算出都提高 10 个百分点、相对增长率分别为 50% 和 25%，解释分母不同造成差异；3. 用‘百分点看比例之差，相对增长率还要看原比例’回扣问题并完成收束。辅助方式已定为这一次直接演示，数值和计算关系是必需内容；计划未设置类比、额外案例或练习。请把这个计划生成可运行的授课提示词。只输出 JSON，字段为 lesson_teaching_prompts 和 global_variable_table，不输出过程或连接平台。",
+      "expected_output": "Materializes the supplied finalized plan without reopening teaching-aid selection or replacing its approved direct demonstration.",
+      "files": [],
+      "expectations": [
+        "The output contains one runnable L74 Teaching Prompt with empty used_variables and global_variable_table, and preserves text-only delivery with no learner-response control.",
+        "The actual teaching sequence contains exactly the supplied lead-in, one parallel-calculation demonstration, and the closing distinction in that order; it adds no analogy, replacement scenario, separate example, practice, or extra teaching action.",
+        "The demonstration retains both supplied baselines and endpoints, the shared 10-percentage-point change, the respective 50% and 25% relative changes, and the explanation that the denominators differ.",
+        "Level 5 leaves ordinary phrasing open while retaining these executable content requirements; it does not treat personalization as permission to substitute new numbers or replace the direct demonstration with another teaching technique.",
+        "The result conforms to the supplied plan itself, not a revised plan invented during generation, and contains no author-facing design discussion or request to rerun orchestration."
+      ]
+    },
+    {
+      "id": 75,
+      "prompt": "请只在本地把下面已批准的分段生成一节授课提示词。课程面向普通成年学习者，这是第二节，lesson_id=L75；纯文字授课，interaction_policy=disabled，teaching_prompt_personalization_level=3。课前已经讲过总量和人数的含义，本节核心问题是‘两组平均数相同，为什么实际情况还可能不同？’。设计选项已经确定，但没有现成的逐步教学安排或执行计划。已批准分段：S01（concept）：平均数等于总量除以数量；S02（concept）：平均数相同的两组数据，各个数值的分布仍可能不同，不能据此认定每个人的情况相同。材料没有具体案例。请直接给出完整、容易理解的授课提示词，JSON 字段为 lesson_teaching_prompts 和 global_variable_table；不部署，不生成课程提示词。",
+      "expected_output": "Builds the missing lesson plan locally from approved segments and controls, selects useful explanatory support, and completes generation without an orchestration prerequisite.",
+      "files": [],
+      "expectations": [
+        "The response directly produces one runnable L75 lesson and does not demand a preexisting execution plan, ask for a separate orchestration run, or stop at a design proposal.",
+        "The generated lesson has a coherent teaching path from the core question through explanation and application or demonstration to a close that answers why equal means can conceal different distributions.",
+        "It selects an executable example or direct comparison of two different distributions with the same mean and uses it to expose the missing information; the aid includes the necessary quantities or selection conditions, reasoning, and intended takeaway rather than a bare add an example instruction.",
+        "The material remains mathematically correct and does not imply that equal means always indicate unequal distributions or that a mean is useless; an analogy is optional and cannot replace the required understanding of the actual quantities.",
+        "The lesson applies level 3 to the locally resolved plan without creating learner input, named variables, answer-dependent branches, slides, or an author-facing explanation of its planning process."
+      ]
     }
   ]
 }

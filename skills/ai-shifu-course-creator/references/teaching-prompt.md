@@ -22,6 +22,10 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 
 ### Workflow
 
+When a finalized internal lesson execution plan is supplied, retain it unchanged and start at step 3. Its teaching decisions, including whether an example or analogy is needed and whether an existing demonstration already suffices, are inputs to materialization. Do not reselect teaching aids, replace approved demonstrations, or rebuild the plan. If a supplied plan has a gap that requires changing its teaching actions, report that unresolved design dependency through [Outputs](#outputs) instead of silently repairing the plan during generation.
+
+When only approved segments and design controls are supplied, resolve the missing plan locally with steps 1 and 2, then continue at step 3; a separate orchestration run is not required.
+
 1. Resolve the lesson's teaching decisions from the approved design:
    - Select the pattern that best fits the core question and source evidence, preserving the order in `pedagogy.md#teaching-patterns` rather than forcing Evidence Chain.
    - Apply the normalized interaction policy without adding unselected purposes or blanket interactions.
@@ -237,6 +241,7 @@ Image composition is owned by `image-authoring.md` and is loaded conditionally b
   - The Prompt contains the selected teaching method and locally executable objective, facts and boundaries, sequence, interaction effect, and close rather than outsourcing pedagogy to the Course Prompt.
   - Slide instructions contain lesson-specific order, content, teaching function, and position- or purpose-specific treatment without restating general presentation requirements owned by the Course Prompt.
 - Validate the lesson execution:
+  - When a finalized plan was supplied, compare the generated artifact with that original plan, not a replacement plan inferred or rebuilt during generation.
   - The internal execution plan is resolved before personalization. Its recovered signature matches the actual instruction order, actions, slide count and order, content grouping and hierarchy, interaction and feedback adjacency, images, and close.
   - The first learner-time position is the ordinary teaching-start instruction; no syntax-owned or exact structure precedes it, and every later instruction performs a teaching, presentation, interaction, feedback, or close function.
   - After MarkdownFlow removes navigation comments from an author-editable layout, the first remaining block is that instruction's unordered-list item.
