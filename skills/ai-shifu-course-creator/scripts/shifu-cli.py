@@ -3508,6 +3508,9 @@ def main():
         except profiles.ProfileError as exc:
             print(f"Configuration error: {exc}", file=sys.stderr)
             sys.exit(4)
+        except requests.RequestException as exc:
+            print(f"Network request failed: {exc}", file=sys.stderr)
+            sys.exit(1)
         except OSError as exc:
             print(f"Local configuration or file operation failed: {exc}", file=sys.stderr)
             sys.exit(1)

@@ -312,6 +312,27 @@ class CourseCreatorSiteTests(unittest.TestCase):
         self.post.assert_not_called()
         self.assertEqual(list(self.root.rglob("pending-device-auth.json")), [])
 
+    def test_network_errors_are_not_reported_as_local_file_errors(self):
+        self.configure_profiles()
+        for failure in (course_creator_cli.requests.ConnectionError("service unavailable"),
+                        course_creator_cli.requests.Timeout("request timed out")):
+            with self.subTest(failure=type(failure).__name__), contextlib.redirect_stderr(io.StringIO()) as output:
+                self.get.side_effect = failure
+                with self.assertRaises(SystemExit) as exc:
+                    self.run_cli("list", "--profile", "日常")
+                self.assertEqual(exc.exception.code, 1)
+                self.assertIn("Network request failed", output.getvalue())
+                self.assertNotIn("Local configuration", output.getvalue())
+
+    def test_local_file_errors_keep_the_local_diagnostic(self):
+        self.configure_profiles()
+        with mock.patch.object(course_creator_cli, "cmd_list", side_effect=OSError("disk failure")), contextlib.redirect_stderr(io.StringIO()) as output:
+            with self.assertRaises(SystemExit) as exc:
+                self.run_cli("list", "--profile", "日常")
+        self.assertEqual(exc.exception.code, 1)
+        self.assertIn("Local configuration or file operation failed", output.getvalue())
+        self.assertNotIn("Network request failed", output.getvalue())
+
     def test_profile_list_exposes_presence_not_credentials(self):
         self.configure_profiles()
         output = self.run_cli("profile", "list")
