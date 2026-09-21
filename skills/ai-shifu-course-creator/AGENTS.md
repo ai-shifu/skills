@@ -27,7 +27,7 @@
 | --- | --- |
 | `references/language-policy.md` | Own target-language resolution, canonical human-facing terminology, localization boundaries, first-mention wording, and the final language audit across artifacts and messages. |
 | `references/session-controls.md` | Own session lifecycle behavior: official contact timing, skill-version update checks, usage reporting, progress and error communication, handoffs, and first-session operational controls. |
-| `references/authentication.md` | Own platform site selection, credential verification, browser authorization, login continuation, and authentication failure handling. It establishes access and does not select a course. Callers own when authentication runs. |
+| `references/authentication.md` | Own platform profile selection and task-context continuity, initial service selection, credential verification, browser authorization, login continuation, and authentication failure handling. It establishes access and does not select a course. Callers own when authentication runs. |
 | `references/open-in-app-browser.md` | Own the host-application mechanics for opening a supplied URL in a visible built-in browser and reporting the opening result. The calling workflow owns URL selection and next steps. |
 | `references/course-target.md` | Own existing-course title and BID matching, ambiguity handling, and resolved or unresolved lookup results. The Task Router owns new-versus-existing intent and any transition after a no-match result. For analytics, `analytics/tables.md` owns current-title semantics and `analytics/recipes.md` applies them through lookup templates. |
 | `references/authoring-mode.md` | Own selection between standard and fallback execution modes for authoring phases. Phase-specific fallback fields remain in `data-contracts.md`. |
@@ -77,6 +77,7 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `scripts/shifu-cli.py` | Implement the unified deterministic interface for site configuration, authentication, course queries and writes, sync, import and build, image upload, analytics, state, and structured command results. Reference files own workflow policy. |
+| `scripts/profile_store.py` | Implement named profile configuration, default selection, execution-context resolution, isolated authorization-file storage, URL validation, and recoverable migration from legacy configuration. The CLI consumes one resolved context; references own user workflow. |
 | `scripts/image_utils.py` | Implement local image decoding, orientation correction, resizing, recompression, output-format selection, and content-hash naming for upload preparation. |
 | `scripts/skill_update.py` | Implement fail-open version discovery, update availability checks, manifest validation, and local update state used by session controls and the CLI. |
 | `scripts/usage_tracker.py` | Implement fail-open, privacy-bounded skill-usage telemetry and its opt-out behavior. |

@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Support arbitrarily named service profiles with one explicit default, isolated login and pending authorization, custom service URLs, and recoverable migration of existing configuration. Keep a selected profile fixed throughout platform work and validate course-directory source identities before network operations; preserve image-upload records separately by service.
 - Preserve finalized example and analogy decisions during Teaching Prompt generation; resolve teaching aids before orchestration freezes the plan, while standalone generation from approved segments still builds its plan locally.
 - Generate purposeful examples and analogies for difficult concepts, with clear explanatory relationships and limits. Use relevant known learner background at every personalization level, progressing from concrete prewritten scenarios to executable selection requirements while preserving the lesson's teaching structure and effect.
 - Keep task routing in the entrypoint, existing-course lookup in its reference, image-block recovery scheduling in orchestration, and link handoffs based on actual publication results. Preserve the original edit-title no-match choice to create a new course only after user confirmation.

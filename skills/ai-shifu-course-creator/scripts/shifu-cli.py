@@ -9,18 +9,19 @@ import json
 import math
 import os
 import platform
+import shlex
 import shutil
 import socket
 import sys
-import tempfile
 import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse
 
 import requests
-from dotenv import dotenv_values, load_dotenv, set_key
+from dotenv import load_dotenv
+
+import profile_store as profiles
 
 from skill_update import DEV_CACHE_FILE, check_for_update
 
@@ -29,15 +30,14 @@ from skill_update import DEV_CACHE_FILE, check_for_update
 try:
     from usage_tracker import track
 except Exception:  # noqa: BLE001 - fail-open: any tracker breakage must not take the CLI down
-    def track(event_name):
+    def track(event_name, **kwargs):
         return None
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 ENV_EXAMPLE_FILE = ENV_FILE.with_name(".env.example")
 
-DEFAULT_BASE_URL = "https://app.ai-shifu.cn"
-SITE_URLS = {"cn": DEFAULT_BASE_URL, "com": "https://app.ai-shifu.com"}
+SITE_URLS = profiles.SITE_URLS
 
 # Backend ERROR_CODE["server.shifu.draftConflict"] — the optimistic-lock
 # conflict raised by POST .../mdflow when the cloud draft advanced past the
@@ -88,178 +88,86 @@ def load_env():
     """Ensure and load environment variables from the skill's .env file."""
     ensure_env_file()
     load_dotenv(dotenv_path=ENV_FILE, override=False)
-    migrate_legacy_token()
 
 
-# Loopback stays available over http so the CLI can be pointed at a local
-# development server; every other host must use TLS.
-LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+def profile_store():
+    return profiles.ProfileStore(config_dir(), ENV_FILE)
 
 
-def configured_base_url():
-    """Prefer explicit environment configuration to the remembered site."""
-    value = os.environ.get("SHIFU_BASE_URL", "").strip().rstrip(" /\t\r\n")
-    if value:
-        return value
-    settings = _read_json_file(config_dir() / "settings.json")
-    if isinstance(settings, dict) and isinstance(settings.get("base_url"), str):
-        return settings["base_url"].strip().rstrip(" /\t\r\n")
-    return ""
+def resolve_context(args, *, named_only=False):
+    """Resolve once per invocation; callers share this exact execution context."""
+    if not hasattr(args, "_profile_context"):
+        args._profile_context = profile_store().resolve(
+            name=getattr(args, "profile", None), environ=os.environ,
+            token=getattr(args, "token", None), named_only=named_only,
+            load_credentials=not named_only,
+        )
+    return args._profile_context
 
 
-def resolve_base_url():
-    """Resolve the configured site; main requires selection before platform use."""
-    return configured_base_url() or DEFAULT_BASE_URL
+def _context_output(context):
+    base_url = context.base_url if context else None
+    return {
+        "status": "configured" if context else "selection_required",
+        "profile": context.name if context else None,
+        "base_url": base_url,
+        "contact_url": (
+            "https://ai-shifu.cn/contact.html" if base_url == SITE_URLS["cn"]
+            else "https://ai-shifu.com/contact.html" if base_url else None
+        ),
+    }
 
 
 def cmd_site(args):
-    """Inspect or remember the site without making a network request."""
-    current = configured_base_url()
+    """Compatibility entry point for inspecting/configuring a named profile."""
+    store = profile_store()
+    name = getattr(args, "profile", None)
     selected = SITE_URLS.get(args.set) if args.set else args.url
     if selected is not None:
-        selected = selected.strip().rstrip(" /\t\r\n")
-        try:
-            parsed = urlparse(selected)
-            port = parsed.port
-            valid = (
-                bool(parsed.hostname) and (port is None or port > 0)
-                and parsed.username is None
-                and parsed.password is None and not parsed.query
-                and not parsed.fragment and "?" not in selected and "#" not in selected
-                and "\\" not in selected and not any(c.isspace() for c in selected)
-            )
-        except ValueError:
-            valid = False
-        if not valid:
-            print("Error: provide a service URL with a hostname and no credentials, query, or fragment.")
-            sys.exit(1)
-        require_secure_base_url(selected)
-        override = os.environ.get("SHIFU_BASE_URL", "").strip().rstrip(" /\t\r\n")
-        if override and override != selected:
-            print("Error: SHIFU_BASE_URL already selects another site. Update that explicit configuration first.")
-            sys.exit(1)
-        # Existing credentials do not yet carry their issuing site. First-time
-        # setup must not turn an old token into a request to a different host.
-        if current != selected and (load_saved_token() or os.environ.get("SHIFU_TOKEN")):
-            print("Error: credentials already exist. Restore their original SHIFU_BASE_URL before selecting a site; switching signed-in sites is not supported here.")
-            sys.exit(1)
-        path = config_dir() / "settings.json"
-        settings = _read_json_file(path) or {}
-        if not isinstance(settings, dict):
-            settings = {}
-        settings["base_url"] = selected
-        _write_private_json(path, settings)
-        current = configured_base_url()
-    print(json.dumps({
-        "status": "configured" if current else "selection_required",
-        "base_url": current or None,
-        "contact_url": (
-            "https://ai-shifu.cn/contact.html" if current == SITE_URLS["cn"]
-            else "https://ai-shifu.com/contact.html" if current else None
-        ),
-    }, ensure_ascii=False))
+        if name is not None:
+            store.resolve(name=name, environ={}, load_credentials=False)
+        context = store.set_profile(name or store.default_profile() or "default", selected)
+    else:
+        context = store.resolve(name=name, environ=os.environ, allow_unconfigured=True,
+                                token=getattr(args, "token", None), load_credentials=False)
+    print(json.dumps(_context_output(context), ensure_ascii=False))
 
 
-def require_secure_base_url(base_url):
-    """Refuse to carry the device code or token over plaintext HTTP."""
-    parsed = urlparse(base_url)
-    if parsed.scheme == "https":
-        return base_url
-    if parsed.scheme == "http" and (parsed.hostname or "") in LOOPBACK_HOSTS:
-        return base_url
-    print(
-        f"Error: SHIFU_BASE_URL must use https, got '{base_url}'. "
-        "Authorization carries credentials and will not be sent in the clear."
-    )
-    sys.exit(1)
+def cmd_profile(args):
+    store = profile_store()
+    if args.profile_command == "list":
+        result = {"profiles": store.list_profiles()}
+    elif args.profile_command == "set":
+        result = _context_output(store.set_profile(args.name, args.base_url))
+    else:
+        result = {"default_profile": store.default_profile(args.name)}
+    print(json.dumps(result, ensure_ascii=False))
+
+
+def cmd_logout(args):
+    context = resolve_context(args, named_only=True)
+    profile_store().logout(context)
+    print(f"Signed out of profile {context.name!r} on this device.")
 
 
 def config_dir():
-    """Return the directory holding credentials for this user.
-
-    Credentials live outside the skill package so upgrading or reinstalling the
-    skill does not silently sign the user out, which is what happened while the
-    token was kept in the package's own .env file. The location follows the XDG
-    convention other command-line tools use (~/.config/gh, ~/.config/anthropic).
-    """
-    override = os.environ.get("AI_SHIFU_CONFIG_DIR", "").strip()
-    if override:
-        return Path(override).expanduser()
-    xdg_home = os.environ.get("XDG_CONFIG_HOME", "").strip()
-    base = Path(xdg_home).expanduser() if xdg_home else Path.home() / ".config"
-    return base / "ai-shifu"
+    return profiles.config_dir()
 
 
-def credentials_path():
-    return config_dir() / "credentials.json"
+def credentials_path(context):
+    return profiles.credentials_path(context)
 
 
-def pending_auth_path():
-    return config_dir() / "pending-device-auth.json"
+def pending_auth_path(context):
+    return profiles.pending_auth_path(context)
 
 
 def _write_private_json(path, payload):
-    """Write JSON readable only by the current user, atomically.
-
-    The content is written to a fresh 0600 temporary file and moved into place.
-    Writing directly would expose the credential twice: a permissive umask
-    leaves the new file readable until the chmod lands, and rewriting an
-    existing file keeps whatever mode it already had while it is truncated.
-    """
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temp_name = tempfile.mkstemp(dir=str(path.parent), prefix=".tmp-")
-    try:
-        os.chmod(temp_name, 0o600)
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(payload, handle, indent=2)
-        os.replace(temp_name, path)
-    except BaseException:
-        with contextlib.suppress(OSError):
-            os.unlink(temp_name)
-        raise
+    return profiles.write_private_json(path, payload)
 
 
-def _read_json_file(path):
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-
-
-def load_saved_token():
-    """Return the stored token, or an empty string when there is none."""
-    data = _read_json_file(credentials_path())
-    if isinstance(data, dict):
-        token = data.get("token")
-        if isinstance(token, str):
-            return token.strip()
-    return ""
-
-
-def save_token(token):
-    """Persist the issued token to the user's config directory."""
-    _write_private_json(credentials_path(), {"token": token})
-
-
-def migrate_legacy_token():
-    """Move a token written by an older CLI into the config directory.
-
-    Only the .env file is inspected, never the environment: a SHIFU_TOKEN the
-    user exported themselves belongs to them and must not be rewritten.
-    """
-    if load_saved_token() or not ENV_FILE.exists():
-        return
-    try:
-        legacy_token = (dotenv_values(str(ENV_FILE)) or {}).get("SHIFU_TOKEN") or ""
-    except OSError:
-        return
-    legacy_token = legacy_token.strip()
-    if not legacy_token:
-        return
-    save_token(legacy_token)
-    # Leave a single source of truth behind.
-    with contextlib.suppress(OSError):
-        set_key(str(ENV_FILE), "SHIFU_TOKEN", "")
+def save_token(token, context):
+    return profile_store().save_token(context, token)
 
 
 def _jwt_payload(token):
@@ -288,14 +196,10 @@ def resolve_auth(args):
     to stderr (the authoritative expiry check is the backend's DB record, so this
     is only a nudge — the call still proceeds).
     """
-    token = (
-        getattr(args, "token", None)
-        or os.environ.get("SHIFU_TOKEN")
-        or load_saved_token()
-    )
+    context = resolve_context(args)
+    token = context.token
     if not token:
-        print("Error: no token available. Run 'shifu-cli.py login' first, "
-              "or use --token / set SHIFU_TOKEN")
+        print(f"Error: no token available. {_auth_recovery(context)}")
         sys.exit(1)
 
     payload = _jwt_payload(token)
@@ -304,11 +208,10 @@ def resolve_auth(args):
         if isinstance(ts, (int, float)) and (time.time() - ts) > TOKEN_EXPIRE_SECONDS:
             print("Warning: token may be expired "
                   f"(issued > {TOKEN_EXPIRE_SECONDS // 86400} days ago). "
-                  "Run `shifu-cli.py verify` to check, or `shifu-cli.py login` "
-                  "to re-login.",
+                  f"{_auth_recovery(context)}",
                   file=sys.stderr)
 
-    return resolve_base_url(), token
+    return context.base_url, token
 
 
 def api(base_url, token, method, path, **kwargs):
@@ -708,7 +611,19 @@ def _poll_device_authorization(base_url, device_code):
     return str(data.get("status") or "pending"), str(data.get("token") or "")
 
 
-def _start_device_authorization(base_url):
+def _login_command(context, *, wait=False):
+    command = f"shifu-cli.py login --profile={shlex.quote(context.name)}"
+    return command + (" --wait" if wait else "")
+
+
+def _auth_recovery(context):
+    if context.name is None:
+        return "Supply a valid token for the temporary service configuration."
+    return f"Run `{_login_command(context)}` to authorize this profile."
+
+
+def _start_device_authorization(context):
+    base_url = context.base_url
     device_name, device_os = _device_description()
     response = _login_post(
         base_url,
@@ -738,7 +653,7 @@ def _start_device_authorization(base_url):
     # approved, so it is stored with owner-only permissions rather than
     # printed: printing would copy it into the calling agent's transcript.
     _write_private_json(
-        pending_auth_path(),
+        pending_auth_path(context),
         {
             "device_code": device_code,
             "user_code": user_code,
@@ -755,23 +670,23 @@ def _start_device_authorization(base_url):
     print(f"  {url}")
     print(f"Pairing code: {user_code}")
     print(
-        "After approving it there, run 'shifu-cli.py login --wait' "
+        f"After approving it there, run `{_login_command(context, wait=True)}` "
         "to finish signing in."
     )
 
 
-def _wait_for_device_authorization(base_url, timeout_seconds):
-    pending = _read_json_file(pending_auth_path())
+def _wait_for_device_authorization(context, timeout_seconds):
+    base_url = context.base_url
+    pending = profiles.read_private_json(pending_auth_path(context))
     if not isinstance(pending, dict) or not pending.get("device_code"):
-        print("No authorization is in progress. Run 'shifu-cli.py login' first.")
+        print(f"No authorization is in progress. Run `{_login_command(context)}` first.")
         sys.exit(1)
 
     issuing_base_url = str(pending.get("base_url") or "")
-    if issuing_base_url and issuing_base_url != base_url:
+    if not issuing_base_url or profiles.normalize_base_url(issuing_base_url) != base_url:
         print(
-            "Error: SHIFU_BASE_URL changed since this authorization started "
-            f"('{issuing_base_url}' -> '{base_url}'). "
-            "Run 'shifu-cli.py login' again to start a new one."
+            "Error: the pending authorization does not belong to this profile's service. "
+            f"Run `{_login_command(context)}` again to start a new one."
         )
         sys.exit(1)
 
@@ -785,22 +700,22 @@ def _wait_for_device_authorization(base_url, timeout_seconds):
     while True:
         status, token = _poll_device_authorization(base_url, device_code)
         if status == "approved" and token:
-            save_token(token)
+            save_token(token, context)
             with contextlib.suppress(OSError):
-                pending_auth_path().unlink()
-            print(f"Authorization complete. Credentials saved to {credentials_path()}")
+                pending_auth_path(context).unlink()
+            print(f"Authorization complete for profile {context.name!r}.")
             return
         if status == "denied":
             with contextlib.suppress(OSError):
-                pending_auth_path().unlink()
+                pending_auth_path(context).unlink()
             print("The request was denied in the browser. Nothing was authorized.")
             sys.exit(1)
         if status == "expired":
             with contextlib.suppress(OSError):
-                pending_auth_path().unlink()
+                pending_auth_path(context).unlink()
             print(
                 "The authorization request expired. "
-                "Run 'shifu-cli.py login' to start a new one."
+                f"Run `{_login_command(context)}` to start a new one."
             )
             sys.exit(1)
         if time.time() + interval >= deadline:
@@ -809,18 +724,18 @@ def _wait_for_device_authorization(base_url, timeout_seconds):
 
     print(
         "Still waiting for approval in the browser. Approve the request, "
-        "then run 'shifu-cli.py login --wait' again."
+        f"then run `{_login_command(context, wait=True)}` again."
     )
     sys.exit(EXIT_AUTH_PENDING)
 
 
 def cmd_login(args):
     """Authorize this device through the browser and store the issued token."""
-    base_url = require_secure_base_url(resolve_base_url())
+    context = resolve_context(args, named_only=True)
     if getattr(args, "wait", False):
-        _wait_for_device_authorization(base_url, getattr(args, "timeout", 120))
+        _wait_for_device_authorization(context, getattr(args, "timeout", 120))
         return
-    _start_device_authorization(base_url)
+    _start_device_authorization(context)
 
 
 # ── Verify Token ────────────────────────────────────────────────────────────────
@@ -833,6 +748,7 @@ def cmd_verify(args):
       2 — unknown (network / service error — cannot determine)
     """
     base_url, token = resolve_auth(args)
+    recovery = _auth_recovery(resolve_context(args))
     try:
         url = f"{base_url}/api/shifu/shifus?limit=1"
         headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
@@ -845,7 +761,7 @@ def cmd_verify(args):
         # definitively mean "not authenticated", so report expired (exit 1) so the
         # agent re-logins instead of retrying forever as if it were a network blip.
         if resp.status_code in (401, 403):
-            print("Token is expired or invalid — re-run `shifu-cli.py login`")
+            print(f"Token is expired or invalid. {recovery}")
             sys.exit(1)
         print(f"Token status: unknown (HTTP {resp.status_code})")
         sys.exit(2)
@@ -862,7 +778,7 @@ def cmd_verify(args):
         print("Token is valid")
         sys.exit(0)
     if code in _TOKEN_ERROR_CODES:
-        print("Token is expired or invalid — re-run `shifu-cli.py login`")
+        print(f"Token is expired or invalid. {recovery}")
         sys.exit(1)
     # Any other business code (e.g. no courses) — the token was recognised.
     print(f"Token is valid (API returned code {code})")
@@ -1152,6 +1068,76 @@ COURSE_CONFIG_DEFAULTS = {
 }
 
 
+def _profile_name(args):
+    """Return provenance from the already-resolved invocation context."""
+    context = getattr(args, "_profile_context", None)
+    return getattr(context, "name", None)
+
+
+def _validate_bound_course_dir(course_dir, base_url, *, shifu_bid=None,
+                               new_course=False):
+    """Validate an existing directory binding without reading credentials.
+
+    The URL and course BID are authoritative; profile names are informational.
+    An invalid existing manifest must not be mistaken for an unbound directory.
+    """
+    if not course_dir:
+        return None
+    path = _sync_path(course_dir)
+    if not path.exists() and not path.is_symlink():
+        return None
+    try:
+        with path.open("r", encoding="utf-8") as source:
+            manifest = json.load(source)
+        if not isinstance(manifest, dict):
+            raise ValueError("expected an object")
+        recorded_url = manifest.get("base_url")
+        recorded_bid = manifest.get("shifu_bid")
+        if not isinstance(recorded_url, str) or not recorded_url.strip():
+            raise ValueError("missing base_url")
+        if not isinstance(recorded_bid, str) or not recorded_bid.strip():
+            raise ValueError("missing shifu_bid")
+        if not isinstance(manifest.get("course"), dict):
+            raise ValueError("missing course object")
+        if not isinstance(manifest.get("lessons"), list):
+            raise ValueError("missing lessons list")
+        if any(not isinstance(lesson, dict) for lesson in manifest["lessons"]):
+            raise ValueError("invalid lesson record")
+        normalized_url = profiles.normalize_base_url(recorded_url)
+        selected_url = profiles.normalize_base_url(base_url)
+    except (OSError, UnicodeError, ValueError, TypeError) as exc:
+        print(f"Error: invalid course binding in {path}: {exc}. "
+              "Restore the sync manifest or use a new course directory.",
+              file=sys.stderr)
+        sys.exit(1)
+    if normalized_url != selected_url:
+        print(f"Error: {path} belongs to {normalized_url}, but the selected "
+              f"profile uses {selected_url}. Specify the matching --profile "
+              "or use a different course directory.", file=sys.stderr)
+        sys.exit(1)
+    if new_course:
+        print(f"Error: {path} is already bound to course {recorded_bid}. "
+              "Use an unbound course directory for import --new.",
+              file=sys.stderr)
+        sys.exit(1)
+    if shifu_bid is not None and recorded_bid != shifu_bid:
+        print(f"Error: {path} belongs to course {recorded_bid}, not "
+              f"{shifu_bid}. Use the matching course or a different directory.",
+              file=sys.stderr)
+        sys.exit(1)
+    return manifest
+
+
+def validate_course_binding(args, base_url):
+    """Preflight before telemetry, network requests, or course-directory writes."""
+    return _validate_bound_course_dir(
+        getattr(args, "course_dir", None), base_url,
+        shifu_bid=getattr(args, "shifu_bid", None),
+        new_course=(getattr(args, "command", None) == "import"
+                    and getattr(args, "new", False)),
+    )
+
+
 def _normalize_keywords(value):
     """Coerce keywords to a list — some endpoints return a comma-joined string."""
     if isinstance(value, list):
@@ -1246,7 +1232,8 @@ def _flatten_outline_tree(tree):
     return flat
 
 
-def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force=False):
+def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True,
+                   force=False, profile_name=None):
     """Fetch detail + outline tree + every lesson's mdflow + course draft-meta,
     write them into the course directory, and (re)write .shifu-sync.json.
 
@@ -1261,6 +1248,9 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force
             (otherwise README is written only when absent, to preserve any
             author notes beyond the title line).
     """
+    existing = _validate_bound_course_dir(
+        course_dir, base_url, shifu_bid=shifu_bid,
+    )
     course_path = Path(course_dir)
     (course_path / "lessons").mkdir(parents=True, exist_ok=True)
     ts = _now_iso().replace(":", "").replace("-", "")
@@ -1272,7 +1262,6 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force
     course_meta = api_safe(base_url, token, "get",
                            f"/shifus/{shifu_bid}/draft-meta") or {}
 
-    existing = _load_sync(course_dir)
     existing_by_bid = {}
     if existing:
         for e in existing.get("lessons", []):
@@ -1410,7 +1399,7 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force
     manifest = {
         "schema_version": 1,
         "shifu_bid": shifu_bid,
-        "base_url": base_url,
+        "base_url": profiles.normalize_base_url(base_url),
         "course": {
             "revision": course_meta.get("revision"),
             "name": name,
@@ -1422,6 +1411,10 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True, force
         "last_pull_at": _now_iso(),
         "last_push_at": existing.get("last_push_at") if existing else None,
     }
+    if profile_name is not None:
+        manifest["profile"] = profile_name
+    elif existing and existing.get("profile"):
+        manifest["profile"] = existing["profile"]
     if existing and existing.get("published"):
         manifest["published"] = existing["published"]
     _write_sync(course_dir, manifest)
@@ -1432,7 +1425,8 @@ def cmd_pull(args):
     """Pull a course from the platform into a local course directory (git pull)."""
     base_url, token = resolve_auth(args)
     manifest = _pull_into_dir(base_url, token, args.shifu_bid, args.course_dir,
-                              backup=not args.force, force=args.force)
+                              backup=not args.force, force=args.force,
+                              profile_name=_profile_name(args))
     lessons = [x for x in manifest["lessons"] if not x.get("is_chapter")]
     chapters = [x for x in manifest["lessons"] if x.get("is_chapter")]
     print(f"Pulled {args.shifu_bid} into {args.course_dir}")
@@ -1575,7 +1569,8 @@ def cmd_status(args):
 
 def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
                          outline_bid=None, attempted_content=None,
-                         local_file=None, intended_meta=None, conflict_meta=None):
+                         local_file=None, intended_meta=None, conflict_meta=None,
+                         profile_name=None):
     """Cloud-wins recovery shared by the version-guarded write commands.
 
     Backs up the local pending work (so nothing is lost), pulls the cloud copy
@@ -1592,6 +1587,7 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
               file=sys.stderr)
         return
 
+    _validate_bound_course_dir(course_dir, base_url, shifu_bid=shifu_bid)
     ts = _now_iso().replace(":", "").replace("-", "")
     course_path = Path(course_dir)
     backup_location = None
@@ -1639,7 +1635,8 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
     # scope the entire tree was already copied to .conflict-backup-<ts>/ above,
     # so skip the redundant per-file backups. force=False keeps README intact.
     _pull_into_dir(base_url, token, shifu_bid, course_dir,
-                   backup=(scope != "import"), force=False)
+                   backup=(scope != "import"), force=False,
+                   profile_name=profile_name)
 
     cm = conflict_meta or {}
     who = _mask_phone((cm.get("updated_user") or {}).get("phone")) \
@@ -1673,7 +1670,7 @@ def cmd_create(args):
 
 # ── Update Meta ────────────────────────────────────────────────────────────────
 def _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
-                                intended_meta):
+                                intended_meta, profile_name=None):
     """Check course-level draft revision conflicts before a detail write."""
     if not (manifest and manifest.get("shifu_bid") == shifu_bid):
         return
@@ -1686,12 +1683,13 @@ def _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest
             and cloud_rev > local_course_rev):
         _auto_pull_overwrite(base_url, token, shifu_bid, course_dir,
                              scope="meta", intended_meta=intended_meta,
-                             conflict_meta=cloud_meta)
+                             conflict_meta=cloud_meta, profile_name=profile_name)
         sys.exit(EXIT_CONFLICT)
 
 
 def _update_course_manifest_after_push(base_url, token, shifu_bid, course_dir,
-                                       manifest, course_updates=None):
+                                       manifest, course_updates=None,
+                                       profile_name=None):
     """Re-read and record the new course-level revision after a detail write."""
     fresh = api_safe(base_url, token, "get", f"/shifus/{shifu_bid}/draft-meta")
     if not isinstance(fresh, dict) or fresh.get("revision") is None:
@@ -1720,6 +1718,8 @@ def _update_course_manifest_after_push(base_url, token, shifu_bid, course_dir,
     if fresh_user is not None:
         course["updated_user_bid"] = fresh_user
     manifest["last_push_at"] = _now_iso()
+    if profile_name is not None:
+        manifest["profile"] = profile_name
     _write_sync(course_dir, manifest)
 
 
@@ -1757,7 +1757,7 @@ def cmd_update_meta(args):
     intended = {"name": args.name, "description": description,
                 "course_prompt_file": args.course_prompt_file}
     _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
-                                intended)
+                                intended, profile_name=_profile_name(args))
 
     # Send ONLY the content fields the user is changing. The backend uses PATCH
     # semantics (an omitted field is left unchanged), so we deliberately do NOT
@@ -1792,7 +1792,7 @@ def cmd_update_meta(args):
             course_updates={
                 "name": payload.get("name"),
                 "description": payload.get("description"),
-            })
+            }, profile_name=_profile_name(args))
 
 
 # ── Set Listen Mode ────────────────────────────────────────────────────────────
@@ -1965,7 +1965,7 @@ def cmd_set_tts(args):
         tts_config = api_safe(base_url, token, "get", "/tts/config") or {}
     payload = _build_set_tts_payload(args, tts_config)
     _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
-                                payload)
+                                payload, profile_name=_profile_name(args))
 
     # Disabling sends only the switch. Enabling sends the full TTS settings that
     # the backend now validates strictly, matching the platform editor payload.
@@ -1984,7 +1984,8 @@ def cmd_set_tts(args):
                   "`pull --course-dir <dir>` to resync.", file=sys.stderr)
 
         _update_course_manifest_after_push(base_url, token, shifu_bid,
-                                           course_dir, manifest)
+                                           course_dir, manifest,
+                                           profile_name=_profile_name(args))
 
 
 def cmd_set_avatar(args):
@@ -2018,7 +2019,7 @@ def cmd_set_avatar(args):
     # leave an unused resource behind.
     intended_meta = {"avatar": "<pending local upload>"}
     _check_course_meta_conflict(base_url, token, shifu_bid, course_dir, manifest,
-                                intended_meta)
+                                intended_meta, profile_name=_profile_name(args))
 
     remote_url = api_upload(
         base_url, token, prepared.filename, prepared.data, prepared.mime,
@@ -2050,7 +2051,8 @@ def cmd_set_avatar(args):
     if manifest and manifest.get("shifu_bid") == shifu_bid:
         _write_course_config(course_dir, _course_config_from_detail(fresh_detail))
         _update_course_manifest_after_push(base_url, token, shifu_bid,
-                                           course_dir, manifest)
+                                           course_dir, manifest,
+                                           profile_name=_profile_name(args))
 
 
 # ── Add Chapter ────────────────────────────────────────────────────────────────
@@ -2144,7 +2146,8 @@ def cmd_update_lesson(args):
         _auto_pull_overwrite(
             base_url, token, shifu_bid, course_dir, scope="lesson",
             outline_bid=outline_bid, attempted_content=content,
-            local_file=(entry or {}).get("file"), conflict_meta=result)
+            local_file=(entry or {}).get("file"), conflict_meta=result,
+            profile_name=_profile_name(args))
         sys.exit(EXIT_CONFLICT)
 
     new_revision = result.get("new_revision")
@@ -2152,6 +2155,8 @@ def cmd_update_lesson(args):
         _set_lesson_revision(manifest, outline_bid, new_revision,
                              content_sha256=_sha256_text(content))
         manifest["last_push_at"] = _now_iso()
+        if _profile_name(args) is not None:
+            manifest["profile"] = _profile_name(args)
         _write_sync(course_dir, manifest)
         # Keep the local lesson file in lockstep with what was just pushed, so a
         # subsequent `status` reports clean instead of "locally modified".
@@ -2431,7 +2436,8 @@ def cmd_import(args):
             if (cloud_rev is not None and local_rev is not None
                     and cloud_rev > local_rev):
                 _auto_pull_overwrite(base_url, token, shifu_bid, args.course_dir,
-                                     scope="import", conflict_meta=cloud_meta)
+                                     scope="import", conflict_meta=cloud_meta,
+                                     profile_name=_profile_name(args))
                 sys.exit(EXIT_CONFLICT)
 
     result_bid = None
@@ -2456,7 +2462,8 @@ def cmd_import(args):
     # are regenerated), so a pull is the reliable way to capture them.
     if args.course_dir and result_bid:
         _pull_into_dir(base_url, token, result_bid, args.course_dir,
-                       backup=False, force=False)
+                       backup=False, force=False,
+                       profile_name=_profile_name(args))
         print(f"  Sync manifest seeded: {_sync_path(args.course_dir)}")
 
 
@@ -2996,15 +3003,23 @@ def _write_manifest(manifest_path, manifest):
 
 
 def _update_manifest(course_dir, entry):
-    """Upsert an image entry by 'local' (file path) or 'source_url' (URL upload)."""
+    """Upsert by deployment URL and source, retaining unknown legacy records."""
     manifest_path = Path(course_dir) / "assets" / "image-manifest.json"
     manifest = _load_manifest(manifest_path)
 
     key_field = "local" if entry.get("local") else "source_url"
     key_value = entry[key_field]
+    entry_url = profiles.normalize_base_url(entry["base_url"])
+    entry["base_url"] = entry_url
     existing_idx = None
     for i, item in enumerate(manifest["images"]):
-        if item.get(key_field) == key_value:
+        if not isinstance(item, dict) or not item.get("base_url"):
+            continue
+        try:
+            item_url = profiles.normalize_base_url(item["base_url"])
+        except (ValueError, TypeError):
+            continue
+        if item_url == entry_url and item.get(key_field) == key_value:
             existing_idx = i
             break
     if existing_idx is None:
@@ -3073,6 +3088,8 @@ def cmd_upload_image(args):
                 )
             _update_manifest(course_dir, {
                 "local": local_rel,
+                "base_url": base_url,
+                "profile": _profile_name(args),
                 "remote": remote_url,
                 "alt": alt,
                 "uploaded_at": _now_iso(),
@@ -3090,6 +3107,8 @@ def cmd_upload_image(args):
     if course_dir is not None:
         _update_manifest(course_dir, {
             "source_url": args.url,
+            "base_url": base_url,
+            "profile": _profile_name(args),
             "remote": remote_url,
             "alt": alt,
             "uploaded_at": _now_iso(),
@@ -3118,18 +3137,32 @@ def build_parser():
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument("--token", default=None,
                                help="JWT token (or SHIFU_TOKEN in .env)")
+    parent_parser.add_argument("--profile", action=UniqueProfileAction,
+                               help="Use this named profile for this command only")
 
     parser = argparse.ArgumentParser(
         prog="shifu-cli",
         description="AI-Shifu Course CLI - Unified tool for course CRUD operations",
     )
+    parser.add_argument("--profile", dest="global_profile", action=UniqueProfileAction,
+                        help="Use this named profile for this command only")
 
     sub = parser.add_subparsers(dest="command", help="Available commands")
 
-    p = sub.add_parser("site", help="Show or remember the platform site (no network)")
+    p = sub.add_parser("site", parents=[parent_parser],
+                       help="Show or configure the selected profile (no network)")
     selection = p.add_mutually_exclusive_group()
     selection.add_argument("--set", choices=tuple(SITE_URLS), help="Select cn or com")
     selection.add_argument("--url", help="Select a custom service URL")
+
+    p = sub.add_parser("profile", help="Manage independently named service profiles")
+    profile_sub = p.add_subparsers(dest="profile_command", required=True)
+    profile_sub.add_parser("list", help="List profiles without checking authorization")
+    configure = profile_sub.add_parser("set", help="Create or update a profile")
+    configure.add_argument("name")
+    configure.add_argument("--base-url", required=True, help="cn, com, or a complete service URL")
+    default = profile_sub.add_parser("default", help="Show or change the default profile")
+    default.add_argument("name", nargs="?")
 
     # ── check-update (public, no login required) ──
     p = sub.add_parser(
@@ -3157,6 +3190,9 @@ def build_parser():
                    help="Wait for the pending authorization to be approved")
     p.add_argument("--timeout", type=int, default=120,
                    help="Seconds to keep polling when used with --wait")
+
+    sub.add_parser("logout", parents=[parent_parser],
+                   help="Clear only the selected profile's local authorization")
 
     # ── verify ──
     sub.add_parser("verify", parents=[parent_parser],
@@ -3395,11 +3431,20 @@ def build_parser():
     return parser
 
 
-def main():
-    load_env()
+class UniqueProfileAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, self.dest, None) is not None:
+            parser.error("Specify --profile only once per command")
+        setattr(namespace, self.dest, values)
 
+
+def main():
     parser = build_parser()
     args = parser.parse_args()
+    if args.global_profile is not None:
+        if getattr(args, "profile", None) is not None:
+            parser.error("Specify --profile only once per command")
+        args.profile = args.global_profile
 
     if not args.command:
         parser.print_help()
@@ -3407,8 +3452,10 @@ def main():
 
     commands = {
         "site": cmd_site,
+        "profile": cmd_profile,
         "check-update": cmd_check_update,
         "login": cmd_login,
+        "logout": cmd_logout,
         "verify": cmd_verify,
         "list": cmd_list,
         "show": cmd_show,
@@ -3440,20 +3487,27 @@ def main():
 
     handler = commands.get(args.command)
     if handler:
-        if args.command not in {"site", "check-update", "build"}:
-            base_url = configured_base_url()
-            if not base_url:
-                print("Site selection required. Run 'shifu-cli.py site --set cn', 'site --set com', or 'site --url <URL>' before connecting.")
-                sys.exit(4)
-            require_secure_base_url(base_url)
-        # check-update runs once per session (session-controls.md), so it
-        # doubles as the session-start marker; every other command reports
-        # its own name. Only the command name is sent, never its arguments.
-        if args.command == "check-update":
-            track("skill_start")
-        elif args.command != "site":
-            track(f"cli_{args.command}")
-        handler(args)
+        try:
+            if args.command not in {"check-update", "build"}:
+                profile_store().migrate_legacy(dict(os.environ))
+            load_env()
+            context = None
+            if args.command not in {"site", "profile", "check-update", "build"}:
+                context = resolve_context(args, named_only=args.command in {"login", "logout"})
+                validate_course_binding(args, context.base_url)
+            # Resolve identity from this invocation, never again from a global
+            # token that explicit --profile deliberately ignored.
+            if args.command == "check-update":
+                track("skill_start", token="")
+            elif args.command not in {"site", "profile"}:
+                track(f"cli_{args.command}", token=context.token if context else "")
+            handler(args)
+        except profiles.ProfileError as exc:
+            print(f"Configuration error: {exc}", file=sys.stderr)
+            sys.exit(4)
+        except OSError as exc:
+            print(f"Local configuration or file operation failed: {exc}", file=sys.stderr)
+            sys.exit(1)
     else:
         parser.print_help()
         sys.exit(1)

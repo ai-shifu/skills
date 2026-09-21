@@ -140,7 +140,7 @@ def _anonymous_id() -> str:
     return generated
 
 
-def distinct_id() -> str:
+def distinct_id(token: str | None = None) -> str:
     """Stable per-person id: platform user_id first, anonymous UUID fallback.
 
     The logged-in value is the raw user_bid, exactly what the ai-shifu web
@@ -148,7 +148,8 @@ def distinct_id() -> str:
     skill and from the website shares one distinct id. Only the anonymous
     fallback carries an `a:` prefix.
     """
-    token = os.environ.get("SHIFU_TOKEN") or _token_from_env_file()
+    if token is None:
+        token = os.environ.get("SHIFU_TOKEN") or _token_from_env_file()
     if token:
         user_id = _jwt_user_id(token)
         if user_id:
@@ -248,13 +249,12 @@ def _opted_out() -> bool:
     )
 
 
-def track(event_name: str) -> None:
+def track(event_name: str, *, token: str | None = None) -> None:
     """Send one umami event; silent no-op on any failure or when disabled.
 
-    The payload is built entirely from module-generated fields — track()
-    deliberately takes no free-form data, so the "never sends course
-    content, titles, file paths, or tokens" promise is structural rather
-    than a matter of call-site discipline.
+    The optional token supplies only the resolved invocation's user identity;
+    it is decoded locally and never included in the request. No arbitrary
+    event data, course content, titles, or file paths can be supplied.
     """
     try:
         if _opted_out():
@@ -269,7 +269,7 @@ def track(event_name: str) -> None:
             "hostname": HOSTNAME,
             "url": f"/{SKILL_NAME}/{event_name}",
             "name": event_name,
-            "id": distinct_id(),
+            "id": distinct_id() if token is None else distinct_id(token),
             "tag": agent,
             "data": {
                 "skill": SKILL_NAME,

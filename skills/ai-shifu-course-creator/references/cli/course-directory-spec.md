@@ -31,7 +31,7 @@ None.
 | `course-config.json` | `pull`, `set-tts --course-dir`, or `set-avatar --course-dir` | reference only; `build` and `import` ignore it | No. |
 | `structure.json` | author, `pull`, or `set-access --course-dir` | `build` chapter and lesson mapping | No; missing selects single-chapter discovery. |
 | `shifu-import.json` | `build` | JSON import | Generated output. |
-| `.shifu-sync.json` | `pull` and version-aware writes | `status` and version-aware writes | Required only for full conflict protection. |
+| `.shifu-sync.json` | `pull` and version-aware writes | network commands with a course directory; `status` and version-aware writes | Optional for an unbound directory; when present, its source identity is mandatory. Required for full conflict protection. |
 | `lessons/*` | author or `pull` | `build` and lesson update commands | Yes; at least one discoverable lesson is required by `build`. |
 | `assets/image-manifest.json` | `upload-image --course-dir` | asset lookup | No. |
 | `assets/raw/` | user | no direct build consumer | No; conventional storage only. |
@@ -145,6 +145,7 @@ This file is auto-maintained; its abridged schema is:
   "schema_version": 1,
   "shifu_bid": "a1b2c3",
   "base_url": "https://app.ai-shifu.cn",
+  "profile": "日常",
   "course": {
     "revision": 42,
     "name": "Course Title",
@@ -178,6 +179,10 @@ This file is auto-maintained; its abridged schema is:
 
 The course and lesson revisions are cloud baselines. `content_sha256` is the last synchronized local-content hash. The CLI writes this file atomically; manual edits are unsupported.
 
+Before any network command using a course directory reads remote state or changes local files, an existing sync manifest must be valid and its normalized `base_url` must match the selected execution context. An explicit target course BID must also match `shifu_bid`, even if two services happen to use the same BID. A malformed manifest or missing source URL is an error, not an unbound directory. `--force` never bypasses these checks. Resolve a mismatch by explicitly selecting the correct profile or an appropriate directory; do not infer a profile from the manifest.
+
+`profile` records provenance only (null for temporary contexts); the source-service identity remains `base_url`. Old manifests with a valid URL but no profile remain supported, and two named profiles for the same service may use the same directory. A new directory without a manifest remains valid for initial pull, authoring, upload, or import; local `build` does not require a profile or enforce this network preflight.
+
 ## assets/
 
 `assets/image-manifest.json` schema:
@@ -187,6 +192,8 @@ The course and lesson revisions are cloud baselines. `content_sha256` is the las
   "images": [
     {
       "local": "assets/raw/gradient-descent.heic",
+      "base_url": "https://app.ai-shifu.cn",
+      "profile": "日常",
       "remote": "https://assets.example.com/abcd",
       "alt": "Image description",
       "uploaded_at": "2026-05-23T08:42:31Z",
@@ -197,6 +204,8 @@ The course and lesson revisions are cloud baselines. `content_sha256` is the las
     },
     {
       "source_url": "https://example.com/diagram.png",
+      "base_url": "https://school.example/training",
+      "profile": "客户 A",
       "remote": "https://assets.example.com/efgh",
       "alt": "Image description",
       "uploaded_at": "2026-05-23T08:45:02Z"
@@ -205,12 +214,16 @@ The course and lesson revisions are cloud baselines. `content_sha256` is the las
 }
 ```
 
-- `local` is the source path for file uploads and their upsert key. It is relative to the course directory when possible, otherwise absolute.
-- `source_url` is the source and upsert key for URL uploads.
+- `local` is the source path for file uploads. It is relative to the course directory when possible, otherwise absolute.
+- `source_url` is the original source for URL uploads.
+- `base_url` is the normalized service used for upload. The upsert key is this URL plus `local` or `source_url`, so the same source uploaded to different services keeps separate entries.
+- `profile` records the profile used for upload, or null for temporary configuration. It does not change the service/source upsert key.
 - `remote` is the platform-hosted URL returned by the CLI.
 - `alt` is the value supplied through `--alt`.
 - `uploaded_at` is a UTC ISO 8601 timestamp.
 - `bytes`, `original_bytes`, `mime`, and `filename` describe locally processed uploads and are absent from URL-upload entries.
+
+Legacy entries without `base_url` have unknown provenance. Preserve them as-is; they are neither an upsert match for a known service nor proof that an asset was uploaded to the current service. Match a reusable upload by its known service and source, not by profile name alone.
 
 `build` ignores the entire `assets/` directory.
 

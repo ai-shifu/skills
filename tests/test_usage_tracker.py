@@ -64,6 +64,13 @@ class DetectAgentTests(unittest.TestCase):
 
 
 class DistinctIdTests(unittest.TestCase):
+    def test_resolved_profile_identity_ignores_global_token(self) -> None:
+        with mock.patch.dict(usage_tracker.os.environ,
+                             {"SHIFU_TOKEN": fake_jwt({"user_id": "other-user"})}), \
+                mock.patch.object(usage_tracker, "_anonymous_id", return_value="anonymous"):
+            self.assertEqual(usage_tracker.distinct_id(fake_jwt({"user_id": "profile-user"})), "profile-user")
+            self.assertEqual(usage_tracker.distinct_id(""), "a:anonymous")
+
     def test_uses_raw_user_bid_matching_web_identify(self) -> None:
         token = fake_jwt({"user_id": "user-123", "time_stamp": 1})
         with mock.patch.dict(
