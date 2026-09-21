@@ -148,6 +148,38 @@ class ProfileStoreTests(unittest.TestCase):
         self.store.logout(context)
         self.assertEqual(self.store.set_profile("one", "com").directory, context.directory)
 
+    def test_pending_auth_rejects_a_stale_profile_identity(self):
+        context = self.store.set_profile("Demo", "cn")
+        replacement = self.store.set_profile("Replacement", "cn")
+        settings = read_private_json(self.store.settings_path)
+        settings["profiles"]["Demo"] = settings["profiles"].pop("Replacement")
+        write_private_json(self.store.settings_path, settings)
+        with self.assertRaisesRegex(ProfileError, "changed"):
+            self.store.save_pending_auth(context, {
+                "base_url": context.base_url, "device_code": "stale-device-code",
+            })
+        self.assertFalse(self.store.pending_auth_path(context).exists())
+        self.assertFalse(self.store.pending_auth_path(replacement).exists())
+
+    def test_pending_auth_rejects_another_issuing_service(self):
+        context = self.store.set_profile("Demo", "cn")
+        with self.assertRaisesRegex(ProfileError, "does not belong"):
+            self.store.save_pending_auth(context, {
+                "base_url": "https://app.ai-shifu.com", "device_code": "wrong-service",
+            })
+        self.assertFalse(self.store.pending_auth_path(context).exists())
+
+    def test_pending_auth_allows_unrelated_settings_changes(self):
+        context = self.store.set_profile("Demo", "cn")
+        other = self.store.set_profile("Other", "com")
+        self.store.default_profile("Other")
+        self.store.set_profile("Demo", "https://APP.AI-SHIFU.CN:443/")
+        pending = {"base_url": context.base_url, "device_code": "current-device-code"}
+        self.store.save_pending_auth(context, pending)
+        self.assertEqual(read_private_json(self.store.pending_auth_path(context)), pending)
+        self.assertFalse(self.store.pending_auth_path(other).exists())
+        self.assertEqual(self.store.default_profile(), "Other")
+
     def test_explicit_profile_ignores_even_incomplete_environment(self):
         context = self.store.set_profile("saved", "cn")
         self.store.save_token(context, "saved-token")

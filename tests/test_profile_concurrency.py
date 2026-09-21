@@ -24,7 +24,7 @@ store = profiles.ProfileStore(root / 'config', root / '.env')
 original_write = profiles.write_private_json
 
 def guarded_write(path, data):
-    if path == store.settings_path:
+    if path == store.settings_path or path.name == 'pending-device-auth.json':
         (root / (label + '-snapshot')).touch()
         if gate == 'yes':
             deadline = time.monotonic() + 10
@@ -42,6 +42,19 @@ elif action == 'default':
     store.default_profile(name)
 elif action == 'site':
     store.configure_site('https://school.example', environ={})
+elif action == 'pending':
+    context = store.resolve(name, environ={})
+    store.save_pending_auth(context, {
+        'base_url': context.base_url, 'device_code': 'current-device-code',
+    })
+elif action == 'change-rejected':
+    try:
+        store.set_profile(name, 'cn')
+    except profiles.ProfileError as exc:
+        if 'authorization state' not in str(exc):
+            raise
+    else:
+        raise RuntimeError('changed a profile with pending authorization')
 elif action == 'migrate-set':
     store.migrate_legacy()
     store.set_profile(name, 'com')
@@ -160,6 +173,16 @@ class ProfileConcurrencyTests(unittest.TestCase):
         self.assertEqual(credentials[0].parent.name, data["profiles"]["default"]["id"])
         self.assertEqual(json.loads(credentials[0].read_text())["token"], "legacy-test-token")
         self.assertFalse((self.config / ".profile-migration.json").exists())
+
+    def test_pending_auth_holds_configuration_lock_through_the_write(self):
+        self.finish(self.start("set", "Demo", "seed"))
+        self.overlap("pending", "Demo", "change-rejected", "Demo")
+        entry = self.settings()["profiles"]["Demo"]
+        self.assertEqual(entry["base_url"], "https://app.ai-shifu.com")
+        pending_path = self.config / "profiles" / entry["id"] / "pending-device-auth.json"
+        self.assertEqual(json.loads(pending_path.read_text()), {
+            "base_url": entry["base_url"], "device_code": "current-device-code",
+        })
 
     def test_lock_times_out_and_is_released_when_owner_is_terminated(self):
         owner = self.start("lock", "", "owner")

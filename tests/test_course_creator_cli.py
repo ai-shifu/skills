@@ -284,6 +284,31 @@ class CourseCreatorSiteTests(unittest.TestCase):
         self.assertEqual(course_creator_cli.profile_store().load_token(second), "new-second")
         self.assertEqual(course_creator_cli.profile_store().default_profile(), "测试 环境")
 
+    def test_login_rejects_a_profile_changed_during_authorization(self):
+        store = course_creator_cli.profile_store()
+        context = store.set_profile("Demo", "cn")
+
+        def authorize(*_args):
+            # Model another process committing a URL change during the request.
+            store.set_profile("Demo", "com")
+            return {"data": {
+                "device_code": "stale-device-code", "user_code": "OLD-CODE",
+                "verification_uri": "https://app.ai-shifu.cn/login/device",
+            }}
+
+        with (mock.patch.object(course_creator_cli, "_login_post", side_effect=authorize),
+              mock.patch.object(sys, "argv", ["shifu-cli.py", "login", "--profile", "Demo"]),
+              contextlib.redirect_stdout(io.StringIO()) as stdout,
+              contextlib.redirect_stderr(io.StringIO()) as stderr,
+              self.assertRaises(SystemExit) as raised):
+            course_creator_cli.main()
+
+        self.assertEqual(raised.exception.code, 4)
+        self.assertIn("changed", stderr.getvalue())
+        self.assertNotIn("OLD-CODE", stdout.getvalue())
+        self.assertFalse(store.pending_auth_path(context).exists())
+        self.assertEqual(store.resolve("Demo", environ={}).base_url, course_creator_cli.SITE_URLS["com"])
+
     def test_logout_recovers_from_invalid_local_credentials(self):
         first, second = self.configure_profiles()
         course_creator_cli.credentials_path(first).write_text("broken")
@@ -541,7 +566,7 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         with (
             mock.patch.dict(
                 course_creator_cli.os.environ,
-                {"SHIFU_BASE_URL": "https://example.test/"},
+                {"SHIFU_BASE_URL": "https://example.test/", "AI_SHIFU_CONFIG_DIR": str(self.root)},
                 clear=True,
             ),
             mock.patch.object(
@@ -558,7 +583,6 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
                     },
                 },
             ) as login_post,
-            mock.patch.object(course_creator_cli, "_write_private_json") as write_json,
             mock.patch("webbrowser.open") as open_browser,
             contextlib.redirect_stdout(io.StringIO()) as stdout,
         ):
@@ -576,7 +600,7 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         # The device code can be exchanged for a token, so it must stay on disk
         # and out of the calling agent's transcript.
         self.assertNotIn("secret-device-code", printed)
-        stored = write_json.call_args[0][1]
+        stored = course_creator_cli.profiles.read_private_json(course_creator_cli.pending_auth_path(self.context))
         self.assertEqual(stored["device_code"], "secret-device-code")
 
     def test_login_prints_plain_verification_uri_and_pairing_code(self):
@@ -590,7 +614,6 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
                     "verification_uri": "https://example.test/login/device",
                 }},
             ) as login_post,
-            mock.patch.object(course_creator_cli, "_write_private_json") as write_json,
             mock.patch("webbrowser.open") as open_browser,
             contextlib.redirect_stdout(io.StringIO()) as stdout,
         ):
@@ -601,7 +624,8 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertIn("Pairing code: AC4-7HK", printed)
         self.assertNotIn("secret-device-code", printed)
         self.assertEqual(login_post.call_count, 1)
-        self.assertEqual(write_json.call_args[0][1]["device_code"], "secret-device-code")
+        stored = course_creator_cli.profiles.read_private_json(course_creator_cli.pending_auth_path(self.context))
+        self.assertEqual(stored["device_code"], "secret-device-code")
         open_browser.assert_not_called()
 
     def test_login_wait_saves_the_token_once_approved(self):

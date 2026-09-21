@@ -94,6 +94,8 @@ On first use of legacy configuration, the CLI migrates a known saved service and
 
 Profile creation/updates, default changes, and migration serialize their complete read-modify-write transactions with a cross-process lock. If another command holds the lock for ten seconds, the CLI reports that configuration is busy; retry after that command finishes. A terminated process releases its lock automatically.
 
+After the service returns a new authorization request, saving it uses the same lock to revalidate the profile's internal ID and URL. If either changed while the request was in flight, login fails without saving or displaying the stale request; retry login for the intended profile. The network request itself does not hold the configuration lock.
+
 ## Site Selection
 
 ```bash

@@ -314,6 +314,19 @@ class ProfileStore:
             raise ProfileError("Cannot save an empty token.")
         write_private_json(credentials_path(context), {"base_url": context.base_url, "token": token.strip()})
 
+    def save_pending_auth(self, context, pending):
+        """Bind a pending request to the still-current profile under the settings lock."""
+        with self._configuration_lock():
+            current = self._context(self._settings(), context.name)
+            if current.directory != context.directory or current.base_url != context.base_url:
+                raise ProfileError(
+                    "Profile configuration changed while starting authorization; "
+                    "run login again for this profile."
+                )
+            if normalize_base_url(pending.get("base_url")) != current.base_url:
+                raise ProfileError("Pending authorization does not belong to this profile's service.")
+            write_private_json(pending_auth_path(current), pending)
+
     def logout(self, context):
         for path in (credentials_path(context), pending_auth_path(context)):
             with contextlib.suppress(FileNotFoundError):

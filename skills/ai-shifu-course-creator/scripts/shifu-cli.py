@@ -660,8 +660,8 @@ def _start_device_authorization(context):
     # The device code can be exchanged for a token once the request is
     # approved, so it is stored with owner-only permissions rather than
     # printed: printing would copy it into the calling agent's transcript.
-    _write_private_json(
-        pending_auth_path(context),
+    profile_store().save_pending_auth(
+        context,
         {
             "device_code": device_code,
             "user_code": user_code,
