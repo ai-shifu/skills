@@ -207,6 +207,37 @@ class CourseProfileSyncTests(unittest.TestCase):
         for call in self.api.call_args_list:
             self.assertEqual(call.args[0], base_url)
 
+    def test_temporary_pull_clears_previous_profile_provenance(self):
+        self.bind(profile="previous-account")
+        self.api.side_effect = [{"name": "Course", "description": ""}, []]
+        self.api_safe.return_value = {"revision": 2}
+        cli._pull_into_dir(CN, "temporary-token", "same-course", self.course_dir)
+        self.assertIsNone(json.loads(self.sync.read_text())["profile"])
+
+    def test_temporary_metadata_push_clears_previous_profile_provenance(self):
+        manifest = self.bind(profile="previous-account")
+        self.api_safe.return_value = {"revision": 2}
+        cli._update_course_manifest_after_push(
+            CN, "temporary-token", "same-course", self.course_dir, manifest,
+        )
+        self.assertIsNone(json.loads(self.sync.read_text())["profile"])
+
+    def test_temporary_lesson_push_clears_previous_profile_provenance(self):
+        self.bind(profile="previous-account", lessons=[{
+            "outline_bid": "lesson", "revision": 1,
+        }])
+        content = self.root / "lesson.md"
+        content.write_text("Updated lesson", encoding="utf-8")
+        args = self.args(shifu_bid="same-course", outline_bid="lesson",
+                         teaching_prompt_file=str(content),
+                         _profile_context=types.SimpleNamespace(name=None))
+        with (
+            mock.patch.object(cli, "resolve_auth", return_value=(CN, "temporary-token")),
+            mock.patch.object(cli, "api_conflict_aware", return_value=("ok", {"new_revision": 2})),
+        ):
+            cli.cmd_update_lesson(args)
+        self.assertIsNone(json.loads(self.sync.read_text())["profile"])
+
 
 class CourseProfileImageTests(unittest.TestCase):
     def setUp(self):

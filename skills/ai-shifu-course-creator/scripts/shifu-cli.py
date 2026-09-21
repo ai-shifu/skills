@@ -1411,10 +1411,7 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True,
         "last_pull_at": _now_iso(),
         "last_push_at": existing.get("last_push_at") if existing else None,
     }
-    if profile_name is not None:
-        manifest["profile"] = profile_name
-    elif existing and existing.get("profile"):
-        manifest["profile"] = existing["profile"]
+    manifest["profile"] = profile_name
     if existing and existing.get("published"):
         manifest["published"] = existing["published"]
     _write_sync(course_dir, manifest)
@@ -1718,8 +1715,7 @@ def _update_course_manifest_after_push(base_url, token, shifu_bid, course_dir,
     if fresh_user is not None:
         course["updated_user_bid"] = fresh_user
     manifest["last_push_at"] = _now_iso()
-    if profile_name is not None:
-        manifest["profile"] = profile_name
+    manifest["profile"] = profile_name
     _write_sync(course_dir, manifest)
 
 
@@ -2155,8 +2151,7 @@ def cmd_update_lesson(args):
         _set_lesson_revision(manifest, outline_bid, new_revision,
                              content_sha256=_sha256_text(content))
         manifest["last_push_at"] = _now_iso()
-        if _profile_name(args) is not None:
-            manifest["profile"] = _profile_name(args)
+        manifest["profile"] = _profile_name(args)
         _write_sync(course_dir, manifest)
         # Keep the local lesson file in lockstep with what was just pushed, so a
         # subsequent `status` reports clean instead of "locally modified".
