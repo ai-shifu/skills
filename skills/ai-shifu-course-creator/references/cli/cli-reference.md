@@ -96,6 +96,8 @@ Profile creation/updates, default changes, and migration serialize their complet
 
 After the service returns a new authorization request, saving it uses the same lock to revalidate the profile's internal ID and URL. If either changed while the request was in flight, login fails without saving or displaying the stale request; retry login for the intended profile. The network request itself does not hold the configuration lock.
 
+Authorization completion and logout also use this lock. Before storing an approved token and consuming its pending request, the CLI rechecks the profile ID, service URL, and device code. A request cleared by logout or replaced by another login cannot restore credentials; delayed denial or expiry responses cannot clear the replacement request. Polling does not hold the lock.
+
 ## Site Selection
 
 ```bash

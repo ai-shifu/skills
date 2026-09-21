@@ -24,7 +24,7 @@ store = profiles.ProfileStore(root / 'config', root / '.env')
 original_write = profiles.write_private_json
 
 def guarded_write(path, data):
-    if path == store.settings_path or path.name == 'pending-device-auth.json':
+    if path == store.settings_path or path.name in {'pending-device-auth.json', 'credentials.json'}:
         (root / (label + '-snapshot')).touch()
         if gate == 'yes':
             deadline = time.monotonic() + 10
@@ -46,6 +46,15 @@ elif action == 'pending':
     context = store.resolve(name, environ={})
     store.save_pending_auth(context, {
         'base_url': context.base_url, 'device_code': 'current-device-code',
+    })
+elif action == 'complete':
+    store.finish_pending_auth(store.resolve(name, environ={}), 'current-device-code', 'approved-token')
+elif action == 'logout':
+    store.logout(store.resolve(name, environ={}, load_credentials=False))
+elif action == 'pending-new':
+    context = store.resolve(name, environ={})
+    store.save_pending_auth(context, {
+        'base_url': context.base_url, 'device_code': 'replacement-device-code',
     })
 elif action == 'change-rejected':
     try:
@@ -183,6 +192,25 @@ class ProfileConcurrencyTests(unittest.TestCase):
         self.assertEqual(json.loads(pending_path.read_text()), {
             "base_url": entry["base_url"], "device_code": "current-device-code",
         })
+
+    def test_logout_waits_for_token_save_and_then_clears_both_files(self):
+        self.finish(self.start("set", "Demo", "seed-profile"))
+        self.finish(self.start("pending", "Demo", "seed-pending"))
+        self.overlap("complete", "Demo", "logout", "Demo")
+        entry = self.settings()["profiles"]["Demo"]
+        directory = self.config / "profiles" / entry["id"]
+        self.assertFalse((directory / "credentials.json").exists())
+        self.assertFalse((directory / "pending-device-auth.json").exists())
+
+    def test_completing_auth_does_not_remove_a_concurrent_replacement(self):
+        self.finish(self.start("set", "Demo", "seed-profile"))
+        self.finish(self.start("pending", "Demo", "seed-pending"))
+        self.overlap("complete", "Demo", "pending-new", "Demo")
+        entry = self.settings()["profiles"]["Demo"]
+        directory = self.config / "profiles" / entry["id"]
+        self.assertEqual(json.loads((directory / "credentials.json").read_text())["token"], "approved-token")
+        self.assertEqual(json.loads((directory / "pending-device-auth.json").read_text())["device_code"],
+                         "replacement-device-code")
 
     def test_lock_times_out_and_is_released_when_owner_is_terminated(self):
         owner = self.start("lock", "", "owner")

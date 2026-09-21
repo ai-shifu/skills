@@ -309,6 +309,55 @@ class CourseCreatorSiteTests(unittest.TestCase):
         self.assertFalse(store.pending_auth_path(context).exists())
         self.assertEqual(store.resolve("Demo", environ={}).base_url, course_creator_cli.SITE_URLS["com"])
 
+    def test_login_wait_does_not_restore_a_logged_out_profile(self):
+        store = course_creator_cli.profile_store()
+        for change_url in (False, True):
+            with self.subTest(change_url=change_url):
+                context = store.set_profile(f"Demo-{change_url}", "cn")
+                store.save_pending_auth(context, {
+                    "base_url": context.base_url, "device_code": "original-request",
+                })
+
+                def poll(*_args):
+                    store.logout(context)
+                    if change_url:
+                        store.set_profile(context.name, "com")
+                    return "approved", "stale-token"
+
+                with (mock.patch.object(course_creator_cli, "_poll_device_authorization", side_effect=poll),
+                      mock.patch.object(sys, "argv", ["shifu-cli.py", "login", "--wait", "--profile", context.name]),
+                      contextlib.redirect_stdout(io.StringIO()) as stdout,
+                      contextlib.redirect_stderr(io.StringIO()),
+                      self.assertRaises(SystemExit) as raised):
+                    course_creator_cli.main()
+                self.assertEqual(raised.exception.code, 4)
+                self.assertNotIn("Authorization complete", stdout.getvalue())
+                self.assertFalse(store.credentials_path(context).exists())
+                self.assertFalse(store.pending_auth_path(context).exists())
+
+    def test_login_wait_preserves_a_replacement_request(self):
+        store = course_creator_cli.profile_store()
+        for status in ("approved", "denied", "expired"):
+            with self.subTest(status=status):
+                context = store.set_profile(f"Demo-{status}", "cn")
+                store.save_pending_auth(context, {
+                    "base_url": context.base_url, "device_code": "original-request",
+                })
+                replacement = {"base_url": context.base_url, "device_code": "replacement-request"}
+
+                def poll(*_args):
+                    store.save_pending_auth(context, replacement)
+                    return status, "stale-token" if status == "approved" else ""
+
+                with (mock.patch.object(course_creator_cli, "_poll_device_authorization", side_effect=poll),
+                      contextlib.redirect_stderr(io.StringIO()),
+                      self.assertRaises(SystemExit) as raised):
+                    self.run_cli("login", "--wait", "--profile", context.name)
+                self.assertEqual(raised.exception.code, 4)
+                self.assertFalse(store.credentials_path(context).exists())
+                self.assertEqual(course_creator_cli.profiles.read_private_json(
+                    store.pending_auth_path(context)), replacement)
+
     def test_logout_recovers_from_invalid_local_credentials(self):
         first, second = self.configure_profiles()
         course_creator_cli.credentials_path(first).write_text("broken")
@@ -630,59 +679,51 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
 
     def test_login_wait_saves_the_token_once_approved(self):
         args = types.SimpleNamespace(wait=True, timeout=30, _profile_context=self.context)
+        store = course_creator_cli.profile_store()
+        store.save_pending_auth(self.context, {
+            "device_code": "secret-device-code", "user_code": "AC4-7HK",
+            "interval": 1, "expires_at": course_creator_cli.time.time() + 600,
+            "base_url": self.context.base_url,
+        })
         with (
             mock.patch.dict(
                 course_creator_cli.os.environ,
-                {"SHIFU_BASE_URL": "https://example.test/"},
+                {"SHIFU_BASE_URL": "https://example.test/", "AI_SHIFU_CONFIG_DIR": str(self.root)},
                 clear=True,
-            ),
-            mock.patch.object(
-                course_creator_cli.profiles,
-                "read_private_json",
-                return_value={
-                    "device_code": "secret-device-code",
-                    "user_code": "AC4-7HK",
-                    "interval": 1,
-                    "expires_at": course_creator_cli.time.time() + 600,
-                    "base_url": self.context.base_url,
-                },
             ),
             mock.patch.object(
                 course_creator_cli,
                 "_poll_device_authorization",
                 return_value=("approved", "new-token"),
             ) as poll,
-            mock.patch.object(course_creator_cli, "save_token") as save_token,
-            mock.patch.object(course_creator_cli.Path, "unlink"),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             course_creator_cli.cmd_login(args)
 
         poll.assert_called_once_with("https://example.test", "secret-device-code")
-        save_token.assert_called_once_with("new-token", self.context)
+        self.assertEqual(store.load_token(self.context), "new-token")
+        self.assertFalse(store.pending_auth_path(self.context).exists())
 
     def test_login_wait_reports_a_denied_request(self):
         args = types.SimpleNamespace(wait=True, timeout=30, _profile_context=self.context)
+        store = course_creator_cli.profile_store()
+        store.save_pending_auth(self.context, {
+            "device_code": "secret", "interval": 1, "base_url": self.context.base_url,
+        })
         with (
-            mock.patch.object(
-                course_creator_cli.profiles,
-                "read_private_json",
-                return_value={"device_code": "secret", "interval": 1, "base_url": self.context.base_url},
-            ),
             mock.patch.object(
                 course_creator_cli,
                 "_poll_device_authorization",
                 return_value=("denied", ""),
             ),
-            mock.patch.object(course_creator_cli, "save_token") as save_token,
-            mock.patch.object(course_creator_cli.Path, "unlink"),
             contextlib.redirect_stdout(io.StringIO()),
             self.assertRaises(SystemExit) as exit_ctx,
         ):
             course_creator_cli.cmd_login(args)
 
         self.assertEqual(exit_ctx.exception.code, 1)
-        save_token.assert_not_called()
+        self.assertFalse(store.credentials_path(self.context).exists())
+        self.assertFalse(store.pending_auth_path(self.context).exists())
 
     def test_login_wait_without_a_pending_request_fails_clearly(self):
         args = types.SimpleNamespace(wait=True, timeout=30, _profile_context=self.context)

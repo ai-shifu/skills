@@ -180,6 +180,31 @@ class ProfileStoreTests(unittest.TestCase):
         self.assertFalse(self.store.pending_auth_path(other).exists())
         self.assertEqual(self.store.default_profile(), "Other")
 
+    def test_finishing_auth_rejects_a_stale_profile_identity(self):
+        context = self.store.set_profile("Demo", "cn")
+        replacement = self.store.set_profile("Replacement", "cn")
+        pending = {"base_url": context.base_url, "device_code": "same-code"}
+        self.store.save_pending_auth(context, pending)
+        self.store.save_pending_auth(replacement, pending)
+        settings = read_private_json(self.store.settings_path)
+        settings["profiles"]["Demo"] = settings["profiles"].pop("Replacement")
+        write_private_json(self.store.settings_path, settings)
+        with self.assertRaisesRegex(ProfileError, "changed"):
+            self.store.finish_pending_auth(context, "same-code", "stale-token")
+        for target in (context, replacement):
+            self.assertFalse(self.store.credentials_path(target).exists())
+            self.assertEqual(read_private_json(self.store.pending_auth_path(target)), pending)
+
+    def test_finishing_auth_preserves_state_on_invalid_token(self):
+        context = self.store.set_profile("Demo", "cn")
+        self.store.save_token(context, "existing-token")
+        pending = {"base_url": context.base_url, "device_code": "current-code"}
+        self.store.save_pending_auth(context, pending)
+        with self.assertRaisesRegex(ProfileError, "empty token"):
+            self.store.finish_pending_auth(context, "current-code", " ")
+        self.assertEqual(self.store.load_token(context), "existing-token")
+        self.assertEqual(read_private_json(self.store.pending_auth_path(context)), pending)
+
     def test_explicit_profile_ignores_even_incomplete_environment(self):
         context = self.store.set_profile("saved", "cn")
         self.store.save_token(context, "saved-token")

@@ -314,23 +314,42 @@ class ProfileStore:
             raise ProfileError("Cannot save an empty token.")
         write_private_json(credentials_path(context), {"base_url": context.base_url, "token": token.strip()})
 
+    def _current_auth_context(self, context):
+        """Revalidate an authorization context while the caller holds the settings lock."""
+        current = self._context(self._settings(), context.name)
+        if current.directory != context.directory or current.base_url != context.base_url:
+            raise ProfileError("Profile configuration changed; retry the command for the intended profile.")
+        return current
+
     def save_pending_auth(self, context, pending):
         """Bind a pending request to the still-current profile under the settings lock."""
         with self._configuration_lock():
-            current = self._context(self._settings(), context.name)
-            if current.directory != context.directory or current.base_url != context.base_url:
-                raise ProfileError(
-                    "Profile configuration changed while starting authorization; "
-                    "run login again for this profile."
-                )
+            current = self._current_auth_context(context)
             if normalize_base_url(pending.get("base_url")) != current.base_url:
                 raise ProfileError("Pending authorization does not belong to this profile's service.")
             write_private_json(pending_auth_path(current), pending)
 
+    def finish_pending_auth(self, context, device_code, token=None):
+        """Consume only the current request, optionally storing its approved token."""
+        with self._configuration_lock():
+            current = self._current_auth_context(context)
+            path = pending_auth_path(current)
+            pending = read_private_json(path)
+            if (not pending or not device_code or pending.get("device_code") != device_code
+                    or normalize_base_url(pending.get("base_url")) != current.base_url):
+                raise ProfileError(
+                    "Pending authorization changed or was cleared; run login again for this profile."
+                )
+            if token is not None:
+                self.save_token(current, token)
+            path.unlink()
+
     def logout(self, context):
-        for path in (credentials_path(context), pending_auth_path(context)):
-            with contextlib.suppress(FileNotFoundError):
-                path.unlink()
+        with self._configuration_lock():
+            current = self._current_auth_context(context)
+            for path in (credentials_path(current), pending_auth_path(current)):
+                with contextlib.suppress(FileNotFoundError):
+                    path.unlink()
 
     def _env_values(self):
         if not self.env_file.exists():

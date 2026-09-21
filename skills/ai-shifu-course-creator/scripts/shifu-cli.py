@@ -708,19 +708,15 @@ def _wait_for_device_authorization(context, timeout_seconds):
     while True:
         status, token = _poll_device_authorization(base_url, device_code)
         if status == "approved" and token:
-            save_token(token, context)
-            with contextlib.suppress(OSError):
-                pending_auth_path(context).unlink()
+            profile_store().finish_pending_auth(context, device_code, token)
             print(f"Authorization complete for profile {context.name!r}.")
             return
         if status == "denied":
-            with contextlib.suppress(OSError):
-                pending_auth_path(context).unlink()
+            profile_store().finish_pending_auth(context, device_code)
             print("The request was denied in the browser. Nothing was authorized.")
             sys.exit(1)
         if status == "expired":
-            with contextlib.suppress(OSError):
-                pending_auth_path(context).unlink()
+            profile_store().finish_pending_auth(context, device_code)
             print(
                 "The authorization request expired. "
                 f"Start a new request. {_login_instruction(context)}"
