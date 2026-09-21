@@ -40,6 +40,8 @@ if action == 'set':
     store.set_profile(name, 'com')
 elif action == 'default':
     store.default_profile(name)
+elif action == 'site':
+    store.configure_site('https://school.example', environ={})
 elif action == 'migrate-set':
     store.migrate_legacy()
     store.set_profile(name, 'com')
@@ -129,6 +131,22 @@ class ProfileConcurrencyTests(unittest.TestCase):
         data = self.settings()
         self.assertEqual(set(data["profiles"]), {"original", "chosen", "new"})
         self.assertEqual(data["default_profile"], "chosen")
+
+    def test_site_selection_waits_for_concurrent_first_profile_creation(self):
+        self.overlap("set", "first", "site", "")
+        data = self.settings()
+        self.assertEqual(set(data["profiles"]), {"first"})
+        self.assertEqual(data["default_profile"], "first")
+        self.assertEqual(data["profiles"]["first"]["base_url"], "https://school.example")
+
+    def test_site_selection_uses_the_locked_default_snapshot(self):
+        self.finish(self.start("set", "original", "seed1"))
+        self.finish(self.start("set", "chosen", "seed2"))
+        self.overlap("default", "chosen", "site", "")
+        data = self.settings()
+        self.assertEqual(data["default_profile"], "chosen")
+        self.assertEqual(data["profiles"]["chosen"]["base_url"], "https://school.example")
+        self.assertEqual(data["profiles"]["original"]["base_url"], "https://app.ai-shifu.com")
 
     def test_concurrent_migration_and_creation_keep_referenced_credentials(self):
         (self.config / "settings.json").write_text(json.dumps({"base_url": "https://app.ai-shifu.cn"}))

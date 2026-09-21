@@ -236,6 +236,13 @@ class ProfileStore:
         with self._configuration_lock():
             return self._set_profile(name, url)
 
+    def configure_site(self, url, *, name=None, environ=None):
+        """Select and configure the compatibility command's target atomically."""
+        with self._configuration_lock():
+            context = self.resolve(name=name, environ=environ, named_only=True,
+                                   allow_unconfigured=True, load_credentials=False)
+            return self._set_profile(context.name if context else "default", url)
+
     def _set_profile(self, name, url):
         name, url = normalize_profile_name(name), normalize_base_url(url)
         settings = self._settings()
