@@ -3074,11 +3074,11 @@ def cmd_upload_image(args):
             try:
                 local_rel = str(src_path.relative_to(course_dir))
             except ValueError:
-                local_rel = src_path.name
+                local_rel = str(src_path)
                 print(
                     f"warning: {src_path} is outside --course-dir; "
-                    f"recording only the filename ({local_rel}) in manifest "
-                    "(cross-machine dedup may be imperfect)",
+                    "recording its absolute path in the manifest "
+                    "(this source mapping is machine-specific)",
                     file=sys.stderr,
                 )
             _update_manifest(course_dir, {

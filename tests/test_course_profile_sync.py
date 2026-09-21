@@ -292,6 +292,26 @@ class CourseProfileImageTests(unittest.TestCase):
         self.assertEqual(entry["base_url"], COM)
         self.assertEqual(entry["remote"], "https://cdn.example/id")
 
+    def test_same_named_external_files_keep_distinct_source_records(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        sources = [root / name / "image.png" for name in ("first", "second")]
+        internal = self.course_dir / "assets" / "image.png"
+        for source in [*sources, internal]:
+            source.parent.mkdir(parents=True, exist_ok=True)
+            source.write_bytes(b"test image bytes")
+            args = types.SimpleNamespace(
+                course_dir=str(self.course_dir), file=str(source), no_process=True,
+                alt="", _profile_context=types.SimpleNamespace(name="account"),
+            )
+            with (
+                mock.patch.object(cli, "resolve_auth", return_value=(CN, "fake-token")),
+                mock.patch.object(cli, "api_upload", return_value=f"https://cdn.example/{source.parent.name}"),
+            ):
+                cli.cmd_upload_image(args)
+        self.assertEqual(len(self.entries()), 3)
+        self.assertEqual({entry["local"] for entry in self.entries()},
+                         {str(path.resolve()) for path in sources} | {"assets/image.png"})
+
 
 if __name__ == "__main__":
     unittest.main()
