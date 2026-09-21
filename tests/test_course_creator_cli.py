@@ -325,7 +325,9 @@ class CourseCreatorSiteTests(unittest.TestCase):
     def test_login_continuation_round_trips_arbitrary_profile_names(self):
         for name in ("-demo", "客户 A", "客户'B", "a/b"):
             context = course_creator_cli.profile_store().set_profile(name, "cn")
-            command = course_creator_cli._login_command(context, wait=True)
+            with mock.patch.object(course_creator_cli.platform, "system", return_value="Linux"):
+                hint = course_creator_cli._login_instruction(context, wait=True)
+            command = hint.removeprefix("Run `").removesuffix("`")
             args = course_creator_cli.build_parser().parse_args(course_creator_cli.shlex.split(command)[1:])
             self.assertEqual(args.profile, name)
             self.assertTrue(args.wait)

@@ -611,15 +611,25 @@ def _poll_device_authorization(base_url, device_code):
     return str(data.get("status") or "pending"), str(data.get("token") or "")
 
 
-def _login_command(context, *, wait=False):
+def _login_instruction(context, *, wait=False):
+    if platform.system() == "Windows":
+        # cmd.exe and PowerShell have different expansion/quoting rules. Provide
+        # literal argv, not a shell snippet that can reinterpret a profile name.
+        arguments = ["login", f"--profile={context.name}"]
+        if wait:
+            arguments.append("--wait")
+        return ("Invoke shifu-cli.py with this argument list (JSON, not a shell command): "
+                + json.dumps(arguments, ensure_ascii=False))
     command = f"shifu-cli.py login --profile={shlex.quote(context.name)}"
-    return command + (" --wait" if wait else "")
+    if wait:
+        command += " --wait"
+    return f"Run `{command}`"
 
 
 def _auth_recovery(context):
     if context.name is None:
         return "Supply a valid token for the temporary service configuration."
-    return f"Run `{_login_command(context)}` to authorize this profile."
+    return f"Authorize this profile. {_login_instruction(context)}"
 
 
 def _start_device_authorization(context):
@@ -670,8 +680,8 @@ def _start_device_authorization(context):
     print(f"  {url}")
     print(f"Pairing code: {user_code}")
     print(
-        f"After approving it there, run `{_login_command(context, wait=True)}` "
-        "to finish signing in."
+        "After approving it there, finish signing in. "
+        f"{_login_instruction(context, wait=True)}"
     )
 
 
@@ -679,14 +689,14 @@ def _wait_for_device_authorization(context, timeout_seconds):
     base_url = context.base_url
     pending = profiles.read_private_json(pending_auth_path(context))
     if not isinstance(pending, dict) or not pending.get("device_code"):
-        print(f"No authorization is in progress. Run `{_login_command(context)}` first.")
+        print(f"No authorization is in progress. {_login_instruction(context)}")
         sys.exit(1)
 
     issuing_base_url = str(pending.get("base_url") or "")
     if not issuing_base_url or profiles.normalize_base_url(issuing_base_url) != base_url:
         print(
             "Error: the pending authorization does not belong to this profile's service. "
-            f"Run `{_login_command(context)}` again to start a new one."
+            f"Start a new request. {_login_instruction(context)}"
         )
         sys.exit(1)
 
@@ -715,7 +725,7 @@ def _wait_for_device_authorization(context, timeout_seconds):
                 pending_auth_path(context).unlink()
             print(
                 "The authorization request expired. "
-                f"Run `{_login_command(context)}` to start a new one."
+                f"Start a new request. {_login_instruction(context)}"
             )
             sys.exit(1)
         if time.time() + interval >= deadline:
@@ -724,7 +734,7 @@ def _wait_for_device_authorization(context, timeout_seconds):
 
     print(
         "Still waiting for approval in the browser. Approve the request, "
-        f"then run `{_login_command(context, wait=True)}` again."
+        f"then retry. {_login_instruction(context, wait=True)}"
     )
     sys.exit(EXIT_AUTH_PENDING)
 

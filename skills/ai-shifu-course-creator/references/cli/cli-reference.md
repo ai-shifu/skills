@@ -125,6 +125,7 @@ logout [--profile <name>]
 - `login --wait` polls the pending request. It exits `0` once the request is approved and the token is stored, `1` when the request was denied, expired, or never started, and `3` while the request is still valid but nobody has approved it yet. Exit `3` means the same command can simply be run again.
 - `--timeout` bounds a single `--wait` invocation in seconds; it does not shorten the request's own lifetime.
 - `login` and `login --wait` use the same named profile and issuing service. Different profiles may authorize concurrently without overwriting one another's pending requests or tokens. Continuation commands carry the profile name.
+- On Windows, continuation and recovery hints give a literal JSON argument list rather than assuming cmd.exe or PowerShell quoting. Pass these arguments directly to the CLI (for example through a subprocess argument array); the JSON is explicitly not a shell command. Other platforms show a POSIX-quoted command.
 - `logout` removes only the selected profile's local credentials and pending request, retaining its URL, name, and default setting. It does not revoke remote tokens or affect another profile.
 - Storage, URL validation, temporary configuration, and legacy migration follow [Profiles](#profiles).
 - A stored token is valid for thirty days; successful authenticated API calls refresh that expiry.
