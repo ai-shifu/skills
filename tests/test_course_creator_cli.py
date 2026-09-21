@@ -816,7 +816,8 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
             ):
                 course_creator_cli.profile_store().migrate_legacy(dict(course_creator_cli.os.environ))
                 self.assertEqual(course_creator_cli.profile_store().list_profiles(), [])
-                self.assertFalse(config_dir.exists())
+            self.assertFalse((config_dir / "settings.json").exists())
+            self.assertFalse((config_dir / "profiles").exists())
 
 
 class CourseCreatorCliPaginationTests(unittest.TestCase):

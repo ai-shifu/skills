@@ -259,14 +259,16 @@ class ProfileStoreTests(unittest.TestCase):
 
     def test_exported_credentials_alone_are_not_persisted(self):
         self.store.migrate_legacy({"SHIFU_BASE_URL": "cn", "SHIFU_TOKEN": "exported"})
-        self.assertFalse(self.root.exists())
+        self.assertFalse(self.store.settings_path.exists())
+        self.assertFalse((self.root / "profiles").exists())
 
     def test_environment_dependent_dotenv_values_are_not_persisted(self):
         self.env_file.write_text("SHIFU_BASE_URL=cn\nSHIFU_TOKEN=${EXPORTED_TOKEN}\n")
         original = self.env_file.read_bytes()
         with mock.patch.dict(os.environ, {"EXPORTED_TOKEN": "never-persist"}):
             self.store.migrate_legacy(os.environ)
-        self.assertFalse(self.root.exists())
+        self.assertFalse(self.store.settings_path.exists())
+        self.assertFalse((self.root / "profiles").exists())
         self.assertEqual(self.env_file.read_bytes(), original)
 
     def test_dynamic_dotenv_does_not_block_independent_saved_configuration_migration(self):

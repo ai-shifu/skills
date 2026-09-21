@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import contextlib
+import errno
 import hashlib
 import json
 import os
 import tempfile
+import time
 import unicodedata
 import uuid
 from dataclasses import dataclass, field, replace
@@ -140,6 +142,50 @@ class ProfileStore:
     credentials_path = staticmethod(credentials_path)
     pending_auth_path = staticmethod(pending_auth_path)
 
+    @contextlib.contextmanager
+    def _configuration_lock(self, timeout=10):
+        """Serialize shared settings transactions; OS locks release on process exit."""
+        self.root.mkdir(parents=True, exist_ok=True)
+        # Never unlink the lock file: waiters must continue locking the same inode.
+        fd = os.open(self.root / ".profiles.lock", os.O_CREAT | os.O_RDWR, 0o600)
+        with os.fdopen(fd, "r+b") as handle:
+            if os.fstat(handle.fileno()).st_size == 0:
+                handle.write(b"\0")
+                handle.flush()
+            handle.seek(0)
+            if os.name == "nt":
+                import msvcrt
+
+                def acquire():
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+
+                def release():
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+
+                def acquire():
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+                def release():
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+            deadline = time.monotonic() + timeout
+            while True:
+                try:
+                    acquire()
+                    break
+                except OSError as exc:
+                    if exc.errno not in {errno.EACCES, errno.EAGAIN, errno.EDEADLK}:
+                        raise
+                    if time.monotonic() >= deadline:
+                        raise ProfileError("Profile configuration is busy; retry this command shortly.") from exc
+                    time.sleep(0.05)
+            try:
+                yield
+            finally:
+                release()
+
     def _settings(self):
         settings = read_private_json(self.settings_path)
         if settings is None:
@@ -187,6 +233,10 @@ class ProfileStore:
         } for name, entry in settings["profiles"].items()]
 
     def set_profile(self, name, url):
+        with self._configuration_lock():
+            return self._set_profile(name, url)
+
+    def _set_profile(self, name, url):
         name, url = normalize_profile_name(name), normalize_base_url(url)
         settings = self._settings()
         entry = settings["profiles"].get(name)
@@ -205,12 +255,14 @@ class ProfileStore:
         return self._context(settings, name)
 
     def default_profile(self, name=None):
-        settings = self._settings()
-        if name is not None:
+        if name is None:
+            return self._settings()["default_profile"]
+        with self._configuration_lock():
+            settings = self._settings()
             name = self._context(settings, name).name
             settings["default_profile"] = name
             write_private_json(self.settings_path, settings)
-        return settings["default_profile"]
+            return name
 
     def resolve(self, name=None, environ=None, token=None, allow_unconfigured=False, named_only=False,
                 load_credentials=True):
@@ -305,6 +357,10 @@ class ProfileStore:
         back before settings commit, and cleanup is resumable after that commit.
         The process environment is intentionally neither read nor modified.
         """
+        with self._configuration_lock():
+            self._migrate_legacy()
+
+    def _migrate_legacy(self):
         settings = read_private_json(self.settings_path)
         journal = read_private_json(self.migration_path)
         if settings is not None and settings.get("schema_version") == 2:
