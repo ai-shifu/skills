@@ -29,3 +29,7 @@ jobs:
 
       - name: Run update-check tests
         run: python3 -m unittest discover -s tests -p "test_*.py"
+
+      - name: Run release tool tests
+        working-directory: tools/ai-shifu-skill-release
+        run: python3 -m unittest discover -s tests -p "test_*.py"

@@ -1,0 +1,57 @@
+{
+  "id": "ai-shifu",
+  "name": "AI师傅教学专家",
+  "persona_name": "AI师傅教学专家",
+  "primary_skill": "ai-shifu-course-creator",
+  "avatar": "avatar.png",
+  "tags": [
+    "学习教育"
+  ],
+  "description": "基于你的教学需求和原始内容(PPT、Word、PDF、txt等)，帮你快速做一门AI一对一互动课",
+  "core_scenarios": [
+    "从0开始建课：以“为什么要学习AI”为主题，创建一门AI师傅课程",
+    "做课方向建议：从想做课的领域出发，通过对话补充经验、案例或已有素材，分析适合的课程方向、目标受众和市场定位",
+    "基于已有素材建课：上传自己的PPT、Word、PDF或文本素材，基于素材生成并部署AI师傅课程"
+  ],
+  "recommended_instructions": [
+    "以“为什么要学习AI”为主题，创建一门AI师傅课程",
+    "我想做一门跟 AI 相关的课，帮我找找具体什么方向比较好？",
+    "帮我把这份上传的素材转成AI师傅课程"
+  ],
+  "recommended_question_en": "Create an AI-Shifu course on why people should learn AI",
+  "ai_tags": [
+    "课程设计",
+    "课程选题",
+    "课程制作"
+  ],
+  "welcome_intro": "你好，我是AI师傅教学专家。我可以基于你的教学需求和原始内容(PPT、Word、PDF、txt等)，帮你快速做一门AI一对一互动课",
+  "readme_intro": "基于你的教学需求和原始内容(PPT、Word、PDF、txt等)，帮你快速做一门AI一对一互动课",
+  "readme_scenarios": [
+    {
+      "name": "从0开始建课",
+      "description": "以“为什么要学习AI”为主题，创建一门AI师傅课程"
+    },
+    {
+      "name": "做课方向建议",
+      "description": "从想做课的领域出发，通过对话补充经验、案例或已有素材，分析适合的课程方向、目标受众和市场定位"
+    },
+    {
+      "name": "基于已有素材建课",
+      "description": "上传自己的PPT、Word、PDF或文本素材，基于素材生成并部署AI师傅课程"
+    }
+  ],
+  "skills": [
+    {
+      "name": "ai-shifu-course-creator",
+      "display_name": "课程制作管理"
+    },
+    {
+      "name": "ai-shifu-learning-report",
+      "display_name": "课程学习报告"
+    },
+    {
+      "name": "course-direction-advisor",
+      "display_name": "做课方向建议"
+    }
+  ]
+}
