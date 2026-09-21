@@ -17,7 +17,23 @@ skills/
   ai-shifu-course-creator/
   ai-shifu-learning-report/
   course-direction-advisor/
+tools/
+  ai-shifu-skill-release/
 ```
+
+## Build and Release Tools
+
+The [AI-Shifu Skill Release tool](tools/ai-shifu-skill-release/README.md) builds and verifies packages for ClawHub, SkillHub, WorkBuddy, QClaw, and Doubao, and supports the existing publication workflow. Its implementation now lives in this repository, migrated from `ai-shifu/ai-shifu-skill-release` (the local `ai-shifu-skill-build` project).
+
+Builds require Python 3.11+ and Git. They still fetch the committed skills from GitHub `ai-shifu/skills` remote `main`; local skill edits are never build inputs. From the repository root:
+
+```bash
+cd tools/ai-shifu-skill-release
+python3 scripts/release.py build --skill-name ai-shifu-course-creator
+python3 scripts/release.py verify dist/<release-id>
+```
+
+Use the exact release directory printed by `build`. Building and verifying do not upload packages. See the tool README for publisher configuration, channel-specific dependencies, and publication commands. Maintainer agents can read the tool's [release skill](tools/ai-shifu-skill-release/SKILL.md); it is separate from the three business skills above.
 
 ## Learning Report Path
 

@@ -1,19 +1,37 @@
 # Python cache
 __pycache__/
 *.py[cod]
+.pytest_cache/
 
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor / IDE and local agent state
+.idea/
+.vscode/
+*.swp
+*.swo
+.claude/
+
+# Logs
+*.log
 
 # Environment variables (may contain secrets)
 .env
+.env.local
 .update-check.json
 .update-check.dev.json
+
+# Local release publisher identity (keep publisher.toml.example tracked)
+/tools/ai-shifu-skill-release/publisher.toml
 
 # Generated release artifacts
 dist/
 
 # Design / process docs and eval reports (local notes, not for version control)
+/docs/
 design/
 eval_report/
 ai-shifu-course-creator-workspace/

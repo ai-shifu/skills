@@ -17,7 +17,23 @@ skills/
   ai-shifu-course-creator/
   ai-shifu-learning-report/
   course-direction-advisor/
+tools/
+  ai-shifu-skill-release/
 ```
+
+## 构建与发布工具
+
+[AI-Shifu Skill Release 工具](tools/ai-shifu-skill-release/README.md) 用于构建和校验 ClawHub、腾讯 SkillHub、WorkBuddy、QClaw 与豆包渠道包，并提供已有的发布流程。实现已从 `ai-shifu/ai-shifu-skill-release`（本地 `ai-shifu-skill-build` 项目）迁入本仓库维护。
+
+构建需要 Python 3.11+ 和 Git。源码仍取自 GitHub `ai-shifu/skills` 远端 `main` 的已提交内容，本地 Skill 修改不会进入产物。从仓库根目录执行：
+
+```bash
+cd tools/ai-shifu-skill-release
+python3 scripts/release.py build --skill-name ai-shifu-course-creator
+python3 scripts/release.py verify dist/<release-id>
+```
+
+校验时使用 `build` 实际输出的发布目录。构建与校验不会上传；发布者配置、各渠道依赖和发布命令见工具目录的英文 README。维护者可读取[发布 Skill](tools/ai-shifu-skill-release/SKILL.md)，它与上方三个业务 Skill 分开维护。工程说明使用英文，渠道包内的中文提示词与展示文案保持原样。
 
 ## 学习报告路径
 

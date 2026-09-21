@@ -2,7 +2,11 @@
 
 ## Scope
 
-This repository hosts reusable AI-Shifu skills for MarkdownFlow course production.
+This repository hosts reusable AI-Shifu skills for MarkdownFlow course production and the tools used to build and publish their channel packages.
+
+Business skills live under `skills/`. Maintainer tools live under `tools/`; the release workflow is in `tools/ai-shifu-skill-release/` and is not a bundled business skill. See its [README](tools/ai-shifu-skill-release/README.md) for build and release instructions.
+
+Use English for tool code, comments, CLI messages, maintainer documentation, and release skill metadata. Preserve localized channel prompts, display copy, platform-required values, matching rules, and corresponding test data. Do not translate package content as part of engineering-only maintenance.
 
 ## Before You Open a PR
 
@@ -22,6 +26,14 @@ This repository hosts reusable AI-Shifu skills for MarkdownFlow course productio
 
 ```bash
 python3 scripts/validate_skill_quality.py
+python3 -m unittest discover -s tests -p "test_*.py"
+```
+
+Run the release tool suite separately from its own directory so its `scripts` imports do not collide with repository-level modules. The tool requires Python 3.11+ and Git; its tests use temporary repositories and mocked publication commands, with no live uploads:
+
+```bash
+cd tools/ai-shifu-skill-release
+python3 -m unittest discover -s tests -p "test_*.py"
 ```
 
 ## PR Quality Bar

@@ -1,0 +1,7 @@
+interface:
+  display_name: "AI-Shifu Skill Release"
+  short_description: "Build, verify, and publish AI-Shifu channel packages"
+  default_prompt: "Use $ai-shifu-skill-release to build and dry-run the current AI-Shifu skill release."
+
+policy:
+  allow_implicit_invocation: false

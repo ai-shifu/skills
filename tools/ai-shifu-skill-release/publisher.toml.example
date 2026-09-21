@@ -1,0 +1,9 @@
+# Publisher identity. Copy to publisher.toml in this tool directory.
+# The local file is ignored by Git; never commit it.
+# Build injects this identity into the WorkBuddy plugin.json author field.
+# AISHIFU_PUBLISHER_NAME / AISHIFU_PUBLISHER_EMAIL take precedence.
+# Without a configured identity, build warns and retains the placeholder.
+
+[publisher]
+name = "your-name"
+email = "you@example.com"
