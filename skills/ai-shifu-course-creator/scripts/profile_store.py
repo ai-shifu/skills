@@ -225,7 +225,7 @@ class ProfileStore:
             env_token = str(environ.get("SHIFU_TOKEN") or "").strip()
             if env_url or env_token:
                 if named_only:
-                    raise ProfileError("Browser authorization and saved state require a named profile; use --profile.")
+                    raise ProfileError("This operation requires a named profile; use --profile when temporary configuration is active.")
                 if not env_url or not (explicit_token or env_token):
                     raise ProfileError("Temporary configuration requires both SHIFU_BASE_URL and SHIFU_TOKEN (or --token).")
                 return ProfileContext(None, normalize_base_url(env_url), None, explicit_token or env_token)

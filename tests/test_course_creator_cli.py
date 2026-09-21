@@ -95,6 +95,39 @@ class CourseCreatorSiteTests(unittest.TestCase):
         self.assertEqual(result["contact_url"], "https://ai-shifu.com/contact.html")
         self.assertEqual(course_creator_cli.profile_store().resolve(environ={}).base_url, result["base_url"])
 
+    def test_temporary_site_setup_requires_explicit_profile_without_mutation(self):
+        self.run_cli("profile", "set", "saved", "--base-url", "cn")
+        before = (self.root / "settings.json").read_bytes()
+        for environment in (
+            {"SHIFU_BASE_URL": "com", "SHIFU_TOKEN": "temporary"},
+            {"SHIFU_BASE_URL": "com"}, {"SHIFU_TOKEN": "temporary"},
+        ):
+            for selection in (("--set", "com"), ("--url", "https://school.example")):
+                with self.subTest(environment=environment, selection=selection), mock.patch.dict(
+                    course_creator_cli.os.environ, environment,
+                ):
+                    with self.assertRaises(SystemExit) as exc:
+                        self.run_cli("site", *selection)
+                    self.assertEqual(exc.exception.code, 4)
+                    self.assertEqual((self.root / "settings.json").read_bytes(), before)
+        with mock.patch.dict(course_creator_cli.os.environ, {
+            "SHIFU_BASE_URL": "com", "SHIFU_TOKEN": "temporary",
+        }):
+            result = json.loads(self.run_cli("site", "--set", "com", "--profile", "saved"))
+        self.assertEqual(result["profile"], "saved")
+        self.assertEqual(result["base_url"], "https://app.ai-shifu.com")
+        self.get.assert_not_called()
+        self.post.assert_not_called()
+
+    def test_temporary_site_setup_does_not_create_a_default(self):
+        with mock.patch.dict(course_creator_cli.os.environ, {
+            "SHIFU_BASE_URL": "com", "SHIFU_TOKEN": "temporary",
+        }):
+            with self.assertRaises(SystemExit) as exc:
+                self.run_cli("site", "--set", "cn")
+        self.assertEqual(exc.exception.code, 4)
+        self.assertFalse((self.root / "settings.json").exists())
+
     def test_explicit_profile_ignores_temporary_environment_configuration(self):
         self.run_cli("site", "--set", "com")
         original = (self.root / "settings.json").read_bytes()

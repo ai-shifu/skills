@@ -124,9 +124,9 @@ def cmd_site(args):
     name = getattr(args, "profile", None)
     selected = SITE_URLS.get(args.set) if args.set else args.url
     if selected is not None:
-        if name is not None:
-            store.resolve(name=name, environ={}, load_credentials=False)
-        context = store.set_profile(name or store.default_profile() or "default", selected)
+        context = store.resolve(name=name, environ=os.environ, named_only=True,
+                                allow_unconfigured=True, load_credentials=False)
+        context = store.set_profile(context.name if context else "default", selected)
     else:
         context = store.resolve(name=name, environ=os.environ, allow_unconfigured=True,
                                 token=getattr(args, "token", None), load_credentials=False)
