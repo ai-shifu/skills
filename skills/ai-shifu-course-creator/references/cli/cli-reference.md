@@ -50,13 +50,13 @@ check-update [--force] [--dev-manifest-url <loopback-url>]
 ## Profiles
 
 ```bash
-profile set 日常 --base-url cn
-profile set 演示 --base-url com
-profile set "客户 A" --base-url https://school.example:8443/training
+profile set Daily --base-url cn
+profile set Demo --base-url com
+profile set "Client A" --base-url https://school.example:8443/training
 profile list
 profile default
-profile default 日常
-list --profile "客户 A"
+profile default Daily
+list --profile "Client A"
 ```
 
 Each profile holds one service URL and independent credentials and pending authorization. Names are arbitrary, case-sensitive Unicode strings; surrounding whitespace is trimmed, and empty names or control characters are rejected. Names do not identify regions or constrain URLs. Multiple profiles may use the same service with separate accounts. The first profile becomes the default; creating or selecting another does not change the default. `profile default [name]` reads or explicitly changes that setting. Unknown names fail without fallback.
@@ -78,9 +78,9 @@ The configuration root is `AI_SHIFU_CONFIG_DIR` when set, otherwise `$XDG_CONFIG
 ```json
 {
   "schema_version": 2,
-  "default_profile": "日常",
+  "default_profile": "Daily",
   "profiles": {
-    "日常": {
+    "Daily": {
       "id": "<generated internal ID>",
       "base_url": "https://app.ai-shifu.cn"
     }

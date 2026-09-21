@@ -145,7 +145,7 @@ This file is auto-maintained; its abridged schema is:
   "schema_version": 1,
   "shifu_bid": "a1b2c3",
   "base_url": "https://app.ai-shifu.cn",
-  "profile": "日常",
+  "profile": "Daily",
   "course": {
     "revision": 42,
     "name": "Course Title",
@@ -193,7 +193,7 @@ Before any network command using a course directory reads remote state or change
     {
       "local": "assets/raw/gradient-descent.heic",
       "base_url": "https://app.ai-shifu.cn",
-      "profile": "日常",
+      "profile": "Daily",
       "remote": "https://assets.example.com/abcd",
       "alt": "Image description",
       "uploaded_at": "2026-05-23T08:42:31Z",
@@ -205,7 +205,7 @@ Before any network command using a course directory reads remote state or change
     {
       "source_url": "https://example.com/diagram.png",
       "base_url": "https://school.example/training",
-      "profile": "客户 A",
+      "profile": "Client A",
       "remote": "https://assets.example.com/efgh",
       "alt": "Image description",
       "uploaded_at": "2026-05-23T08:45:02Z"
