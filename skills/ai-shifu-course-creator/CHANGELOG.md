@@ -1,6 +1,7 @@
 ## Unreleased
 
 - Make high-personalization Teaching Prompts connect learner evidence to useful changes in the main explanation, example, and existing feedback while preserving the approved lesson structure. Distinguish executable adaptation from authoring commentary and add frozen-prompt, multi-context delivery evaluations.
+- Correct fixed-text and image preservation guidance: only complete preserved MarkdownFlow blocks bypass generation; a marker on its own line inside ordinary instructions still relies on the model. Isolate existing exact material at its approved position and verify the parser behavior without changing ordinary teaching actions.
 - Fill Course Prompts with the selected delivery instructions: single-mode courses contain only their applicable behavior, while explicitly combined courses retain conditional delivery. Remove leftover mode-selection guidance from the fixed slide instructions.
 - Support arbitrarily named service profiles with one explicit default, isolated login and pending authorization, custom service URLs, and recoverable migration of existing configuration. Keep a selected profile fixed throughout platform work and validate course-directory source identities before network operations; preserve image-upload records separately by service.
 - Preserve finalized example and analogy decisions during Teaching Prompt generation; resolve teaching aids before orchestration freezes the plan, while standalone generation from approved segments still builds its plan locally.

@@ -1082,6 +1082,18 @@
         "C acknowledges only the supplied correct basis that the original proportions differ, and connects it to the fixed case without assigning an unseen error or broader mastery.",
         "All three retain the fixed numerical relationships and exact closing sentence. The shared runtime instruction states concrete feedback choices without authoring-level commentary or fabricated personal facts."
       ]
+    },
+    {
+      "id": 88,
+      "prompt": "只做无网络的 MarkdownFlow 解析回归，不调用真实模型、平台或升级依赖。使用当前平台锁定的已安装 markdown-flow 库，记录版本，并实际解析以下文档（字符串中的 \\n 表示换行）：A='===固定句。==='；B='解释本节概念。\\n\\n===固定句。==='；C='解释本节概念。\\n\\n---\\n\\n===固定句。==='；D='!===\\n固定句。\\n!==='；E='解释本节概念。\\n\\n!===\\n固定句。\\n!==='；F='解释图片含义。\\n\\n===![示意图](https://example.org/diagram.png)==='。逐例输出实际 block_type 与原始块内容。用只记录调用并返回固定占位文本的本地 LLMProvider 检查哪些块经过生成、哪些块直接输出；不得手写假解析器或根据文档猜测结果。库不可用时报告未执行。解释为什么独占一行不等于独占解析块，以及原有固定材料需要确定性输出时怎样仅在原位置隔离它，不改变普通内容的分页、教学动作或互动策略。",
+      "expected_output": "Uses the actual installed parser and a local provider spy to distinguish complete deterministic blocks from mixed generated blocks without network calls or teaching-policy changes.",
+      "files": [],
+      "expectations": [
+        "The report records the actual library version, parsed blocks and provider-call observations; an unavailable runtime is reported as not executed rather than simulated success.",
+        "For markdown-flow 0.3.1, A and D are PRESERVED_CONTENT; B, E and F each remain one CONTENT block; C becomes CONTENT followed by PRESERVED_CONTENT. Blank lines and markers alone do not split mixed blocks.",
+        "A, D and C's preserved block emit the selected fixed sentence without invoking the provider. Mixed blocks invoke the local provider: markers become preservation instructions and do not guarantee exact output or position. No real model, platform, image URL or other network service is called.",
+        "The explanation uses the complete parsed block as the determinism condition and treats MarkdownFlow's existing block boundaries as the way to isolate only already-selected fixed material at its original position; it neither wraps adaptive explanations nor adds teaching actions, learner questions, interaction controls or a general pagination policy."
+      ]
     }
   ]
 }
