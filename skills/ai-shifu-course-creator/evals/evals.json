@@ -878,7 +878,8 @@
         "The case and analogy preserve the source facts. Each analogy has an intelligible correspondence, and any limitation needed to prevent it from implying a confirmed cause, certain danger, or certain false alarm is taught at its use point.",
         "Levels 1 and 2 prewrite a selected example and analogy with concrete key details; level 1 is near-final while level 2 leaves incidental elaboration open. Level 3 specifies type, teaching point, and the essential correspondence without fixing unnecessary identity or detail.",
         "Levels 4 and 5 retain executable selection or material requirements, intended understanding, correspondence, and necessary limits while leaving unnecessary example and analogy identity and wording unwritten. Their local instructions connect relevant runtime learner evidence to a specific teaching choice and understanding effect inside the existing explanation or example; shorter instructions or a generic personalize request alone are insufficient, and neither required teaching move is dropped.",
-        "Differences among levels appear in local runtime instructions, not in author-facing explanations about how personalization works or generic statements that the Teaching Agent may choose anything suitable."
+        "Differences among levels appear in local runtime instructions, not in author-facing explanations about how personalization works or generic statements that the Teaching Agent may choose anything suitable.",
+        "High-level local directions identify the lesson-specific relationship to explain or judgment to support when relevant evidence is present; merely asking the Teaching Agent to adjust depth or select a suitable scenario is insufficient."
       ]
     },
     {
@@ -1050,7 +1051,8 @@
         "Relevant context changes the principal explanation or case and the existing feedback. Merely substituting a name, occupation, scenario noun, tone or an optional appended personalized sentence does not count as a useful teaching change.",
         "All deliveries retain the fixed facts, A and B values and results, the three teaching blocks in order, sole unchanged question/control and exact closing sentence; no delivery adds learner-background collection, exercise, branch, variable or fabricated learner facts.",
         "Every irrelevant-interest, empty and UNKNOWN run uses a neutral course-appropriate strategy, handles only the supplied uncertain answer at feedback, and does not force a jazz analogy, guess a profession or knowledge state, or reveal profile content or the UNKNOWN marker.",
-        "The report preserves actual output evidence and per-context pass counts with denominators and failures, distinguishes unperformed checks from failed checks, and labels offline trial results as insufficient to verify production. Expected observations never enter the delivery model input, and no second rule-version comparison is claimed unless separately frozen and run."
+        "The report preserves actual output evidence and per-context pass counts with denominators and failures, distinguishes unperformed checks from failed checks, and labels offline trial results as insufficient to verify production. Expected observations never enter the delivery model input, and no second rule-version comparison is claimed unless separately frozen and run.",
+        "An answer that only expresses uncertainty supplies no assessable claim and is treated as unestablished understanding, not evidence of mastery or a particular misconception; an explicit erroneous claim in a short answer or selected option is still corrected even without a rationale; neither neutral examples nor feedback invent a learner task. Condensed expert explanations retain every required fact and boundary."
       ]
     },
     {
@@ -1065,6 +1067,19 @@
         "The runtime artifact contains concrete evidence-to-teaching-choice-to-effect directions and all necessary facts, but no authoring-level label, explanation that wording was left open, repeated course-wide profile policy or serialized profile tags.",
         "The analysis identifies an overly skeletal concept instruction and optional-afterthought adaptation as observable prompt defects; effective assembled prompts, actual runtime learner context, overriding chapter rules and deterministic output blocks remain verification targets, not invented proof of an injection failure or a reason to change platform fields.",
         "The response does not claim runtime or production improvement based only on its repaired text; a frozen-prompt repeated-delivery evaluation remains necessary for behavioral evidence."
+      ]
+    },
+    {
+      "id": 87,
+      "prompt": "只在本地验证已存在的课节反馈，不新增互动或重新设计课程。固定事实：A 从 20% 到 30%，增加 10 个百分点，相对增长率 50%；B 从 40% 到 50%，也增加 10 个百分点，相对增长率 25%。原题是“A、B 都提高了 10 个百分点，能说相对增长率相同吗？请说明理由。”只生成一个 teaching_prompt_personalization_level=5 的反馈指令并冻结它，再针对三份实际回答分别给出简短试讲：A“增加 10 个百分点就是增长 10%。”；B“还不确定。”；C“不相同，因为原比例不同。”。没有其他学员信息。三个版本都以“百分点看比例之差，相对增长率还要看原比例。”原样结束。输出共同指令与三份试讲，不联网，不提新问题。",
+      "expected_output": "Distinguishes an explicitly wrong short claim, absent assessable evidence, and a supported correct conclusion without inventing learner reasoning or changing the existing feedback action.",
+      "files": [],
+      "expectations": [
+        "One frozen feedback instruction produces all three deliveries within the same existing feedback-and-close action; no new control, question, diagnostic step or learner profile is added.",
+        "A corrects the explicitly stated equality between a ten-percentage-point difference and ten-percent relative growth using the original proportion as denominator; missing accompanying rationale does not prevent correction of that explicit claim.",
+        "B explains the deciding denominator relationship without claiming mastery, progress, a specific misconception or a particular knowledge deficit from uncertainty alone.",
+        "C acknowledges only the supplied correct basis that the original proportions differ, and connects it to the fixed case without assigning an unseen error or broader mastery.",
+        "All three retain the fixed numerical relationships and exact closing sentence. The shared runtime instruction states concrete feedback choices without authoring-level commentary or fabricated personal facts."
       ]
     }
   ]
