@@ -92,7 +92,7 @@ Pass the normalized selection unchanged through the in-memory authoring handoff 
 - Input files must be readable text or Markdown.
 - When multiple files are provided, their order must be explicit.
 - `interaction_policy` must satisfy its mode and purpose invariants.
-- When present, `personalization_directions` must satisfy [Personalization Directions](#personalization-directions); an old numeric level never satisfies this contract.
+- When present, `personalization_directions` must satisfy [Personalization Directions](#personalization-directions).
 - `course_author_avatar_source` never changes course content and never blocks authoring when absent or skipped.
 
 ## Output Contract
