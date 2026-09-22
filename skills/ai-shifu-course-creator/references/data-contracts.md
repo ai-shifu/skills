@@ -26,15 +26,24 @@ Provide one of:
 - `course_profile` object.
 - `delivery_constraints` object.
 - `interaction_policy` object.
-- `teaching_prompt_personalization_level` (integer from `1` through `5`): a course-wide, transient authoring input that controls how much learner-visible wording, explanation, already-required example identity and detail, and feedback wording each Teaching Prompt predetermines. It does not control teaching or slide structure.
+- `personalization_directions` (array of strings): a course-wide, transient authoring input selecting which aspects of teaching may adapt to learner background and preferences. It does not control teaching or slide structure.
 
-### Teaching Prompt Personalization Level
+### Personalization Directions
 
-`teaching_prompt_personalization_level` is a top-level scalar and transient authoring input, and it must be strictly an integer from `1` through `5`. It is not a member of `course_profile`, `delivery_constraints`, or `interaction_policy`. Its author-facing names, level semantics, and materialization rules are owned exclusively by `teaching-prompt.md#personalization-levels`.
+`personalization_directions` is a top-level, duplicate-free array of strings and a transient authoring input. It is not a member of `course_profile`, `delivery_constraints`, or `interaction_policy`. Each entry must be one of the following enum values; author-facing names and behavior belong to `prompt-contracts.md#personalization-directions`.
+
+| Value |
+| --- |
+| `examples` |
+| `analogies` |
+| `language_style` |
+| `value_relevance` |
+
+Array order has no behavioral meaning. An empty array explicitly selects no background-based personalization; an absent field is unresolved, not an empty selection. Reject non-array values, non-string entries, unknown values, and duplicates rather than coercing them. Intake owns collection, skips, and delivery-mode defaults. The former `teaching_prompt_personalization_level` is not a valid substitute for this array and has no numeric mapping to directions; intake owns handling an old selection.
 
 This is a content-expression control, not a structure control. It never changes the internal lesson execution plan, including the teaching sequence, required actions and effects, slide count and order, or interaction and feedback placement.
 
-Pass the normalized value unchanged through the in-memory authoring handoff to Teaching Prompt generation and, when applicable, optimization review. Its only effect on `teaching_prompt` is the amount of ordinary wording and already-permitted example detail materialized inside direct local runtime instructions. Keep the control's name, value, and authoring semantics absent from Prompt bodies, output fields, course-directory files, CLI inputs or configuration, all build or deployment payloads including `shifu-import.json`, and platform metadata. In particular, do not serialize this control as a field in `lesson_teaching_prompts`, `course_index`, `global_variable_table`, `course_prompt`, `course_description`, or fallback output extensions.
+Pass the normalized selection unchanged through the in-memory authoring handoff to Teaching Prompt and Course Prompt generation and, when applicable, optimization review. Materialize its teaching effects as direct runtime instructions. Keep the control's name, enum array, and authoring semantics absent from Prompt bodies, output fields, course-directory files, CLI inputs or configuration, all build or deployment payloads including `shifu-import.json`, and platform metadata. In particular, do not serialize this control as a field in `lesson_teaching_prompts`, `course_index`, `global_variable_table`, `course_prompt`, `course_description`, or fallback output extensions.
 
 ### Recommended Object Shapes
 
@@ -83,7 +92,7 @@ Pass the normalized value unchanged through the in-memory authoring handoff to T
 - Input files must be readable text or Markdown.
 - When multiple files are provided, their order must be explicit.
 - `interaction_policy` must satisfy its mode and purpose invariants.
-- When present, `teaching_prompt_personalization_level` must be an integer from `1` through `5`. Reject booleans, floats, numeric strings, and out-of-range values rather than coercing them.
+- When present, `personalization_directions` must satisfy [Personalization Directions](#personalization-directions); an old numeric level never satisfies this contract.
 - `course_author_avatar_source` never changes course content and never blocks authoring when absent or skipped.
 
 ## Output Contract

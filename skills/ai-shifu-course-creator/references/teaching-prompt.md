@@ -6,7 +6,7 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 
 - `language-policy.md`
 - `prompt-contracts.md`
-- `data-contracts.md#teaching-prompt-personalization-level`
+- `data-contracts.md#personalization-directions`
 - `data-contracts.md#lesson-schema`
 - `data-contracts.md#generation-fallback-fields`
 - `data-contracts.md#variable-table`
@@ -31,12 +31,12 @@ When only approved segments and design controls are supplied, resolve the missin
    - Apply the normalized interaction policy without adding unselected purposes or blanket interactions.
    - Resolve the objective, must-cover evidence and boundaries, required path, interaction purpose and visible effect, and close.
    - Select examples and analogies for the comprehension needs identified under `pedagogy.md#examples-and-analogies`, including any source example or demonstration that already meets the need.
-2. Build one internal lesson execution plan before applying the personalization level:
+2. Build one internal lesson execution plan before applying personalization directions:
    - Determine course-entry status from the approved chapter and lesson order rather than the lesson id.
    - Resolve every teaching action, content position and effect, interaction and feedback adjacency, close, and any slide count and order.
-   - Fix each selected example's or analogy's position, purpose, essential conditions or explanatory relationships, necessary limits, and takeaway before applying the personalization level.
+   - Fix each selected example's or analogy's position, purpose, essential conditions or explanatory relationships, necessary limits, and takeaway before applying personalization directions.
    - For standard visual-text teaching, resolve the complete lead-in and visual-and-explanation cadence from `pedagogy.md#visual-text-coordination`.
-3. Materialize that plan through [Lesson Materialization](#lesson-materialization), applying [Personalization Levels](#personalization-levels) only while writing ordinary local instructions.
+3. Materialize that plan through [Lesson Materialization](#lesson-materialization), applying [Personalization Directions](#personalization-directions) only while writing ordinary local instructions.
 4. Insert each selected interaction, deterministic block, required code or source span, and image instruction at its resolved learner-time position using its owning syntax:
    - Load `image-authoring.md` before composing an image instruction, and only when the lesson uses an image asset.
    - Represent variable lifecycle through MarkdownFlow controls and schema fields; Prompt prose carries only the required feedback, branch, or carryover behavior.
@@ -50,7 +50,7 @@ When only approved segments and design controls are supplied, resolve the missin
   - Keep the course-wide learner-context strategy in the Course Prompt; write its concrete application at the relevant teaching actions below. Do not rely on the Course Prompt to supply, repair, or override lesson pedagogy, lesson-specific slide structure, or treatment tied to a particular slide position or teaching purpose.
 - Materialize the complete lesson:
   - Resolve exactly one core question through the selected teaching pattern.
-  - Make the objective, must-cover facts and boundaries, and required explanatory relationships unambiguous at the selected personalization level.
+  - Make the objective, must-cover facts and boundaries, and required explanatory relationships unambiguous with enough detail for reliable execution.
   - Use the interaction or non-interactive loop selected by the normalized policy.
   - Preserve required source evidence and any downstream deliverable defined by the lesson design.
   - Close with the summary, decision checkpoint, or action required by the selected pattern.
@@ -64,46 +64,34 @@ When only approved segments and design controls are supplied, resolve the missin
   - Whenever slides are created, give slide 1 a clear cover-page visual treatment with lesson title and author information.
     - Apply that treatment to the already-resolved first slide without adding a teaching action or changing the plan's slide count or order.
     - Apply every other slide and explanation rule normally for the selected delivery mode.
-  - For pure classroom slides, write the complete ordered sequence of direct slide-creation instructions required by `pedagogy.md#visual-text-coordination`. Give each slide its required visible content, teaching function, content grouping, visual hierarchy, and semantic layout at the selected personalization level. General slide presentation and delivery-mode behavior remain owned by `course-prompt.md`.
+  - For pure classroom slides, write the complete ordered sequence of direct slide-creation instructions required by `pedagogy.md#visual-text-coordination`. Give each slide its required visible content, teaching function, content grouping, visual hierarchy, and semantic layout with enough detail for reliable execution. General slide presentation and delivery-mode behavior remain owned by `course-prompt.md`.
   - In other delivery modes, begin with their applicable teaching-start behavior.
 - At each interaction, keep the complete learner-facing question, unchanged `?[]` control, and immediate feedback instruction together where the answer affects teaching.
-- At each selected example or analogy, explicitly instruct the Teaching Agent to use relevant known learner background when choosing or explaining it, while retaining the resolved teaching purpose, essential conditions or correspondences, necessary limits, and takeaway from `pedagogy.md#examples-and-analogies`.
-  - Materialize the selected level's concrete details or selection constraints locally. When the source or approved plan fixes the case or analogy, keep it and connect its explanation to relevant learner experience without replacing it or adding another teaching aid.
-  - If no individual background is known during authoring, still include the local direction to use relevant learner background available at delivery time, with a neutral course-appropriate fallback. This requires no new learner question, variable, or assumed identity.
+- At each example or analogy already required by the plan, apply [Personalization Directions](#personalization-directions) to materialize either a background-based local instruction or the course baseline. Keep its resolved teaching purpose, essential conditions or correspondences, necessary limits, and takeaway from `pedagogy.md#examples-and-analogies`.
 - Where the resolved lesson calls for detailed explanation, explicitly instruct the Teaching Agent to expand the supplied content at that position: name the facts or steps to explain, the reasoning or relationships to develop, the boundaries to retain, and the understanding or application to reach. Do not leave only a heading, a list of points, or an unqualified "explain in detail".
-  - A short Teaching Prompt is not a requirement for a short delivered explanation. At higher personalization levels, retain the expansion direction and its content requirements while leaving ordinary delivery wording unwritten. Develop the given content without inventing evidence, adding unrelated topics, or changing the approved teaching sequence.
+  - A short Teaching Prompt is not a requirement for a short delivered explanation. For every direction selection, including none, retain the expansion direction and its content requirements without requiring prewritten delivery wording. Develop the given content without inventing evidence, adding unrelated topics, or changing the approved teaching sequence.
   - Follow the selected delivery mode: in standard visual-text teaching, put the detailed explanation after its visual and before the next one; in text-only teaching, keep it at the resolved text position; pure classroom slides retain complete projected relationships without adding Teaching Agent narration.
 
-### Personalization Levels
+### Personalization Directions
 
-- Course Design Intake resolves one course-wide `teaching_prompt_personalization_level` integer.
-  - Pass it unchanged to every Teaching Prompt in the authoring run.
-  - Keep the level and its authoring rationale only in the in-memory handoff.
-- Apply the level only while writing ordinary instructions for the already-fixed execution plan.
-  - A higher value predetermines less ordinary title, explanation, transition, example-detail, and non-deterministic feedback wording while retaining the message, evidence, boundaries, selection constraints, and effect required at every position.
-  - When the level leaves ordinary expression open, write only the required runtime elements and end the instruction there; never add runtime prose announcing that wording, examples, transitions, or feedback were omitted, left open, adaptable, or not prewritten.
-- At every level, use relevant explicitly stated learner context already available during authoring to materialize the selected examples and analogies under `pedagogy.md#examples-and-analogies`. Lower levels prewrite a fitting concrete scenario; higher levels carry its relevant selection constraints into the local teaching action so learner-time context can guide the remaining choices. When individual context is unavailable during authoring, follow the runtime background direction and neutral fallback in [Lesson Materialization](#lesson-materialization) rather than fixing an assumed future learner identity. The level changes prescription, not whether known relevant context matters or required explanations are fully developed.
+- Course Design Intake resolves one course-wide `personalization_directions` selection. Pass it unchanged to every Teaching Prompt in the authoring run and to Course Prompt generation; keep its field name, enum array, and authoring rationale only in the in-memory handoff.
+- Apply the shared effects in `prompt-contracts.md#personalization-directions` to the already-fixed execution plan. Write the concrete message and outcome for every teaching action, critical facts and boundaries, required explanation relationships, and feedback completion conditions and effects. Neither a selected direction nor an empty selection changes these requirements or demands a mandatory spoken transcript.
+- For a required example or analogy whose direction is selected, place an explicit local instruction to use relevant known learner background at that action. Carry the essential selection constraints, reasoning or correspondences, limits, and takeaway, leaving the scenario details that depend on runtime background open. Use relevant context already supplied during authoring without embedding a specific learner's profile in reusable course artifacts. If no relevant context is available at delivery, use a neutral course-appropriate fallback.
+  - When the source or approved plan fixes the case or analogy, keep it and connect its explanation to relevant learner experience without replacing it or adding another teaching aid.
+  - When that direction is unselected, retain a supplied case or materialize a suitable course-wide case and its explanation from the source, author requirements, and intended audience. Do not add a local instruction to adapt it to individual background, and do not remove the aid.
+- When language style is selected, let the Course Prompt supply its cross-lesson behavior. Preserve local terminology meanings, detailed explanation requirements, and exact wording; a lesson generated without a Course Prompt includes the concise style direction it needs to run. When language style is unselected, use the authored course-wide tone and wording requirements.
+- When practical value is selected, place a direction at existing framing, application, or close positions to connect the specified learning outcome to the learner's stated goals, tasks, or constraints. Name the outcome and relevant connection to explain; add no teaching position just to accommodate this direction. Otherwise use the course-wide value explanation.
+- Write only the required runtime elements and end the instruction there. Do not announce which direction was selected or omitted, or describe authoring choices about adaptable wording. An empty outline such as "explain the concept", "add an example", or "ask a question" remains incomplete.
 
-| Level | Author-facing name | Teaching Prompt materialization |
-| --- | --- | --- |
-| `1` | High determinism | Write exact or near-final title wording, selected example details, ordinary explanations, transitions, and feedback wording into the corresponding runtime instructions. For selected examples and analogies, prewrite the concrete situation, key conditions, explanatory relationships, and necessary limits using relevant known background. Permit only minor fluency or learner-context substitutions that preserve meaning. |
-| `2` | Determinism-leaning | Write the main title wording, example or analogy identity, key conditions and correspondences, necessary limits, intended takeaway, principal explanation language, and required feedback points. Leave ordinary transition wording, secondary elaboration, incidental scenario details, and non-essential feedback phrasing unwritten. |
-| `3` | Balanced | Write each title's communicative meaning, each required example's or analogy's scenario type, selection conditions, teaching point, essential relationships and necessary limits, all key definitions and conclusions, and each feedback response's required meaning and effect. Include ordinary explanation detail only where it is needed for reliable execution; leave incidental identities and scenario details unwritten. |
-| `4` | Personalization-leaning | Write each title's intent, must-cover points, each required example's or analogy's comprehension need, background-relevant selection constraints, essential relationships, necessary limits and intended takeaway, and the required feedback effect. Omit concrete scenario identity and ordinary title, example-detail, explanation, transition, and feedback wording that is not needed to preserve those requirements. |
-| `5` | High personalization | Write the concrete message and outcome for every teaching action, critical facts and boundaries, each required example's material requirements and intended takeaway, the essential conditions or explanatory relationships, necessary limits and completion criteria for every selected example or analogy, and feedback completion conditions and effects. Omit all other ordinary wording and example identity or detail, including the concrete analogy source situation. |
+#### Shared Constraints
 
-- Levels `1` and `2` may produce near-final learner-visible delivery, but the artifact remains a Prompt rather than a mandatory spoken transcript.
-- Levels `4` and `5` must still be executable without guessing; an empty outline such as "explain the concept", "add an example", or "ask a question" is incomplete.
-
-#### Cross-Level Constraints
-
-- Every level preserves factual and source fidelity, the selected teaching pattern and loop, interaction policy, variable lifecycle, delivery mode, Course Prompt responsibility, and internal lesson execution plan.
-- Every level has the same execution signature:
+- Every selection preserves factual and source fidelity, the selected teaching pattern and loop, interaction policy, variable lifecycle, delivery mode, Course Prompt responsibility, and internal lesson execution plan.
+- Variants of one approved plan have the same execution signature:
   - The complete teaching sequence and each required action's position and effect.
   - The exact slide count, order, placement, teaching function, content grouping, visual hierarchy, and semantic layout.
-  - The presence and position of titles, explanations, examples, analogies, transitions, interactions, images, feedback states, and the close. A required example's permitted identity or details may vary, but its required meaning and effect do not. The same applies to an analogy's source situation: its required explanatory relationships and necessary limits remain fixed.
-- The level adds no learner-context collection, interactions, variables, or branches.
-- Insert exact material at its resolved runtime position at every level:
+  - The presence and position of titles, explanations, examples, analogies, transitions, interactions, images, feedback states, and the close. A required example's permitted identity or details may vary only when its direction is selected, but its required meaning and effect do not. The same applies to an analogy's source situation: its required explanatory relationships and necessary limits remain fixed.
+- The selection adds no learner-context collection, interactions, variables, or branches.
+- Insert exact material at its resolved runtime position for every selection:
   - The complete interaction question, `?[]` form, option wording and order, variable assignments and references, literal `UNKNOWN` behavior, and selected feedback or branch effect.
   - Deterministic output and required code or fence structure.
   - Regulated wording, fixed numeric thresholds, and immutable source spans.
@@ -258,12 +246,11 @@ Image composition is owned by `image-authoring.md` and is loaded conditionally b
   - When slides exist, slide 1 has a clear cover-page treatment with lesson title and author information, and every other slide or explanation behavior follows the selected delivery mode's existing rules.
   - Other delivery modes begin with their applicable teaching-start behavior.
 - Validate personalization:
-  - The normalized level is an integer from `1` through `5`, and ordinary content-expression specificity matches it.
-  - Multiple variants of the same approved plan have identical execution signatures, including every required example's presence, position, and teaching function; only permitted ordinary expression differs.
-  - Levels `1` and `2` provide near-final specificity without unrequested typography, color, coordinates, animation, or deterministic markers.
-  - Levels `4` and `5` omit permitted ordinary wording and detail while every required action, relationship, boundary, and effect remains executable.
-  - At levels `2` through `5`, open expression omits unnecessary prewritten delivery rather than adding authoring commentary about that omission. The local background-based example or analogy directions and content-specific expansion requirements in [Lesson Materialization](#lesson-materialization) remain executable instructions. Level `3` retains its balanced division.
-  - Every exact item remains in its required form, scope, and runtime position at every level.
+  - The normalized selection passes `data-contracts.md#personalization-directions`, and both Prompt artifacts implement exactly the selected effects from `prompt-contracts.md#personalization-directions`.
+  - Multiple variants of the same approved plan have identical execution signatures, including every required example's presence, position, and teaching function; only selected background-based expression differs.
+  - Selected example and analogy directions are executable at their use points with a neutral fallback; unselected directions retain the course baseline and do not acquire individual-background adaptation.
+  - Required detailed explanations remain content-specific and complete even for `[]`. Flag empty outlines, omitted reasoning, and prewritten details that prevent a selected direction from using relevant runtime context.
+  - Local teaching directions remain runtime instructions rather than authoring commentary about selection or omitted wording. Every exact item remains in its required form, scope, and runtime position.
 - Validate source encoding:
   - New and explicitly rewritten Prompts apply [Author-Editable Layout](#author-editable-layout); audit-only review of an existing Prompt does not add or normalize it.
   - Layout, interaction, variable, branch, and preservation encoding pass [Encoding Checks](#encoding-checks). In an audit-only existing Prompt, layout checks are `not-assessed` while observable runtime encoding is still checked.
