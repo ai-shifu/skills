@@ -1090,6 +1090,7 @@
       "expectations": [
         "All four Course Prompts contain the six canonical sections in order with every applicable placeholder resolved and no personalization_directions field, machine enum, selection list, or authoring rationale serialized into their bodies.",
         "A keeps the course's shared examples, analogy, language style, and value framing without background-based adaptation, while preserving the required teaching actions and complete explanations.",
+        "The fixed template preserves lesson decisions, privacy, and neutral fallback without independently authorizing learner-context adaptation; only the materialized personalization placeholder grants the selected effects.",
         "B directly enables background-based example selection or explanation only; it does not also personalize analogies, language style, value, scaffolding, pacing, or explanation depth.",
         "C directly adapts language style from stated preferences and relates approved practical value to stated goals or constraints; it retains shared course arrangements for examples and analogies.",
         "D directly materializes all four selected directions, preserving valid analogy correspondence and limits and prohibiting invented benefits or guaranteed outcomes.",

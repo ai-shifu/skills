@@ -2913,7 +2913,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "pacing, required examples, interactions, exact material, slide count "
             "and order, and close unchanged",
             "empty, `UNKNOWN`, irrelevant, or unavailable",
-            "without quoting, summarizing, or mentioning the learner profile",
+            "Do not quote, summarize, or mention the learner profile",
         ):
             self.assertIn(required_behavior, template)
 

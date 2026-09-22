@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Keep generic Course Prompt template rules limited to lesson boundaries, learner-profile privacy, and neutral fallbacks so only the author's selected directions enable personalization.
 - Verify an existing Course Prompt's personalization behavior before reusing it for lesson generation; report incompatible course-wide instructions as a dependency without expanding a lesson-only edit.
 - Use the same personalization choices and intake rules in every delivery mode, including pure classroom slides; a missing selection always prompts the author instead of silently defaulting to none.
 - Replace the five personalization strength levels with independent choices for examples, analogies, language style, and practical value. Carry the selection into both Prompt artifacts, preserve the course baseline for unselected directions, and keep required detailed explanations and lesson structure complete even when none are selected.
