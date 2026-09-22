@@ -1417,11 +1417,11 @@ class CourseCreatorContractTests(unittest.TestCase):
             validation,
         )
         self.assertIn(
-            "open expression appears as a shorter local instruction",
+            "open expression omits unnecessary prewritten delivery",
             validation,
         )
         self.assertIn(
-            "omitted, left open, or not prewritten",
+            "rather than adding authoring commentary about that omission",
             validation,
         )
         self.assertIn(
@@ -3029,8 +3029,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         checklist = markdown_section(self.optimization_checklist, "Course Prompt")
 
         for required_behavior in (
-            "Actively use relevant learner context",
-            "only where the current user message leaves those details open",
+            "Teach based on the learner's explicitly stated background",
+            "where the current user message leaves those details open",
             "objectives, facts and boundaries, teaching method, content sequence, "
             "pacing, required examples, interactions, exact material, slide count "
             "and order, and close unchanged",
@@ -3040,7 +3040,9 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertIn(required_behavior, template)
 
         for adaptable_surface in (
-            "ordinary examples",
+            "examples",
+            "analogies",
+            "practical value",
             "terminology",
             "prerequisite scaffolding",
             "emphasis",

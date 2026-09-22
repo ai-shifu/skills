@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Make Course Prompts explicitly adapt language style, examples, analogies, and practical value to learner background and preferences. Put background-based example and analogy directions and content-specific detailed explanation requirements directly at the relevant Teaching Prompt positions, including when learner context becomes available only during delivery.
 - Fill Course Prompts with the selected delivery instructions: single-mode courses contain only their applicable behavior, while explicitly combined courses retain conditional delivery. Remove leftover mode-selection guidance from the fixed slide instructions.
 - Support arbitrarily named service profiles with one explicit default, isolated login and pending authorization, custom service URLs, and recoverable migration of existing configuration. Keep a selected profile fixed throughout platform work and validate course-directory source identities before network operations; preserve image-upload records separately by service.
 - Preserve finalized example and analogy decisions during Teaching Prompt generation; resolve teaching aids before orchestration freezes the plan, while standalone generation from approved segments still builds its plan locally.

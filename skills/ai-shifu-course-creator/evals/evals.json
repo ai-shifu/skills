@@ -488,7 +488,8 @@
         "Both Course Prompts retain all six canonical sections in order, resolve all five XXX placeholders, and contain no unresolved placeholder.",
         "Course A preserves the author's intended audience of experienced emergency physicians and does not change or retarget the course because of an individual learner profile.",
         "Course B preserves the author's intended audience of workplace training organizers and does not retarget the course to one learner profile.",
-        "In every delivery mode, both Course Prompts actively use relevant explicitly stated learner context only to shape open ordinary examples, terminology, prerequisite scaffolding, emphasis, explanation depth, language style, and non-deterministic feedback.",
+        "In every delivery mode, both Course Prompts directly require teaching from relevant explicitly stated background and preferences: adapt language style and terminology, choose examples from relevant tasks and analogies from familiar situations, and explain practical value through the learner's goals, tasks, or constraints. Prerequisite scaffolding, emphasis, explanation depth, and non-deterministic feedback remain adaptable only where the Teaching Prompt leaves them open.",
+        "Practical-value explanations remain grounded in the course content and stated learner context; neither Course Prompt invents benefits, guarantees outcomes, or treats a role label as proof that a proposed analogy is familiar.",
         "Both Course Prompts preserve the existing Teaching Prompts' objectives, facts and boundaries, methods, sequence, pacing, required examples, interactions, exact material, slide count and order, and close.",
         "Pure classroom slides still contain no Teaching Agent narration or address to a single learner even while relevant learner context shapes open projected content.",
         "Empty, UNKNOWN, unavailable, or irrelevant learner context falls back to neutral course-appropriate defaults without inferred facts or a summary or disclosure of the learner profile.",
@@ -503,7 +504,8 @@
       "expectations": [
         "The repaired artifact keeps all six canonical sections in order, contains no unresolved XXX placeholder, and preserves the author's licensed-counselor audience and course goal.",
         "The repaired Course Prompt does not change or retarget the intended audience based on learner context and removes the instructions to add pages, replace approved examples, or ask extra interactions.",
-        "Relevant explicitly stated learner context actively shapes only open ordinary examples, terminology, prerequisite scaffolding, emphasis, explanation depth, language style, and non-deterministic feedback in every delivery mode.",
+        "The repaired runtime instructions directly connect relevant explicitly stated background and preferences to language style, task-relevant examples, familiar analogies, and practical value for the learner's goals, tasks, or constraints in every delivery mode. They also preserve bounded adaptation of terminology, prerequisite scaffolding, emphasis, explanation depth, and non-deterministic feedback rather than reducing personalization to a generic be suitable instruction.",
+        "The practical-value direction does not invent benefits or promise outcomes; personalization stays within the supplied professional course content and does not assume knowledge or familiarity from occupation alone.",
         "The approved objectives, facts and boundaries, teaching method, sequence, pacing, required examples, interactions, exact material, four-page structure, and close remain unchanged.",
         "Pure classroom slides remain projection-ready without Teaching Agent narration or addressing a single learner.",
         "The result removes `{{sys_user_background}}` and contains no other internal learner-profile variable, platform learner-profile tag, learner-profile placeholder, concrete learner profile value, or global_variable_table entry.",
@@ -875,6 +877,7 @@
         "The output contains exactly five variants ordered by levels 1 through 5, each with a non-empty runnable Teaching Prompt.",
         "All five actual instruction sequences preserve the same lead-in, three-page order, content grouping, example-before-analogy placement on page 2, visual-and-explanation cadence, and close; personalization adds no page, learner question, control, variable, or answer-dependent branch.",
         "Every variant makes the example demonstrate the alert-to-independent-verification relationship and makes the analogy illuminate why a signal is not a conclusion, rather than merely requesting an interesting story or analogy.",
+        "At the example and analogy positions, every variant explicitly directs use of relevant learner background available during delivery when choosing or explaining the aid, with a neutral course-appropriate fallback. The local directions preserve the level's prewritten details or selection constraints and do not rely on an omitted Course Prompt to supply this behavior.",
         "The case and analogy preserve the source facts. Each analogy has an intelligible correspondence, and any limitation needed to prevent it from implying a confirmed cause, certain danger, or certain false alarm is taught at its use point.",
         "Levels 1 and 2 prewrite a selected example and analogy with concrete key details; level 1 is near-final while level 2 leaves incidental elaboration open. Level 3 specifies type, teaching point, and the essential correspondence without fixing unnecessary identity or detail.",
         "Levels 4 and 5 retain executable selection or material requirements, intended understanding, correspondence, and necessary limits while leaving unnecessary example and analogy identity and wording unwritten; neither variant drops either required teaching move.",
@@ -891,9 +894,9 @@
         "Level 1 uses the relevant author-known context to prewrite a concrete near-final case: A involves historical-source selection or verification, while B involves interview evidence and the scope of an inferred need. Low personalization does not cause either context to be ignored.",
         "For A and B, level 5 carries background-relevant material-selection requirements, evidence, decisions, and the intended takeaway without prewriting unnecessary case identity or story details. The two roles change meaningful task relationships or consequences rather than merely substituting a job title.",
         "The teacher's role is not treated as proof of subject, technical, or AI knowledge beyond the supplied facts; the product manager's role is not treated as proof of statistical expertise. Explanations introduce any needed unfamiliar concept without assuming familiarity from occupation alone.",
-        "For C and D, both levels use neutral course-appropriate work examples or executable selection requirements at the corresponding specificity. Jazz preference does not cause an unrelated music analogy, a guessed occupation, or a new question asking for background.",
+        "For C and D, both levels use neutral course-appropriate work examples or executable selection requirements at the corresponding specificity, while retaining a local direction to use relevant learner background if it becomes available during delivery. Jazz preference does not cause an unrelated music analogy, a guessed occupation, or a new question asking for background.",
         "Every Prompt and any included trial delivery preserve the author's workplace audience and teach acceptance against the task goal and verifiable evidence; no role adaptation replaces that objective, quotes a learner profile, or presents invented case details as facts about the learner.",
-        "The level-5 local instruction carries concrete material-selection needs and teaching effects rather than a generic instruction to personalize; it does not repeat course-wide learner-profile policy or serialize internal learner-profile tags."
+        "Every example action explicitly connects its selection or explanation to relevant learner background. The level-5 local instruction carries concrete material-selection needs and teaching effects rather than a generic instruction to personalize; these local directions are not removed as authoring commentary and do not repeat course-wide learner-profile policy or serialize internal learner-profile tags."
       ]
     },
     {
@@ -1035,6 +1038,21 @@
         "The Task section preserves both direct second-person learner address for self-study and projection-ready content without individual address or narration for classroom delivery.",
         "The two behaviors are conditional on the current user message rather than imposed simultaneously or reduced to one mode.",
         "All six template sections remain and there are no unfilled placeholders or authoring explanations."
+      ]
+    },
+    {
+      "id": 85,
+      "prompt": "只在本地生成一节授课提示词，不连接平台、不生成课程提示词。课程面向使用信息系统的普通职场人，本节是第二节，lesson_id=L85；纯文字授课，interaction_policy=disabled，teaching_prompt_personalization_level=5。作者目前不知道具体学习者的职业、任务或偏好，平台可能在授课时提供相关背景，也可能没有。核心问题：‘同一份数据为什么会看到不同版本？’。已批准来源只有这些事实：缓存保存此前取得的数据副本；原始数据更新不必然同时更新缓存；读取缓存时可能仍显示旧副本；缓存失效后重新取得原始数据，才会得到更新后的副本；缓存只是版本不一致的一种可能原因，不能仅凭版本差异断定原因。已批准的完整执行顺序是：1. 简短引出问题和本课目标；2. 详细讲清缓存造成旧版本显示的机制，按‘原始数据和缓存都是 v1 → 原始数据更新成 v2、缓存仍为 v1 → 读取缓存显示 v1 → 缓存失效并重新取数后显示 v2’展开，说明每一步从哪里读数据、哪个副本改变或未变、为何得到该显示结果；3. 用一个与学习者任务有关的工作案例应用这个机制，案例必须具备独立保存的副本、原始数据更新、副本未同步和重新取数这四个关系；4. 用学习者熟悉场景中的一个类比帮助理解，明确对应关系并说明类比不能证明实际系统使用了缓存；5. 简短回扣核心问题，保留不能仅凭版本差异判断原因的边界。第 2 步的版本和顺序固定，第 3、4 步的具体素材尚未指定，不得增加排障步骤、互动或其他教学动作。请直接输出 JSON，字段为 lesson_teaching_prompts 和 global_variable_table；不附试讲或过程说明。",
+      "expected_output": "Materializes a level-5 lesson with explicit runtime background use at its example and analogy positions and detailed, source-bounded expansion at its fixed mechanism explanation.",
+      "files": [],
+      "expectations": [
+        "The output contains one runnable L85 Teaching Prompt with empty used_variables and global_variable_table, preserving text-only delivery and the five approved teaching actions in order without new questions, controls, branches, troubleshooting steps, or additional teaching aids.",
+        "The second action directly instructs detailed expansion of the supplied four-stage mechanism, retaining both v1 and v2, the stated order, which copy is read or changed at each stage, and the causal connection to the displayed result. A heading, a list of versions, or an unqualified explain in detail does not satisfy this requirement.",
+        "Level 5 leaves ordinary delivery wording unwritten but does not compress the mechanism into a summary or make the detailed explanation optional; the lead-in and close remain brief at their approved positions.",
+        "The work-example action explicitly instructs selection from relevant learner tasks known at delivery time and preserves the separate-copy, original-update, unsynchronized-copy, and refetch relationships and intended takeaway. The analogy action separately directs use of a familiar situation from relevant learner background, states the needed correspondence, and includes the limit that an analogy does not prove a real system used caching.",
+        "The Teaching Prompt includes a neutral course-appropriate fallback when runtime context is absent or irrelevant, without guessing an occupation, assuming technical familiarity, asking for background, or serializing platform learner-profile tags or internal variables. Because no individual context is known during authoring, it does not prewrite a specific learner identity or freeze the open example and analogy into particular scenarios.",
+        "The local example, analogy, and expansion directions remain executable runtime instructions at their respective positions, not a single course-wide personalization statement, a reliance on a future Course Prompt, or authoring commentary about level 5.",
+        "The explanation and close preserve that caching is only one possible cause of version differences. No action claims every mismatch proves caching, promises that any refresh always reaches the latest data, or invents system behavior or evidence beyond the approved source."
       ]
     }
   ]

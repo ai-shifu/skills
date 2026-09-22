@@ -68,6 +68,7 @@ A lesson missing a phase required by its selected loop is incomplete. The follow
 - **Carryover statements** are allowed only when cross-lesson dependency is explicitly permitted; otherwise remove them together with any unbound carryover variables.
 - **Non-interactive close**: end with a summary, decision checkpoint, or action rather than a new learner interaction.
 - **Content-shaped structure**: adapt the number and teaching purpose of content turns to the source and core question rather than manufacturing filler to make lessons look identical.
+- **Explanation depth**: identify where a concept, mechanism, reasoning step, or application needs detailed explanation for the learner to understand or act. Resolve the supplied facts, intermediate relationships, relevant boundaries, and intended understanding at that position. A concise lead-in or summary need not become a detailed explanation; presentation brevity and a high personalization level must not remove needed reasoning. Apply the selected delivery mode when expressing that depth.
 
 ### Teaching Patterns
 
