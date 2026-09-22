@@ -194,18 +194,18 @@ def config_dir():
 
 
 def credentials_path(context=None):
-    if context is None:
+    if context is None or context.directory is None:
         return config_dir() / "credentials.json"
     return profiles.credentials_path(context)
 
 
 def course_handoff_lock_path(context=None):
-    root = context.directory if context is not None else config_dir()
+    root = getattr(context, "directory", None) or config_dir()
     return root / "course-handoff.lock"
 
 
 def pending_course_creations_path(context=None):
-    root = context.directory if context is not None else config_dir()
+    root = getattr(context, "directory", None) or config_dir()
     return root / "pending-course-creations.json"
 
 
@@ -2595,6 +2595,7 @@ def _validate_pending_course_creation(record, token_digest):
 @contextlib.contextmanager
 def _course_creation_attribution(active_token, operation_key, context=None):
     """Bind one handoff to one operation until creation is confirmed."""
+    selected_host_platform = host_platform()
     token_digest = hashlib.sha256(active_token.encode("utf-8")).hexdigest()
     journal_key = f"{token_digest}:{operation_key}"
     lease_id = str(uuid.uuid4())
@@ -2688,7 +2689,7 @@ def _course_creation_attribution(active_token, operation_key, context=None):
             _write_private_json(credential_path, cleaned_credentials)
         _ACTIVE_COURSE_CREATION_LEASES.add(lease_id)
         attribution = {
-            "host_platform": host_platform(),
+            "host_platform": selected_host_platform,
             "skill_id": SKILL_ID,
             "skill_version": _client_version(),
             "handoff_id": reserved_handoff_id,
@@ -2976,7 +2977,6 @@ def cmd_import(args):
                                      profile_name=_profile_name(args))
                 sys.exit(EXIT_CONFLICT)
 
-    result_bid = None
     if args.course_dir:
         # Build JSON first, then import
         build_options = {
@@ -2997,10 +2997,11 @@ def cmd_import(args):
                 args.course_dir,
                 backup=False,
                 force=False,
+                profile_name=_profile_name(args),
             )
             print(f"  Sync manifest seeded: {_sync_path(args.course_dir)}")
 
-        result_bid = _import_flat(
+        _import_flat(
             base_url,
             token,
             json_file,
@@ -3010,7 +3011,7 @@ def cmd_import(args):
             attribution_context=context,
         )
     elif args.json_file:
-        result_bid = _import_flat(
+        _import_flat(
             base_url,
             token,
             args.json_file,
@@ -3020,16 +3021,6 @@ def cmd_import(args):
     else:
         print("Error: provide --json-file or --course-dir")
         sys.exit(1)
-
-    # Re-seed the sync manifest from the freshly imported cloud state so future
-    # edits are version-tracked. Phase 1 import is destructive (all outline bids
-    # are regenerated), so a pull is the reliable way to capture them.
-    if args.course_dir and result_bid:
-        _pull_into_dir(base_url, token, result_bid, args.course_dir,
-                       backup=False, force=False,
-                       profile_name=_profile_name(args))
-        print(f"  Sync manifest seeded: {_sync_path(args.course_dir)}")
-
 
 # ── Build ──────────────────────────────────────────────────────────────────────
 def _derive_lesson_title(filename):

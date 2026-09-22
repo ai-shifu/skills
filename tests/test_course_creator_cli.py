@@ -579,6 +579,89 @@ class CourseCreationAttributionTests(unittest.TestCase):
         ), self.assertRaisesRegex(RuntimeError, "AI_SHIFU_HOST_PLATFORM"):
             course_creator_cli.host_platform()
 
+    def test_temporary_context_uses_config_root_for_attribution_state(self):
+        context = course_creator_cli.profiles.ProfileContext(
+            None,
+            self.base_url,
+            None,
+            "temporary-token",
+        )
+
+        self.assertEqual(
+            course_creator_cli.credentials_path(context),
+            course_creator_cli.config_dir() / "credentials.json",
+        )
+        self.assertEqual(
+            course_creator_cli.course_handoff_lock_path(context),
+            course_creator_cli.config_dir() / "course-handoff.lock",
+        )
+        self.assertEqual(
+            course_creator_cli.pending_course_creations_path(context),
+            course_creator_cli.config_dir() / "pending-course-creations.json",
+        )
+
+    def test_invalid_host_platform_does_not_mutate_handoff_state(self):
+        with mock.patch.dict(
+            course_creator_cli.os.environ,
+            {"AI_SHIFU_HOST_PLATFORM": "user-supplied"},
+            clear=False,
+        ), self.assertRaisesRegex(
+            RuntimeError, "AI_SHIFU_HOST_PLATFORM"
+        ), course_creator_cli._course_creation_attribution(
+            "test-token", "new-operation"
+        ):
+            pass
+
+        self.assertFalse(course_creator_cli.pending_course_creations_path().exists())
+        self.assertFalse(course_creator_cli.credentials_path().exists())
+
+    def test_directory_import_seeds_sync_manifest_once_with_profile(self):
+        context = types.SimpleNamespace(name="school")
+        args = types.SimpleNamespace(
+            new=True,
+            shifu_bid=None,
+            course_dir=Path("course-dir"),
+            json_file=None,
+            title=None,
+            description=None,
+            keywords=None,
+            chapter_name=None,
+            _profile_context=context,
+        )
+
+        def run_import(*_args, **kwargs):
+            kwargs["after_import"]("course-new")
+            return "course-new"
+
+        with (
+            mock.patch.object(
+                course_creator_cli,
+                "resolve_auth",
+                return_value=(self.base_url, "test-token"),
+            ),
+            mock.patch.object(
+                course_creator_cli,
+                "_build_import_json",
+                return_value=Path("course-dir/shifu-import.json"),
+            ),
+            mock.patch.object(
+                course_creator_cli, "_import_flat", side_effect=run_import
+            ),
+            mock.patch.object(course_creator_cli, "_pull_into_dir") as pull,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            course_creator_cli.cmd_import(args)
+
+        pull.assert_called_once_with(
+            self.base_url,
+            "test-token",
+            "course-new",
+            Path("course-dir"),
+            backup=False,
+            force=False,
+            profile_name="school",
+        )
+
     def test_journey_event_uses_only_allowlisted_fields_and_is_fail_open(self):
         with mock.patch.object(
             course_creator_cli.requests,
