@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Verify an existing Course Prompt's personalization behavior before reusing it for lesson generation; report incompatible course-wide instructions as a dependency without expanding a lesson-only edit.
 - Use the same personalization choices and intake rules in every delivery mode, including pure classroom slides; a missing selection always prompts the author instead of silently defaulting to none.
 - Replace the five personalization strength levels with independent choices for examples, analogies, language style, and practical value. Carry the selection into both Prompt artifacts, preserve the course baseline for unselected directions, and keep required detailed explanations and lesson structure complete even when none are selected.
 - Make Course Prompts explicitly adapt language style, examples, analogies, and practical value to learner background and preferences. Put background-based example and analogy directions and content-specific detailed explanation requirements directly at the relevant Teaching Prompt positions, including when learner context becomes available only during delivery.

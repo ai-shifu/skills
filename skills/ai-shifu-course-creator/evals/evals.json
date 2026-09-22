@@ -1110,6 +1110,19 @@
         "The artifact remains a Teaching Prompt rather than a mandatory spoken transcript, adds no deterministic markers for ordinary wording, and preserves the brief lead-in and close.",
         "The result adds no background question, variable, interaction, troubleshooting step, new analogy, additional case, or authoring-control field."
       ]
+    },
+    {
+      "id": 90,
+      "prompt": "以下三个情境独立，现有课程已完成认证、定位和 pull；不再调用平台工具。只修改第二节的授课设计，课程结构和 Course Prompt 不在修改范围。已批准为纯文字授课，课程面向普通职场人，核心问题是为何同一数据会显示不同版本，执行顺序固定为引出问题、详细解释缓存副本与原始数据更新不同步的关系、回扣结论；不新增例子、类比或互动。其它设计输入完整，personalization_directions=[\"language_style\"]，学习者偏好短句和自然口语。A：已有 Course Prompt 要求根据个人背景调整例子、类比、措辞和价值说明。B：已有 Course Prompt 要求只按学习者明确表达的偏好调整措辞，其他方面使用来源、作者要求和课程受众的统一基线。C：确认没有 Course Prompt。分别给出本次生成的处理结果；能完成的情境给出可运行 Teaching Prompt，不能完成的说明具体依赖。",
+      "expected_output": "Checks the actual existing Course Prompt before relying on it, reports incompatible course-wide behavior without changing lesson-only scope, and supplies local style instructions when no Course Prompt exists.",
+      "files": [],
+      "expectations": [
+        "A identifies that the existing Course Prompt enables unselected adaptations, reports Course Prompt alignment as an upstream dependency, and does not mark generation or handoff successful.",
+        "A leaves the Course Prompt unchanged, does not silently expand to course-wide editing, infer a new selection, or claim that lesson-local instructions neutralize incompatible course-wide rules.",
+        "B verifies the actual selected-only behavior and can delegate language-style adaptation to that compatible Course Prompt without duplicating its course-wide policy in the lesson.",
+        "C includes a concise executable instruction to adapt phrasing to stated preferences, preserving meaning and detailed explanation; absence of a Course Prompt does not silently drop the selected style effect.",
+        "B and C preserve the same three teaching actions and explanation requirements, add no examples, analogies, interactions, profile fields, or internal direction arrays, and follow neutral course-appropriate wording when relevant preferences are unavailable."
+      ]
     }
   ]
 }
