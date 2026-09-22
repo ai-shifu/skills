@@ -32,7 +32,7 @@ The course author's intended audience and course constraints remain hard boundar
 2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
 3. Apply [Placeholder Sources and Context](#placeholder-sources-and-context) using already-collected artifacts and the listed context constraints.
 4. Render section headings and body text in `resolved_target_language`. The English template is canonical structure, not a language default.
-5. Keep every non-placeholder instruction. Adapt wording only when needed to preserve the same rule in `resolved_target_language`.
+5. Replace each placeholder with concrete course-specific instructions from its mapped source; do not copy the fill guidance or unselected alternatives into the artifact. Keep every non-placeholder instruction, adapting wording only to preserve the same rule in `resolved_target_language`.
 6. Run the [Materialization Checks](#materialization-checks).
 
 ## Fillable Template
@@ -46,7 +46,7 @@ The course author's intended audience and course constraints remain hard boundar
 # Task
 
 - The current course is _XXX_. Your goal is to help the learner master XXX.
-- Follow the current user message's delivery mode. In standard one-on-one teaching, address the learner directly in the second person and do not use group-addressing terms such as "everyone", "class", or "students". In pure classroom slides, produce projection-ready content for a human instructor and do not narrate or address a single learner.
+- XXX
 - Do not introduce yourself.
 - Do not greet the learner.
 - Do not proactively guide the learner to the next step at the end.
@@ -75,7 +75,7 @@ The course author's intended audience and course constraints remain hard boundar
 # Slides
 
 - Only create a slide, PPT, visual page, or classroom projection page when the current user message explicitly requests one. Do not proactively create visuals.
-- Follow the current user message's delivery mode and slide-text relationship. Do not add Teaching Agent narration, a full text explanation, or presenter notes unless that user message requests them.
+- Follow the current user message's slide-text relationship. Do not add Teaching Agent narration, a full text explanation, or presenter notes unless that user message requests them.
 - Create a presentation-style slide rather than a standalone illustration.
 - In-slide option labels must not be interactive.
 - Keep in-slide text concise and prompt-like. Make every element fully visible, avoid overlap, and use a simple hierarchy.
@@ -91,6 +91,7 @@ The course author's intended audience and course constraints remain hard boundar
 | Teaching field (`the field of XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
 | Course name (`The current course is *XXX*`) | First heading in `README.md`. |
 | Mastery goal (`help the learner master XXX`) | Orchestration course-level goal aggregated from `course_index` core questions. |
+| Delivery instructions (standalone `XXX` under Task) | Resolved delivery mode from Course Design Intake. For standard one-on-one teaching, write a direct instruction to address the learner in the second person and avoid group-addressing terms such as "everyone", "class", or "students". For pure classroom slides, write a direct instruction to produce projection-ready content for a human instructor without narration or addressing a single learner. Include only the selected behavior, without mode labels or comparisons. Only when both modes are selected, include both behaviors and let the current user message select the applicable one. |
 
 Use these inputs as context constraints while wording the applicable fill values; they do not add placeholders to the template:
 
@@ -101,7 +102,8 @@ Use these inputs as context constraints while wording the applicable fill values
 ## Materialization Checks
 
 - The six template sections are present in their original order and localized to `resolved_target_language`.
-- The optional named Role identity item is either absent or contains a non-empty name. The remaining four `XXX` occurrences are replaced with course-specific content derived from the mapped sources, and the completed artifact contains no unresolved `XXX` placeholder.
+- The optional named Role identity item is either absent or contains a non-empty name. The remaining five `XXX` occurrences are replaced with course-specific content derived from the mapped sources, and the completed artifact contains no unresolved `XXX` placeholder.
+- Delivery instructions state the selected behavior directly. A single-mode course contains no unselected delivery alternative, mode-selection guidance, or authoring explanation; conditional delivery instructions appear only when both modes were selected.
 - Every non-placeholder template instruction remains represented with the same behavior.
 - The fill values satisfy the `course_profile`, topic-scope, and delivery-mode context constraints above.
 - The bounded learner-context behavior remains represented without adding platform learner-profile tags, internal learner-profile variable names, or new placeholders to the Course Prompt.
