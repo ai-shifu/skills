@@ -21,15 +21,35 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install update-check test dependency
-        run: python3 -m pip install "requests>=2.28"
+      - name: Install test dependencies
+        run: python3 -m pip install "requests>=2.28" "python-dotenv>=1.0"
 
       - name: Validate skill quality
         run: python3 scripts/validate_skill_quality.py
 
-      - name: Run update-check tests
+      - name: Run skill tests
         run: python3 -m unittest discover -s tests -p "test_*.py"
 
       - name: Run release tool tests
         working-directory: tools/ai-shifu-skill-release
         run: python3 -m unittest discover -s tests -p "test_*.py"
+
+  profile-concurrency-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install profile test dependency
+        run: python -m pip install "python-dotenv>=1.0" "requests>=2.28"
+
+      - name: Test native Windows profile locking
+        run: python -m unittest discover -s tests -p "test_profile_concurrency.py"
+
+      - name: Test Windows login guidance
+        run: python -m unittest discover -s tests -p "test_profile_login_hints.py"

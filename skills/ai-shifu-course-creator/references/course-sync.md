@@ -25,7 +25,7 @@ This workflow does not resolve the target, author content, publish the course, o
 3. Complete `language-policy.md#language-audit` before pushing changed content.
 4. Run `status --course-dir <dir>` to inspect cloud and local divergence.
 
-Never hand-edit `.shifu-sync.json`. Always pass `--course-dir` to a version-aware push so the CLI can compare the recorded revision. Without the manifest baseline, concurrent-edit protection is degraded.
+Never hand-edit `.shifu-sync.json`. Always pass `--course-dir` to a version-aware push so the CLI can compare the recorded revision. Without the manifest baseline, concurrent-edit protection is degraded. Use the task context established by `authentication.md` for every command. The directory source checks in `cli/course-directory-spec.md#shifu-syncjson` run before network access; a mismatch is a configuration error and does not enter the conflict-convergence loop.
 
 ## Push Existing Course Content
 

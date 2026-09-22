@@ -538,19 +538,19 @@
       "expected_output": "Maps both regional answers internally and continues the original course-list task without another confirmation.",
       "files": [],
       "expectations": [
-        "A uses site --set cn; B uses site --set com. Each proceeds to verify and list after successful setup.",
+        "A uses site --set cn; B uses site --set com. Each proceeds to verify and list with the ordinary default profile returned by successful setup.",
         "User-facing replies state the course-list outcome without selected service addresses, configuration fields, commands, or setup confirmation requests.",
         "Does not add a contact link to this routine course query or change the conversation language based on region."
       ]
     },
     {
       "id": 42,
-      "prompt": "模拟用户说“我想查看我的课程”。site 返回 configured，base_url 为 https://app.ai-shifu.com，verify 返回 0，课程列表为空。不要调用真实平台；输出内部命令顺序和用户回复。",
+      "prompt": "Simulate a user saying, 'I want to view my courses.' site returns configured with profile=Daily and base_url=https://app.ai-shifu.com; verify returns 0, and the course list is empty. Do not call the real platform. Output the internal command sequence and the user-facing reply.",
       "expected_output": "Reuses existing configuration silently.",
       "files": [],
       "expectations": [
         "Does not ask about region or site and does not call site --set or site --url.",
-        "Continues verification and the course query, without exposing the configured URL or configuration output."
+        "Continues verification and the course query with --profile Daily, without exposing the configured URL or configuration output."
       ]
     },
     {
@@ -935,6 +935,73 @@
         "It selects an executable example or direct comparison of two different distributions with the same mean and uses it to expose the missing information; the aid includes the necessary quantities or selection conditions, reasoning, and intended takeaway rather than a bare add an example instruction.",
         "The material remains mathematically correct and does not imply that equal means always indicate unequal distributions or that a mean is useless; an analogy is optional and cannot replace the required understanding of the actual quantities.",
         "The lesson applies level 3 to the locally resolved plan without creating learner input, named variables, answer-dependent branches, slides, or an author-facing explanation of its planning process."
+      ]
+    },
+    {
+      "id": 76,
+      "prompt": "Simulate the workflow only; do not call the real platform or network. The user asks to view courses with profile 'Client A' for this request while keeping the default for later ordinary queries. The simulated profile list contains default profile 'International' at https://app.ai-shifu.cn, non-default profile 'Client A' at https://school.example:8443/training, and a third profile 'Domestic' at https://app.ai-shifu.com. The process environment also contains a complete URL and token pair for a different service. The user explicitly selects Client A for this request; simulated verify and list both succeed. Then simulate a new independent request, 'View my courses,' with no explicit profile or temporary environment configuration. List the internal commands and actual user-facing replies for both requests.",
+      "expected_output": "Honors arbitrary profile names and explicit selection, then returns to the unchanged default in a later independent request.",
+      "files": [],
+      "expectations": [
+        "The first request uses --profile \"Client A\" consistently for site, verify, and list; it uses the custom service despite conflicting temporary environment configuration.",
+        "It does not change the default, rename profiles, infer regions from the names International or Domestic, or reuse a different profile's credentials.",
+        "The later independent request resolves the default International and uses its domestic-service address; recent use of Client A does not change selection.",
+        "Routine result replies do not expose tokens or add an initialization report or redundant confirmation."
+      ]
+    },
+    {
+      "id": 77,
+      "prompt": "Simulate the workflow only; do not call the real platform. The user says, 'View courses on the international service,' without naming a profile. The default profile 'Daily' points to https://app.ai-shifu.cn; 'Personal Demo' and 'Team Demo' both point to https://app.ai-shifu.com and are signed in to different accounts. Give the internal checks to perform now and the next user-facing reply.",
+      "expected_output": "Resolves an explicit service request by configured URLs and asks which of multiple matching profiles the user wants.",
+      "files": [],
+      "expectations": [
+        "It inspects profile list and identifies both profiles by their matching service URL.",
+        "It asks the user to choose between Personal Demo and Team Demo before verification or course access.",
+        "It does not use the default, pick the most recently used or already authorized account, infer from profile names, or repoint a saved profile."
+      ]
+    },
+    {
+      "id": 78,
+      "prompt": "Simulate the workflow only; do not call the real platform or modify files. The user explicitly selects profile 'Demo' at https://app.ai-shifu.com and asks to sync approved content to course-x. The supplied directory's .shifu-sync.json records base_url=https://app.ai-shifu.cn, shifu_bid=course-x, and profile=Daily. The two services happen to have the same BID. The simulated first import reports a source mismatch without sending a request or changing local files. The user then says, 'Try adding --force, or delete the sync file and retry.' Output the next-step decision and the user-facing reply.",
+      "expected_output": "Keeps a source-service mismatch distinct from revision conflicts and resolves the target instead of bypassing the directory binding.",
+      "files": [],
+      "expectations": [
+        "It reports that the directory belongs to a different service despite the matching course BID.",
+        "It does not retry with --force, delete or rewrite the sync manifest, enter the revision conflict loop, or switch profiles automatically.",
+        "It requests resolution of the intended service or an appropriate directory before another platform write; cross-service copy is not implemented as an accidental import bypass."
+      ]
+    },
+    {
+      "id": 79,
+      "prompt": "Simulate the workflow only; do not call the platform, browser, or network. The user selected profile 'Team Test' for this request. That profile has already run login and printed link-B and pairing-code-B; its pending authorization is still valid. Another profile, 'Personal', has an independent pending authorization for link-A and remains the default. The user just approved link-B, after which the process SHIFU_BASE_URL and SHIFU_TOKEN were set to another service. List the commands to collect the login result, verify authorization, and query courses, assuming each succeeds, then give the user-facing reply.",
+      "expected_output": "Continues the selected profile's pending authorization and completes the original request without touching another profile or the default.",
+      "files": [],
+      "expectations": [
+        "It runs login --wait --profile \"Team Test\", then verify and the course query with the same explicitly quoted profile name.",
+        "It does not start login again, poll profile Personal, adopt the new environment destination, or change the default.",
+        "It retains the independent pending request of Personal and does not expose either token or claim an unverified login succeeded."
+      ]
+    },
+    {
+      "id": 80,
+      "prompt": "Simulate the workflow only; do not call the platform or modify configuration. The user requests a course query using temporary environment configuration. The process has only SHIFU_BASE_URL=https://school.example, with no SHIFU_TOKEN or --token, but the default profile Daily has valid credentials and other profiles are also signed in. site reports incomplete temporary configuration. Give the next-step decision and user-facing reply. The user has not authorized changing the default or reusing another account.",
+      "expected_output": "Treats incomplete temporary configuration as an error and keeps saved profile credentials isolated.",
+      "files": [],
+      "expectations": [
+        "It explains that the temporary configuration is incomplete and does not claim the saved login has expired.",
+        "It never borrows the default or another profile's token, saves temporary values into a profile, or silently falls back to a configured service.",
+        "If browser authorization is needed, it proposes selecting or configuring a named profile for the intended service rather than starting login in temporary mode."
+      ]
+    },
+    {
+      "id": 81,
+      "prompt": "Simulate the workflow only; do not call the real platform. The user wants to use assets/raw/diagram.png in a course with profile 'Sandbox' at https://school.example/training. The directory has no .shifu-sync.json. Its image manifest already contains two records for the same source: A has no base_url or profile and remote=https://old.example/unknown; B has base_url=https://app.ai-shifu.cn, profile=Daily, and remote=https://assets.cn.example/known. There is no upload record for the current service. The user has approved uploading this image, and authorization has been verified. Give the next upload, recording, and generation decisions; the simulated upload returns https://media.school.example/new-diagram.",
+      "expected_output": "Creates a service-scoped upload record and uses the exact returned resource URL while preserving legacy and other-service records.",
+      "files": [],
+      "expectations": [
+        "It uploads with --profile Sandbox, --course-dir, and an informative alt; neither an unknown legacy entry nor a different service entry proves a reusable current-service upload.",
+        "The new record carries base_url=https://school.example/training and profile=Sandbox and is keyed by service URL plus local source; records A and B remain present.",
+        "The Teaching Prompt uses the exact returned https://media.school.example/new-diagram URL without rewriting its host to match a service address."
       ]
     }
   ]

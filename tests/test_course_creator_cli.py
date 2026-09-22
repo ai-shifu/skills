@@ -42,6 +42,7 @@ class CourseCreatorSiteTests(unittest.TestCase):
             {"AI_SHIFU_CONFIG_DIR": tmp}, clear=True,
         ))
         self.enterContext(mock.patch.object(course_creator_cli, "load_env"))
+        self.enterContext(mock.patch.object(course_creator_cli, "ENV_FILE", self.root / "skill.env"))
         self.track = self.enterContext(mock.patch.object(course_creator_cli, "track"))
         self.get = self.enterContext(mock.patch.object(course_creator_cli.requests, "get"))
         self.post = self.enterContext(mock.patch.object(course_creator_cli.requests, "post"))
@@ -57,7 +58,8 @@ class CourseCreatorSiteTests(unittest.TestCase):
     def test_first_run_requires_choice_without_network_or_credentials(self):
         result = json.loads(self.run_cli("site"))
         self.assertEqual(result, {
-            "status": "selection_required", "base_url": None, "contact_url": None,
+            "status": "selection_required", "profile": None,
+            "base_url": None, "contact_url": None,
         })
         self.assertFalse((self.root / "settings.json").exists())
         self.get.assert_not_called()
@@ -80,7 +82,7 @@ class CourseCreatorSiteTests(unittest.TestCase):
                     login.assert_not_called()
                 with contextlib.redirect_stdout(io.StringIO()) as output:
                     course_creator_cli._print_verification_urls(
-                        course_creator_cli.resolve_base_url(), "course", True,
+                        course_creator_cli.profile_store().resolve(environ={}).base_url, "course", True,
                     )
                 self.assertIn(f"https://app.ai-shifu.{site}/c/course", output.getvalue())
         self.assertEqual((self.root / "settings.json").stat().st_mode & 0o777, 0o600)
@@ -91,29 +93,63 @@ class CourseCreatorSiteTests(unittest.TestCase):
         result = json.loads(self.run_cli("site", "--url", " https://school.example:8443/ "))
         self.assertEqual(result["base_url"], "https://school.example:8443")
         self.assertEqual(result["contact_url"], "https://ai-shifu.com/contact.html")
-        self.assertEqual(course_creator_cli.resolve_base_url(), result["base_url"])
+        self.assertEqual(course_creator_cli.profile_store().resolve(environ={}).base_url, result["base_url"])
 
-    def test_explicit_configuration_is_reused_and_cannot_be_silently_overridden(self):
+    def test_temporary_site_setup_requires_explicit_profile_without_mutation(self):
+        self.run_cli("profile", "set", "saved", "--base-url", "cn")
+        before = (self.root / "settings.json").read_bytes()
+        for environment in (
+            {"SHIFU_BASE_URL": "com", "SHIFU_TOKEN": "temporary"},
+            {"SHIFU_BASE_URL": "com"}, {"SHIFU_TOKEN": "temporary"},
+        ):
+            for selection in (("--set", "com"), ("--url", "https://school.example")):
+                with self.subTest(environment=environment, selection=selection), mock.patch.dict(
+                    course_creator_cli.os.environ, environment,
+                ):
+                    with self.assertRaises(SystemExit) as exc:
+                        self.run_cli("site", *selection)
+                    self.assertEqual(exc.exception.code, 4)
+                    self.assertEqual((self.root / "settings.json").read_bytes(), before)
+        with mock.patch.dict(course_creator_cli.os.environ, {
+            "SHIFU_BASE_URL": "com", "SHIFU_TOKEN": "temporary",
+        }):
+            result = json.loads(self.run_cli("site", "--set", "com", "--profile", "saved"))
+        self.assertEqual(result["profile"], "saved")
+        self.assertEqual(result["base_url"], "https://app.ai-shifu.com")
+        self.get.assert_not_called()
+        self.post.assert_not_called()
+
+    def test_temporary_site_setup_does_not_create_a_default(self):
+        with mock.patch.dict(course_creator_cli.os.environ, {
+            "SHIFU_BASE_URL": "com", "SHIFU_TOKEN": "temporary",
+        }):
+            with self.assertRaises(SystemExit) as exc:
+                self.run_cli("site", "--set", "cn")
+        self.assertEqual(exc.exception.code, 4)
+        self.assertFalse((self.root / "settings.json").exists())
+
+    def test_explicit_profile_ignores_temporary_environment_configuration(self):
         self.run_cli("site", "--set", "com")
         original = (self.root / "settings.json").read_bytes()
-        with mock.patch.dict(course_creator_cli.os.environ, {"SHIFU_BASE_URL": "https://app.ai-shifu.cn/"}):
+        with mock.patch.dict(course_creator_cli.os.environ, {
+            "SHIFU_BASE_URL": "https://app.ai-shifu.cn/", "SHIFU_TOKEN": "temporary",
+        }):
             self.assertEqual(json.loads(self.run_cli("site"))["base_url"], course_creator_cli.SITE_URLS["cn"])
-            with self.assertRaises(SystemExit) as error:
-                self.run_cli("site", "--set", "com")
-            self.assertEqual(error.exception.code, 1)
+            result = json.loads(self.run_cli("site", "--profile", "default"))
+            self.assertEqual(result["base_url"], course_creator_cli.SITE_URLS["com"])
         self.assertEqual((self.root / "settings.json").read_bytes(), original)
 
     def test_blank_override_uses_remembered_site(self):
         self.run_cli("site", "--set", "com")
-        for value in ("", "   ", "///"):
+        for value in ("", "   "):
             with mock.patch.dict(course_creator_cli.os.environ, {"SHIFU_BASE_URL": value}):
-                self.assertEqual(course_creator_cli.configured_base_url(), course_creator_cli.SITE_URLS["com"])
+                self.assertEqual(course_creator_cli.profile_store().resolve().base_url, course_creator_cli.SITE_URLS["com"])
 
     def test_invalid_custom_addresses_are_rejected_without_saving(self):
         for url in ("", "school.example", "https://", "http://school.example", "https://user:secret@school.example", "https://school.example?q=1", "https://school.example#x", "https://school.example:bad", "https://school.example?", "https://school.example#", "https://school.example:0", "https://school example"):
             with self.subTest(url=url), self.assertRaises(SystemExit) as error:
                 self.run_cli("site", "--url", url)
-            self.assertEqual(error.exception.code, 1)
+            self.assertEqual(error.exception.code, 4)
             self.assertFalse((self.root / "settings.json").exists())
         self.get.assert_not_called()
         self.post.assert_not_called()
@@ -144,23 +180,252 @@ class CourseCreatorSiteTests(unittest.TestCase):
         self.assertFalse((self.root / "settings.json").exists())
 
     def test_existing_unbound_credentials_are_not_sent_to_new_site(self):
-        course_creator_cli.save_token("test-token")
-        with self.assertRaises(SystemExit) as error:
-            self.run_cli("site", "--set", "com")
-        self.assertEqual(error.exception.code, 1)
-        self.assertFalse((self.root / "settings.json").exists())
-        self.assertEqual(course_creator_cli.load_saved_token(), "test-token")
+        legacy = self.root / "credentials.json"
+        legacy.write_text(json.dumps({"token": "test-token"}))
+        self.run_cli("site", "--set", "com")
+        context = course_creator_cli.profile_store().resolve(environ={})
+        self.assertEqual(context.token, "")
+        self.assertEqual(json.loads(legacy.read_text())["token"], "test-token")
         self.get.assert_not_called()
         self.post.assert_not_called()
 
     def test_same_site_setup_preserves_existing_credentials_and_settings(self):
         self.run_cli("site", "--set", "cn")
-        course_creator_cli.save_token("test-token")
+        context = course_creator_cli.profile_store().resolve(environ={})
+        course_creator_cli.save_token("test-token", context)
         self.run_cli("site", "--set", "cn")
         with self.assertRaises(SystemExit):
             self.run_cli("site", "--set", "com")
-        self.assertEqual(course_creator_cli.configured_base_url(), course_creator_cli.SITE_URLS["cn"])
-        self.assertEqual(course_creator_cli.load_saved_token(), "test-token")
+        self.assertEqual(course_creator_cli.profile_store().resolve().base_url, course_creator_cli.SITE_URLS["cn"])
+        self.assertEqual(course_creator_cli.profile_store().load_token(context), "test-token")
+
+    def configure_profiles(self):
+        self.run_cli("profile", "set", "日常", "--base-url", "CN")
+        self.run_cli("profile", "set", "测试 环境", "--base-url", "https://school.example:8443/academy/")
+        store = course_creator_cli.profile_store()
+        first = store.resolve(name="日常", environ={})
+        second = store.resolve(name="测试 环境", environ={})
+        store.save_token(first, "daily-token")
+        store.save_token(second, "school-token")
+        return first, second
+
+    def test_named_profile_selection_is_per_invocation_and_handles_global_flag(self):
+        first, second = self.configure_profiles()
+        with mock.patch.object(course_creator_cli, "_fetch_all_courses", return_value=[]) as fetch:
+            self.run_cli("list")
+            self.run_cli("--profile", "测试 环境", "list")
+            self.run_cli("list", "--profile", "测试 环境")
+            self.run_cli("list")
+        self.assertEqual(fetch.call_args_list, [
+            mock.call(first.base_url, "daily-token"),
+            mock.call(second.base_url, "school-token"),
+            mock.call(second.base_url, "school-token"),
+            mock.call(first.base_url, "daily-token"),
+        ])
+        self.assertEqual(json.loads(self.run_cli("profile", "default")), {"default_profile": "日常"})
+
+    def test_environment_mode_is_temporary_and_cannot_override_explicit_profile(self):
+        first, second = self.configure_profiles()
+        original = (self.root / "settings.json").read_bytes()
+        with mock.patch.dict(course_creator_cli.os.environ, {
+            "SHIFU_BASE_URL": "https://temporary.example", "SHIFU_TOKEN": "temporary-token",
+        }), mock.patch.object(course_creator_cli, "_fetch_all_courses", return_value=[]) as fetch:
+            self.run_cli("list")
+            self.run_cli("list", "--profile", "测试 环境")
+            self.run_cli("list", "--profile", "日常", "--token", "one-off")
+        self.assertEqual(fetch.call_args_list, [
+            mock.call("https://temporary.example", "temporary-token"),
+            mock.call(second.base_url, "school-token"),
+            mock.call(first.base_url, "one-off"),
+        ])
+        self.assertEqual((self.root / "settings.json").read_bytes(), original)
+        self.assertEqual(course_creator_cli.profile_store().load_token(first), "daily-token")
+        self.track.assert_called_with("cli_list", token="one-off")
+
+    def test_incomplete_temporary_configuration_never_borrows_a_saved_token(self):
+        self.configure_profiles()
+        for override in ({"SHIFU_BASE_URL": "https://school.example"}, {"SHIFU_TOKEN": "external"}):
+            with mock.patch.dict(course_creator_cli.os.environ, override), \
+                    contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
+                self.run_cli("list")
+            self.assertEqual(raised.exception.code, 4)
+        self.get.assert_not_called()
+
+    def test_unknown_profile_and_duplicate_flags_fail_without_fallback(self):
+        self.configure_profiles()
+        for args in (("list", "--profile", "missing"),
+                     ("--profile", "日常", "list", "--profile", "测试 环境"),
+                     ("list", "--profile", "日常", "--profile", "日常")):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                self.run_cli(*args)
+        self.get.assert_not_called()
+        self.post.assert_not_called()
+
+    def test_independent_browser_authorization_and_logout(self):
+        first, second = self.configure_profiles()
+        with mock.patch.object(course_creator_cli, "_login_post", side_effect=[
+            {"data": {"device_code": "first-device", "user_code": "111", "verification_uri": "https://app.ai-shifu.cn/approve", "expires_in": 600}},
+            {"data": {"device_code": "second-device", "user_code": "222", "verification_uri": "https://school.example/approve", "expires_in": 600}},
+        ]):
+            printed = self.run_cli("login")
+            self.assertIn("--profile", printed)
+            self.assertIn("日常", printed)
+            self.run_cli("login", "--profile", "测试 环境")
+        self.run_cli("profile", "default", "测试 环境")
+        with mock.patch.object(course_creator_cli, "_poll_device_authorization", side_effect=[
+            ("approved", "new-first"), ("approved", "new-second"),
+        ]) as poll:
+            self.run_cli("login", "--wait", "--profile", "日常")
+            self.assertTrue(course_creator_cli.pending_auth_path(second).exists())
+            self.run_cli("login", "--wait", "--profile", "测试 环境")
+        self.assertEqual(poll.call_args_list, [mock.call(first.base_url, "first-device"), mock.call(second.base_url, "second-device")])
+        self.run_cli("logout", "--profile", "日常")
+        self.assertFalse(course_creator_cli.credentials_path(first).exists())
+        self.assertEqual(course_creator_cli.profile_store().load_token(second), "new-second")
+        self.assertEqual(course_creator_cli.profile_store().default_profile(), "测试 环境")
+
+    def test_login_rejects_a_profile_changed_during_authorization(self):
+        store = course_creator_cli.profile_store()
+        context = store.set_profile("Demo", "cn")
+
+        def authorize(*_args):
+            # Model another process committing a URL change during the request.
+            store.set_profile("Demo", "com")
+            return {"data": {
+                "device_code": "stale-device-code", "user_code": "OLD-CODE",
+                "verification_uri": "https://app.ai-shifu.cn/login/device",
+            }}
+
+        with (mock.patch.object(course_creator_cli, "_login_post", side_effect=authorize),
+              mock.patch.object(sys, "argv", ["shifu-cli.py", "login", "--profile", "Demo"]),
+              contextlib.redirect_stdout(io.StringIO()) as stdout,
+              contextlib.redirect_stderr(io.StringIO()) as stderr,
+              self.assertRaises(SystemExit) as raised):
+            course_creator_cli.main()
+
+        self.assertEqual(raised.exception.code, 4)
+        self.assertIn("changed", stderr.getvalue())
+        self.assertNotIn("OLD-CODE", stdout.getvalue())
+        self.assertFalse(store.pending_auth_path(context).exists())
+        self.assertEqual(store.resolve("Demo", environ={}).base_url, course_creator_cli.SITE_URLS["com"])
+
+    def test_login_wait_does_not_restore_a_logged_out_profile(self):
+        store = course_creator_cli.profile_store()
+        for change_url in (False, True):
+            with self.subTest(change_url=change_url):
+                context = store.set_profile(f"Demo-{change_url}", "cn")
+                store.save_pending_auth(context, {
+                    "base_url": context.base_url, "device_code": "original-request",
+                })
+
+                def poll(*_args):
+                    store.logout(context)
+                    if change_url:
+                        store.set_profile(context.name, "com")
+                    return "approved", "stale-token"
+
+                with (mock.patch.object(course_creator_cli, "_poll_device_authorization", side_effect=poll),
+                      mock.patch.object(sys, "argv", ["shifu-cli.py", "login", "--wait", "--profile", context.name]),
+                      contextlib.redirect_stdout(io.StringIO()) as stdout,
+                      contextlib.redirect_stderr(io.StringIO()),
+                      self.assertRaises(SystemExit) as raised):
+                    course_creator_cli.main()
+                self.assertEqual(raised.exception.code, 4)
+                self.assertNotIn("Authorization complete", stdout.getvalue())
+                self.assertFalse(store.credentials_path(context).exists())
+                self.assertFalse(store.pending_auth_path(context).exists())
+
+    def test_login_wait_preserves_a_replacement_request(self):
+        store = course_creator_cli.profile_store()
+        for status in ("approved", "denied", "expired"):
+            with self.subTest(status=status):
+                context = store.set_profile(f"Demo-{status}", "cn")
+                store.save_pending_auth(context, {
+                    "base_url": context.base_url, "device_code": "original-request",
+                })
+                replacement = {"base_url": context.base_url, "device_code": "replacement-request"}
+
+                def poll(*_args):
+                    store.save_pending_auth(context, replacement)
+                    return status, "stale-token" if status == "approved" else ""
+
+                with (mock.patch.object(course_creator_cli, "_poll_device_authorization", side_effect=poll),
+                      contextlib.redirect_stderr(io.StringIO()),
+                      self.assertRaises(SystemExit) as raised):
+                    self.run_cli("login", "--wait", "--profile", context.name)
+                self.assertEqual(raised.exception.code, 4)
+                self.assertFalse(store.credentials_path(context).exists())
+                self.assertEqual(course_creator_cli.profiles.read_private_json(
+                    store.pending_auth_path(context)), replacement)
+
+    def test_logout_recovers_from_invalid_local_credentials(self):
+        first, second = self.configure_profiles()
+        course_creator_cli.credentials_path(first).write_text("broken")
+        self.run_cli("logout", "--profile", "日常")
+        self.assertFalse(course_creator_cli.credentials_path(first).exists())
+        self.assertEqual(course_creator_cli.profile_store().load_token(second), "school-token")
+
+    def test_missing_named_token_prompts_for_that_profile_without_fallback(self):
+        first, second = self.configure_profiles()
+        course_creator_cli.credentials_path(second).unlink()
+        with mock.patch.object(sys, "argv", ["shifu-cli.py", "verify", "--profile", "测试 环境"]), \
+                contextlib.redirect_stdout(io.StringIO()) as output, self.assertRaises(SystemExit) as raised:
+            course_creator_cli.main()
+        self.assertEqual(raised.exception.code, 1)
+        self.assertIn("--profile='测试 环境'", output.getvalue())
+        self.get.assert_not_called()
+        self.assertEqual(course_creator_cli.profile_store().load_token(first), "daily-token")
+
+    def test_temporary_browser_login_never_creates_pending_state(self):
+        self.configure_profiles()
+        with mock.patch.dict(course_creator_cli.os.environ, {
+            "SHIFU_BASE_URL": "https://temporary.example", "SHIFU_TOKEN": "temporary-token",
+        }), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
+            self.run_cli("login")
+        self.assertEqual(raised.exception.code, 4)
+        self.post.assert_not_called()
+        self.assertEqual(list(self.root.rglob("pending-device-auth.json")), [])
+
+    def test_network_errors_are_not_reported_as_local_file_errors(self):
+        self.configure_profiles()
+        for failure in (course_creator_cli.requests.ConnectionError("service unavailable"),
+                        course_creator_cli.requests.Timeout("request timed out")):
+            with self.subTest(failure=type(failure).__name__), contextlib.redirect_stderr(io.StringIO()) as output:
+                self.get.side_effect = failure
+                with self.assertRaises(SystemExit) as exc:
+                    self.run_cli("list", "--profile", "日常")
+                self.assertEqual(exc.exception.code, 1)
+                self.assertIn("Network request failed", output.getvalue())
+                self.assertNotIn("Local configuration", output.getvalue())
+
+    def test_local_file_errors_keep_the_local_diagnostic(self):
+        self.configure_profiles()
+        with mock.patch.object(course_creator_cli, "cmd_list", side_effect=OSError("disk failure")), contextlib.redirect_stderr(io.StringIO()) as output:
+            with self.assertRaises(SystemExit) as exc:
+                self.run_cli("list", "--profile", "日常")
+        self.assertEqual(exc.exception.code, 1)
+        self.assertIn("Local configuration or file operation failed", output.getvalue())
+        self.assertNotIn("Network request failed", output.getvalue())
+
+    def test_profile_list_exposes_presence_not_credentials(self):
+        self.configure_profiles()
+        output = self.run_cli("profile", "list")
+        self.assertNotIn("daily-token", output)
+        self.assertNotIn("school-token", output)
+        rows = json.loads(output)["profiles"]
+        self.assertEqual([row["name"] for row in rows], ["日常", "测试 环境"])
+        self.assertEqual([row["default"] for row in rows], [True, False])
+        self.assertTrue(all(row["credentials_present"] for row in rows))
+
+    def test_login_continuation_round_trips_arbitrary_profile_names(self):
+        for name in ("-demo", "客户 A", "客户'B", "a/b"):
+            context = course_creator_cli.profile_store().set_profile(name, "cn")
+            with mock.patch.object(course_creator_cli.platform, "system", return_value="Linux"):
+                hint = course_creator_cli._login_instruction(context, wait=True)
+            command = hint.removeprefix("Run `").removesuffix("`")
+            args = course_creator_cli.build_parser().parse_args(course_creator_cli.shlex.split(command)[1:])
+            self.assertEqual(args.profile, name)
+            self.assertTrue(args.wait)
 
 
 class CourseCreatorVerificationUrlTests(unittest.TestCase):
@@ -256,6 +521,14 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
 
 
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
+    def setUp(self):
+        tmp = self.enterContext(tempfile.TemporaryDirectory())
+        self.root = Path(tmp)
+        self.enterContext(mock.patch.dict(course_creator_cli.os.environ,
+                                         {"AI_SHIFU_CONFIG_DIR": tmp}, clear=True))
+        self.enterContext(mock.patch.object(course_creator_cli, "ENV_FILE", self.root / "skill.env"))
+        self.context = course_creator_cli.profile_store().set_profile("例子", "https://example.test")
+
     def test_env_example_documents_base_url_and_token(self):
         env_example = SCRIPT_DIR.parent / ".env.example"
         content = env_example.read_text(encoding="utf-8")
@@ -338,11 +611,11 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
             self.assertIn("missing environment template", stderr.getvalue())
 
     def test_login_starts_device_authorization_on_custom_base_url(self):
-        args = types.SimpleNamespace(wait=False, timeout=120)
+        args = types.SimpleNamespace(wait=False, timeout=120, _profile_context=self.context)
         with (
             mock.patch.dict(
                 course_creator_cli.os.environ,
-                {"SHIFU_BASE_URL": "https://example.test/"},
+                {"SHIFU_BASE_URL": "https://example.test/", "AI_SHIFU_CONFIG_DIR": str(self.root)},
                 clear=True,
             ),
             mock.patch.object(
@@ -359,7 +632,6 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
                     },
                 },
             ) as login_post,
-            mock.patch.object(course_creator_cli, "_write_private_json") as write_json,
             mock.patch("webbrowser.open") as open_browser,
             contextlib.redirect_stdout(io.StringIO()) as stdout,
         ):
@@ -377,7 +649,7 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         # The device code can be exchanged for a token, so it must stay on disk
         # and out of the calling agent's transcript.
         self.assertNotIn("secret-device-code", printed)
-        stored = write_json.call_args[0][1]
+        stored = course_creator_cli.profiles.read_private_json(course_creator_cli.pending_auth_path(self.context))
         self.assertEqual(stored["device_code"], "secret-device-code")
 
     def test_login_prints_plain_verification_uri_and_pairing_code(self):
@@ -391,79 +663,72 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
                     "verification_uri": "https://example.test/login/device",
                 }},
             ) as login_post,
-            mock.patch.object(course_creator_cli, "_write_private_json") as write_json,
             mock.patch("webbrowser.open") as open_browser,
             contextlib.redirect_stdout(io.StringIO()) as stdout,
         ):
-            course_creator_cli._start_device_authorization("https://example.test")
+            course_creator_cli._start_device_authorization(self.context)
 
         printed = stdout.getvalue()
         self.assertIn("  https://example.test/login/device\n", printed)
         self.assertIn("Pairing code: AC4-7HK", printed)
         self.assertNotIn("secret-device-code", printed)
         self.assertEqual(login_post.call_count, 1)
-        self.assertEqual(write_json.call_args[0][1]["device_code"], "secret-device-code")
+        stored = course_creator_cli.profiles.read_private_json(course_creator_cli.pending_auth_path(self.context))
+        self.assertEqual(stored["device_code"], "secret-device-code")
         open_browser.assert_not_called()
 
     def test_login_wait_saves_the_token_once_approved(self):
-        args = types.SimpleNamespace(wait=True, timeout=30)
+        args = types.SimpleNamespace(wait=True, timeout=30, _profile_context=self.context)
+        store = course_creator_cli.profile_store()
+        store.save_pending_auth(self.context, {
+            "device_code": "secret-device-code", "user_code": "AC4-7HK",
+            "interval": 1, "expires_at": course_creator_cli.time.time() + 600,
+            "base_url": self.context.base_url,
+        })
         with (
             mock.patch.dict(
                 course_creator_cli.os.environ,
-                {"SHIFU_BASE_URL": "https://example.test/"},
+                {"SHIFU_BASE_URL": "https://example.test/", "AI_SHIFU_CONFIG_DIR": str(self.root)},
                 clear=True,
-            ),
-            mock.patch.object(
-                course_creator_cli,
-                "_read_json_file",
-                return_value={
-                    "device_code": "secret-device-code",
-                    "user_code": "AC4-7HK",
-                    "interval": 1,
-                    "expires_at": course_creator_cli.time.time() + 600,
-                },
             ),
             mock.patch.object(
                 course_creator_cli,
                 "_poll_device_authorization",
                 return_value=("approved", "new-token"),
             ) as poll,
-            mock.patch.object(course_creator_cli, "save_token") as save_token,
-            mock.patch.object(course_creator_cli.Path, "unlink"),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             course_creator_cli.cmd_login(args)
 
         poll.assert_called_once_with("https://example.test", "secret-device-code")
-        save_token.assert_called_once_with("new-token")
+        self.assertEqual(store.load_token(self.context), "new-token")
+        self.assertFalse(store.pending_auth_path(self.context).exists())
 
     def test_login_wait_reports_a_denied_request(self):
-        args = types.SimpleNamespace(wait=True, timeout=30)
+        args = types.SimpleNamespace(wait=True, timeout=30, _profile_context=self.context)
+        store = course_creator_cli.profile_store()
+        store.save_pending_auth(self.context, {
+            "device_code": "secret", "interval": 1, "base_url": self.context.base_url,
+        })
         with (
-            mock.patch.object(
-                course_creator_cli,
-                "_read_json_file",
-                return_value={"device_code": "secret", "interval": 1},
-            ),
             mock.patch.object(
                 course_creator_cli,
                 "_poll_device_authorization",
                 return_value=("denied", ""),
             ),
-            mock.patch.object(course_creator_cli, "save_token") as save_token,
-            mock.patch.object(course_creator_cli.Path, "unlink"),
             contextlib.redirect_stdout(io.StringIO()),
             self.assertRaises(SystemExit) as exit_ctx,
         ):
             course_creator_cli.cmd_login(args)
 
         self.assertEqual(exit_ctx.exception.code, 1)
-        save_token.assert_not_called()
+        self.assertFalse(store.credentials_path(self.context).exists())
+        self.assertFalse(store.pending_auth_path(self.context).exists())
 
     def test_login_wait_without_a_pending_request_fails_clearly(self):
-        args = types.SimpleNamespace(wait=True, timeout=30)
+        args = types.SimpleNamespace(wait=True, timeout=30, _profile_context=self.context)
         with (
-            mock.patch.object(course_creator_cli, "_read_json_file", return_value=None),
+            mock.patch.object(course_creator_cli.profiles, "read_private_json", return_value=None),
             contextlib.redirect_stdout(io.StringIO()) as stdout,
             self.assertRaises(SystemExit) as exit_ctx,
         ):
@@ -474,24 +739,20 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
 
     def test_plaintext_base_url_is_refused(self):
         """Authorization carries credentials, so it must not go over http."""
-        with self.assertRaises(SystemExit) as exit_ctx, contextlib.redirect_stdout(
-            io.StringIO()
-        ) as stdout:
-            course_creator_cli.require_secure_base_url("http://example.test")
-        self.assertEqual(exit_ctx.exception.code, 1)
-        self.assertIn("https", stdout.getvalue())
+        with self.assertRaisesRegex(course_creator_cli.profiles.ProfileError, "HTTPS"):
+            course_creator_cli.profiles.normalize_base_url("http://example.test")
 
     def test_loopback_may_stay_plaintext_for_local_development(self):
         for url in ("http://localhost:5800", "http://127.0.0.1:5800"):
-            self.assertEqual(course_creator_cli.require_secure_base_url(url), url)
+            self.assertEqual(course_creator_cli.profiles.normalize_base_url(url), url)
 
     def test_https_base_url_is_accepted(self):
         url = "https://app.ai-shifu.cn"
-        self.assertEqual(course_creator_cli.require_secure_base_url(url), url)
+        self.assertEqual(course_creator_cli.profiles.normalize_base_url(url), url)
 
     def test_wait_refuses_a_device_code_issued_by_another_host(self):
         """The device code belongs to the host that issued it."""
-        args = types.SimpleNamespace(wait=True, timeout=30)
+        args = types.SimpleNamespace(wait=True, timeout=30, _profile_context=self.context)
         with (
             mock.patch.dict(
                 course_creator_cli.os.environ,
@@ -499,8 +760,8 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
                 clear=True,
             ),
             mock.patch.object(
-                course_creator_cli,
-                "_read_json_file",
+                course_creator_cli.profiles,
+                "read_private_json",
                 return_value={
                     "device_code": "secret",
                     "base_url": "https://original.example",
@@ -595,15 +856,16 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
                 {"AI_SHIFU_CONFIG_DIR": tmp},
                 clear=True,
             ):
-                course_creator_cli.save_token("stored-token")
-                self.assertEqual(course_creator_cli.load_saved_token(), "stored-token")
-                path = course_creator_cli.credentials_path()
+                context = course_creator_cli.profile_store().set_profile("名称", "cn")
+                course_creator_cli.save_token("stored-token", context)
+                self.assertEqual(course_creator_cli.profile_store().load_token(context), "stored-token")
+                path = course_creator_cli.credentials_path(context)
 
             self.assertTrue(str(path).startswith(tmp))
             # Owner-only permissions: the file holds a live credential.
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
-    def test_legacy_token_is_migrated_out_of_the_env_file(self):
+    def test_unknown_legacy_origin_is_preserved_without_guessing(self):
         with tempfile.TemporaryDirectory() as tmp:
             env_file = Path(tmp) / ".env"
             env_file.write_text("SHIFU_TOKEN=legacy-token\n", encoding="utf-8")
@@ -616,17 +878,12 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
                     clear=True,
                 ),
                 mock.patch.object(course_creator_cli, "ENV_FILE", env_file),
-                mock.patch.object(
-                    course_creator_cli,
-                    "dotenv_values",
-                    return_value={"SHIFU_TOKEN": "legacy-token"},
-                ),
-                mock.patch.object(course_creator_cli, "set_key") as set_key,
+                mock.patch.object(course_creator_cli.profiles, "dotenv_values",
+                                  return_value={"SHIFU_TOKEN": "legacy-token"}),
             ):
-                course_creator_cli.migrate_legacy_token()
-                self.assertEqual(course_creator_cli.load_saved_token(), "legacy-token")
-
-            set_key.assert_called_once_with(str(env_file), "SHIFU_TOKEN", "")
+                course_creator_cli.profile_store().migrate_legacy({})
+                self.assertEqual(course_creator_cli.profile_store().list_profiles(), [])
+            self.assertIn("legacy-token", env_file.read_text())
 
     def test_migration_never_rewrites_an_exported_token(self):
         """A SHIFU_TOKEN the user exported is theirs; only the .env is migrated."""
@@ -645,8 +902,10 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
                 ),
                 mock.patch.object(course_creator_cli, "ENV_FILE", missing_env),
             ):
-                course_creator_cli.migrate_legacy_token()
-                self.assertEqual(course_creator_cli.load_saved_token(), "")
+                course_creator_cli.profile_store().migrate_legacy(dict(course_creator_cli.os.environ))
+                self.assertEqual(course_creator_cli.profile_store().list_profiles(), [])
+            self.assertFalse((config_dir / "settings.json").exists())
+            self.assertFalse((config_dir / "profiles").exists())
 
 
 class CourseCreatorCliPaginationTests(unittest.TestCase):
