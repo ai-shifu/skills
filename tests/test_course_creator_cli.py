@@ -541,6 +541,7 @@ class CourseCreationAttributionTests(unittest.TestCase):
                 return_value=(self.base_url, "test-token"),
             )
         )
+        self.enterContext(mock.patch.object(course_creator_cli.requests, "post"))
 
     def test_create_sends_platform_attribution(self):
         with mock.patch.object(
