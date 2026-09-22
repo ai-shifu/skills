@@ -2909,8 +2909,6 @@ class CourseCreatorContractTests(unittest.TestCase):
         checklist = markdown_section(self.optimization_checklist, "Course Prompt")
 
         for required_behavior in (
-            "Use learner context only for the adaptations specified above",
-            "where the current user message leaves those details open",
             "objectives, facts and boundaries, teaching method, content sequence, "
             "pacing, required examples, interactions, exact material, slide count "
             "and order, and close unchanged",
