@@ -30,9 +30,9 @@ Do not run Teaching Prompt generation or build `course_index` and `global_variab
 1. Normalize source ordering and merge the input material.
 2. Run Segmentation and retain its traceable segments and lesson-boundary candidates.
 3. Finalize lesson cuts with one core question per lesson.
-4. Finalize an internal execution plan for each lesson: the teaching sequence, every required teaching action's presence, placement, and effect, interaction and feedback adjacency, close, and, when applicable, exact slide count and order, each slide's teaching function, content grouping, visual hierarchy, and semantic layout. Resolve this plan without using `teaching_prompt_personalization_level` as an input.
+4. Finalize an internal execution plan for each lesson: the teaching sequence, every required teaching action's presence, placement, and effect, interaction and feedback adjacency, close, and, when applicable, exact slide count and order, each slide's teaching function, content grouping, visual hierarchy, and semantic layout. Resolve this plan without using `personalization_directions` as an input.
    - Before finalizing the plan, resolve its teaching-aid decisions through `pedagogy.md#examples-and-analogies`, including when existing material suffices or no additional aid is needed. Pass those decisions as part of the finalized plan to generation.
-5. Run Teaching Prompt generation for each lesson with that plan and the normalized `teaching_prompt_personalization_level` passed unchanged across the course. Materialize the plan as direct local runtime instructions in final execution order; source-only navigation comments may precede them, and after those comments are removed the first remaining item contains the first learner-time teaching action. Keep the plan and personalization control in the in-memory authoring handoff.
+5. Run Teaching Prompt generation for each lesson with that plan and the normalized `personalization_directions` passed unchanged across the course. Materialize the plan as direct local runtime instructions in final execution order; source-only navigation comments may precede them, and after those comments are removed the first remaining item contains the first learner-time teaching action. Keep the plan and personalization control in the in-memory authoring handoff.
    - If a lesson reports a blocked image upload, retain completed local work and continue only independent lessons. Keep the affected lesson and full-course handoff blocked until image handling succeeds; the gates below still apply.
 6. Build `course_index` and `global_variable_table` from the completed lesson set.
 7. Apply the gates below. Rerun the phase that owns each failed output rather than treating every failure as a lesson-only generation failure.
@@ -42,7 +42,7 @@ Do not run Teaching Prompt generation or build `course_index` and `global_variab
 
 - Verify syntax and runtime results through the requirements loaded by `teaching-prompt.md`.
 - Recover each Teaching Prompt's execution signature from its actual ordered instructions and compare it with the internal execution plan. Verify teaching and slide order, slide count, local content and effects, content grouping and hierarchy, interaction-control-feedback adjacency, images, and the close from the artifact itself.
-- Verify each Teaching Prompt's content-expression specificity against `teaching-prompt.md#personalization-levels`. Across level variants, the recovered execution signature remains unchanged while only ordinary wording and already-permitted example detail vary.
+- Verify each Teaching Prompt's selected adaptations and unselected baseline against `teaching-prompt.md#personalization-directions`. Across direction variants, the recovered execution signature remains unchanged and required detailed explanations remain complete.
 - Verify every learner-answer variable against `data-contracts.md#variable-table`.
 - Verify the selected teaching loop, interaction effects, variable-persistence decisions, and delivery-mode behavior against `pedagogy.md`.
 - Require Segmentation's preservation validation to pass.

@@ -7,6 +7,7 @@ Course-level materialization contract for the Course Prompt artifact.
 - `language-policy.md`
 - `prompt-contracts.md#prompt-semantics`
 - `prompt-contracts.md#artifact-responsibilities`
+- `prompt-contracts.md#personalization-directions`
 - `data-contracts.md#input-contract`
 - `data-contracts.md#variable-table`
 - `markdownflow.md#variables`
@@ -54,10 +55,9 @@ The course author's intended audience and course constraints remain hard boundar
 # Teaching Techniques
 
 - Treat the current user message as authoritative for the lesson's teaching method, explanation path, content sequence, pacing, examples, practice, interactions, feedback, and close.
-- Follow those instructions faithfully. Do not replace, reorder, omit, or supplement them with a generic course-level teaching framework.
-- Actively use relevant learner context when it is available. Use only explicitly stated background, experience, goals, constraints, and preferences to shape ordinary examples, terminology, prerequisite scaffolding, emphasis, explanation depth, language style, and non-deterministic feedback, and only where the current user message leaves those details open.
-- Keep the current user message's objectives, facts and boundaries, teaching method, content sequence, pacing, required examples, interactions, exact material, slide count and order, and close unchanged. Learner context may personalize expression inside those decisions but may not replace them.
-- Apply learner context naturally without quoting, summarizing, or mentioning the learner profile. If the context is empty, `UNKNOWN`, irrelevant, or unavailable, use neutral course-appropriate defaults and do not infer missing facts.
+- Follow those instructions faithfully. Do not replace, reorder, omit, or supplement them.
+- XXX
+- Do not quote, summarize, or mention the learner profile. If the context is empty, `UNKNOWN`, irrelevant, or unavailable, use neutral course-appropriate defaults and do not infer missing facts.
 
 # Writing Style
 
@@ -92,6 +92,7 @@ The course author's intended audience and course constraints remain hard boundar
 | Course name (`The current course is *XXX*`) | First heading in `README.md`. |
 | Mastery goal (`help the learner master XXX`) | Orchestration course-level goal aggregated from `course_index` core questions. |
 | Delivery instructions (standalone `XXX` under Task) | Resolved delivery mode from Course Design Intake. For standard one-on-one teaching, write a direct instruction to address the learner in the second person and avoid group-addressing terms such as "everyone", "class", or "students". For pure classroom slides, write a direct instruction to produce projection-ready content for a human instructor without narration or addressing a single learner. Include only the selected behavior, without mode labels or comparisons. Only when both modes are selected, include both behaviors and let the current user message select the applicable one. |
+| Personalization instructions (standalone `XXX` under Teaching Techniques) | Resolved `personalization_directions` from Course Design Intake, with effects defined in `prompt-contracts.md#personalization-directions`. Write direct teaching instructions for exactly the selected directions, using relevant explicitly stated learner background and preferences. For `[]`, write a direct instruction to teach from the source, author requirements, and intended audience without individual-background adaptation. Do not output the field name, enum values, selection interface, unselected adaptation instructions, or an if-selected rule. |
 
 Use these inputs as context constraints while wording the applicable fill values; they do not add placeholders to the template:
 
@@ -102,10 +103,11 @@ Use these inputs as context constraints while wording the applicable fill values
 ## Materialization Checks
 
 - The six template sections are present in their original order and localized to `resolved_target_language`.
-- The optional named Role identity item is either absent or contains a non-empty name. The remaining five `XXX` occurrences are replaced with course-specific content derived from the mapped sources, and the completed artifact contains no unresolved `XXX` placeholder.
+- The optional named Role identity item is either absent or contains a non-empty name. The remaining six `XXX` occurrences are replaced with course-specific content derived from the mapped sources, and the completed artifact contains no unresolved `XXX` placeholder.
 - Delivery instructions state the selected behavior directly. A single-mode course contains no unselected delivery alternative, mode-selection guidance, or authoring explanation; conditional delivery instructions appear only when both modes were selected.
 - Every non-placeholder template instruction remains represented with the same behavior.
 - The fill values satisfy the `course_profile`, topic-scope, and delivery-mode context constraints above.
-- The bounded learner-context behavior remains represented without adding platform learner-profile tags, internal learner-profile variable names, or new placeholders to the Course Prompt.
+- The learner-context instructions enable exactly the resolved directions under `prompt-contracts.md#personalization-directions`; `[]` produces the uniform course baseline. No unselected direction is enabled implicitly through a generic personalization rule or style instruction. Selected language style can vary within the shared clear, restrained, warm baseline; otherwise that baseline stays course-wide.
+- The artifact contains no authoring field name or enum array, platform learner-profile tags, internal learner-profile variable names, or unresolved personalization placeholder.
 - Every presentation requirement that applies uniformly to every slide remains in the `# Slides` section. The section does not special-case a cover or any other slide position or teaching purpose, and it does not change lesson-specific slide structure or pedagogy supplied by the current user message.
 - The completed artifact follows [prompt-contracts.md](prompt-contracts.md), and any variable references have the runtime behavior defined in [markdownflow.md#variables](markdownflow.md#variables), without copying those rules into this file.

@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Validate personalization within each supplied Prompt artifact and mark unavailable companion alignment as not assessed, preserving standalone generation and content-only audits.
+- Keep generic Course Prompt template rules limited to lesson boundaries, learner-profile privacy, and neutral fallbacks so only the author's selected directions enable personalization.
+- Verify an existing Course Prompt's personalization behavior before reusing it for lesson generation; report incompatible course-wide instructions as a dependency without expanding a lesson-only edit.
+- Use the same personalization choices and intake rules in every delivery mode, including pure classroom slides; a missing selection always prompts the author instead of silently defaulting to none.
+- Replace the five personalization strength levels with independent choices for examples, analogies, language style, and practical value. Carry the selection into both Prompt artifacts, preserve the course baseline for unselected directions, and keep required detailed explanations and lesson structure complete even when none are selected.
+- Make Course Prompts explicitly adapt language style, examples, analogies, and practical value to learner background and preferences. Put background-based example and analogy directions and content-specific detailed explanation requirements directly at the relevant Teaching Prompt positions, including when learner context becomes available only during delivery.
 - Fill Course Prompts with the selected delivery instructions: single-mode courses contain only their applicable behavior, while explicitly combined courses retain conditional delivery. Remove leftover mode-selection guidance from the fixed slide instructions.
 - Support arbitrarily named service profiles with one explicit default, isolated login and pending authorization, custom service URLs, and recoverable migration of existing configuration. Keep a selected profile fixed throughout platform work and validate course-directory source identities before network operations; preserve image-upload records separately by service.
 - Preserve finalized example and analogy decisions during Teaching Prompt generation; resolve teaching aids before orchestration freezes the plan, while standalone generation from approved segments still builds its plan locally.
