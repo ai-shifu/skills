@@ -542,7 +542,7 @@ class CourseCreationAttributionTests(unittest.TestCase):
             )
         )
 
-    def test_create_sends_lobster_attribution(self):
+    def test_create_sends_platform_attribution(self):
         with mock.patch.object(
             course_creator_cli, "api", return_value={"bid": "course-new"}
         ) as api_call:
@@ -551,16 +551,54 @@ class CourseCreationAttributionTests(unittest.TestCase):
             )
 
         payload = api_call.call_args.kwargs["json"]
+        self.assertEqual(payload["creation_attribution"]["host_platform"], "direct")
         self.assertEqual(
-            payload["creation_attribution"]["creation_source"], "ai_assistant"
+            payload["creation_attribution"]["skill_id"],
+            "ai-shifu-course-creator",
         )
-        self.assertEqual(
-            payload["creation_attribution"]["source_product"], "lobster"
-        )
+        self.assertTrue(payload["creation_attribution"]["skill_version"])
         self.assertRegex(
             payload["creation_attribution"]["handoff_id"],
             r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
         )
+
+    def test_configured_host_platform_is_used(self):
+        with mock.patch.dict(
+            course_creator_cli.os.environ,
+            {"AI_SHIFU_CONFIG_DIR": str(course_creator_cli.config_dir()),
+             "AI_SHIFU_HOST_PLATFORM": "doubao"},
+            clear=True,
+        ):
+            self.assertEqual(course_creator_cli.host_platform(), "doubao")
+
+    def test_invalid_host_platform_is_rejected_before_attribution(self):
+        with mock.patch.dict(
+            course_creator_cli.os.environ,
+            {"AI_SHIFU_HOST_PLATFORM": "user-supplied"},
+            clear=True,
+        ), self.assertRaisesRegex(RuntimeError, "AI_SHIFU_HOST_PLATFORM"):
+            course_creator_cli.host_platform()
+
+    def test_journey_event_uses_only_allowlisted_fields_and_is_fail_open(self):
+        with mock.patch.object(
+            course_creator_cli.requests,
+            "post",
+            side_effect=OSError("network down"),
+        ) as post:
+            course_creator_cli.report_skill_journey(
+                self.base_url,
+                "secret-token",
+                "course_creation_completed",
+                "52cefd54-930a-4c06-b62d-00de456cd56f",
+                "course-1",
+            )
+
+        payload = post.call_args.kwargs["json"]
+        self.assertEqual(
+            set(payload),
+            {"event_id", "event_name", "host_platform", "skill_id", "skill_version", "shifu_bid"},
+        )
+        self.assertNotIn("secret-token", json.dumps(payload))
 
     def test_create_keeps_retry_reservation_when_response_has_no_course_id(self):
         with (
@@ -684,8 +722,8 @@ class CourseCreationAttributionTests(unittest.TestCase):
                     if existing_bid is None:
                         self.assertEqual(len(create_calls), 1)
                         self.assertEqual(
-                            create_calls[0][2]["creation_attribution"]["source_product"],
-                            "lobster",
+                            create_calls[0][2]["creation_attribution"]["host_platform"],
+                            "direct",
                         )
                     else:
                         self.assertEqual(create_calls, [])
@@ -1311,8 +1349,8 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertEqual(called_path, "/api/user/device/authorize")
         self.assertIn("device_name", payload)
         attribution = payload["registration_attribution"]
-        self.assertEqual(attribution["creation_source"], "ai_assistant")
-        self.assertEqual(attribution["source_product"], "lobster")
+        self.assertEqual(attribution["host_platform"], "direct")
+        self.assertEqual(attribution["skill_id"], "ai-shifu-course-creator")
 
         printed = stdout.getvalue()
         open_browser.assert_not_called()
@@ -1378,38 +1416,36 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertFalse(store.pending_auth_path(self.context).exists())
 
     def test_login_wait_transfers_the_registration_handoff(self):
-        args = types.SimpleNamespace(wait=True, timeout=30)
+        args = types.SimpleNamespace(
+            wait=True, timeout=30, _profile_context=self.context
+        )
         handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
+        store = course_creator_cli.profile_store()
+        store.save_pending_auth(
+            self.context,
+            {
+                "device_code": "secret-device-code",
+                "interval": 1,
+                "expires_at": course_creator_cli.time.time() + 600,
+                "base_url": self.context.base_url,
+                "course_handoff_id": handoff_id,
+            },
+        )
         with (
-            mock.patch.dict(
-                course_creator_cli.os.environ,
-                {"SHIFU_BASE_URL": "https://example.test/"},
-                clear=True,
-            ),
-            mock.patch.object(
-                course_creator_cli,
-                "_read_json_file",
-                return_value={
-                    "device_code": "secret-device-code",
-                    "interval": 1,
-                    "expires_at": course_creator_cli.time.time() + 600,
-                    "course_handoff_id": handoff_id,
-                },
-            ),
             mock.patch.object(
                 course_creator_cli,
                 "_poll_device_authorization",
                 return_value=("approved", "new-token"),
             ),
-            mock.patch.object(course_creator_cli, "save_token") as save_token,
-            mock.patch.object(course_creator_cli.Path, "unlink"),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             course_creator_cli.cmd_login(args)
 
-        save_token.assert_called_once_with(
-            "new-token", course_handoff_id=handoff_id
+        saved = course_creator_cli._read_json_file(
+            course_creator_cli.credentials_path(self.context)
         )
+        self.assertEqual(saved["token"], "new-token")
+        self.assertEqual(saved["course_handoff_id"], handoff_id)
 
     def test_login_wait_reports_a_denied_request(self):
         args = types.SimpleNamespace(wait=True, timeout=30, _profile_context=self.context)

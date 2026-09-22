@@ -164,8 +164,9 @@ class TrackTests(unittest.TestCase):
         # data must contain only module-generated fields (privacy contract)
         self.assertEqual(
             set(payload["data"]),
-            {"skill", "version", "agent", "os", "arch", "python"},
+            {"skill", "version", "agent", "os", "arch", "python", "host_platform"},
         )
+        self.assertEqual(payload["data"]["host_platform"], "direct")
         self.assertTrue(
             kwargs["headers"]["User-Agent"].startswith("Mozilla/5.0 (")
         )
@@ -200,6 +201,27 @@ class TrackTests(unittest.TestCase):
             side_effect=OSError("network down"),
         ):
             usage_tracker.track("cli_list")  # must not raise
+
+    def test_allowlisted_host_platform_is_reported(self) -> None:
+        with mock.patch.dict(
+            usage_tracker.os.environ,
+            self._env(AI_SHIFU_HOST_PLATFORM="workbuddy"),
+            clear=True,
+        ), mock.patch.object(
+            usage_tracker, "distinct_id", return_value="a:x"
+        ), mock.patch.object(usage_tracker.requests, "post") as post:
+            usage_tracker.track("cli_list")
+
+        data = post.call_args.kwargs["json"]["payload"]["data"]
+        self.assertEqual(data["host_platform"], "workbuddy")
+
+    def test_unknown_host_platform_falls_back_to_direct(self) -> None:
+        with mock.patch.dict(
+            usage_tracker.os.environ,
+            self._env(AI_SHIFU_HOST_PLATFORM="untrusted-value"),
+            clear=True,
+        ):
+            self.assertEqual(usage_tracker.host_platform(), "direct")
 
 
 if __name__ == "__main__":

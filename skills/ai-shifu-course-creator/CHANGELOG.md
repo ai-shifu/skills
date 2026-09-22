@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Record the controlled host platform for direct and packaged Skill installs,
+  attach the same attribution contract to registration and new-course creation,
+  and report best-effort authorization, creation, import, and publish milestones.
 - Fill Course Prompts with the selected delivery instructions: single-mode courses contain only their applicable behavior, while explicitly combined courses retain conditional delivery. Remove leftover mode-selection guidance from the fixed slide instructions.
 - Support arbitrarily named service profiles with one explicit default, isolated login and pending authorization, custom service URLs, and recoverable migration of existing configuration. Keep a selected profile fixed throughout platform work and validate course-directory source identities before network operations; preserve image-upload records separately by service.
 - Preserve finalized example and analogy decisions during Teaching Prompt generation; resolve teaching aids before orchestration freezes the plan, while standalone generation from approved segments still builds its plan locally.
@@ -13,9 +16,8 @@
 - Define one canonical responsibility for every Course Creator package file and route cross-file maintenance through the owning reference.
 - Route current-title and draft-versus-published title questions through analytics metadata resolution.
 - Attribute new registrations and courses created by `create` or `import
-  --new` to the Lobster AI-assisted workflow with a generated cross-system
-  handoff identifier, without reclassifying existing users or existing-course
-  imports.
+  --new` to the invoking Skill platform with a generated cross-system handoff
+  identifier, without reclassifying existing users or existing-course imports.
 - Remove the complete local, artifact-only, author-only course path so a full-course request continues through deployment and publication by default.
 - Open browser URLs in new visible tabs, reusing only exact URL matches so existing pages and unfinished work are preserved.
 - Share built-in browser URL opening across authorization and course handoffs, including host selection, visible interaction, user opt-outs, and opening result handling.

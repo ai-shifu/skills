@@ -309,10 +309,13 @@ class ProfileStore:
             raise ProfileError(f"Invalid credentials for profile '{context.name}'; run logout and login for this profile.")
         return token.strip()
 
-    def save_token(self, context, token):
+    def save_token(self, context, token, *, course_handoff_id=""):
         if not isinstance(token, str) or not token.strip():
             raise ProfileError("Cannot save an empty token.")
-        write_private_json(credentials_path(context), {"base_url": context.base_url, "token": token.strip()})
+        payload = {"base_url": context.base_url, "token": token.strip()}
+        if course_handoff_id:
+            payload["course_handoff_id"] = course_handoff_id
+        write_private_json(credentials_path(context), payload)
 
     def _current_auth_context(self, context):
         """Revalidate an authorization context while the caller holds the settings lock."""
@@ -341,7 +344,11 @@ class ProfileStore:
                     "Pending authorization changed or was cleared; run login again for this profile."
                 )
             if token is not None:
-                self.save_token(current, token)
+                self.save_token(
+                    current,
+                    token,
+                    course_handoff_id=str(pending.get("course_handoff_id") or ""),
+                )
             path.unlink()
 
     def logout(self, context):

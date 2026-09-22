@@ -31,7 +31,8 @@ Existing-course edits and standalone platform-management operations are outside 
 ## Preconditions
 
 - Complete `authentication.md`.
-- Browser authorization carries a generated Lobster handoff identifier. The
+- Browser authorization carries a generated Skill handoff identifier and the
+  allowlisted host platform configured by the distribution package. The
   platform records it as registration attribution only when authorization
   results in a newly registered account; signing an existing account into the
   CLI does not change that account's registration source.

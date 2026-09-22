@@ -5,8 +5,8 @@ Every function here must never raise into the caller and never block the CLI:
 tracking is strictly best-effort (short timeout, all exceptions swallowed),
 mirroring the fail-open contract of skill_update.py.
 
-What is sent per event: event name (CLI command), skill name/version, host
-agent (Claude Code / opencode / codex / ...), OS/arch/Python version, and a
+What is sent per event: event name (CLI command), skill name/version, controlled
+host platform, host agent (Claude Code / opencode / codex / ...), OS/arch/Python version, and a
 distinct id (platform user_id when logged in, otherwise a random anonymous
 UUID persisted in ~/.ai-shifu/analytics-id). No course content, titles, file
 paths, or tokens are ever sent. Set AI_SHIFU_SKILL_TELEMETRY=off to disable.
@@ -48,6 +48,12 @@ REQUEST_TIMEOUT = 3
 DISTINCT_ID_MAX = 50
 
 _OPT_OUT_VALUES = frozenset({"off", "0", "false", "no"})
+_HOST_PLATFORMS = frozenset({"workbuddy", "doubao", "lobster", "codex", "direct"})
+
+
+def host_platform() -> str:
+    value = os.environ.get("AI_SHIFU_HOST_PLATFORM", "").strip().lower()
+    return value if value in _HOST_PLATFORMS else "direct"
 
 # Host-agent env markers, checked in order. The generic AI_AGENT convention
 # (checked first in detect_agent) usually carries name + version already.
@@ -278,6 +284,7 @@ def track(event_name: str, *, token: str | None = None) -> None:
                 "os": platform.system().lower(),
                 "arch": platform.machine(),
                 "python": platform.python_version(),
+                "host_platform": host_platform(),
             },
         }
         requests.post(

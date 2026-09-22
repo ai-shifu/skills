@@ -70,10 +70,46 @@ _TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
 COURSE_LIST_PAGE_SIZE = 50
 MAX_COURSE_PAGES = 10
 
-COURSE_CREATION_SOURCE = "ai_assistant"
-COURSE_SOURCE_PRODUCT = "lobster"
+SKILL_ID = "ai-shifu-course-creator"
+HOST_PLATFORM_ENV = "AI_SHIFU_HOST_PLATFORM"
+HOST_PLATFORMS = frozenset({"workbuddy", "doubao", "lobster", "codex", "direct"})
 COURSE_HANDOFF_LOCK_TIMEOUT_SECONDS = 30
 _ACTIVE_COURSE_CREATION_LEASES = set()
+
+
+def host_platform():
+    """Return the controlled package channel, defaulting direct installs safely."""
+    value = os.environ.get(HOST_PLATFORM_ENV, "").strip().lower() or "direct"
+    if value not in HOST_PLATFORMS:
+        allowed = ", ".join(sorted(HOST_PLATFORMS))
+        raise RuntimeError(f"{HOST_PLATFORM_ENV} must be one of: {allowed}")
+    return value
+
+
+def _journey_event_id(handoff_id, event_name):
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"ai-shifu:{handoff_id}:{event_name}"))
+
+
+def report_skill_journey(base_url, token, event_name, event_id, shifu_bid=""):
+    """Report one allowlisted journey milestone without affecting the operation."""
+    try:
+        payload = {
+            "event_id": event_id,
+            "event_name": event_name,
+            "host_platform": host_platform(),
+            "skill_id": SKILL_ID,
+            "skill_version": _client_version(),
+        }
+        if shifu_bid:
+            payload["shifu_bid"] = shifu_bid
+        requests.post(
+            f"{base_url}/api/user/skill/events",
+            json=payload,
+            headers={"Authorization": token, "Content-Type": "application/json"},
+            timeout=3,
+        )
+    except Exception:  # noqa: BLE001 - analytics must never block user work
+        return
 
 
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
@@ -157,20 +193,24 @@ def config_dir():
     return profiles.config_dir()
 
 
-def credentials_path(context):
+def credentials_path(context=None):
+    if context is None:
+        return config_dir() / "credentials.json"
     return profiles.credentials_path(context)
 
 
-def course_handoff_lock_path():
-    return config_dir() / "course-handoff.lock"
+def course_handoff_lock_path(context=None):
+    root = context.directory if context is not None else config_dir()
+    return root / "course-handoff.lock"
 
 
-def pending_course_creations_path():
-    return config_dir() / "pending-course-creations.json"
+def pending_course_creations_path(context=None):
+    root = context.directory if context is not None else config_dir()
+    return root / "pending-course-creations.json"
 
 
-def pending_auth_path():
-    return config_dir() / "pending-device-auth.json"
+def pending_auth_path(context):
+    return profiles.pending_auth_path(context)
 
 
 def _write_private_json(path, payload):
@@ -184,9 +224,9 @@ def _read_json_file(path):
         return None
 
 
-def _read_pending_course_creations():
+def _read_pending_course_creations(context=None):
     """Read the handoff journal, failing closed when existing data is unsafe."""
-    path = pending_course_creations_path()
+    path = pending_course_creations_path(context)
     if not path.exists():
         return {}
     try:
@@ -200,23 +240,23 @@ def _read_pending_course_creations():
     return pending
 
 
-def load_saved_token():
-    """Return the stored token, or an empty string when there is none."""
-    data = _read_json_file(credentials_path())
-    if isinstance(data, dict):
-        token = data.get("token")
-        if isinstance(token, str):
-            return token.strip()
-    return ""
+def save_token(token, context=None, *, course_handoff_id=""):
+    """Compatibility wrapper for the profile-aware credential store."""
+    if context is None:
+        payload = {"token": token}
+        if course_handoff_id:
+            payload["course_handoff_id"] = course_handoff_id
+        return _write_private_json(credentials_path(), payload)
+    return profile_store().save_token(
+        context, token, course_handoff_id=course_handoff_id
+    )
 
 
-def save_token(token, *, course_handoff_id=""):
-    """Persist the issued token to the user's config directory."""
-    payload = {"token": token}
-    if course_handoff_id:
-        payload["course_handoff_id"] = course_handoff_id
-    with _course_handoff_lock():
-        _write_private_json(credentials_path(), payload)
+def load_saved_token(context=None):
+    data = _read_json_file(credentials_path(context))
+    if not isinstance(data, dict):
+        return ""
+    return str(data.get("token") or "").strip()
 
 
 @contextlib.contextmanager
@@ -268,27 +308,6 @@ def _course_handoff_lock(
         handle.seek(0)
         unlock()
         handle.close()
-
-
-def migrate_legacy_token():
-    """Move a token written by an older CLI into the config directory.
-
-    Only the .env file is inspected, never the environment: a SHIFU_TOKEN the
-    user exported themselves belongs to them and must not be rewritten.
-    """
-    if load_saved_token() or not ENV_FILE.exists():
-        return
-    try:
-        legacy_token = (dotenv_values(str(ENV_FILE)) or {}).get("SHIFU_TOKEN") or ""
-    except OSError:
-        return
-    legacy_token = legacy_token.strip()
-    if not legacy_token:
-        return
-    save_token(legacy_token)
-    # Leave a single source of truth behind.
-    with contextlib.suppress(OSError):
-        set_key(str(ENV_FILE), "SHIFU_TOKEN", "")
 
 
 def _jwt_payload(token):
@@ -765,8 +784,9 @@ def _start_device_authorization(context):
             "device_os": device_os,
             "client_version": _client_version(),
             "registration_attribution": {
-                "creation_source": COURSE_CREATION_SOURCE,
-                "source_product": COURSE_SOURCE_PRODUCT,
+                "host_platform": host_platform(),
+                "skill_id": SKILL_ID,
+                "skill_version": _client_version(),
                 "handoff_id": handoff_id,
             },
         },
@@ -839,6 +859,14 @@ def _wait_for_device_authorization(context, timeout_seconds):
         status, token = _poll_device_authorization(base_url, device_code)
         if status == "approved" and token:
             profile_store().finish_pending_auth(context, device_code, token)
+            handoff_id = str(pending.get("course_handoff_id") or "")
+            if handoff_id:
+                report_skill_journey(
+                    base_url,
+                    token,
+                    "authorization_completed",
+                    _journey_event_id(handoff_id, "authorization_completed"),
+                )
             print(f"Authorization complete for profile {context.name!r}.")
             return
         if status == "denied":
@@ -1790,13 +1818,21 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
 def cmd_create(args):
     """Create a new empty course."""
     base_url, token = resolve_auth(args)
+    context = getattr(args, "_profile_context", None)
     operation_key = _course_creation_operation_key(
         "create",
         {"name": args.name, "description": args.description or ""},
     )
     with _course_creation_attribution(
-        token, operation_key
+        token, operation_key, context=context
     ) as creation_attribution:
+        handoff_id = creation_attribution["handoff_id"]
+        report_skill_journey(
+            base_url,
+            token,
+            "course_creation_started",
+            _journey_event_id(handoff_id, "course_creation_started"),
+        )
         result = api(
             base_url,
             token,
@@ -1809,6 +1845,13 @@ def cmd_create(args):
             },
         )
         bid = _course_bid_from_create_response(result)
+        report_skill_journey(
+            base_url,
+            token,
+            "course_creation_completed",
+            _journey_event_id(handoff_id, "course_creation_completed"),
+            bid,
+        )
     print(f"Created course: {bid}")
     print(f"  Name: {args.name}")
     _print_verification_urls(base_url, bid)
@@ -2550,13 +2593,16 @@ def _validate_pending_course_creation(record, token_digest):
 
 
 @contextlib.contextmanager
-def _course_creation_attribution(active_token, operation_key):
+def _course_creation_attribution(active_token, operation_key, context=None):
     """Bind one handoff to one operation until creation is confirmed."""
     token_digest = hashlib.sha256(active_token.encode("utf-8")).hexdigest()
     journal_key = f"{token_digest}:{operation_key}"
     lease_id = str(uuid.uuid4())
-    with _course_handoff_lock():
-        pending = _read_pending_course_creations()
+    lock_path = course_handoff_lock_path(context)
+    journal_path = pending_course_creations_path(context)
+    credential_path = credentials_path(context)
+    with _course_handoff_lock(lock_path):
+        pending = _read_pending_course_creations(context)
         existing_operation = pending.get(journal_key)
         if existing_operation is not None:
             _validate_pending_course_creation(existing_operation, token_digest)
@@ -2569,7 +2615,7 @@ def _course_creation_attribution(active_token, operation_key):
             existing_operation = legacy_operation
             pending.pop(operation_key, None)
             pending[journal_key] = legacy_operation
-            _write_private_json(pending_course_creations_path(), pending)
+            _write_private_json(journal_path, pending)
         reserved_handoff_id = ""
         retry_generation = None
         if (
@@ -2595,9 +2641,9 @@ def _course_creation_attribution(active_token, operation_key):
                     "retry_generation": retry_generation,
                 })
                 pending[journal_key] = existing_operation
-                _write_private_json(pending_course_creations_path(), pending)
+                _write_private_json(journal_path, pending)
         if not reserved_handoff_id:
-            credentials = _read_json_file(credentials_path())
+            credentials = _read_json_file(credential_path)
             credential_handoff_id = ""
             if (
                 isinstance(credentials, dict)
@@ -2628,8 +2674,8 @@ def _course_creation_attribution(active_token, operation_key):
             # Persist the reservation first. If the process exits before the
             # credential slot is cleared, other operations still see this
             # handoff in the journal and cannot consume it again.
-            _write_private_json(pending_course_creations_path(), pending)
-        credentials = _read_json_file(credentials_path())
+            _write_private_json(journal_path, pending)
+        credentials = _read_json_file(credential_path)
         if (
             isinstance(credentials, dict)
             and credentials.get("token") == active_token
@@ -2637,11 +2683,14 @@ def _course_creation_attribution(active_token, operation_key):
         ):
             # This also handles recovery after interruption between the journal
             # write and the original credential cleanup.
-            _write_private_json(credentials_path(), {"token": active_token})
+            cleaned_credentials = dict(credentials)
+            cleaned_credentials.pop("course_handoff_id", None)
+            _write_private_json(credential_path, cleaned_credentials)
         _ACTIVE_COURSE_CREATION_LEASES.add(lease_id)
         attribution = {
-            "creation_source": COURSE_CREATION_SOURCE,
-            "source_product": COURSE_SOURCE_PRODUCT,
+            "host_platform": host_platform(),
+            "skill_id": SKILL_ID,
+            "skill_version": _client_version(),
             "handoff_id": reserved_handoff_id,
         }
     succeeded = False
@@ -2649,9 +2698,9 @@ def _course_creation_attribution(active_token, operation_key):
         yield attribution
         succeeded = True
     finally:
-        with _course_handoff_lock():
+        with _course_handoff_lock(lock_path):
             _ACTIVE_COURSE_CREATION_LEASES.discard(lease_id)
-            latest_pending = _read_pending_course_creations()
+            latest_pending = _read_pending_course_creations(context)
             current = latest_pending.get(journal_key)
             if (
                 isinstance(current, dict)
@@ -2688,7 +2737,7 @@ def _course_creation_attribution(active_token, operation_key):
                     current["retry_required"] = current_retry_required
                     current["failure_generation"] = current_generation
                     latest_pending[journal_key] = current
-                _write_private_json(pending_course_creations_path(), latest_pending)
+                _write_private_json(journal_path, latest_pending)
 
 
 @contextlib.contextmanager
@@ -2716,6 +2765,7 @@ def _import_flat(
     creation_operation_key=None,
     creation_source_path=None,
     after_import=None,
+    attribution_context=None,
 ):
     """Coordinate a complete import for each new-course operation identity."""
     import_data = json.loads(Path(json_file).read_text(encoding="utf-8"))
@@ -2729,7 +2779,16 @@ def _import_flat(
         creation_source_path or json_file,
         import_data,
     )
-    with _course_creation_attribution(token, operation_key) as attribution:
+    with _course_creation_attribution(
+        token, operation_key, context=attribution_context
+    ) as attribution:
+        handoff_id = attribution["handoff_id"]
+        report_skill_journey(
+            base_url,
+            token,
+            "course_import_started",
+            _journey_event_id(handoff_id, "course_import_started"),
+        )
         with _course_import_operation_lock(token, operation_key):
             result_bid = _import_flat_apply(
                 base_url,
@@ -2740,6 +2799,13 @@ def _import_flat(
             )
             if after_import:
                 after_import(result_bid)
+            report_skill_journey(
+                base_url,
+                token,
+                "course_import_completed",
+                _journey_event_id(handoff_id, "course_import_completed"),
+                result_bid,
+            )
             return result_bid
 
 
@@ -2890,6 +2956,7 @@ def cmd_import(args):
         sys.exit(1)
 
     base_url, token = resolve_auth(args)
+    context = resolve_context(args)
     shifu_bid = None if args.new else args.shifu_bid
 
     # Version preflight: when re-importing into an existing, version-tracked
@@ -2940,9 +3007,16 @@ def cmd_import(args):
             shifu_bid,
             creation_source_path=args.course_dir,
             after_import=seed_sync_manifest,
+            attribution_context=context,
         )
     elif args.json_file:
-        result_bid = _import_flat(base_url, token, args.json_file, shifu_bid)
+        result_bid = _import_flat(
+            base_url,
+            token,
+            args.json_file,
+            shifu_bid,
+            attribution_context=context,
+        )
     else:
         print("Error: provide --json-file or --course-dir")
         sys.exit(1)
@@ -3211,7 +3285,22 @@ def cmd_build(args):
 def cmd_publish(args):
     """Publish a course."""
     base_url, token = resolve_auth(args)
+    invocation_id = str(uuid.uuid4())
+    report_skill_journey(
+        base_url,
+        token,
+        "course_publish_started",
+        _journey_event_id(invocation_id, "course_publish_started"),
+        args.shifu_bid,
+    )
     api(base_url, token, "post", f"/shifus/{args.shifu_bid}/publish", json={})
+    report_skill_journey(
+        base_url,
+        token,
+        "course_publish_completed",
+        _journey_event_id(invocation_id, "course_publish_completed"),
+        args.shifu_bid,
+    )
     print(f"Published: {args.shifu_bid}")
     _print_verification_urls(base_url, args.shifu_bid, include_published=True)
 
