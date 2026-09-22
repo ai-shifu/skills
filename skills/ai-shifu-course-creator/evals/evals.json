@@ -1124,6 +1124,19 @@
         "C includes a concise executable instruction to adapt phrasing to stated preferences, preserving meaning and detailed explanation; absence of a Course Prompt does not silently drop the selected style effect.",
         "B and C preserve the same three teaching actions and explanation requirements, add no examples, analogies, interactions, profile fields, or internal direction arrays, and follow neutral course-appropriate wording when relevant preferences are unavailable."
       ]
+    },
+    {
+      "id": 91,
+      "prompt": "仅做本地、只读、单工件的个性化专项审查，三种情境独立。不生成缺少的配套提示词，不连接平台，也不改正文。A：personalization_directions=[]，只提供 Teaching Prompt：‘引出同一数据为何出现不同版本的问题；按原始数据 v1、缓存 v1，原始数据变为 v2 而缓存仍为 v1，读缓存仍见 v1，缓存失效后重新取数见 v2 的顺序详细讲清各副本读写关系；收束时说明缓存只是可能原因，不能仅凭版本差异下结论。’没有提供 Course Prompt。B：同 A，但正文多一句‘结合学习者的个人背景调整举例、类比和措辞。’C：personalization_directions=[\"language_style\"]，只审查一份 Course Prompt 中的个性化指令：‘只根据学习者明确表达的偏好调整语气、措辞与句式，保留内容含义、要求的解释深度和输出语言；其它方面遵循来源、作者要求和课程受众的统一基线；没有相关偏好时使用课程的清晰自然表达。’Teaching Prompt 不在审查范围。给出可观察结论和 not-assessed 项。",
+      "expected_output": "Audits each supplied artifact without requiring an absent companion, while still flagging observable unselected personalization.",
+      "files": [],
+      "expectations": [
+        "All cases validate the supplied direction-array shape and assess the available artifact's owned personalization behavior without requesting or creating a companion Prompt.",
+        "A preserves a valid course baseline and detailed explanation with [] rather than failing solely because no Course Prompt is supplied.",
+        "B flags the generic learner-background instruction as enabling unselected examples, analogies, and language style; missing companion context does not hide an observable local defect.",
+        "C finds the supplied instruction consistent with language-style-only selection, without requiring lesson-local examples or analogy instructions from an out-of-scope Teaching Prompt.",
+        "Every case marks companion-artifact alignment as not-assessed, distinguishes it from checks actually passed or failed, and makes no claim that the unseen artifact is compatible. Other absent plan, source, or full-artifact checks remain outside this focused audit."
+      ]
     }
   ]
 }

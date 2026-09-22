@@ -247,7 +247,7 @@ Image composition is owned by `image-authoring.md` and is loaded conditionally b
   - When slides exist, slide 1 has a clear cover-page treatment with lesson title and author information, and every other slide or explanation behavior follows the selected delivery mode's existing rules.
   - Other delivery modes begin with their applicable teaching-start behavior.
 - Validate personalization:
-  - The normalized selection passes `data-contracts.md#personalization-directions`, and both Prompt artifacts implement exactly the selected effects from `prompt-contracts.md#personalization-directions`.
+  - The normalized selection passes `data-contracts.md#personalization-directions`. Validate each available Prompt artifact's owned behavior against exactly the selected effects from `prompt-contracts.md#personalization-directions`. Mark companion-artifact alignment as `not-assessed` when the companion is unavailable or outside the declared audit scope; this does not clear an upstream dependency reported under [Personalization Directions](#personalization-directions).
   - Multiple variants of the same approved plan have identical execution signatures, including every required example's presence, position, and teaching function; only selected background-based expression differs.
   - Selected example and analogy directions are executable at their use points with a neutral fallback; unselected directions retain the course baseline and do not acquire individual-background adaptation.
   - Required detailed explanations remain content-specific and complete even for `[]`. Flag empty outlines, omitted reasoning, and prewritten details that prevent a selected direction from using relevant runtime context.

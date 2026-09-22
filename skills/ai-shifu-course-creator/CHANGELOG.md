@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Validate personalization within each supplied Prompt artifact and mark unavailable companion alignment as not assessed, preserving standalone generation and content-only audits.
 - Keep generic Course Prompt template rules limited to lesson boundaries, learner-profile privacy, and neutral fallbacks so only the author's selected directions enable personalization.
 - Verify an existing Course Prompt's personalization behavior before reusing it for lesson generation; report incompatible course-wide instructions as a dependency without expanding a lesson-only edit.
 - Use the same personalization choices and intake rules in every delivery mode, including pure classroom slides; a missing selection always prompts the author instead of silently defaulting to none.
