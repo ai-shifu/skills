@@ -2964,6 +2964,25 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("If unknown, ask the author", sources)
         self.assertIn("they do not add placeholders to the template", sources)
 
+    def test_course_prompt_materializes_only_selected_delivery_behavior(self):
+        """Keep delivery selection in fill guidance, not fixed runtime text."""
+        template = markdown_section(self.course_prompt, "Fillable Template")
+        sources = markdown_section(
+            self.course_prompt, "Placeholder Sources and Context"
+        )
+        checks = markdown_section(self.course_prompt, "Materialization Checks")
+        task = template.split("# Task", 1)[1].split("# Teaching Techniques", 1)[0]
+        self.assertIn("\n- XXX\n", task)
+        for fixed_alternative in (
+            "standard one-on-one", "pure classroom slides", "delivery mode",
+        ):
+            self.assertNotIn(fixed_alternative, template)
+        self.assertIn("Include only the selected behavior", sources)
+        self.assertIn("Only when both modes are selected", sources)
+        self.assertIn("let the current user message select the applicable one", sources)
+        self.assertIn("A single-mode course contains no unselected delivery alternative", checks)
+        self.assertIn("conditional delivery instructions appear only when both modes were selected", checks)
+
     def test_course_prompt_owns_delivery_mode_not_lesson_pedagogy(self):
         responsibilities = markdown_section(
             self.prompt_contracts, "Artifact Responsibilities"

@@ -1003,6 +1003,39 @@
         "The new record carries base_url=https://school.example/training and profile=Sandbox and is keyed by service URL plus local source; records A and B remain present.",
         "The Teaching Prompt uses the exact returned https://media.school.example/new-diagram URL without rewriting its host to match a service address."
       ]
+    },
+    {
+      "id": 82,
+      "prompt": "Generate only the Course Prompt from these approved local artifacts; do not access the platform. README title: Practical Spreadsheet Basics. Course goal: calculate and check a monthly budget. Audience: adult beginners. Author name: empty. Target language: English. The lesson plan and all remaining intake choices are finalized. The selected usage scenario is personalized AI one-on-one self-study only.",
+      "expected_output": "Direct learner-address instructions without classroom alternatives.",
+      "files": [],
+      "expectations": [
+        "The Task section instructs direct second-person learner address and excludes group-addressing terms.",
+        "The complete artifact, including Slides, contains no classroom delivery alternative or instruction to select a delivery mode from the current user message.",
+        "All six template sections remain; all placeholders are filled or the empty optional author identity is omitted; existing slide-text and narration constraints remain."
+      ]
+    },
+    {
+      "id": 83,
+      "prompt": "Generate only the Course Prompt from these approved local artifacts; do not access the platform. README title: Practical Spreadsheet Basics. Course goal: calculate and check a monthly budget. Audience: adult beginners. Author name: empty. Target language: English. The lesson plan and all remaining intake choices are finalized. The selected usage scenario is pure classroom projection slides only, paced by a human instructor.",
+      "expected_output": "Concrete projection instructions without one-on-one alternatives.",
+      "files": [],
+      "expectations": [
+        "The Task section instructs projection-ready content for a human instructor without narration or addressing an individual learner.",
+        "The complete artifact, including Slides, contains no one-on-one delivery alternative or instruction to select a delivery mode from the current user message.",
+        "All six template sections remain and there are no unfilled placeholders or authoring explanations."
+      ]
+    },
+    {
+      "id": 84,
+      "prompt": "Generate only the Course Prompt from these approved local artifacts; do not access the platform. README title: Practical Spreadsheet Basics. Course goal: calculate and check a monthly budget. Audience: adult beginners. Author name: empty. Target language: English. The lesson plan and all remaining intake choices are finalized. The selected usage scenario explicitly combines personalized AI self-study and human-instructor classroom projection.",
+      "expected_output": "Conditional instructions for both explicitly selected experiences.",
+      "files": [],
+      "expectations": [
+        "The Task section preserves both direct second-person learner address for self-study and projection-ready content without individual address or narration for classroom delivery.",
+        "The two behaviors are conditional on the current user message rather than imposed simultaneously or reduced to one mode.",
+        "All six template sections remain and there are no unfilled placeholders or authoring explanations."
+      ]
     }
   ]
 }
