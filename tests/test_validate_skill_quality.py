@@ -2612,10 +2612,13 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertNotIn("runtime_contexts", authoring)
         self.assertNotIn("expected_observations", authoring)
 
-        contexts = {
-            context["id"]: context for context in fixture["runtime_contexts"]
-        }
-        self.assertEqual(len(contexts), 5)
+        runtime_contexts = fixture["runtime_contexts"]
+        self.assertEqual(len(runtime_contexts), 5)
+        self.assertEqual(
+            len({context["id"] for context in runtime_contexts}),
+            len(runtime_contexts),
+        )
+        contexts = {context["id"]: context for context in runtime_contexts}
         for name in ("novice_misconception", "experienced_goal"):
             self.assertEqual(
                 set(contexts[name]["expected_observations"]), set(block_ids)
