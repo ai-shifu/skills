@@ -1608,9 +1608,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         legacy = controls.split("When only the old", 1)[1].split(
             "**Interaction policy**", 1
         )[0]
-        self.assertRegex(
-            legacy, r"(?i)ask for a direction selection.*pure-slide delivery"
-        )
+        self.assertRegex(legacy, r"(?i)ask for a direction selection")
         self.assertRegex(legacy, r"(?i)do not.*map.*old value")
         self.assertRegex(
             legacy, r"(?i)valid new selection.*use it without another question"
@@ -1688,7 +1686,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("rather than showing a bare label", normalized_validation)
         self.assertIn("make no promotional or unsupported promise", normalized_validation)
 
-    def test_slide_only_intake_defaults_to_no_directions_and_respects_explicit_choices(self):
+    def test_personalization_intake_is_independent_of_delivery_mode(self):
         scope = " ".join(
             markdown_section(self.course_design_intake, "Intake Scope").split()
         )
@@ -1699,16 +1697,19 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertRegex(
             scope,
-            r"Do not[^.]*silently skip this question for standard or combined delivery",
+            r"Do not[^.]*silently skip this question because of the delivery mode",
         )
-        self.assertRegex(controls, r"(?i)reuse.*including `\[\]`.*explicit selections")
-        self.assertIn("pure-slide delivery", controls)
+        self.assertRegex(controls, r"(?i)reuse.*including `\[\]`")
         self.assertRegex(
             controls,
-            r"(?i)pure-slide delivery with neither an explicit selection nor an old level, "
-            r"use `\[\]` without asking",
+            r"(?i)in every delivery mode, absence alone is not a skip: ask",
         )
-        self.assertRegex(controls, r"(?i)standard or combined delivery.*absence.*ask")
+        self.assertNotIn("use `[]` without asking", controls)
+        personalization = controls.split("**Personalization directions**", 1)[1].split(
+            "**Interaction policy**", 1
+        )[0]
+        self.assertNotIn("slide-only", personalization)
+        self.assertNotIn("pure-slide", personalization)
 
     def test_teaching_patterns_are_selected_not_redefined_during_generation(self):
         patterns = markdown_section(self.pedagogy, "Teaching Patterns")

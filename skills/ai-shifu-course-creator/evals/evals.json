@@ -275,18 +275,18 @@
         "After navigation comments are removed, each Teaching Prompt's first remaining item is its first projected-page direction, and the emitted page sequence carries the shared structure; neither adds an author-facing preamble or postscript explaining the skeleton, personalization policy, content-slot model, or exact-preservation categories.",
         "Both variants keep the complete example on slide 1. The common version uses the course's shared client-data example; examples_only locally requires a relevant customer-callback example using the supplied group context while preserving its essential data-classification relationship. Neither version personalizes language style, analogy, or value framing from that background.",
         "Both variants remain understandable and directly projectable, convey what the selected image teaches, and add no narration, individual-learner address, or long spoken paragraph.",
-        "Selecting examples is honored even for pure-slide delivery; it does not get discarded by the empty-selection default for missing choices. Local example adaptation is a runtime teaching requirement, not an explanation of authoring configuration.",
+        "Selecting examples is honored in pure-slide delivery under the same personalization rules as every other delivery mode. Local example adaptation is a runtime teaching requirement, not an explanation of authoring configuration.",
         "The two variants do not change, omit, duplicate, reorder, or reposition the required example slot, policy, selected image, caption, interaction, feedback, close, source facts, or delivery mode to create their expression difference."
       ]
     },
     {
       "id": 21,
       "prompt": "course_author_name=李明。我要把一份门店新人培训材料做成纯课堂幻灯片课程。使用场景已经确定为 slide-only，interaction_policy 已选择 disabled，Listen Mode 关闭，结构固定为 1 章 3 节；没有提供 personalization_directions。请先完成 Course Design Intake，这一轮不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Completes slide-only intake without asking a personalization question and normalizes an absent direction selection to an empty array.",
+      "expected_output": "Asks the same effect-aware personalization multi-select question used in other delivery modes instead of inferring an empty selection from slide-only delivery.",
       "files": [],
       "expectations": [
-        "The response does not ask the author to choose personalization directions and does not present any five-level choice.",
-        "Because delivery is slide-only and no directions were provided, personalization_directions normalizes to []; this retains uniform course arrangements and does not remove examples, change teaching sequence, slide count or order, content grouping, semantic layout, interaction, image, or close placement.",
+        "The response asks for the missing personalization_directions, presents the four independent choices 举例, 类比, 语言风格, and 价值阐述 with their effects, and permits selecting none. It uses no strength scale.",
+        "Slide-only delivery does not supply a personalization default, reduce the available choices, or change their meaning. The unresolved selection stays unresolved until the author answers or explicitly skips; it is not silently normalized to []. Required examples, teaching sequence, slide structure, and presentation behavior remain intact.",
         "The response reuses the supplied usage scenario, interaction policy, Listen Mode, and structure choices without asking them again.",
         "The workflow does not start Segmentation, Orchestration, Teaching Prompt generation, or deployment."
       ]

@@ -52,7 +52,7 @@ The author selects any combination of these independent directions. The field sh
 - For an unselected direction, use the source, author requirements, and course-wide audience defaults consistently. Do not delete a needed example, analogy, or value explanation, and do not turn ordinary prose into exact output. An empty selection keeps this baseline for all four directions.
 - Required content, detailed explanations, teaching sequence, slide structure, and interaction and feedback effects remain complete for every selection. Background-based personalization does not independently enable prerequisite scaffolding, change explanation depth, or create extra questions, variables, branches, teaching aids, or feedback actions. Existing responses to learner answers still follow the lesson's interaction contract.
 - Learner context can become available during delivery even when it was absent during authoring. Selected directions remain executable with that context; use the shared neutral fallback when no relevant context is available. Do not serialize a specific learner's profile into reusable course artifacts.
-- Pure classroom slides keep their projection-only behavior, even when directions are explicitly selected. Artifact owners translate these shared effects into course-wide instructions and local teaching actions without copying the selection interface or internal enum values into runtime prose.
+- The same direction effects apply in every delivery mode, within its existing presentation behavior. Artifact owners translate these shared effects into course-wide instructions and local teaching actions without copying the selection interface or internal enum values into runtime prose.
 
 ## Artifact Responsibilities
 

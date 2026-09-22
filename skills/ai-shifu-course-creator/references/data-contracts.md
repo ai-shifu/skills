@@ -39,7 +39,7 @@ Provide one of:
 | `language_style` |
 | `value_relevance` |
 
-Array order has no behavioral meaning. An empty array explicitly selects no background-based personalization; an absent field is unresolved, not an empty selection. Reject non-array values, non-string entries, unknown values, and duplicates rather than coercing them. Intake owns collection, skips, and delivery-mode defaults. The former `teaching_prompt_personalization_level` is not a valid substitute for this array and has no numeric mapping to directions; intake owns handling an old selection.
+Array order has no behavioral meaning. An empty array explicitly selects no background-based personalization; an absent field is unresolved, not an empty selection. Reject non-array values, non-string entries, unknown values, and duplicates rather than coercing them. Intake owns collection and skip handling. The former `teaching_prompt_personalization_level` is not a valid substitute for this array and has no numeric mapping to directions; intake owns handling an old selection.
 
 This is a content-expression control, not a structure control. It never changes the internal lesson execution plan, including the teaching sequence, required actions and effects, slide count and order, or interaction and feedback placement.
 
