@@ -110,7 +110,11 @@ class CourseProfileProcessTests(unittest.TestCase):
             "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost",
             "PYTHONIOENCODING": "utf-8",
         })
-        process_env.update(env or {})
+        for key, value in (env or {}).items():
+            if value is None:
+                process_env.pop(key, None)
+            else:
+                process_env[key] = value
         result = subprocess.run([sys.executable, str(self.cli), *args], cwd=self.root,
                                 env=process_env, capture_output=True, text=True, timeout=20,
                                 encoding="utf-8")
@@ -208,6 +212,55 @@ class CourseProfileProcessTests(unittest.TestCase):
         self.run_cli("verify")
         self.assertEqual(self.requests[-1][1:3], ("/one/api/shifu/shifus?limit=1", "token=file-token"))
         self.assertEqual(self.env_file.read_text(), contents)
+
+    def test_dotenv_config_root_is_used_before_legacy_migration(self):
+        self.config = self.root / "custom configuration"
+        fallback = self.root / "fallback-xdg"
+        self.env_file.write_text("AI_SHIFU_CONFIG_DIR='${TEST_CONFIG_PARENT}/custom configuration'\n")
+        self.save_json(self.config / "settings.json", {"base_url": self.origin + "/one"})
+        self.save_json(self.config / "credentials.json", {"token": "saved-token"})
+        env = {"AI_SHIFU_CONFIG_DIR": None, "XDG_CONFIG_HOME": str(fallback),
+               "TEST_CONFIG_PARENT": str(self.root)}
+        self.run_cli("verify", "--profile", "default", env={**env, "SHIFU_TOKEN": "exported-token"})
+        self.assertEqual(self.requests[-1][1:3], ("/one/api/shifu/shifus?limit=1", "token=saved-token"))
+        credentials = json.loads((self.profile_dir("default") / "credentials.json").read_text())
+        self.assertEqual(credentials["token"], "saved-token")
+        self.assertFalse((self.config / "credentials.json").exists())
+        self.assertFalse((fallback / "ai-shifu").exists())
+        self.run_cli("verify", env=env)
+        self.assertEqual(self.requests[-1][1:3], ("/one/api/shifu/shifus?limit=1", "token=saved-token"))
+
+    def test_dotenv_xdg_root_and_migrated_token_cleanup_share_one_context(self):
+        self.config = self.root / "custom-xdg" / "ai-shifu"
+        fallback = self.root / "fallback-home"
+        self.env_file.write_text(
+            "XDG_CONFIG_HOME='${TEST_CONFIG_PARENT}/custom-xdg'\n"
+            f"SHIFU_BASE_URL={self.origin}/one\nSHIFU_TOKEN=file-token\n"
+        )
+        env = {"AI_SHIFU_CONFIG_DIR": None, "XDG_CONFIG_HOME": None,
+               "HOME": str(fallback), "USERPROFILE": str(fallback),
+               "TEST_CONFIG_PARENT": str(self.root)}
+        self.run_cli("verify", env={**env, "SHIFU_TOKEN": "exported-token"}, expected=4)
+        self.assertFalse(self.requests)
+        credentials = json.loads((self.profile_dir("default") / "credentials.json").read_text())
+        self.assertEqual(credentials["token"], "file-token")
+        self.assertIn("SHIFU_TOKEN=''", self.env_file.read_text())
+        self.assertFalse((fallback / ".config" / "ai-shifu").exists())
+        self.run_cli("verify", env=env)
+        self.assertEqual(self.requests[-1][1:3], ("/one/api/shifu/shifus?limit=1", "token=file-token"))
+
+    def test_process_config_root_overrides_dotenv_root_during_migration(self):
+        unused = self.root / "unused"
+        self.env_file.write_text(f"AI_SHIFU_CONFIG_DIR='{unused}'\n")
+        self.save_json(unused / "settings.json", {"schema_version": "do-not-read"})
+        before = (unused / "settings.json").read_bytes()
+        self.save_json(self.config / "settings.json", {"base_url": self.origin + "/one"})
+        self.save_json(self.config / "credentials.json", {"token": "saved-token"})
+        self.run_cli("verify")
+        self.assertEqual(self.settings()["schema_version"], 2)
+        self.assertEqual(self.requests[-1][1:3], ("/one/api/shifu/shifus?limit=1", "token=saved-token"))
+        self.assertEqual((unused / "settings.json").read_bytes(), before)
+        self.assertEqual(set(unused.iterdir()), {unused / "settings.json"})
 
     def test_existing_profiles_keep_dotenv_temporary_and_explicit_profile_wins(self):
         self.run_cli("profile", "set", "named", "--base-url", self.origin + "/one")

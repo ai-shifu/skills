@@ -3487,9 +3487,17 @@ def main():
     handler = commands.get(args.command)
     if handler:
         try:
-            if args.command not in {"check-update", "build"}:
-                profile_store().migrate_legacy(dict(os.environ))
+            process_env = dict(os.environ)
             load_env()
+            if args.command not in {"check-update", "build"}:
+                profile_store().migrate_legacy(process_env)
+                # Resolve the config root from dotenv before migration, then
+                # discard only dotenv credential values that cleanup may have
+                # removed. Exported process values keep their original priority.
+                for key in ("SHIFU_BASE_URL", "SHIFU_TOKEN"):
+                    if key not in process_env:
+                        os.environ.pop(key, None)
+                load_env()
             context = None
             if args.command not in {"site", "profile", "check-update", "build"}:
                 context = resolve_context(args, named_only=args.command in {"login", "logout"})

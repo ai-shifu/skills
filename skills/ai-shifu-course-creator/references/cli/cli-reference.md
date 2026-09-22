@@ -73,7 +73,7 @@ Browser login and continuation require a named profile, so use explicit `--profi
 
 ### Configuration and Migration
 
-The configuration root is `AI_SHIFU_CONFIG_DIR` when set, otherwise `$XDG_CONFIG_HOME/ai-shifu`, otherwise `~/.config/ai-shifu` on all platforms (including `%USERPROFILE%\.config\ai-shifu` on Windows). `settings.json` contains:
+The configuration root is `AI_SHIFU_CONFIG_DIR` when set, otherwise `$XDG_CONFIG_HOME/ai-shifu`, otherwise `~/.config/ai-shifu` on all platforms (including `%USERPROFILE%\.config\ai-shifu` on Windows). Root overrides may come from the process environment or the skill's `.env`, with process values taking precedence for the same variable. The CLI resolves this root before legacy migration and reloads temporary URL/token values after migration cleanup without replacing exported process values. `settings.json` contains:
 
 ```json
 {
