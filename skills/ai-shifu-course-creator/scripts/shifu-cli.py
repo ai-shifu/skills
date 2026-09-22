@@ -105,7 +105,7 @@ def report_skill_journey(base_url, token, event_name, event_id, shifu_bid=""):
         requests.post(
             f"{base_url}/api/user/skill/events",
             json=payload,
-            headers={"Authorization": token, "Content-Type": "application/json"},
+            headers={"Token": token, "Content-Type": "application/json"},
             timeout=3,
         )
     except Exception:  # noqa: BLE001 - analytics must never block user work
@@ -2589,7 +2589,14 @@ def _validate_pending_course_creation(record, token_digest):
         or failure_generation < 0
     ):
         raise RuntimeError("Pending course creation record has invalid retry state")
-    return handoff_id, leases, retry_required, failure_generation
+    attribution = {
+        "host_platform": str(record.get("host_platform") or ""),
+        "skill_id": str(record.get("skill_id") or ""),
+        "skill_version": str(record.get("skill_version") or ""),
+    }
+    if any(attribution.values()) and not all(attribution.values()):
+        raise RuntimeError("Pending course creation record has invalid attribution")
+    return handoff_id, leases, retry_required, failure_generation, attribution
 
 
 @contextlib.contextmanager
@@ -2628,19 +2635,44 @@ def _course_creation_attribution(active_token, operation_key, context=None):
                 existing_leases,
                 retry_required,
                 failure_generation,
+                recorded_attribution,
             ) = _validate_pending_course_creation(existing_operation, token_digest)
             if reserved_handoff_id:
-                existing_operation["leases"] = [
-                    lease
-                    for lease in existing_leases
+                live_leases = [
+                    lease for lease in existing_leases
                     if _course_creation_lease_is_alive(lease)
                 ]
-                retry_generation = failure_generation if retry_required else None
+                stale_lease_detected = len(live_leases) != len(existing_leases)
+                stale_external_lease = stale_lease_detected and any(
+                    lease.get("pid") != os.getpid()
+                    for lease in existing_leases
+                    if lease not in live_leases
+                )
+                if stale_lease_detected:
+                    retry_required = True
+                    failure_generation += 1
+                existing_operation["leases"] = [
+                    *live_leases,
+                ]
+                retry_generation = (
+                    None
+                    if stale_external_lease
+                    else (failure_generation if retry_required else None)
+                )
                 existing_operation["leases"].append({
                     "id": lease_id,
                     "pid": os.getpid(),
                     "retry_generation": retry_generation,
                 })
+                existing_operation["retry_required"] = retry_required
+                existing_operation["failure_generation"] = failure_generation
+                if not recorded_attribution["host_platform"]:
+                    recorded_attribution = {
+                        "host_platform": selected_host_platform,
+                        "skill_id": SKILL_ID,
+                        "skill_version": _client_version(),
+                    }
+                    existing_operation.update(recorded_attribution)
                 pending[journal_key] = existing_operation
                 _write_private_json(journal_path, pending)
         if not reserved_handoff_id:
@@ -2671,27 +2703,39 @@ def _course_creation_attribution(active_token, operation_key, context=None):
                 }],
                 "retry_required": False,
                 "failure_generation": 0,
+                "host_platform": selected_host_platform,
+                "skill_id": SKILL_ID,
+                "skill_version": _client_version(),
+            }
+            recorded_attribution = {
+                "host_platform": selected_host_platform,
+                "skill_id": SKILL_ID,
+                "skill_version": _client_version(),
             }
             # Persist the reservation first. If the process exits before the
             # credential slot is cleared, other operations still see this
             # handoff in the journal and cannot consume it again.
             _write_private_json(journal_path, pending)
-        credentials = _read_json_file(credential_path)
-        if (
-            isinstance(credentials, dict)
-            and credentials.get("token") == active_token
-            and credentials.get("course_handoff_id") == reserved_handoff_id
-        ):
+        if context is not None and context.directory is not None:
+            profile_store().consume_course_handoff(
+                context, active_token, reserved_handoff_id
+            )
+        else:
+            credentials = _read_json_file(credential_path)
+            matches_handoff = (
+                isinstance(credentials, dict)
+                and credentials.get("token") == active_token
+                and credentials.get("course_handoff_id") == reserved_handoff_id
+            )
             # This also handles recovery after interruption between the journal
             # write and the original credential cleanup.
-            cleaned_credentials = dict(credentials)
-            cleaned_credentials.pop("course_handoff_id", None)
-            _write_private_json(credential_path, cleaned_credentials)
+            if matches_handoff:
+                cleaned_credentials = dict(credentials)
+                cleaned_credentials.pop("course_handoff_id", None)
+                _write_private_json(credential_path, cleaned_credentials)
         _ACTIVE_COURSE_CREATION_LEASES.add(lease_id)
         attribution = {
-            "host_platform": selected_host_platform,
-            "skill_id": SKILL_ID,
-            "skill_version": _client_version(),
+            **recorded_attribution,
             "handoff_id": reserved_handoff_id,
         }
     succeeded = False
@@ -2713,17 +2757,22 @@ def _course_creation_attribution(active_token, operation_key, context=None):
                     current_leases,
                     current_retry_required,
                     current_generation,
+                    _,
                 ) = _validate_pending_course_creation(
                     current,
                     token_digest,
                 )
-                remaining_leases = [
+                sibling_leases = [
                     lease
                     for lease in current_leases
                     if str(lease.get("id") or "") != lease_id
-                    and _course_creation_lease_is_alive(lease)
                 ]
-                if not succeeded:
+                remaining_leases = [
+                    lease for lease in sibling_leases
+                    if _course_creation_lease_is_alive(lease)
+                ]
+                has_unconfirmed_sibling = len(remaining_leases) != len(sibling_leases)
+                if not succeeded or has_unconfirmed_sibling:
                     current_retry_required = True
                     current_generation += 1
                 elif (

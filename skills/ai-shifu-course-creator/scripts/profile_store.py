@@ -317,6 +317,24 @@ class ProfileStore:
             payload["course_handoff_id"] = course_handoff_id
         write_private_json(credentials_path(context), payload)
 
+    def consume_course_handoff(self, context, token, handoff_id):
+        """Remove one matching handoff without reviving credentials cleared by logout."""
+        with self._configuration_lock():
+            current = self._current_auth_context(context)
+            path = credentials_path(current)
+            credentials = read_private_json(path)
+            if not credentials:
+                return False
+            if (
+                credentials.get("token") != token
+                or credentials.get("course_handoff_id") != handoff_id
+            ):
+                return False
+            cleaned = dict(credentials)
+            cleaned.pop("course_handoff_id", None)
+            write_private_json(path, cleaned)
+            return True
+
     def _current_auth_context(self, context):
         """Revalidate an authorization context while the caller holds the settings lock."""
         current = self._context(self._settings(), context.name)

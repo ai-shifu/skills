@@ -11,6 +11,7 @@ import threading
 import time
 import types
 import unittest
+import uuid
 from pathlib import Path
 from unittest import mock
 
@@ -678,6 +679,8 @@ class CourseCreationAttributionTests(unittest.TestCase):
             )
 
         payload = post.call_args.kwargs["json"]
+        self.assertEqual(post.call_args.kwargs["headers"]["Token"], "secret-token")
+        self.assertNotIn("Authorization", post.call_args.kwargs["headers"])
         self.assertEqual(
             set(payload),
             {"event_id", "event_name", "host_platform", "skill_id", "skill_version", "shifu_bid"},
@@ -992,6 +995,64 @@ class CourseCreationAttributionTests(unittest.TestCase):
             pass
         self.assertEqual(failed["handoff_id"], handoff_id)
         self.assertEqual(retried["handoff_id"], handoff_id)
+
+    def test_retry_keeps_recorded_package_identity(self):
+        operation_key = "recorded-identity"
+        with mock.patch.dict(
+            course_creator_cli.os.environ,
+            {"AI_SHIFU_HOST_PLATFORM": "doubao"},
+            clear=False,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "response lost"):
+                with course_creator_cli._course_creation_attribution(
+                    "test-token", operation_key
+                ) as first:
+                    raise RuntimeError("response lost")
+        with mock.patch.dict(
+            course_creator_cli.os.environ,
+            {"AI_SHIFU_HOST_PLATFORM": "workbuddy"},
+            clear=False,
+        ):
+            with course_creator_cli._course_creation_attribution(
+                "test-token", operation_key
+            ) as retried:
+                pass
+        self.assertEqual(first["host_platform"], "doubao")
+        self.assertEqual(retried["host_platform"], "doubao")
+        self.assertEqual(retried["skill_id"], course_creator_cli.SKILL_ID)
+
+    def test_dead_sibling_lease_keeps_retry_record(self):
+        operation_key = "dead-sibling"
+        with course_creator_cli._course_creation_attribution(
+            "test-token", operation_key
+        ) as first:
+            pass
+        pending = course_creator_cli._read_pending_course_creations()
+        record = next(iter(pending.values())) if pending else None
+        self.assertIsNone(record)
+        # Seed a sibling lease from a process that no longer exists.
+        token_digest = hashlib.sha256(b"test-token").hexdigest()
+        journal_key = f"{token_digest}:{operation_key}"
+        handoff_id = str(uuid.uuid4())
+        course_creator_cli._write_private_json(
+            course_creator_cli.pending_course_creations_path(),
+            {journal_key: {
+                "token_digest": token_digest,
+                "handoff_id": handoff_id,
+                "leases": [{"id": "dead", "pid": 999999, "retry_generation": None}],
+                "retry_required": False,
+                "failure_generation": 0,
+                "host_platform": "direct",
+                "skill_id": course_creator_cli.SKILL_ID,
+                "skill_version": course_creator_cli._client_version(),
+            }},
+        )
+        with course_creator_cli._course_creation_attribution(
+            "test-token", operation_key
+        ):
+            pass
+        pending = course_creator_cli._read_pending_course_creations()
+        self.assertTrue(pending[journal_key]["retry_required"])
 
     def test_failed_handoff_is_not_assigned_to_another_operation(self):
         handoff_id = "52cefd54-930a-4c06-b62d-00de456cd56f"
