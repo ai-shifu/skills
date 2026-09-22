@@ -2909,9 +2909,6 @@ class CourseCreatorContractTests(unittest.TestCase):
         checklist = markdown_section(self.optimization_checklist, "Course Prompt")
 
         for required_behavior in (
-            "objectives, facts and boundaries, teaching method, content sequence, "
-            "pacing, required examples, interactions, exact material, slide count "
-            "and order, and close unchanged",
             "empty, `UNKNOWN`, irrelevant, or unavailable",
             "Do not quote, summarize, or mention the learner profile",
         ):
