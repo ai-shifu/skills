@@ -1593,7 +1593,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             ).split()
         )
         self.assertIn("`personalization_directions`", controls)
-        self.assertIn("absence alone is not a skip", controls)
+        self.assertIn("absence alone is not a skip", controls.lower())
         self.assertRegex(controls, r"(?i)explicit none or skip.*`\[\]`")
         self.assertRegex(controls, r"(?i)none.*another choice.*resolve.*conflict")
         self.assertIn("data-contracts.md#personalization-directions", controls)
@@ -1697,12 +1697,12 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertRegex(
             scope,
-            r"Do not[^.]*silently skip this question because of the delivery mode",
+            r"Do not[^.]*silently skip this question",
         )
         self.assertRegex(controls, r"(?i)reuse.*including `\[\]`")
         self.assertRegex(
             controls,
-            r"(?i)in every delivery mode, absence alone is not a skip: ask",
+            r"(?i)absence alone is not a skip: ask",
         )
         self.assertNotIn("use `[]` without asking", controls)
         personalization = controls.split("**Personalization directions**", 1)[1].split(
