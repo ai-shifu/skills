@@ -508,6 +508,7 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
     def test_publish_prints_learner_url_only_after_success(self):
         for succeeds in (False, True):
             with self.subTest(succeeds=succeeds):
+                self.journey_post.reset_mock()
                 self.api.side_effect = None if succeeds else RuntimeError("Publish failed")
                 with contextlib.redirect_stdout(io.StringIO()) as output:
                     if succeeds:
@@ -525,6 +526,26 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
                     )
                 else:
                     self.assertEqual(output.getvalue(), "")
+                payloads = [
+                    call.kwargs["json"] for call in self.journey_post.call_args_list
+                ]
+                expected_events = ["course_publish_started"]
+                if succeeds:
+                    expected_events.append("course_publish_completed")
+                self.assertEqual(
+                    [payload["event_name"] for payload in payloads],
+                    expected_events,
+                )
+                for payload in payloads:
+                    self.assertEqual(payload["host_platform"], "direct")
+                    self.assertEqual(payload["skill_id"], course_creator_cli.SKILL_ID)
+                    self.assertTrue(payload["skill_version"])
+                    self.assertEqual(payload["shifu_bid"], "course")
+                    self.assertEqual(str(uuid.UUID(payload["event_id"])), payload["event_id"])
+                self.assertEqual(
+                    len({payload["event_id"] for payload in payloads}),
+                    len(payloads),
+                )
 
 
 class CourseCreationAttributionTests(unittest.TestCase):
