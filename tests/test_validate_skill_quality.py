@@ -2930,7 +2930,7 @@ class CourseCreatorContractTests(unittest.TestCase):
                     "image-authoring.md",
                 )
 
-    def test_course_prompt_keeps_six_sections_and_five_placeholders(self):
+    def test_course_prompt_keeps_six_sections_and_six_placeholders(self):
         template = markdown_section(self.course_prompt, "Fillable Template")
         headings = re.findall(
             r"^# (Role|Task|Teaching Techniques|Writing Style|Format|Slides)$",
@@ -2948,13 +2948,13 @@ class CourseCreatorContractTests(unittest.TestCase):
             ],
             headings,
         )
-        self.assertEqual(5, template.count("XXX"))
+        self.assertEqual(6, template.count("XXX"))
 
         sources = markdown_section(
             self.course_prompt, "Placeholder Sources and Context"
         )
         placeholders = markdown_table_first_column(sources, "Placeholder")
-        self.assertEqual(5, len(placeholders))
+        self.assertEqual(6, len(placeholders))
         self.assertEqual(len(placeholders), len(set(placeholders)))
         self.assertIn("`course_author_name` from Course Design Intake", sources)
         self.assertIn(
