@@ -383,6 +383,82 @@ class ProfileStoreTests(unittest.TestCase):
         self.assertEqual(context.token, "legacy-token")
         self.assertFalse(self.store.migration_path.exists())
 
+    def stage_interrupted_migration(self):
+        real_write = profile_store.write_private_json
+
+        def fail_on_settings(path, data):
+            if path == self.store.settings_path:
+                raise OSError("simulated crash before settings commit")
+            return real_write(path, data)
+
+        with mock.patch.object(profile_store, "write_private_json", side_effect=fail_on_settings):
+            with self.assertRaises(OSError):
+                self.store.migrate_legacy({})
+        journal = read_private_json(self.store.migration_path)
+        return self.root / "profiles" / journal["id"]
+
+    def test_migration_retry_drops_deleted_authorization_sources(self):
+        self.legacy("https://app.ai-shifu.cn", "legacy-token", {
+            "base_url": "https://app.ai-shifu.cn", "device_code": "legacy-request",
+        })
+        staged = self.stage_interrupted_migration()
+        (self.root / "credentials.json").unlink()
+        (self.root / "pending-device-auth.json").unlink()
+        self.store.migrate_legacy({})
+        context = self.store.resolve(environ={})
+        self.assertEqual(context.directory, staged)
+        self.assertEqual(context.token, "")
+        self.assertFalse(self.store.credentials_path(context).exists())
+        self.assertFalse(self.store.pending_auth_path(context).exists())
+        self.assertFalse(self.store.migration_path.exists())
+
+    def test_migration_retry_preserves_foreign_sources_without_activating_staged_state(self):
+        self.legacy("https://app.ai-shifu.cn", "legacy-token", {
+            "base_url": "https://app.ai-shifu.cn", "device_code": "legacy-request",
+        })
+        staged = self.stage_interrupted_migration()
+        foreign = {
+            "credentials.json": {"base_url": "https://app.ai-shifu.com", "token": "foreign-token"},
+            "pending-device-auth.json": {"base_url": "https://app.ai-shifu.com", "device_code": "foreign-request"},
+        }
+        for filename, data in foreign.items():
+            write_private_json(self.root / filename, data)
+        self.store.migrate_legacy({})
+        self.assertEqual(self.store.resolve(environ={}).token, "")
+        for filename, data in foreign.items():
+            self.assertFalse((staged / filename).exists())
+            self.assertEqual(read_private_json(self.root / filename), data)
+
+    def test_migration_retry_drops_cleared_dotenv_token_but_keeps_current_pending_request(self):
+        self.legacy("https://app.ai-shifu.cn", pending={
+            "base_url": "https://app.ai-shifu.cn", "device_code": "legacy-request",
+        })
+        self.env_file.write_text("SHIFU_BASE_URL=cn\nSHIFU_TOKEN=file-token\n")
+        staged = self.stage_interrupted_migration()
+        self.env_file.write_text("SHIFU_BASE_URL=cn\nSHIFU_TOKEN=\n")
+        self.store.migrate_legacy({})
+        self.assertEqual(self.store.resolve(environ={}).token, "")
+        self.assertFalse((staged / "credentials.json").exists())
+        self.assertEqual(read_private_json(staged / "pending-device-auth.json")["device_code"], "legacy-request")
+
+    def test_migration_retry_does_not_commit_if_stale_state_cannot_be_removed(self):
+        self.legacy("https://app.ai-shifu.cn", "legacy-token")
+        staged = self.stage_interrupted_migration()
+        (self.root / "credentials.json").unlink()
+        real_unlink = Path.unlink
+
+        def fail_on_staged(path, *args, **kwargs):
+            if path == staged / "credentials.json":
+                raise OSError("simulated removal failure")
+            return real_unlink(path, *args, **kwargs)
+
+        with mock.patch.object(Path, "unlink", fail_on_staged), self.assertRaises(OSError):
+            self.store.migrate_legacy({})
+        self.assertEqual(read_private_json(self.store.settings_path), {"base_url": "https://app.ai-shifu.cn"})
+        self.assertTrue(self.store.migration_path.exists())
+        self.store.migrate_legacy({})
+        self.assertEqual(self.store.resolve(environ={}).token, "")
+
     def test_migration_recovers_after_commit_without_overwriting_new_credentials(self):
         self.legacy("https://app.ai-shifu.cn", "legacy-token")
         with mock.patch.object(self.store, "_cleanup_migration", side_effect=OSError("cleanup interrupted")):

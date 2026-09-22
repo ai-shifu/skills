@@ -452,6 +452,12 @@ class ProfileStore:
             env_fields["SHIFU_BASE_URL"] = _digest(migration_env["SHIFU_BASE_URL"])
         journal = {"id": identifier, "base_url": url, "legacy_files": legacy_files, "env_fields": env_fields}
         write_private_json(self.migration_path, journal)
+        # A retry reuses the staged ID, but removed or foreign legacy sources
+        # must not activate files left behind by an interrupted earlier attempt.
+        retained_paths = {path for path, _data in records}
+        for path in (credentials_path(context), pending_auth_path(context)):
+            if path not in retained_paths:
+                path.unlink(missing_ok=True)
         for path, data in records:
             write_private_json(path, data)
             if read_private_json(path) != data:
