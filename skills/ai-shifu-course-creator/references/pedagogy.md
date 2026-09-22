@@ -114,13 +114,25 @@ When `pre_content_thinking` or `lesson_end_self_check` is selected and applies, 
 4. **Action translation** — Turn conceptual understanding into an immediately executable step.
 5. **Reflection loop** — Ask learners to compare current understanding with prior assumptions.
 
+### Teaching from Learner Context
+
+Apply the boundaries in [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics) within the already-required teaching actions. Connect relevant learner evidence to a teaching choice and an observable comprehension effect:
+
+- Use explicitly stated prior knowledge or a demonstrated misunderstanding to choose the prerequisite explanation and emphasis needed to understand the same required facts.
+- Use a stated task, goal, or familiar process to select meaningful conditions, decisions, and consequences for an already-required example or analogy. A different name, occupation, or conversational tone alone is not a teaching effect.
+- In existing answer-informed teaching or feedback, respond to the actual answer's reasoning, error, or demonstrated understanding. Correct the specific misunderstanding or connect an already-understood distinction to the required application instead of repeating the same explanation for every answer.
+
+Make these choices inside the main explanation, example, or feedback at its approved position, not merely in an optional personalized afterword. Keep required facts, author-required examples, exact material, teaching actions, and existing branch effects intact. Selecting emphasis within an existing action does not authorize another diagnostic question, remedial block, exercise, or learning path. Use only context actually available at that point; do not assume access to earlier lessons or answers that have not been supplied.
+
+When authoring before individual learners are known, identify which relevant evidence could guide the permitted choice at delivery time; do not hard-code a future learner identity. The selected level determines how this decision becomes a local instruction under [teaching-prompt.md#personalization-levels](teaching-prompt.md#personalization-levels). There is no quota of adaptations: where no relevant evidence or permitted choice exists, retain the shared contract's neutral behavior and required content.
+
 ### Examples and Analogies
 
 Use examples or analogies to address an identified comprehension need: an abstract concept, unfamiliar mechanism, easily confused distinction, or difficult transfer to action. Choose the aid that makes that point easier to understand; there is no per-lesson quota and no requirement to use both. An existing source example or direct demonstration can already meet the need. Avoid repeating it without a new teaching purpose, and prefer a direct explanation or worked example when an analogy would introduce more unfamiliar ideas than it resolves.
 
 - **Examples**: provide enough situation, relevant conditions, and reasoning or action steps for the learner to see how the concept works. Connect the result back to the intended concept, judgment, or application instead of leaving an anecdote to speak for itself.
 - **Analogies**: choose a familiar source situation and make the explanatory correspondence to the target concept clear. Preserve the relationship that does the explanatory work, not just a superficial resemblance. Where the comparison could support a false inference, identify the relevant difference or limit. Return to the target concept and its evidence; an analogy is an aid to understanding, not evidence that the claim is true.
-- **Background fit**: apply the learner-context boundaries in [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics) to choose meaningful tasks, situations, terminology, or constraints. Merely changing a character's job title does not establish fit. A role label alone does not establish knowledge, experience, or familiarity with a proposed analogy. When relevant context is missing, use the course-appropriate default defined by that shared contract.
+- **Background fit**: apply [Teaching from Learner Context](#teaching-from-learner-context) to choose meaningful tasks, situations, terminology, or constraints. Merely changing a character's job title does not establish fit. A role label alone does not establish knowledge, experience, or familiarity with a proposed analogy. When relevant context is missing, use the course-appropriate default defined by the shared Prompt contract.
 
 Resolve each needed example's or analogy's position, teaching purpose, essential conditions or relationships, and intended takeaway as part of the lesson design. These decisions remain the same across personalization levels; the level controls how much of the concrete scenario and ordinary expression is prewritten, as defined in [teaching-prompt.md#personalization-levels](teaching-prompt.md#personalization-levels).
 

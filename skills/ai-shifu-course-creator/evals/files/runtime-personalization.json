@@ -1,0 +1,90 @@
+{
+  "purpose": "Synthetic fixed-prompt trial; authoring_input is the only authoring input. Keep runtime_contexts and evaluation_protocol out of the authoring session and all grading expectations out of trial delivery.",
+  "authoring_input": {
+    "lesson_id": "runtime-personalization",
+    "audience": "需要读懂工作报告中百分比变化的普通成年学习者",
+    "delivery_mode": "纯文字一对一授课；非课程首节",
+    "learner_context_at_authoring": null,
+    "objective": "区分百分点与相对增长率，避免用相同的百分点变化断言增长幅度相同。",
+    "facts": [
+      "百分点变化等于两个比例之差；相对增长率等于比例之差除以原比例。",
+      "本节只处理原比例大于零的增长；两种计算都不能省略比较基准。",
+      "A 从 20% 提高到 30%，增加 10 个百分点，相对增长率为 50%；B 从 40% 提高到 50%，也增加 10 个百分点，相对增长率为 25%。",
+      "A、B 相对增长率不同，是因为原比例这个分母不同。"
+    ],
+    "fixed_plan": [
+      {
+        "id": "concept",
+        "action": "在同一个教学块中简短引入目标，解释比例之差与相对增长率的含义，以及原比例在计算中的作用。",
+        "adaptable": "术语铺垫、解释重点和解释深度；不增加类比或独立教学块。"
+      },
+      {
+        "id": "case",
+        "action": "在一个完整工作案例中并列计算 A、B 的两种变化，并解释为什么不能只看增加的百分点来比较相对增长率。案例必须使用上述固定数值和计算关系；具体工作场景未指定。",
+        "adaptable": "工作场景和计算的解释重点，使这些计算服务于学员已说明的实际任务；场景属于演示，不得把虚构数据说成学员真实经历。"
+      },
+      {
+        "id": "feedback",
+        "question": "A、B 都提高了 10 个百分点，能说它们的相对增长率相同吗？请说明理由。",
+        "control": "?[...说明你的理由]",
+        "action": "保留这一处既有开放回答，紧接回答给出反馈，然后在本块内收束。纠正理由中真实存在的错误；理由正确时确认其依据，并在已有案例内解释这一判断对报告结论的意义。",
+        "adaptable": "反馈的解释重点和深度；不得新增追问、练习、分支、变量或补救教学块。",
+        "exact_close": "百分点看比例之差，相对增长率还要看原比例。"
+      }
+    ]
+  },
+  "runtime_contexts": [
+    {
+      "id": "novice_misconception",
+      "profile": "刚开始读工作报告，不理解‘基准’和‘相对增长’。希望看懂门店转化率，之前以为增加 10 个百分点就是增长 10%。",
+      "answer_at_feedback": "相同，因为都是增加 10，增长率都是 10%。",
+      "expected_observations": {
+        "concept": "用已有比例说明原比例是比较起点，并明确区分‘相差多少’与‘相对于原来增加多少’，不能只复述两个公式。",
+        "case": "以转化率报告作为主要案例；固定计算明确展示 10÷20 与 10÷40，解释它们为何不是 10%，并连接到不能把两家门店的相对增长说成一样。",
+        "feedback": "针对回答中的两个错误解释：10 是百分点差而非 10% 相对增长；原比例不同使相对增长不同。不得只评价答错或重述标准答案。"
+      }
+    },
+    {
+      "id": "experienced_goal",
+      "profile": "能熟练计算百分比变化，已经知道百分点与相对增长率的区别。正在写订阅产品两组用户留存率的对比报告，希望避免只报一个指标造成误读。",
+      "answer_at_feedback": "不能。A 是 (30%-20%)/20%=50%，B 是 (50%-40%)/40%=25%，原比例不同。",
+      "expected_observations": {
+        "concept": "简洁确认定义，解释重点放在同一差值因比较基准不同而有不同报告含义；不大段重复零基础术语铺垫。",
+        "case": "主要案例服务于留存率对比报告；在固定数据上说明同时写清原比例、百分点变化和相对增长率能避免哪种误读，不只是替换职业或场景名。",
+        "feedback": "确认实际回答中使用正确分母的理由，在原案例内说明报告应如何呈现基准与两种变化；不虚构错误或再次补教整段基础概念。"
+      }
+    },
+    {
+      "id": "irrelevant_interest",
+      "profile": "喜欢爵士乐。",
+      "answer_at_feedback": "还不确定。",
+      "expected_observations": {
+        "all": "使用中性工作案例；不根据爵士乐推断职业、能力或场景，不强行加入音乐类比。反馈只回应尚不确定并说明比较依据。"
+      }
+    },
+    {
+      "id": "empty",
+      "profile": "",
+      "answer_at_feedback": "还不确定。",
+      "expected_observations": {
+        "all": "使用中性工作案例和适量概念铺垫；不猜身份、基础或误解，不追问背景。反馈只回应尚不确定并说明比较依据。"
+      }
+    },
+    {
+      "id": "unknown",
+      "profile": "UNKNOWN",
+      "answer_at_feedback": "还不确定。",
+      "expected_observations": {
+        "all": "将 UNKNOWN 视为缺失信息，采用与空画像相同的中性策略；不把字面值说给学员或解释成其姓名、身份或知识状态。"
+      }
+    }
+  ],
+  "evaluation_protocol": {
+    "authoring": "For each compared rule version and selected level, independently generate one Teaching Prompt and its shared Course Prompt using only authoring_input. Freeze both artifacts before revealing runtime contexts; reuse their exact contents throughout that arm. Never edit or regenerate them for a profile or repetition.",
+    "levels": [4, 5],
+    "repetitions_per_context": 3,
+    "delivery": "Run all three blocks in order for every context. Inject only profile as runtime learner context; supply answer_at_feedback only after the existing question. Keep model and generation settings the same between comparison arms. Use the real teaching prompt assembly and generation path when available; otherwise explicitly label the run offline and runtime effects unverified. Static inspection alone is not trial delivery.",
+    "record": "Keep the immutable prompt artifacts, effective assembled requests, runtime context, settings, delivery text and per-block evidence. For each expected observation, record the learner evidence, actual teaching choice and supported learning effect; do not supply expected_observations to the delivery model.",
+    "acceptance": "Each relevant context must meet all three block observations in at least two of three repetitions. Every output must preserve all facts, fixed numerical relations, the three-block order, sole original question/control and exact close; no new interaction, branch, variable or fabricated learner fact. Irrelevant, empty and UNKNOWN profiles must meet their fallback observations in all repetitions. Name, occupation or wording changes alone do not count as personalization. Report all failures, denominators and unassessed checks separately for each rule version and level; do not infer production success from offline delivery or prompt quality."
+  }
+}

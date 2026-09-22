@@ -890,9 +890,11 @@ class CourseCreatorContractTests(unittest.TestCase):
             semantics,
         )
         self.assertIn(
-            "the level controls how much ordinary title, explanation, "
-            "transition, example-detail, and non-deterministic feedback wording "
-            "generation writes into the local runtime instructions",
+            "teaching-prompt.md#personalization-levels",
+            semantics,
+        )
+        self.assertIn(
+            "pedagogy.md#teaching-from-learner-context",
             semantics,
         )
         self.assertIn(
@@ -1320,9 +1322,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         self.assertIn("in-memory authoring handoff", normalized)
         self.assertIn(
-            "Its only effect on `teaching_prompt` is the amount of ordinary "
-            "wording and already-permitted example detail materialized inside "
-            "direct local runtime instructions",
+            "Its effect on `teaching_prompt` is materialized in direct local "
+            "runtime instructions under [teaching-prompt.md#personalization-levels]",
             normalized,
         )
         self.assertIn(
@@ -1386,8 +1387,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
 
         self.assertIn(
-            "leaving the rest unwritten is the materialization of that "
-            "authoring choice",
+            "Do not explain the authoring decision to omit wording, but retain "
+            "directions that change teaching in response to available learner evidence",
             semantics,
         )
         self.assertIn(
@@ -1405,11 +1406,8 @@ class CourseCreatorContractTests(unittest.TestCase):
             workflow,
         )
         self.assertIn(
-            "write only the required runtime elements and end the instruction there",
-            levels,
-        )
-        self.assertIn(
-            "omitted, left open, adaptable, or not prewritten",
+            "executable directions to use learner evidence are runtime "
+            "instructions, not authoring commentary",
             levels,
         )
         self.assertIn(
@@ -1417,11 +1415,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             validation,
         )
         self.assertIn(
-            "open expression appears as a shorter local instruction",
-            validation,
-        )
-        self.assertIn(
-            "omitted, left open, or not prewritten",
+            "Retain executable learner-context directions required by the selected level",
             validation,
         )
         self.assertIn(
@@ -1445,8 +1439,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             repair,
         )
         self.assertIn(
-            "The shorter instruction carries that choice without a replacement "
-            "explanation about adaptable wording or detail",
+            "do not remove executable adaptation instructions merely to shorten the Prompt",
             repair,
         )
         self.assertIn(
@@ -2486,8 +2479,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "already-fixed execution plan",
             "A higher value predetermines less ordinary title, explanation, "
             "transition, example-detail, and non-deterministic feedback wording",
-            "write only the required runtime elements and end the instruction there",
-            "omitted, left open, adaptable, or not prewritten",
+            "pedagogy.md#teaching-from-learner-context",
             "in the in-memory handoff",
             "an empty outline",
         ):
@@ -2506,6 +2498,8 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertEqual({"1", "2", "3", "4", "5"}, set(level_rows))
         for level, row in level_rows.items():
             self.assertIn("Write", row, level)
+        for level in ("4", "5"):
+            self.assertIn("learner evidence", level_rows[level])
 
         level_1 = " ".join(level_rows["1"].split())
         for fragment in (
@@ -2594,6 +2588,47 @@ class CourseCreatorContractTests(unittest.TestCase):
                 r"(?m)^#{2,6} Personalization Levels$",
                 f"five-level behavior table belongs only in teaching-prompt.md: {path}",
             )
+
+    def test_runtime_personalization_eval_has_isolated_inputs_and_complete_matrix(self):
+        cases = json.loads(
+            (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
+        )["evals"]
+        self.assertEqual(len(cases), len({case["id"] for case in cases}))
+        for case in cases:
+            for fixture_name in case["files"]:
+                fixture_path = self.skill_root / fixture_name
+                self.assertTrue(fixture_path.is_file(), (case["id"], fixture_name))
+
+        runtime_eval = next(case for case in cases if case["id"] == 85)
+        self.assertEqual(len(runtime_eval["files"]), 1)
+        fixture = json.loads(
+            (self.skill_root / runtime_eval["files"][0]).read_text(encoding="utf-8")
+        )
+        authoring = fixture["authoring_input"]
+        self.assertIsNone(authoring["learner_context_at_authoring"])
+        block_ids = [block["id"] for block in authoring["fixed_plan"]]
+        self.assertEqual(block_ids, ["concept", "case", "feedback"])
+        self.assertNotIn("runtime_contexts", authoring)
+        self.assertNotIn("expected_observations", authoring)
+
+        contexts = {
+            context["id"]: context for context in fixture["runtime_contexts"]
+        }
+        self.assertEqual(len(contexts), 5)
+        for name in ("novice_misconception", "experienced_goal"):
+            self.assertEqual(
+                set(contexts[name]["expected_observations"]), set(block_ids)
+            )
+        self.assertEqual(contexts["empty"]["profile"], "")
+        self.assertEqual(contexts["unknown"]["profile"], "UNKNOWN")
+        for name in ("irrelevant_interest", "empty", "unknown"):
+            self.assertEqual(set(contexts[name]["expected_observations"]), {"all"})
+            self.assertEqual(
+                contexts[name]["answer_at_feedback"],
+                contexts["empty"]["answer_at_feedback"],
+            )
+        self.assertEqual(fixture["evaluation_protocol"]["levels"], [4, 5])
+        self.assertEqual(fixture["evaluation_protocol"]["repetitions_per_context"], 3)
 
     def test_personalization_does_not_absorb_course_prompt_or_runtime_contracts(self):
         field = "teaching_prompt_personalization_level"

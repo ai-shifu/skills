@@ -26,7 +26,7 @@ Provide one of:
 - `course_profile` object.
 - `delivery_constraints` object.
 - `interaction_policy` object.
-- `teaching_prompt_personalization_level` (integer from `1` through `5`): a course-wide, transient authoring input that controls how much learner-visible wording, explanation, already-required example identity and detail, and feedback wording each Teaching Prompt predetermines. It does not control teaching or slide structure.
+- `teaching_prompt_personalization_level` (integer from `1` through `5`): a course-wide, transient authoring input that controls ordinary expression specificity and the materialization of learner-informed choices inside each Teaching Prompt. It does not control teaching or slide structure.
 
 ### Teaching Prompt Personalization Level
 
@@ -34,7 +34,7 @@ Provide one of:
 
 This is a content-expression control, not a structure control. It never changes the internal lesson execution plan, including the teaching sequence, required actions and effects, slide count and order, or interaction and feedback placement.
 
-Pass the normalized value unchanged through the in-memory authoring handoff to Teaching Prompt generation and, when applicable, optimization review. Its only effect on `teaching_prompt` is the amount of ordinary wording and already-permitted example detail materialized inside direct local runtime instructions. Keep the control's name, value, and authoring semantics absent from Prompt bodies, output fields, course-directory files, CLI inputs or configuration, all build or deployment payloads including `shifu-import.json`, and platform metadata. In particular, do not serialize this control as a field in `lesson_teaching_prompts`, `course_index`, `global_variable_table`, `course_prompt`, `course_description`, or fallback output extensions.
+Pass the normalized value unchanged through the in-memory authoring handoff to Teaching Prompt generation and, when applicable, optimization review. Its effect on `teaching_prompt` is materialized in direct local runtime instructions under [teaching-prompt.md#personalization-levels](teaching-prompt.md#personalization-levels), not in a new runtime field. Keep the control's name, value, and authoring semantics absent from Prompt bodies, output fields, course-directory files, CLI inputs or configuration, all build or deployment payloads including `shifu-import.json`, and platform metadata. In particular, do not serialize this control as a field in `lesson_teaching_prompts`, `course_index`, `global_variable_table`, `course_prompt`, `course_description`, or fallback output extensions.
 
 ### Recommended Object Shapes
 

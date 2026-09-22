@@ -19,6 +19,7 @@
 | `.env.example` | Document supported service-selection and token environment variables with safe empty defaults and credential-storage guidance. |
 | `CHANGELOG.md` | Record user-visible and maintainer-relevant changes in chronological release history. Current behavior remains defined by `SKILL.md`, references, and scripts. |
 | `evals/evals.json` | Hold end-to-end behavioral scenarios, optional input fixtures, and expected outcomes for routing, authoring, platform, analytics, and boundary regressions. Canonical guidance remains the source of behavior. |
+| `evals/files/runtime-personalization.json` | Hold synthetic lesson inputs, separate runtime learner contexts, and the frozen-prompt replay protocol for personalization evaluations. It tests the owned teaching rules without defining production data fields or using real learner records. |
 | `evals/trigger_eval.json` | Test whether representative requests should or should not discover this skill. Keep capability and trigger wording canonical in `SKILL.md` frontmatter. |
 
 ## Core Reference Responsibilities

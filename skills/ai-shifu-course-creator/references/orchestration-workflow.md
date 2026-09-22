@@ -42,7 +42,7 @@ Do not run Teaching Prompt generation or build `course_index` and `global_variab
 
 - Verify syntax and runtime results through the requirements loaded by `teaching-prompt.md`.
 - Recover each Teaching Prompt's execution signature from its actual ordered instructions and compare it with the internal execution plan. Verify teaching and slide order, slide count, local content and effects, content grouping and hierarchy, interaction-control-feedback adjacency, images, and the close from the artifact itself.
-- Verify each Teaching Prompt's content-expression specificity against `teaching-prompt.md#personalization-levels`. Across level variants, the recovered execution signature remains unchanged while only ordinary wording and already-permitted example detail vary.
+- Verify each Teaching Prompt's content-expression specificity and executable learner-informed choices against `teaching-prompt.md#personalization-levels`. Across level variants, the recovered execution signature remains unchanged while only permitted expression and example detail vary.
 - Verify every learner-answer variable against `data-contracts.md#variable-table`.
 - Verify the selected teaching loop, interaction effects, variable-persistence decisions, and delivery-mode behavior against `pedagogy.md`.
 - Require Segmentation's preservation validation to pass.

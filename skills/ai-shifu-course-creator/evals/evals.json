@@ -877,14 +877,14 @@
         "Every variant makes the example demonstrate the alert-to-independent-verification relationship and makes the analogy illuminate why a signal is not a conclusion, rather than merely requesting an interesting story or analogy.",
         "The case and analogy preserve the source facts. Each analogy has an intelligible correspondence, and any limitation needed to prevent it from implying a confirmed cause, certain danger, or certain false alarm is taught at its use point.",
         "Levels 1 and 2 prewrite a selected example and analogy with concrete key details; level 1 is near-final while level 2 leaves incidental elaboration open. Level 3 specifies type, teaching point, and the essential correspondence without fixing unnecessary identity or detail.",
-        "Levels 4 and 5 retain executable selection or material requirements, intended understanding, correspondence, and necessary limits while leaving unnecessary example and analogy identity and wording unwritten; neither variant drops either required teaching move.",
+        "Levels 4 and 5 retain executable selection or material requirements, intended understanding, correspondence, and necessary limits while leaving unnecessary example and analogy identity and wording unwritten. Their local instructions connect relevant runtime learner evidence to a specific teaching choice and understanding effect inside the existing explanation or example; shorter instructions or a generic personalize request alone are insufficient, and neither required teaching move is dropped.",
         "Differences among levels appear in local runtime instructions, not in author-facing explanations about how personalization works or generic statements that the Teaching Agent may choose anything suitable."
       ]
     },
     {
       "id": 72,
       "prompt": "课程面向会使用 AI 的普通职场人，讲‘检查 AI 结果前先明确验收标准’，采用纯文字授课，互动关闭，教学结构已定。现在只生成其中一个教学块：用一个工作案例展示同一份看似流畅的 AI 结果，怎样按照任务目标和可核验证据来判断是否合格，然后点明判断依据。请分别为四种学习者信息生成 teaching_prompt_personalization_level=1 和 5 的版本，共八个简短教学块：A 初中历史教师，正在准备课堂史料，希望避免把无法核实的材料给学生；B 产品经理，正在整理用户访谈，希望避免把个别人的意见写成所有用户的需求；C 无学习者信息；D 只知道喜欢爵士乐。每种情况下，作者在生成授课提示词时已经知道这里列出的信息，但课程目标人群保持不变。每份可附一段简短试讲，便于我比较效果。只输出 JSON：variants 数组，每项含 context、level、teaching_prompt 和可选的 delivery；不连接平台，不生成完整课程。",
-      "expected_output": "Uses relevant context already available during authoring at both personalization levels, while varying how much of the selected example is prewritten.",
+      "expected_output": "Uses relevant context already available during authoring at both personalization levels while varying prescription; this author-known-context comparison is not evidence of runtime personalization from a frozen Prompt.",
       "files": [],
       "expectations": [
         "The output contains all eight context-and-level combinations. Every variant keeps one example-based teaching block with the same objective, evidence relationship, and conclusion; none solicits learner input or adds controls, variables, diagnostic questions, remedial blocks, or another lesson structure.",
@@ -1035,6 +1035,36 @@
         "The Task section preserves both direct second-person learner address for self-study and projection-ready content without individual address or narration for classroom delivery.",
         "The two behaviors are conditional on the current user message rather than imposed simultaneously or reduced to one mode.",
         "All six template sections remain and there are no unfilled placeholders or authoring explanations."
+      ]
+    },
+    {
+      "id": 85,
+      "prompt": "只做本地合成评测，不发布课程、不读取真实学员数据。使用附件 runtime-personalization.json：先将 authoring_input 单独交给隔离的创作步骤，分别按 teaching_prompt_personalization_level=4 和 5 各生成一次完整授课提示词及配套课程提示词；创作步骤不能看到 runtime_contexts 或评测预期。冻结产物后，严格按 evaluation_protocol，对每份冻结产物使用五种上下文分别独立试讲三次，每次按顺序完成 concept、case、feedback 三块。不得为了某画像或某次重试重写提示词；预期观察不能进入授课模型输入；回答只在固定题目之后注入。有可用的真实授课组装和生成链路就使用并保留有效请求；否则明确标为离线试讲、线上效果未验证，不要模拟一个成功的线上调用。记录冻结产物、设置、实际输出与每块的证据→教学选择→理解效果，以及逐画像计数；没有执行的检查标为未评测，不得用静态检查代替试讲。",
+      "expected_output": "Tests substantive runtime adaptation of the same frozen high-personalization artifacts across repeated relevant and negative contexts without profile-specific reauthoring or fabricated execution claims.",
+      "files": [
+        "evals/files/runtime-personalization.json"
+      ],
+      "expectations": [
+        "Authoring receives only authoring_input and the selected level; each level produces one frozen Teaching Prompt and shared Course Prompt before any runtime context is exposed. All fifteen deliveries per level reuse those exact artifacts and the same generation settings, with answer_at_feedback injected only at the existing question.",
+        "The two relevant contexts each meet the fixture observations for concept, case and feedback in at least two of three repetitions: novice delivery explains the comparison baseline and corrects the actual two-part misconception; experienced delivery uses concise foundations and interprets the fixed calculations for a retention report without inventing an error.",
+        "Relevant context changes the principal explanation or case and the existing feedback. Merely substituting a name, occupation, scenario noun, tone or an optional appended personalized sentence does not count as a useful teaching change.",
+        "All deliveries retain the fixed facts, A and B values and results, the three teaching blocks in order, sole unchanged question/control and exact closing sentence; no delivery adds learner-background collection, exercise, branch, variable or fabricated learner facts.",
+        "Every irrelevant-interest, empty and UNKNOWN run uses a neutral course-appropriate strategy, handles only the supplied uncertain answer at feedback, and does not force a jazz analogy, guess a profession or knowledge state, or reveal profile content or the UNKNOWN marker.",
+        "The report preserves actual output evidence and per-context pass counts with denominators and failures, distinguishes unperformed checks from failed checks, and labels offline trial results as insufficient to verify production. Expected observations never enter the delivery model input, and no second rule-version comparison is claimed unless separately frozen and run."
+      ]
+    },
+    {
+      "id": 86,
+      "prompt": "只在本地审查并最小修复一段已标记为高个性化的课，不重做课程或调用平台。设计已定：纯文字、无互动、固定两个教学块，依次为概念解释、一个工作案例与收束。事实：AI 生成的引文可能不存在；真实原文存在也不代表支持所引用的具体论断；引用前必须找到原文，再核对是否支持论断。作者要求原句“找到原文，再核对论断。”完整保留在结尾；未要求保留案例身份。现有授课提示词：<!-- 分清两个核验步骤 -->\n- 讲解上述事实。\n<!-- 用案例理解核验 -->\n- 先讲一位办公室助理核对会议纪要中引文的完整案例，然后可按学员背景补一句相关的例子，最后说：找到原文，再核对论断。\n现有课程提示词已经允许使用相关学员上下文，但作者创作时不知道未来学员画像。请修成 teaching_prompt_personalization_level=5 的可执行授课提示词，并说明可确定的缺陷和线上仍需核验的事项；不能因为没有线上日志就断言画像注入失效。不要收集学员背景，也不要输出个性化级别的创作说明。",
+      "expected_output": "Repairs an optional afterthought into evidence-based choices within the original teaching blocks while preserving exact content and distinguishing prompt defects from unverified runtime hypotheses.",
+      "files": [],
+      "expectations": [
+        "The repair retains exactly the concept block and one case-and-close block in order, all three verification facts and the exact required closing sentence; it adds no interaction, named variable, analogy, exercise or teaching branch.",
+        "The concept instruction connects relevant evidence of learner understanding to prerequisite explanation or emphasis. The case instruction uses a stated application goal to select the main case and explain both existence and claim-support checks, rather than always presenting the office-assistant case before an optional personalized addition.",
+        "When no useful context is available, the instructions remain executable with a neutral work example and the complete two-step distinction; they do not invent knowledge, identity or a learning goal or ask for new background.",
+        "The runtime artifact contains concrete evidence-to-teaching-choice-to-effect directions and all necessary facts, but no authoring-level label, explanation that wording was left open, repeated course-wide profile policy or serialized profile tags.",
+        "The analysis identifies an overly skeletal concept instruction and optional-afterthought adaptation as observable prompt defects; effective assembled prompts, actual runtime learner context, overriding chapter rules and deterministic output blocks remain verification targets, not invented proof of an injection failure or a reason to change platform fields.",
+        "The response does not claim runtime or production improvement based only on its repaired text; a frozen-prompt repeated-delivery evaluation remains necessary for behavioral evidence."
       ]
     }
   ]
