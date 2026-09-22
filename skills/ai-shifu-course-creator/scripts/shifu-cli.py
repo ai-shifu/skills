@@ -82,7 +82,9 @@ def host_platform():
     value = os.environ.get(HOST_PLATFORM_ENV, "").strip().lower() or "direct"
     if value not in HOST_PLATFORMS:
         allowed = ", ".join(sorted(HOST_PLATFORMS))
-        raise RuntimeError(f"{HOST_PLATFORM_ENV} must be one of: {allowed}")
+        raise profiles.ProfileError(
+            f"{HOST_PLATFORM_ENV} must be one of: {allowed}"
+        )
     return value
 
 
@@ -2589,13 +2591,24 @@ def _validate_pending_course_creation(record, token_digest):
         or failure_generation < 0
     ):
         raise RuntimeError("Pending course creation record has invalid retry state")
-    attribution = {
-        "host_platform": str(record.get("host_platform") or ""),
-        "skill_id": str(record.get("skill_id") or ""),
-        "skill_version": str(record.get("skill_version") or ""),
+    raw_attribution = {
+        "host_platform": record.get("host_platform"),
+        "skill_id": record.get("skill_id"),
+        "skill_version": record.get("skill_version"),
     }
-    if any(attribution.values()) and not all(attribution.values()):
+    if all(value in (None, "") for value in raw_attribution.values()):
+        attribution = {key: "" for key in raw_attribution}
+    elif (
+        not all(
+            isinstance(value, str) and bool(value)
+            for value in raw_attribution.values()
+        )
+        or raw_attribution["host_platform"] not in HOST_PLATFORMS
+        or raw_attribution["skill_id"] != SKILL_ID
+    ):
         raise RuntimeError("Pending course creation record has invalid attribution")
+    else:
+        attribution = raw_attribution
     return handoff_id, leases, retry_required, failure_generation, attribution
 
 

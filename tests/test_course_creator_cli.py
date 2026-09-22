@@ -441,6 +441,9 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
         ))
         self.api = self.enterContext(mock.patch.object(course_creator_cli, "api"))
         self.api_safe = self.enterContext(mock.patch.object(course_creator_cli, "api_safe"))
+        self.journey_post = self.enterContext(
+            mock.patch.object(course_creator_cli.requests, "post")
+        )
 
     def test_link_output_has_labels_and_course_preview_without_explanations(self):
         for base_url in (
@@ -578,7 +581,10 @@ class CourseCreationAttributionTests(unittest.TestCase):
             course_creator_cli.os.environ,
             {"AI_SHIFU_HOST_PLATFORM": "user-supplied"},
             clear=True,
-        ), self.assertRaisesRegex(RuntimeError, "AI_SHIFU_HOST_PLATFORM"):
+        ), self.assertRaisesRegex(
+            course_creator_cli.profiles.ProfileError,
+            "AI_SHIFU_HOST_PLATFORM",
+        ):
             course_creator_cli.host_platform()
 
     def test_temporary_context_uses_config_root_for_attribution_state(self):
@@ -608,7 +614,8 @@ class CourseCreationAttributionTests(unittest.TestCase):
             {"AI_SHIFU_HOST_PLATFORM": "user-supplied"},
             clear=False,
         ), self.assertRaisesRegex(
-            RuntimeError, "AI_SHIFU_HOST_PLATFORM"
+            course_creator_cli.profiles.ProfileError,
+            "AI_SHIFU_HOST_PLATFORM",
         ), course_creator_cli._course_creation_attribution(
             "test-token", "new-operation"
         ):
@@ -771,6 +778,32 @@ class CourseCreationAttributionTests(unittest.TestCase):
                 self.assertEqual(
                     pending[journal_key]["failure_generation"], invalid_generation
                 )
+
+    def test_invalid_recorded_package_identity_fails_closed(self):
+        token_digest = hashlib.sha256(b"test-token").hexdigest()
+        base_record = {
+            "token_digest": token_digest,
+            "handoff_id": "52cefd54-930a-4c06-b62d-00de456cd56f",
+            "leases": [],
+            "retry_required": True,
+            "failure_generation": 1,
+            "host_platform": "direct",
+            "skill_id": course_creator_cli.SKILL_ID,
+            "skill_version": "1.2.3",
+        }
+        invalid_values = (
+            {"host_platform": "foreign-host"},
+            {"skill_id": "foreign-skill"},
+            {"skill_version": 123},
+            {"host_platform": ""},
+        )
+        for changes in invalid_values:
+            with self.subTest(changes=changes):
+                record = {**base_record, **changes}
+                with self.assertRaisesRegex(RuntimeError, "invalid attribution"):
+                    course_creator_cli._validate_pending_course_creation(
+                        record, token_digest
+                    )
 
     def test_new_import_sends_attribution_but_existing_import_does_not(self):
         import_data = {
