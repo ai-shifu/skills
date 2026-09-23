@@ -309,31 +309,10 @@ class ProfileStore:
             raise ProfileError(f"Invalid credentials for profile '{context.name}'; run logout and login for this profile.")
         return token.strip()
 
-    def save_token(self, context, token, *, course_handoff_id=""):
+    def save_token(self, context, token):
         if not isinstance(token, str) or not token.strip():
             raise ProfileError("Cannot save an empty token.")
-        payload = {"base_url": context.base_url, "token": token.strip()}
-        if course_handoff_id:
-            payload["course_handoff_id"] = course_handoff_id
-        write_private_json(credentials_path(context), payload)
-
-    def consume_course_handoff(self, context, token, handoff_id):
-        """Remove one matching handoff without reviving credentials cleared by logout."""
-        with self._configuration_lock():
-            current = self._current_auth_context(context)
-            path = credentials_path(current)
-            credentials = read_private_json(path)
-            if not credentials:
-                return False
-            if (
-                credentials.get("token") != token
-                or credentials.get("course_handoff_id") != handoff_id
-            ):
-                return False
-            cleaned = dict(credentials)
-            cleaned.pop("course_handoff_id", None)
-            write_private_json(path, cleaned)
-            return True
+        write_private_json(credentials_path(context), {"base_url": context.base_url, "token": token.strip()})
 
     def _current_auth_context(self, context):
         """Revalidate an authorization context while the caller holds the settings lock."""
@@ -362,11 +341,7 @@ class ProfileStore:
                     "Pending authorization changed or was cleared; run login again for this profile."
                 )
             if token is not None:
-                self.save_token(
-                    current,
-                    token,
-                    course_handoff_id=str(pending.get("course_handoff_id") or ""),
-                )
+                self.save_token(current, token)
             path.unlink()
 
     def logout(self, context):

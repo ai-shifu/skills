@@ -153,12 +153,8 @@ class CourseProfileProcessTests(unittest.TestCase):
             directory = self.profile_dir(name)
             self.assertFalse((directory / "pending-device-auth.json").exists())
             credentials = json.loads((directory / "credentials.json").read_text())
-            self.assertEqual(credentials["base_url"], self.origin + "/" + prefix)
-            self.assertEqual(credentials["token"], f"issued-{prefix}-secret")
-            self.assertRegex(
-                credentials["course_handoff_id"],
-                r"^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
-            )
+            self.assertEqual(credentials, {"base_url": self.origin + "/" + prefix,
+                                           "token": f"issued-{prefix}-secret"})
         self.run_cli("verify")
         self.run_cli("--profile", "../客户A", "verify", env=conflicting)
         self.run_cli("verify")
