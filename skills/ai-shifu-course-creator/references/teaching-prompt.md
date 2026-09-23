@@ -12,6 +12,7 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 - `data-contracts.md#variable-table`
 - `pedagogy.md`
 - `markdownflow.md`
+- `markdownflow-2.md`
 
 ## Conditional References
 
