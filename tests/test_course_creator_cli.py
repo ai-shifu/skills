@@ -431,6 +431,9 @@ class CourseCreatorSiteTests(unittest.TestCase):
 class CourseCreatorVerificationUrlTests(unittest.TestCase):
     def setUp(self):
         self.base_url = "https://school.example/academy"
+        self.track = self.enterContext(
+            mock.patch.object(course_creator_cli, "track")
+        )
         self.enterContext(mock.patch.object(
             course_creator_cli, "resolve_auth",
             return_value=(self.base_url, "test-token"),
@@ -501,6 +504,7 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
     def test_publish_prints_learner_url_only_after_success(self):
         for succeeds in (False, True):
             with self.subTest(succeeds=succeeds):
+                self.track.reset_mock()
                 self.api.side_effect = None if succeeds else RuntimeError("Publish failed")
                 with contextlib.redirect_stdout(io.StringIO()) as output:
                     if succeeds:
@@ -518,6 +522,15 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
                     )
                 else:
                     self.assertEqual(output.getvalue(), "")
+                expected_events = ["course_publish_started"]
+                if succeeds:
+                    expected_events.append("course_publish_completed")
+                self.assertEqual(
+                    [call.args[0] for call in self.track.call_args_list],
+                    expected_events,
+                )
+                for call in self.track.call_args_list:
+                    self.assertEqual(call.kwargs, {"token": "test-token"})
 
 
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
@@ -641,6 +654,22 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertEqual(called_base_url, "https://example.test")
         self.assertEqual(called_path, "/api/user/device/authorize")
         self.assertIn("device_name", payload)
+        self.assertEqual(
+            payload["registration_attribution"]["host_platform"], "direct"
+        )
+        self.assertEqual(
+            payload["registration_attribution"]["skill_id"],
+            "ai-shifu-course-creator",
+        )
+        self.assertTrue(payload["registration_attribution"]["skill_version"])
+        self.assertEqual(
+            str(
+                course_creator_cli.uuid.UUID(
+                    payload["registration_attribution"]["handoff_id"]
+                )
+            ),
+            payload["registration_attribution"]["handoff_id"],
+        )
 
         printed = stdout.getvalue()
         open_browser.assert_not_called()

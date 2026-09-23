@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Record the controlled host platform for direct and packaged Skill installs,
+  attach the same attribution contract to registration and new-course creation,
+  and report best-effort authorization, creation, import, and publish milestones.
 - Validate personalization within each supplied Prompt artifact and mark unavailable companion alignment as not assessed, preserving standalone generation and content-only audits.
 - Keep generic Course Prompt template rules limited to lesson boundaries, learner-profile privacy, and neutral fallbacks so only the author's selected directions enable personalization.
 - Verify an existing Course Prompt's personalization behavior before reusing it for lesson generation; report incompatible course-wide instructions as a dependency without expanding a lesson-only edit.
@@ -18,6 +21,9 @@
 - Format newly generated or explicitly rewritten Teaching Prompts with one runtime-invisible, freely worded learning-result comment per teaching block, using concise and naturally varied result phrases that keep adjacent blocks distinguishable, plus hierarchical unordered-list instructions wherever actions have separable supporting details, while preserving every existing teaching requirement and exact MarkdownFlow structure.
 - Define one canonical responsibility for every Course Creator package file and route cross-file maintenance through the owning reference.
 - Route current-title and draft-versus-published title questions through analytics metadata resolution.
+- Report browser authorization and course-creation journey events directly to
+  Umami with the controlled package channel, without writing attribution into
+  user, course, or event tables.
 - Remove the complete local, artifact-only, author-only course path so a full-course request continues through deployment and publication by default.
 - Open browser URLs in new visible tabs, reusing only exact URL matches so existing pages and unfinished work are preserved.
 - Share built-in browser URL opening across authorization and course handoffs, including host selection, visible interaction, user opt-outs, and opening result handling.
