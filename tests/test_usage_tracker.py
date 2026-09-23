@@ -203,17 +203,18 @@ class TrackTests(unittest.TestCase):
             usage_tracker.track("cli_list")  # must not raise
 
     def test_allowlisted_host_platform_is_reported(self) -> None:
-        with mock.patch.dict(
-            usage_tracker.os.environ,
-            self._env(AI_SHIFU_HOST_PLATFORM="workbuddy"),
-            clear=True,
-        ), mock.patch.object(
-            usage_tracker, "distinct_id", return_value="a:x"
-        ), mock.patch.object(usage_tracker.requests, "post") as post:
-            usage_tracker.track("cli_list")
+        for platform in ("workbuddy", "doubao", "qclaw", "lobster", "codex"):
+            with self.subTest(platform=platform), mock.patch.dict(
+                usage_tracker.os.environ,
+                self._env(AI_SHIFU_HOST_PLATFORM=platform),
+                clear=True,
+            ), mock.patch.object(
+                usage_tracker, "distinct_id", return_value="a:x"
+            ), mock.patch.object(usage_tracker.requests, "post") as post:
+                usage_tracker.track("cli_list")
 
-        data = post.call_args.kwargs["json"]["payload"]["data"]
-        self.assertEqual(data["host_platform"], "workbuddy")
+            data = post.call_args.kwargs["json"]["payload"]["data"]
+            self.assertEqual(data["host_platform"], platform)
 
     def test_unknown_host_platform_falls_back_to_direct(self) -> None:
         with mock.patch.dict(

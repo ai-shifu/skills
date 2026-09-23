@@ -48,7 +48,9 @@ REQUEST_TIMEOUT = 3
 DISTINCT_ID_MAX = 50
 
 _OPT_OUT_VALUES = frozenset({"off", "0", "false", "no"})
-_HOST_PLATFORMS = frozenset({"workbuddy", "doubao", "lobster", "codex", "direct"})
+_HOST_PLATFORMS = frozenset(
+    {"workbuddy", "doubao", "qclaw", "lobster", "codex", "direct"}
+)
 
 
 def host_platform() -> str:

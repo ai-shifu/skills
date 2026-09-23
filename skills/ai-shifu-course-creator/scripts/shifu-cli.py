@@ -72,7 +72,9 @@ MAX_COURSE_PAGES = 10
 
 SKILL_ID = "ai-shifu-course-creator"
 HOST_PLATFORM_ENV = "AI_SHIFU_HOST_PLATFORM"
-HOST_PLATFORMS = frozenset({"workbuddy", "doubao", "lobster", "codex", "direct"})
+HOST_PLATFORMS = frozenset(
+    {"workbuddy", "doubao", "qclaw", "lobster", "codex", "direct"}
+)
 COURSE_HANDOFF_LOCK_TIMEOUT_SECONDS = 30
 _ACTIVE_COURSE_CREATION_LEASES = set()
 

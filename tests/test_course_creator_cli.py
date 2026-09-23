@@ -589,13 +589,16 @@ class CourseCreationAttributionTests(unittest.TestCase):
         )
 
     def test_configured_host_platform_is_used(self):
-        with mock.patch.dict(
-            course_creator_cli.os.environ,
-            {"AI_SHIFU_CONFIG_DIR": str(course_creator_cli.config_dir()),
-             "AI_SHIFU_HOST_PLATFORM": "doubao"},
-            clear=True,
-        ):
-            self.assertEqual(course_creator_cli.host_platform(), "doubao")
+        for platform in ("workbuddy", "doubao", "qclaw", "lobster", "codex"):
+            with self.subTest(platform=platform), mock.patch.dict(
+                course_creator_cli.os.environ,
+                {
+                    "AI_SHIFU_CONFIG_DIR": str(course_creator_cli.config_dir()),
+                    "AI_SHIFU_HOST_PLATFORM": platform,
+                },
+                clear=True,
+            ):
+                self.assertEqual(course_creator_cli.host_platform(), platform)
 
     def test_invalid_host_platform_is_rejected_before_attribution(self):
         with mock.patch.dict(
