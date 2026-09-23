@@ -435,6 +435,12 @@ class CourseCreatorSiteTests(unittest.TestCase):
 class CourseCreatorVerificationUrlTests(unittest.TestCase):
     def setUp(self):
         self.base_url = "https://school.example/academy"
+        self.enterContext(
+            mock.patch.dict(
+                course_creator_cli.os.environ,
+                {"AI_SHIFU_HOST_PLATFORM": "direct"},
+            )
+        )
         self.enterContext(mock.patch.object(
             course_creator_cli, "resolve_auth",
             return_value=(self.base_url, "test-token"),
