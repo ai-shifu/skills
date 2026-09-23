@@ -749,6 +749,24 @@ class CourseCreationAttributionTests(unittest.TestCase):
         )
         self.assertEqual(credentials["course_handoff_id"], handoff_id)
 
+    def test_windows_lease_liveness_does_not_send_a_console_event(self):
+        lease = {
+            "id": "other-process",
+            "pid": course_creator_cli.os.getpid() + 1000,
+        }
+
+        with (
+            mock.patch.object(course_creator_cli.os, "name", "nt"),
+            mock.patch.object(
+                course_creator_cli, "_windows_process_is_alive", return_value=True
+            ) as windows_check,
+            mock.patch.object(course_creator_cli.os, "kill") as kill,
+        ):
+            self.assertTrue(course_creator_cli._course_creation_lease_is_alive(lease))
+
+        windows_check.assert_called_once_with(lease["pid"])
+        kill.assert_not_called()
+
     def test_malformed_matching_record_fails_before_allocating_handoff(self):
         operation_key = "new-operation"
         token_digest = hashlib.sha256(b"test-token").hexdigest()

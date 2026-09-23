@@ -2542,6 +2542,35 @@ def _course_directory_import_operation_key(course_dir, json_file):
     )
 
 
+def _windows_process_is_alive(process_id):
+    """Check a Windows process without sending it a console control event."""
+    import ctypes
+    from ctypes import wintypes
+
+    process_query_limited_information = 0x1000
+    still_active = 259
+    error_access_denied = 5
+    error_invalid_parameter = 87
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    handle = kernel32.OpenProcess(
+        process_query_limited_information, False, process_id
+    )
+    if not handle:
+        error = ctypes.get_last_error()
+        if error == error_access_denied:
+            return True
+        if error == error_invalid_parameter:
+            return False
+        raise ctypes.WinError(error)
+    try:
+        exit_code = wintypes.DWORD()
+        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+            return True
+        return exit_code.value == still_active
+    finally:
+        kernel32.CloseHandle(handle)
+
+
 def _course_creation_lease_is_alive(lease):
     """Return whether a journal lease still belongs to a live invocation."""
     if not isinstance(lease, dict):
@@ -2555,6 +2584,8 @@ def _course_creation_lease_is_alive(lease):
         return False
     if process_id == os.getpid():
         return lease_id in _ACTIVE_COURSE_CREATION_LEASES
+    if os.name == "nt":
+        return _windows_process_is_alive(process_id)
     try:
         os.kill(process_id, 0)
     except ProcessLookupError:
