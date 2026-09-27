@@ -788,7 +788,7 @@
         "It asks the first unresolved Course Design Intake question with an effect preview; missing source material is collected locally before the phase that needs it.",
         "It does not call site, verify, login, find-title, create, import, or publish, and does not open an authorization page.",
         "It does not claim the user asked for an empty course, reserve a course name on the platform, or replace the authoring route with standalone management.",
-        "A session version check remains permitted and is not followed automatically by login verification."
+        "It does not check for skill updates because the user did not request a version check, and it does not start login verification."
       ]
     },
     {

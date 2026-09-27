@@ -106,7 +106,6 @@ class CourseProfileProcessTests(unittest.TestCase):
                        if not key.startswith(("SHIFU_", "AI_SHIFU_"))}
         process_env.update({
             "AI_SHIFU_CONFIG_DIR": str(self.config),
-            "AI_SHIFU_SKILL_TELEMETRY": "off",
             "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost",
             "PYTHONIOENCODING": "utf-8",
         })

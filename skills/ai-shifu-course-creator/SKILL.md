@@ -1,8 +1,9 @@
 ---
 name: ai-shifu-course-creator
 description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to authoring interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Also covers post-deployment analytics on those courses — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profiles, and individual learner tracking. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, Course Prompt authoring, course analytics, creator analytics, 学习人数, 完成率, 卡课节, 订单收入, 积分消耗, or learner progress.
-version: 1.2.10
-version_management: standalone
+metadata:
+  version: 1.2.10
+  version_management: standalone
 ---
 
 # AI-Shifu Course Creator
@@ -19,7 +20,7 @@ On the first invocation in a session:
 
 1. Read `references/language-policy.md` and resolve `resolved_target_language` before the first user-visible response.
 2. Read `references/session-controls.md` completely before the first user-visible response.
-3. Apply its contact, version-check, progress/error, and handoff rules.
+3. Apply its contact, explicit-request-only version-check, progress/error, and handoff rules.
 4. Classify the request with the routing table below.
 5. Read every file or anchored section listed for the selected Task Router row, then execute the listed stages in order. Reading a later-stage reference does not execute its steps early; in particular, do not authenticate while preparing local content merely because deployment follows. When one file appears at multiple anchored stages, read it once and apply each named section at its listed point. The Task Router declares the required workflow stages.
 6. In each selected reference, read the ordered bullets under `## Required References` before applying that reference. Resolve those strong dependencies transitively.

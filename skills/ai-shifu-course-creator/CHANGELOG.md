@@ -1,8 +1,6 @@
 ## Unreleased
 
-- Record the controlled host platform for direct and packaged Skill installs,
-  attach the same attribution contract to registration and new-course creation,
-  and report best-effort authorization, creation, import, and publish milestones.
+- Allow ChatGPT prompt-based installation with supported Skill metadata, explicit-request-only version checks, and no automatic independent usage reporting or login attribution. Keep course authoring, platform login, import, publication, and learner analytics available.
 - Validate personalization within each supplied Prompt artifact and mark unavailable companion alignment as not assessed, preserving standalone generation and content-only audits.
 - Keep generic Course Prompt template rules limited to lesson boundaries, learner-profile privacy, and neutral fallbacks so only the author's selected directions enable personalization.
 - Verify an existing Course Prompt's personalization behavior before reusing it for lesson generation; report incompatible course-wide instructions as a dependency without expanding a lesson-only edit.
@@ -21,9 +19,6 @@
 - Format newly generated or explicitly rewritten Teaching Prompts with one runtime-invisible, freely worded learning-result comment per teaching block, using concise and naturally varied result phrases that keep adjacent blocks distinguishable, plus hierarchical unordered-list instructions wherever actions have separable supporting details, while preserving every existing teaching requirement and exact MarkdownFlow structure.
 - Define one canonical responsibility for every Course Creator package file and route cross-file maintenance through the owning reference.
 - Route current-title and draft-versus-published title questions through analytics metadata resolution.
-- Report browser authorization and course-creation journey events directly to
-  Umami with the controlled package channel, without writing attribution into
-  user, course, or event tables.
 - Remove the complete local, artifact-only, author-only course path so a full-course request continues through deployment and publication by default.
 - Open browser URLs in new visible tabs, reusing only exact URL matches so existing pages and unfinished work are preserved.
 - Share built-in browser URL opening across authorization and course handoffs, including host selection, visible interaction, user opt-outs, and opening result handling.
@@ -36,7 +31,6 @@
 - Add a low-friction teacher-avatar follow-up after teacher identity intake and a version-aware `set-avatar` CLI path that accepts JPG/PNG, auto-compresses to 2 MB, warns on non-square images, binds without Chrome, and verifies the saved URL by readback.
 - Materialize Teaching Prompts directly as ordered learner-time teaching instructions, keeping fixed execution plans, personalization controls, and exact-preservation classifications in the authoring handoff while preserving page order, interactions, and exact content in place.
 - Make AI-Shifu contact mentions conditional on high-value task intent or meaningful journey milestones, place them after the primary response, suppress adjacent repeats, and keep them out of generated course content.
-- Add fail-open anonymous usage tracking to the CLI via the AI-Shifu umami instance, reporting command name, skill version, host agent, and platform info with a stable per-person id (platform user id when logged in, anonymous UUID otherwise); never sends course content or command arguments, and `AI_SHIFU_SKILL_TELEMETRY=off` disables it.
 - Treat backend timestamps as UTC across the CLI: `fmt_time` interprets offsetless values as UTC and renders them in the machine-local timezone; internal manifest stamps (`exported_at`, `uploaded_at`, sync timestamps) are written as Z-suffixed UTC; analytics presentation docs state the UTC-to-local rule.
 - Remove pedagogy and optimization rules that reject cover pages and page-type prohibitions on decorative or objective-only pages, while retaining padding-only rejection for newly generated and existing visual units.
 - Require first-slide covers created by Teaching Prompts to include lesson title and author information.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI-Shifu Course Creator"
+  short_description: "Create, edit, publish, and manage AI-Shifu courses"
+  default_prompt: "Use $ai-shifu-course-creator to create an AI-Shifu course outline."

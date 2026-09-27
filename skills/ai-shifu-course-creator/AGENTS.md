@@ -16,6 +16,7 @@
 | --- | --- |
 | `AGENTS.md` | Define this skill's maintenance-time ownership map and cross-file editing rules. It guides contributors and does not define learner-time or authoring behavior. |
 | `SKILL.md` | Define skill discovery metadata, the package-wide user-facing Markdown link contract, startup requirements, the task router, and routing guardrails. It selects the smallest complete reference set and leaves domain behavior to those references. |
+| `agents/openai.yaml` | Define ChatGPT's display label, short description, and starter prompt for this skill. Discovery behavior remains in `SKILL.md`. |
 | `.env.example` | Document supported service-selection and token environment variables with safe empty defaults and credential-storage guidance. |
 | `CHANGELOG.md` | Record user-visible and maintainer-relevant changes in chronological release history. Current behavior remains defined by `SKILL.md`, references, and scripts. |
 | `evals/evals.json` | Hold end-to-end behavioral scenarios, optional input fixtures, and expected outcomes for routing, authoring, platform, analytics, and boundary regressions. Canonical guidance remains the source of behavior. |
@@ -26,7 +27,7 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `references/language-policy.md` | Own target-language resolution, canonical human-facing terminology, localization boundaries, first-mention wording, and the final language audit across artifacts and messages. |
-| `references/session-controls.md` | Own session lifecycle behavior: official contact timing, skill-version update checks, usage reporting, progress and error communication, handoffs, and first-session operational controls. |
+| `references/session-controls.md` | Own session lifecycle behavior: official contact timing, explicit skill-version update checks, progress and error communication, handoffs, and first-session operational controls. |
 | `references/authentication.md` | Own platform profile selection and task-context continuity, initial service selection, credential verification, browser authorization, login continuation, and authentication failure handling. It establishes access and does not select a course. Callers own when authentication runs. |
 | `references/open-in-app-browser.md` | Own the host-application mechanics for opening a supplied URL in a visible built-in browser and reporting the opening result. The calling workflow owns URL selection and next steps. |
 | `references/course-target.md` | Own existing-course title and BID matching, ambiguity handling, and resolved or unresolved lookup results. The Task Router owns new-versus-existing intent and any transition after a no-match result. For analytics, `analytics/tables.md` owns current-title semantics and `analytics/recipes.md` applies them through lookup templates. |
@@ -80,7 +81,6 @@
 | `scripts/profile_store.py` | Implement named profile configuration, default selection, execution-context resolution, isolated authorization-file storage, URL validation, and recoverable migration from legacy configuration. The CLI consumes one resolved context; references own user workflow. |
 | `scripts/image_utils.py` | Implement local image decoding, orientation correction, resizing, recompression, output-format selection, and content-hash naming for upload preparation. |
 | `scripts/skill_update.py` | Implement fail-open version discovery, update availability checks, manifest validation, and local update state used by session controls and the CLI. |
-| `scripts/usage_tracker.py` | Implement fail-open, privacy-bounded skill-usage telemetry and its opt-out behavior. |
 | `scripts/requirements.txt` | Declare Python runtime dependencies used by the course-creator scripts. |
 
 ## Change Placement Guide

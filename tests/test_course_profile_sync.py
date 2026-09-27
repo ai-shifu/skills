@@ -76,7 +76,7 @@ class CourseProfileSyncTests(unittest.TestCase):
         self.assertEqual(self.sync.read_bytes(), before)
         self.assertFalse((self.course_dir / "lessons").exists())
 
-    def test_main_rejects_wrong_site_before_platform_handlers_and_tracking(self):
+    def test_main_rejects_wrong_site_before_platform_handlers(self):
         self.bind(COM)
         context = types.SimpleNamespace(
             name="domestic", base_url=CN, directory=self.root / "profile",
@@ -97,7 +97,6 @@ class CourseProfileSyncTests(unittest.TestCase):
                 self.subTest(command=arguments[0]),
                 mock.patch.object(cli, "load_env"),
                 mock.patch.object(cli, "profile_store", return_value=store),
-                mock.patch.object(cli, "track") as track,
                 mock.patch.object(sys, "argv", [
                     "shifu-cli.py", *arguments,
                     "--course-dir", str(self.course_dir),
@@ -106,7 +105,6 @@ class CourseProfileSyncTests(unittest.TestCase):
                 with self.assertRaises(SystemExit) as exc:
                     cli.main()
                 self.assertEqual(exc.exception.code, 1)
-                track.assert_not_called()
                 self.assert_no_platform_calls()
         self.assertFalse((self.course_dir / "lessons").exists())
 

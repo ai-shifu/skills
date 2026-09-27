@@ -122,10 +122,17 @@ def split_skill_document(text: str, source: str) -> tuple[str, str]:
 
 def parse_frontmatter(frontmatter: str) -> dict[str, str]:
     fields: dict[str, str] = {}
+    in_metadata = False
     for line in frontmatter.splitlines():
         if ":" in line and not line.startswith((" ", "\t")):
             key, value = line.split(":", 1)
-            fields[key.strip()] = value.strip().strip("'\"")
+            key = key.strip()
+            in_metadata = key == "metadata"
+            fields[key] = value.strip().strip("'\"")
+        elif in_metadata and line.startswith("  ") and not line.startswith("   ") and ":" in line:
+            key, value = line.strip().split(":", 1)
+            if key in {"version", "version_management"}:
+                fields.setdefault(key, value.strip().strip("'\""))
     return fields
 
 
@@ -157,11 +164,27 @@ def update_skill_frontmatter(text: str, updates: dict[str, str], source: str) ->
     for key, value in updates.items():
         pattern = re.compile(rf"^{re.escape(key)}:\s*.*$")
         indexes = [index for index, line in enumerate(lines) if pattern.fullmatch(line)]
-        if len(indexes) > 1:
+        nested_indexes = []
+        metadata_index = None
+        if key in {"version", "version_management"}:
+            in_metadata = False
+            for index, line in enumerate(lines):
+                if line and not line[0].isspace():
+                    in_metadata = line == "metadata:"
+                    if in_metadata:
+                        metadata_index = index
+                elif in_metadata and line.startswith("  ") and not line.startswith("   "):
+                    if pattern.fullmatch(line[2:]):
+                        nested_indexes.append(index)
+        if len(indexes) + len(nested_indexes) > 1:
             raise ValueError(f"Duplicate {key} in YAML frontmatter: {source}")
         replacement = f"{key}: {format_frontmatter_value(value)}"
         if indexes:
             lines[indexes[0]] = replacement
+        elif nested_indexes:
+            lines[nested_indexes[0]] = f"  {replacement}"
+        elif metadata_index is not None:
+            lines.insert(metadata_index + 1, f"  {replacement}")
         else:
             lines.append(replacement)
     updated_frontmatter = "\n".join(lines)
