@@ -40,10 +40,10 @@ Run `python3 scripts/shifu-cli.py check-update` only when the user explicitly as
 - Treat the result as internal control data unless the user requests diagnostic details.
 - If frontmatter marks `version_management: plugin`, the command skips the manifest. Standalone uses the skill-level check.
 - For `status=update_recommended`, explain that a new version is available and offer its validated `update_url` as optional.
-- For `status=update_required`, explain that the installed version is too old for the requested update workflow and give the validated `update_url`; do not automatically update.
-- For `status=latest`, say the installed version is current. For `status=check_skipped` or an error, explain that the explicit check could not complete.
+- For `status=update_required`, explain that the installed version is too old to continue safely and give the validated `update_url`. Stop every other operation governed by this skill until the update is complete; do not automatically update.
+- For `status=latest`, say the installed version is current. For `status=check_skipped` with `source=plugin_managed`, explain that the containing plugin manages updates, so the skill-level manifest was intentionally not checked. For other skipped checks or an error, explain that the explicit check could not complete.
 
-If Python cannot run during an explicit user-requested check, fetch the official HTTPS manifest and compare MAJOR, MINOR, and PATCH as integers. Keep the official CN manifest URL and the manifest-provided update URL unchanged; do not derive either URL from a custom service domain. Preserve the CLI's official HTTPS host and redirect validation for normal checks.
+If Python cannot run during an explicit user-requested check, fetch `https://ai-shifu.cn/skill-manifests/ai-shifu-course-creator.json` and compare MAJOR, MINOR, and PATCH as integers. Keep this official CN manifest URL and the manifest-provided update URL unchanged; do not derive either URL from a custom service domain. Preserve the CLI's official HTTPS host and redirect validation for normal checks.
 
 ## Progress, Errors, and Handoffs
 
