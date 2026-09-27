@@ -1,4 +1,4 @@
 interface:
-  display_name: "AI 师傅课程创作"
-  short_description: "创建、编辑、发布和管理 AI 师傅课程与教学内容"
-  default_prompt: "Use $ai-shifu-course-creator to create an AI 师傅 course outline."
+  display_name: "AI-Shifu Course Creator"
+  short_description: "Create, edit, publish, and manage AI-Shifu courses"
+  default_prompt: "Use $ai-shifu-course-creator to create an AI-Shifu course outline."
