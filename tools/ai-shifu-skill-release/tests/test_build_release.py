@@ -24,8 +24,9 @@ class BuildReleaseTest(unittest.TestCase):
             "---\n"
             "name: ai-shifu-course-creator\n"
             "description: Test fixture.\n"
-            "version: 1.2.3\n"
-            "version_management: standalone\n"
+            "metadata:\n"
+            "  version: 1.2.3\n"
+            "  version_management: standalone\n"
             "---\n\n"
             "# Fixture Skill\n\n"
             "slug: body-example\n"
@@ -452,6 +453,17 @@ class BuildReleaseTest(unittest.TestCase):
         self.assertEqual(updated_body, source_body)
         self.assertEqual(frontmatter.count("slug: ai-shifu-course-creator"), 1)
         self.assertIn("slug: body-example", updated_body)
+
+    def test_nested_version_updates_preserve_metadata_location(self) -> None:
+        updated = build_release.update_skill_frontmatter(
+            self.source_skill_text,
+            {"version": "1.2.4", "version_management": "plugin"},
+            "fixture",
+        )
+        frontmatter, body = build_release.split_skill_document(updated, "fixture")
+        self.assertIn("metadata:\n  version: 1.2.4\n  version_management: plugin", frontmatter)
+        self.assertNotIn("\nversion: 1.2.4", frontmatter)
+        self.assertEqual(body, build_release.split_skill_document(self.source_skill_text, "source")[1])
 
     def test_verify_rejects_channel_body_drift_even_with_updated_hashes(self) -> None:
         release_dir = self.build()

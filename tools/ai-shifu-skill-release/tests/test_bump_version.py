@@ -9,8 +9,9 @@ from scripts import bump_version
 
 SKILL_MD = """---
 name: Demo Skill
-version: 1.1.1
-version_management: standalone
+metadata:
+  version: 1.1.1
+  version_management: standalone
 ---
 
 # Demo
@@ -72,7 +73,8 @@ class BumpVersionTest(unittest.TestCase):
         check = Path(self.tmp.name) / "check"
         git("clone", "--quiet", "--branch", result["branch"], self.repo_url, str(check), cwd=Path(self.tmp.name))
         text = (check / "skills/demo-skill/SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("version: 1.2.0", text)
+        self.assertIn("metadata:\n  version: 1.2.0\n  version_management: standalone", text)
+        self.assertNotIn("\nversion: 1.2.0", text)
         self.assertEqual(text.split("---\n", 2)[2], SKILL_MD.split("---\n", 2)[2])  # body unchanged
         # main itself must not move: the merge is a human gate
         self.assertIn("version: 1.1.1", git("show", "origin/main:skills/demo-skill/SKILL.md", cwd=check))

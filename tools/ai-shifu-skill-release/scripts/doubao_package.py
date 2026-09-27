@@ -178,15 +178,25 @@ def parse_frontmatter(text: str) -> dict[str, str]:
         raise ValueError("Doubao skill has invalid YAML frontmatter")
     raw = text[4:].split("\n---\n", 1)[0]
     fields = {}
+    in_metadata = False
     for line in raw.splitlines():
-        if ":" not in line or line.startswith((" ", "\t")):
+        if ":" not in line:
             continue
-        key, value = line.split(":", 1)
+        if not line[0].isspace():
+            key, value = line.split(":", 1)
+            key = key.strip()
+            in_metadata = key == "metadata"
+        elif in_metadata and line.startswith("  ") and not line.startswith("   "):
+            key, value = line.strip().split(":", 1)
+            if key not in {"version", "version_management"} or key in fields:
+                continue
+        else:
+            continue
         value = value.strip()
         try:
-            fields[key.strip()] = json.loads(value)
+            fields[key] = json.loads(value)
         except json.JSONDecodeError:
-            fields[key.strip()] = value.strip("'\"")
+            fields[key] = value.strip("'\"")
     return fields
 
 
