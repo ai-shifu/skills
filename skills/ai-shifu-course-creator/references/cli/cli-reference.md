@@ -109,7 +109,7 @@ site --set com
 site --url https://your-service.example
 ```
 
-`site` is the compatibility entrypoint for inspecting the effective context or configuring the selected/default profile. It prints JSON with `status=configured`, the effective `base_url`, `profile`, and official `contact_url`, or `status=selection_required` with no configured service. `profile` is null for temporary or unconfigured contexts. Contact links depend on the service address: the domestic official service uses the Chinese contact page; the international official service and custom deployments use the international contact page. Profile names do not affect this mapping. It makes no network requests or usage events.
+`site` is the compatibility entrypoint for inspecting the effective context or configuring the selected/default profile. It prints JSON with `status=configured`, the effective `base_url`, `profile`, and official `contact_url`, or `status=selection_required` with no configured service. `profile` is null for temporary or unconfigured contexts. Contact links depend on the service address: the domestic official service uses the Chinese contact page; the international official service and custom deployments use the international contact page. Profile names do not affect this mapping. It makes no network requests.
 
 `site --set cn/com` and `site --url <URL>` update the selected/default profile using the same URL and authorization rules as `profile set`. With no configured profile, initial setup creates an ordinary profile named `default`. Use explicit `--profile` to configure a named profile when temporary environment configuration is active.
 

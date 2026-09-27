@@ -43,7 +43,6 @@ class CourseCreatorSiteTests(unittest.TestCase):
         ))
         self.enterContext(mock.patch.object(course_creator_cli, "load_env"))
         self.enterContext(mock.patch.object(course_creator_cli, "ENV_FILE", self.root / "skill.env"))
-        self.track = self.enterContext(mock.patch.object(course_creator_cli, "track"))
         self.get = self.enterContext(mock.patch.object(course_creator_cli.requests, "get"))
         self.post = self.enterContext(mock.patch.object(course_creator_cli.requests, "post"))
 
@@ -64,7 +63,6 @@ class CourseCreatorSiteTests(unittest.TestCase):
         self.assertFalse((self.root / "settings.json").exists())
         self.get.assert_not_called()
         self.post.assert_not_called()
-        self.track.assert_not_called()
 
     def test_official_choices_persist_and_drive_platform_and_contact_urls(self):
         for site in ("cn", "com"):
@@ -166,7 +164,6 @@ class CourseCreatorSiteTests(unittest.TestCase):
             self.assertEqual(error.exception.code, 4)
         self.get.assert_not_called()
         self.post.assert_not_called()
-        self.track.assert_not_called()
 
     def test_local_build_and_update_check_do_not_require_selection(self):
         with (
@@ -240,7 +237,6 @@ class CourseCreatorSiteTests(unittest.TestCase):
         ])
         self.assertEqual((self.root / "settings.json").read_bytes(), original)
         self.assertEqual(course_creator_cli.profile_store().load_token(first), "daily-token")
-        self.track.assert_called_with("cli_list", token="one-off")
 
     def test_incomplete_temporary_configuration_never_borrows_a_saved_token(self):
         self.configure_profiles()
@@ -431,9 +427,6 @@ class CourseCreatorSiteTests(unittest.TestCase):
 class CourseCreatorVerificationUrlTests(unittest.TestCase):
     def setUp(self):
         self.base_url = "https://school.example/academy"
-        self.track = self.enterContext(
-            mock.patch.object(course_creator_cli, "track")
-        )
         self.enterContext(mock.patch.object(
             course_creator_cli, "resolve_auth",
             return_value=(self.base_url, "test-token"),
@@ -504,7 +497,6 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
     def test_publish_prints_learner_url_only_after_success(self):
         for succeeds in (False, True):
             with self.subTest(succeeds=succeeds):
-                self.track.reset_mock()
                 self.api.side_effect = None if succeeds else RuntimeError("Publish failed")
                 with contextlib.redirect_stdout(io.StringIO()) as output:
                     if succeeds:
@@ -522,15 +514,6 @@ class CourseCreatorVerificationUrlTests(unittest.TestCase):
                     )
                 else:
                     self.assertEqual(output.getvalue(), "")
-                expected_events = ["course_publish_started"]
-                if succeeds:
-                    expected_events.append("course_publish_completed")
-                self.assertEqual(
-                    [call.args[0] for call in self.track.call_args_list],
-                    expected_events,
-                )
-                for call in self.track.call_args_list:
-                    self.assertEqual(call.kwargs, {"token": "test-token"})
 
 
 class CourseCreatorCliBaseUrlTests(unittest.TestCase):
@@ -654,22 +637,9 @@ class CourseCreatorCliBaseUrlTests(unittest.TestCase):
         self.assertEqual(called_base_url, "https://example.test")
         self.assertEqual(called_path, "/api/user/device/authorize")
         self.assertIn("device_name", payload)
-        self.assertEqual(
-            payload["registration_attribution"]["host_platform"], "direct"
-        )
-        self.assertEqual(
-            payload["registration_attribution"]["skill_id"],
-            "ai-shifu-course-creator",
-        )
-        self.assertTrue(payload["registration_attribution"]["skill_version"])
-        self.assertEqual(
-            str(
-                course_creator_cli.uuid.UUID(
-                    payload["registration_attribution"]["handoff_id"]
-                )
-            ),
-            payload["registration_attribution"]["handoff_id"],
-        )
+        self.assertIn("device_os", payload)
+        self.assertIn("client_version", payload)
+        self.assertNotIn("registration_attribution", payload)
 
         printed = stdout.getvalue()
         open_browser.assert_not_called()

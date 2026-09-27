@@ -188,6 +188,17 @@ class MarkdownSectionHelperTests(unittest.TestCase):
         self.assertEqual(expected, split_markdown_table_row(r"| value\|"))
 
 
+class FrontmatterValidationTests(unittest.TestCase):
+    def test_course_creator_version_in_supported_metadata(self):
+        skill_md = REPO_ROOT / "skills" / "ai-shifu-course-creator" / "SKILL.md"
+        issues = validate_skill_quality.IssueBag()
+        fields = validate_skill_quality.parse_frontmatter(skill_md, issues)
+        self.assertEqual(issues.errors, [])
+        self.assertIsNotNone(fields)
+        self.assertEqual(fields["version"], "1.2.10")
+        self.assertEqual(fields["version_management"], "standalone")
+
+
 class AnchorValidationTests(unittest.TestCase):
     def test_heading_scan_recognizes_only_zero_to_three_space_fences(self):
         with tempfile.TemporaryDirectory() as tmpdir:

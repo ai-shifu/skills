@@ -84,7 +84,7 @@ def parse_semver(value: object) -> tuple[int, int, int] | None:
 
 
 def read_skill_metadata(skill_md: Path = SKILL_MD) -> dict[str, str] | None:
-    """Read simple top-level scalar fields from SKILL.md frontmatter."""
+    """Read scalar frontmatter and version fields inside the metadata mapping."""
     try:
         lines = skill_md.read_text(encoding="utf-8").splitlines()
     except OSError:
@@ -93,13 +93,22 @@ def read_skill_metadata(skill_md: Path = SKILL_MD) -> dict[str, str] | None:
         return None
 
     result: dict[str, str] = {}
+    in_metadata = False
     for line in lines[1:]:
         if line.strip() == "---":
             return result
-        if not line or line[0].isspace() or ":" not in line:
+        if not line.strip() or ":" not in line:
             continue
-        key, value = line.split(":", 1)
-        result[key.strip()] = value.strip().strip("\"'")
+        if not line[0].isspace():
+            key, value = line.split(":", 1)
+            key = key.strip()
+            in_metadata = key == "metadata"
+            if key != "metadata":
+                result[key] = value.strip().strip("\"'")
+        elif in_metadata and line.startswith("  ") and not line.startswith("   "):
+            key, value = line.strip().split(":", 1)
+            if key in {"version", "version_management"} and key not in result:
+                result[key] = value.strip().strip("\"'")
     return None
 
 

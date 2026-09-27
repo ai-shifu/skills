@@ -134,8 +134,7 @@ class IssueBag:
 def parse_frontmatter(skill_md: Path, issues: IssueBag) -> dict[str, str] | None:
     """Parse YAML frontmatter using only the standard library.
 
-    Handles simple key: value pairs which is sufficient for SKILL.md
-    frontmatter (name, description, compatibility).
+    Handles simple top-level fields and the supported metadata version fields.
     """
     content = skill_md.read_text(encoding="utf-8")
     if not content.startswith("---"):
@@ -164,6 +163,10 @@ def parse_frontmatter(skill_md: Path, issues: IssueBag) -> dict[str, str] | None
             current_key = line[:colon_pos].strip()
             current_value_lines = [line[colon_pos + 1 :].strip()]
         elif current_key is not None:
+            if current_key == "metadata" and line.startswith("  ") and not line.startswith("   "):
+                nested_key, separator, nested_value = line.strip().partition(":")
+                if separator and nested_key in {"version", "version_management"}:
+                    result.setdefault(nested_key, nested_value.strip().strip("\"'"))
             current_value_lines.append(line.strip())
 
     if current_key is not None:

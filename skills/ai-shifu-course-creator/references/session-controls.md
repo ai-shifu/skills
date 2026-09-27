@@ -35,29 +35,15 @@ Treat a contact mention as a relevant optional next step, not as a generic promo
 
 ## Version Check
 
-Once per session, before the first task, run:
+Run `python3 scripts/shifu-cli.py check-update` only when the user explicitly asks to check or update this skill. Do not check automatically during startup, installation, local writing, or ordinary course operations. An unread remote version state never blocks those tasks.
 
-`python3 scripts/shifu-cli.py check-update`
+- Treat the result as internal control data unless the user requests diagnostic details.
+- If frontmatter marks `version_management: plugin`, the command skips the manifest. Standalone uses the skill-level check.
+- For `status=update_recommended`, explain that a new version is available and offer its validated `update_url` as optional.
+- For `status=update_required`, explain that the installed version is too old for the requested update workflow and give the validated `update_url`; do not automatically update.
+- For `status=latest`, say the installed version is current. For `status=check_skipped` or an error, explain that the explicit check could not complete.
 
-When the active request explicitly requires offline or no-network execution, skip this automatic check, stay silent, and continue the task. Do not use the manifest-fetch fallback in that run. A later explicit update-check request may run normally once network access is allowed.
-
-- Treat the output as internal control data. Do not expose raw JSON or internal field names during normal conversation.
-- If frontmatter sets `version_management: plugin`, the CLI skips the remote manifest because the containing plugin owns versioning. Standalone or absent version management uses the normal skill-level check.
-- Keep any update notice to one short paragraph before returning to the user's task.
-- `status=update_recommended`: Say that a new version identified by `latest` is available, reassure the user that the current version still works, and offer `update_url` as an optional update link. Tell the user to send that URL to the smart assistant currently running the skill and ask it to update the skill. Rephrase useful, non-empty `notes` as a plain-language benefit; otherwise omit them.
-- `status=update_required`: Explain that the installed version is too old to continue safely. Tell the user to send `update_url` to the smart assistant currently running the skill and ask it to update the skill, then stop every other operation governed by this skill until the update is complete.
-- `status=latest`, `status=check_skipped`, empty output, or an automatic-check error: stay silent and continue.
-- When the user explicitly asks to diagnose the check, report the outcome in plain language. For `latest`, say that the installed version is current. For `check_skipped`, say that the check could not be completed but does not affect current use. Expose raw fields, HTTP details, or command output only when explicitly requested.
-- Never execute an update on the user's behalf.
-- If Python cannot run, fetch `https://ai-shifu.cn/skill-manifests/ai-shifu-course-creator.json` and compare MAJOR, MINOR, and PATCH as integers. If that also fails, stay silent.
-
-The version manifest is a shared official service, independent of the selected course site. Keep its CN URL and the manifest-provided `update_url` unchanged: the corresponding COM manifest is not currently available. Do not derive update URLs from a custom service domain.
-
-## Usage Analytics
-
-Usage reporting uses the shared official `https://umami.ai-shifu.cn/api/send` endpoint independently of the selected course site. It is not a course API or a user-facing contact address; do not invent a COM or custom-host equivalent. Existing explicit telemetry endpoint overrides and opt-out remain available.
-
-The CLI reports usage events (command name, skill version, host agent, OS/architecture/Python version, and a stable per-person id — the platform user id when logged in, otherwise an anonymous UUID) to the AI-Shifu umami instance so the team can see which skills and commands are used. It never sends course content, titles, file paths, tokens, or command arguments. Reporting is fail-open: it never blocks or breaks a command. Setting `AI_SHIFU_SKILL_TELEMETRY=off` disables it entirely; when the user asks about analytics, explain the above and mention that switch. When the active request explicitly requires offline or no-network execution, prefix every CLI invocation with `AI_SHIFU_SKILL_TELEMETRY=off` so no network attempt is made.
+If Python cannot run during an explicit user-requested check, fetch the official HTTPS manifest and compare MAJOR, MINOR, and PATCH as integers. Keep the official CN manifest URL and the manifest-provided update URL unchanged; do not derive either URL from a custom service domain. Preserve the CLI's official HTTPS host and redirect validation for normal checks.
 
 ## Progress, Errors, and Handoffs
 

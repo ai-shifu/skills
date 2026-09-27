@@ -25,14 +25,6 @@ import profile_store as profiles
 
 from skill_update import DEV_CACHE_FILE, check_for_update
 
-# Usage tracking is strictly optional: a broken tracker must never take the
-# CLI down with it.
-try:
-    from usage_tracker import track
-except Exception:  # noqa: BLE001 - fail-open: any tracker breakage must not take the CLI down
-    def track(event_name, **kwargs):
-        return None
-
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 ENV_EXAMPLE_FILE = ENV_FILE.with_name(".env.example")
@@ -69,24 +61,6 @@ _TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
 # first-page default.
 COURSE_LIST_PAGE_SIZE = 50
 MAX_COURSE_PAGES = 10
-SKILL_ID = "ai-shifu-course-creator"
-HOST_PLATFORM_ENV = "AI_SHIFU_HOST_PLATFORM"
-HOST_PLATFORMS = frozenset(
-    {"workbuddy", "doubao", "qclaw", "lobster", "codex", "direct"}
-)
-
-
-def host_platform():
-    """Return the controlled package channel, defaulting direct installs safely."""
-    value = os.environ.get(HOST_PLATFORM_ENV, "").strip().lower() or "direct"
-    if value not in HOST_PLATFORMS:
-        allowed = ", ".join(sorted(HOST_PLATFORMS))
-        raise profiles.ProfileError(
-            f"{HOST_PLATFORM_ENV} must be one of: {allowed}"
-        )
-    return value
-
-
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
 def ensure_env_file():
     """Create the runtime .env from .env.example when it does not exist."""
@@ -649,7 +623,6 @@ def _auth_recovery(context):
 def _start_device_authorization(context):
     base_url = context.base_url
     device_name, device_os = _device_description()
-    handoff_id = str(uuid.uuid4())
     response = _login_post(
         base_url,
         "/api/user/device/authorize",
@@ -657,12 +630,6 @@ def _start_device_authorization(context):
             "device_name": device_name,
             "device_os": device_os,
             "client_version": _client_version(),
-            "registration_attribution": {
-                "host_platform": host_platform(),
-                "skill_id": SKILL_ID,
-                "skill_version": _client_version(),
-                "handoff_id": handoff_id,
-            },
         },
         "Failed to start authorization",
     )
@@ -732,7 +699,6 @@ def _wait_for_device_authorization(context, timeout_seconds):
         status, token = _poll_device_authorization(base_url, device_code)
         if status == "approved" and token:
             profile_store().finish_pending_auth(context, device_code, token)
-            track("authorization_completed", token=token)
             print(f"Authorization complete for profile {context.name!r}.")
             return
         if status == "denied":
@@ -1157,7 +1123,7 @@ def _validate_bound_course_dir(course_dir, base_url, *, shifu_bid=None,
 
 
 def validate_course_binding(args, base_url):
-    """Preflight before telemetry, network requests, or course-directory writes."""
+    """Preflight before network requests or course-directory writes."""
     return _validate_bound_course_dir(
         getattr(args, "course_dir", None), base_url,
         shifu_bid=getattr(args, "shifu_bid", None),
@@ -1684,12 +1650,10 @@ def _auto_pull_overwrite(base_url, token, shifu_bid, course_dir, *, scope,
 def cmd_create(args):
     """Create a new empty course."""
     base_url, token = resolve_auth(args)
-    track("course_creation_started", token=token)
     result = api(base_url, token, "put", "/shifus",
                  json={"name": args.name,
                        "description": args.description or ""})
     bid = result.get("bid") or result.get("shifu_bid")
-    track("course_creation_completed", token=token)
     print(f"Created course: {bid}")
     print(f"  Name: {args.name}")
     _print_verification_urls(base_url, bid)
@@ -2447,8 +2411,6 @@ def cmd_import(args):
 
     base_url, token = resolve_auth(args)
     shifu_bid = None if args.new else args.shifu_bid
-    if args.new:
-        track("course_import_started", token=token)
 
     # Version preflight: when re-importing into an existing, version-tracked
     # course, refuse to clobber changes another editor pushed since the last
@@ -2483,9 +2445,6 @@ def cmd_import(args):
     else:
         print("Error: provide --json-file or --course-dir")
         sys.exit(1)
-
-    if args.new:
-        track("course_import_completed", token=token)
 
     # Re-seed the sync manifest from the freshly imported cloud state so future
     # edits are version-tracked. Phase 1 import is destructive (all outline bids
@@ -2751,9 +2710,7 @@ def cmd_build(args):
 def cmd_publish(args):
     """Publish a course."""
     base_url, token = resolve_auth(args)
-    track("course_publish_started", token=token)
     api(base_url, token, "post", f"/shifus/{args.shifu_bid}/publish", json={})
-    track("course_publish_completed", token=token)
     print(f"Published: {args.shifu_bid}")
     _print_verification_urls(base_url, args.shifu_bid, include_published=True)
 
@@ -3537,10 +3494,6 @@ def main():
                 validate_course_binding(args, context.base_url)
             # Resolve identity from this invocation, never again from a global
             # token that explicit --profile deliberately ignored.
-            if args.command == "check-update":
-                track("skill_start", token="")
-            elif args.command not in {"site", "profile"}:
-                track(f"cli_{args.command}", token=context.token if context else "")
             handler(args)
         except profiles.ProfileError as exc:
             print(f"Configuration error: {exc}", file=sys.stderr)

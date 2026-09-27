@@ -264,11 +264,8 @@ class CourseCreatorRouterTests(unittest.TestCase):
         session_controls = (
             REFERENCES / "session-controls.md"
         ).read_text(encoding="utf-8")
-        self.assertIn(
-            "explicitly requires offline or no-network execution",
-            session_controls,
-        )
-        self.assertIn("skip this automatic check", session_controls)
+        self.assertIn("only when the user explicitly asks", session_controls)
+        self.assertIn("Do not check automatically", session_controls)
 
     def test_complete_local_only_course_route_is_removed(self):
         self.assertFalse(
