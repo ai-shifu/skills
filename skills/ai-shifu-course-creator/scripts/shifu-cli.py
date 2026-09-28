@@ -1226,9 +1226,34 @@ def _flatten_outline_tree(tree):
     return flat
 
 
+def _get_lesson_revision(base_url, token, shifu_bid, outline_bid):
+    """Read the lesson revision from its metadata endpoint, not mdflow text."""
+    meta = api(base_url, token, "get",
+               f"/shifus/{shifu_bid}/draft-meta?outline_bid={outline_bid}")
+    revision = meta.get("revision") if isinstance(meta, dict) else None
+    if type(revision) is not int or revision <= 0:
+        print(f"Error: no valid revision for lesson {outline_bid}; "
+              "no unversioned write will be attempted.", file=sys.stderr)
+        sys.exit(1)
+    return revision
+
+
+def _get_lesson_snapshot(base_url, token, shifu_bid, outline_bid):
+    """Read immutable content so it cannot be paired with a different revision."""
+    revision = _get_lesson_revision(base_url, token, shifu_bid, outline_bid)
+    version = api(base_url, token, "get",
+                  f"/shifus/{shifu_bid}/outlines/{outline_bid}/mdflow/history/{revision}")
+    if (not isinstance(version, dict) or version.get("version_id") != revision
+            or not isinstance(version.get("content"), str)):
+        print(f"Error: invalid content snapshot for lesson {outline_bid} "
+              f"at revision {revision}; pull was not saved.", file=sys.stderr)
+        sys.exit(1)
+    return version["content"], revision
+
+
 def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True,
                    force=False, profile_name=None):
-    """Fetch detail + outline tree + every lesson's mdflow + course draft-meta,
+    """Fetch detail + outline tree + versioned lesson content + draft-meta,
     write them into the course directory, and (re)write .shifu-sync.json.
 
     This is the single "cloud → local" writer, reused by `pull`, by import's
@@ -1263,6 +1288,12 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True,
                 existing_by_bid[e["outline_bid"]] = e
 
     flat = _flatten_outline_tree(tree)
+    # Fetch every snapshot before changing files. A failed read must not leave
+    # newly written content paired with the previous manifest's revisions.
+    snapshots = {
+        node["bid"]: _get_lesson_snapshot(base_url, token, shifu_bid, node["bid"])
+        for node in flat if not node["is_chapter"]
+    }
 
     # Assign stable lesson filenames: reuse a prior manifest filename for the
     # same outline_bid, otherwise pick the next free lesson-NN.md.
@@ -1304,13 +1335,7 @@ def _pull_into_dir(base_url, token, shifu_bid, course_dir, *, backup=True,
                 "is_chapter": True, "content_sha256": None,
             })
             continue
-        md = api(base_url, token, "get",
-                 f"/shifus/{shifu_bid}/outlines/{node['bid']}/mdflow")
-        if isinstance(md, dict):
-            content = md.get("data", "") or ""
-            revision = md.get("revision")
-        else:
-            content, revision = (md or ""), None
+        content, revision = snapshots[node["bid"]]
         prev = existing_by_bid.get(node["bid"])
         relfile = prev["file"] if (prev and prev.get("file")) else _next_free_lesson()
         dest = safe_join_path(str(course_path), relfile)
@@ -1456,7 +1481,7 @@ def cmd_status(args):
 
     _collect(tree if isinstance(tree, list) else [tree])
 
-    behind, locally_modified, deleted_remote = [], [], []
+    behind, locally_modified, deleted_remote, unknown = [], [], [], []
     course_locally_modified = []
     manifest_bids = set()
     uptodate = 0
@@ -1495,6 +1520,9 @@ def cmd_status(args):
                             session=session) or {}
             cloud_rev = meta.get("revision")
             local_rev = entry.get("revision")
+            is_unknown = cloud_rev is None or local_rev is None
+            if is_unknown:
+                unknown.append(entry)
             is_behind = (cloud_rev is not None and local_rev is not None
                          and cloud_rev > local_rev)
             if is_behind:
@@ -1508,19 +1536,26 @@ def cmd_status(args):
                         and cur_hash != entry["content_sha256"]):
                     locally_modified.append(entry)
                     is_local_mod = True
-            if not is_behind and not is_local_mod:
+            if not is_behind and not is_local_mod and not is_unknown:
                 uptodate += 1
     new_remote = sorted(cloud_bids - manifest_bids)
 
     print(f"Course: {manifest['course'].get('name', '')}  (shifu_bid {shifu_bid})")
     if cloud_course_rev is None:
         print("Course meta: unknown (failed to fetch cloud revision)")
+    elif local_course_rev is None:
+        print("Course meta: unknown (missing local revision — run `pull`)")
     elif local_course_rev is not None and cloud_course_rev > local_course_rev:
         print(f"Course meta: BEHIND (local rev {local_course_rev} < cloud {cloud_course_rev}) "
               f"— run `pull`")
     else:
         print(f"Course meta: up to date (revision {local_course_rev})")
 
+    if unknown:
+        print("\nUnknown lesson revisions (cannot confirm sync — run `pull`):")
+        for entry in unknown:
+            print(f"  {entry.get('file') or entry.get('outline_bid')}   "
+                  f"{entry.get('name', '')}")
     if behind:
         print("\nBehind (cloud changed — run `pull`; your local copy is stale):")
         for entry, lr, cr, meta in behind:
@@ -1550,9 +1585,10 @@ def cmd_status(args):
     # A locally-modified working tree counts as diverged too, so `status
     # --exit-code` can guard import/push automation against unsynced edits.
     diverged = bool(
-        behind or new_remote or deleted_remote or locally_modified
+        behind or new_remote or deleted_remote or locally_modified or unknown
         or course_locally_modified
-    ) or (cloud_course_rev is not None and local_course_rev is not None
+    ) or cloud_course_rev is None or local_course_rev is None or (
+          cloud_course_rev is not None and local_course_rev is not None
           and cloud_course_rev > local_course_rev)
     if getattr(args, "exit_code", False) and diverged:
         sys.exit(1)
@@ -2095,6 +2131,7 @@ def cmd_update_lesson(args):
     When --course-dir points at a directory with a .shifu-sync.json manifest,
     base_revision is the *recorded baseline* for this outline (its revision at
     last pull/push) — so a concurrent edit by someone else is actually detected.
+    A manifest with no valid lesson baseline must be refreshed before a write.
     Without a manifest the command falls back to the legacy behavior of taking
     the current cloud head as the baseline (degraded protection). On conflict it
     auto-pulls the cloud copy, backs up the attempted edit, and exits non-zero.
@@ -2111,12 +2148,14 @@ def cmd_update_lesson(args):
         entry = _sync_lesson_by_bid(manifest, outline_bid)
         if entry:
             base_revision = entry.get("revision")
+        if type(base_revision) is not int or base_revision <= 0:
+            print("Error: the sync manifest has no valid baseline for this "
+                  "lesson. Run `pull`, reapply your edits, then retry; "
+                  "the existing local files were left unchanged.", file=sys.stderr)
+            sys.exit(1)
     if base_revision is None:
         # Legacy fallback: take the cloud head as baseline (no concurrency guard).
-        current = api(base_url, token, "get",
-                      f"/shifus/{shifu_bid}/outlines/{outline_bid}/mdflow")
-        if isinstance(current, dict):
-            base_revision = current.get("revision")
+        base_revision = _get_lesson_revision(base_url, token, shifu_bid, outline_bid)
         if course_dir and not manifest:
             print("  note: no .shifu-sync.json — version protection degraded; "
                   "run `pull` first for full conflict detection.", file=sys.stderr)
