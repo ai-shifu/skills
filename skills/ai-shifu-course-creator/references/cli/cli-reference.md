@@ -180,7 +180,7 @@ pull <shifu_bid> --course-dir ./course-a/ [--force]
 status --course-dir ./course-a/ [--exit-code]
 ```
 
-`pull` writes the cloud draft into the course directory: `README.md`, `course-description.md`, `course-prompt.md`, `course-config.json`, lesson files, `structure.json`, and `.shifu-sync.json`. It records course and lesson revision baselines. Before overwriting a divergent local file, it writes `<file>.local-<timestamp>.bak`; `--force` disables these backups.
+`pull` writes the cloud draft into the course directory: `README.md`, `course-description.md`, `course-prompt.md`, `course-config.json`, lesson files, `structure.json`, and `.shifu-sync.json`. It records course and lesson revision baselines. Each lesson revision comes from `draft-meta`; the corresponding immutable history version supplies its content, so a concurrent edit cannot pair content with the wrong baseline. If any lesson snapshot is unavailable or invalid, pull stops before replacing existing files. Before overwriting a divergent local file, it writes `<file>.local-<timestamp>.bak`; `--force` disables these backups.
 
 `status` reads `.shifu-sync.json`, compares it with cloud revisions and local hashes, and reports:
 
@@ -189,8 +189,9 @@ status --course-dir ./course-a/ [--exit-code]
 - locally modified lesson or course description;
 - new lesson on the server;
 - lesson deleted on the server.
+- unknown lesson or course revisions, which cannot be confirmed as up to date.
 
-Without `--exit-code`, divergence is reported while the command exits normally. With `--exit-code`, any divergence exits `1`. A missing sync manifest also exits `1`.
+Without `--exit-code`, divergence is reported while the command exits normally. With `--exit-code`, any divergence or unknown revision exits `1`. A missing sync manifest also exits `1`.
 
 `.shifu-sync.json` is auto-maintained by the CLI. Its schema and the source-service/course identity checks applied before all network commands with a course directory are defined in `course-directory-spec.md#shifu-syncjson`. `--force` affects local backups only; it never bypasses identity checks.
 
@@ -226,7 +227,7 @@ reorder <shifu_bid> --order bid1,bid2,bid3
 
 ### `update-lesson` and `rename-lesson`
 
-`update-lesson` sends the prompt file as lesson content. With a matching `.shifu-sync.json`, it uses the recorded lesson revision as the optimistic-lock baseline and updates the manifest and local file after success. Without that baseline it uses the current cloud head, so concurrent-edit detection is degraded. On a conflict with `--course-dir`, the CLI saves the attempted content as `<file>.conflict`, pulls the cloud course over local, and exits `2`.
+`update-lesson` sends the prompt file as lesson content. With a matching `.shifu-sync.json`, it uses the recorded lesson revision as the optimistic-lock baseline and updates the manifest and local file after success. If the manifest lacks a valid lesson baseline, the command refuses the write and preserves local edits: pull again, then reapply the intended edits before retrying. Without a manifest it reads the current revision from `draft-meta`, so concurrent-edit detection is degraded. An unavailable revision stops the write rather than sending unversioned content. On a conflict with `--course-dir`, the CLI saves the attempted content as `<file>.conflict`, pulls the cloud course over local, and exits `2`.
 
 `rename-lesson` sends only the lesson name and preserves omitted lesson fields.
 
