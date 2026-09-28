@@ -28,7 +28,7 @@ Complete `authentication.md` first. Before mutating learner-facing metadata, com
 | Preview one lesson | Reuse the known lesson BID; use `show <shifu_bid>` only if it still needs to be identified | Apply the Course Admin Handoff below for that lesson. |
 | Publish current draft | `publish <shifu_bid>` | Confirm the CLI-produced public learner URL works. |
 | Archive or restore | `archive <shifu_bid>` / `unarchive <shifu_bid>` | Re-run `list` or `show` as appropriate to confirm state. |
-| Reorder lessons | `reorder <shifu_bid> --order bid1,bid2,...` | Run `show <shifu_bid>` and confirm the returned order. |
+| Reorder sibling chapters or lessons | `reorder <shifu_bid> --order bid1,bid2,...`; select the sibling group as specified in [the reorder command](cli/cli-reference.md#reorder). | Run `show <shifu_bid>` and confirm the requested sibling group's order. |
 | Update name, description, or Course Prompt | `update-meta <shifu_bid> ... [--course-dir <dir>]` | Use `show` for name/description and `export` for the Course Prompt; confirm only requested fields changed. |
 | Set lesson access or visibility | `set-access <shifu_bid> <outline_bid> ...` | Confirm success output; with `--course-dir`, also inspect the updated `structure.json`. |
 | Configure Listen Mode | `set-tts <shifu_bid> ...` | Confirm success output; with `--course-dir`, also inspect the refreshed `course-config.json`. |
