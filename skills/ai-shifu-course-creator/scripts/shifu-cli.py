@@ -2225,13 +2225,19 @@ def cmd_delete_lesson(args):
 
 # ── Reorder ────────────────────────────────────────────────────────────────────
 def cmd_reorder(args):
-    """Reorder lessons in a course."""
+    """Reorder one complete sibling group without changing the course hierarchy."""
+    bids = [b.strip() for b in args.order.split(",")]
+    if not all(bids) or len(set(bids)) != len(bids):
+        print("Error: --order requires nonempty, unique outline BIDs", file=sys.stderr)
+        sys.exit(1)
     base_url, token = resolve_auth(args)
-    bids = [b.strip() for b in args.order.split(",") if b.strip()]
+    # The server merges this sibling order into the current tree under its
+    # course lock. Sending a client-built full tree can overwrite another group.
+    # Servers without this contract reject the request; do not retry with a tree.
     api(base_url, token, "patch",
         f"/shifus/{args.shifu_bid}/outlines/reorder",
         json={"order": bids})
-    print(f"Reordered {len(bids)} lessons")
+    print(f"Reordered {len(bids)} outlines")
 
 
 # ── Set Access (learning permission) ────────────────────────────────────────────
@@ -3378,10 +3384,10 @@ def build_parser():
 
     # ── reorder ──
     p = sub.add_parser("reorder", parents=[parent_parser],
-                       help="Reorder lessons")
+                       help="Reorder sibling chapters or lessons")
     p.add_argument("shifu_bid", help="Course BID")
     p.add_argument("--order", required=True,
-                   help="Comma-separated list of outline BIDs in desired order")
+                   help="All outline BIDs under one parent, comma-separated in desired order")
 
     # ── import ──
     p = sub.add_parser("import", parents=[parent_parser],

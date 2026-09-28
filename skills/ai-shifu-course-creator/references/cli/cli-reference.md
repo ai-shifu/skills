@@ -255,7 +255,11 @@ After upload, the command sends only the returned resource URL as `avatar`, read
 
 ### `reorder`
 
-The command sends the comma-separated outline BID sequence and changes the course outline order.
+`--order` must list every outline BID under one parent exactly once, in the desired order. Use all top-level BIDs to reorder chapters, or all BIDs within one chapter to reorder its lessons. The command sends only that group's ordered BIDs as `order` to `PATCH /shifus/<shifu_bid>/outlines/reorder`. The server applies the order to its current tree under the course lock, preserving other sibling groups and parent-child relationships. It does not move outlines between parents.
+
+Empty or duplicate BIDs exit `1` before any request. The server rejects unknown, cross-parent, or incomplete groups without changing the course, and the CLI exits `1` on that error.
+
+The platform must support the atomic `order` request. Older servers that require an `outlines` tree reject it, and the CLI exits `1`; it never retries with a full tree, which could overwrite another group's concurrent edits. Deploy the backend supporting this contract before using this command.
 
 ## Delete Commands
 
