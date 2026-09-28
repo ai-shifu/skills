@@ -998,6 +998,9 @@ def cmd_history(args):
         ts = fmt_time(item.get("updated_at") or item.get("created_at", ""))
         user = (item.get("updated_user_name") or item.get("updated_user_bid")
                 or item.get("created_user_bid", ""))
+        user = "".join(char if char.isprintable()
+                       else char.encode("unicode_escape").decode("ascii")
+                       for char in str(user))
         print(f"  {rev}  {ts}  by {user}")
 
 

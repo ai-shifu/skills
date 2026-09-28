@@ -1125,6 +1125,17 @@ class CourseCreatorHistoryTests(unittest.TestCase):
                 }]})
                 self.assertEqual(output, "  13    by editor-bid\n")
 
+    def test_history_escapes_controls_without_losing_printable_unicode(self):
+        name = "编辑 José 🙂\n  99 forged\r\t\x1b[31m\x07\x7f\x9b[2J\u2028\u2029"
+        output, _ = self.render_history({"items": [
+            {"version_id": 13, "updated_user_name": name},
+            {"version_id": 12, "updated_user_name": "下一位编辑"},
+        ]})
+        self.assertEqual(output.splitlines(), [
+            "  13    by 编辑 José 🙂\\n  99 forged\\r\\t\\x1b[31m\\x07\\x7f\\x9b[2J\\u2028\\u2029",
+            "  12    by 下一位编辑",
+        ])
+
     def test_legacy_history_list_remains_supported(self):
         timestamp = "2026-09-01T00:00:00Z"
         output, fmt_time = self.render_history([{
