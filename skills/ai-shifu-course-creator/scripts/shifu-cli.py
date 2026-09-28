@@ -2237,9 +2237,12 @@ def _reordered_outline_tree(tree, bids):
             if not isinstance(bid, str) or not bid.strip() or bid in siblings_by_bid:
                 raise ValueError("The platform returned invalid or duplicate outline BIDs")
             siblings_by_bid[bid] = result
+            children = item.get("children", [])
+            if children is None:
+                children = []
             result.append({
                 "bid": bid,
-                "children": copy_nodes(item.get("children", [])),
+                "children": copy_nodes(children),
             })
         return result
 

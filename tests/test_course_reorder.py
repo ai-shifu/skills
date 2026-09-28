@@ -79,6 +79,17 @@ class CourseReorderTests(unittest.TestCase):
         self.run_reorder("lesson-c")
         self.assert_payload(self.payload)
 
+    def test_null_and_missing_children_are_empty_without_changing_source(self):
+        self.tree[0]["children"][0]["children"][0]["children"] = None
+        del self.tree[0]["children"][1]["children"]
+        self.tree[1]["children"] = None
+        original = copy.deepcopy(self.tree)
+        self.run_reorder("lesson-b,lesson-a")
+        self.payload[0]["children"].reverse()
+        self.payload[1]["children"] = []
+        self.assert_payload(self.payload)
+        self.assertEqual(self.tree, original)
+
     def test_empty_and_duplicate_ids_fail_before_network_access(self):
         for order in ("", " ", ",", "lesson-a,", "lesson-a,,lesson-b", "lesson-a,lesson-a"):
             with self.subTest(order=order), self.assertRaises(SystemExit) as raised:
@@ -108,6 +119,10 @@ class CourseReorderTests(unittest.TestCase):
         for tree in (
             None, {}, [], [None], [{}], [{"bid": 12}],
             [{"bid": "chapter-a", "children": {}}],
+            [{"bid": "chapter-a", "children": False}],
+            [{"bid": "chapter-a", "children": 0}],
+            [{"bid": "chapter-a", "children": ""}],
+            [{"bid": "chapter-a", "children": "invalid"}],
             [{"bid": "chapter-a", "children": [{"bid": "chapter-a"}]}],
             [{"bid": "chapter-a"}, {"bid": "chapter-a"}],
         ):
