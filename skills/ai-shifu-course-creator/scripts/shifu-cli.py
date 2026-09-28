@@ -994,9 +994,13 @@ def cmd_history(args):
 
     items = result if isinstance(result, list) else result.get("items", [])
     for item in items:
-        rev = item.get("revision", "")
-        ts = fmt_time(item.get("created_at", ""))
-        user = item.get("created_user_bid", "")
+        rev = item.get("version_id", item.get("revision", ""))
+        ts = fmt_time(item.get("updated_at") or item.get("created_at", ""))
+        user = (item.get("updated_user_name") or item.get("updated_user_bid")
+                or item.get("created_user_bid", ""))
+        user = "".join(char if char.isprintable()
+                       else char.encode("unicode_escape").decode("ascii")
+                       for char in str(user))
         print(f"  {rev}  {ts}  by {user}")
 
 

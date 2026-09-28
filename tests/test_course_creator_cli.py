@@ -1080,6 +1080,74 @@ class CourseCreatorCliPaginationTests(unittest.TestCase):
         )
 
 
+class CourseCreatorHistoryTests(unittest.TestCase):
+    def render_history(self, result):
+        with (
+            mock.patch.object(course_creator_cli, "resolve_auth",
+                              return_value=("https://app.ai-shifu.com", "test-token")),
+            mock.patch.object(course_creator_cli, "api", return_value=result) as api,
+            mock.patch.object(course_creator_cli, "fmt_time",
+                              wraps=course_creator_cli.fmt_time) as fmt_time,
+            contextlib.redirect_stdout(io.StringIO()) as output,
+        ):
+            course_creator_cli.cmd_history(types.SimpleNamespace(
+                shifu_bid="course", outline_bid="lesson",
+            ))
+        api.assert_called_once_with(
+            "https://app.ai-shifu.com", "test-token", "get",
+            "/shifus/course/outlines/lesson/mdflow/history",
+        )
+        return output.getvalue(), fmt_time
+
+    def test_current_history_fields_show_version_time_and_updater_name(self):
+        timestamp = "2026-09-28T06:23:00Z"
+        output, fmt_time = self.render_history({"items": [{
+            "version_id": 12,
+            "updated_at": timestamp,
+            "updated_user_bid": "editor-bid",
+            "updated_user_name": "Course Editor",
+            "revision": 99,
+            "created_at": "2026-09-01T00:00:00Z",
+            "created_user_bid": "creator-bid",
+        }]})
+        fmt_time.assert_called_once_with(timestamp)
+        self.assertEqual(
+            output,
+            f"  12  {course_creator_cli.fmt_time(timestamp)}  by Course Editor\n",
+        )
+
+    def test_history_uses_updater_bid_when_display_name_is_missing(self):
+        for name in (None, ""):
+            with self.subTest(name=name):
+                output, _ = self.render_history({"items": [{
+                    "version_id": 13, "updated_at": "",
+                    "updated_user_bid": "editor-bid", "updated_user_name": name,
+                }]})
+                self.assertEqual(output, "  13    by editor-bid\n")
+
+    def test_history_escapes_controls_without_losing_printable_unicode(self):
+        name = "编辑 José 🙂\n  99 forged\r\t\x1b[31m\x07\x7f\x9b[2J\u2028\u2029"
+        output, _ = self.render_history({"items": [
+            {"version_id": 13, "updated_user_name": name},
+            {"version_id": 12, "updated_user_name": "下一位编辑"},
+        ]})
+        self.assertEqual(output.splitlines(), [
+            "  13    by 编辑 José 🙂\\n  99 forged\\r\\t\\x1b[31m\\x07\\x7f\\x9b[2J\\u2028\\u2029",
+            "  12    by 下一位编辑",
+        ])
+
+    def test_legacy_history_list_remains_supported(self):
+        timestamp = "2026-09-01T00:00:00Z"
+        output, fmt_time = self.render_history([{
+            "revision": 0, "created_at": timestamp, "created_user_bid": "creator-bid",
+        }])
+        fmt_time.assert_called_once_with(timestamp)
+        self.assertEqual(
+            output,
+            f"  0  {course_creator_cli.fmt_time(timestamp)}  by creator-bid\n",
+        )
+
+
 class FmtTimeTests(unittest.TestCase):
     """Backend timestamps are UTC; fmt_time must render them in local time."""
 

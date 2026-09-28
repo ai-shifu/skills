@@ -151,7 +151,7 @@ find-title <keyword>
 
 - `list` prints all active courses visible to the authenticated creator.
 - `show <shifu_bid>` prints course detail and the outline tree. `show <shifu_bid> <outline_bid>` prints one lesson's Teaching Prompt.
-- `history` prints one lesson's Teaching Prompt revision history.
+- `history` prints one lesson's Teaching Prompt version ID, update time in the local timezone, and updater display name (or user BID when the name is unavailable). Nonprintable characters in the updater field are escaped so each entry stays on one terminal line; printable Unicode is preserved.
 - `export` writes course JSON to stdout or the path passed with `-o`.
 - `find-title` requires at least two non-whitespace characters, then matches the keyword case-insensitively after whitespace normalization against current draft and published titles. It does not match historical or renamed titles.
 
