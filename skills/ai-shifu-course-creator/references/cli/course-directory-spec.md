@@ -271,3 +271,9 @@ Legacy entries without `base_url` have unknown provenance. Preserve them as-is; 
 ```
 
 Every top-level chapter has an empty `parent_bid` and empty `content`. Every lesson has its chapter BID as `parent_bid`, its file contents in `content`, and the resolved Course Prompt in its `course_prompt` field. Generated BIDs contain UUID characters without hyphens. Positions are zero-based strings.
+
+### Course Prompt import compatibility
+
+`import` accepts both the builder's `shifu.course_prompt` and the platform export's `shifu.llm_system_prompt`. When both keys are present, `course_prompt` takes precedence, including an explicit empty string. The selected value must be a string; `null` and other types are rejected before creating or updating a course. Prompt text is sent unchanged, including whitespace.
+
+An explicit empty string clears the Course Prompt. If neither key is present, import omits `system_prompt`: an existing course keeps its current prompt, and a new course keeps the platform default. This distinction prevents an omitted field from silently clearing existing content.

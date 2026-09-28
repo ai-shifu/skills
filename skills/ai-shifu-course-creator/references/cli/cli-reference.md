@@ -286,6 +286,8 @@ build --course-dir ./course-a/ [-o shifu-import.json] \
 
 `import --new` creates a new course. `import <shifu_bid>` targets an existing course. Both forms send content fields. Existing-course import leaves omitted platform attributes unchanged; new-course import uses platform defaults for omitted attributes.
 
+Flat JSON imports accept both `build` output and platform `export` output. Course Prompt field precedence, explicit clearing, and omitted-field behavior follow [Course Prompt import compatibility](course-directory-spec.md#course-prompt-import-compatibility).
+
 Importing into an existing course deletes and recreates every outline, so all outline BIDs are regenerated and recreated lessons receive platform-default permissions. With `--course-dir` and a matching sync manifest, an existing-course import checks the course revision first. On conflict it backs up the local tree to `.conflict-backup-<timestamp>/`, pulls the cloud course over local, and exits `2`. After a successful existing-course import it runs an automatic pull to reseed the manifest.
 
 ## Image Upload
