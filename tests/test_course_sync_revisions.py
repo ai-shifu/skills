@@ -106,6 +106,42 @@ class CourseSyncRevisionTests(unittest.TestCase):
         self.assertEqual(local.read_text(), "Keep this unsaved edit")
         self.assertIn("reapply your edits", self.errors.getvalue())
 
+    def test_later_snapshot_failure_preserves_all_existing_files(self):
+        tree = [{"bid": "chapter", "name": "Chapter", "children": [
+            {"bid": "lesson", "name": "Lesson", "children": []},
+            {"bid": "second", "name": "Second lesson", "children": []},
+        ]}]
+
+        def two_lessons(*args, **kwargs):
+            path = args[3]
+            if path.endswith("/outlines"):
+                return tree
+            if path.endswith("/draft-meta?outline_bid=second"):
+                return {"revision": 20}
+            if path.endswith("/second/mdflow/history/20"):
+                return {"version_id": 20, "content": "Second lesson content"}
+            return self.platform(*args, **kwargs)
+
+        self.api.side_effect = two_lessons
+        self.pull()
+        (self.root / "lessons/lesson-01.md").write_text("First unsaved edit")
+        (self.root / "lessons/lesson-02.md").write_text("Second unsaved edit")
+        original = {path.relative_to(self.root): path.read_bytes()
+                    for path in self.root.rglob("*") if path.is_file()}
+
+        def fail_second(*args, **kwargs):
+            if args[3].endswith("/second/mdflow/history/20"):
+                return {"version_id": 21, "content": "Mismatched snapshot"}
+            return two_lessons(*args, **kwargs)
+
+        self.api.side_effect = fail_second
+        with self.assertRaises(SystemExit) as caught:
+            self.pull()
+        self.assertEqual(caught.exception.code, 1)
+        after = {path.relative_to(self.root): path.read_bytes()
+                 for path in self.root.rglob("*") if path.is_file()}
+        self.assertEqual(after, original)
+
     def test_standalone_update_reads_revision_from_metadata(self):
         self.pull()
         self.api.reset_mock()
