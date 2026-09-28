@@ -1226,12 +1226,16 @@ def _flatten_outline_tree(tree):
     return flat
 
 
+def _is_valid_revision(value):
+    return type(value) is int and value > 0
+
+
 def _get_lesson_revision(base_url, token, shifu_bid, outline_bid):
     """Read the lesson revision from its metadata endpoint, not mdflow text."""
     meta = api(base_url, token, "get",
                f"/shifus/{shifu_bid}/draft-meta?outline_bid={outline_bid}")
     revision = meta.get("revision") if isinstance(meta, dict) else None
-    if type(revision) is not int or revision <= 0:
+    if not _is_valid_revision(revision):
         print(f"Error: no valid revision for lesson {outline_bid}; "
               "no unversioned write will be attempted.", file=sys.stderr)
         sys.exit(1)
@@ -1468,6 +1472,8 @@ def cmd_status(args):
                            f"/shifus/{shifu_bid}/draft-meta") or {}
     cloud_course_rev = course_meta.get("revision")
     local_course_rev = (manifest.get("course") or {}).get("revision")
+    course_unknown = (not _is_valid_revision(cloud_course_rev)
+                      or not _is_valid_revision(local_course_rev))
 
     tree = api(base_url, token, "get", f"/shifus/{shifu_bid}/outlines")
     cloud_bids = set()
@@ -1520,11 +1526,11 @@ def cmd_status(args):
                             session=session) or {}
             cloud_rev = meta.get("revision")
             local_rev = entry.get("revision")
-            is_unknown = cloud_rev is None or local_rev is None
+            is_unknown = (not _is_valid_revision(cloud_rev)
+                          or not _is_valid_revision(local_rev))
             if is_unknown:
                 unknown.append(entry)
-            is_behind = (cloud_rev is not None and local_rev is not None
-                         and cloud_rev > local_rev)
+            is_behind = not is_unknown and cloud_rev > local_rev
             if is_behind:
                 behind.append((entry, local_rev, cloud_rev, meta))
             # Local edit detection via content hash.
@@ -1541,11 +1547,11 @@ def cmd_status(args):
     new_remote = sorted(cloud_bids - manifest_bids)
 
     print(f"Course: {manifest['course'].get('name', '')}  (shifu_bid {shifu_bid})")
-    if cloud_course_rev is None:
-        print("Course meta: unknown (failed to fetch cloud revision)")
-    elif local_course_rev is None:
-        print("Course meta: unknown (missing local revision — run `pull`)")
-    elif local_course_rev is not None and cloud_course_rev > local_course_rev:
+    if not _is_valid_revision(cloud_course_rev):
+        print("Course meta: unknown (missing or invalid cloud revision)")
+    elif not _is_valid_revision(local_course_rev):
+        print("Course meta: unknown (missing or invalid local revision — run `pull`)")
+    elif cloud_course_rev > local_course_rev:
         print(f"Course meta: BEHIND (local rev {local_course_rev} < cloud {cloud_course_rev}) "
               f"— run `pull`")
     else:
@@ -1587,9 +1593,7 @@ def cmd_status(args):
     diverged = bool(
         behind or new_remote or deleted_remote or locally_modified or unknown
         or course_locally_modified
-    ) or cloud_course_rev is None or local_course_rev is None or (
-          cloud_course_rev is not None and local_course_rev is not None
-          and cloud_course_rev > local_course_rev)
+    ) or course_unknown or (not course_unknown and cloud_course_rev > local_course_rev)
     if getattr(args, "exit_code", False) and diverged:
         sys.exit(1)
 
@@ -2148,7 +2152,7 @@ def cmd_update_lesson(args):
         entry = _sync_lesson_by_bid(manifest, outline_bid)
         if entry:
             base_revision = entry.get("revision")
-        if type(base_revision) is not int or base_revision <= 0:
+        if not _is_valid_revision(base_revision):
             print("Error: the sync manifest has no valid baseline for this "
                   "lesson. Run `pull`, reapply your edits, then retry; "
                   "the existing local files were left unchanged.", file=sys.stderr)

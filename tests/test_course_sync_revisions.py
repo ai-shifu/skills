@@ -151,6 +151,39 @@ class CourseSyncRevisionTests(unittest.TestCase):
                 self.assertIn("Unknown lesson revisions", self.output.getvalue())
                 self.assertIn("Up to date: 0 lessons", self.output.getvalue())
 
+    def test_status_treats_invalid_course_and_lesson_revisions_as_unknown(self):
+        for scope in ("course", "lesson"):
+            for location in ("local", "cloud"):
+                for invalid in (None, 0, -1, True, False, "10", 10.0):
+                    with self.subTest(scope=scope, location=location, revision=invalid):
+                        self.safe.side_effect = None
+                        self.safe.return_value = {"revision": 8}
+                        manifest = self.pull()
+                        if location == "local":
+                            entry = manifest["course"] if scope == "course" else manifest["lessons"][-1]
+                            entry["revision"] = invalid
+                            self.save_manifest(manifest)
+
+                        def metadata(*args, **kwargs):
+                            is_lesson = "outline_bid" in args[3]
+                            revision = 10 if is_lesson else 8
+                            if location == "cloud" and is_lesson == (scope == "lesson"):
+                                revision = invalid
+                            return {"revision": revision}
+
+                        self.safe.side_effect = metadata
+                        self.output.truncate(0)
+                        self.output.seek(0)
+                        with self.assertRaises(SystemExit) as caught:
+                            cli.cmd_status(self.args())
+                        self.assertEqual(caught.exception.code, 1)
+                        if scope == "lesson":
+                            self.assertIn("Unknown lesson revisions", self.output.getvalue())
+                            self.assertIn("Up to date: 0 lessons", self.output.getvalue())
+                        else:
+                            self.assertIn("Course meta: unknown", self.output.getvalue())
+                            self.assertNotIn("Course meta: up to date", self.output.getvalue())
+
     def test_server_conflict_keeps_recorded_baseline_for_recovery(self):
         self.pull()
         self.post.return_value = ("conflict", {"revision": 11})
