@@ -2282,6 +2282,15 @@ def _import_flat(base_url, token, json_file, shifu_bid):
     shifu_info = import_data["shifu"]
     outline_items = import_data["outline_items"]
 
+    # Build and platform export use different names for the same content.
+    # Resolve and validate before any write; absence must not clear a prompt.
+    prompt_key = next((key for key in ("course_prompt", "llm_system_prompt")
+                       if key in shifu_info), None)
+    if prompt_key is not None and not isinstance(shifu_info[prompt_key], str):
+        print(f"Error: shifu.{prompt_key} must be a string; "
+              "use an empty string to clear the Course Prompt.", file=sys.stderr)
+        sys.exit(1)
+
     # Create or reuse shifu
     if shifu_bid:
         print(f"Using existing shifu: {shifu_bid}")
@@ -2301,8 +2310,9 @@ def _import_flat(base_url, token, json_file, shifu_bid):
     detail_payload = {
         "name": shifu_info["title"],
         "description": shifu_info.get("description", ""),
-        "system_prompt": shifu_info.get("course_prompt", ""),
     }
+    if prompt_key is not None:
+        detail_payload["system_prompt"] = shifu_info[prompt_key]
     for attempt in range(1, 4):
         result = api_safe(base_url, token, "post", f"/shifus/{shifu_bid}/detail",
                           json=detail_payload)

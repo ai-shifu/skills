@@ -1,0 +1,76 @@
+{
+  "version": "1.0",
+  "exported_at": "2026-09-28T08:57:36.451021Z",
+  "shifu": {
+    "shifu_bid": "exported-course",
+    "title": "导入验证课程",
+    "keywords": "",
+    "description": "平台导出结构回归测试。",
+    "avatar_res_bid": "",
+    "llm": "1",
+    "llm_temperature": 0.3,
+    "llm_system_prompt": "  这是测试课程。\n请用中文简短回答。\n",
+    "ask_enabled_status": 5101,
+    "flow_engine": 1,
+    "ask_llm": "1",
+    "ask_llm_temperature": 0.0,
+    "ask_llm_system_prompt": "",
+    "ask_provider_config": {
+      "provider": "llm",
+      "mode": "provider_only",
+      "config": {}
+    },
+    "price": 0.5
+  },
+  "outline_items": [
+    {
+      "outline_item_bid": "exported-chapter",
+      "title": "导入验证",
+      "type": 400,
+      "hidden": 0,
+      "parent_bid": "",
+      "position": "01",
+      "prerequisite_item_bids": "",
+      "llm_system_prompt": "",
+      "ask_llm_system_prompt": "",
+      "ask_enabled_status": 5101,
+      "content": ""
+    },
+    {
+      "outline_item_bid": "exported-lesson",
+      "title": "导入课节",
+      "type": 400,
+      "hidden": 0,
+      "parent_bid": "exported-chapter",
+      "position": "0101",
+      "prerequisite_item_bids": "",
+      "llm_system_prompt": "",
+      "ask_llm_system_prompt": "",
+      "ask_enabled_status": 5101,
+      "content": "这是导入功能测试内容。\n"
+    }
+  ],
+  "structure": {
+    "bid": "exported-course",
+    "id": 1,
+    "type": "shifu",
+    "children": [
+      {
+        "bid": "exported-chapter",
+        "id": 2,
+        "type": "outline",
+        "children": [
+          {
+            "bid": "exported-lesson",
+            "id": 3,
+            "type": "outline",
+            "children": [],
+            "child_count": 1
+          }
+        ],
+        "child_count": 0
+      }
+    ],
+    "child_count": 0
+  }
+}
