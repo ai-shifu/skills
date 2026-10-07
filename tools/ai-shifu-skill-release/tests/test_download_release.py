@@ -7,10 +7,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from support import ReleaseFixture
-
 from ai_shifu_release import github_releases
 from ai_shifu_release import verify as verification
+from support import ReleaseFixture
 
 
 class DownloadReleaseTest(unittest.TestCase):

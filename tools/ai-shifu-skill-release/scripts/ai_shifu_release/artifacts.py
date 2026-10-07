@@ -129,11 +129,14 @@ def manifest_tree_hash(manifest: dict[str, dict[str, str]]) -> str:
 
 
 def zip_subtree_contents(path: Path, root: str) -> dict[str, bytes]:
+    verify_zip(path)
     prefix = f"{root.rstrip('/')}/"
     contents: dict[str, bytes] = {}
     with zipfile.ZipFile(path) as archive:
         for info in archive.infolist():
-            if info.is_dir() or not info.filename.startswith(prefix):
+            if not info.filename.startswith(prefix):
+                raise ValueError(f"ZIP member outside {prefix}: {info.filename}")
+            if info.is_dir():
                 continue
             relative = info.filename[len(prefix) :]
             if relative:
@@ -184,7 +187,12 @@ def write_zip(source: Path, output: Path, root_name: str) -> None:
 
 def verify_zip(path: Path) -> None:
     with zipfile.ZipFile(path) as archive:
-        for name in archive.namelist():
+        names: set[str] = set()
+        for info in archive.infolist():
+            name = info.filename
+            if name in names:
+                raise ValueError(f"Duplicate ZIP member: {name}")
+            names.add(name)
             relative = PurePosixPath(name)
             if (
                 relative.is_absolute()
@@ -192,7 +200,14 @@ def verify_zip(path: Path) -> None:
                 or is_excluded(relative)
             ):
                 raise ValueError(f"Forbidden ZIP member in {path.name}: {name}")
-            content = archive.read(name)
+            mode = info.external_attr >> 16
+            if info.is_dir():
+                if not stat.S_ISDIR(mode):
+                    raise ValueError(f"Non-directory ZIP entry: {name}")
+                continue
+            if not stat.S_ISREG(mode):
+                raise ValueError(f"Non-file ZIP entry: {name}")
+            content = archive.read(info)
             if any(pattern.search(content) for pattern in SECRET_PATTERNS):
                 raise ValueError(f"Possible secret in {path.name}: {name}")
 

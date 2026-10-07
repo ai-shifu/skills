@@ -99,12 +99,17 @@ def verify_channel_artifact(
         expected_root = f"workbuddy-ai-shifu-{skill['version']}"
         if package_root != expected_root:
             raise ValueError("workbuddy archive root mismatch")
-        validate_workbuddy_package_contents(
-            zip_subtree_contents(archive, package_root), skill["version"]
-        )
-    assert_contents_equal(
-        zip_subtree_contents(archive, archive_root), expected, f"{channel} archive"
-    )
+        package_contents = zip_subtree_contents(archive, package_root)
+        validate_workbuddy_package_contents(package_contents, skill["version"])
+        skill_prefix = embedded_root[len(package_root) + 1 :] + "/"
+        archive_contents = {
+            name[len(skill_prefix) :]: content
+            for name, content in package_contents.items()
+            if name.startswith(skill_prefix)
+        }
+    else:
+        archive_contents = zip_subtree_contents(archive, archive_root)
+    assert_contents_equal(archive_contents, expected, f"{channel} archive")
     hashes.append(archive_sha)
     return hashes
 
