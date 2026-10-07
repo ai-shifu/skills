@@ -7,14 +7,16 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import test_build_release
-from scripts import build_release, download_release, github_release
+from support import ReleaseFixture
+
+from ai_shifu_release import github_releases
+from ai_shifu_release import verify as verification
 
 
 class DownloadReleaseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.fixture = test_build_release.BuildReleaseTest()
+        cls.fixture = ReleaseFixture()
         cls.fixture.setUp()
         cls.addClassCleanup(cls.fixture.tearDown)
         cls.commit = cls.fixture.git("rev-parse", "main")
@@ -23,7 +25,7 @@ class DownloadReleaseTest(unittest.TestCase):
     def test_recovers_and_verifies_exact_release_assets(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            assets, _ = github_release.prepare_assets(
+            assets, _ = github_releases.prepare_assets(
                 self.original, "v1.2.3", self.commit, root / "assets"
             )
             self._download(root, assets)
@@ -31,10 +33,12 @@ class DownloadReleaseTest(unittest.TestCase):
     def test_corrupt_attachment_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            assets, _ = github_release.prepare_assets(
+            assets, _ = github_releases.prepare_assets(
                 self.original, "v1.2.3", self.commit, root / "assets"
             )
-            next(asset for asset in assets if asset.suffix == ".zip").write_bytes(b"corrupt")
+            next(asset for asset in assets if asset.suffix == ".zip").write_bytes(
+                b"corrupt"
+            )
             with self.assertRaisesRegex(ValueError, "checksum differs"):
                 self._download(root, assets)
 
@@ -43,10 +47,19 @@ class DownloadReleaseTest(unittest.TestCase):
 
         def fake_gh(*args: str, **kwargs):
             if args[:2] == ("release", "view"):
-                return type("Response", (), {"stdout": json.dumps({
-                    "isDraft": False, "tagName": "v1.2.3",
-                    "assets": [{"name": name} for name in mapping],
-                })})()
+                return type(
+                    "Response",
+                    (),
+                    {
+                        "stdout": json.dumps(
+                            {
+                                "isDraft": False,
+                                "tagName": "v1.2.3",
+                                "assets": [{"name": name} for name in mapping],
+                            }
+                        )
+                    },
+                )()
             if args[:2] == ("release", "download"):
                 name = args[args.index("--pattern") + 1]
                 shutil.copy2(mapping[name], Path(args[args.index("--dir") + 1]) / name)
@@ -55,12 +68,12 @@ class DownloadReleaseTest(unittest.TestCase):
                 return type("Response", (), {"stdout": self.commit})()
             raise AssertionError(args)
 
-        with patch.object(github_release, "gh", side_effect=fake_gh):
-            recovered = download_release.download(
+        with patch.object(github_releases, "gh", side_effect=fake_gh):
+            recovered = github_releases.download(
                 "v1.2.3", "ai-shifu/skills", root / "download"
             )
         self.assertEqual(recovered.name, self.original.name)
-        build_release.verify(recovered)
+        verification.verify(recovered)
         report = json.loads((recovered / "release.json").read_text())
         self.assertEqual(report["source"]["commit"], self.commit)
 

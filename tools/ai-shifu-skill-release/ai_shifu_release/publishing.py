@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Publish a verified release to Standalone Skill registries."""
 
 from __future__ import annotations
@@ -9,17 +8,16 @@ import re
 import shutil
 import subprocess
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from scripts import build_release, doubao_package
-
+from . import TOOL_ROOT
+from .artifacts import artifact_path
+from .channels import doubao
+from .release_state import ReleaseContext, ReleaseReport
 
 AUTOMATED_TARGETS = ("clawhub", "skillhub")
 MANUAL_TARGETS = ("workbuddy", "doubao")
-MANIFEST_REQUIRED_AUTOMATED_TARGETS = AUTOMATED_TARGETS
-MANIFEST_REQUIRED_MANUAL_TARGETS = ("workbuddy",)
 MANUAL_STATUSES = ("submitted", "verified", "failed")
 
 
@@ -43,62 +41,6 @@ def run_command(command: list[str]) -> CommandResult:
         output = (error.stderr or error.stdout or str(error)).strip()
         raise CommandFailure(command, output) from error
     return CommandResult(result.stdout.strip(), result.stderr.strip())
-
-
-@dataclass(frozen=True)
-class ReleaseContext:
-    directory: Path
-    metadata: dict
-
-    @classmethod
-    def load(cls, directory: Path) -> "ReleaseContext":
-        directory = directory.expanduser().resolve()
-        build_release.verify(directory)
-        metadata = json.loads((directory / "release.json").read_text(encoding="utf-8"))
-        return cls(directory, metadata)
-
-    def channel_directory(self, target: str) -> Path:
-        relative = self.metadata["artifacts"][target]["directory"]
-        return build_release.artifact_path(self.directory, relative)
-
-    @property
-    def skill_name(self) -> str:
-        return self.metadata["skill"]["name"]
-
-    @property
-    def version(self) -> str:
-        return self.metadata["skill"]["version"]
-
-    @property
-    def display_name(self) -> str:
-        return self.metadata["skill"]["display_name"]
-
-    @property
-    def source_commit(self) -> str:
-        return self.metadata["source"]["commit"]
-
-    @property
-    def source_repository(self) -> str:
-        return self.metadata["source"]["repository"]
-
-    @property
-    def source_repo(self) -> str:
-        match = re.search(r"github\.com(?::|/)([^/]+/[^/]+?)(?:\.git)?$", self.source_repository)
-        if not match:
-            raise ValueError(f"Unsupported GitHub repository URL: {self.source_repository}")
-        return match.group(1)
-
-    def artifact_sha(self, target: str) -> str:
-        artifact = self.metadata["artifacts"][target]
-        return artifact.get("tree_sha256", artifact.get("sha256", ""))
-
-    def assert_remote_main(self, runner: Callable[[list[str]], CommandResult]) -> None:
-        response = runner(["git", "ls-remote", self.source_repository, "refs/heads/main"])
-        remote_commit = response.stdout.split(maxsplit=1)[0] if response.stdout else ""
-        if remote_commit != self.source_commit:
-            raise ValueError(
-                f"GitHub main changed: release={self.source_commit}, remote={remote_commit or 'unavailable'}; rebuild required"
-            )
 
 
 def resolve_clawhub_command() -> tuple[str, ...]:
@@ -132,37 +74,10 @@ def resolve_skillhub_cli() -> Path:
     override = os.environ.get("SKILLHUB_CLI")
     command = override or shutil.which("skillhub")
     if not command:
-        raise ValueError("skillhub CLI is not installed; see https://skillhub.cn/install/skillhub.md")
+        raise ValueError(
+            "skillhub CLI is not installed; see https://skillhub.cn/install/skillhub.md"
+        )
     return Path(command).expanduser().resolve()
-
-
-class ReleaseReport:
-    def __init__(self, release: ReleaseContext) -> None:
-        self.release = release
-        self.path = release.directory / "release-report.json"
-
-    def update(self, channel_results: dict) -> None:
-        report = self._load()
-        report["updated_at"] = datetime.now(timezone.utc).isoformat()
-        report["channels"].update(channel_results)
-        temporary = self.path.with_suffix(".json.tmp")
-        temporary.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        os.replace(temporary, self.path)
-
-    def _load(self) -> dict:
-        if self.path.exists():
-            report = json.loads(self.path.read_text(encoding="utf-8"))
-            if report.get("release_id") != self.release.metadata["release_id"]:
-                raise ValueError("release-report.json belongs to a different release")
-            if report.get("release_sha256") != self.release.metadata["release_sha256"]:
-                raise ValueError("release-report.json references different artifact content")
-            return report
-        return {
-            "schema_version": 1,
-            "release_id": self.release.metadata["release_id"],
-            "release_sha256": self.release.metadata["release_sha256"],
-            "channels": {},
-        }
 
 
 class AutomatedPublisher:
@@ -184,13 +99,69 @@ class AutomatedPublisher:
         self.require_current_main = require_current_main
         self.report = ReleaseReport(release)
 
+    def existing_clawhub_version(self) -> bool:
+        """Return whether the configured owner's exact version already exists."""
+        identity = f"@{self.clawhub_owner}/{self.release.skill_name}"
+        command = [
+            *self._clawhub_command(),
+            "--yes",
+            "clawhub@latest",
+            "inspect",
+            identity,
+            "--version",
+            self.release.version,
+            "--json",
+        ]
+        try:
+            self.runner(command)
+            return True
+        except CommandFailure as error:
+            if re.search(
+                r"\b(not found|404|no such version)\b", error.output, re.IGNORECASE
+            ):
+                return False
+            raise
+
+    def existing_skillhub_version(self) -> bool:
+        """Verify an existing version against this release's SkillHub archive."""
+        archive = self.release.metadata["artifacts"]["skillhub"]["archive"]
+        command = [
+            str(self._skillhub_cli()),
+            "verify",
+            f"{self.release.skill_name}@{self.release.version}",
+            "--zip",
+            str(artifact_path(self.release.directory, archive)),
+            "--host",
+            "https://api.skillhub.cn",
+        ]
+        try:
+            response = self.runner(command)
+            if not re.search(
+                r"签名与内容校验通过|signature and content verified|verification passed",
+                response.stdout,
+                re.IGNORECASE,
+            ):
+                raise ValueError(
+                    "SkillHub version exists but its content could not be verified"
+                )
+            return True
+        except CommandFailure as error:
+            if re.search(
+                r"找不到该版本|version not found|404", error.output, re.IGNORECASE
+            ):
+                return False
+            raise
+
     def check(self, targets: tuple[str, ...]) -> dict:
         results = {}
         if self.require_current_main:
             try:
                 self.release.assert_remote_main(self.runner)
             except (CommandFailure, ValueError) as error:
-                results = {target: self._result(target, "failed", str(error)) for target in targets}
+                results = {
+                    target: self._result(target, "failed", str(error))
+                    for target in targets
+                }
                 self.report.update(results)
                 return results
         for target in targets:
@@ -223,7 +194,15 @@ class AutomatedPublisher:
         if target == "clawhub":
             self.runner([*self._clawhub_command(), "--yes", "clawhub@latest", "whoami"])
         elif target == "skillhub":
-            self.runner([str(self._skillhub_cli()), "auth", "whoami", "--host", "https://api.skillhub.cn"])
+            self.runner(
+                [
+                    str(self._skillhub_cli()),
+                    "auth",
+                    "whoami",
+                    "--host",
+                    "https://api.skillhub.cn",
+                ]
+            )
         else:
             raise ValueError(f"Unsupported target: {target}")
 
@@ -311,11 +290,15 @@ class ManualPublisher:
 
     def plan(self, targets: tuple[str, ...]) -> dict:
         self.release.assert_remote_main(self.runner)
-        results = {target: self._base_result(target, "pending_manual") for target in targets}
+        results = {
+            target: self._base_result(target, "pending_manual") for target in targets
+        }
         self.report.update(results)
         return results
 
-    def record(self, target: str, status: str, *, url: str = "", note: str = "") -> dict:
+    def record(
+        self, target: str, status: str, *, url: str = "", note: str = ""
+    ) -> dict:
         if target not in MANUAL_TARGETS:
             raise ValueError(f"Unsupported manual target: {target}")
         if status not in MANUAL_STATUSES:
@@ -332,21 +315,21 @@ class ManualPublisher:
 
     def _base_result(self, target: str, status: str) -> dict:
         artifact = self.release.metadata["artifacts"][target]
-        archive = build_release.artifact_path(self.release.directory, artifact["archive"])
+        archive = artifact_path(self.release.directory, artifact["archive"])
         result = {
             "status": status,
             "version": artifact["version"],
             "embedded_skill_version": self.release.version,
             "artifact": artifact["archive"],
             "upload_path": str(archive),
-            "artifact_sha256": artifact.get("archive_sha256", artifact.get("sha256", "")),
+            "artifact_sha256": artifact.get(
+                "archive_sha256", artifact.get("sha256", "")
+            ),
         }
         if artifact.get("embedded_skills"):
             result["embedded_skills"] = sorted(artifact["embedded_skills"])
         if target == "doubao":
-            profile = doubao_package.load_profile(
-                Path(__file__).resolve().parents[1] / "channels/doubao/profile.json"
-            )
+            profile = doubao.load_profile(TOOL_ROOT / "channels/doubao/profile.json")
             result["runtime_tests"] = {
                 "recommended_instructions": profile["recommended_instructions"],
                 "required_checks": [

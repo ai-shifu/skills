@@ -1,4 +1,4 @@
-name: Publish Skill Platform
+name: Publish Skill Channel
 
 on:
   workflow_call:
@@ -21,7 +21,7 @@ on:
         required: true
         type: string
       target:
-        description: "Retry only this platform"
+        description: "Retry only this channel"
         required: true
         type: choice
         options:
@@ -44,10 +44,11 @@ jobs:
   publish:
     runs-on: ubuntu-24.04
     steps:
-      - name: Check out release tag
+      - name: Check out release tool from workflow revision
         uses: actions/checkout@v4
         with:
-          ref: refs/tags/${{ inputs.tag }}
+          # The requested tag selects immutable attachments, not the tool runtime.
+          ref: ${{ github.workflow_sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -101,18 +102,18 @@ jobs:
           "$HOME/.local/bin/skillhub" login --key "$SKILLHUB_TOKEN" --host https://api.skillhub.cn
           "$HOME/.local/bin/skillhub" auth whoami
 
-      - name: Download, verify and submit one platform package
+      - name: Download, verify and submit one channel package
         env:
           GH_TOKEN: ${{ github.token }}
           CLAWHUB_OWNER: ${{ vars.CLAWHUB_OWNER }}
           RELEASE_TAG: ${{ inputs.tag }}
-          PLATFORM_TARGET: ${{ inputs.target }}
+          CHANNEL_TARGET: ${{ inputs.target }}
         run: |
-          python3 tools/ai-shifu-skill-release/scripts/platform_publish.py \
+          python3 tools/ai-shifu-skill-release/scripts/release.py submit-channel \
             --tag "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
-            --target "$PLATFORM_TARGET" --output platform-work --execute
+            --target "$CHANNEL_TARGET" --output platform-work --execute
 
-      - name: Save platform result
+      - name: Save channel result
         if: always()
         uses: actions/upload-artifact@v4
         with:

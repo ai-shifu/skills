@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Open a website-manifest PR to activate a released skill version.
 
 The last release stage: after the channels are published, update the public
@@ -17,18 +16,32 @@ import tempfile
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Protocol
 
-from scripts.build_release import SEMVER, SOURCE_REPOSITORY, parse_frontmatter, run, split_skill_document
-from scripts.bump_version import semver_key
-from scripts.publish_release import (
-    MANIFEST_REQUIRED_AUTOMATED_TARGETS,
-    MANIFEST_REQUIRED_MANUAL_TARGETS,
-)
+from .publishing import AUTOMATED_TARGETS
+from .skill_metadata import SEMVER, parse_frontmatter, split_skill_document
+from .source import SOURCE_REPOSITORY, run
+from .version import semver_key
 
 WEBSITE_REPOSITORY = "git@github.com:ai-shifu/ai-shifu-website.git"
 MANIFEST_BASE_URL = "https://ai-shifu.cn/skill-manifests"
+MANIFEST_REQUIRED_AUTOMATED_TARGETS = AUTOMATED_TARGETS
+MANIFEST_REQUIRED_MANUAL_TARGETS = ("workbuddy",)
 AUTOMATED_OK = {"published", "verified"}
 MANUAL_OK = {"submitted", "verified"}
+
+
+class ManifestOptions(Protocol):
+    """Inputs consumed by manifest activation or online verification."""
+
+    release_dir: str
+    notes: str
+    auto_notes: bool
+    draft: bool
+    no_pr: bool
+    check_online: bool
+    allow_pending: list[str]
+    repo_url: str
 
 
 def load_release(release_dir: Path) -> tuple[str, str, str]:
@@ -38,7 +51,11 @@ def load_release(release_dir: Path) -> tuple[str, str, str]:
 
 
 def collect_changes(
-    repo_url: str, skill_name: str, previous_version: str, upper_commit: str, workdir: Path
+    repo_url: str,
+    skill_name: str,
+    previous_version: str,
+    upper_commit: str,
+    workdir: Path,
 ) -> list[str]:
     """Commit subjects (squash-merged PR titles) that touched this skill between
     the commit where SKILL.md last became previous_version and upper_commit."""
@@ -48,7 +65,9 @@ def collect_changes(
     boundary = ""
     seen_previous = False
     for sha in run("git", "log", "--format=%H", "--", skill_md, cwd=clone).split():
-        frontmatter, _ = split_skill_document(run("git", "show", f"{sha}:{skill_md}", cwd=clone), sha)
+        frontmatter, _ = split_skill_document(
+            run("git", "show", f"{sha}:{skill_md}", cwd=clone), sha
+        )
         version = parse_frontmatter(frontmatter).get("version", "")
         if version == previous_version:
             seen_previous = True
@@ -56,13 +75,24 @@ def collect_changes(
         elif seen_previous:
             break
     if not boundary:
-        raise ValueError(f"Cannot locate the commit where {skill_name} became {previous_version}")
+        raise ValueError(
+            f"Cannot locate the commit where {skill_name} became {previous_version}"
+        )
     subjects = run(
-        "git", "log", "--format=%s", f"{boundary}..{upper_commit or 'HEAD'}",
-        "--", f"skills/{skill_name}/", cwd=clone,
+        "git",
+        "log",
+        "--format=%s",
+        f"{boundary}..{upper_commit or 'HEAD'}",
+        "--",
+        f"skills/{skill_name}/",
+        cwd=clone,
     )
     bump_noise = re.compile(rf"bump {re.escape(skill_name)} to ")
-    return [line for line in subjects.splitlines() if line.strip() and not bump_noise.search(line)]
+    return [
+        line
+        for line in subjects.splitlines()
+        if line.strip() and not bump_noise.search(line)
+    ]
 
 
 def compose_notes(version: str, changes: list[str]) -> str:
@@ -73,10 +103,14 @@ def compose_notes(version: str, changes: list[str]) -> str:
     return notes[:497] + "..." if len(notes) > 500 else notes
 
 
-def assert_channels_ready(release_dir: Path, allow_pending: tuple[str, ...] = ()) -> None:
+def assert_channels_ready(
+    release_dir: Path, allow_pending: tuple[str, ...] = ()
+) -> None:
     report_path = release_dir / "release-report.json"
     if not report_path.exists():
-        raise ValueError("release-report.json not found; run check/publish and record-manual first")
+        raise ValueError(
+            "release-report.json not found; run check/publish and record-manual first"
+        )
     channels = json.loads(report_path.read_text(encoding="utf-8")).get("channels", {})
     problems = []
     for target in MANIFEST_REQUIRED_AUTOMATED_TARGETS:
@@ -91,7 +125,8 @@ def assert_channels_ready(release_dir: Path, allow_pending: tuple[str, ...] = ()
             problems.append(f"{target}={status}")
     if problems:
         raise ValueError(
-            "Channels are not ready for manifest activation: " + ", ".join(problems)
+            "Channels are not ready for manifest activation: "
+            + ", ".join(problems)
             + ". Publish the automated channels and record the manual uploads first."
         )
 
@@ -104,14 +139,18 @@ def update_manifest(manifest_path: Path, version: str, notes: str) -> dict:
     if not SEMVER.fullmatch(manifest.get("latest", "")):
         raise ValueError(f"Invalid latest version: {manifest.get('latest')!r}")
     if not SEMVER.fullmatch(manifest.get("min_supported", "")):
-        raise ValueError(f"Invalid min_supported version: {manifest.get('min_supported')!r}")
+        raise ValueError(
+            f"Invalid min_supported version: {manifest.get('min_supported')!r}"
+        )
     if semver_key(manifest["min_supported"]) > semver_key(manifest["latest"]):
         raise ValueError("min_supported must not exceed latest")
     if not str(manifest.get("update_url", "")).startswith("https://"):
         raise ValueError("update_url must be HTTPS")
     if "schema_version" not in manifest:
         raise ValueError("manifest is missing schema_version")
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     return manifest
 
 
@@ -127,11 +166,13 @@ def check_online(skill_name: str, version: str) -> dict:
         "online_latest": online,
         "expected": version,
         "active": online == version,
-        "note": "" if online == version else "Edge caches hold entries up to ~5 minutes; retry after deploying.",
+        "note": ""
+        if online == version
+        else "Edge caches hold entries up to ~5 minutes; retry after deploying.",
     }
 
 
-def activate(args) -> dict:
+def activate(args: ManifestOptions) -> dict:
     release_dir = Path(args.release_dir).expanduser().resolve()
     skill_name, version, source_commit = load_release(release_dir)
     if args.check_online:
@@ -144,15 +185,29 @@ def activate(args) -> dict:
     with tempfile.TemporaryDirectory(prefix="ai-shifu-manifest-") as tmp:
         workdir = Path(tmp)
         clone = workdir / "website"
-        run("git", "clone", "--quiet", "--depth=1", args.repo_url, str(clone), cwd=workdir)
+        run(
+            "git",
+            "clone",
+            "--quiet",
+            "--depth=1",
+            args.repo_url,
+            str(clone),
+            cwd=workdir,
+        )
         manifest_path = clone / "zh/skill-manifests" / f"{skill_name}.json"
         if not manifest_path.exists():
-            raise ValueError(f"Manifest not found in website repository: {manifest_path.name}")
+            raise ValueError(
+                f"Manifest not found in website repository: {manifest_path.name}"
+            )
         notes = args.notes
         changes: list[str] = []
         if args.auto_notes:
-            previous_latest = json.loads(manifest_path.read_text(encoding="utf-8")).get("latest", "")
-            changes = collect_changes(SOURCE_REPOSITORY, skill_name, previous_latest, source_commit, workdir)
+            previous_latest = json.loads(manifest_path.read_text(encoding="utf-8")).get(
+                "latest", ""
+            )
+            changes = collect_changes(
+                SOURCE_REPOSITORY, skill_name, previous_latest, source_commit, workdir
+            )
             notes = compose_notes(version, changes)
         notes = notes or f"Release {version}"
         manifest = update_manifest(manifest_path, version, notes)
@@ -182,11 +237,22 @@ def activate(args) -> dict:
         if waived:
             pr_body += f" Waived channels (handled offline by the release owner): {', '.join(waived)}."
         if args.no_pr:
-            result["next_step"] = f"Open a PR for branch {branch} manually. {manual_tail}"
+            result["next_step"] = (
+                f"Open a PR for branch {branch} manually. {manual_tail}"
+            )
         else:
             command = [
-                "gh", "pr", "create", "--head", branch, "--base", "main",
-                "--title", title, "--body", pr_body,
+                "gh",
+                "pr",
+                "create",
+                "--head",
+                branch,
+                "--base",
+                "main",
+                "--title",
+                title,
+                "--body",
+                pr_body,
             ]
             if args.draft:
                 command.append("--draft")

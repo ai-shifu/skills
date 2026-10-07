@@ -5,7 +5,7 @@ description: "Release AI-Shifu skills using the maintained release.py workflow: 
 
 ## Execution Environment
 
-Operator build and platform publication operations go through this tool's `scripts/release.py`. The tagged GitHub workflow calls `scripts/github_release.py` after verification. Do not duplicate packaging logic or call platform publication commands directly.
+All operations go through this tool's `scripts/release.py`. The tagged GitHub workflow uses its `github-release` subcommand after verification. Channel jobs use `submit-channel`, which downloads and verifies Release attachments before submission. Do not duplicate packaging logic or call channel publication commands directly.
 
 1. Locate the directory containing **this** `SKILL.md`. In `ai-shifu/skills`, it is `tools/ai-shifu-skill-release/`, not the Git repository root. Use it as the working directory for the commands below. A standalone copy uses the same sibling layout.
 2. Confirm that `scripts/release.py` and `channels/workbuddy/.codebuddy-plugin/plugin.json` exist there. Stop if the intended tool cannot be located.
@@ -66,9 +66,7 @@ After confirmation:
 python3 scripts/release.py build --skill-name ai-shifu-course-creator
 ```
 
-For a trial build of a particular commit, pass `--source-ref <full-commit-sha> --expected-version X.Y.Z`. Pass `--source-repo-url <checkout-path>` when testing a local checkout before its commit exists upstream. The tagged GitHub workflow uses the canonical remote and checks that the commit has reached `main`.
-PR validation performs a trial build with the publisher identity committed in the selected source revision and keeps preview attachments in Actions. Those attachments are never publication candidates.
-The **Release Skills** manual Actions run provides two previews before tagging. Select `preview_type=artifact` for temporary attachments without a GitHub Release, including an automation-only acceptance run on `main`. For a future version PR, select its development branch, enter the branch's expected version, and choose `preview_type=draft`. This creates a test Draft Release with a distinct `preview-v...` tag, uploads and downloads all six attachments for verification, and leaves the draft unpublished. The administrator merges the version PR after reviewing the branch preview; the operator later tags the final merged `main` commit with `vX.Y.Z` for formal publication. Never publish or reuse the test draft as the final Release. See [README](README.md) for cleanup and GitHub permission limits.
+For a trial build of a particular commit, pass `--source-ref <full-commit-sha> --expected-version X.Y.Z`. Pass `--source-repo-url <checkout-path>` when testing a local checkout before its commit exists upstream. The tagged GitHub workflow uses the canonical remote and checks that the commit has reached `main`. PR validation performs a trial build with the publisher identity committed in the selected source revision and keeps preview attachments in Actions. Those attachments are never publication candidates. The **Release Skills** manual Actions run provides two previews before tagging. Select `preview_type=artifact` for temporary attachments without a GitHub Release, including an automation-only acceptance run on `main`. For a future version PR, select its development branch, enter the branch's expected version, and choose `preview_type=draft`. This creates a test Draft Release with a distinct `preview-v...` tag, uploads and downloads all six attachments for verification, and leaves the draft unpublished. The administrator merges the version PR after reviewing the branch preview; the operator later tags the final merged `main` commit with `vX.Y.Z` for formal publication. Never publish or reuse the test draft as the final Release. See [README](README.md) for cleanup and GitHub permission limits.
 
 Record the exact output directory as `RELEASE_DIR` and verify it:
 

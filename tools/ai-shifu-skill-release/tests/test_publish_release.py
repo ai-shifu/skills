@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import publish_release
+from ai_shifu_release import publishing, release_state
 
 
 class FakeRunner:
@@ -21,16 +21,20 @@ class FakeRunner:
         self.failing_auth = failing_auth
         self.remote_commit = remote_commit
 
-    def __call__(self, command: list[str]) -> publish_release.CommandResult:
+    def __call__(self, command: list[str]) -> publishing.CommandResult:
         self.commands.append(command)
         if command[:2] == ["git", "ls-remote"]:
-            return publish_release.CommandResult(f"{self.remote_commit}\trefs/heads/main")
-        if "whoami" in command and self.failing_auth and self.failing_auth in command[0]:
-            raise publish_release.CommandFailure(command, "not authenticated")
+            return publishing.CommandResult(f"{self.remote_commit}\trefs/heads/main")
+        if (
+            "whoami" in command
+            and self.failing_auth
+            and self.failing_auth in command[0]
+        ):
+            raise publishing.CommandFailure(command, "not authenticated")
         is_publish = "publish" in command and "--dry-run" not in command
         if is_publish and self.failing_publish and self.failing_publish in command[0]:
-            raise publish_release.CommandFailure(command, "publish failed")
-        return publish_release.CommandResult('{"ok": true}')
+            raise publishing.CommandFailure(command, "publish failed")
+        return publishing.CommandResult('{"ok": true}')
 
 
 class PublishReleaseTest(unittest.TestCase):
@@ -43,7 +47,9 @@ class PublishReleaseTest(unittest.TestCase):
         skillhub.mkdir(parents=True)
         (clawhub / "SKILL.md").write_text("fixture\n")
         (skillhub / "SKILL.md").write_text("fixture\n")
-        workbuddy = self.release_dir / "artifacts/workbuddy/workbuddy-ai-shifu-1.1.0.zip"
+        workbuddy = (
+            self.release_dir / "artifacts/workbuddy/workbuddy-ai-shifu-1.1.0.zip"
+        )
         doubao = self.release_dir / "artifacts/doubao/doubao-ai-shifu-1.2.3.zip"
         workbuddy.parent.mkdir(parents=True)
         doubao.parent.mkdir(parents=True)
@@ -94,10 +100,10 @@ class PublishReleaseTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def publisher(self, runner: FakeRunner) -> publish_release.AutomatedPublisher:
-        with patch.object(publish_release.build_release, "verify"):
-            context = publish_release.ReleaseContext.load(self.release_dir)
-        return publish_release.AutomatedPublisher(
+    def publisher(self, runner: FakeRunner) -> publishing.AutomatedPublisher:
+        with patch.object(release_state, "verify"):
+            context = release_state.ReleaseContext.load(self.release_dir)
+        return publishing.AutomatedPublisher(
             context,
             runner=runner,
             clawhub_command=("/node22/node", "/node22/npx-cli.js"),
@@ -108,28 +114,50 @@ class PublishReleaseTest(unittest.TestCase):
         runner = FakeRunner()
         results = self.publisher(runner).check(("clawhub", "skillhub"))
 
-        self.assertEqual({target: result["status"] for target, result in results.items()}, {
-            "clawhub": "ready",
-            "skillhub": "ready",
-        })
-        publish_commands = [command for command in runner.commands if "publish" in command]
+        self.assertEqual(
+            {target: result["status"] for target, result in results.items()},
+            {
+                "clawhub": "ready",
+                "skillhub": "ready",
+            },
+        )
+        publish_commands = [
+            command for command in runner.commands if "publish" in command
+        ]
         self.assertEqual(len(publish_commands), 2)
         self.assertTrue(all("--dry-run" in command for command in publish_commands))
-        clawhub_command = next(command for command in publish_commands if "clawhub@latest" in command)
-        skillhub_command = next(command for command in publish_commands if command[0] == "/bin/skillhub")
+        clawhub_command = next(
+            command for command in publish_commands if "clawhub@latest" in command
+        )
+        skillhub_command = next(
+            command for command in publish_commands if command[0] == "/bin/skillhub"
+        )
         self.assertIn(
-            str((self.release_dir / "artifacts/clawhub/ai-shifu-course-creator").resolve()),
+            str(
+                (
+                    self.release_dir / "artifacts/clawhub/ai-shifu-course-creator"
+                ).resolve()
+            ),
             clawhub_command,
         )
         self.assertIn(
-            str((self.release_dir / "artifacts/skillhub/ai-shifu-course-creator").resolve()),
+            str(
+                (
+                    self.release_dir / "artifacts/skillhub/ai-shifu-course-creator"
+                ).resolve()
+            ),
             skillhub_command,
         )
         self.assertNotIn("--json", skillhub_command)
         self.assertIn("https://api.skillhub.cn", skillhub_command)
-        self.assertIn(["skill", "publish"], [clawhub_command[i:i + 2]
-                                           for i in range(len(clawhub_command) - 1)])
-        self.assertEqual(clawhub_command[clawhub_command.index("--name") + 1], "AI-Shifu Course Creator")
+        self.assertIn(
+            ["skill", "publish"],
+            [clawhub_command[i : i + 2] for i in range(len(clawhub_command) - 1)],
+        )
+        self.assertEqual(
+            clawhub_command[clawhub_command.index("--name") + 1],
+            "AI-Shifu Course Creator",
+        )
         report = json.loads((self.release_dir / "release-report.json").read_text())
         self.assertEqual(report["channels"]["clawhub"]["status"], "ready")
         self.assertEqual(results["clawhub"]["artifact_sha256"], "clawhub-tree-sha")
@@ -153,7 +181,8 @@ class PublishReleaseTest(unittest.TestCase):
         self.assertEqual(results["clawhub"]["status"], "ready")
         self.assertEqual(results["skillhub"]["status"], "failed")
         real_publish_commands = [
-            command for command in runner.commands
+            command
+            for command in runner.commands
             if "publish" in command and "--dry-run" not in command
         ]
         self.assertEqual(real_publish_commands, [])
@@ -168,28 +197,38 @@ class PublishReleaseTest(unittest.TestCase):
 
     def test_verified_release_can_publish_after_main_advances(self) -> None:
         runner = FakeRunner(remote_commit="different-commit")
-        with patch.object(publish_release.build_release, "verify"):
-            context = publish_release.ReleaseContext.load(self.release_dir)
-        publisher = publish_release.AutomatedPublisher(
-            context, runner=runner, require_current_main=False,
+        with patch.object(release_state, "verify"):
+            context = release_state.ReleaseContext.load(self.release_dir)
+        publisher = publishing.AutomatedPublisher(
+            context,
+            runner=runner,
+            require_current_main=False,
             skillhub_cli=Path("/bin/skillhub"),
         )
         results = publisher.publish(("skillhub",))
         self.assertEqual(results["skillhub"]["status"], "published")
-        self.assertFalse(any(command[:2] == ["git", "ls-remote"] for command in runner.commands))
+        self.assertFalse(
+            any(command[:2] == ["git", "ls-remote"] for command in runner.commands)
+        )
 
     def test_manual_channels_use_built_archives_and_require_evidence(self) -> None:
-        with patch.object(publish_release.build_release, "verify"):
-            context = publish_release.ReleaseContext.load(self.release_dir)
-        publisher = publish_release.ManualPublisher(context, runner=FakeRunner())
+        with patch.object(release_state, "verify"):
+            context = release_state.ReleaseContext.load(self.release_dir)
+        publisher = publishing.ManualPublisher(context, runner=FakeRunner())
 
         plan = publisher.plan(("workbuddy", "doubao"))
         self.assertEqual(plan["workbuddy"]["status"], "pending_manual")
         self.assertEqual(
             plan["doubao"]["embedded_skills"],
-            ["ai-shifu-course-creator", "ai-shifu-learning-report", "course-direction-advisor"],
+            [
+                "ai-shifu-course-creator",
+                "ai-shifu-learning-report",
+                "course-direction-advisor",
+            ],
         )
-        self.assertEqual(len(plan["doubao"]["runtime_tests"]["recommended_instructions"]), 3)
+        self.assertEqual(
+            len(plan["doubao"]["runtime_tests"]["recommended_instructions"]), 3
+        )
         self.assertIn(
             "all_embedded_skills_triggered",
             plan["doubao"]["runtime_tests"]["required_checks"],
