@@ -1,8 +1,8 @@
 ## Publishing Environment and Configuration
 
-This release tool is self-contained: keep `SKILL.md`, `scripts/`, and `channels/` together. Its maintained location is `tools/ai-shifu-skill-release/` in `ai-shifu/skills`, but a standalone copy also works without a Git repository. Exclude `dist/`, caches, `.git/`, and private `publisher.toml` when distributing the tool.
+This release tool is self-contained: keep `SKILL.md`, `scripts/`, `channels/`, and `publisher.toml` together. Its maintained location is `tools/ai-shifu-skill-release/` in `ai-shifu/skills`, but a standalone copy also works without a Git repository. Exclude `dist/`, caches, and `.git/` when distributing the tool.
 
-The tool directory is not the Git repository root. Run documented commands from the directory containing this tool's `SKILL.md`. The local publisher file and channel templates are resolved relative to the tool; relative output paths are resolved against the caller's working directory.
+The tool directory is not the Git repository root. Run documented commands from the directory containing this tool's `SKILL.md`. The publisher file and channel templates are read from the selected source revision; relative output paths are resolved against the caller's working directory.
 
 ## Requirements
 
@@ -30,7 +30,7 @@ Run ClawHub with Node 22. This tool does not store or request tokens; the user c
 The WorkBuddy `plugin.json` template uses placeholders for two fields:
 
 - **`version`** comes from the primary source skill's `SKILL.md` version, replacing `__SKILL_VERSION__`. QClaw and Doubao versions derive from the same value. There is no independent version maintained under this tool directory.
-- **`author`** comes from `AISHIFU_PUBLISHER_NAME` / `AISHIFU_PUBLISHER_EMAIL`, or from `publisher.toml` alongside this tool's `SKILL.md`. Create the ignored local file from `publisher.toml.example`. Environment values take precedence. The build rejects missing or placeholder publisher information.
+- **`author`** comes from the committed `publisher.toml` in the selected source revision. The build writes those values to the packaged WorkBuddy `plugin.json` and rejects missing or placeholder information. Review publisher changes in a PR because the name and email are public in the package.
 
 ## Human Release Gates
 

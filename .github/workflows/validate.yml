@@ -36,9 +36,6 @@ jobs:
 
       - name: Trial build from PR commit
         if: github.event_name == 'pull_request'
-        env:
-          AISHIFU_PUBLISHER_NAME: Preview Build
-          AISHIFU_PUBLISHER_EMAIL: preview@example.invalid
         run: |
           python3 tools/ai-shifu-skill-release/scripts/release.py build \
             --source-repo-url "$GITHUB_WORKSPACE" --source-ref "$GITHUB_SHA" --output dist

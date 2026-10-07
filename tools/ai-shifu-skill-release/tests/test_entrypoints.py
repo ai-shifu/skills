@@ -7,7 +7,6 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 import test_build_release
 
@@ -22,11 +21,7 @@ class ReleaseEntrypointTest(unittest.TestCase):
         cls.fixture = test_build_release.BuildReleaseTest()
         cls.fixture.setUp()
         cls.addClassCleanup(cls.fixture.tearDown)
-        with patch.dict(os.environ, {
-            "AISHIFU_PUBLISHER_NAME": "Release Test",
-            "AISHIFU_PUBLISHER_EMAIL": "release@example.com",
-        }):
-            cls.release_dir = cls.fixture.build()
+        cls.release_dir = cls.fixture.build()
 
     def test_verify_and_manual_plan_work_from_both_roots(self) -> None:
         for cwd in (REPOSITORY_ROOT, TOOL_ROOT):
@@ -55,14 +50,12 @@ class ReleaseEntrypointTest(unittest.TestCase):
     def test_build_entrypoint_accepts_local_pr_source(self) -> None:
         commit = self.fixture.git("rev-parse", "main")
         with tempfile.TemporaryDirectory() as temporary:
-            env = dict(os.environ, AISHIFU_PUBLISHER_NAME="Preview Build",
-                       AISHIFU_PUBLISHER_EMAIL="preview@example.invalid")
             result = subprocess.run(
                 [sys.executable, str(TOOL_ROOT / "scripts/release.py"), "build",
                  "--source-repo-url", str(self.fixture.source_repo),
                  "--source-ref", commit, "--expected-version", "1.2.3",
                  "--output", temporary],
-                cwd=REPOSITORY_ROOT, env=env, check=True, capture_output=True, text=True,
+                cwd=REPOSITORY_ROOT, check=True, capture_output=True, text=True,
             )
             report = json.loads((Path(result.stdout.strip()) / "release.json").read_text())
             self.assertEqual(report["source"]["commit"], commit)

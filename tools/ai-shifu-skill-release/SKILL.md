@@ -66,7 +66,7 @@ python3 scripts/release.py build --skill-name ai-shifu-course-creator
 ```
 
 For a trial build of a particular commit, pass `--source-ref <full-commit-sha> --expected-version X.Y.Z`. Pass `--source-repo-url <checkout-path>` when testing a local checkout before its commit exists upstream. The tagged GitHub workflow uses the canonical remote and checks that the commit has reached `main`.
-PR validation performs a trial build with a test publisher identity and keeps preview attachments in Actions. Those attachments are never publication candidates.
+PR validation performs a trial build with the publisher identity committed in the selected source revision and keeps preview attachments in Actions. Those attachments are never publication candidates.
 The **Release Skills** manual Actions run provides a preview before tagging: select a branch and enter the expected version. It saves temporary attachments without creating a GitHub Release.
 
 Record the exact output directory as `RELEASE_DIR` and verify it:

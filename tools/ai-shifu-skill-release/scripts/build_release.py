@@ -6,7 +6,6 @@ from __future__ import annotations
 import hashlib
 import io
 import json
-import os
 import re
 import shutil
 import stat
@@ -85,20 +84,24 @@ def _git_metadata(project: Path):
         return None, None, None
 
 
-def load_publisher(project: Path) -> dict | None:
-    """Publisher identity for channel packages. Environment variables win over
-    publisher.toml at the skill root; returns None when neither is set."""
-    name = os.environ.get("AISHIFU_PUBLISHER_NAME", "")
-    email = os.environ.get("AISHIFU_PUBLISHER_EMAIL", "")
-    if name:
-        return {"name": name, "email": email}
-    config_path = project / "publisher.toml"
-    if config_path.is_file():
-        config = tomllib.loads(config_path.read_text(encoding="utf-8"))
-        publisher = config.get("publisher", {})
-        if publisher.get("name"):
-            return {"name": publisher["name"], "email": publisher.get("email", "")}
-    return None
+def load_publisher(source_repo: Path, commit: str) -> dict[str, str]:
+    """Read the publisher identity committed with the selected source revision."""
+    path = "tools/ai-shifu-skill-release/publisher.toml"
+    try:
+        contents = run("git", "show", f"{commit}:{path}", cwd=source_repo)
+    except subprocess.CalledProcessError as exc:
+        raise ValueError(f"Missing publisher configuration at {path}") from exc
+    config = tomllib.loads(contents)
+    publisher = config.get("publisher")
+    if not isinstance(publisher, dict):
+        raise ValueError("publisher.toml must contain a [publisher] section")
+    for field in ("name", "email"):
+        value = publisher.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"publisher.toml publisher.{field} must be non-empty")
+        if "__PUBLISHER_" in value or value in {"your-name", "you@example.com"}:
+            raise ValueError(f"publisher.toml publisher.{field} contains a placeholder")
+    return {"name": publisher["name"], "email": publisher["email"]}
 
 
 def is_excluded(path: PurePosixPath) -> bool:
@@ -594,6 +597,7 @@ class BuildContext:
     skill_name: str
     version: str
     display_name: str
+    publisher: dict[str, str]
 
     @property
     def artifacts(self) -> Path:
@@ -633,13 +637,7 @@ def build_workbuddy_artifact(channel: str, context: BuildContext) -> dict:
     stage_plugin_path = stage_dir / ".codebuddy-plugin/plugin.json"
     stage_plugin = json.loads(stage_plugin_path.read_text(encoding="utf-8"))
     stage_plugin["version"] = context.version
-    publisher = load_publisher(Path(__file__).resolve().parents[1])
-    if not publisher or not publisher.get("name") or not publisher.get("email"):
-        raise ValueError("Publisher name and email are required for WorkBuddy packaging")
-    if any("__PUBLISHER_" in value or value in {"your-name", "you@example.com"}
-           for value in publisher.values()):
-        raise ValueError("Publisher identity must not contain placeholders")
-    stage_plugin["author"] = publisher
+    stage_plugin["author"] = context.publisher
     stage_plugin_path.write_text(
         json.dumps(stage_plugin, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
@@ -778,6 +776,7 @@ def build(args: BuildOptions) -> Path:
         source_repo = temporary_root / "github-source"
         source_ref = getattr(args, "source_ref", SOURCE_REF)
         commit, remote = fetch_source(args.source_repo_url, source_repo, source_ref)
+        publisher = load_publisher(source_repo, commit)
         channels = temporary_root / "channels"
         export_tree(source_repo, commit, "tools/ai-shifu-skill-release/channels", channels,
                     normalize_git_modes=True)
@@ -817,6 +816,7 @@ def build(args: BuildOptions) -> Path:
             skill_name=args.skill_name,
             version=metadata["version"],
             display_name=display_name,
+            publisher=publisher,
         )
         records = {channel: CHANNEL_BUILDERS[channel](channel, context) for channel in CHANNEL_ORDER}
 

@@ -23,6 +23,13 @@ class BuildReleaseTest(unittest.TestCase):
         self.source_repo = self.root / "skills"
         shutil.copytree(TOOL_ROOT / "channels", self.source_repo / "tools/ai-shifu-skill-release/channels",
                         symlinks=True)
+        self.workbuddy_config = (
+            self.source_repo / "tools/ai-shifu-skill-release/channels/workbuddy/.codebuddy-plugin/plugin.json"
+        )
+        self.publisher_config = self.source_repo / "tools/ai-shifu-skill-release/publisher.toml"
+        self.publisher_config.write_text(
+            '[publisher]\nname = "AI-Shifu"\nemail = "release@ai-shifu.cn"\n', encoding="utf-8"
+        )
         self.output = self.root / "dist"
         self.skill = self.source_repo / "skills/ai-shifu-course-creator"
         self.skill.mkdir(parents=True)
@@ -144,8 +151,7 @@ class BuildReleaseTest(unittest.TestCase):
             skill_name="ai-shifu-course-creator",
             output=str(self.output),
         )
-        with patch.dict("os.environ", {"AISHIFU_PUBLISHER_NAME": "AI-Shifu", "AISHIFU_PUBLISHER_EMAIL": "release@ai-shifu.cn"}):
-            return build_release.build(args)
+        return build_release.build(args)
 
     def extract_workbuddy(self, release_dir: Path, destination: str) -> Path:
         report = json.loads((release_dir / "release.json").read_text())
@@ -410,17 +416,33 @@ class BuildReleaseTest(unittest.TestCase):
         commit = self.git("rev-parse", "main")
         template = self.source_repo / "tools/ai-shifu-skill-release/channels/workbuddy/.codebuddy-plugin/plugin.json"
         template.write_text("tampered working tree", encoding="utf-8")
+        self.publisher_config.write_text(
+            '[publisher]\nname = "Wrong Author"\nemail = "wrong@example.com"\n', encoding="utf-8"
+        )
         release_dir = self.build(source_ref=commit)
         report = json.loads((release_dir / "release.json").read_text())
         archive = release_dir / report["artifacts"]["workbuddy"]["archive"]
         with zipfile.ZipFile(archive) as package:
             plugin = json.loads(package.read("workbuddy-ai-shifu-1.2.3/.codebuddy-plugin/plugin.json"))
         self.assertEqual(plugin["version"], "1.2.3")
+        self.assertEqual(plugin["author"], {"name": "AI-Shifu", "email": "release@ai-shifu.cn"})
 
     def test_build_requires_publisher_identity(self) -> None:
-        with patch.object(build_release, "load_publisher", return_value=None):
-            with self.assertRaisesRegex(ValueError, "Publisher name and email"):
-                self.build()
+        self.publisher_config.write_text(
+            '[publisher]\nname = "__PUBLISHER_NAME__"\nemail = "__PUBLISHER_EMAIL__"\n',
+            encoding="utf-8",
+        )
+        self.git("add", "tools/ai-shifu-skill-release/publisher.toml")
+        self.git("commit", "-m", "invalid author fixture")
+        with self.assertRaisesRegex(ValueError, "publisher.toml publisher.name contains a placeholder"):
+            self.build()
+
+    def test_build_uses_configured_author_even_with_environment_values(self) -> None:
+        with patch.dict("os.environ", {"AISHIFU_PUBLISHER_NAME": "Wrong Author",
+                                    "AISHIFU_PUBLISHER_EMAIL": "wrong@example.com"}):
+            root = self.extract_workbuddy(self.build(), "configured-author")
+        plugin = json.loads((root / ".codebuddy-plugin/plugin.json").read_text())
+        self.assertEqual(plugin["author"], {"name": "AI-Shifu", "email": "release@ai-shifu.cn"})
 
     def test_release_manifest_is_reproducible_for_same_commit(self) -> None:
         commit = self.git("rev-parse", "main")
@@ -429,9 +451,7 @@ class BuildReleaseTest(unittest.TestCase):
         args = SimpleNamespace(source_repo_url=str(self.source_repo), source_ref=commit,
                                expected_version="1.2.3", skill_name="ai-shifu-course-creator",
                                output=str(second_output))
-        with patch.dict("os.environ", {"AISHIFU_PUBLISHER_NAME": "AI-Shifu",
-                                    "AISHIFU_PUBLISHER_EMAIL": "release@ai-shifu.cn"}):
-            second = build_release.build(args)
+        second = build_release.build(args)
         self.assertEqual((first / "release.json").read_bytes(),
                          (second / "release.json").read_bytes())
 

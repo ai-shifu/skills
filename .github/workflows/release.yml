@@ -45,8 +45,6 @@ jobs:
 
       - name: Build and verify selected commit
         env:
-          AISHIFU_PUBLISHER_NAME: ${{ vars.AISHIFU_PUBLISHER_NAME }}
-          AISHIFU_PUBLISHER_EMAIL: ${{ vars.AISHIFU_PUBLISHER_EMAIL }}
           PREVIEW_VERSION: ${{ inputs.expected_version }}
         run: |
           python3 tools/ai-shifu-skill-release/scripts/release.py build \
@@ -97,9 +95,6 @@ jobs:
           python3 -m unittest discover -s tests -p "test_*.py"
 
       - name: Build and verify tagged commit
-        env:
-          AISHIFU_PUBLISHER_NAME: ${{ vars.AISHIFU_PUBLISHER_NAME }}
-          AISHIFU_PUBLISHER_EMAIL: ${{ vars.AISHIFU_PUBLISHER_EMAIL }}
         run: |
           version="${GITHUB_REF_NAME#skills-v}"
           python3 tools/ai-shifu-skill-release/scripts/release.py build \
