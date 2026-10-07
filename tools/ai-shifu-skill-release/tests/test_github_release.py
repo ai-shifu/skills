@@ -9,9 +9,8 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from support import ReleaseFixture
-
 from ai_shifu_release import github_releases
+from support import ReleaseFixture
 
 
 class GitHubReleaseTest(unittest.TestCase):
@@ -99,7 +98,9 @@ class GitHubReleaseTest(unittest.TestCase):
                     payload = {
                         "isDraft": not published,
                         "assets": [{"name": name} for name in remote],
-                        "url": "https://github.com/ai-shifu/skills/releases/tag/v1.2.3",
+                        "url": "https://github.com/ai-shifu/skills/releases/tag/v1.2.3"
+                        if published
+                        else "https://github.com/ai-shifu/skills/releases/tag/untagged-fixture",
                     }
                     return type(
                         "Response", (), {"returncode": 0, "stdout": json.dumps(payload)}
@@ -126,11 +127,14 @@ class GitHubReleaseTest(unittest.TestCase):
                 patch.object(github_releases, "gh", side_effect=fake_gh),
                 redirect_stdout(io.StringIO()),
             ):
-                github_releases.publish("v1.2.3", self.commit, assets, notes)
+                url = github_releases.publish("v1.2.3", self.commit, assets, notes)
             self.assertTrue(published)
             self.assertEqual(calls.count("create"), 1)
             self.assertEqual(calls.count("upload"), len(assets))
-            self.assertEqual(calls[-1], "edit")
+            self.assertEqual(calls[-2:], ["edit", "view"])
+            self.assertEqual(
+                url, "https://github.com/ai-shifu/skills/releases/tag/v1.2.3"
+            )
 
     def test_branch_preview_uploads_and_verifies_without_publishing(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

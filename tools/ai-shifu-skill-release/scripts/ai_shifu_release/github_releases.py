@@ -218,6 +218,9 @@ def publish(
                 )
     if final["isDraft"] and not draft_preview:
         gh("release", "edit", tag, "--repo", repository, "--draft=false")
+        final = json.loads(
+            gh("release", "view", tag, "--repo", repository, "--json", "url").stdout
+        )
     return final["url"]
 
 
