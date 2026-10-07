@@ -21,6 +21,9 @@ from scripts import build_release
 
 CHANNELS = build_release.CHANNEL_ORDER
 TAG_PATTERN = re.compile(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
+PREVIEW_TAG_PATTERN = re.compile(
+    r"preview-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-([0-9a-f]{40})-([1-9]\d*)-([1-9]\d*)$"
+)
 
 
 def gh(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -90,7 +93,15 @@ def prepare_assets(release_dir: Path, tag: str, commit: str, destination: Path) 
     return assets, notes
 
 
-def publish(tag: str, commit: str, assets: list[Path], notes: str) -> None:
+def publish(tag: str, commit: str, assets: list[Path], notes: str,
+            *, draft_preview: bool = False, version_tag: str | None = None) -> None:
+    if draft_preview:
+        match = PREVIEW_TAG_PATTERN.fullmatch(tag)
+        if not match or version_tag != f"v{'.'.join(match.groups()[:3])}" or match.group(4) != commit:
+            raise ValueError("Preview tag must contain the package version and exact source commit")
+        notes = "TEST DRAFT ONLY — do not publish this Release.\n\n" + notes
+    elif not TAG_PATTERN.fullmatch(tag):
+        raise ValueError("Published Release tag must use vX.Y.Z")
     repository = os.environ.get("GITHUB_REPOSITORY", "")
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         raise ValueError("GITHUB_REPOSITORY is required")
@@ -99,10 +110,15 @@ def publish(tag: str, commit: str, assets: list[Path], notes: str) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             notes_file = Path(temporary) / "notes.md"
             notes_file.write_text(notes, encoding="utf-8")
-            gh("release", "create", tag, "--repo", repository, "--verify-tag", "--draft",
-               "--target", commit, "--title", tag, "--notes-file", str(notes_file))
+            command = ["release", "create", tag, "--repo", repository, "--draft",
+                       "--target", commit, "--title", tag, "--notes-file", str(notes_file)]
+            if not draft_preview:
+                command.append("--verify-tag")
+            gh(*command)
         existing = gh("release", "view", tag, "--repo", repository, "--json", "isDraft,assets")
     release = json.loads(existing.stdout)
+    if draft_preview and not release["isDraft"]:
+        raise ValueError("Preview Release is already public; refusing to change it")
     remote_assets = {asset["name"] for asset in release["assets"]}
     expected_assets = {asset.name for asset in assets}
     if remote_assets - expected_assets:
@@ -124,7 +140,7 @@ def publish(tag: str, commit: str, assets: list[Path], notes: str) -> None:
                "--dir", temporary)
             if sha256(Path(temporary) / asset.name) != sha256(asset):
                 raise ValueError(f"Published asset has different content: {asset.name}; use a new version")
-    if final["isDraft"]:
+    if final["isDraft"] and not draft_preview:
         gh("release", "edit", tag, "--repo", repository, "--draft=false")
     print(final["url"])
 
@@ -135,8 +151,11 @@ def main() -> None:
     parser.add_argument("--tag", required=True)
     parser.add_argument("--commit", required=True)
     parser.add_argument("--prepare-only", action="store_true", help="Prepare assets without creating a Release")
+    parser.add_argument("--draft-preview-tag", help="Create and verify a branch-only test Draft Release")
     parser.add_argument("--output", type=Path, help="Required output directory for --prepare-only")
     args = parser.parse_args()
+    if args.prepare_only and args.draft_preview_tag:
+        parser.error("--prepare-only and --draft-preview-tag cannot be combined")
     if args.prepare_only:
         if args.output is None:
             parser.error("--prepare-only requires --output")
@@ -147,7 +166,8 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as temporary:
         assets, notes = prepare_assets(args.release_dir.resolve(), args.tag, args.commit,
                                        Path(temporary))
-        publish(args.tag, args.commit, assets, notes)
+        publish(args.draft_preview_tag or args.tag, args.commit, assets, notes,
+                draft_preview=bool(args.draft_preview_tag), version_tag=args.tag)
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ Operator build and platform publication operations go through this tool's `scrip
 4. Before packaging, check `git status --short` and `git log -1 --oneline` in the enclosing repository when present. The builder supports standalone copies without Git and records unavailable provenance as null; do not claim a clean repository without evidence.
 5. GitHub `ai-shifu/skills` remote `main`, or a specified commit from it, is the source of business skills and channel templates. Sharing a repository with the tool does not make local skill edits build inputs. Tagged commits create downloadable GitHub Releases. Platform Actions jobs download and verify the published Release attachments before submission; they do not rebuild or require the old tag to remain the current `main` tip.
 
-Building and publishing do not modify skill source. Version changes go through `bump`, which opens a source-repository PR for human review and merge. Only the primary source skill's `SKILL.md` stores the release version; all four channel versions derive from it, with no independent version under this tool directory. If the user specifies a version, compare it with `release.json`. Stop on a mismatch and explain that the target version must first reach remote `main` through a merged bump PR.
+Building and publishing do not modify skill source. Version changes go through `bump`, which opens a source-repository PR for human review and merge. Only the primary source skill's `SKILL.md` stores the release version; all four channel versions derive from it, with no independent version under this tool directory. If the user specifies a version, compare it with `release.json`. For formal publication, stop on a mismatch and explain that the target version must first reach remote `main` through a merged bump PR. A Draft Release preview may instead use the exact commit on an unmerged version branch.
 
 ## Safety Rules
 
@@ -32,7 +32,8 @@ Building and publishing do not modify skill source. Version changes go through `
 
 | User intent | Steps | Stop point |
 | --- | --- | --- |
-| Accept automation changes without a new skill release | Keep the existing skill version, review and merge the automation PR, then run the manual **Release Skills** preview on the merged `main` commit | Report the preview run and six temporary attachments; do not create a version tag or submit to platforms |
+| Accept automation changes without a new skill release | Keep the existing skill version, review and merge the automation PR, then run **Release Skills** with `preview_type=artifact` on the merged `main` commit | Report the preview run and six temporary attachments; do not create a version tag or submit to platforms |
+| Preview a future version before its PR is merged | Run **Release Skills** with `preview_type=draft` on the version branch and its matching expected version | Report the test Draft Release and six verified attachments; leave the draft unpublished and wait for administrator merge |
 | Upgrade a version | `bump` | Return the source PR and wait for human merge |
 | Build or package | `build`, then `verify` | Report artifacts |
 | Check or dry-run | Build if needed, then `verify` and `check` | Report channel readiness |
@@ -67,7 +68,7 @@ python3 scripts/release.py build --skill-name ai-shifu-course-creator
 
 For a trial build of a particular commit, pass `--source-ref <full-commit-sha> --expected-version X.Y.Z`. Pass `--source-repo-url <checkout-path>` when testing a local checkout before its commit exists upstream. The tagged GitHub workflow uses the canonical remote and checks that the commit has reached `main`.
 PR validation performs a trial build with the publisher identity committed in the selected source revision and keeps preview attachments in Actions. Those attachments are never publication candidates.
-The **Release Skills** manual Actions run provides a preview before tagging: select a branch and enter the expected version. It saves temporary attachments without creating a GitHub Release.
+The **Release Skills** manual Actions run provides two previews before tagging. Select `preview_type=artifact` for temporary attachments without a GitHub Release, including an automation-only acceptance run on `main`. For a future version PR, select its development branch, enter the branch's expected version, and choose `preview_type=draft`. This creates a test Draft Release with a distinct `preview-v...` tag, uploads and downloads all six attachments for verification, and leaves the draft unpublished. The administrator merges the version PR after reviewing the branch preview; the operator later tags the final merged `main` commit with `vX.Y.Z` for formal publication. Never publish or reuse the test draft as the final Release. See [README](README.md) for cleanup and GitHub permission limits.
 
 Record the exact output directory as `RELEASE_DIR` and verify it:
 

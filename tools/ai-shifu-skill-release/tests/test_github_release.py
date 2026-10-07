@@ -104,6 +104,73 @@ class GitHubReleaseTest(unittest.TestCase):
             self.assertEqual(calls.count("upload"), len(assets))
             self.assertEqual(calls[-1], "edit")
 
+    def test_branch_preview_uploads_and_verifies_without_publishing(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets, notes = github_release.prepare_assets(
+                self.release_dir, "v1.2.3", self.commit, Path(temporary)
+            )
+            preview_tag = f"preview-v1.2.3-{self.commit}-123-1"
+            remote = {}
+            created = False
+            calls = []
+
+            def fake_gh(*args, check=True):
+                nonlocal created
+                action = args[1]
+                calls.append(action)
+                if action == "view":
+                    if not created:
+                        return type("Response", (), {"returncode": 1, "stdout": ""})()
+                    payload = {"isDraft": True, "assets": [{"name": name} for name in remote],
+                               "url": f"https://github.com/ai-shifu/skills/releases/tag/{preview_tag}"}
+                    return type("Response", (), {"returncode": 0, "stdout": json.dumps(payload)})()
+                if action == "create":
+                    self.assertIn("--draft", args)
+                    self.assertNotIn("--verify-tag", args)
+                    self.assertEqual(args[args.index("--target") + 1], self.commit)
+                    notes_path = Path(args[args.index("--notes-file") + 1])
+                    self.assertIn("TEST DRAFT ONLY", notes_path.read_text(encoding="utf-8"))
+                    created = True
+                elif action == "upload":
+                    asset = Path(args[3])
+                    remote[asset.name] = asset.read_bytes()
+                elif action == "download":
+                    name = args[args.index("--pattern") + 1]
+                    directory = Path(args[args.index("--dir") + 1])
+                    (directory / name).write_bytes(remote[name])
+                elif action == "edit":
+                    self.fail("A branch preview must never publish the Draft Release")
+                return type("Response", (), {"returncode": 0, "stdout": ""})()
+
+            with patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}), \
+                 patch.object(github_release, "gh", side_effect=fake_gh), \
+                 redirect_stdout(io.StringIO()):
+                github_release.publish(preview_tag, self.commit, assets, notes,
+                                       draft_preview=True, version_tag="v1.2.3")
+            self.assertEqual(set(remote), {asset.name for asset in assets})
+            self.assertEqual(calls.count("download"), len(assets))
+            self.assertNotIn("edit", calls)
+
+    def test_branch_preview_rejects_wrong_identity_or_public_release(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets, notes = github_release.prepare_assets(
+                self.release_dir, "v1.2.3", self.commit, Path(temporary)
+            )
+            preview_tag = f"preview-v1.2.3-{self.commit}-123-1"
+            with self.assertRaisesRegex(ValueError, "version and exact source commit"):
+                github_release.publish(preview_tag, self.commit, assets, notes,
+                                       draft_preview=True, version_tag="v1.2.4")
+            with self.assertRaisesRegex(ValueError, "version and exact source commit"):
+                github_release.publish(preview_tag, "a" * 40, assets, notes,
+                                       draft_preview=True, version_tag="v1.2.3")
+            response = type("Response", (), {"returncode": 0,
+                "stdout": json.dumps({"isDraft": False, "assets": []})})()
+            with patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}), \
+                 patch.object(github_release, "gh", return_value=response):
+                with self.assertRaisesRegex(ValueError, "already public"):
+                    github_release.publish(preview_tag, self.commit, assets, notes,
+                                           draft_preview=True, version_tag="v1.2.3")
+
     def test_interrupted_draft_upload_can_resume_before_publication(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             assets, notes = github_release.prepare_assets(

@@ -7,9 +7,17 @@ on:
   workflow_dispatch:
     inputs:
       expected_version:
-        description: "Skill version to preview (X.Y.Z); no Release is created"
+        description: "Skill version to preview (X.Y.Z)"
         required: true
         type: string
+      preview_type:
+        description: "Save an Actions artifact, or create a test Draft Release from a development branch"
+        required: true
+        default: artifact
+        type: choice
+        options:
+          - artifact
+          - draft
 
 permissions:
   contents: read
@@ -20,7 +28,7 @@ concurrency:
 
 jobs:
   preview:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.preview_type == 'artifact'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout selected commit
@@ -62,6 +70,67 @@ jobs:
           name: skill-release-preview-${{ github.sha }}
           path: preview-assets/*
           retention-days: 7
+
+  preview-draft:
+    if: github.event_name == 'workflow_dispatch' && inputs.preview_type == 'draft'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require a development branch
+        run: |
+          test "$GITHUB_REF_TYPE" = branch
+          test "$GITHUB_REF_NAME" != main
+
+      - name: Checkout selected commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Draft Release permission boundary
+        run: |
+          git fetch origin main
+          if test -n "$(git diff --name-only origin/main "$GITHUB_SHA" -- .github/workflows/)"; then
+            echo "::error::This branch changes GitHub workflow files relative to main. GitHub will not let the built-in Actions token create a Draft Release for this commit. Use the artifact preview and review the workflow changes separately."
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: python3 -m pip install "requests>=2.28" "python-dotenv>=1.0"
+
+      - name: Validate skills and run tests
+        run: |
+          python3 scripts/validate_skill_quality.py
+          python3 -m unittest discover -s tests -p "test_*.py"
+          cd tools/ai-shifu-skill-release
+          python3 -m unittest discover -s tests -p "test_*.py"
+
+      - name: Build and verify selected commit
+        env:
+          PREVIEW_VERSION: ${{ inputs.expected_version }}
+        run: |
+          python3 tools/ai-shifu-skill-release/scripts/release.py build \
+            --source-ref "$GITHUB_SHA" --expected-version "$PREVIEW_VERSION" --output dist
+          release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          test -n "$release_dir"
+          python3 tools/ai-shifu-skill-release/scripts/release.py verify "$release_dir"
+
+      - name: Create and verify test Draft Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIEW_VERSION: ${{ inputs.expected_version }}
+        run: |
+          release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          preview_tag="preview-v${PREVIEW_VERSION}-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          python3 tools/ai-shifu-skill-release/scripts/github_release.py "$release_dir" \
+            --tag "v$PREVIEW_VERSION" --commit "$GITHUB_SHA" \
+            --draft-preview-tag "$preview_tag"
+          echo "Test Draft Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${preview_tag}" >> "$GITHUB_STEP_SUMMARY"
 
   publish:
     if: github.event_name == 'push'
