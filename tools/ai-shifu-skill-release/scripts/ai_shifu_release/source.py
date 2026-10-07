@@ -43,7 +43,15 @@ def export_tree(
     normalize_git_modes: bool = False,
 ) -> None:
     archive = subprocess.run(
-        ["git", "archive", "--format=tar", f"{commit}:{source_path}"],
+        # Keep the historical Git archive modes independent of user Git config.
+        [
+            "git",
+            "-c",
+            "tar.umask=0002",
+            "archive",
+            "--format=tar",
+            f"{commit}:{source_path}",
+        ],
         cwd=repo,
         check=True,
         capture_output=True,
