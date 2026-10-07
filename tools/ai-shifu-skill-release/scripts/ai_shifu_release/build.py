@@ -17,8 +17,10 @@ from ai_shifu_release.artifacts import (
     release_hash,
 )
 from ai_shifu_release.channels import BuildContext, doubao
+from ai_shifu_release.channels.clawhub_skillhub import (
+    build_clawhub_skillhub_artifact,
+)
 from ai_shifu_release.channels.doubao import build_doubao_artifact
-from ai_shifu_release.channels.registry import build_registry_artifact
 from ai_shifu_release.channels.workbuddy import build_workbuddy_artifact
 from ai_shifu_release.skill_metadata import read_frontmatter, split_skill_document
 from ai_shifu_release.source import (
@@ -33,8 +35,8 @@ from ai_shifu_release.source import (
 from ai_shifu_release.verify import verify
 
 CHANNEL_BUILDERS: dict[str, Callable[[str, BuildContext], dict]] = {
-    "clawhub": build_registry_artifact,
-    "skillhub": build_registry_artifact,
+    "clawhub": build_clawhub_skillhub_artifact,
+    "skillhub": build_clawhub_skillhub_artifact,
     "workbuddy": build_workbuddy_artifact,
     "doubao": build_doubao_artifact,
 }

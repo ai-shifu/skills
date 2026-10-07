@@ -10,7 +10,7 @@ from ai_shifu_release.skill_metadata import (
 )
 
 
-def build_registry_artifact(channel: str, context: BuildContext) -> dict:
+def build_clawhub_skillhub_artifact(channel: str, context: BuildContext) -> dict:
     overrides = channel_frontmatter_overrides(
         channel, context.skill_name, context.display_name
     )
