@@ -86,15 +86,14 @@ jobs:
         if: inputs.target == 'skillhub' && vars.AISHIFU_SKILLHUB_PUBLICATION_APPROVED == 'true'
         env:
           SKILLHUB_TOKEN: ${{ secrets.SKILLHUB_TOKEN }}
-          INSTALL_URL: ${{ vars.AISHIFU_SKILLHUB_PUBLISH_INSTALL_URL }}
-          INSTALL_SHA256: ${{ vars.AISHIFU_SKILLHUB_PUBLISH_INSTALL_SHA256 }}
         run: |
           test -n "$SKILLHUB_TOKEN"
-          test -n "$INSTALL_URL"
-          test -n "$INSTALL_SHA256"
-          curl -fsSL "$INSTALL_URL" -o "$RUNNER_TEMP/skillhub-install.sh"
-          echo "$INSTALL_SHA256  $RUNNER_TEMP/skillhub-install.sh" | sha256sum --check --status
-          bash "$RUNNER_TEMP/skillhub-install.sh" --cli-only
+          kit="$RUNNER_TEMP/skillhub-cli-2026.8.5.tar.gz"
+          curl -fsSL https://skillhub-1388575217.cos.ap-guangzhou.myqcloud.com/install/skillhub-cli-2026.8.5.tar.gz -o "$kit"
+          echo "3bbe2ba15ada2eb7a94a2b760fead83be5f4164ab28a6c8b0944dbc539f7e236  $kit" | sha256sum --check --status
+          mkdir -p "$RUNNER_TEMP/skillhub-kit"
+          tar -xzf "$kit" -C "$RUNNER_TEMP/skillhub-kit"
+          bash "$RUNNER_TEMP/skillhub-kit/cli/install.sh" --cli-only --no-self-upgrade
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/skillhub" publish --help > /dev/null
           "$HOME/.local/bin/skillhub" login --help > /dev/null
