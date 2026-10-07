@@ -31,9 +31,9 @@ class PlatformPublishTest(unittest.TestCase):
         self.assertIn("owner", result["reason"])
         publisher.assert_not_called()
 
-    def test_skillhub_submits_only_its_verified_release_package(self) -> None:
+    def test_skillhub_submits_without_approval_switch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, \
-             patch.dict(os.environ, {"AISHIFU_SKILLHUB_PUBLICATION_APPROVED": "true"}), \
+             patch.dict(os.environ, {}, clear=True), \
              patch.object(platform_publish.download_release, "download", return_value=self.release_dir), \
              patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher, \
              patch.object(platform_publish, "existing_skillhub_version", return_value=False):
@@ -83,7 +83,7 @@ class PlatformPublishTest(unittest.TestCase):
 
     def test_existing_skillhub_version_is_not_resubmitted(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, \
-             patch.dict(os.environ, {"AISHIFU_SKILLHUB_PUBLICATION_APPROVED": "true"}), \
+             patch.dict(os.environ, {}, clear=True), \
              patch.object(platform_publish.download_release, "download", return_value=self.release_dir), \
              patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher, \
              patch.object(platform_publish, "existing_skillhub_version", return_value=True):
@@ -110,7 +110,7 @@ class PlatformPublishTest(unittest.TestCase):
 
     def test_uncertain_registry_lookup_never_submits(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, \
-             patch.dict(os.environ, {"AISHIFU_SKILLHUB_PUBLICATION_APPROVED": "true"}), \
+             patch.dict(os.environ, {}, clear=True), \
              patch.object(platform_publish.download_release, "download", return_value=self.release_dir), \
              patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher, \
              patch.object(platform_publish, "existing_skillhub_version", side_effect=ValueError("unknown state")):
