@@ -40,6 +40,7 @@ Building and publishing do not modify skill source. Version changes go through `
 | Publish automated channels | Build if needed, verify, check, obtain authorization, publish | Report channel results |
 | Prepare manual channels | Build if needed, then `verify` and `manual-plan` | Return exact upload paths and hashes |
 | Record manual results | Verify the specified release, then `record-manual` | Report the updated ledger |
+| Import Actions channel results | Verify the matching release, download each channel result artifact, then `record-channel` | Report the updated ledger |
 | Activate the website manifest | After channel gates pass, `activate-manifest` | Return the website PR and wait for human merge and deployment |
 | Complete a full release | Follow applicable stages in order | Stop at each human gate |
 
@@ -129,6 +130,19 @@ Use `--target clawhub` or `--target skillhub` when only one channel is authorize
 
 After partial failure, keep the same immutable release directory. Diagnose the failure and retry only failed channels. Rebuild only if remote `main` has advanced.
 
+## Import Actions Channel Results
+
+Before activating a manifest after Actions submission, use the verified `RELEASE_DIR` matching the published tag and source commit. Download each channel's `platform-result-<tag>-<channel>` Actions artifact into its own receipt directory using the [README commands](README.md#channel-submission-from-the-release), then import both results:
+
+```bash
+python3 scripts/release.py record-channel "$RELEASE_DIR" \
+  --result "$RELEASE_DIR/receipts/clawhub/platform-result.json"
+python3 scripts/release.py record-channel "$RELEASE_DIR" \
+  --result "$RELEASE_DIR/receipts/skillhub/platform-result.json"
+```
+
+Read the updated `release-report.json` and report the actual channel states. The [README](README.md#channel-submission-from-the-release) explains receipt validation and status meanings. Recording a receipt does not submit packages or establish fresh-install verification. Complete the manual WorkBuddy gate, then use `activate-manifest` below.
+
 ## Prepare and Record Manual Publication
 
 ```bash
@@ -151,7 +165,7 @@ Both `submitted` and `verified` require `--url`. Only `failed`, when no platform
 
 ## Activate the Website Manifest
 
-The gate requires ClawHub and SkillHub to be `published`, and WorkBuddy to be `submitted` or `verified`. Doubao is recorded independently.
+The gate requires ClawHub and SkillHub to be `published` or `verified`, and WorkBuddy to be `submitted` or `verified`. Doubao is recorded independently.
 
 ```bash
 python3 scripts/release.py activate-manifest "$RELEASE_DIR" \

@@ -25,6 +25,7 @@ COMMANDS = (
     "publish",
     "manual-plan",
     "record-manual",
+    "record-channel",
     "activate-manifest",
     "github-release",
     "submit-channel",

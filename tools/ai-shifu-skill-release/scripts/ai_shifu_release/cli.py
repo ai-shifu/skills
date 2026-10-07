@@ -8,7 +8,15 @@ import os
 import tempfile
 from pathlib import Path
 
-from . import build, channel_submission, github_releases, manifest, publishing, version
+from . import (
+    build,
+    channel_results,
+    channel_submission,
+    github_releases,
+    manifest,
+    publishing,
+    version,
+)
 from .release_state import ReleaseContext
 from .source import SOURCE_REF, SOURCE_REPOSITORY
 from .verify import verify
@@ -112,6 +120,13 @@ def create_parser() -> argparse.ArgumentParser:
     )
     record_manual.add_argument("--url", default="")
     record_manual.add_argument("--note", default="")
+
+    record_channel = commands.add_parser(
+        "record-channel",
+        help="Import channel submission results into the release report",
+    )
+    record_channel.add_argument("release_dir")
+    record_channel.add_argument("--result", type=Path, action="append", required=True)
 
     activate = commands.add_parser(
         "activate-manifest", help="Open a website PR that bumps the skill manifest"
@@ -242,6 +257,14 @@ def main(argv: list[str] | None = None) -> None:
     elif args.command == "verify":
         verify(Path(args.release_dir).expanduser().resolve())
         print("release verified")
+    elif args.command == "record-channel":
+        print(
+            json.dumps(
+                channel_results.import_results(Path(args.release_dir), args.result),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
     elif args.command in {"check", "publish"}:
         if args.command == "publish" and not args.execute:
             parser.error("publish requires --execute; use check for a dry run")

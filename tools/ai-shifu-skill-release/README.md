@@ -60,6 +60,21 @@ The official SkillHub CLI archive was checked on 2026-10-07: version `2026.8.5` 
 
 To retry one platform from an existing Release, open **Actions → Publish Skill Channel → Run workflow**, enter the existing `vX.Y.Z` tag and select only the failed platform. This reads the same Release ZIP; it does not rebuild or resubmit the other platform. If an exact ClawHub version already exists, the job stops for content review instead of overwriting it. SkillHub runs its documented exact-version ZIP verification first; a signed matching version is recorded as `already_verified`, and any uncertain result stops. Before a SkillHub retry, also check its dashboard for an existing or pending submission and select the confirmation checkbox only when none exists; the workflow refuses a SkillHub retry without it. Do not use **Re-run jobs** for SkillHub: a rerun is rejected because it reuses the old confirmation. Start a new manual run after checking the platform again. WorkBuddy and Doubao remain manual downloads from the Release. No documented official WorkBuddy expert-package submission API has been confirmed for this integration.
 
+Before website manifest activation, import each channel's Actions receipt into the matching verified local release directory. Download the result artifact from that channel's Actions run, keeping the two channels in separate directories:
+
+```bash
+gh run download <clawhub-run-id> --repo ai-shifu/skills \
+  --name platform-result-<tag>-clawhub --dir "$RELEASE_DIR/receipts/clawhub"
+python3 scripts/release.py record-channel "$RELEASE_DIR" \
+  --result "$RELEASE_DIR/receipts/clawhub/platform-result.json"
+gh run download <skillhub-run-id> --repo ai-shifu/skills \
+  --name platform-result-<tag>-skillhub --dir "$RELEASE_DIR/receipts/skillhub"
+python3 scripts/release.py record-channel "$RELEASE_DIR" \
+  --result "$RELEASE_DIR/receipts/skillhub/platform-result.json"
+```
+
+Use the published `vX.Y.Z` tag for `<tag>`. `record-channel` checks the receipt's channel, source commit, version, tag, and archive hash against the candidate before updating `release-report.json`. It never submits again. `submitted` and `pending_review` become `published`, retaining `submission_status`; this records accepted upload rather than independent listing or fresh-install verification. `already_verified` becomes `verified` only for the remote exact version that matched the Release ZIP. Failed or uncertain receipts leave the activation gates unsatisfied. Then complete the manual WorkBuddy gate and run `activate-manifest` as described below.
+
 From the repository root:
 
 ```bash
