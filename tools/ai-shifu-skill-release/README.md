@@ -10,7 +10,7 @@ Python 3.11+ and Git are required for building and testing. The implementation u
 
 ## Tagged GitHub Release
 
-The repository workflow `.github/workflows/release.yml` runs for `skills-vX.Y.Z` tags. It builds the tagged commit, verifies all four ZIP files, creates a draft GitHub Release, uploads four ZIPs plus `release.json` and `SHA256SUMS`, then publishes it after checking the complete asset set. A rerun fills missing draft assets. Existing assets must have identical bytes; a published Release is never changed. Only after the Release is public do independent ClawHub and SkillHub jobs read and verify those six attachments. The platform jobs never rebuild an old version from the current `main` branch.
+The repository workflow `.github/workflows/release.yml` runs for `vX.Y.Z` tags. It builds the tagged commit, verifies all four ZIP files, creates a draft GitHub Release, uploads four ZIPs plus `release.json` and `SHA256SUMS`, then publishes it after checking the complete asset set. A rerun fills missing draft assets. Existing assets must have identical bytes; a published Release is never changed. Only after the Release is public do independent ClawHub and SkillHub jobs read and verify those six attachments. The platform jobs never rebuild an old version from the current `main` branch.
 
 Every PR also runs a trial build from its checked-out commit and saves six preview attachments for seven days. The PR artifact is only for review and must not be published. To test the final package before tagging, or to accept automation changes without releasing a new version, open **Actions → Release Skills → Run workflow**, select the branch or merged `main` commit to preview, and enter its existing `X.Y.Z` version. The manual run performs the same tests, pinned build, package verification, and attachment preparation, then saves a seven-day Actions artifact. It does **not** create a Release or submit to a platform. The WorkBuddy ZIP uses the author in the `publisher.toml` committed with the selected source revision. A failed preview should be fixed and rerun.
 
@@ -24,8 +24,8 @@ The numbered steps below apply when a new skill version is actually ready for re
    ```bash
    git checkout main
    git pull --ff-only
-   git tag skills-vX.Y.Z
-   git push origin skills-vX.Y.Z
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
    ```
 
 5. Open the **Release Skills** Actions run to inspect a failure and choose **Re-run jobs** after fixing a transient issue. If the tagged source or package contents need changing, merge the fix and use a new version and tag. Check the completed Release page for four ZIPs, `release.json`, and `SHA256SUMS`.
@@ -42,7 +42,7 @@ For the first coordinated release, configure `CLAWHUB_TOKEN` and `SKILLHUB_TOKEN
 
 The official SkillHub CLI archive was checked on 2026-10-07: version `2026.8.5` includes `login`, `publish`, and `verify`, and the workflow pins its SHA-256 digest. The platform's publication guide says `slug`, top-level `version`, and `displayName` are required, while `license` is recommended rather than mandatory. The SkillHub ZIP contains the required top-level version. Keep automatic submission disabled until the team confirms the existing listing's publisher identity and publication terms and provides its token. The workflow checks the three commands before trying to authenticate.
 
-To retry one platform from an existing Release, open **Actions → Publish Skill Platform → Run workflow**, enter the existing `skills-vX.Y.Z` tag and select only the failed platform. This reads the same Release ZIP; it does not rebuild or resubmit the other platform. If an exact ClawHub version already exists, the job stops for content review instead of overwriting it. SkillHub runs its documented exact-version ZIP verification first; a signed matching version is recorded as `already_verified`, and any uncertain result stops. Before a SkillHub retry, also check its dashboard for an existing or pending submission and select the confirmation checkbox only when none exists; the workflow refuses a SkillHub retry without it. WorkBuddy and Doubao remain manual downloads from the Release. No documented official WorkBuddy expert-package submission API has been confirmed for this integration.
+To retry one platform from an existing Release, open **Actions → Publish Skill Platform → Run workflow**, enter the existing `vX.Y.Z` tag and select only the failed platform. This reads the same Release ZIP; it does not rebuild or resubmit the other platform. If an exact ClawHub version already exists, the job stops for content review instead of overwriting it. SkillHub runs its documented exact-version ZIP verification first; a signed matching version is recorded as `already_verified`, and any uncertain result stops. Before a SkillHub retry, also check its dashboard for an existing or pending submission and select the confirmation checkbox only when none exists; the workflow refuses a SkillHub retry without it. WorkBuddy and Doubao remain manual downloads from the Release. No documented official WorkBuddy expert-package submission API has been confirmed for this integration.
 
 From the repository root:
 

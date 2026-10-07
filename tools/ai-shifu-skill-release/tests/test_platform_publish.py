@@ -25,7 +25,7 @@ class PlatformPublishTest(unittest.TestCase):
              patch.object(platform_publish.download_release, "download", return_value=self.release_dir), \
              patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher:
             result = platform_publish.publish(
-                "skills-v1.2.3", "ai-shifu/skills", "clawhub", Path(temporary), execute=True
+                "v1.2.3", "ai-shifu/skills", "clawhub", Path(temporary), execute=True
             )
         self.assertEqual(result["status"], "disabled")
         publisher.assert_not_called()
@@ -42,7 +42,7 @@ class PlatformPublishTest(unittest.TestCase):
             }}
             publisher.return_value = instance
             result = platform_publish.publish(
-                "skills-v1.2.3", "ai-shifu/skills", "skillhub", Path(temporary), execute=True
+                "v1.2.3", "ai-shifu/skills", "skillhub", Path(temporary), execute=True
             )
         self.assertEqual(result["status"], "pending_review")
         self.assertEqual(result["archive_sha256"], self._archive_hash("skillhub"))
@@ -57,7 +57,7 @@ class PlatformPublishTest(unittest.TestCase):
              patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher, \
              patch.object(platform_publish, "existing_clawhub_version", return_value=True):
             result = platform_publish.publish(
-                "skills-v1.2.3", "ai-shifu/skills", "clawhub", Path(temporary), execute=True
+                "v1.2.3", "ai-shifu/skills", "clawhub", Path(temporary), execute=True
             )
         self.assertEqual(result["status"], "needs_review")
         self.assertEqual(publisher.call_args.kwargs["clawhub_owner"], "heshaofu2")
@@ -70,7 +70,7 @@ class PlatformPublishTest(unittest.TestCase):
              patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher, \
              patch.object(platform_publish, "existing_skillhub_version", return_value=True):
             result = platform_publish.publish(
-                "skills-v1.2.3", "ai-shifu/skills", "skillhub", Path(temporary), execute=True
+                "v1.2.3", "ai-shifu/skills", "skillhub", Path(temporary), execute=True
             )
         self.assertEqual(result["status"], "already_verified")
         publisher.return_value.publish.assert_not_called()
@@ -97,7 +97,7 @@ class PlatformPublishTest(unittest.TestCase):
              patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher, \
              patch.object(platform_publish, "existing_skillhub_version", side_effect=ValueError("unknown state")):
             result = platform_publish.publish(
-                "skills-v1.2.3", "ai-shifu/skills", "skillhub", Path(temporary), execute=True
+                "v1.2.3", "ai-shifu/skills", "skillhub", Path(temporary), execute=True
             )
         self.assertEqual(result["status"], "needs_review")
         publisher.return_value.publish.assert_not_called()

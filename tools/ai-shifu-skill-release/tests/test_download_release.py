@@ -24,7 +24,7 @@ class DownloadReleaseTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             assets, _ = github_release.prepare_assets(
-                self.original, "skills-v1.2.3", self.commit, root / "assets"
+                self.original, "v1.2.3", self.commit, root / "assets"
             )
             self._download(root, assets)
 
@@ -32,7 +32,7 @@ class DownloadReleaseTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             assets, _ = github_release.prepare_assets(
-                self.original, "skills-v1.2.3", self.commit, root / "assets"
+                self.original, "v1.2.3", self.commit, root / "assets"
             )
             next(asset for asset in assets if asset.suffix == ".zip").write_bytes(b"corrupt")
             with self.assertRaisesRegex(ValueError, "checksum differs"):
@@ -44,7 +44,7 @@ class DownloadReleaseTest(unittest.TestCase):
         def fake_gh(*args: str, **kwargs):
             if args[:2] == ("release", "view"):
                 return type("Response", (), {"stdout": json.dumps({
-                    "isDraft": False, "tagName": "skills-v1.2.3",
+                    "isDraft": False, "tagName": "v1.2.3",
                     "assets": [{"name": name} for name in mapping],
                 })})()
             if args[:2] == ("release", "download"):
@@ -57,7 +57,7 @@ class DownloadReleaseTest(unittest.TestCase):
 
         with patch.object(github_release, "gh", side_effect=fake_gh):
             recovered = download_release.download(
-                "skills-v1.2.3", "ai-shifu/skills", root / "download"
+                "v1.2.3", "ai-shifu/skills", root / "download"
             )
         self.assertEqual(recovered.name, self.original.name)
         build_release.verify(recovered)

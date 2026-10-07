@@ -44,7 +44,7 @@ jobs:
           python3 tools/ai-shifu-skill-release/scripts/release.py verify "$release_dir"
           version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["skill"]["version"])' "$release_dir/release.json")"
           python3 tools/ai-shifu-skill-release/scripts/github_release.py "$release_dir" \
-            --tag "skills-v$version" --commit "$GITHUB_SHA" \
+            --tag "v$version" --commit "$GITHUB_SHA" \
             --prepare-only --output preview-assets
 
       - name: Save PR trial packages

@@ -3,7 +3,7 @@ name: Release Skills
 on:
   push:
     tags:
-      - "skills-v*"
+      - "v*"
   workflow_dispatch:
     inputs:
       expected_version:
@@ -53,7 +53,7 @@ jobs:
           test -n "$release_dir"
           python3 tools/ai-shifu-skill-release/scripts/release.py verify "$release_dir"
           python3 tools/ai-shifu-skill-release/scripts/github_release.py "$release_dir" \
-            --tag "skills-v$PREVIEW_VERSION" --commit "$GITHUB_SHA" \
+            --tag "v$PREVIEW_VERSION" --commit "$GITHUB_SHA" \
             --prepare-only --output preview-assets
 
       - name: Save preview attachments
@@ -96,7 +96,7 @@ jobs:
 
       - name: Build and verify tagged commit
         run: |
-          version="${GITHUB_REF_NAME#skills-v}"
+          version="${GITHUB_REF_NAME#v}"
           python3 tools/ai-shifu-skill-release/scripts/release.py build \
             --source-ref "$GITHUB_SHA" --expected-version "$version" --output dist
           release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"

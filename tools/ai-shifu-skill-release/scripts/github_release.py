@@ -20,7 +20,7 @@ from scripts import build_release
 
 
 CHANNELS = build_release.CHANNEL_ORDER
-TAG_PATTERN = re.compile(r"skills-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
+TAG_PATTERN = re.compile(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 
 
 def gh(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -35,9 +35,10 @@ def change_notes(tag: str, commit: str) -> str:
     try:
         tags = subprocess.run(
             ["git", "for-each-ref", "--sort=-version:refname", "--format=%(refname:short)",
-             "refs/tags/skills-v*"], capture_output=True, text=True, check=True
+             "refs/tags/v*"], capture_output=True, text=True, check=True
         ).stdout.splitlines()
-        previous = next((candidate for candidate in tags if candidate != tag and
+        previous = next((candidate for candidate in tags if TAG_PATTERN.fullmatch(candidate) and
+                         candidate != tag and
                          subprocess.run(["git", "merge-base", "--is-ancestor", candidate, commit],
                                         capture_output=True).returncode == 0), None)
         span = f"{previous}..{commit}" if previous else commit
@@ -51,7 +52,7 @@ def change_notes(tag: str, commit: str) -> str:
 def prepare_assets(release_dir: Path, tag: str, commit: str, destination: Path) -> tuple[list[Path], str]:
     match = TAG_PATTERN.fullmatch(tag)
     if not match:
-        raise ValueError("Tag must use skills-vX.Y.Z")
+        raise ValueError("Tag must use vX.Y.Z")
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("A full source commit SHA is required")
     build_release.verify(release_dir)

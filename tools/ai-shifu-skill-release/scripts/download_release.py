@@ -45,7 +45,7 @@ def extract_archive(archive: Path, destination: Path, archive_root: str) -> None
 
 def download(tag: str, repository: str, output: Path) -> Path:
     if not github_release.TAG_PATTERN.fullmatch(tag):
-        raise ValueError("Tag must use skills-vX.Y.Z")
+        raise ValueError("Tag must use vX.Y.Z")
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         raise ValueError("Repository must be owner/name")
     release = json.loads(github_release.gh(
@@ -88,7 +88,7 @@ def download(tag: str, repository: str, output: Path) -> Path:
                                "--jq", ".sha").stdout.strip()
     if report["source"]["commit"] != commit or report["source"]["ref"] != commit:
         raise ValueError("Release source commit differs from its tag")
-    if tag != f"skills-v{report['skill']['version']}":
+    if tag != f"v{report['skill']['version']}":
         raise ValueError("Release tag differs from package version")
     release_dir = output / report["release_id"]
     release_dir.mkdir()

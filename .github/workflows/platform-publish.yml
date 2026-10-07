@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing published Release tag (skills-vX.Y.Z)"
+        description: "Existing published Release tag (vX.Y.Z)"
         required: true
         type: string
       target:
