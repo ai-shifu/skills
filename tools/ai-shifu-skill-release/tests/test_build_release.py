@@ -235,7 +235,7 @@ class BuildReleaseTest(unittest.TestCase):
         )
         for platform, expected_root in (
             ("workbuddy", "workbuddy-ai-shifu-1.2.3"),
-            ("qclaw", "qclaw-ai-shifu-1.2.3"),
+            ("qclaw", f"qclaw-ai-shifu-{report['artifacts']['qclaw']['version']}"),
         ):
             archive_path = release_dir / report["artifacts"][platform]["archive"]
             with zipfile.ZipFile(archive_path) as archive:
@@ -381,6 +381,20 @@ class BuildReleaseTest(unittest.TestCase):
                 )
 
         build_release.verify(release_dir)
+
+    def test_channel_templates_keep_git_file_modes(self) -> None:
+        release_dir = self.build()
+        report = json.loads((release_dir / "release.json").read_text())
+        entries = {
+            "workbuddy": "workbuddy-ai-shifu-1.2.3/agents/ai-shifu.md",
+            "qclaw": "qclaw-ai-shifu-1.2.3/AGENTS.md",
+            "doubao": "doubao-ai-shifu-1.2.3/workspace/AGENTS.md",
+        }
+        for channel, entry in entries.items():
+            with self.subTest(channel=channel):
+                archive = release_dir / report["artifacts"][channel]["archive"]
+                with zipfile.ZipFile(archive) as package:
+                    self.assertEqual((package.getinfo(entry).external_attr >> 16) & 0o777, 0o644)
 
     def test_builds_exact_commit_and_rejects_version_mismatch(self) -> None:
         commit = self.git("rev-parse", "feature/newer-version")

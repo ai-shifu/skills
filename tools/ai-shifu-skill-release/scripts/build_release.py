@@ -226,7 +226,8 @@ def build_skill_variant(source: Path, destination: Path, updates: dict[str, str]
     skill_file.write_bytes(updated.encode("utf-8"))
 
 
-def export_tree(repo: Path, commit: str, source_path: str, destination: Path) -> None:
+def export_tree(repo: Path, commit: str, source_path: str, destination: Path,
+                *, normalize_git_modes: bool = False) -> None:
     archive = subprocess.run(
         ["git", "archive", "--format=tar", f"{commit}:{source_path}"],
         cwd=repo,
@@ -248,7 +249,10 @@ def export_tree(repo: Path, commit: str, source_path: str, destination: Path) ->
                 if source is None:
                     raise ValueError(f"Cannot extract {member.name}")
                 target.write_bytes(source.read())
-                target.chmod(member.mode)
+                # Git tracks regular files as 100644 or 100755. Archive tar headers
+                # may add group write bits that a checkout would not have.
+                mode = (0o755 if member.mode & 0o111 else 0o644) if normalize_git_modes else member.mode
+                target.chmod(mode)
             elif member.issym():
                 continue
             else:
@@ -775,7 +779,8 @@ def build(args: BuildOptions) -> Path:
         source_ref = getattr(args, "source_ref", SOURCE_REF)
         commit, remote = fetch_source(args.source_repo_url, source_repo, source_ref)
         channels = temporary_root / "channels"
-        export_tree(source_repo, commit, "tools/ai-shifu-skill-release/channels", channels)
+        export_tree(source_repo, commit, "tools/ai-shifu-skill-release/channels", channels,
+                    normalize_git_modes=True)
         source_skill = temporary_root / "source-skill"
         export_skill(source_repo, commit, args.skill_name, source_skill)
         profile = doubao_package.load_profile(channels / "doubao/profile.json")
