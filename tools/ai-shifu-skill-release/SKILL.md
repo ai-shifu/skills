@@ -25,7 +25,7 @@ Building and publishing do not modify skill source. Version changes go through `
 - Never request or print platform tokens. If authentication is missing, provide the login command and wait for the user to authenticate locally.
 - Do not commit or push the current checkout without an explicit user request. `bump` and `activate-manifest` require an explicit request for those operations and only push dedicated branches and open PRs. Never merge their PRs or push directly to `main`.
 - If GitHub `main` has advanced, do not delete existing artifacts. Rebuild and use the new output directory.
-- Only accept `release.json` schema 4. Rebuild schema 3 or older candidates.
+- Only accept `release.json` schema 5. Rebuild older candidates.
 - Do not record a manual channel as `verified` without a platform URL and confirmation of independent validation.
 
 ## Choose the Workflow

@@ -34,7 +34,7 @@ The release trust chain is: a commit anchors the source, deterministic builds ma
 
 Doubao verification additionally checks its single archive root, required files, three scenarios, three recommended instructions, three skill entries, embedded source manifests, avatar, and local-path leakage. Its embedded skills may only change an existing `version_management: standalone` to `plugin` and add `label` and an empty `icon`. Other source files and skill bodies must remain unchanged.
 
-The current `release.json` contract is **schema 4**. Schema 3 and older candidates lack the required embedded-source evidence and must be rebuilt. Loading a release for publication always runs verification first.
+The current `release.json` contract is **schema 5**. Schema 4 candidates include QClaw and must be rebuilt for the four-channel release. Loading a release for publication always runs verification first.
 
 `check` and `publish` use `git ls-remote` to compare the current remote `main` commit with the candidate's recorded source commit. If remote `main` has advanced, rebuild. This still applies when a commit only changes tools in the shared repository.
 

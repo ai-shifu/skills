@@ -46,7 +46,7 @@ SECRET_PATTERNS = (
 ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 SOURCE_REPOSITORY = "https://github.com/ai-shifu/skills.git"
 SOURCE_REF = "main"
-RELEASE_SCHEMA_VERSION = 4
+RELEASE_SCHEMA_VERSION = 5
 # Order feeds release_sha256; changing it breaks verification of existing releases.
 CHANNEL_ORDER = ("clawhub", "skillhub", "workbuddy", "doubao")
 

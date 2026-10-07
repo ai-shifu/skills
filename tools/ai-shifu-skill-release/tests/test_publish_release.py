@@ -50,7 +50,7 @@ class PublishReleaseTest(unittest.TestCase):
         workbuddy.write_bytes(b"workbuddy")
         doubao.write_bytes(b"doubao")
         self.metadata = {
-            "schema_version": 4,
+            "schema_version": 5,
             "release_id": "fixture-1.2.3-abc1234-def5678",
             "release_sha256": "def5678",
             "source": {

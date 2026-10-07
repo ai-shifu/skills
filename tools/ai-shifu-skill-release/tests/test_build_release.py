@@ -182,7 +182,7 @@ class BuildReleaseTest(unittest.TestCase):
         clawhub = release_dir / report["artifacts"]["clawhub"]["directory"]
         skillhub = release_dir / report["artifacts"]["skillhub"]["directory"]
 
-        self.assertEqual(report["schema_version"], 4)
+        self.assertEqual(report["schema_version"], 5)
         self.assertEqual(report["skill"]["version"], "1.2.3")
         self.assertFalse((clawhub / ".env").exists())
         self.assertEqual(
@@ -489,10 +489,10 @@ class BuildReleaseTest(unittest.TestCase):
         release_dir = self.build()
         report_path = release_dir / "release.json"
         report = json.loads(report_path.read_text())
-        report["schema_version"] = 1
+        report["schema_version"] = 4
         report_path.write_text(json.dumps(report))
 
-        with self.assertRaisesRegex(ValueError, "rebuild with schema 4"):
+        with self.assertRaisesRegex(ValueError, "rebuild with schema 5"):
             build_release.verify(release_dir)
 
     def test_doubao_profile_tampering_is_rejected(self) -> None:
