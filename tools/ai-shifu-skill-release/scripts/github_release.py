@@ -62,7 +62,7 @@ def prepare_assets(release_dir: Path, tag: str, commit: str, destination: Path) 
     if report["source"]["ref"] != commit:
         raise ValueError("Release packages were not built from the exact tagged commit")
     if set(report["artifacts"]) != set(CHANNELS):
-        raise ValueError("Release must contain exactly four channel packages")
+        raise ValueError("Release must contain exactly five channel packages")
 
     destination.mkdir(parents=True, exist_ok=True)
     assets = []
@@ -82,7 +82,7 @@ def prepare_assets(release_dir: Path, tag: str, commit: str, destination: Path) 
         f"AI-Shifu Skills {version}\n\n"
         f"Source commit: {commit}\n\n"
         "Packages: ClawHub and SkillHub standalone skills; WorkBuddy expert plugin; "
-        "Doubao Work partner package. These are downloadable installation packages. "
+        "QClaw plugin; Doubao Work partner package. These are downloadable installation packages. "
         "Publication to each platform is tracked separately.\n\n"
         f"Changes:\n{change_notes(tag, commit)}\n"
     )

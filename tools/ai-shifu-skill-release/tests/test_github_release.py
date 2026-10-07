@@ -22,14 +22,14 @@ class GitHubReleaseTest(unittest.TestCase):
         cls.commit = cls.fixture.git("rev-parse", "main")
         cls.release_dir = cls.fixture.build(source_ref=cls.commit, expected_version="1.2.3")
 
-    def test_prepares_four_distinct_packages_and_checksums(self) -> None:
+    def test_prepares_five_distinct_packages_and_checksums(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             assets, notes = github_release.prepare_assets(
                 self.release_dir, "skills-v1.2.3", self.commit, Path(temporary)
             )
-            self.assertEqual(len(assets), 6)
-            self.assertEqual(len({asset.name for asset in assets}), 6)
-            self.assertEqual(len([asset for asset in assets if asset.suffix == ".zip"]), 4)
+            self.assertEqual(len(assets), 7)
+            self.assertEqual(len({asset.name for asset in assets}), 7)
+            self.assertEqual(len([asset for asset in assets if asset.suffix == ".zip"]), 5)
             self.assertIn(self.commit, notes)
             self.assertIn("clawhub-", assets[0].name)
             checksums = assets[-1].read_text(encoding="utf-8")

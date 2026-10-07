@@ -71,7 +71,7 @@ def download(tag: str, repository: str, output: Path) -> Path:
                 for channel in build_release.CHANNEL_ORDER}
     expected = set(archives.values()) | {"release.json", "SHA256SUMS"}
     if names != expected or {path.name for path in output.iterdir()} != expected:
-        raise ValueError("Release attachment set differs from the four-package contract")
+        raise ValueError("Release attachment set differs from the five-package contract")
     lines = (output / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
     checksums = {}
     for line in lines:

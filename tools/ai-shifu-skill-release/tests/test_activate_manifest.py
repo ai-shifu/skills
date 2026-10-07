@@ -23,6 +23,7 @@ GOOD_CHANNELS = {
     "clawhub": {"status": "published"},
     "skillhub": {"status": "published"},
     "workbuddy": {"status": "submitted"},
+    "qclaw": {"status": "verified"},
 }
 
 

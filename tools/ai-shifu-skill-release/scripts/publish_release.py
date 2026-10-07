@@ -17,9 +17,9 @@ from scripts import build_release, doubao_package
 
 
 AUTOMATED_TARGETS = ("clawhub", "skillhub")
-MANUAL_TARGETS = ("workbuddy", "doubao")
+MANUAL_TARGETS = ("workbuddy", "qclaw", "doubao")
 MANIFEST_REQUIRED_AUTOMATED_TARGETS = AUTOMATED_TARGETS
-MANIFEST_REQUIRED_MANUAL_TARGETS = ("workbuddy",)
+MANIFEST_REQUIRED_MANUAL_TARGETS = ("workbuddy", "qclaw")
 MANUAL_STATUSES = ("submitted", "verified", "failed")
 
 
