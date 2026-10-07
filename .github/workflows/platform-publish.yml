@@ -105,7 +105,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           AISHIFU_CLAWHUB_MIT0_APPROVED: ${{ vars.AISHIFU_CLAWHUB_MIT0_APPROVED }}
-          AISHIFU_CLAWHUB_OWNER: ${{ vars.AISHIFU_CLAWHUB_OWNER }}
+          CLAWHUB_OWNER: ${{ vars.CLAWHUB_OWNER }}
           AISHIFU_SKILLHUB_PUBLICATION_APPROVED: ${{ vars.AISHIFU_SKILLHUB_PUBLICATION_APPROVED }}
           RELEASE_TAG: ${{ inputs.tag }}
           PLATFORM_TARGET: ${{ inputs.target }}

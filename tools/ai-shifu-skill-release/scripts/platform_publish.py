@@ -74,7 +74,7 @@ def publish(tag: str, repository: str, target: str, output: Path, *, execute: bo
         return {**base, "status": "disabled", "reason": "MIT-0 publication approval is not configured"}
     if target == "skillhub" and os.environ.get("AISHIFU_SKILLHUB_PUBLICATION_APPROVED") != "true":
         return {**base, "status": "disabled", "reason": "SkillHub publication terms are not approved"}
-    owner = os.environ.get("AISHIFU_CLAWHUB_OWNER", "").strip().lstrip("@")
+    owner = os.environ.get("CLAWHUB_OWNER", "").strip().lstrip("@") if target == "clawhub" else ""
     if target == "clawhub" and not re.fullmatch(r"[A-Za-z0-9_-]+", owner):
         return {**base, "status": "failed", "reason": "ClawHub publisher owner is not configured"}
     publisher = publish_release.AutomatedPublisher(

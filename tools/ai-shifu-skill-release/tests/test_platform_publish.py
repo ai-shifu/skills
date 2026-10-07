@@ -52,7 +52,7 @@ class PlatformPublishTest(unittest.TestCase):
     def test_existing_clawhub_version_requires_review(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, \
              patch.dict(os.environ, {"AISHIFU_CLAWHUB_MIT0_APPROVED": "true",
-                                  "AISHIFU_CLAWHUB_OWNER": "heshaofu2"}), \
+                                  "CLAWHUB_OWNER": "heshaofu2"}), \
              patch.object(platform_publish.download_release, "download", return_value=self.release_dir), \
              patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher, \
              patch.object(platform_publish, "existing_clawhub_version", return_value=True):
@@ -60,6 +60,7 @@ class PlatformPublishTest(unittest.TestCase):
                 "skills-v1.2.3", "ai-shifu/skills", "clawhub", Path(temporary), execute=True
             )
         self.assertEqual(result["status"], "needs_review")
+        self.assertEqual(publisher.call_args.kwargs["clawhub_owner"], "heshaofu2")
         publisher.return_value.publish.assert_not_called()
 
     def test_existing_skillhub_version_is_not_resubmitted(self) -> None:
