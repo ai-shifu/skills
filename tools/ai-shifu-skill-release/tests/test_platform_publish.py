@@ -19,15 +19,16 @@ class PlatformPublishTest(unittest.TestCase):
         cls.commit = cls.fixture.git("rev-parse", "main")
         cls.release_dir = cls.fixture.build(source_ref=cls.commit)
 
-    def test_clawhub_stays_disabled_without_license_approval(self) -> None:
+    def test_clawhub_requires_existing_publisher_owner(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, \
-             patch.dict(os.environ, {"AISHIFU_CLAWHUB_MIT0_APPROVED": ""}), \
+             patch.dict(os.environ, {"CLAWHUB_OWNER": ""}), \
              patch.object(platform_publish.download_release, "download", return_value=self.release_dir), \
              patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher:
             result = platform_publish.publish(
                 "v1.2.3", "ai-shifu/skills", "clawhub", Path(temporary), execute=True
             )
-        self.assertEqual(result["status"], "disabled")
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("owner", result["reason"])
         publisher.assert_not_called()
 
     def test_skillhub_submits_only_its_verified_release_package(self) -> None:
@@ -49,10 +50,27 @@ class PlatformPublishTest(unittest.TestCase):
         self.assertEqual(publisher.call_args.kwargs["require_current_main"], False)
         instance.publish.assert_called_once_with(("skillhub",))
 
+    def test_clawhub_submits_with_owner_without_mit0_switch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.dict(os.environ, {"CLAWHUB_OWNER": "heshaofu2"}, clear=True), \
+             patch.object(platform_publish.download_release, "download", return_value=self.release_dir), \
+             patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher, \
+             patch.object(platform_publish, "existing_clawhub_version", return_value=False):
+            instance = MagicMock()
+            instance.publish.return_value = {"clawhub": {
+                "status": "published", "response": "version accepted"
+            }}
+            publisher.return_value = instance
+            result = platform_publish.publish(
+                "v1.2.3", "ai-shifu/skills", "clawhub", Path(temporary), execute=True
+            )
+        self.assertEqual(result["status"], "submitted")
+        self.assertEqual(publisher.call_args.kwargs["clawhub_owner"], "heshaofu2")
+        instance.publish.assert_called_once_with(("clawhub",))
+
     def test_existing_clawhub_version_requires_review(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, \
-             patch.dict(os.environ, {"AISHIFU_CLAWHUB_MIT0_APPROVED": "true",
-                                  "CLAWHUB_OWNER": "heshaofu2"}), \
+             patch.dict(os.environ, {"CLAWHUB_OWNER": "heshaofu2"}), \
              patch.object(platform_publish.download_release, "download", return_value=self.release_dir), \
              patch.object(platform_publish.publish_release, "AutomatedPublisher") as publisher, \
              patch.object(platform_publish, "existing_clawhub_version", return_value=True):

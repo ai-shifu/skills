@@ -61,13 +61,13 @@ jobs:
         run: test "$CONFIRMED" = "true"
 
       - name: Set up Node for ClawHub
-        if: inputs.target == 'clawhub' && vars.AISHIFU_CLAWHUB_MIT0_APPROVED == 'true'
+        if: inputs.target == 'clawhub'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Configure ClawHub token
-        if: inputs.target == 'clawhub' && vars.AISHIFU_CLAWHUB_MIT0_APPROVED == 'true'
+        if: inputs.target == 'clawhub'
         env:
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
         run: |
@@ -104,7 +104,6 @@ jobs:
       - name: Download, verify and submit one platform package
         env:
           GH_TOKEN: ${{ github.token }}
-          AISHIFU_CLAWHUB_MIT0_APPROVED: ${{ vars.AISHIFU_CLAWHUB_MIT0_APPROVED }}
           CLAWHUB_OWNER: ${{ vars.CLAWHUB_OWNER }}
           AISHIFU_SKILLHUB_PUBLICATION_APPROVED: ${{ vars.AISHIFU_SKILLHUB_PUBLICATION_APPROVED }}
           RELEASE_TAG: ${{ inputs.tag }}
