@@ -50,6 +50,16 @@ class PlatformPublishTest(unittest.TestCase):
         self.assertEqual(publisher.call_args.kwargs["require_current_main"], False)
         instance.publish.assert_called_once_with(("skillhub",))
 
+    def test_skillhub_rerun_requires_new_confirmation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.dict(os.environ, {"GITHUB_RUN_ATTEMPT": "2"}), \
+             patch.object(platform_publish.download_release, "download") as download:
+            with self.assertRaisesRegex(ValueError, "start a new manual run"):
+                platform_publish.publish(
+                    "v1.2.3", "ai-shifu/skills", "skillhub", Path(temporary), execute=True
+                )
+            download.assert_not_called()
+
     def test_clawhub_submits_with_owner_without_mit0_switch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary, \
              patch.dict(os.environ, {"CLAWHUB_OWNER": "heshaofu2"}, clear=True), \

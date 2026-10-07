@@ -61,6 +61,8 @@ def publish(tag: str, repository: str, target: str, output: Path, *, execute: bo
         raise ValueError(f"Unsupported automatic platform: {target}")
     if not execute:
         raise ValueError("Platform submission requires --execute")
+    if target == "skillhub" and os.environ.get("GITHUB_RUN_ATTEMPT", "1") != "1":
+        raise ValueError("SkillHub workflow reruns cannot submit; start a new manual run after checking the platform")
     release_dir = download_release.download(tag, repository, output)
     release = publish_release.ReleaseContext.load(release_dir)
     base = {

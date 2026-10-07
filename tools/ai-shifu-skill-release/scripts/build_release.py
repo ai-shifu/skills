@@ -657,7 +657,10 @@ def build_workbuddy_artifact(channel: str, context: BuildContext) -> dict:
 
 def build_doubao_artifact(channel: str, context: BuildContext) -> dict:
     channel_root = context.channels / channel
-    profile = doubao_package.load_profile(channel_root / "profile.json")
+    profile_path = channel_root / "profile.json"
+    profile_bytes = profile_path.read_bytes()
+    profile = json.loads(profile_bytes)
+    doubao_package.validate_profile(profile)
     if context.skill_name != profile["primary_skill"]:
         raise ValueError(
             f"Doubao profile supports {profile['primary_skill']}, not {context.skill_name}"
@@ -728,6 +731,8 @@ def build_doubao_artifact(channel: str, context: BuildContext) -> dict:
         "archive_sha256": file_hash(archive),
         "archive_root": root_name,
         "version": context.version,
+        "source_profile_json": profile_bytes.decode("utf-8"),
+        "source_profile_sha256": content_hash(profile_bytes),
         "embedded_skills": embedded_skills,
     }
 
@@ -975,8 +980,13 @@ def verify_doubao_artifact(
     source_commit: str,
     canonical: dict[str, bytes],
 ) -> list[str]:
-    project = Path(__file__).resolve().parents[1]
-    profile = doubao_package.load_profile(project / "channels/doubao/profile.json")
+    profile_json = artifact.get("source_profile_json")
+    if not isinstance(profile_json, str):
+        raise ValueError("Doubao source profile is missing or differs from its recorded hash")
+    if content_hash(profile_json.encode("utf-8")) != artifact.get("source_profile_sha256"):
+        raise ValueError("Doubao source profile is missing or differs from its recorded hash")
+    profile = json.loads(profile_json)
+    doubao_package.validate_profile(profile)
     if skill["name"] != profile["primary_skill"]:
         raise ValueError("Doubao primary skill does not match release.json")
     directory = artifact_path(release_dir, artifact["directory"])

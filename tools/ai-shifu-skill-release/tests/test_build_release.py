@@ -462,6 +462,25 @@ class BuildReleaseTest(unittest.TestCase):
         report = json.loads((release_dir / "release.json").read_text())
         self.assertEqual(report["source"]["commit"], pinned)
         self.assertEqual(report["skill"]["version"], "1.2.3")
+
+    def test_doubao_verification_uses_profile_from_release_source(self) -> None:
+        release_dir = self.build()
+        report_path = release_dir / "release.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        record = report["artifacts"]["doubao"]
+        self.assertEqual(
+            hashlib.sha256(record["source_profile_json"].encode("utf-8")).hexdigest(),
+            record["source_profile_sha256"],
+        )
+        with patch.object(doubao_package, "load_profile", side_effect=AssertionError("local profile used")):
+            build_release.verify(release_dir)
+        record["source_profile_json"] = record["source_profile_json"].replace(
+            "AI师傅教学专家", "Changed profile", 1
+        )
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "source profile is missing or differs"):
+            build_release.verify(release_dir)
+
     def test_workbuddy_rejects_legacy_config_directory(self) -> None:
         root = self.extract_workbuddy(self.build(), "legacy-workbuddy")
         legacy = root / ".workbuddy-plugin"
