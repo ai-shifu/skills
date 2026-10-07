@@ -32,7 +32,7 @@ jobs:
 
       - name: Run release tool tests
         working-directory: tools/ai-shifu-skill-release
-        run: python3 -m unittest discover -s tests -p "test_*.py"
+        run: PYTHONPATH=scripts python3 -m unittest discover -s tests -p "test_*.py"
 
       - name: Trial build from PR commit
         if: github.event_name == 'pull_request'

@@ -49,7 +49,7 @@ jobs:
           python3 scripts/validate_skill_quality.py
           python3 -m unittest discover -s tests -p "test_*.py"
           cd tools/ai-shifu-skill-release
-          python3 -m unittest discover -s tests -p "test_*.py"
+          PYTHONPATH=scripts python3 -m unittest discover -s tests -p "test_*.py"
 
       - name: Build and verify selected commit
         env:
@@ -108,7 +108,7 @@ jobs:
           python3 scripts/validate_skill_quality.py
           python3 -m unittest discover -s tests -p "test_*.py"
           cd tools/ai-shifu-skill-release
-          python3 -m unittest discover -s tests -p "test_*.py"
+          PYTHONPATH=scripts python3 -m unittest discover -s tests -p "test_*.py"
 
       - name: Build and verify selected commit
         env:
@@ -161,7 +161,7 @@ jobs:
           python3 scripts/validate_skill_quality.py
           python3 -m unittest discover -s tests -p "test_*.py"
           cd tools/ai-shifu-skill-release
-          python3 -m unittest discover -s tests -p "test_*.py"
+          PYTHONPATH=scripts python3 -m unittest discover -s tests -p "test_*.py"
 
       - name: Build and verify tagged commit
         run: |

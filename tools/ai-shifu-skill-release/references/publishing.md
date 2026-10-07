@@ -1,6 +1,6 @@
 ## Publishing Environment and Configuration
 
-This release tool is self-contained: keep `SKILL.md`, `scripts/`, `ai_shifu_release/`, `channels/`, and `publisher.toml` together. Its maintained location is `tools/ai-shifu-skill-release/` in `ai-shifu/skills`, but a standalone copy also works without a Git repository. Exclude `dist/`, caches, and `.git/` when distributing the tool.
+This release tool is self-contained: keep `SKILL.md`, `scripts/`, `channels/`, and `publisher.toml` together. The `scripts/` directory contains both the command entrypoint and its internal `ai_shifu_release/` package. Its maintained location is `tools/ai-shifu-skill-release/` in `ai-shifu/skills`, but a standalone copy also works without a Git repository. Exclude `dist/`, caches, and `.git/` when distributing the tool.
 
 The tool directory is not the Git repository root. Run documented commands from the directory containing this tool's `SKILL.md`. The publisher file and channel templates are read from the selected source revision; relative output paths are resolved against the caller's working directory.
 

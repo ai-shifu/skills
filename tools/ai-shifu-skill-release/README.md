@@ -8,7 +8,7 @@ Moving the implementation does not change the release source: GitHub `ai-shifu/s
 
 Python 3.11+ and Git are required for building and testing. The implementation uses the Python standard library. Publication has additional CLI and authentication requirements; see [Publishing Environment](references/publishing.md).
 
-`scripts/release.py` is the only command entrypoint. It delegates to the `ai_shifu_release` package: `build` and `verify` own orchestration, `source`, `skill_metadata`, and `artifacts` own shared operations, and `channels/` owns each channel's package format. Publication state, channel submission, GitHub Releases, version changes, and manifest activation have separate modules. Keep `ai_shifu_release/` beside `scripts/` when copying the tool.
+`scripts/release.py` is the only command entrypoint. It delegates to the internal `scripts/ai_shifu_release/` package: `build` and `verify` own orchestration, `source`, `skill_metadata`, and `artifacts` own shared operations, and the package's `channels/` owns each channel's package format. Publication state, channel submission, GitHub Releases, version changes, and manifest activation have separate modules. Copy the complete `scripts/` directory with the tool.
 
 The former standalone `github_release.py`, `platform_publish.py`, and `download_release.py` commands are removed. Use `github-release` and `submit-channel` below. Download and verification are internal steps of channel submission; there is no standalone `download` subcommand.
 
@@ -198,7 +198,7 @@ Engineering prose is English. Chinese channel prompts, display copy, platform en
 From this tool directory:
 
 ```bash
-python3 -m unittest discover -s tests -p 'test_*.py'
+PYTHONPATH=scripts python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
 The repository CI runs these tests separately from the business-skill tests. Release tests import the dedicated `ai_shifu_release` package. Tests use temporary Git repositories and mocked external publication commands. Do not run live `bump`, `publish`, or `activate-manifest` operations to validate a code migration.
