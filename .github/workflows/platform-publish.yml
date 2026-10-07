@@ -1,0 +1,125 @@
+name: Publish Skill Platform
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      target:
+        required: true
+        type: string
+    secrets:
+      CLAWHUB_TOKEN:
+        required: false
+      SKILLHUB_TOKEN:
+        required: false
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing published Release tag (skills-vX.Y.Z)"
+        required: true
+        type: string
+      target:
+        description: "Retry only this platform"
+        required: true
+        type: choice
+        options:
+          - clawhub
+          - skillhub
+      confirm_skillhub_not_submitted:
+        description: "For SkillHub retry: I checked the platform and this version was not submitted"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skill-platform-${{ inputs.tag }}-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Confirm SkillHub retry will not duplicate a submission
+        if: github.event_name == 'workflow_dispatch' && inputs.target == 'skillhub'
+        env:
+          CONFIRMED: ${{ inputs.confirm_skillhub_not_submitted }}
+        run: test "$CONFIRMED" = "true"
+
+      - name: Set up Node for ClawHub
+        if: inputs.target == 'clawhub' && vars.AISHIFU_CLAWHUB_MIT0_APPROVED == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Configure ClawHub token
+        if: inputs.target == 'clawhub' && vars.AISHIFU_CLAWHUB_MIT0_APPROVED == 'true'
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: |
+          test -n "$CLAWHUB_TOKEN"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ['RUNNER_TEMP']) / 'clawhub-config.json'
+          path.write_text(json.dumps({'registry': 'https://clawhub.ai', 'token': os.environ['CLAWHUB_TOKEN']}))
+          path.chmod(0o600)
+          with Path(os.environ['GITHUB_ENV']).open('a') as output:
+              output.write(f'CLAWHUB_CONFIG_PATH={path}\n')
+          PY
+
+      - name: Install and authenticate SkillHub CLI
+        if: inputs.target == 'skillhub' && vars.AISHIFU_SKILLHUB_PUBLICATION_APPROVED == 'true'
+        env:
+          SKILLHUB_TOKEN: ${{ secrets.SKILLHUB_TOKEN }}
+          INSTALL_URL: ${{ vars.AISHIFU_SKILLHUB_PUBLISH_INSTALL_URL }}
+          INSTALL_SHA256: ${{ vars.AISHIFU_SKILLHUB_PUBLISH_INSTALL_SHA256 }}
+        run: |
+          test -n "$SKILLHUB_TOKEN"
+          test -n "$INSTALL_URL"
+          test -n "$INSTALL_SHA256"
+          curl -fsSL "$INSTALL_URL" -o "$RUNNER_TEMP/skillhub-install.sh"
+          echo "$INSTALL_SHA256  $RUNNER_TEMP/skillhub-install.sh" | sha256sum --check --status
+          bash "$RUNNER_TEMP/skillhub-install.sh" --cli-only
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/skillhub" publish --help > /dev/null
+          "$HOME/.local/bin/skillhub" login --help > /dev/null
+          "$HOME/.local/bin/skillhub" verify --help > /dev/null
+          "$HOME/.local/bin/skillhub" login --key "$SKILLHUB_TOKEN" --host https://api.skillhub.cn
+          "$HOME/.local/bin/skillhub" auth whoami
+
+      - name: Download, verify and submit one platform package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AISHIFU_CLAWHUB_MIT0_APPROVED: ${{ vars.AISHIFU_CLAWHUB_MIT0_APPROVED }}
+          AISHIFU_CLAWHUB_OWNER: ${{ vars.AISHIFU_CLAWHUB_OWNER }}
+          AISHIFU_SKILLHUB_PUBLICATION_APPROVED: ${{ vars.AISHIFU_SKILLHUB_PUBLICATION_APPROVED }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          PLATFORM_TARGET: ${{ inputs.target }}
+        run: |
+          python3 tools/ai-shifu-skill-release/scripts/platform_publish.py \
+            --tag "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --target "$PLATFORM_TARGET" --output platform-work --execute
+
+      - name: Save platform result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-result-${{ inputs.tag }}-${{ inputs.target }}
+          path: platform-work/platform-result.json
+          if-no-files-found: ignore
+          retention-days: 30

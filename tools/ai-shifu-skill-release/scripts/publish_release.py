@@ -17,9 +17,9 @@ from scripts import build_release, doubao_package
 
 
 AUTOMATED_TARGETS = ("clawhub", "skillhub")
-MANUAL_TARGETS = ("workbuddy", "qclaw", "doubao")
+MANUAL_TARGETS = ("workbuddy", "doubao")
 MANIFEST_REQUIRED_AUTOMATED_TARGETS = AUTOMATED_TARGETS
-MANIFEST_REQUIRED_MANUAL_TARGETS = ("workbuddy", "qclaw")
+MANIFEST_REQUIRED_MANUAL_TARGETS = ("workbuddy",)
 MANUAL_STATUSES = ("submitted", "verified", "failed")
 
 
@@ -172,22 +172,27 @@ class AutomatedPublisher:
         *,
         runner: Callable[[list[str]], CommandResult] = run_command,
         clawhub_command: tuple[str, ...] | None = None,
+        clawhub_owner: str = "",
         skillhub_cli: Path | None = None,
+        require_current_main: bool = True,
     ) -> None:
         self.release = release
         self.runner = runner
         self.clawhub_command = clawhub_command
+        self.clawhub_owner = clawhub_owner
         self.skillhub_cli = skillhub_cli
+        self.require_current_main = require_current_main
         self.report = ReleaseReport(release)
 
     def check(self, targets: tuple[str, ...]) -> dict:
         results = {}
-        try:
-            self.release.assert_remote_main(self.runner)
-        except (CommandFailure, ValueError) as error:
-            results = {target: self._result(target, "failed", str(error)) for target in targets}
-            self.report.update(results)
-            return results
+        if self.require_current_main:
+            try:
+                self.release.assert_remote_main(self.runner)
+            except (CommandFailure, ValueError) as error:
+                results = {target: self._result(target, "failed", str(error)) for target in targets}
+                self.report.update(results)
+                return results
         for target in targets:
             try:
                 self._authenticate(target)
@@ -218,7 +223,7 @@ class AutomatedPublisher:
         if target == "clawhub":
             self.runner([*self._clawhub_command(), "--yes", "clawhub@latest", "whoami"])
         elif target == "skillhub":
-            self.runner([str(self._skillhub_cli()), "auth", "whoami"])
+            self.runner([str(self._skillhub_cli()), "auth", "whoami", "--host", "https://api.skillhub.cn"])
         else:
             raise ValueError(f"Unsupported target: {target}")
 
@@ -234,12 +239,14 @@ class AutomatedPublisher:
                 *self._clawhub_command(),
                 "--yes",
                 "clawhub@latest",
+                "skill",
                 "publish",
                 common[0],
                 "--slug",
                 self.release.skill_name,
                 "--name",
                 self.release.display_name,
+                *(["--owner", self.clawhub_owner] if self.clawhub_owner else []),
                 *common[1:],
                 "--source-repo",
                 self.release.source_repo,
@@ -258,7 +265,8 @@ class AutomatedPublisher:
                 *common,
                 "--changelog",
                 changelog,
-                "--json",
+                "--host",
+                "https://api.skillhub.cn",
             ]
         else:
             raise ValueError(f"Unsupported target: {target}")

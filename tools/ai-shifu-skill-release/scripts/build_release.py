@@ -11,13 +11,11 @@ import re
 import shutil
 import stat
 import subprocess
-import sys
 import tarfile
 import tomllib
 import tempfile
 import zipfile
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Callable, Protocol
 
@@ -46,13 +44,15 @@ SECRET_PATTERNS = (
 ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 SOURCE_REPOSITORY = "https://github.com/ai-shifu/skills.git"
 SOURCE_REF = "main"
-RELEASE_SCHEMA_VERSION = 4
+RELEASE_SCHEMA_VERSION = 5
 # Order feeds release_sha256; changing it breaks verification of existing releases.
-CHANNEL_ORDER = ("clawhub", "skillhub", "workbuddy", "qclaw", "doubao")
+CHANNEL_ORDER = ("clawhub", "skillhub", "workbuddy", "doubao")
 
 
 class BuildOptions(Protocol):
     source_repo_url: str
+    source_ref: str
+    expected_version: str
     skill_name: str
     output: str
 
@@ -62,7 +62,7 @@ def channel_frontmatter_overrides(channel: str, skill_name: str, display_name: s
         return {}
     if channel == "skillhub":
         return {"slug": skill_name, "displayName": display_name}
-    if channel in {"workbuddy", "qclaw"}:
+    if channel == "workbuddy":
         return {"version_management": "plugin"}
     raise ValueError(f"Unsupported channel: {channel}")
 
@@ -195,19 +195,40 @@ def update_skill_frontmatter(text: str, updates: dict[str, str], source: str) ->
     return updated
 
 
-def build_skill_variant(source: Path, destination: Path, updates: dict[str, str]) -> None:
+def render_skill_variant(text: str, updates: dict[str, str], source: str,
+                         *, top_level_version: str = "") -> str:
+    updated = update_skill_frontmatter(text, updates, source)
+    if not top_level_version:
+        return updated
+    frontmatter, body = split_skill_document(updated, source)
+    lines = frontmatter.split("\n")
+    indexes = [index for index, line in enumerate(lines) if re.fullmatch(r"version:\s*.*", line)]
+    if len(indexes) > 1:
+        raise ValueError(f"Duplicate top-level version: {source}")
+    replacement = f"version: {format_frontmatter_value(top_level_version)}"
+    if indexes:
+        lines[indexes[0]] = replacement
+    else:
+        lines.append(replacement)
+    joined = "\n".join(lines)
+    return f"---\n{joined}\n---\n{body}"
+
+
+def build_skill_variant(source: Path, destination: Path, updates: dict[str, str],
+                        *, top_level_version: str = "") -> None:
     shutil.copytree(source, destination)
-    if not updates:
+    if not updates and not top_level_version:
         return
     skill_file = destination / "SKILL.md"
     text = skill_file.read_bytes().decode("utf-8")
-    updated = update_skill_frontmatter(text, updates, str(skill_file))
+    updated = render_skill_variant(text, updates, str(skill_file),
+                                   top_level_version=top_level_version)
     skill_file.write_bytes(updated.encode("utf-8"))
 
 
-def export_skill(repo: Path, commit: str, skill_name: str, destination: Path) -> None:
+def export_tree(repo: Path, commit: str, source_path: str, destination: Path) -> None:
     archive = subprocess.run(
-        ["git", "archive", "--format=tar", f"{commit}:skills/{skill_name}"],
+        ["git", "archive", "--format=tar", f"{commit}:{source_path}"],
         cwd=repo,
         check=True,
         capture_output=True,
@@ -228,16 +249,27 @@ def export_skill(repo: Path, commit: str, skill_name: str, destination: Path) ->
                     raise ValueError(f"Cannot extract {member.name}")
                 target.write_bytes(source.read())
                 target.chmod(member.mode)
+            elif member.issym():
+                continue
             else:
                 raise ValueError(f"Unsupported archive member: {member.name}")
 
 
-def fetch_source(repository: str, destination: Path) -> tuple[str, str]:
+def export_skill(repo: Path, commit: str, skill_name: str, destination: Path) -> None:
+    export_tree(repo, commit, f"skills/{skill_name}", destination)
+
+
+def fetch_source(repository: str, destination: Path, source_ref: str = SOURCE_REF) -> tuple[str, str]:
+    if not re.fullmatch(r"[0-9a-fA-F]{40}|main", source_ref):
+        raise ValueError("Source ref must be main or a full commit SHA")
     destination.mkdir(parents=True)
     run("git", "init", "--quiet", cwd=destination)
     run("git", "remote", "add", "origin", repository, cwd=destination)
-    run("git", "fetch", "--quiet", "--depth=1", "origin", f"refs/heads/{SOURCE_REF}", cwd=destination)
+    fetch_ref = "refs/heads/main" if source_ref == "main" else source_ref
+    run("git", "fetch", "--quiet", "--depth=1", "origin", fetch_ref, cwd=destination)
     commit = run("git", "rev-parse", "FETCH_HEAD^{commit}", cwd=destination)
+    if source_ref != "main" and commit.lower() != source_ref.lower():
+        raise ValueError("Fetched source commit does not match requested commit")
     remote = run("git", "remote", "get-url", "origin", cwd=destination)
     return commit, remote
 
@@ -389,6 +421,8 @@ def validate_workbuddy_package_contents(
     for field in ("name", "email"):
         if not isinstance(author.get(field), str) or not author[field].strip():
             raise ValueError(f"WorkBuddy author.{field} must be a non-empty string")
+        if "__PUBLISHER_" in author[field] or author[field] in {"your-name", "you@example.com"}:
+            raise ValueError(f"WorkBuddy author.{field} contains a placeholder")
 
     for field in ("displayName", "profession", "displayDescription", "defaultInitPrompt"):
         _workbuddy_localized(plugin.get(field), field)
@@ -502,10 +536,14 @@ def expected_variant_contents(
     canonical: dict[str, bytes],
     updates: dict[str, str],
     source: str,
+    *,
+    top_level_version: str = "",
 ) -> dict[str, bytes]:
     expected = dict(canonical)
     skill_text = expected["SKILL.md"].decode("utf-8")
-    expected["SKILL.md"] = update_skill_frontmatter(skill_text, updates, source).encode("utf-8")
+    expected["SKILL.md"] = render_skill_variant(
+        skill_text, updates, source, top_level_version=top_level_version
+    ).encode("utf-8")
     return expected
 
 
@@ -564,7 +602,8 @@ class BuildContext:
 def build_registry_artifact(channel: str, context: BuildContext) -> dict:
     overrides = channel_frontmatter_overrides(channel, context.skill_name, context.display_name)
     directory = context.artifacts / channel / context.skill_name
-    build_skill_variant(context.source_skill, directory, overrides)
+    build_skill_variant(context.source_skill, directory, overrides,
+                        top_level_version=context.version if channel == "skillhub" else "")
     scan_tree(directory)
     archive = context.artifacts / channel / f"{context.skill_name}-{context.version}.zip"
     write_zip(directory, archive, context.skill_name)
@@ -590,40 +629,18 @@ def build_workbuddy_artifact(channel: str, context: BuildContext) -> dict:
     stage_plugin_path = stage_dir / ".codebuddy-plugin/plugin.json"
     stage_plugin = json.loads(stage_plugin_path.read_text(encoding="utf-8"))
     stage_plugin["version"] = context.version
-    publisher = load_publisher(context.channels.parent)
-    if publisher:
-        stage_plugin["author"] = publisher
-    else:
-        print(
-            "warning: no publisher configured (publisher.toml or AISHIFU_PUBLISHER_NAME); "
-            "workbuddy plugin.json keeps its placeholder author",
-            file=sys.stderr,
-        )
+    publisher = load_publisher(Path(__file__).resolve().parents[1])
+    if not publisher or not publisher.get("name") or not publisher.get("email"):
+        raise ValueError("Publisher name and email are required for WorkBuddy packaging")
+    if any("__PUBLISHER_" in value or value in {"your-name", "you@example.com"}
+           for value in publisher.values()):
+        raise ValueError("Publisher identity must not contain placeholders")
+    stage_plugin["author"] = publisher
     stage_plugin_path.write_text(
         json.dumps(stage_plugin, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     build_skill_variant(context.source_skill, stage_dir / "skills" / context.skill_name, overrides)
     validate_workbuddy_package(stage_dir, context.version)
-    scan_tree(stage_dir)
-    archive = context.artifacts / channel / f"{root_name}.zip"
-    write_zip(stage_dir, archive, root_name)
-    return {
-        "archive": context.record_path(archive),
-        "sha256": file_hash(archive),
-        "version": context.version,
-        "embedded_skill_root": f"{root_name}/skills/{context.skill_name}",
-        "frontmatter_overrides": overrides,
-    }
-
-
-def build_qclaw_artifact(channel: str, context: BuildContext) -> dict:
-    overrides = channel_frontmatter_overrides(channel, context.skill_name, context.display_name)
-    root_name = f"qclaw-ai-shifu-{context.version}"
-    stage_dir = context.artifacts / channel / root_name
-    stage_dir.mkdir(parents=True)
-    for filename in ("AGENTS.md", "SOUL.md", "IDENTITY.md"):
-        shutil.copy2(context.channels / "qclaw" / filename, stage_dir / filename)
-    build_skill_variant(context.source_skill, stage_dir / "skills" / context.skill_name, overrides)
     scan_tree(stage_dir)
     archive = context.artifacts / channel / f"{root_name}.zip"
     write_zip(stage_dir, archive, root_name)
@@ -717,7 +734,6 @@ CHANNEL_BUILDERS: dict[str, Callable[[str, BuildContext], dict]] = {
     "clawhub": build_registry_artifact,
     "skillhub": build_registry_artifact,
     "workbuddy": build_workbuddy_artifact,
-    "qclaw": build_qclaw_artifact,
     "doubao": build_doubao_artifact,
 }
 
@@ -735,10 +751,13 @@ def build(args: BuildOptions) -> Path:
     with tempfile.TemporaryDirectory(prefix="ai-shifu-build-") as temporary:
         temporary_root = Path(temporary)
         source_repo = temporary_root / "github-source"
-        commit, remote = fetch_source(args.source_repo_url, source_repo)
+        source_ref = getattr(args, "source_ref", SOURCE_REF)
+        commit, remote = fetch_source(args.source_repo_url, source_repo, source_ref)
+        channels = temporary_root / "channels"
+        export_tree(source_repo, commit, "tools/ai-shifu-skill-release/channels", channels)
         source_skill = temporary_root / "source-skill"
         export_skill(source_repo, commit, args.skill_name, source_skill)
-        profile = doubao_package.load_profile(project / "channels/doubao/profile.json")
+        profile = doubao_package.load_profile(channels / "doubao/profile.json")
         if args.skill_name != profile["primary_skill"]:
             raise ValueError(
                 f"Doubao profile supports {profile['primary_skill']}, not {args.skill_name}"
@@ -752,6 +771,9 @@ def build(args: BuildOptions) -> Path:
             export_skill(source_repo, commit, name, companion)
             source_skills[name] = companion
         metadata = read_frontmatter(source_skill / "SKILL.md")
+        expected_version = getattr(args, "expected_version", "")
+        if expected_version and metadata["version"] != expected_version:
+            raise ValueError(f"Source version {metadata['version']} does not match expected {expected_version}")
         if metadata["version_management"] != "standalone":
             raise ValueError("Canonical skill must use version_management: standalone")
         display_name = metadata.get("name", "").strip()
@@ -764,7 +786,7 @@ def build(args: BuildOptions) -> Path:
             source_skill=source_skill,
             source_skills=source_skills,
             source_commit=commit,
-            channels=project / "channels",
+            channels=channels,
             stage=temporary_root / "release",
             skill_name=args.skill_name,
             version=metadata["version"],
@@ -777,12 +799,13 @@ def build(args: BuildOptions) -> Path:
         release_id = f"{args.skill_name}-{context.version}-{commit[:7]}-{release_sha[:7]}"
         builder_commit, builder_remote, builder_dirty = _git_metadata(project)
         stage = context.stage
+        source_time = run("git", "show", "-s", "--format=%cI", commit, cwd=source_repo)
         report = {
             "schema_version": RELEASE_SCHEMA_VERSION,
             "release_id": release_id,
             "release_sha256": release_sha,
-            "built_at": datetime.now(timezone.utc).isoformat(),
-            "source": {"repository": remote, "ref": SOURCE_REF, "commit": commit},
+            "source_committed_at": source_time,
+            "source": {"repository": remote, "ref": source_ref, "commit": commit},
             "builder": {
                 "repository": builder_remote,
                 "commit": builder_commit,
@@ -804,6 +827,11 @@ def build(args: BuildOptions) -> Path:
             existing = json.loads((destination / "release.json").read_text(encoding="utf-8"))
             if existing.get("release_sha256") != release_sha:
                 raise ValueError(f"Existing release has different content: {destination}")
+            if existing.get("source") != report["source"] or existing.get("skill") != report["skill"]:
+                raise ValueError(
+                    f"Existing release has different source metadata: {destination}; "
+                    "choose another --output directory"
+                )
             verify(destination)
             return destination
         output_root.mkdir(parents=True, exist_ok=True)
@@ -847,7 +875,10 @@ def verify_channel_artifact(
     expected_overrides = channel_frontmatter_overrides(channel, skill["name"], skill["display_name"])
     if (artifact.get("frontmatter_overrides") or {}) != expected_overrides:
         raise ValueError(f"{channel} frontmatter override policy mismatch")
-    expected = expected_variant_contents(canonical, expected_overrides, f"{channel} SKILL.md")
+    expected = expected_variant_contents(
+        canonical, expected_overrides, f"{channel} SKILL.md",
+        top_level_version=skill["version"] if channel == "skillhub" else "",
+    )
     hashes: list[str] = []
     if "directory" in artifact:
         directory = artifact_path(release_dir, artifact["directory"])

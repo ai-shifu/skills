@@ -44,16 +44,13 @@ class PublishReleaseTest(unittest.TestCase):
         (clawhub / "SKILL.md").write_text("fixture\n")
         (skillhub / "SKILL.md").write_text("fixture\n")
         workbuddy = self.release_dir / "artifacts/workbuddy/workbuddy-ai-shifu-1.1.0.zip"
-        qclaw = self.release_dir / "artifacts/qclaw/qclaw-ai-shifu-1.0.0.zip"
         doubao = self.release_dir / "artifacts/doubao/doubao-ai-shifu-1.2.3.zip"
         workbuddy.parent.mkdir(parents=True)
-        qclaw.parent.mkdir(parents=True)
         doubao.parent.mkdir(parents=True)
         workbuddy.write_bytes(b"workbuddy")
-        qclaw.write_bytes(b"qclaw")
         doubao.write_bytes(b"doubao")
         self.metadata = {
-            "schema_version": 4,
+            "schema_version": 5,
             "release_id": "fixture-1.2.3-abc1234-def5678",
             "release_sha256": "def5678",
             "source": {
@@ -78,11 +75,6 @@ class PublishReleaseTest(unittest.TestCase):
                     "archive": "artifacts/workbuddy/workbuddy-ai-shifu-1.1.0.zip",
                     "sha256": "workbuddy-sha",
                     "version": "1.1.0",
-                },
-                "qclaw": {
-                    "archive": "artifacts/qclaw/qclaw-ai-shifu-1.0.0.zip",
-                    "sha256": "qclaw-sha",
-                    "version": "1.0.0",
                 },
                 "doubao": {
                     "archive": "artifacts/doubao/doubao-ai-shifu-1.2.3.zip",
@@ -133,6 +125,10 @@ class PublishReleaseTest(unittest.TestCase):
             str((self.release_dir / "artifacts/skillhub/ai-shifu-course-creator").resolve()),
             skillhub_command,
         )
+        self.assertNotIn("--json", skillhub_command)
+        self.assertIn("https://api.skillhub.cn", skillhub_command)
+        self.assertIn(["skill", "publish"], [clawhub_command[i:i + 2]
+                                           for i in range(len(clawhub_command) - 1)])
         self.assertEqual(clawhub_command[clawhub_command.index("--name") + 1], "AI-Shifu Course Creator")
         report = json.loads((self.release_dir / "release-report.json").read_text())
         self.assertEqual(report["channels"]["clawhub"]["status"], "ready")
@@ -170,14 +166,25 @@ class PublishReleaseTest(unittest.TestCase):
         self.assertIn("rebuild required", results["skillhub"]["response"])
         self.assertEqual(len(runner.commands), 1)
 
+    def test_verified_release_can_publish_after_main_advances(self) -> None:
+        runner = FakeRunner(remote_commit="different-commit")
+        with patch.object(publish_release.build_release, "verify"):
+            context = publish_release.ReleaseContext.load(self.release_dir)
+        publisher = publish_release.AutomatedPublisher(
+            context, runner=runner, require_current_main=False,
+            skillhub_cli=Path("/bin/skillhub"),
+        )
+        results = publisher.publish(("skillhub",))
+        self.assertEqual(results["skillhub"]["status"], "published")
+        self.assertFalse(any(command[:2] == ["git", "ls-remote"] for command in runner.commands))
+
     def test_manual_channels_use_built_archives_and_require_evidence(self) -> None:
         with patch.object(publish_release.build_release, "verify"):
             context = publish_release.ReleaseContext.load(self.release_dir)
         publisher = publish_release.ManualPublisher(context, runner=FakeRunner())
 
-        plan = publisher.plan(("workbuddy", "qclaw", "doubao"))
+        plan = publisher.plan(("workbuddy", "doubao"))
         self.assertEqual(plan["workbuddy"]["status"], "pending_manual")
-        self.assertEqual(plan["qclaw"]["embedded_skill_version"], "1.2.3")
         self.assertEqual(
             plan["doubao"]["embedded_skills"],
             ["ai-shifu-course-creator", "ai-shifu-learning-report", "course-direction-advisor"],

@@ -1,19 +1,19 @@
 ---
 name: ai-shifu-skill-release
-description: "Release AI-Shifu skills using the maintained release.py workflow: open version-bump PRs, build and verify channel packages, run preflight checks, publish to ClawHub and SkillHub, prepare and record manual WorkBuddy/QClaw/Doubao uploads, and open website manifest activation PRs. Use for skill version upgrades, packaging, release checks, publication, or manifest activation. Source and website PRs require human merge; never bypass that workflow by editing local business-skill source."
+description: "Release AI-Shifu skills using the maintained release.py workflow: open version-bump PRs, build and verify channel packages, run preflight checks, publish to ClawHub and SkillHub, prepare and record manual WorkBuddy/Doubao uploads, and open website manifest activation PRs. Use for skill version upgrades, packaging, release checks, publication, or manifest activation. Source and website PRs require human merge; never bypass that workflow by editing local business-skill source."
 ---
 
 ## Execution Environment
 
-All release operations go through this tool's `scripts/release.py`. Do not duplicate packaging logic or call platform publication commands directly.
+Operator build and platform publication operations go through this tool's `scripts/release.py`. The tagged GitHub workflow calls `scripts/github_release.py` after verification. Do not duplicate packaging logic or call platform publication commands directly.
 
 1. Locate the directory containing **this** `SKILL.md`. In `ai-shifu/skills`, it is `tools/ai-shifu-skill-release/`, not the Git repository root. Use it as the working directory for the commands below. A standalone copy uses the same sibling layout.
 2. Confirm that `scripts/release.py` and `channels/workbuddy/.codebuddy-plugin/plugin.json` exist there. Stop if the intended tool cannot be located.
 3. Read `python3 scripts/release.py --help` if the implementation may have changed. Read [Publishing Environment](references/publishing.md) for runtime, publisher configuration, and authentication requirements.
 4. Before packaging, check `git status --short` and `git log -1 --oneline` in the enclosing repository when present. The builder supports standalone copies without Git and records unavailable provenance as null; do not claim a clean repository without evidence.
-5. GitHub `ai-shifu/skills` remote `main` is the only source of business skills. Sharing a repository with the tool does not make local skill edits build inputs. GitHub is not a publication target.
+5. GitHub `ai-shifu/skills` remote `main`, or a specified commit from it, is the source of business skills and channel templates. Sharing a repository with the tool does not make local skill edits build inputs. Tagged commits create downloadable GitHub Releases. Platform Actions jobs download and verify the published Release attachments before submission; they do not rebuild or require the old tag to remain the current `main` tip.
 
-Building and publishing do not modify skill source. Version changes go through `bump`, which opens a source-repository PR for human review and merge. Only the primary source skill's `SKILL.md` stores the release version; all five channel versions derive from it, with no independent version under this tool directory. If the user specifies a version, compare it with `release.json`. Stop on a mismatch and explain that the target version must first reach remote `main` through a merged bump PR.
+Building and publishing do not modify skill source. Version changes go through `bump`, which opens a source-repository PR for human review and merge. Only the primary source skill's `SKILL.md` stores the release version; all four channel versions derive from it, with no independent version under this tool directory. If the user specifies a version, compare it with `release.json`. Stop on a mismatch and explain that the target version must first reach remote `main` through a merged bump PR.
 
 ## Safety Rules
 
@@ -25,13 +25,14 @@ Building and publishing do not modify skill source. Version changes go through `
 - Never request or print platform tokens. If authentication is missing, provide the login command and wait for the user to authenticate locally.
 - Do not commit or push the current checkout without an explicit user request. `bump` and `activate-manifest` require an explicit request for those operations and only push dedicated branches and open PRs. Never merge their PRs or push directly to `main`.
 - If GitHub `main` has advanced, do not delete existing artifacts. Rebuild and use the new output directory.
-- Only accept `release.json` schema 4. Rebuild schema 3 or older candidates.
+- Only accept `release.json` schema 5. Rebuild older candidates.
 - Do not record a manual channel as `verified` without a platform URL and confirmation of independent validation.
 
 ## Choose the Workflow
 
 | User intent | Steps | Stop point |
 | --- | --- | --- |
+| Accept automation changes without a new skill release | Keep the existing skill version, review and merge the automation PR, then run the manual **Release Skills** preview on the merged `main` commit | Report the preview run and six temporary attachments; do not create a version tag or submit to platforms |
 | Upgrade a version | `bump` | Return the source PR and wait for human merge |
 | Build or package | `build`, then `verify` | Report artifacts |
 | Check or dry-run | Build if needed, then `verify` and `check` | Report channel readiness |
@@ -41,7 +42,7 @@ Building and publishing do not modify skill source. Version changes go through `
 | Activate the website manifest | After channel gates pass, `activate-manifest` | Return the website PR and wait for human merge and deployment |
 | Complete a full release | Follow applicable stages in order | Stop at each human gate |
 
-Automated targets are `clawhub` and `skillhub`. Manual targets are `workbuddy`, `qclaw`, and `doubao`. Doubao does not block website manifest activation.
+Automated targets are `clawhub` and `skillhub`. Manual targets are `workbuddy` and `doubao`. Doubao does not block website manifest activation.
 
 ## Upgrade the Skill Version
 
@@ -56,13 +57,17 @@ Use `--level major|minor|patch` instead of an explicit version when requested. `
 
 ## Build and Verify
 
-For each new packaging request, first read and show the primary source skill's version on remote `main`, then confirm whether to keep it or upgrade and to which version. Do not ask again when the user has already specified that choice for the current request. All five channels use that version; do not edit local source or introduce an independent plugin version to satisfy a mismatch.
+For each new packaging request, first read and show the primary source skill's version on remote `main`, then confirm whether to keep it or upgrade and to which version. Do not ask again when the user has already specified that choice for the current request. All four channels use that version; do not edit local source or introduce an independent plugin version to satisfy a mismatch.
 
 After confirmation:
 
 ```bash
 python3 scripts/release.py build --skill-name ai-shifu-course-creator
 ```
+
+For a trial build of a particular commit, pass `--source-ref <full-commit-sha> --expected-version X.Y.Z`. Pass `--source-repo-url <checkout-path>` when testing a local checkout before its commit exists upstream. The tagged GitHub workflow uses the canonical remote and checks that the commit has reached `main`.
+PR validation performs a trial build with a test publisher identity and keeps preview attachments in Actions. Those attachments are never publication candidates.
+The **Release Skills** manual Actions run provides a preview before tagging: select a branch and enter the expected version. It saves temporary attachments without creating a GitHub Release.
 
 Record the exact output directory as `RELEASE_DIR` and verify it:
 
@@ -75,8 +80,8 @@ The default output is `dist/` relative to the caller's working directory. With t
 Read `$RELEASE_DIR/release.json` and report:
 
 - The release ID and recorded SHA-256.
-- The source repository, remote `main` commit, and skill version.
-- Paths, versions, and hashes for ClawHub, SkillHub, WorkBuddy, QClaw, and Doubao.
+- The source repository, source commit, and skill version.
+- Paths, versions, and hashes for ClawHub, SkillHub, WorkBuddy and Doubao.
 - Source-body consistency across channels. For Doubao, also report the source manifests for all embedded skills, the allowlisted `version_management` / `label` / empty `icon` changes, and static package validation.
 - Whether the builder's enclosing worktree had uncommitted changes, or whether provenance was unavailable.
 
@@ -131,13 +136,13 @@ After partial failure, keep the same immutable release directory. Diagnose the f
 python3 scripts/release.py manual-plan "$RELEASE_DIR" --target all
 ```
 
-Use `--target workbuddy`, `--target qclaw`, or `--target doubao` for a single manual channel. Give the user the exact `upload_path`, plugin version, embedded skill version, and artifact SHA-256. The user uploads on the platform.
+Use `--target workbuddy` or `--target doubao` for a single manual channel. Give the user the exact `upload_path`, plugin version, embedded skill version, and artifact SHA-256. The user uploads on the platform.
 
 Record the user's result with:
 
 ```bash
 python3 scripts/release.py record-manual "$RELEASE_DIR" \
-  --target <workbuddy|qclaw|doubao> \
+  --target <workbuddy|doubao> \
   --status <submitted|verified|failed> \
   --url <platform-url> \
   --note <optional-note>
@@ -147,7 +152,7 @@ Both `submitted` and `verified` require `--url`. Only `failed`, when no platform
 
 ## Activate the Website Manifest
 
-The gate requires ClawHub and SkillHub to be `published`, and WorkBuddy and QClaw to be `submitted` or `verified`. Doubao is recorded independently.
+The gate requires ClawHub and SkillHub to be `published`, and WorkBuddy to be `submitted` or `verified`. Doubao is recorded independently.
 
 ```bash
 python3 scripts/release.py activate-manifest "$RELEASE_DIR" \
@@ -162,7 +167,7 @@ python3 scripts/release.py activate-manifest "$RELEASE_DIR" \
 
 The command opens a `codex/` branch PR in `ai-shifu-website`, updating `zh/skill-manifests/<skill_name>.json`. It validates SemVer, `min_supported <= latest`, and an HTTPS `update_url`. **Never merge the PR.** If channel readiness is insufficient, it refuses and reports the missing channels.
 
-Only when the user explicitly chooses to handle a manual channel offline may `--allow-pending workbuddy|qclaw` waive that channel's gate. The waiver is recorded in command output and the PR description.
+Only when the user explicitly chooses to handle a manual channel offline may `--allow-pending workbuddy` waive that channel's gate. The waiver is recorded in command output and the PR description.
 
 After the user merges the PR, the website image must still be rebuilt and deployed. Once deployment is complete:
 

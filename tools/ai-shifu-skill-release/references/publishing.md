@@ -29,8 +29,8 @@ Run ClawHub with Node 22. This tool does not store or request tokens; the user c
 
 The WorkBuddy `plugin.json` template uses placeholders for two fields:
 
-- **`version`** comes from the primary source skill's `SKILL.md` version, replacing `__SKILL_VERSION__`. QClaw and Doubao versions derive from the same value. There is no independent version maintained under this tool directory.
-- **`author`** comes from `AISHIFU_PUBLISHER_NAME` / `AISHIFU_PUBLISHER_EMAIL`, or from `publisher.toml` alongside this tool's `SKILL.md`. Create the ignored local file from `publisher.toml.example`. Environment values take precedence. Without an identity, build keeps `__PUBLISHER_NAME__` and emits a warning for review before uploading.
+- **`version`** comes from the primary source skill's `SKILL.md` version, replacing `__SKILL_VERSION__`. Doubao versions derive from the same value. There is no independent version maintained under this tool directory.
+- **`author`** comes from `AISHIFU_PUBLISHER_NAME` / `AISHIFU_PUBLISHER_EMAIL`, or from `publisher.toml` alongside this tool's `SKILL.md`. Create the ignored local file from `publisher.toml.example`. Environment values take precedence. The build rejects missing or placeholder publisher information.
 
 ## Human Release Gates
 
@@ -38,7 +38,9 @@ The [release skill](../SKILL.md) owns the workflow and its authorization checks.
 
 1. Human review and merge of the source version-bump PR.
 2. Explicit authorization before `publish --execute` for the reviewed candidate and selected channels.
-3. Manual WorkBuddy, QClaw, and Doubao uploads and platform validation; record evidence with `record-manual`.
+3. Manual WorkBuddy and Doubao uploads and platform validation; record evidence with `record-manual`.
 4. Human review and merge of the website manifest PR, followed by image rebuild and production deployment; use `--check-online` afterward to confirm activation.
 
 Doubao is recorded separately and does not participate in the website manifest gate. Neither a successful dry run nor a merged manifest PR proves that a release is live.
+
+For the GitHub Actions path, configure `CLAWHUB_TOKEN` and `SKILLHUB_TOKEN` as repository Secrets. Configure `AISHIFU_CLAWHUB_OWNER`, `AISHIFU_CLAWHUB_MIT0_APPROVED`, and `AISHIFU_SKILLHUB_PUBLICATION_APPROVED` as repository Variables after the team confirms ownership and publication terms. SkillHub additionally needs `AISHIFU_SKILLHUB_PUBLISH_INSTALL_URL` and the installer script's `AISHIFU_SKILLHUB_PUBLISH_INSTALL_SHA256`; the currently advertised installer does not include publishing commands. The platform workflow reads and verifies published GitHub Release attachments and submits ClawHub and SkillHub independently when enabled. Its approval variables default to off. WorkBuddy and Doubao use the verified Release ZIPs for manual submission. See the tool [README](../README.md#platform-submission-from-the-release) for retry and result handling.

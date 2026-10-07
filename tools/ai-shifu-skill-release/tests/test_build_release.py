@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from scripts import build_release, doubao_package
+
+TOOL_ROOT = Path(__file__).resolve().parents[1]
 
 
 class BuildReleaseTest(unittest.TestCase):
@@ -17,6 +21,8 @@ class BuildReleaseTest(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
         self.source_repo = self.root / "skills"
+        shutil.copytree(TOOL_ROOT / "channels", self.source_repo / "tools/ai-shifu-skill-release/channels",
+                        symlinks=True)
         self.output = self.root / "dist"
         self.skill = self.source_repo / "skills/ai-shifu-course-creator"
         self.skill.mkdir(parents=True)
@@ -126,16 +132,20 @@ class BuildReleaseTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def git(self, *args: str) -> None:
-        subprocess.run(["git", *args], cwd=self.source_repo, check=True, capture_output=True)
+    def git(self, *args: str) -> str:
+        return subprocess.run(["git", *args], cwd=self.source_repo, check=True,
+                              capture_output=True, text=True).stdout.strip()
 
-    def build(self) -> Path:
+    def build(self, *, source_ref: str = "main", expected_version: str = "") -> Path:
         args = SimpleNamespace(
             source_repo_url=str(self.source_repo),
+            source_ref=source_ref,
+            expected_version=expected_version,
             skill_name="ai-shifu-course-creator",
             output=str(self.output),
         )
-        return build_release.build(args)
+        with patch.dict("os.environ", {"AISHIFU_PUBLISHER_NAME": "AI-Shifu", "AISHIFU_PUBLISHER_EMAIL": "release@ai-shifu.cn"}):
+            return build_release.build(args)
 
     def extract_workbuddy(self, release_dir: Path, destination: str) -> Path:
         report = json.loads((release_dir / "release.json").read_text())
@@ -176,14 +186,24 @@ class BuildReleaseTest(unittest.TestCase):
         ).hexdigest()
         (release_dir / "release.json").write_text(json.dumps(report))
 
+    def test_existing_output_cannot_hide_a_different_source_ref(self) -> None:
+        release_dir = self.build(source_ref="main")
+        commit = self.git("rev-parse", "main")
+        with self.assertRaisesRegex(ValueError, "different source metadata"):
+            self.build(source_ref=commit)
+        report = json.loads((release_dir / "release.json").read_text())
+        self.assertEqual(report["source"]["ref"], "main")
+
     def test_builds_all_artifacts_from_committed_source(self) -> None:
         release_dir = self.build()
         report = json.loads((release_dir / "release.json").read_text())
         clawhub = release_dir / report["artifacts"]["clawhub"]["directory"]
         skillhub = release_dir / report["artifacts"]["skillhub"]["directory"]
 
-        self.assertEqual(report["schema_version"], 4)
+        self.assertEqual(report["schema_version"], 5)
+        self.assertEqual(set(report["artifacts"]), set(build_release.CHANNEL_ORDER))
         self.assertEqual(report["skill"]["version"], "1.2.3")
+
         self.assertFalse((clawhub / ".env").exists())
         self.assertEqual(
             (clawhub / ".env.example").read_text(encoding="utf-8"),
@@ -194,15 +214,18 @@ class BuildReleaseTest(unittest.TestCase):
         self.assertFalse((clawhub / "evals").exists())
         self.assertEqual((clawhub / "SKILL.md").read_text(), self.source_skill_text)
 
-        expected_skillhub = build_release.update_skill_frontmatter(
+        expected_skillhub = build_release.render_skill_variant(
             self.source_skill_text,
             {
                 "slug": "ai-shifu-course-creator",
                 "displayName": "ai-shifu-course-creator",
             },
             "fixture",
+            top_level_version="1.2.3",
         )
         self.assertEqual((skillhub / "SKILL.md").read_text(), expected_skillhub)
+        skillhub_frontmatter, _ = build_release.read_skill_document(skillhub / "SKILL.md")
+        self.assertIn("\nversion: 1.2.3", skillhub_frontmatter)
         self.assertEqual((skillhub / "references/guide.md").read_text(), "guide\n")
 
         expected_plugin = build_release.update_skill_frontmatter(
@@ -210,10 +233,7 @@ class BuildReleaseTest(unittest.TestCase):
             {"version_management": "plugin"},
             "fixture",
         )
-        for platform, expected_root in (
-            ("workbuddy", "workbuddy-ai-shifu-1.2.3"),
-            ("qclaw", f"qclaw-ai-shifu-{report['artifacts']['qclaw']['version']}"),
-        ):
+        for platform, expected_root in (("workbuddy", "workbuddy-ai-shifu-1.2.3"),):
             archive_path = release_dir / report["artifacts"][platform]["archive"]
             with zipfile.ZipFile(archive_path) as archive:
                 skill_file = archive.read(
@@ -351,7 +371,7 @@ class BuildReleaseTest(unittest.TestCase):
             self.assertEqual(
                 archive.read(f"{advisor_prefix}/references/guide.md"), b"advisor guide\n"
             )
-        for channel in ("clawhub", "skillhub", "workbuddy", "qclaw"):
+        for channel in ("clawhub", "skillhub", "workbuddy"):
             with zipfile.ZipFile(release_dir / report["artifacts"][channel]["archive"]) as archive:
                 self.assertFalse(
                     any("course-direction-advisor" in name for name in archive.namelist())
@@ -359,6 +379,54 @@ class BuildReleaseTest(unittest.TestCase):
 
         build_release.verify(release_dir)
 
+    def test_builds_exact_commit_and_rejects_version_mismatch(self) -> None:
+        commit = self.git("rev-parse", "feature/newer-version")
+        release_dir = self.build(source_ref=commit, expected_version="8.8.8")
+        report = json.loads((release_dir / "release.json").read_text())
+        self.assertEqual(report["source"]["commit"], commit)
+        self.assertEqual(report["source"]["ref"], commit)
+        self.assertEqual(report["skill"]["version"], "8.8.8")
+        with self.assertRaisesRegex(ValueError, "does not match expected"):
+            self.build(source_ref=commit, expected_version="1.2.3")
+
+    def test_build_uses_committed_channel_templates(self) -> None:
+        commit = self.git("rev-parse", "main")
+        template = self.source_repo / "tools/ai-shifu-skill-release/channels/workbuddy/.codebuddy-plugin/plugin.json"
+        template.write_text("tampered working tree", encoding="utf-8")
+        release_dir = self.build(source_ref=commit)
+        report = json.loads((release_dir / "release.json").read_text())
+        archive = release_dir / report["artifacts"]["workbuddy"]["archive"]
+        with zipfile.ZipFile(archive) as package:
+            plugin = json.loads(package.read("workbuddy-ai-shifu-1.2.3/.codebuddy-plugin/plugin.json"))
+        self.assertEqual(plugin["version"], "1.2.3")
+
+    def test_build_requires_publisher_identity(self) -> None:
+        with patch.object(build_release, "load_publisher", return_value=None):
+            with self.assertRaisesRegex(ValueError, "Publisher name and email"):
+                self.build()
+
+    def test_release_manifest_is_reproducible_for_same_commit(self) -> None:
+        commit = self.git("rev-parse", "main")
+        first = self.build(source_ref=commit)
+        second_output = self.root / "second-dist"
+        args = SimpleNamespace(source_repo_url=str(self.source_repo), source_ref=commit,
+                               expected_version="1.2.3", skill_name="ai-shifu-course-creator",
+                               output=str(second_output))
+        with patch.dict("os.environ", {"AISHIFU_PUBLISHER_NAME": "AI-Shifu",
+                                    "AISHIFU_PUBLISHER_EMAIL": "release@ai-shifu.cn"}):
+            second = build_release.build(args)
+        self.assertEqual((first / "release.json").read_bytes(),
+                         (second / "release.json").read_bytes())
+
+    def test_pinned_build_ignores_later_main_changes(self) -> None:
+        pinned = self.git("rev-parse", "main")
+        self.git("add", "skills/ai-shifu-course-creator/SKILL.md")
+        self.git("commit", "-m", "later main version")
+        self.assertNotEqual(self.git("rev-parse", "main"), pinned)
+        release_dir = self.build(source_ref=pinned, expected_version="1.2.3")
+        report = json.loads((release_dir / "release.json").read_text())
+        self.assertEqual(report["source"]["commit"], pinned)
+        self.assertEqual(report["skill"]["version"], "1.2.3")
     def test_workbuddy_rejects_legacy_config_directory(self) -> None:
         root = self.extract_workbuddy(self.build(), "legacy-workbuddy")
         legacy = root / ".workbuddy-plugin"
@@ -419,7 +487,6 @@ class BuildReleaseTest(unittest.TestCase):
             "clawhub": first_report["artifacts"]["clawhub"]["archive_sha256"],
             "skillhub": first_report["artifacts"]["skillhub"]["archive_sha256"],
             "workbuddy": first_report["artifacts"]["workbuddy"]["sha256"],
-            "qclaw": first_report["artifacts"]["qclaw"]["sha256"],
             "doubao": first_report["artifacts"]["doubao"]["archive_sha256"],
         }
         second = self.build()
@@ -428,7 +495,6 @@ class BuildReleaseTest(unittest.TestCase):
         self.assertEqual(hashes["clawhub"], second_report["artifacts"]["clawhub"]["archive_sha256"])
         self.assertEqual(hashes["skillhub"], second_report["artifacts"]["skillhub"]["archive_sha256"])
         self.assertEqual(hashes["workbuddy"], second_report["artifacts"]["workbuddy"]["sha256"])
-        self.assertEqual(hashes["qclaw"], second_report["artifacts"]["qclaw"]["sha256"])
         self.assertEqual(
             hashes["doubao"], second_report["artifacts"]["doubao"]["archive_sha256"]
         )
@@ -495,7 +561,7 @@ class BuildReleaseTest(unittest.TestCase):
         report["schema_version"] = 1
         report_path.write_text(json.dumps(report))
 
-        with self.assertRaisesRegex(ValueError, "rebuild with schema 4"):
+        with self.assertRaisesRegex(ValueError, "rebuild with schema 5"):
             build_release.verify(release_dir)
 
     def test_doubao_profile_tampering_is_rejected(self) -> None:

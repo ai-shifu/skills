@@ -19,9 +19,13 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
 
     build = commands.add_parser("build", help="Build all channel artifacts")
-    build.set_defaults(source_repo_url=build_release.SOURCE_REPOSITORY)
     build.add_argument("--skill-name", default="ai-shifu-course-creator")
     build.add_argument("--output", default="dist")
+    build.add_argument("--source-repo-url", dest="source_repo_url",
+                       default=build_release.SOURCE_REPOSITORY,
+                       help="Source Git repository (default: ai-shifu/skills)")
+    build.add_argument("--source-ref", default="main", help="main or a full source commit SHA")
+    build.add_argument("--expected-version", default="", help="Fail if source SKILL.md has another version")
 
     bump = commands.add_parser("bump", help="Open a version-bump PR against the skills source repository")
     bump.add_argument("--skill-name", default="ai-shifu-course-creator")
@@ -49,7 +53,7 @@ def main() -> None:
     publish.add_argument("--skillhub-cli", default="", help="Path to the skillhub CLI binary")
 
     manual_plan = commands.add_parser(
-        "manual-plan", help="Show WorkBuddy, QClaw, and Doubao upload artifacts"
+        "manual-plan", help="Show WorkBuddy and Doubao upload artifacts"
     )
     manual_plan.add_argument("release_dir")
     manual_plan.add_argument("--target", choices=(*publish_release.MANUAL_TARGETS, "all"), default="all")

@@ -44,13 +44,29 @@ class ReleaseEntrypointTest(unittest.TestCase):
                     cwd=cwd, check=True, capture_output=True, text=True,
                 )
                 plan = json.loads(planned.stdout)
-                self.assertEqual(set(plan), {"workbuddy", "qclaw", "doubao"})
+                self.assertEqual(set(plan), {"workbuddy", "doubao"})
                 for target in plan.values():
                     self.assertEqual(target["status"], "pending_manual")
                     self.assertTrue(Path(target["upload_path"]).is_file())
                 self.assertEqual(len(plan["doubao"]["runtime_tests"][
                     "recommended_instructions"
                 ]), 3)
+
+    def test_build_entrypoint_accepts_local_pr_source(self) -> None:
+        commit = self.fixture.git("rev-parse", "main")
+        with tempfile.TemporaryDirectory() as temporary:
+            env = dict(os.environ, AISHIFU_PUBLISHER_NAME="Preview Build",
+                       AISHIFU_PUBLISHER_EMAIL="preview@example.invalid")
+            result = subprocess.run(
+                [sys.executable, str(TOOL_ROOT / "scripts/release.py"), "build",
+                 "--source-repo-url", str(self.fixture.source_repo),
+                 "--source-ref", commit, "--expected-version", "1.2.3",
+                 "--output", temporary],
+                cwd=REPOSITORY_ROOT, env=env, check=True, capture_output=True, text=True,
+            )
+            report = json.loads((Path(result.stdout.strip()) / "release.json").read_text())
+            self.assertEqual(report["source"]["commit"], commit)
+            self.assertEqual(set(report["artifacts"]), {"clawhub", "skillhub", "workbuddy", "doubao"})
 
     def test_channel_wrappers_resolve_entrypoint_and_output(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -66,7 +82,7 @@ class ReleaseEntrypointTest(unittest.TestCase):
             env = dict(os.environ, PATH=f"{temporary}{os.pathsep}{os.environ['PATH']}")
             env.pop("DIST_DIR", None)
             for cwd in (REPOSITORY_ROOT, TOOL_ROOT):
-                for wrapper in ("workbuddy/build-zip.sh", "qclaw/build.sh"):
+                for wrapper in ("workbuddy/build-zip.sh",):
                     for output in (None, str(temporary_root / "custom-output")):
                         with self.subTest(cwd=cwd, wrapper=wrapper, output=output):
                             invocation_env = dict(env)

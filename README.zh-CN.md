@@ -23,7 +23,7 @@ tools/
 
 ## 构建与发布工具
 
-[AI-Shifu Skill Release 工具](tools/ai-shifu-skill-release/README.md) 用于构建和校验 ClawHub、腾讯 SkillHub、WorkBuddy、QClaw 与豆包渠道包，并提供已有的发布流程。实现已从 `ai-shifu/ai-shifu-skill-release`（本地 `ai-shifu-skill-build` 项目）迁入本仓库维护。
+[AI-Shifu Skill Release 工具](tools/ai-shifu-skill-release/README.md) 用于构建和校验 ClawHub、腾讯 SkillHub、WorkBuddy 与豆包渠道包，并提供已有的发布流程。实现已从 `ai-shifu/ai-shifu-skill-release`（本地 `ai-shifu-skill-build` 项目）迁入本仓库维护。
 
 构建需要 Python 3.11+ 和 Git。源码仍取自 GitHub `ai-shifu/skills` 远端 `main` 的已提交内容，本地 Skill 修改不会进入产物。从仓库根目录执行：
 

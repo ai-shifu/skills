@@ -23,7 +23,7 @@ tools/
 
 ## Build and Release Tools
 
-The [AI-Shifu Skill Release tool](tools/ai-shifu-skill-release/README.md) builds and verifies packages for ClawHub, SkillHub, WorkBuddy, QClaw, and Doubao, and supports the existing publication workflow. Its implementation now lives in this repository, migrated from `ai-shifu/ai-shifu-skill-release` (the local `ai-shifu-skill-build` project).
+The [AI-Shifu Skill Release tool](tools/ai-shifu-skill-release/README.md) builds and verifies packages for ClawHub, SkillHub, WorkBuddy, and Doubao, and supports the existing publication workflow. Its implementation now lives in this repository, migrated from `ai-shifu/ai-shifu-skill-release` (the local `ai-shifu-skill-build` project).
 
 Builds require Python 3.11+ and Git. They still fetch the committed skills from GitHub `ai-shifu/skills` remote `main`; local skill edits are never build inputs. From the repository root:
 
