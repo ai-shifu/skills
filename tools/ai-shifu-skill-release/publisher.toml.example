@@ -2,7 +2,7 @@
 # The local file is ignored by Git; never commit it.
 # Build injects this identity into the WorkBuddy plugin.json author field.
 # AISHIFU_PUBLISHER_NAME / AISHIFU_PUBLISHER_EMAIL take precedence.
-# Without a configured identity, build warns and retains the placeholder.
+# Without a complete name and email, the WorkBuddy package build fails.
 
 [publisher]
 name = "your-name"
