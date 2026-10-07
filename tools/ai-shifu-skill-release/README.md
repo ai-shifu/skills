@@ -1,6 +1,6 @@
 ## Purpose and Location
 
-Build and publish the AI-Shifu Course Creator across five channels from one canonical source. This tool is maintained in `ai-shifu/skills`, under `tools/ai-shifu-skill-release/`. It was migrated from `ai-shifu/ai-shifu-skill-release`, also known locally as `ai-shifu-skill-build`. The old project is retained for historical reference.
+Build and publish the AI-Shifu Course Creator across four channels from one canonical source. This tool is maintained in `ai-shifu/skills`, under `tools/ai-shifu-skill-release/`. It was migrated from `ai-shifu/ai-shifu-skill-release`, also known locally as `ai-shifu-skill-build`. The old project is retained for historical reference.
 
 Moving the implementation does not change the release source: GitHub `ai-shifu/skills` remote `main` remains authoritative. Build, verification, preflight, and publication are separate operations.
 
@@ -19,22 +19,22 @@ python3 scripts/release.py verify dist/<release-id>
 
 Use the exact release directory printed by `build`, not a guessed latest directory. These commands do not upload packages. The standard working directory is the tool directory, so the default output is `tools/ai-shifu-skill-release/dist/` within the repository. `--output` remains relative to the caller's working directory; when invoking the script from the repository root, use `--output tools/ai-shifu-skill-release/dist` for the same location.
 
-The two channel entrypoints, `channels/workbuddy/build-zip.sh` and `channels/qclaw/build.sh`, invoke the same all-channel builder. Their default output is the tool's `dist/`; `DIST_DIR` overrides it. They do not implement separate packaging logic.
+The WorkBuddy entrypoint, `channels/workbuddy/build-zip.sh`, invokes the same all-channel builder. Its default output is the tool's `dist/`; `DIST_DIR` overrides it. It does not implement separate packaging logic.
 
 ## Build and Verification Contract
 
 The release trust chain is: a commit anchors the source, deterministic builds make package contents reproducible, a hash ledger detects changes, and publication preflight rejects stale candidates.
 
 1. **Pin the source.** Shallow-fetch remote `main` into a temporary repository, resolve its commit, and export skills with `git archive`. Local skill branches, uncommitted edits, runtime `.env` files, and update caches are not build inputs. Committed `.env.example` templates are included.
-2. **Render channel variants.** Generate the five packages from that export. Only allowlisted frontmatter changes are permitted. WorkBuddy and QClaw wrap the primary skill in plugin shells. Doubao wraps the course creator, learning report, and course direction advisor from the same source commit.
+2. **Render channel variants.** Generate the four packages from that export. Only allowlisted frontmatter changes are permitted. WorkBuddy wraps the primary skill in a plugin shell. Doubao wraps the course creator, learning report, and course direction advisor from the same source commit.
 3. **Write deterministic archives.** ZIP entries are sorted and use fixed timestamps. Identical inputs produce identical archive bytes.
-4. **Record hashes.** Hash all eight artifact digests in the fixed channel order to derive `release_sha256`. The release directory is `dist/<skill>-<version>-<commit-prefix>-<artifact-prefix>/`.
+4. **Record hashes.** Hash all seven artifact digests in the fixed channel order to derive `release_sha256`. The release directory is `dist/<skill>-<version>-<commit-prefix>-<artifact-prefix>/`.
 
 `verify` independently recalculates directory and ZIP hashes, verifies the canonical ClawHub `SKILL.md` against its source hash, compares channel contents byte for byte against their permitted variants, and checks the combined release hash and directory name. Directory hashes include paths, modes, and contents. Secret-pattern scanning and ZIP path checks also apply.
 
 Doubao verification additionally checks its single archive root, required files, three scenarios, three recommended instructions, three skill entries, embedded source manifests, avatar, and local-path leakage. Its embedded skills may only change an existing `version_management: standalone` to `plugin` and add `label` and an empty `icon`. Other source files and skill bodies must remain unchanged.
 
-The current `release.json` contract is **schema 4**. Schema 3 and older candidates lack the required embedded-source evidence and must be rebuilt. Loading a release for publication always runs verification first.
+The current `release.json` contract is **schema 5**. Schema 4 candidates include QClaw and must be rebuilt for the four-channel release. Loading a release for publication always runs verification first.
 
 `check` and `publish` use `git ls-remote` to compare the current remote `main` commit with the candidate's recorded source commit. If remote `main` has advanced, rebuild. This still applies when a commit only changes tools in the shared repository.
 
@@ -42,7 +42,7 @@ Builder provenance now records the enclosing `ai-shifu/skills` repository, commi
 
 ## Version Changes
 
-The primary skill's `skills/ai-shifu-course-creator/SKILL.md` version is the only version source. All five channel versions derive from it. The tool has no independent release version. Companion skills without their own versions are traced by the source commit and content hashes.
+The primary skill's `skills/ai-shifu-course-creator/SKILL.md` version is the only version source. All four channel versions derive from it. The tool has no independent release version. Companion skills without their own versions are traced by the source commit and content hashes.
 
 ```bash
 python3 scripts/release.py bump --skill-name ai-shifu-course-creator \
@@ -63,8 +63,6 @@ Options include `--level major|minor|patch`, `--changelog <text>`, `--draft`, an
 | `artifacts/skillhub/*.zip` | SkillHub archive for review and retention |
 | `artifacts/workbuddy/workbuddy-ai-shifu-<version>/` | Expanded WorkBuddy package for review |
 | `artifacts/workbuddy/*.zip` | WorkBuddy plugin upload |
-| `artifacts/qclaw/qclaw-ai-shifu-<version>/` | Expanded QClaw package for review |
-| `artifacts/qclaw/*.zip` | QClaw plugin upload |
 | `artifacts/doubao/doubao-ai-shifu-<version>/` | Expanded Doubao Work partner package |
 | `artifacts/doubao/*.zip` | Doubao submission ZIP |
 | `release.json` | Source commit, versions, builder provenance, and SHA-256 ledger |
@@ -93,7 +91,7 @@ Publication repeats authentication and dry runs. If any selected target fails pr
 
 ## Manual Channels
 
-WorkBuddy, QClaw, and Doubao require manual uploads:
+WorkBuddy and Doubao require manual uploads:
 
 ```bash
 python3 scripts/release.py manual-plan dist/<release-id> --target all
@@ -101,13 +99,13 @@ python3 scripts/release.py record-manual dist/<release-id> \
   --target workbuddy --status submitted --url <platform-page-url>
 ```
 
-Use `qclaw` or `doubao` for the other manual targets. Valid states are `submitted`, `verified`, and `failed`. `submitted` and `verified` require a platform URL; only a failure without a platform page can omit it. Do not label a submission as independently verified without supporting evidence.
+Use `doubao` for the other manual targets. Valid states are `submitted`, `verified`, and `failed`. `submitted` and `verified` require a platform URL; only a failure without a platform page can omit it. Do not label a submission as independently verified without supporting evidence.
 
 The Doubao plan lists every embedded skill, the recommended instructions, and runtime checks. Platform testing should cover starting a course from scratch, choosing a course direction, and converting uploaded material into a course, plus the retained learning-report capability. Record the result after the platform checks.
 
 ## Website Manifest Activation
 
-The website gate requires ClawHub and SkillHub to be `published` and WorkBuddy and QClaw to be `submitted` or `verified`. Doubao is tracked independently and does not block activation.
+The website gate requires ClawHub and SkillHub to be `published` and WorkBuddy to be `submitted` or `verified`. Doubao is tracked independently and does not block activation.
 
 ```bash
 python3 scripts/release.py activate-manifest dist/<release-id> --notes <release-notes>
@@ -128,9 +126,9 @@ Edge caching may delay the visible update by about five minutes.
 - Copy `publisher.toml.example` to `publisher.toml` **in this tool directory**, or use `AISHIFU_PUBLISHER_NAME` and `AISHIFU_PUBLISHER_EMAIL`. Environment variables take precedence. The local file is ignored by Git. Without an identity, WorkBuddy retains its publisher placeholder and build emits a warning.
 - `channels/workbuddy/.codebuddy-plugin/plugin.json` stores the `__SKILL_VERSION__` placeholder; build injects the canonical version and publisher identity.
 - ClawHub preserves the exported `SKILL.md` unchanged. Its slug and display name are CLI arguments. SkillHub only adds or replaces `slug` and `displayName` in frontmatter.
-- WorkBuddy and QClaw only change the embedded primary skill's version management to `plugin`. Their shells remain under `channels/`.
+- WorkBuddy only changes the embedded primary skill's version management to `plugin`. Its shell remains under `channels/`.
 - `channels/doubao/profile.json` owns the stable identity, display labels, and recommended instructions. Skill names and descriptions come from source frontmatter; icons remain empty for platform matching. The first two scenarios do not require uploaded material. The third scenario uses supplied material. The learning-report skill remains embedded even though it is not one of the three displayed scenarios.
-- `channels/avatars/expert.png` is the shared 512×512 avatar. WorkBuddy includes it through the build; QClaw requires a manual upload. Preserve the relative `channels/workbuddy/avatars` symlink.
+- `channels/avatars/expert.png` is the shared 512×512 avatar. WorkBuddy includes it through the build. Preserve the relative `channels/workbuddy/avatars` symlink.
 
 Engineering prose is English. Chinese channel prompts, display copy, platform enums, matching rules, and their test fixtures are intentional and must retain their behavior.
 

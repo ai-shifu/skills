@@ -46,9 +46,9 @@ SECRET_PATTERNS = (
 ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 SOURCE_REPOSITORY = "https://github.com/ai-shifu/skills.git"
 SOURCE_REF = "main"
-RELEASE_SCHEMA_VERSION = 4
+RELEASE_SCHEMA_VERSION = 5
 # Order feeds release_sha256; changing it breaks verification of existing releases.
-CHANNEL_ORDER = ("clawhub", "skillhub", "workbuddy", "qclaw", "doubao")
+CHANNEL_ORDER = ("clawhub", "skillhub", "workbuddy", "doubao")
 
 
 class BuildOptions(Protocol):
@@ -62,7 +62,7 @@ def channel_frontmatter_overrides(channel: str, skill_name: str, display_name: s
         return {}
     if channel == "skillhub":
         return {"slug": skill_name, "displayName": display_name}
-    if channel in {"workbuddy", "qclaw"}:
+    if channel == "workbuddy":
         return {"version_management": "plugin"}
     raise ValueError(f"Unsupported channel: {channel}")
 
@@ -616,26 +616,6 @@ def build_workbuddy_artifact(channel: str, context: BuildContext) -> dict:
     }
 
 
-def build_qclaw_artifact(channel: str, context: BuildContext) -> dict:
-    overrides = channel_frontmatter_overrides(channel, context.skill_name, context.display_name)
-    root_name = f"qclaw-ai-shifu-{context.version}"
-    stage_dir = context.artifacts / channel / root_name
-    stage_dir.mkdir(parents=True)
-    for filename in ("AGENTS.md", "SOUL.md", "IDENTITY.md"):
-        shutil.copy2(context.channels / "qclaw" / filename, stage_dir / filename)
-    build_skill_variant(context.source_skill, stage_dir / "skills" / context.skill_name, overrides)
-    scan_tree(stage_dir)
-    archive = context.artifacts / channel / f"{root_name}.zip"
-    write_zip(stage_dir, archive, root_name)
-    return {
-        "archive": context.record_path(archive),
-        "sha256": file_hash(archive),
-        "version": context.version,
-        "embedded_skill_root": f"{root_name}/skills/{context.skill_name}",
-        "frontmatter_overrides": overrides,
-    }
-
-
 def build_doubao_artifact(channel: str, context: BuildContext) -> dict:
     channel_root = context.channels / channel
     profile = doubao_package.load_profile(channel_root / "profile.json")
@@ -717,7 +697,6 @@ CHANNEL_BUILDERS: dict[str, Callable[[str, BuildContext], dict]] = {
     "clawhub": build_registry_artifact,
     "skillhub": build_registry_artifact,
     "workbuddy": build_workbuddy_artifact,
-    "qclaw": build_qclaw_artifact,
     "doubao": build_doubao_artifact,
 }
 
