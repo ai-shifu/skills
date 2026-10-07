@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from ..config import ReleaseConfig
+
 
 @dataclass(frozen=True)
 class BuildContext:
@@ -16,7 +18,11 @@ class BuildContext:
     skill_name: str
     version: str
     display_name: str
-    publisher: dict[str, str]
+    config: ReleaseConfig
+
+    @property
+    def publisher(self) -> dict[str, str]:
+        return self.config.publisher
 
     @property
     def artifacts(self) -> Path:

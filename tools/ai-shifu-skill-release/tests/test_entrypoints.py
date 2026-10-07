@@ -13,9 +13,8 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from support import ReleaseFixture
-
 from ai_shifu_release import TOOL_ROOT, cli
+from support import ReleaseFixture
 
 REPOSITORY_ROOT = TOOL_ROOT.parents[1]
 COMMANDS = (
@@ -144,6 +143,8 @@ class ReleaseEntrypointTest(unittest.TestCase):
                 symlinks=True,
                 ignore=shutil.ignore_patterns(".git", "__pycache__", "dist", "tests"),
             )
+            # This runtime copy is not the source of the candidate's configuration.
+            (standalone / "release.toml").write_text("malformed runtime config [")
             cwd = root / "caller"
             cwd.mkdir()
             result = self.invoke(

@@ -1,0 +1,22 @@
+[publisher]
+name = "heshaofu"
+email = "heshaofu2@gmail.com"
+
+[channels.clawhub]
+owner = "heshaofu2"
+endpoint = "https://clawhub.ai"
+package = "clawhub@latest"
+node_version = "22"
+
+[channels.skillhub]
+endpoint = "https://api.skillhub.cn"
+cli_version = "2026.8.5"
+cli_url = "https://skillhub-1388575217.cos.ap-guangzhou.myqcloud.com/install/skillhub-cli-2026.8.5.tar.gz"
+cli_sha256 = "3bbe2ba15ada2eb7a94a2b760fead83be5f4164ab28a6c8b0944dbc539f7e236"
+
+[channels.workbuddy]
+template_dir = "channels/workbuddy"
+
+[channels.doubao]
+profile = "channels/doubao/profile.json"
+workspace_dir = "channels/doubao/workspace"

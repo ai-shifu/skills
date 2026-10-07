@@ -7,6 +7,7 @@ import os
 import re
 from pathlib import Path
 
+from . import config as release_config
 from . import github_releases, publishing
 from .release_state import ReleaseContext
 
@@ -27,7 +28,13 @@ def classify_submission(target: str, response: object) -> str:
 
 
 def publish(
-    tag: str, repository: str, target: str, output: Path, *, execute: bool
+    tag: str,
+    repository: str,
+    target: str,
+    output: Path,
+    *,
+    execute: bool,
+    config: release_config.ReleaseConfig | None = None,
 ) -> dict:
     """Submit one immutable release after validating content and retry eligibility."""
     if target not in publishing.AUTOMATED_TARGETS:
@@ -40,6 +47,11 @@ def publish(
         )
     release_dir = github_releases.download(tag, repository, output)
     release = ReleaseContext.load(release_dir)
+    expected_commit = os.environ.get("RELEASE_SOURCE_COMMIT", "").strip()
+    if expected_commit and expected_commit != release.source_commit:
+        raise ValueError(
+            "Downloaded Release source differs from the configuration source commit"
+        )
     base = {
         "target": target,
         "tag": tag,
@@ -47,19 +59,8 @@ def publish(
         "version": release.version,
         "archive_sha256": release.metadata["artifacts"][target]["archive_sha256"],
     }
-    owner = (
-        os.environ.get("CLAWHUB_OWNER", "").strip().lstrip("@")
-        if target == "clawhub"
-        else ""
-    )
-    if target == "clawhub" and not re.fullmatch(r"[A-Za-z0-9_-]+", owner):
-        return {
-            **base,
-            "status": "failed",
-            "reason": "ClawHub publisher owner is not configured",
-        }
     publisher = publishing.AutomatedPublisher(
-        release, require_current_main=False, clawhub_owner=owner
+        release, require_current_main=False, config=config
     )
     try:
         if target == "clawhub" and publisher.existing_clawhub_version():

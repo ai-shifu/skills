@@ -1,4 +1,4 @@
-"""Fetch and export the selected Git source and publisher identity."""
+"""Fetch and export the selected Git source."""
 
 from __future__ import annotations
 
@@ -7,8 +7,6 @@ import re
 import subprocess
 import tarfile
 from pathlib import Path, PurePosixPath
-
-import tomllib
 
 from ai_shifu_release.artifacts import is_excluded
 
@@ -34,26 +32,6 @@ def git_metadata(project: Path) -> tuple[str | None, str | None, bool | None]:
         return commit, remote, dirty
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         return None, None, None
-
-
-def load_publisher(source_repo: Path, commit: str) -> dict[str, str]:
-    """Read the publisher identity committed with the selected source revision."""
-    path = "tools/ai-shifu-skill-release/publisher.toml"
-    try:
-        contents = run("git", "show", f"{commit}:{path}", cwd=source_repo)
-    except subprocess.CalledProcessError as exc:
-        raise ValueError(f"Missing publisher configuration at {path}") from exc
-    config = tomllib.loads(contents)
-    publisher = config.get("publisher")
-    if not isinstance(publisher, dict):
-        raise ValueError("publisher.toml must contain a [publisher] section")
-    for field in ("name", "email"):
-        value = publisher.get(field)
-        if not isinstance(value, str) or not value.strip():
-            raise ValueError(f"publisher.toml publisher.{field} must be non-empty")
-        if "__PUBLISHER_" in value or value in {"your-name", "you@example.com"}:
-            raise ValueError(f"publisher.toml publisher.{field} contains a placeholder")
-    return {"name": publisher["name"], "email": publisher["email"]}
 
 
 def export_tree(

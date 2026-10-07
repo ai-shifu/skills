@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
-from ai_shifu_release import publishing, release_state
+from ai_shifu_release import TOOL_ROOT, config, publishing, release_state
 
 
 class FakeRunner:
@@ -41,6 +43,7 @@ class PublishReleaseTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.release_dir = Path(self.temporary.name)
+        self.config = config.load(TOOL_ROOT / "release.toml")
         clawhub = self.release_dir / "artifacts/clawhub/ai-shifu-course-creator"
         skillhub = self.release_dir / "artifacts/skillhub/ai-shifu-course-creator"
         clawhub.mkdir(parents=True)
@@ -87,6 +90,15 @@ class PublishReleaseTest(unittest.TestCase):
                     "archive_sha256": "doubao-sha",
                     "tree_sha256": "doubao-tree-sha",
                     "version": "1.2.3",
+                    "source_profile_json": json.dumps(
+                        {
+                            "recommended_instructions": [
+                                "Released instruction one",
+                                "Released instruction two",
+                                "Released instruction three",
+                            ]
+                        }
+                    ),
                     "embedded_skills": {
                         "ai-shifu-course-creator": {},
                         "ai-shifu-learning-report": {},
@@ -108,6 +120,7 @@ class PublishReleaseTest(unittest.TestCase):
             runner=runner,
             clawhub_command=("/node22/node", "/node22/npx-cli.js"),
             skillhub_cli=Path("/bin/skillhub"),
+            config=self.config,
         )
 
     def test_check_uses_authentication_and_dry_run_only(self) -> None:
@@ -163,6 +176,79 @@ class PublishReleaseTest(unittest.TestCase):
         self.assertEqual(results["clawhub"]["artifact_sha256"], "clawhub-tree-sha")
         self.assertEqual(results["skillhub"]["artifact_sha256"], "skillhub-tree-sha")
 
+    def test_channel_config_controls_every_authentication_and_publish_command(
+        self,
+    ) -> None:
+        runner = FakeRunner()
+        publisher = self.publisher(runner)
+        publisher._config = replace(
+            self.config,
+            clawhub=replace(
+                self.config.clawhub,
+                owner="configured-owner",
+                endpoint="https://clawhub.example",
+                package="clawhub@1.2.3",
+            ),
+            skillhub=replace(self.config.skillhub, endpoint="https://skillhub.example"),
+        )
+        with patch.dict(os.environ, {"CLAWHUB_OWNER": ""}):
+            result = publisher.check(("clawhub", "skillhub"))
+        self.assertTrue(all(item["status"] == "ready" for item in result.values()))
+        clawhub_commands = [
+            command for command in runner.commands if "clawhub@1.2.3" in command
+        ]
+        self.assertEqual(len(clawhub_commands), 2)
+        for command in clawhub_commands:
+            self.assertEqual(
+                command[command.index("--registry") + 1], "https://clawhub.example"
+            )
+        publication = next(
+            command for command in clawhub_commands if "publish" in command
+        )
+        self.assertEqual(
+            publication[publication.index("--owner") + 1], "configured-owner"
+        )
+        for command in runner.commands:
+            if command[0] == "/bin/skillhub":
+                self.assertEqual(
+                    command[command.index("--host") + 1], "https://skillhub.example"
+                )
+
+    def test_nonempty_owner_override_and_empty_environment_fallback(self) -> None:
+        publisher = self.publisher(FakeRunner())
+        with patch.dict(os.environ, {"CLAWHUB_OWNER": "@local-owner"}):
+            self.assertEqual(publisher.clawhub_owner, "local-owner")
+        with patch.dict(os.environ, {"CLAWHUB_OWNER": ""}):
+            self.assertEqual(publisher.clawhub_owner, self.config.clawhub.owner)
+
+    def test_configured_node_version_is_used_when_resolving_clawhub(self) -> None:
+        publisher = self.publisher(FakeRunner())
+        publisher.clawhub_command = None
+        publisher._config = replace(
+            self.config, clawhub=replace(self.config.clawhub, node_version="24")
+        )
+        with patch.object(
+            publishing, "resolve_clawhub_command", return_value=("/node24/npx",)
+        ) as resolve:
+            publisher.check(("clawhub",))
+            resolve.assert_called_once_with("24")
+
+    def test_release_configuration_is_loaded_lazily_once_from_release(self) -> None:
+        with patch.object(release_state, "verify"):
+            context = release_state.ReleaseContext.load(self.release_dir)
+        with patch.object(
+            publishing.release_config, "load_for_release", return_value=self.config
+        ) as load:
+            publisher = publishing.AutomatedPublisher(
+                context,
+                runner=FakeRunner(),
+                clawhub_command=("/bin/npx",),
+                skillhub_cli=Path("/bin/skillhub"),
+            )
+            load.assert_not_called()
+            publisher.check(("clawhub", "skillhub"))
+            load.assert_called_once_with(context)
+
     def test_publish_records_partial_failure_without_rebuilding(self) -> None:
         runner = FakeRunner(failing_publish="skillhub")
         results = self.publisher(runner).publish(("clawhub", "skillhub"))
@@ -204,6 +290,7 @@ class PublishReleaseTest(unittest.TestCase):
             runner=runner,
             require_current_main=False,
             skillhub_cli=Path("/bin/skillhub"),
+            config=self.config,
         )
         results = publisher.publish(("skillhub",))
         self.assertEqual(results["skillhub"]["status"], "published")
@@ -227,7 +314,12 @@ class PublishReleaseTest(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            len(plan["doubao"]["runtime_tests"]["recommended_instructions"]), 3
+            plan["doubao"]["runtime_tests"]["recommended_instructions"],
+            [
+                "Released instruction one",
+                "Released instruction two",
+                "Released instruction three",
+            ],
         )
         self.assertIn(
             "all_embedded_skills_triggered",

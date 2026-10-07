@@ -13,6 +13,7 @@ from ai_shifu_release.artifacts import (
     write_zip,
 )
 from ai_shifu_release.channels import BuildContext
+from ai_shifu_release.config import channel_path
 from ai_shifu_release.skill_metadata import (
     SEMVER,
     build_skill_variant,
@@ -220,7 +221,9 @@ def build_workbuddy_artifact(channel: str, context: BuildContext) -> dict:
     root_name = f"workbuddy-ai-shifu-{context.version}"
     stage_dir = context.artifacts / channel / root_name
     copy_tree(
-        context.channels / "workbuddy", stage_dir, ignored={"skills", "build-zip.sh"}
+        channel_path(context.channels, context.config.workbuddy.template_dir),
+        stage_dir,
+        ignored={"skills", "build-zip.sh"},
     )
     copy_tree(context.channels / "avatars", stage_dir / "avatars")
     stage_plugin_path = stage_dir / ".codebuddy-plugin/plugin.json"

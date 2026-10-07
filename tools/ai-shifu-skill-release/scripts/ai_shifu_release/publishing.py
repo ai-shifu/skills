@@ -11,9 +11,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from . import TOOL_ROOT
+from . import config as release_config
 from .artifacts import artifact_path
-from .channels import doubao
 from .release_state import ReleaseContext, ReleaseReport
 
 AUTOMATED_TARGETS = ("clawhub", "skillhub")
@@ -43,28 +42,35 @@ def run_command(command: list[str]) -> CommandResult:
     return CommandResult(result.stdout.strip(), result.stderr.strip())
 
 
-def resolve_clawhub_command() -> tuple[str, ...]:
+def resolve_clawhub_command(node_version: str) -> tuple[str, ...]:
     # Portable resolution order: explicit override, then a plain `npx` on PATH,
     # then the nvm-based fallback for machines that only expose Node via nvm.
-    # ClawHub still requires Node 22; when relying on PATH make sure `npx`
-    # resolves to a Node 22 runtime (see references/publishing.md).
+    # PATH must expose the Node runtime selected by release.toml.
     override = os.environ.get("CLAWHUB_NPX")
     if override:
         return (str(Path(override).expanduser().resolve()),)
     npx = shutil.which("npx")
     if npx:
         return (npx,)
-    return _resolve_clawhub_via_nvm()
+    return _resolve_clawhub_via_nvm(node_version)
 
 
-def _resolve_clawhub_via_nvm() -> tuple[str, ...]:
-    result = run_command(["zsh", "-lc", "source ~/.nvm/nvm.sh && nvm which 22"])
+def _resolve_clawhub_via_nvm(node_version: str) -> tuple[str, ...]:
+    result = run_command(
+        [
+            "zsh",
+            "-lc",
+            'source ~/.nvm/nvm.sh && nvm which "$1"',
+            "release-node",
+            node_version,
+        ]
+    )
     node = Path(result.stdout)
     npx_cli = node.parent.parent / "lib/node_modules/npm/bin/npx-cli.js"
     if not node.is_file() or not npx_cli.is_file():
         raise ValueError(
             "Cannot locate a Node runtime for clawhub. Set CLAWHUB_NPX to an npx "
-            "binary, put `npx` (Node 22) on PATH, or install Node 22 via nvm."
+            f"binary, put `npx` (Node {node_version}) on PATH, or install Node {node_version} via nvm."
         )
     path = f"{node.parent}:{os.environ.get('PATH', '')}"
     return ("/usr/bin/env", f"PATH={path}", str(node), str(npx_cli))
@@ -90,22 +96,50 @@ class AutomatedPublisher:
         clawhub_owner: str = "",
         skillhub_cli: Path | None = None,
         require_current_main: bool = True,
+        config: release_config.ReleaseConfig | None = None,
     ) -> None:
         self.release = release
         self.runner = runner
         self.clawhub_command = clawhub_command
-        self.clawhub_owner = clawhub_owner
+        self._clawhub_owner = clawhub_owner
+        self._config = config
         self.skillhub_cli = skillhub_cli
         self.require_current_main = require_current_main
         self.report = ReleaseReport(release)
+
+    @property
+    def config(self) -> release_config.ReleaseConfig:
+        """Load channel settings from this release's exact source commit once."""
+        if self._config is None:
+            self._config = release_config.load_for_release(self.release)
+        return self._config
+
+    @property
+    def clawhub_owner(self) -> str:
+        """Resolve the same publisher owner for local and downloaded releases."""
+        owner = (
+            self._clawhub_owner.strip()
+            or os.environ.get("CLAWHUB_OWNER", "").strip()
+            or self.config.clawhub.owner
+        ).lstrip("@")
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", owner):
+            raise ValueError("ClawHub publisher owner is not configured")
+        return owner
+
+    def _clawhub_invocation(self) -> list[str]:
+        return [
+            *self._clawhub_command(),
+            "--yes",
+            self.config.clawhub.package,
+            "--registry",
+            self.config.clawhub.endpoint,
+        ]
 
     def existing_clawhub_version(self) -> bool:
         """Return whether the configured owner's exact version already exists."""
         identity = f"@{self.clawhub_owner}/{self.release.skill_name}"
         command = [
-            *self._clawhub_command(),
-            "--yes",
-            "clawhub@latest",
+            *self._clawhub_invocation(),
             "inspect",
             identity,
             "--version",
@@ -132,7 +166,7 @@ class AutomatedPublisher:
             "--zip",
             str(artifact_path(self.release.directory, archive)),
             "--host",
-            "https://api.skillhub.cn",
+            self.config.skillhub.endpoint,
         ]
         try:
             response = self.runner(command)
@@ -192,7 +226,7 @@ class AutomatedPublisher:
 
     def _authenticate(self, target: str) -> None:
         if target == "clawhub":
-            self.runner([*self._clawhub_command(), "--yes", "clawhub@latest", "whoami"])
+            self.runner([*self._clawhub_invocation(), "whoami"])
         elif target == "skillhub":
             self.runner(
                 [
@@ -200,7 +234,7 @@ class AutomatedPublisher:
                     "auth",
                     "whoami",
                     "--host",
-                    "https://api.skillhub.cn",
+                    self.config.skillhub.endpoint,
                 ]
             )
         else:
@@ -215,9 +249,7 @@ class AutomatedPublisher:
         changelog = f"Release {self.release.version} from source commit {self.release.source_commit}"
         if target == "clawhub":
             command = [
-                *self._clawhub_command(),
-                "--yes",
-                "clawhub@latest",
+                *self._clawhub_invocation(),
                 "skill",
                 "publish",
                 common[0],
@@ -225,7 +257,8 @@ class AutomatedPublisher:
                 self.release.skill_name,
                 "--name",
                 self.release.display_name,
-                *(["--owner", self.clawhub_owner] if self.clawhub_owner else []),
+                "--owner",
+                self.clawhub_owner,
                 *common[1:],
                 "--source-repo",
                 self.release.source_repo,
@@ -245,7 +278,7 @@ class AutomatedPublisher:
                 "--changelog",
                 changelog,
                 "--host",
-                "https://api.skillhub.cn",
+                self.config.skillhub.endpoint,
             ]
         else:
             raise ValueError(f"Unsupported target: {target}")
@@ -255,7 +288,9 @@ class AutomatedPublisher:
 
     def _clawhub_command(self) -> tuple[str, ...]:
         if self.clawhub_command is None:
-            self.clawhub_command = resolve_clawhub_command()
+            self.clawhub_command = resolve_clawhub_command(
+                self.config.clawhub.node_version
+            )
         return self.clawhub_command
 
     def _skillhub_cli(self) -> Path:
@@ -329,7 +364,7 @@ class ManualPublisher:
         if artifact.get("embedded_skills"):
             result["embedded_skills"] = sorted(artifact["embedded_skills"])
         if target == "doubao":
-            profile = doubao.load_profile(TOOL_ROOT / "channels/doubao/profile.json")
+            profile = json.loads(artifact["source_profile_json"])
             result["runtime_tests"] = {
                 "recommended_instructions": profile["recommended_instructions"],
                 "required_checks": [

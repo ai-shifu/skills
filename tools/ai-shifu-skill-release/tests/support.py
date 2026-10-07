@@ -27,13 +27,11 @@ class ReleaseFixture:
             self.source_repo
             / "tools/ai-shifu-skill-release/channels/workbuddy/.codebuddy-plugin/plugin.json"
         )
-        self.publisher_config = (
-            self.source_repo / "tools/ai-shifu-skill-release/publisher.toml"
+        self.release_config = (
+            self.source_repo / "tools/ai-shifu-skill-release/release.toml"
         )
-        self.publisher_config.write_text(
-            '[publisher]\nname = "AI-Shifu"\nemail = "release@ai-shifu.cn"\n',
-            encoding="utf-8",
-        )
+        shutil.copy2(TOOL_ROOT / "release.toml", self.release_config)
+        self.write_publisher("AI-Shifu", "release@ai-shifu.cn")
         self.output = self.root / "dist"
         self.skill = self.source_repo / "skills/ai-shifu-course-creator"
         self.skill.mkdir(parents=True)
@@ -139,6 +137,15 @@ class ReleaseFixture:
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
+
+    def write_publisher(self, name: str, email: str) -> None:
+        document = self.release_config.read_text(encoding="utf-8")
+        prefix, publisher = document.split("[publisher]\n", 1)
+        _, channels = publisher.split("\n[", 1)
+        self.release_config.write_text(
+            f"{prefix}[publisher]\nname = {json.dumps(name)}\nemail = {json.dumps(email)}\n\n[{channels}",
+            encoding="utf-8",
+        )
 
     def git(self, *args: str) -> str:
         return subprocess.run(

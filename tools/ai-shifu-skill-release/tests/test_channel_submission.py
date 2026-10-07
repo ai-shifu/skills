@@ -7,46 +7,84 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
-
-from support import ReleaseFixture
+from unittest.mock import MagicMock, PropertyMock, patch
 
 from ai_shifu_release import (
+    TOOL_ROOT,
     channel_submission,
+    config,
     github_releases,
     publishing,
     release_state,
 )
+from support import ReleaseFixture
 
 
 class ChannelSubmissionTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        cls.config = config.load(TOOL_ROOT / "release.toml")
         cls.fixture = ReleaseFixture()
         cls.fixture.setUp()
         cls.addClassCleanup(cls.fixture.tearDown)
         cls.commit = cls.fixture.git("rev-parse", "main")
         cls.release_dir = cls.fixture.build(source_ref=cls.commit)
 
-    def test_clawhub_requires_existing_publisher_owner(self) -> None:
+    def test_clawhub_owner_defaults_to_release_configuration(self) -> None:
+        commands = []
+
+        def runner(command):
+            commands.append(command)
+            if "inspect" in command:
+                raise publishing.CommandFailure(command, "not found")
+            return publishing.CommandResult("version accepted")
+
+        publisher_class = publishing.AutomatedPublisher
+
+        def create_publisher(release, **options):
+            return publisher_class(
+                release, runner=runner, clawhub_command=("/bin/npx",), **options
+            )
+
         with (
             tempfile.TemporaryDirectory() as temporary,
-            patch.dict(os.environ, {"CLAWHUB_OWNER": ""}),
+            patch.dict(os.environ, {"CLAWHUB_OWNER": ""}, clear=True),
+            patch.object(
+                release_state.ReleaseContext,
+                "source_repo",
+                new_callable=PropertyMock,
+                return_value="ai-shifu/skills",
+            ),
             patch.object(
                 channel_submission.github_releases,
                 "download",
                 return_value=self.release_dir,
             ),
             patch.object(
-                channel_submission.publishing, "AutomatedPublisher"
-            ) as publisher,
+                channel_submission.publishing,
+                "AutomatedPublisher",
+                side_effect=create_publisher,
+            ),
         ):
             result = channel_submission.publish(
-                "v1.2.3", "ai-shifu/skills", "clawhub", Path(temporary), execute=True
+                "v1.2.3",
+                "ai-shifu/skills",
+                "clawhub",
+                Path(temporary),
+                execute=True,
+                config=self.config,
             )
-        self.assertEqual(result["status"], "failed")
-        self.assertIn("owner", result["reason"])
-        publisher.assert_not_called()
+        self.assertEqual(result["status"], "submitted")
+        lookup = next(command for command in commands if "inspect" in command)
+        self.assertIn(f"@{self.config.clawhub.owner}/ai-shifu-course-creator", lookup)
+        for command in commands:
+            self.assertEqual(
+                command[command.index("--registry") + 1], self.config.clawhub.endpoint
+            )
+            if "publish" in command:
+                self.assertEqual(
+                    command[command.index("--owner") + 1], self.config.clawhub.owner
+                )
 
     def test_skillhub_submits_without_approval_switch(self) -> None:
         with (
@@ -71,7 +109,12 @@ class ChannelSubmissionTest(unittest.TestCase):
             }
             publisher.return_value = instance
             result = channel_submission.publish(
-                "v1.2.3", "ai-shifu/skills", "skillhub", Path(temporary), execute=True
+                "v1.2.3",
+                "ai-shifu/skills",
+                "skillhub",
+                Path(temporary),
+                execute=True,
+                config=self.config,
             )
         self.assertEqual(result["status"], "pending_review")
         self.assertEqual(result["archive_sha256"], self._archive_hash("skillhub"))
@@ -91,6 +134,7 @@ class ChannelSubmissionTest(unittest.TestCase):
                     "skillhub",
                     Path(temporary),
                     execute=True,
+                    config=self.config,
                 )
             download.assert_not_called()
 
@@ -114,10 +158,15 @@ class ChannelSubmissionTest(unittest.TestCase):
             }
             publisher.return_value = instance
             result = channel_submission.publish(
-                "v1.2.3", "ai-shifu/skills", "clawhub", Path(temporary), execute=True
+                "v1.2.3",
+                "ai-shifu/skills",
+                "clawhub",
+                Path(temporary),
+                execute=True,
+                config=self.config,
             )
         self.assertEqual(result["status"], "submitted")
-        self.assertEqual(publisher.call_args.kwargs["clawhub_owner"], "heshaofu2")
+        self.assertIs(publisher.call_args.kwargs["config"], self.config)
         instance.publish.assert_called_once_with(("clawhub",))
 
     def test_existing_clawhub_version_requires_review(self) -> None:
@@ -135,10 +184,15 @@ class ChannelSubmissionTest(unittest.TestCase):
         ):
             publisher.return_value.existing_clawhub_version.return_value = True
             result = channel_submission.publish(
-                "v1.2.3", "ai-shifu/skills", "clawhub", Path(temporary), execute=True
+                "v1.2.3",
+                "ai-shifu/skills",
+                "clawhub",
+                Path(temporary),
+                execute=True,
+                config=self.config,
             )
         self.assertEqual(result["status"], "needs_review")
-        self.assertEqual(publisher.call_args.kwargs["clawhub_owner"], "heshaofu2")
+        self.assertIs(publisher.call_args.kwargs["config"], self.config)
         publisher.return_value.publish.assert_not_called()
 
     def test_existing_skillhub_version_is_not_resubmitted(self) -> None:
@@ -156,7 +210,12 @@ class ChannelSubmissionTest(unittest.TestCase):
         ):
             publisher.return_value.existing_skillhub_version.return_value = True
             result = channel_submission.publish(
-                "v1.2.3", "ai-shifu/skills", "skillhub", Path(temporary), execute=True
+                "v1.2.3",
+                "ai-shifu/skills",
+                "skillhub",
+                Path(temporary),
+                execute=True,
+                config=self.config,
             )
         self.assertEqual(result["status"], "already_verified")
         publisher.return_value.publish.assert_not_called()
@@ -172,6 +231,7 @@ class ChannelSubmissionTest(unittest.TestCase):
             runner=missing,
             skillhub_cli=Path("/bin/skillhub"),
             require_current_main=False,
+            config=self.config,
         )
         self.assertFalse(publisher.existing_skillhub_version())
 
@@ -199,7 +259,12 @@ class ChannelSubmissionTest(unittest.TestCase):
                 "unknown state"
             )
             result = channel_submission.publish(
-                "v1.2.3", "ai-shifu/skills", "skillhub", Path(temporary), execute=True
+                "v1.2.3",
+                "ai-shifu/skills",
+                "skillhub",
+                Path(temporary),
+                execute=True,
+                config=self.config,
             )
         self.assertEqual(result["status"], "needs_review")
         publisher.return_value.publish.assert_not_called()
@@ -230,8 +295,35 @@ class ChannelSubmissionTest(unittest.TestCase):
                         "skillhub",
                         root / "output",
                         execute=True,
+                        config=self.config,
                     )
                 publisher.assert_not_called()
+
+    def test_configuration_commit_must_match_downloaded_release_before_publication(
+        self,
+    ) -> None:
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            patch.dict(os.environ, {"RELEASE_SOURCE_COMMIT": "f" * 40}, clear=True),
+            patch.object(
+                channel_submission.github_releases,
+                "download",
+                return_value=self.release_dir,
+            ),
+            patch.object(
+                channel_submission.publishing, "AutomatedPublisher"
+            ) as publisher,
+        ):
+            with self.assertRaisesRegex(ValueError, "configuration source commit"):
+                channel_submission.publish(
+                    "v1.2.3",
+                    "ai-shifu/skills",
+                    "clawhub",
+                    Path(temporary),
+                    execute=True,
+                    config=self.config,
+                )
+            publisher.assert_not_called()
 
     def test_new_runtime_submits_old_release_after_source_main_advances(self) -> None:
         fixture = ReleaseFixture()
@@ -309,6 +401,7 @@ class ChannelSubmissionTest(unittest.TestCase):
                 "skillhub",
                 fixture.root / "download",
                 execute=True,
+                config=self.config,
             )
 
         self.assertEqual(result["status"], "pending_review")

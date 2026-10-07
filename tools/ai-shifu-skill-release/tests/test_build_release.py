@@ -8,12 +8,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from support import ReleaseFixture
-
 from ai_shifu_release import artifacts, build, skill_metadata
 from ai_shifu_release import verify as verification
 from ai_shifu_release.channels import doubao as doubao_channel
 from ai_shifu_release.channels import workbuddy
+from support import ReleaseFixture
 
 TOOL_ROOT = Path(__file__).resolve().parents[1]
 
@@ -267,10 +266,7 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
             / "tools/ai-shifu-skill-release/channels/workbuddy/.codebuddy-plugin/plugin.json"
         )
         template.write_text("tampered working tree", encoding="utf-8")
-        self.publisher_config.write_text(
-            '[publisher]\nname = "Wrong Author"\nemail = "wrong@example.com"\n',
-            encoding="utf-8",
-        )
+        self.write_publisher("Wrong Author", "wrong@example.com")
         release_dir = self.build(source_ref=commit)
         report = json.loads((release_dir / "release.json").read_text())
         archive = release_dir / report["artifacts"]["workbuddy"]["archive"]
@@ -284,15 +280,10 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
         )
 
     def test_build_requires_publisher_identity(self) -> None:
-        self.publisher_config.write_text(
-            '[publisher]\nname = "__PUBLISHER_NAME__"\nemail = "__PUBLISHER_EMAIL__"\n',
-            encoding="utf-8",
-        )
-        self.git("add", "tools/ai-shifu-skill-release/publisher.toml")
+        self.write_publisher("__PUBLISHER_NAME__", "__PUBLISHER_EMAIL__")
+        self.git("add", "tools/ai-shifu-skill-release/release.toml")
         self.git("commit", "-m", "invalid author fixture")
-        with self.assertRaisesRegex(
-            ValueError, "publisher.toml publisher.name contains a placeholder"
-        ):
+        with self.assertRaisesRegex(ValueError, "publisher.name.*placeholder"):
             self.build()
 
     def test_build_uses_configured_author_even_with_environment_values(self) -> None:

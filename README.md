@@ -33,7 +33,7 @@ python3 scripts/release.py build --skill-name ai-shifu-course-creator
 python3 scripts/release.py verify dist/<release-id>
 ```
 
-Use the exact release directory printed by `build`. Building and verifying do not upload packages. See the tool README for publisher configuration, channel-specific dependencies, and publication commands. Maintainer agents can read the tool's [release skill](tools/ai-shifu-skill-release/SKILL.md); it is separate from the three business skills above.
+Use the exact release directory printed by `build`. Building and verifying do not upload packages. See the tool README for `release.toml` configuration, channel-specific dependencies, and publication commands. Maintainer agents can read the tool's [release skill](tools/ai-shifu-skill-release/SKILL.md); it is separate from the three business skills above.
 
 ## Learning Report Path
 
@@ -43,8 +43,7 @@ Use **AI-Shifu Learning Report** after a course has learning activity and you ne
 - an executive-first HTML report that works without external assets and prints cleanly to PDF;
 - three to five evidence-linked teaching recommendations with confidence and a verification method.
 
-The report does not expose learner identities, raw course identifiers, or raw follow-up text. Business and credit data stay out of the report unless the user explicitly asks for the optional operations appendix.
-Reports default to Simplified Chinese; English is used only when explicitly requested.
+The report does not expose learner identities, raw course identifiers, or raw follow-up text. Business and credit data stay out of the report unless the user explicitly asks for the optional operations appendix. Reports default to Simplified Chinese; English is used only when explicitly requested.
 
 ## Usage
 

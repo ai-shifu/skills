@@ -5,7 +5,7 @@ description: "Release AI-Shifu skills using the maintained release.py workflow: 
 
 ## Execution Environment
 
-All operations go through this tool's `scripts/release.py`. The tagged GitHub workflow uses its `github-release` subcommand after verification. Channel jobs use `submit-channel`, which downloads and verifies Release attachments before submission. Do not duplicate packaging logic or call channel publication commands directly.
+All operations go through this tool's `scripts/release.py`. Publisher identity and non-secret channel settings belong to `release.toml` and are read from the release's pinned source revision. The tagged GitHub workflow uses its `github-release` subcommand after verification. Channel jobs use `submit-channel`, which downloads and verifies Release attachments before submission. Do not duplicate packaging logic or call channel publication commands directly.
 
 1. Locate the directory containing **this** `SKILL.md`. In `ai-shifu/skills`, it is `tools/ai-shifu-skill-release/`, not the Git repository root. Use it as the working directory for the commands below. A standalone copy uses the same sibling layout.
 2. Confirm that `scripts/release.py` and `channels/workbuddy/.codebuddy-plugin/plugin.json` exist there. Stop if the intended tool cannot be located.
@@ -94,7 +94,7 @@ Before ClawHub publication, inspect version history:
 npx --yes clawhub@latest inspect ai-shifu-course-creator --versions --json
 ```
 
-ClawHub requires Node 22. The publisher resolves npx from `CLAWHUB_NPX` or `--clawhub-npx`, then PATH, then the nvm Node 22 fallback; see [Publishing Environment](references/publishing.md).
+Use the Node version and CLI package configured under `[channels.clawhub]` in `release.toml`; the example commands use its defaults. The publisher resolves npx from `CLAWHUB_NPX` or `--clawhub-npx`, then PATH, then the nvm fallback for the configured Node version; see [Publishing Environment](references/publishing.md).
 
 Publishing an existing version can overwrite that version's content. Point out the existing version and obtain explicit confirmation before proceeding.
 

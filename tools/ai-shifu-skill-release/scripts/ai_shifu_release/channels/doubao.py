@@ -9,7 +9,7 @@ import re
 import shutil
 import struct
 import unicodedata
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from ai_shifu_release.artifacts import (
     artifact_path,
@@ -28,6 +28,7 @@ from ai_shifu_release.artifacts import (
     zip_subtree_contents,
 )
 from ai_shifu_release.channels import BuildContext
+from ai_shifu_release.config import channel_path
 from ai_shifu_release.skill_metadata import (
     build_skill_variant,
     read_skill_document,
@@ -432,8 +433,7 @@ def validate_package(
 
 
 def build_doubao_artifact(channel: str, context: BuildContext) -> dict:
-    channel_root = context.channels / channel
-    profile_path = channel_root / "profile.json"
+    profile_path = channel_path(context.channels, context.config.doubao.profile)
     profile_bytes = profile_path.read_bytes()
     profile = json.loads(profile_bytes)
     validate_profile(profile)
@@ -445,8 +445,23 @@ def build_doubao_artifact(channel: str, context: BuildContext) -> dict:
     stage_dir = context.artifacts / channel / root_name
     workspace = stage_dir / "workspace"
     stage_dir.mkdir(parents=True)
-    shutil.copy2(channel_root / "avatar.png", stage_dir / "avatar.png")
-    copy_tree(channel_root / "workspace", workspace)
+    avatar_relative = PurePosixPath(profile["avatar"])
+    if (
+        avatar_relative.is_absolute()
+        or ".." in avatar_relative.parts
+        or "\\" in profile["avatar"]
+    ):
+        raise ValueError("Doubao avatar must be a relative package path")
+    avatar = profile_path.parent / avatar_relative
+    channels_root = context.channels.resolve()
+    if not avatar.resolve().is_relative_to(channels_root):
+        raise ValueError("Doubao avatar must stay inside channels/")
+    target_avatar = stage_dir / avatar_relative
+    target_avatar.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(avatar, target_avatar)
+    copy_tree(
+        channel_path(context.channels, context.config.doubao.workspace_dir), workspace
+    )
 
     source_documents: dict[str, tuple[str, str]] = {}
     source_frontmatter: dict[str, dict[str, str]] = {}

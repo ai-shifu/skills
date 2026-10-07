@@ -22,6 +22,7 @@ from ai_shifu_release.channels.clawhub_skillhub import (
 )
 from ai_shifu_release.channels.doubao import build_doubao_artifact
 from ai_shifu_release.channels.workbuddy import build_workbuddy_artifact
+from ai_shifu_release.config import channel_path, load_from_source
 from ai_shifu_release.skill_metadata import read_frontmatter, split_skill_document
 from ai_shifu_release.source import (
     SOURCE_REF,
@@ -29,7 +30,6 @@ from ai_shifu_release.source import (
     export_tree,
     fetch_source,
     git_metadata,
-    load_publisher,
     run,
 )
 from ai_shifu_release.verify import verify
@@ -59,7 +59,7 @@ def build(args: BuildOptions) -> Path:
         source_repo = temporary_root / "github-source"
         source_ref = getattr(args, "source_ref", SOURCE_REF)
         commit, remote = fetch_source(args.source_repo_url, source_repo, source_ref)
-        publisher = load_publisher(source_repo, commit)
+        config = load_from_source(source_repo, commit)
         channels = temporary_root / "channels"
         export_tree(
             source_repo,
@@ -70,7 +70,7 @@ def build(args: BuildOptions) -> Path:
         )
         source_skill = temporary_root / "source-skill"
         export_skill(source_repo, commit, args.skill_name, source_skill)
-        profile = doubao.load_profile(channels / "doubao/profile.json")
+        profile = doubao.load_profile(channel_path(channels, config.doubao.profile))
         if args.skill_name != profile["primary_skill"]:
             raise ValueError(
                 f"Doubao profile supports {profile['primary_skill']}, not {args.skill_name}"
@@ -108,7 +108,7 @@ def build(args: BuildOptions) -> Path:
             skill_name=args.skill_name,
             version=metadata["version"],
             display_name=display_name,
-            publisher=publisher,
+            config=config,
         )
         records = {
             channel: CHANNEL_BUILDERS[channel](channel, context)
