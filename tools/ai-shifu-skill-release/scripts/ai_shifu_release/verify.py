@@ -108,6 +108,8 @@ def verify_channel_artifact(
             if name.startswith(skill_prefix)
         }
     else:
+        if archive_root != skill["name"]:
+            raise ValueError(f"{channel} archive root mismatch")
         archive_contents = zip_subtree_contents(archive, archive_root)
     assert_contents_equal(archive_contents, expected, f"{channel} archive")
     hashes.append(archive_sha)
