@@ -149,6 +149,39 @@ class DoubaoPackageTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unsupported profile fields"):
             doubao.validate_profile(profile)
 
+    def test_avatar_requires_a_safe_nonempty_relative_path(self) -> None:
+        invalid = (
+            None,
+            1,
+            [],
+            {},
+            "",
+            "   ",
+            ".",
+            "./",
+            "/tmp/avatar.png",
+            "../avatar.png",
+            "images/../../avatar.png",
+            "images\\avatar.png",
+            "C:/avatar.png",
+            "C:avatar.png",
+            "avatar\n.png",
+            "avatar\r.png",
+            "avatar\x00.png",
+            "avatar\x7f.png",
+            "avatar\x85.png",
+        )
+        for avatar in invalid:
+            with self.subTest(avatar=avatar):
+                profile = copy.deepcopy(self.profile)
+                profile["avatar"] = avatar
+                with self.assertRaisesRegex(ValueError, "Doubao avatar"):
+                    doubao.validate_profile(profile)
+
+        profile = copy.deepcopy(self.profile)
+        profile["avatar"] = "images/avatar.png"
+        doubao.validate_profile(profile)
+
 
 if __name__ == "__main__":
     unittest.main()

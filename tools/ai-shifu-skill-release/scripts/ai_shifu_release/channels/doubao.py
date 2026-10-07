@@ -266,6 +266,19 @@ def _reject_forbidden(value: str, field: str) -> None:
 
 
 def validate_profile(profile: dict) -> None:
+    avatar = profile.get("avatar")
+    if not isinstance(avatar, str) or not avatar.strip():
+        raise ValueError("Doubao avatar must be a nonempty relative package path")
+    avatar_path = PurePosixPath(avatar)
+    if (
+        not avatar_path.parts
+        or avatar_path.is_absolute()
+        or ".." in avatar_path.parts
+        or "\\" in avatar
+        or re.match(r"^[A-Za-z]:", avatar)
+        or any(unicodedata.category(character) == "Cc" for character in avatar)
+    ):
+        raise ValueError("Doubao avatar must be a safe relative package path")
     if not ID_PATTERN.fullmatch(str(profile.get("id", ""))):
         raise ValueError("Doubao profile id must use kebab-case")
     if profile.get("primary_skill") != "ai-shifu-course-creator":
@@ -359,7 +372,10 @@ def validate_package(
     profile: dict,
     source_frontmatter: dict[str, dict[str, str]],
 ) -> None:
-    required = [root / "agent.yml", root / "README.md", root / profile["avatar"]]
+    validate_profile(profile)
+    root = root.resolve()
+    avatar = artifact_path(root, profile["avatar"])
+    required = [root / "agent.yml", root / "README.md", avatar]
     required.extend(root / "workspace" / name for name in REQUIRED_WORKSPACE_FILES)
     missing = [str(path.relative_to(root)) for path in required if not path.is_file()]
     if missing:
@@ -370,7 +386,7 @@ def validate_package(
         raise ValueError("Doubao agent.yml differs from the channel profile")
     if (root / "README.md").read_text(encoding="utf-8") != render_readme(profile):
         raise ValueError("Doubao README.md differs from the channel profile")
-    validate_image(root / profile["avatar"], max_bytes=2 * 1024 * 1024)
+    validate_image(avatar, max_bytes=2 * 1024 * 1024)
     skills_root = root / "workspace" / "skills"
     actual_names = sorted(path.name for path in skills_root.iterdir() if path.is_dir())
     expected_names = sorted(skill["name"] for skill in profile["skills"])
@@ -446,12 +462,6 @@ def build_doubao_artifact(channel: str, context: BuildContext) -> dict:
     workspace = stage_dir / "workspace"
     stage_dir.mkdir(parents=True)
     avatar_relative = PurePosixPath(profile["avatar"])
-    if (
-        avatar_relative.is_absolute()
-        or ".." in avatar_relative.parts
-        or "\\" in profile["avatar"]
-    ):
-        raise ValueError("Doubao avatar must be a relative package path")
     avatar = profile_path.parent / avatar_relative
     channels_root = context.channels.resolve()
     if not avatar.resolve().is_relative_to(channels_root):
