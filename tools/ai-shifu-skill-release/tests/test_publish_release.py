@@ -44,16 +44,13 @@ class PublishReleaseTest(unittest.TestCase):
         (clawhub / "SKILL.md").write_text("fixture\n")
         (skillhub / "SKILL.md").write_text("fixture\n")
         workbuddy = self.release_dir / "artifacts/workbuddy/workbuddy-ai-shifu-1.1.0.zip"
-        qclaw = self.release_dir / "artifacts/qclaw/qclaw-ai-shifu-1.0.0.zip"
         doubao = self.release_dir / "artifacts/doubao/doubao-ai-shifu-1.2.3.zip"
         workbuddy.parent.mkdir(parents=True)
-        qclaw.parent.mkdir(parents=True)
         doubao.parent.mkdir(parents=True)
         workbuddy.write_bytes(b"workbuddy")
-        qclaw.write_bytes(b"qclaw")
         doubao.write_bytes(b"doubao")
         self.metadata = {
-            "schema_version": 5,
+            "schema_version": 6,
             "release_id": "fixture-1.2.3-abc1234-def5678",
             "release_sha256": "def5678",
             "source": {
@@ -78,11 +75,6 @@ class PublishReleaseTest(unittest.TestCase):
                     "archive": "artifacts/workbuddy/workbuddy-ai-shifu-1.1.0.zip",
                     "sha256": "workbuddy-sha",
                     "version": "1.1.0",
-                },
-                "qclaw": {
-                    "archive": "artifacts/qclaw/qclaw-ai-shifu-1.0.0.zip",
-                    "sha256": "qclaw-sha",
-                    "version": "1.0.0",
                 },
                 "doubao": {
                     "archive": "artifacts/doubao/doubao-ai-shifu-1.2.3.zip",
@@ -191,9 +183,8 @@ class PublishReleaseTest(unittest.TestCase):
             context = publish_release.ReleaseContext.load(self.release_dir)
         publisher = publish_release.ManualPublisher(context, runner=FakeRunner())
 
-        plan = publisher.plan(("workbuddy", "qclaw", "doubao"))
+        plan = publisher.plan(("workbuddy", "doubao"))
         self.assertEqual(plan["workbuddy"]["status"], "pending_manual")
-        self.assertEqual(plan["qclaw"]["embedded_skill_version"], "1.2.3")
         self.assertEqual(
             plan["doubao"]["embedded_skills"],
             ["ai-shifu-course-creator", "ai-shifu-learning-report", "course-direction-advisor"],

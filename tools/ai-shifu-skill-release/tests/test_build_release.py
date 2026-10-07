@@ -206,7 +206,7 @@ class BuildReleaseTest(unittest.TestCase):
         clawhub = release_dir / report["artifacts"]["clawhub"]["directory"]
         skillhub = release_dir / report["artifacts"]["skillhub"]["directory"]
 
-        self.assertEqual(report["schema_version"], 5)
+        self.assertEqual(report["schema_version"], 6)
         self.assertEqual(set(report["artifacts"]), set(build_release.CHANNEL_ORDER))
         self.assertEqual(report["skill"]["version"], "1.2.3")
 
@@ -241,7 +241,6 @@ class BuildReleaseTest(unittest.TestCase):
         )
         for platform, expected_root in (
             ("workbuddy", "workbuddy-ai-shifu-1.2.3"),
-            ("qclaw", f"qclaw-ai-shifu-{report['artifacts']['qclaw']['version']}"),
         ):
             archive_path = release_dir / report["artifacts"][platform]["archive"]
             with zipfile.ZipFile(archive_path) as archive:
@@ -380,7 +379,7 @@ class BuildReleaseTest(unittest.TestCase):
             self.assertEqual(
                 archive.read(f"{advisor_prefix}/references/guide.md"), b"advisor guide\n"
             )
-        for channel in ("clawhub", "skillhub", "workbuddy", "qclaw"):
+        for channel in ("clawhub", "skillhub", "workbuddy"):
             with zipfile.ZipFile(release_dir / report["artifacts"][channel]["archive"]) as archive:
                 self.assertFalse(
                     any("course-direction-advisor" in name for name in archive.namelist())
@@ -393,7 +392,6 @@ class BuildReleaseTest(unittest.TestCase):
         report = json.loads((release_dir / "release.json").read_text())
         entries = {
             "workbuddy": "workbuddy-ai-shifu-1.2.3/agents/ai-shifu.md",
-            "qclaw": "qclaw-ai-shifu-1.2.3/AGENTS.md",
             "doubao": "doubao-ai-shifu-1.2.3/workspace/AGENTS.md",
         }
         for channel, entry in entries.items():
@@ -524,7 +522,6 @@ class BuildReleaseTest(unittest.TestCase):
             "clawhub": first_report["artifacts"]["clawhub"]["archive_sha256"],
             "skillhub": first_report["artifacts"]["skillhub"]["archive_sha256"],
             "workbuddy": first_report["artifacts"]["workbuddy"]["sha256"],
-            "qclaw": first_report["artifacts"]["qclaw"]["sha256"],
             "doubao": first_report["artifacts"]["doubao"]["archive_sha256"],
         }
         second = self.build()
@@ -533,7 +530,6 @@ class BuildReleaseTest(unittest.TestCase):
         self.assertEqual(hashes["clawhub"], second_report["artifacts"]["clawhub"]["archive_sha256"])
         self.assertEqual(hashes["skillhub"], second_report["artifacts"]["skillhub"]["archive_sha256"])
         self.assertEqual(hashes["workbuddy"], second_report["artifacts"]["workbuddy"]["sha256"])
-        self.assertEqual(hashes["qclaw"], second_report["artifacts"]["qclaw"]["sha256"])
         self.assertEqual(
             hashes["doubao"], second_report["artifacts"]["doubao"]["archive_sha256"]
         )
@@ -597,10 +593,10 @@ class BuildReleaseTest(unittest.TestCase):
         release_dir = self.build()
         report_path = release_dir / "release.json"
         report = json.loads(report_path.read_text())
-        report["schema_version"] = 1
+        report["schema_version"] = 5
         report_path.write_text(json.dumps(report))
 
-        with self.assertRaisesRegex(ValueError, "rebuild with schema 5"):
+        with self.assertRaisesRegex(ValueError, "rebuild with schema 6"):
             build_release.verify(release_dir)
 
     def test_doubao_profile_tampering_is_rejected(self) -> None:

@@ -53,7 +53,7 @@ def main() -> None:
     publish.add_argument("--skillhub-cli", default="", help="Path to the skillhub CLI binary")
 
     manual_plan = commands.add_parser(
-        "manual-plan", help="Show WorkBuddy, QClaw, and Doubao upload artifacts"
+        "manual-plan", help="Show WorkBuddy and Doubao upload artifacts"
     )
     manual_plan.add_argument("release_dir")
     manual_plan.add_argument("--target", choices=(*publish_release.MANUAL_TARGETS, "all"), default="all")
