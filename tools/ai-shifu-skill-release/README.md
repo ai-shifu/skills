@@ -105,7 +105,7 @@ The release trust chain is: a commit anchors the source, deterministic builds ma
 1. **Pin the source.** Shallow-fetch remote `main` or the explicitly requested full commit SHA into a temporary repository and export the skills, channel templates, and `release.toml` from that same commit. Local skill branches, uncommitted edits, runtime `.env` files, and update caches are not build inputs. Committed `.env.example` templates are included.
 2. **Render channel variants.** Generate the four packages from that export. Only allowlisted frontmatter changes are permitted. WorkBuddy wraps the primary skill in a plugin shell. Doubao wraps the course creator, learning report, and course direction advisor from the same source commit.
 3. **Write deterministic archives.** ZIP entries are sorted and use fixed timestamps. Identical inputs produce identical archive bytes.
-4. **Record hashes.** Hash all six artifact digests in the fixed channel order to derive `release_sha256`. The release directory is `dist/<skill>-<version>-<commit-prefix>-<artifact-prefix>/`.
+4. **Record hashes.** Derive `release_sha256` from seven artifact digests in the fixed channel order: ClawHub directory and ZIP, SkillHub directory and ZIP, WorkBuddy ZIP, then Doubao directory and ZIP. The release directory is `dist/<skill>-<version>-<commit-prefix>-<artifact-prefix>/`.
 
 `verify` independently recalculates directory and ZIP hashes, verifies the canonical ClawHub `SKILL.md` against its source hash, compares channel contents byte for byte against their permitted variants, and checks the combined release hash and directory name. Directory hashes include paths, modes, and contents. Secret-pattern scanning and ZIP path checks also apply.
 
