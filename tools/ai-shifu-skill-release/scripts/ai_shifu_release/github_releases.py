@@ -326,7 +326,10 @@ def download(tag: str, repository: str, output: Path) -> Path:
         raise ValueError("Release source commit differs from its tag")
     if tag != f"v{report['skill']['version']}":
         raise ValueError("Release tag differs from package version")
-    release_dir = output / report["release_id"]
+    release_id = report["release_id"]
+    if not isinstance(release_id, str) or not release_id:
+        raise ValueError("Release ID must be a nonempty string")
+    release_dir = artifact_path(output, release_id)
     release_dir.mkdir()
     (release_dir / "release.json").write_bytes(manifest.read_bytes())
     for channel, name in archives.items():
