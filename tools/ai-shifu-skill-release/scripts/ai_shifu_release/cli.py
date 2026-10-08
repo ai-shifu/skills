@@ -18,7 +18,7 @@ from . import (
     version,
 )
 from .release_state import ReleaseContext
-from .source import SOURCE_REF, SOURCE_REPOSITORY
+from .source import SOURCE_REF, SOURCE_REPOSITORY, SOURCE_SKILL_NAME
 from .verify import verify
 
 
@@ -28,7 +28,7 @@ def create_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
 
     build_command = commands.add_parser("build", help="Build all channel artifacts")
-    build_command.add_argument("--skill-name", default="ai-shifu-course-creator")
+    build_command.add_argument("--skill-name", default=SOURCE_SKILL_NAME)
     build_command.add_argument("--output", default="dist")
     build_command.add_argument(
         "--source-repo-url",

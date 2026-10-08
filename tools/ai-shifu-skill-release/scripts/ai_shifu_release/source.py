@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 from ai_shifu_release.artifacts import is_excluded
 
 SOURCE_REPOSITORY = "https://github.com/ai-shifu/skills.git"
+SOURCE_SKILL_NAME = "ai-shifu-course-creator"
 
 
 SOURCE_REF = "main"

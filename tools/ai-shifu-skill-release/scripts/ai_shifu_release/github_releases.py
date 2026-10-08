@@ -10,9 +10,13 @@ import subprocess
 import tempfile
 import zipfile
 from pathlib import Path, PurePosixPath
+from types import SimpleNamespace
 
+from . import build
 from .artifacts import CHANNEL_ORDER, artifact_path, verify_zip
 from .artifacts import file_hash as sha256
+from .release_state import ReleaseContext
+from .source import SOURCE_SKILL_NAME
 from .verify import verify
 
 TAG_PATTERN = re.compile(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
@@ -322,6 +326,8 @@ def download(tag: str, repository: str, output: Path) -> Path:
     commit = gh(
         "api", f"repos/{repository}/commits/{tag}", "--jq", ".sha"
     ).stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise ValueError("The Release tag must resolve to a full source commit SHA")
     if report["source"]["commit"] != commit or report["source"]["ref"] != commit:
         raise ValueError("Release source commit differs from its tag")
     if tag != f"v{report['skill']['version']}":
@@ -342,4 +348,47 @@ def download(tag: str, repository: str, output: Path) -> Path:
             target_directory = artifact_path(release_dir, record["directory"])
             extract_archive(archived, target_directory, record["archive_root"])
     verify(release_dir)
+    verify_tagged_source(release_dir, repository, commit, tag[1:])
     return release_dir
+
+
+def verify_tagged_source(
+    release_dir: Path, repository: str, commit: str, version: str
+) -> None:
+    """Anchor downloaded packages to the requested repository's exact tag tree."""
+    report = json.loads((release_dir / "release.json").read_text(encoding="utf-8"))
+    release = ReleaseContext(release_dir, report)
+    if release.source_repo.casefold() != repository.casefold():
+        raise ValueError("Release source repository differs from requested repository")
+    with tempfile.TemporaryDirectory(prefix="ai-shifu-source-check-") as temporary:
+        expected_dir = build.build(
+            SimpleNamespace(
+                source_repo_url=f"https://github.com/{repository}.git",
+                source_ref=commit,
+                expected_version=version,
+                skill_name=SOURCE_SKILL_NAME,
+                output=temporary,
+            )
+        )
+        expected = json.loads(
+            (expected_dir / "release.json").read_text(encoding="utf-8")
+        )
+        for channel in CHANNEL_ORDER:
+            actual_archive = artifact_path(
+                release_dir, report["artifacts"][channel]["archive"]
+            )
+            expected_archive = artifact_path(
+                expected_dir, expected["artifacts"][channel]["archive"]
+            )
+            if sha256(actual_archive) != sha256(expected_archive):
+                raise ValueError(f"{channel} archive differs from tagged source")
+        for field in (
+            "schema_version",
+            "release_id",
+            "release_sha256",
+            "source_committed_at",
+            "skill",
+            "artifacts",
+        ):
+            if report.get(field) != expected[field]:
+                raise ValueError(f"Release {field} differs from tagged source")

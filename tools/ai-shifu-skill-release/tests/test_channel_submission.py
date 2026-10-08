@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 from ai_shifu_release import (
     TOOL_ROOT,
+    build,
     channel_submission,
     config,
     github_releases,
@@ -332,6 +333,9 @@ class ChannelSubmissionTest(unittest.TestCase):
         old_commit = fixture.git("rev-parse", "main")
         candidate = fixture.build(source_ref=old_commit)
         old_metadata = json.loads((candidate / "release.json").read_text())
+        source_repository = "https://github.com/ai-shifu/skills.git"
+        old_metadata["source"]["repository"] = source_repository
+        (candidate / "release.json").write_text(json.dumps(old_metadata))
         skill_file = fixture.skill / "SKILL.md"
         skill_file.write_text(fixture.source_skill_text.replace("1.2.3", "2.0.0"))
         fixture.git("add", "skills/ai-shifu-course-creator/SKILL.md")
@@ -344,6 +348,15 @@ class ChannelSubmissionTest(unittest.TestCase):
         attachment_paths = {path.name: path for path in assets}
         github_calls = []
         registry_commands = []
+        source_fetches = []
+        fetch_source = build.fetch_source
+
+        def fetch_from_fixture(repository, destination, source_ref):
+            source_fetches.append((repository, source_ref))
+            self.assertEqual(repository, source_repository)
+            self.assertEqual(source_ref, old_commit)
+            commit, _ = fetch_source(str(fixture.source_repo), destination, source_ref)
+            return commit, repository
 
         def fake_gh(*arguments, **options):
             github_calls.append(arguments)
@@ -391,6 +404,7 @@ class ChannelSubmissionTest(unittest.TestCase):
         with (
             patch.dict(os.environ, {}, clear=True),
             patch.object(github_releases, "gh", side_effect=fake_gh),
+            patch.object(build, "fetch_source", side_effect=fetch_from_fixture),
             patch.object(
                 publishing, "AutomatedPublisher", side_effect=create_publisher
             ) as publisher,
@@ -405,6 +419,7 @@ class ChannelSubmissionTest(unittest.TestCase):
             )
 
         self.assertEqual(result["status"], "pending_review")
+        self.assertEqual(source_fetches, [(source_repository, old_commit)])
         self.assertEqual(result["source_commit"], old_commit)
         self.assertEqual(result["version"], "1.2.3")
         self.assertEqual(

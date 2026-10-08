@@ -58,8 +58,16 @@ class ReleaseContext:
 
     @property
     def source_repo(self) -> str:
-        match = re.search(
-            r"github\.com(?::|/)([^/]+/[^/]+?)(?:\.git)?$", self.source_repository
+        repository = self.source_repository
+        match = (
+            re.fullmatch(
+                r"(?:https?://github\.com/|git@github\.com:|ssh://git@github\.com/)"
+                r"([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?",
+                repository,
+                re.IGNORECASE,
+            )
+            if isinstance(repository, str)
+            else None
         )
         if not match:
             raise ValueError(
