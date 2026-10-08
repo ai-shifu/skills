@@ -16,12 +16,24 @@ on:
         required: false
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Existing published Release tag (vX.Y.Z)"
+      operation:
+        description: "Preflight checks without upload, or retry a published release"
         required: true
+        default: preflight
+        type: choice
+        options:
+          - preflight
+          - publish
+      expected_version:
+        description: "Preflight only: version on the current main branch (X.Y.Z)"
+        required: false
+        type: string
+      tag:
+        description: "Publish retry only: existing Release tag (vX.Y.Z)"
+        required: false
         type: string
       target:
-        description: "Retry only this channel"
+        description: "Channel to check or retry"
         required: true
         type: choice
         options:
@@ -37,11 +49,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: skill-platform-${{ inputs.tag }}-${{ inputs.target }}
+  group: skill-platform-${{ inputs.operation || 'publish' }}-${{ inputs.tag || github.ref_name }}-${{ inputs.target }}
   cancel-in-progress: false
 
 jobs:
   publish:
+    name: ${{ inputs.operation == 'preflight' && 'Preflight (no upload)' || 'Publish channel' }}
     runs-on: ubuntu-24.04
     steps:
       - name: Check out release tool from workflow revision
@@ -56,7 +69,7 @@ jobs:
           python-version: "3.11"
 
       - name: Confirm SkillHub retry will not duplicate a submission
-        if: github.event_name == 'workflow_dispatch' && inputs.target == 'skillhub'
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'publish' && inputs.target == 'skillhub'
         env:
           CONFIRMED: ${{ inputs.confirm_skillhub_not_submitted }}
         run: test "$CONFIRMED" = "true"
@@ -66,6 +79,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
+          PREFLIGHT: ${{ inputs.operation == 'preflight' }}
+          EXPECTED_VERSION: ${{ inputs.expected_version }}
           PYTHONPATH: tools/ai-shifu-skill-release/scripts
         run: |
           python3 - <<'PY'
@@ -76,14 +91,23 @@ jobs:
           from types import SimpleNamespace
           from ai_shifu_release import config, github_releases
 
-          tag = os.environ['RELEASE_TAG']
           repository = os.environ['GITHUB_REPOSITORY']
-          if not github_releases.TAG_PATTERN.fullmatch(tag):
-              raise ValueError('Tag must use vX.Y.Z')
-          commit = subprocess.run(
-              ['gh', 'api', f'repos/{repository}/commits/{tag}', '--jq', '.sha'],
-              check=True, capture_output=True, text=True,
-          ).stdout.strip()
+          if os.environ['PREFLIGHT'] == 'true':
+              if os.environ['GITHUB_REF'] != 'refs/heads/main':
+                  raise ValueError('Platform preflight must run on main')
+              if os.environ['RELEASE_TAG']:
+                  raise ValueError('Platform preflight must not use a release tag')
+              if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', os.environ['EXPECTED_VERSION']):
+                  raise ValueError('Preflight expected_version must use X.Y.Z')
+              commit = os.environ['GITHUB_SHA']
+          else:
+              tag = os.environ['RELEASE_TAG']
+              if not github_releases.TAG_PATTERN.fullmatch(tag):
+                  raise ValueError('Tag must use vX.Y.Z')
+              commit = subprocess.run(
+                  ['gh', 'api', f'repos/{repository}/commits/{tag}', '--jq', '.sha'],
+                  check=True, capture_output=True, text=True,
+              ).stdout.strip()
           if not re.fullmatch(r'[0-9a-f]{40}', commit):
               raise ValueError('The release tag must resolve to a full source commit')
           settings = config.load_for_release(SimpleNamespace(
@@ -104,9 +128,30 @@ jobs:
                   if not isinstance(value, str) or '\n' in value or '\r' in value:
                       raise ValueError(f'Configuration output must be one line: {key}')
                   output.write(f'{key}={value}\n')
-          with Path(os.environ['GITHUB_ENV']).open('a') as output:
-              output.write(f'RELEASE_SOURCE_COMMIT={commit}\n')
+          if os.environ['PREFLIGHT'] != 'true':
+              with Path(os.environ['GITHUB_ENV']).open('a') as output:
+                  output.write(f'RELEASE_SOURCE_COMMIT={commit}\n')
           PY
+
+      - name: Install test dependencies
+        if: inputs.operation == 'preflight'
+        run: python3 -m pip install "requests>=2.28" "python-dotenv>=1.0"
+
+      - name: Build and verify the current main candidate
+        if: inputs.operation == 'preflight'
+        env:
+          EXPECTED_VERSION: ${{ inputs.expected_version }}
+        run: |
+          python3 scripts/validate_skill_quality.py
+          python3 -m unittest discover -s tests -p "test_*.py"
+          cd tools/ai-shifu-skill-release
+          PYTHONPATH=scripts python3 -m unittest discover -s tests -p "test_*.py"
+          cd ../..
+          python3 tools/ai-shifu-skill-release/scripts/release.py build \
+            --source-ref "$GITHUB_SHA" --expected-version "$EXPECTED_VERSION" --output dist
+          release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          test -n "$release_dir"
+          python3 tools/ai-shifu-skill-release/scripts/release.py verify "$release_dir"
 
       - name: Set up Node for ClawHub
         if: inputs.target == 'clawhub'
@@ -155,6 +200,7 @@ jobs:
           "$HOME/.local/bin/skillhub" auth whoami --host "$SKILLHUB_ENDPOINT"
 
       - name: Download, verify and submit one channel package
+        if: inputs.operation != 'preflight'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
@@ -164,8 +210,28 @@ jobs:
             --tag "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
             --target "$CHANNEL_TARGET" --output platform-work --execute
 
+      - name: Check one channel without uploading
+        if: inputs.operation == 'preflight'
+        env:
+          CHANNEL_TARGET: ${{ inputs.target }}
+        run: |
+          release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          test -n "$release_dir"
+          python3 tools/ai-shifu-skill-release/scripts/release.py check "$release_dir" \
+            --target "$CHANNEL_TARGET"
+          echo "No-upload preflight: $CHANNEL_TARGET for $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save preflight result
+        if: always() && inputs.operation == 'preflight'
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-preflight-${{ github.sha }}-${{ inputs.target }}
+          path: dist/*/release-report.json
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Save channel result
-        if: always()
+        if: always() && inputs.operation != 'preflight'
         uses: actions/upload-artifact@v4
         with:
           name: platform-result-${{ inputs.tag }}-${{ inputs.target }}
