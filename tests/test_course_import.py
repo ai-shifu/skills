@@ -66,6 +66,13 @@ class CourseImportPromptTests(unittest.TestCase):
                 self.assertEqual(self.detail_payloads[-1]["name"], self.data["shifu"]["title"])
                 self.assertEqual(self.lesson_contents, [self.data["outline_items"][1]["content"]])
                 self.assertEqual(self.outline_payloads[1]["parent_bid"], "new-outline-1")
+                # Older platform exports may still contain temperature fields;
+                # importing their content must not send those settings back.
+                self.assertIn("llm_temperature", self.data["shifu"])
+                self.assertIn("ask_llm_temperature", self.data["shifu"])
+                for call in self.api.call_args_list + self.api_safe.call_args_list:
+                    payload = call.kwargs.get("json", {})
+                    self.assertFalse(any("temperature" in key for key in payload), payload)
 
     def test_build_output_still_imports_course_prompt(self):
         lessons = self.root / "lessons"
@@ -127,6 +134,67 @@ class CourseImportPromptTests(unittest.TestCase):
         self.assertEqual(error.exception.code, 1)
         self.api.assert_not_called()
         self.api_safe.assert_not_called()
+
+
+class CourseTemperatureOutputTests(unittest.TestCase):
+    def test_course_config_snapshot_omits_temperature_and_preserves_other_settings(self):
+        detail = {
+            "model": "teaching-model",
+            "ask_model": "follow-up-model",
+            "temperature": 0.7,
+            "ask_temperature": 0.4,
+            "price": 25,
+            "keywords": "course,learning",
+            "tts_enabled": True,
+            "tts_voice_id": "course-voice",
+            "ask_system_prompt": "Answer follow-up questions",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            cli._write_course_config(directory, cli._course_config_from_detail(detail))
+            snapshot = json.loads(
+                (Path(directory) / cli.COURSE_CONFIG_NAME).read_text(encoding="utf-8")
+            )
+        self.assertFalse(any("temperature" in key for key in snapshot), snapshot)
+        for key in ("model", "ask_model", "price", "tts_enabled", "tts_voice_id",
+                    "ask_system_prompt"):
+            self.assertEqual(snapshot[key], detail[key])
+        self.assertEqual(snapshot["keywords"], ["course", "learning"])
+
+    def test_single_and_multiple_chapter_builds_omit_all_temperature_fields(self):
+        for multiple_chapters in (False, True):
+            with self.subTest(multiple_chapters=multiple_chapters):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    lessons = root / "lessons"
+                    lessons.mkdir()
+                    (lessons / "lesson-01.md").write_text("First lesson\n", encoding="utf-8")
+                    (lessons / "lesson-02.md").write_text("Second lesson\n", encoding="utf-8")
+                    (root / "course-prompt.md").write_text("Course Prompt", encoding="utf-8")
+                    if multiple_chapters:
+                        (root / "structure.json").write_text(json.dumps({
+                            "chapters": [
+                                {"title": "First chapter", "lessons": [
+                                    {"file": "lesson-01.md", "title": "First lesson"},
+                                ]},
+                                {"title": "Second chapter", "lessons": [
+                                    {"file": "lesson-02.md", "title": "Second lesson"},
+                                ]},
+                            ],
+                        }), encoding="utf-8")
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        output_path = cli._build_import_json(directory, title="Built course")
+                    data = json.loads(Path(output_path).read_text(encoding="utf-8"))
+
+                for record in [data["shifu"], *data["outline_items"]]:
+                    self.assertFalse(any("temperature" in key for key in record), record)
+                self.assertEqual(data["shifu"]["course_prompt"], "Course Prompt")
+                chapters = [item for item in data["outline_items"] if not item["parent_bid"]]
+                built_lessons = [item for item in data["outline_items"] if item["parent_bid"]]
+                self.assertEqual(len(chapters), 2 if multiple_chapters else 1)
+                self.assertEqual([item["content"] for item in built_lessons],
+                                 ["First lesson\n", "Second lesson\n"])
+                self.assertTrue(all(item["course_prompt"] == "Course Prompt"
+                                    for item in built_lessons))
 
 
 if __name__ == "__main__":

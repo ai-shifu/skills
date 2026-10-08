@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Omit model temperature settings from local course snapshots and generated import files.
 - Allow ChatGPT prompt-based installation with supported Skill metadata, explicit-request-only version checks, and no automatic independent usage reporting or login attribution. Keep course authoring, platform login, import, publication, and learner analytics available.
 - Validate personalization within each supplied Prompt artifact and mark unavailable companion alignment as not assessed, preserving standalone generation and content-only audits.
 - Keep generic Course Prompt template rules limited to lesson boundaries, learner-profile privacy, and neutral fallbacks so only the author's selected directions enable personalization.

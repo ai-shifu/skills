@@ -112,7 +112,6 @@ Fields:
 ```json
 {
   "model": "",
-  "temperature": 0.3,
   "price": 0,
   "keywords": [],
   "avatar": "",
@@ -126,7 +125,6 @@ Fields:
   "tts_emotion": "",
   "ask_enabled_status": 5101,
   "ask_model": "",
-  "ask_temperature": 0.0,
   "ask_system_prompt": "",
   "ask_provider_config": {}
 }
@@ -242,11 +240,9 @@ Legacy entries without `base_url` have unknown provenance. Preserve them as-is; 
     "description": "Course description",
     "avatar_res_bid": "",
     "llm": "",
-    "llm_temperature": 0,
     "course_prompt": "Course Prompt content",
     "ask_enabled_status": 5101,
     "ask_llm": "",
-    "ask_llm_temperature": 0.0,
     "ask_llm_system_prompt": ""
   },
   "outline_items": [
