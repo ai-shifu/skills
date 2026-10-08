@@ -4,12 +4,12 @@ import copy
 import unittest
 from pathlib import Path
 
-from scripts import doubao_package
+from ai_shifu_release.channels import doubao
 
 
 class DoubaoPackageTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.profile = doubao_package.load_profile(
+        self.profile = doubao.load_profile(
             Path(__file__).resolve().parents[1] / "channels/doubao/profile.json"
         )
         self.source_frontmatter = {
@@ -30,23 +30,19 @@ class DoubaoPackageTest(unittest.TestCase):
         }
 
     def test_generated_surfaces_share_recommended_instructions(self) -> None:
-        agent = doubao_package.render_agent_yml(
-            self.profile, self.source_frontmatter
-        )
-        readme = doubao_package.render_readme(self.profile)
+        agent = doubao.render_agent_yml(self.profile, self.source_frontmatter)
+        readme = doubao.render_readme(self.profile)
         for instruction in self.profile["recommended_instructions"]:
             self.assertIn(instruction, agent)
             self.assertIn(instruction, readme)
         first = self.profile["recommended_instructions"][0]
-        self.assertIn(f'zh-CN: {doubao_package.quote(first)}', agent)
+        self.assertIn(f"zh-CN: {doubao.quote(first)}", agent)
         self.assertIn('id: "ai-shifu"', agent)
         self.assertIn('name: "AI师傅教学专家"', agent)
         self.assertIn("AI师傅教学专家", agent)
-        self.assertNotRegex(agent, doubao_package.AI_SHIFU_SPACING_PATTERN)
+        self.assertNotRegex(agent, doubao.AI_SHIFU_SPACING_PATTERN)
         self.assertIn('icon: ""', agent)
-        self.assertIn(
-            'description: "Create and manage AI-Shifu courses."', agent
-        )
+        self.assertIn('description: "Create and manage AI-Shifu courses."', agent)
         self.assertIn('name: "course-direction-advisor"', agent)
         self.assertIn('display_name: "做课方向建议"', agent)
         self.assertIn(
@@ -80,20 +76,22 @@ class DoubaoPackageTest(unittest.TestCase):
         source_frontmatter["ai-shifu-learning-report"]["description"] = (
             "Create an AI 师傅 learning report."
         )
-        with self.assertRaisesRegex(ValueError, "spaces inside the AI-Shifu brand name"):
-            doubao_package.render_agent_yml(self.profile, source_frontmatter)
+        with self.assertRaisesRegex(
+            ValueError, "spaces inside the AI-Shifu brand name"
+        ):
+            doubao.render_agent_yml(self.profile, source_frontmatter)
 
     def test_skill_overrides_are_limited_to_doubao_required_fields(self) -> None:
         skills = {skill["name"]: skill for skill in self.profile["skills"]}
-        creator = doubao_package.skill_overrides(
+        creator = doubao.skill_overrides(
             skills["ai-shifu-course-creator"],
             self.source_frontmatter["ai-shifu-course-creator"],
         )
-        report = doubao_package.skill_overrides(
+        report = doubao.skill_overrides(
             skills["ai-shifu-learning-report"],
             self.source_frontmatter["ai-shifu-learning-report"],
         )
-        advisor = doubao_package.skill_overrides(
+        advisor = doubao.skill_overrides(
             skills["course-direction-advisor"],
             self.source_frontmatter["course-direction-advisor"],
         )
@@ -116,19 +114,19 @@ class DoubaoPackageTest(unittest.TestCase):
         conflicting_label = dict(self.source_frontmatter[skill["name"]])
         conflicting_label["label"] = "另一个标签"
         with self.assertRaisesRegex(ValueError, "label conflicts"):
-            doubao_package.skill_overrides(skill, conflicting_label)
+            doubao.skill_overrides(skill, conflicting_label)
 
         custom_icon = dict(self.source_frontmatter[skill["name"]])
         custom_icon["icon"] = "custom.png"
         with self.assertRaisesRegex(ValueError, "icon must be empty"):
-            doubao_package.skill_overrides(skill, custom_icon)
+            doubao.skill_overrides(skill, custom_icon)
 
     def test_allows_uploaded_material_only_in_third_instruction(self) -> None:
         self.assertRegex(
             self.profile["recommended_instructions"][2],
-            doubao_package.EXTERNAL_INPUT_PATTERN,
+            doubao.EXTERNAL_INPUT_PATTERN,
         )
-        doubao_package.validate_profile(self.profile)
+        doubao.validate_profile(self.profile)
 
         for index in (0, 1):
             with self.subTest(index=index):
@@ -137,19 +135,52 @@ class DoubaoPackageTest(unittest.TestCase):
                     "请上传一份课程附件，我会根据附件内容生成完整的课程教学脚本。"
                 )
                 with self.assertRaisesRegex(ValueError, "not zero-input"):
-                    doubao_package.validate_profile(profile)
+                    doubao.validate_profile(profile)
 
     def test_rejects_duplicate_or_insufficient_skills(self) -> None:
         profile = copy.deepcopy(self.profile)
         profile["skills"] = profile["skills"][:1]
         with self.assertRaisesRegex(ValueError, "at least two skills"):
-            doubao_package.validate_profile(profile)
+            doubao.validate_profile(profile)
 
     def test_rejects_duplicate_channel_metadata_for_skills(self) -> None:
         profile = copy.deepcopy(self.profile)
         profile["skills"][0]["description"] = "Channel-owned description."
         with self.assertRaisesRegex(ValueError, "unsupported profile fields"):
-            doubao_package.validate_profile(profile)
+            doubao.validate_profile(profile)
+
+    def test_avatar_requires_a_safe_nonempty_relative_path(self) -> None:
+        invalid = (
+            None,
+            1,
+            [],
+            {},
+            "",
+            "   ",
+            ".",
+            "./",
+            "/tmp/avatar.png",
+            "../avatar.png",
+            "images/../../avatar.png",
+            "images\\avatar.png",
+            "C:/avatar.png",
+            "C:avatar.png",
+            "avatar\n.png",
+            "avatar\r.png",
+            "avatar\x00.png",
+            "avatar\x7f.png",
+            "avatar\x85.png",
+        )
+        for avatar in invalid:
+            with self.subTest(avatar=avatar):
+                profile = copy.deepcopy(self.profile)
+                profile["avatar"] = avatar
+                with self.assertRaisesRegex(ValueError, "Doubao avatar"):
+                    doubao.validate_profile(profile)
+
+        profile = copy.deepcopy(self.profile)
+        profile["avatar"] = "images/avatar.png"
+        doubao.validate_profile(profile)
 
 
 if __name__ == "__main__":

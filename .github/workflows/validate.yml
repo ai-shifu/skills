@@ -32,7 +32,28 @@ jobs:
 
       - name: Run release tool tests
         working-directory: tools/ai-shifu-skill-release
-        run: python3 -m unittest discover -s tests -p "test_*.py"
+        run: PYTHONPATH=scripts python3 -m unittest discover -s tests -p "test_*.py"
+
+      - name: Trial build from PR commit
+        if: github.event_name == 'pull_request'
+        run: |
+          python3 tools/ai-shifu-skill-release/scripts/release.py build \
+            --source-repo-url "$GITHUB_WORKSPACE" --source-ref "$GITHUB_SHA" --output dist
+          release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          test -n "$release_dir"
+          python3 tools/ai-shifu-skill-release/scripts/release.py verify "$release_dir"
+          version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["skill"]["version"])' "$release_dir/release.json")"
+          python3 tools/ai-shifu-skill-release/scripts/release.py github-release "$release_dir" \
+            --tag "v$version" --commit "$GITHUB_SHA" \
+            --prepare-only --output preview-assets
+
+      - name: Save PR trial packages
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: skill-preview-pr-${{ github.event.pull_request.number }}
+          path: preview-assets/*
+          retention-days: 7
 
   profile-concurrency-windows:
     runs-on: windows-latest

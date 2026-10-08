@@ -5,15 +5,15 @@ description: "Release AI-Shifu skills using the maintained release.py workflow: 
 
 ## Execution Environment
 
-All release operations go through this tool's `scripts/release.py`. Do not duplicate packaging logic or call platform publication commands directly.
+All operations go through this tool's `scripts/release.py`. Publisher identity and non-secret channel settings belong to `release.toml` and are read from the release's pinned source revision. The tagged GitHub workflow uses its `github-release` subcommand after verification. Channel jobs use `submit-channel`, which downloads and verifies Release attachments before submission. Do not duplicate packaging logic or call channel publication commands directly.
 
 1. Locate the directory containing **this** `SKILL.md`. In `ai-shifu/skills`, it is `tools/ai-shifu-skill-release/`, not the Git repository root. Use it as the working directory for the commands below. A standalone copy uses the same sibling layout.
 2. Confirm that `scripts/release.py` and `channels/workbuddy/.codebuddy-plugin/plugin.json` exist there. Stop if the intended tool cannot be located.
 3. Read `python3 scripts/release.py --help` if the implementation may have changed. Read [Publishing Environment](references/publishing.md) for runtime, publisher configuration, and authentication requirements.
 4. Before packaging, check `git status --short` and `git log -1 --oneline` in the enclosing repository when present. The builder supports standalone copies without Git and records unavailable provenance as null; do not claim a clean repository without evidence.
-5. GitHub `ai-shifu/skills` remote `main` is the only source of business skills. Sharing a repository with the tool does not make local skill edits build inputs. GitHub is not a publication target.
+5. GitHub `ai-shifu/skills` remote `main`, or a specified commit from it, is the source of business skills and channel templates. Sharing a repository with the tool does not make local skill edits build inputs. Tagged commits create downloadable GitHub Releases. Platform Actions jobs download and verify the published Release attachments before submission; they do not rebuild or require the old tag to remain the current `main` tip.
 
-Building and publishing do not modify skill source. Version changes go through `bump`, which opens a source-repository PR for human review and merge. Only the primary source skill's `SKILL.md` stores the release version; all four channel versions derive from it, with no independent version under this tool directory. If the user specifies a version, compare it with `release.json`. Stop on a mismatch and explain that the target version must first reach remote `main` through a merged bump PR.
+Building and publishing do not modify skill source. Version changes go through `bump`, which opens a source-repository PR for human review and merge. Only the primary source skill's `SKILL.md` stores the release version; all four channel versions derive from it, with no independent version under this tool directory. If the user specifies a version, compare it with `release.json`. For formal publication, stop on a mismatch and explain that the target version must first reach remote `main` through a merged bump PR. A Draft Release preview may instead use the exact commit on an unmerged version branch.
 
 ## Safety Rules
 
@@ -25,19 +25,22 @@ Building and publishing do not modify skill source. Version changes go through `
 - Never request or print platform tokens. If authentication is missing, provide the login command and wait for the user to authenticate locally.
 - Do not commit or push the current checkout without an explicit user request. `bump` and `activate-manifest` require an explicit request for those operations and only push dedicated branches and open PRs. Never merge their PRs or push directly to `main`.
 - If GitHub `main` has advanced, do not delete existing artifacts. Rebuild and use the new output directory.
-- Only accept `release.json` schema 5. Rebuild older candidates.
+- Only accept `release.json` schema 6. Rebuild older candidates.
 - Do not record a manual channel as `verified` without a platform URL and confirmation of independent validation.
 
 ## Choose the Workflow
 
 | User intent | Steps | Stop point |
 | --- | --- | --- |
+| Accept automation changes without a new skill release | Keep the existing skill version, review and merge the automation PR, then run **Release Skills** with `preview_type=artifact` on the merged `main` commit | Report the preview run and six temporary attachments; do not create a version tag or submit to platforms |
+| Preview a future version before its PR is merged | Run **Release Skills** with `preview_type=draft` on the version branch and its matching expected version | Report the test Draft Release and six verified attachments; leave the draft unpublished and wait for administrator merge |
 | Upgrade a version | `bump` | Return the source PR and wait for human merge |
 | Build or package | `build`, then `verify` | Report artifacts |
 | Check or dry-run | Build if needed, then `verify` and `check` | Report channel readiness |
 | Publish automated channels | Build if needed, verify, check, obtain authorization, publish | Report channel results |
 | Prepare manual channels | Build if needed, then `verify` and `manual-plan` | Return exact upload paths and hashes |
 | Record manual results | Verify the specified release, then `record-manual` | Report the updated ledger |
+| Import Actions channel results | Verify the matching release, download each channel result artifact, then `record-channel` | Report the updated ledger |
 | Activate the website manifest | After channel gates pass, `activate-manifest` | Return the website PR and wait for human merge and deployment |
 | Complete a full release | Follow applicable stages in order | Stop at each human gate |
 
@@ -64,6 +67,8 @@ After confirmation:
 python3 scripts/release.py build --skill-name ai-shifu-course-creator
 ```
 
+For a trial build of a particular commit, pass `--source-ref <full-commit-sha> --expected-version X.Y.Z`. Pass `--source-repo-url <checkout-path>` when testing a local checkout before its commit exists upstream. The tagged GitHub workflow uses the canonical remote and checks that the commit has reached `main`. PR validation performs a trial build with the publisher identity committed in the selected source revision and keeps preview attachments in Actions. Those attachments are never publication candidates. The **Release Skills** manual Actions run provides two previews before tagging. Select `preview_type=artifact` for temporary attachments without a GitHub Release, including an automation-only acceptance run on `main`. For a future version PR, select its development branch, enter the branch's expected version, and choose `preview_type=draft`. This creates a test Draft Release with a distinct `preview-v...` tag, uploads and downloads all six attachments for verification, and leaves the draft unpublished. The administrator merges the version PR after reviewing the branch preview; the operator later tags the final merged `main` commit with `vX.Y.Z` for formal publication. Never publish or reuse the test draft as the final Release. See [README](README.md) for cleanup and GitHub permission limits.
+
 Record the exact output directory as `RELEASE_DIR` and verify it:
 
 ```bash
@@ -75,7 +80,7 @@ The default output is `dist/` relative to the caller's working directory. With t
 Read `$RELEASE_DIR/release.json` and report:
 
 - The release ID and recorded SHA-256.
-- The source repository, remote `main` commit, and skill version.
+- The source repository, source commit, and skill version.
 - Paths, versions, and hashes for ClawHub, SkillHub, WorkBuddy and Doubao.
 - Source-body consistency across channels. For Doubao, also report the source manifests for all embedded skills, the allowlisted `version_management` / `label` / empty `icon` changes, and static package validation.
 - Whether the builder's enclosing worktree had uncommitted changes, or whether provenance was unavailable.
@@ -90,7 +95,7 @@ Before ClawHub publication, inspect version history:
 npx --yes clawhub@latest inspect ai-shifu-course-creator --versions --json
 ```
 
-ClawHub requires Node 22. The publisher resolves npx from `CLAWHUB_NPX` or `--clawhub-npx`, then PATH, then the nvm Node 22 fallback; see [Publishing Environment](references/publishing.md).
+Use the Node version and CLI package configured under `[channels.clawhub]` in `release.toml`; the example commands use its defaults. The publisher resolves npx from `CLAWHUB_NPX` or `--clawhub-npx`, then PATH, then the nvm fallback for the configured Node version; see [Publishing Environment](references/publishing.md).
 
 Publishing an existing version can overwrite that version's content. Point out the existing version and obtain explicit confirmation before proceeding.
 
@@ -125,6 +130,19 @@ Use `--target clawhub` or `--target skillhub` when only one channel is authorize
 
 After partial failure, keep the same immutable release directory. Diagnose the failure and retry only failed channels. Rebuild only if remote `main` has advanced.
 
+## Import Actions Channel Results
+
+Before activating a manifest after Actions submission, use the verified `RELEASE_DIR` matching the published tag and source commit. Download each channel's `platform-result-<tag>-<channel>` Actions artifact into its own receipt directory using the [README commands](README.md#channel-submission-from-the-release), then import both results:
+
+```bash
+python3 scripts/release.py record-channel "$RELEASE_DIR" \
+  --result "$RELEASE_DIR/receipts/clawhub/platform-result.json"
+python3 scripts/release.py record-channel "$RELEASE_DIR" \
+  --result "$RELEASE_DIR/receipts/skillhub/platform-result.json"
+```
+
+Read the updated `release-report.json` and report the actual channel states. The [README](README.md#channel-submission-from-the-release) explains receipt validation and status meanings. Recording a receipt does not submit packages or establish fresh-install verification. Complete the manual WorkBuddy gate, then use `activate-manifest` below.
+
 ## Prepare and Record Manual Publication
 
 ```bash
@@ -147,7 +165,7 @@ Both `submitted` and `verified` require `--url`. Only `failed`, when no platform
 
 ## Activate the Website Manifest
 
-The gate requires ClawHub and SkillHub to be `published`, and WorkBuddy to be `submitted` or `verified`. Doubao is recorded independently.
+The gate requires ClawHub and SkillHub to be `published` or `verified`, and WorkBuddy to be `submitted` or `verified`. Doubao is recorded independently.
 
 ```bash
 python3 scripts/release.py activate-manifest "$RELEASE_DIR" \

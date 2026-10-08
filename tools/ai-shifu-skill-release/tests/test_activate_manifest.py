@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from scripts import activate_manifest
+from ai_shifu_release import manifest as manifest_workflow
 
 MANIFEST = {
     "schema_version": 1,
@@ -27,7 +27,9 @@ GOOD_CHANNELS = {
 
 
 def git(*args: str, cwd: Path) -> str:
-    result = subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True)
+    result = subprocess.run(
+        ["git", *args], cwd=cwd, check=True, capture_output=True, text=True
+    )
     return result.stdout.strip()
 
 
@@ -59,12 +61,21 @@ class ActivateManifestTest(unittest.TestCase):
             self.addCleanup(os.environ.pop, key, None)
 
         self.origin = root / "website.git"
-        git("init", "--bare", "--quiet", "--initial-branch=main", str(self.origin), cwd=root)
+        git(
+            "init",
+            "--bare",
+            "--quiet",
+            "--initial-branch=main",
+            str(self.origin),
+            cwd=root,
+        )
         seed = root / "seed"
         git("clone", "--quiet", f"file://{self.origin}", str(seed), cwd=root)
         manifest_dir = seed / "zh/skill-manifests"
         manifest_dir.mkdir(parents=True)
-        (manifest_dir / "demo-skill.json").write_text(json.dumps(MANIFEST, indent=2) + "\n", encoding="utf-8")
+        (manifest_dir / "demo-skill.json").write_text(
+            json.dumps(MANIFEST, indent=2) + "\n", encoding="utf-8"
+        )
         git("add", "--all", cwd=seed)
         git("commit", "--quiet", "-m", "seed", cwd=seed)
         git("push", "--quiet", "origin", "main", cwd=seed)
@@ -73,7 +84,8 @@ class ActivateManifestTest(unittest.TestCase):
         self.release_dir = root / "release"
         self.release_dir.mkdir()
         (self.release_dir / "release.json").write_text(
-            json.dumps({"skill": {"name": "demo-skill", "version": "1.2.0"}}), encoding="utf-8"
+            json.dumps({"skill": {"name": "demo-skill", "version": "1.2.0"}}),
+            encoding="utf-8",
         )
         self.write_report(GOOD_CHANNELS)
 
@@ -84,51 +96,76 @@ class ActivateManifestTest(unittest.TestCase):
 
     def test_activate_pushes_manifest_branch(self) -> None:
         args = make_args(self.release_dir, self.repo_url)
-        result = activate_manifest.activate(args)
+        result = manifest_workflow.activate(args)
         self.assertEqual(result["branch"], "codex/bump-demo-skill-manifest-v1.2.0")
         self.assertEqual(result["manifest"]["latest"], "1.2.0")
         self.assertEqual(result["manifest"]["notes"], "Release 1.2.0")
 
         check = Path(self.tmp.name) / "check"
-        git("clone", "--quiet", "--branch", result["branch"], self.repo_url, str(check), cwd=Path(self.tmp.name))
-        manifest = json.loads((check / "zh/skill-manifests/demo-skill.json").read_text(encoding="utf-8"))
+        git(
+            "clone",
+            "--quiet",
+            "--branch",
+            result["branch"],
+            self.repo_url,
+            str(check),
+            cwd=Path(self.tmp.name),
+        )
+        manifest = json.loads(
+            (check / "zh/skill-manifests/demo-skill.json").read_text(encoding="utf-8")
+        )
         self.assertEqual(manifest["latest"], "1.2.0")
         self.assertEqual(manifest["update_url"], MANIFEST["update_url"])
-        old = json.loads(git("show", "origin/main:zh/skill-manifests/demo-skill.json", cwd=check))
-        self.assertEqual(old["latest"], "1.1.1")  # main untouched: merge is a human gate
+        old = json.loads(
+            git("show", "origin/main:zh/skill-manifests/demo-skill.json", cwd=check)
+        )
+        self.assertEqual(
+            old["latest"], "1.1.1"
+        )  # main untouched: merge is a human gate
 
     def test_activate_blocks_when_channel_not_ready(self) -> None:
         channels = dict(GOOD_CHANNELS)
         channels["skillhub"] = {"status": "failed"}
         self.write_report(channels)
         with self.assertRaises(ValueError) as ctx:
-            activate_manifest.activate(make_args(self.release_dir, self.repo_url))
+            manifest_workflow.activate(make_args(self.release_dir, self.repo_url))
         self.assertIn("skillhub=failed", str(ctx.exception))
 
     def test_activate_blocks_when_manual_channel_missing(self) -> None:
-        channels = {key: value for key, value in GOOD_CHANNELS.items() if key != "workbuddy"}
+        channels = {
+            key: value for key, value in GOOD_CHANNELS.items() if key != "workbuddy"
+        }
         self.write_report(channels)
         with self.assertRaises(ValueError) as ctx:
-            activate_manifest.activate(make_args(self.release_dir, self.repo_url))
+            manifest_workflow.activate(make_args(self.release_dir, self.repo_url))
         self.assertIn("workbuddy=missing", str(ctx.exception))
 
     def test_activate_allows_waived_manual_channel(self) -> None:
-        channels = {key: value for key, value in GOOD_CHANNELS.items() if key != "workbuddy"}
+        channels = {
+            key: value for key, value in GOOD_CHANNELS.items() if key != "workbuddy"
+        }
         self.write_report(channels)
         args = make_args(self.release_dir, self.repo_url, allow_pending=["workbuddy"])
-        result = activate_manifest.activate(args)
+        result = manifest_workflow.activate(args)
         self.assertEqual(result["manifest"]["latest"], "1.2.0")
         self.assertEqual(result["waived_channels"], ["workbuddy"])
 
     def test_activate_does_not_require_doubao(self) -> None:
         self.assertNotIn("doubao", GOOD_CHANNELS)
-        result = activate_manifest.activate(make_args(self.release_dir, self.repo_url))
+        result = manifest_workflow.activate(make_args(self.release_dir, self.repo_url))
         self.assertEqual(result["manifest"]["latest"], "1.2.0")
 
     def test_collect_changes_between_versions(self) -> None:
         root = Path(self.tmp.name)
         skills_origin = root / "skills.git"
-        git("init", "--bare", "--quiet", "--initial-branch=main", str(skills_origin), cwd=root)
+        git(
+            "init",
+            "--bare",
+            "--quiet",
+            "--initial-branch=main",
+            str(skills_origin),
+            cwd=root,
+        )
         seed = root / "skills-seed"
         git("clone", "--quiet", f"file://{skills_origin}", str(seed), cwd=root)
         skill_dir = seed / "skills/demo-skill"
@@ -152,18 +189,27 @@ class ActivateManifestTest(unittest.TestCase):
 
         workdir = root / "collect-work"
         workdir.mkdir()
-        changes = activate_manifest.collect_changes(
+        changes = manifest_workflow.collect_changes(
             f"file://{skills_origin}", "demo-skill", "1.1.1", head, workdir
         )
         # Exclude the upper-bound bump commit; keep content changes newest first.
         self.assertEqual(
-            changes, ["feat: add analytics guidance (#110)", "fix: improve lesson pacing (#103)"]
+            changes,
+            [
+                "feat: add analytics guidance (#110)",
+                "fix: improve lesson pacing (#103)",
+            ],
         )
-        notes = activate_manifest.compose_notes("1.2.0", changes)
-        self.assertEqual(notes, "Release 1.2.0: add analytics guidance (#110); improve lesson pacing (#103)")
+        notes = manifest_workflow.compose_notes("1.2.0", changes)
+        self.assertEqual(
+            notes,
+            "Release 1.2.0: add analytics guidance (#110); improve lesson pacing (#103)",
+        )
 
     def test_compose_notes_truncates_to_schema_limit(self) -> None:
-        notes = activate_manifest.compose_notes("1.2.0", [f"fix: change {i} " + "x" * 40 for i in range(20)])
+        notes = manifest_workflow.compose_notes(
+            "1.2.0", [f"fix: change {i} " + "x" * 40 for i in range(20)]
+        )
         self.assertLessEqual(len(notes), 500)
         self.assertTrue(notes.endswith("..."))
 
@@ -172,7 +218,7 @@ class ActivateManifestTest(unittest.TestCase):
         bad = dict(MANIFEST, min_supported="9.9.9")
         manifest_path.write_text(json.dumps(bad), encoding="utf-8")
         with self.assertRaises(ValueError):
-            activate_manifest.update_manifest(manifest_path, "1.2.0", "note")
+            manifest_workflow.update_manifest(manifest_path, "1.2.0", "note")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,174 @@
+name: Publish Skill Channel
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      target:
+        required: true
+        type: string
+    secrets:
+      CLAWHUB_TOKEN:
+        required: false
+      SKILLHUB_TOKEN:
+        required: false
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing published Release tag (vX.Y.Z)"
+        required: true
+        type: string
+      target:
+        description: "Retry only this channel"
+        required: true
+        type: choice
+        options:
+          - clawhub
+          - skillhub
+      confirm_skillhub_not_submitted:
+        description: "For SkillHub retry: I checked the platform and this version was not submitted"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skill-platform-${{ inputs.tag }}-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out release tool from workflow revision
+        uses: actions/checkout@v4
+        with:
+          # The requested tag selects immutable attachments, not the tool runtime.
+          ref: ${{ github.workflow_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Confirm SkillHub retry will not duplicate a submission
+        if: github.event_name == 'workflow_dispatch' && inputs.target == 'skillhub'
+        env:
+          CONFIRMED: ${{ inputs.confirm_skillhub_not_submitted }}
+        run: test "$CONFIRMED" = "true"
+
+      - name: Read channel configuration from the release source
+        id: release-config
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          PYTHONPATH: tools/ai-shifu-skill-release/scripts
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+          from types import SimpleNamespace
+          from ai_shifu_release import config, github_releases
+
+          tag = os.environ['RELEASE_TAG']
+          repository = os.environ['GITHUB_REPOSITORY']
+          if not github_releases.TAG_PATTERN.fullmatch(tag):
+              raise ValueError('Tag must use vX.Y.Z')
+          commit = subprocess.run(
+              ['gh', 'api', f'repos/{repository}/commits/{tag}', '--jq', '.sha'],
+              check=True, capture_output=True, text=True,
+          ).stdout.strip()
+          if not re.fullmatch(r'[0-9a-f]{40}', commit):
+              raise ValueError('The release tag must resolve to a full source commit')
+          settings = config.load_for_release(SimpleNamespace(
+              source_repository=f'https://github.com/{repository}.git',
+              source_commit=commit,
+          ))
+          public = {
+              'source_commit': commit,
+              'clawhub_node_version': settings.clawhub.node_version,
+              'clawhub_endpoint': settings.clawhub.endpoint,
+              'skillhub_cli_version': settings.skillhub.cli_version,
+              'skillhub_cli_url': settings.skillhub.cli_url,
+              'skillhub_cli_sha256': settings.skillhub.cli_sha256,
+              'skillhub_endpoint': settings.skillhub.endpoint,
+          }
+          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
+              for key, value in public.items():
+                  if not isinstance(value, str) or '\n' in value or '\r' in value:
+                      raise ValueError(f'Configuration output must be one line: {key}')
+                  output.write(f'{key}={value}\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as output:
+              output.write(f'RELEASE_SOURCE_COMMIT={commit}\n')
+          PY
+
+      - name: Set up Node for ClawHub
+        if: inputs.target == 'clawhub'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.release-config.outputs.clawhub_node_version }}
+
+      - name: Configure ClawHub token
+        if: inputs.target == 'clawhub'
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+          CLAWHUB_REGISTRY: ${{ steps.release-config.outputs.clawhub_endpoint }}
+        run: |
+          test -n "$CLAWHUB_TOKEN"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ['RUNNER_TEMP']) / 'clawhub-config.json'
+          path.write_text(json.dumps({'registry': os.environ['CLAWHUB_REGISTRY'], 'token': os.environ['CLAWHUB_TOKEN']}))
+          path.chmod(0o600)
+          with Path(os.environ['GITHUB_ENV']).open('a') as output:
+              output.write(f'CLAWHUB_CONFIG_PATH={path}\n')
+          PY
+
+      - name: Install and authenticate SkillHub CLI
+        if: inputs.target == 'skillhub'
+        env:
+          SKILLHUB_TOKEN: ${{ secrets.SKILLHUB_TOKEN }}
+          SKILLHUB_CLI_VERSION: ${{ steps.release-config.outputs.skillhub_cli_version }}
+          SKILLHUB_CLI_URL: ${{ steps.release-config.outputs.skillhub_cli_url }}
+          SKILLHUB_CLI_SHA256: ${{ steps.release-config.outputs.skillhub_cli_sha256 }}
+          SKILLHUB_ENDPOINT: ${{ steps.release-config.outputs.skillhub_endpoint }}
+        run: |
+          test -n "$SKILLHUB_TOKEN"
+          kit="$RUNNER_TEMP/skillhub-cli-$SKILLHUB_CLI_VERSION.tar.gz"
+          curl -fsSL "$SKILLHUB_CLI_URL" -o "$kit"
+          printf '%s  %s\n' "$SKILLHUB_CLI_SHA256" "$kit" | sha256sum --check --status
+          mkdir -p "$RUNNER_TEMP/skillhub-kit"
+          tar -xzf "$kit" -C "$RUNNER_TEMP/skillhub-kit"
+          bash "$RUNNER_TEMP/skillhub-kit/cli/install.sh" --cli-only --no-self-upgrade
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/skillhub" publish --help > /dev/null
+          "$HOME/.local/bin/skillhub" login --help > /dev/null
+          "$HOME/.local/bin/skillhub" verify --help > /dev/null
+          "$HOME/.local/bin/skillhub" login --key "$SKILLHUB_TOKEN" --host "$SKILLHUB_ENDPOINT"
+          "$HOME/.local/bin/skillhub" auth whoami --host "$SKILLHUB_ENDPOINT"
+
+      - name: Download, verify and submit one channel package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          CHANNEL_TARGET: ${{ inputs.target }}
+        run: |
+          python3 tools/ai-shifu-skill-release/scripts/release.py submit-channel \
+            --tag "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --target "$CHANNEL_TARGET" --output platform-work --execute
+
+      - name: Save channel result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-result-${{ inputs.tag }}-${{ inputs.target }}
+          path: platform-work/platform-result.json
+          if-no-files-found: ignore
+          retention-days: 30

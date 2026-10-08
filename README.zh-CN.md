@@ -33,7 +33,7 @@ python3 scripts/release.py build --skill-name ai-shifu-course-creator
 python3 scripts/release.py verify dist/<release-id>
 ```
 
-校验时使用 `build` 实际输出的发布目录。构建与校验不会上传；发布者配置、各渠道依赖和发布命令见工具目录的英文 README。维护者可读取[发布 Skill](tools/ai-shifu-skill-release/SKILL.md)，它与上方三个业务 Skill 分开维护。工程说明使用英文，渠道包内的中文提示词与展示文案保持原样。
+校验时使用 `build` 实际输出的发布目录。构建与校验不会上传；`release.toml` 发布配置、各渠道依赖和发布命令见工具目录的英文 README。维护者可读取[发布 Skill](tools/ai-shifu-skill-release/SKILL.md)，它与上方三个业务 Skill 分开维护。工程说明使用英文，渠道包内的中文提示词与展示文案保持原样。
 
 ## 学习报告路径
 
@@ -43,8 +43,7 @@ python3 scripts/release.py verify dist/<release-id>
 - 首屏先呈现管理结论、无需外部资源且可直接打印为 PDF 的 HTML 报告；
 - 三至五条带证据、置信度和验证方法的教学建议。
 
-报告不会暴露学员身份、原始课程标识或追问原文。经营与积分数据默认不进入报告，只有用户明确要求时才加入可选附录。
-报告默认使用简体中文；只有用户明确要求英文时才切换为英文。
+报告不会暴露学员身份、原始课程标识或追问原文。经营与积分数据默认不进入报告，只有用户明确要求时才加入可选附录。报告默认使用简体中文；只有用户明确要求英文时才切换为英文。
 
 ## 使用说明
 

@@ -24,9 +24,6 @@ __pycache__/
 .update-check.json
 .update-check.dev.json
 
-# Local release publisher identity (keep publisher.toml.example tracked)
-/tools/ai-shifu-skill-release/publisher.toml
-
 # Generated release artifacts
 dist/
 
