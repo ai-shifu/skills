@@ -340,7 +340,8 @@ def _collect(
         raise ValueError("Release base is not an ancestor of the source commit")
     span = f"{base_sha}..{head_sha}" if base_sha else head_sha
     mainline = _git(repo, "rev-list", "--first-parent", span).splitlines()
-    all_commits = set(_git(repo, "rev-list", span).splitlines())
+    range_commits = _git(repo, "rev-list", span).splitlines()
+    all_commits = set(range_commits)
     mainline_set = set(mainline)
     target_branch = _default_branch(repo, repository)
     target_head = _resolve(repo, f"refs/remotes/origin/{target_branch}")
@@ -353,11 +354,17 @@ def _collect(
     details: dict[int, dict | None] = {}
     pr_files: dict[int, list[str]] = {}
     unmerged_shas = (
-        set(mainline) - set(_git(repo, "rev-list", target_head).splitlines())
+        all_commits - set(_git(repo, "rev-list", target_head).splitlines())
         if preview
         else set()
     )
-    commit_data = {sha: _commit_data(repo, sha) for sha in mainline}
+    # Actions' test merge pins the trial packages, but its first parent only
+    # contains main. Include the unmerged branch ancestry for preview notes;
+    # merged PR eligibility keeps the original first-parent integration set.
+    collection_commits = mainline + [
+        sha for sha in range_commits if sha in unmerged_shas and sha not in mainline_set
+    ]
+    commit_data = {sha: _commit_data(repo, sha) for sha in collection_commits}
     hinted_prs = {
         sha: number
         for sha, commit in commit_data.items()
@@ -406,7 +413,7 @@ def _collect(
             associations_by_sha = dict(
                 executor.map(
                     association_metadata,
-                    (sha for sha in mainline if sha not in unmerged_shas),
+                    (sha for sha in collection_commits if sha not in unmerged_shas),
                 )
             )
             associated_numbers = {
@@ -416,7 +423,7 @@ def _collect(
             }
             numbers = sorted(associated_numbers | set(hinted_prs.values()))
             details = dict(executor.map(detail_metadata, numbers))
-    for sha in mainline:
+    for sha in collection_commits:
         commit = commit_data[sha]
         unmerged = sha in unmerged_shas
         found_pr = False
