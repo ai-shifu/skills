@@ -246,17 +246,16 @@ class ReleaseNotesTest(unittest.TestCase):
             snapshot = self.collect_github(head)
         self.assertEqual(snapshot["pr_count"], 1)
         self.assertEqual(snapshot["changes"][0]["number"], 12)
-        for overrides, expected in (
-            ({"merged": False}, "not merged into"),
-            ({"merge_commit_sha": self.base}, "outside the release range"),
+        for overrides in (
+            {"merged": False},
+            {"merge_commit_sha": self.base},
             (
                 {
                     "base": {
                         "ref": "development",
                         "repo": {"full_name": "example/skills"},
                     }
-                },
-                "not merged into",
+                }
             ),
         ):
             with self.subTest(overrides=overrides):
@@ -265,7 +264,74 @@ class ReleaseNotesTest(unittest.TestCase):
                     patch.object(
                         release_notes, "_github_json", side_effect=self.api({}, prs)
                     ),
-                    self.assertRaisesRegex(ValueError, expected),
+                ):
+                    snapshot = self.collect_github(head)
+                self.assertEqual(snapshot["pr_count"], 0)
+                self.assertEqual(len(snapshot["changes"]), 1)
+                self.assertEqual(snapshot["changes"][0]["kind"], "commit")
+                self.assertEqual(
+                    snapshot["changes"][0]["title"], "feat: Course creation (#12)"
+                )
+
+    def test_direct_reference_to_another_in_range_pr_remains_a_commit(self) -> None:
+        integrated = self.commit("feat: Course creation (#12)")
+        head = self.commit("fix: Follow up (#12)")
+        prs = {12: self.pr(12, integrated, "feat: Course creation")}
+        with patch.object(
+            release_notes, "_github_json", side_effect=self.api({integrated: [12]}, prs)
+        ):
+            snapshot = self.collect_github(head)
+        self.assertEqual(snapshot["pr_count"], 1)
+        self.assertEqual(len(snapshot["changes"]), 2)
+        direct = next(item for item in snapshot["changes"] if item["commit"] == head)
+        self.assertEqual(direct["kind"], "commit")
+        self.assertEqual(direct["title"], "fix: Follow up (#12)")
+
+    def test_missing_hint_is_optional_but_missing_associated_pr_is_fatal(self) -> None:
+        head = self.commit("fix: Follow up (#12)")
+        for associated in (False, True):
+            with self.subTest(associated=associated):
+                api = self.api({head: [12]} if associated else {}, {})
+
+                def missing_pr(endpoint, *, paginate=False, api=api):
+                    if endpoint.endswith("/pulls/12"):
+                        raise release_notes._GitHubLookupError("PR not found", 404)
+                    return api(endpoint, paginate=paginate)
+
+                with patch.object(
+                    release_notes, "_github_json", side_effect=missing_pr
+                ):
+                    if associated:
+                        with self.assertRaisesRegex(ValueError, "PR not found"):
+                            self.collect_github(head)
+                    else:
+                        snapshot = self.collect_github(head)
+                        self.assertEqual(snapshot["pr_count"], 0)
+                        self.assertEqual(len(snapshot["changes"]), 1)
+                        self.assertEqual(snapshot["changes"][0]["kind"], "commit")
+                        self.assertEqual(
+                            snapshot["changes"][0]["title"], "fix: Follow up (#12)"
+                        )
+
+    def test_hint_failures_other_than_http_404_still_abort_collection(self) -> None:
+        head = self.commit("fix: Follow up (#12)")
+        api = self.api({}, {})
+        for failure in (
+            release_notes._GitHubLookupError("Forbidden", 403),
+            release_notes._GitHubLookupError("connection reset"),
+            ValueError("Invalid GitHub metadata"),
+            ValueError("An arbitrary failure mentioning 404"),
+        ):
+            with self.subTest(failure=str(failure)):
+
+                def failed_pr(endpoint, *, paginate=False, failure=failure):
+                    if endpoint.endswith("/pulls/12"):
+                        raise failure
+                    return api(endpoint, paginate=paginate)
+
+                with (
+                    patch.object(release_notes, "_github_json", side_effect=failed_pr),
+                    self.assertRaisesRegex(ValueError, str(failure)),
                 ):
                     self.collect_github(head)
 
@@ -405,9 +471,12 @@ class ReleaseNotesTest(unittest.TestCase):
                     release_notes.subprocess, "run", return_value=failure
                 ) as run,
                 patch.object(release_notes.time, "sleep") as sleep,
-                self.assertRaisesRegex(ValueError, "metadata lookup failed"),
+                self.assertRaisesRegex(
+                    release_notes._GitHubLookupError, "metadata lookup failed"
+                ) as raised,
             ):
                 release_notes._github_json("endpoint")
+            self.assertEqual(raised.exception.status, 404 if "404" in message else 403)
             self.assertEqual(run.call_count, 1)
             sleep.assert_not_called()
         malformed = SimpleNamespace(returncode=0, stdout="not json", stderr="")

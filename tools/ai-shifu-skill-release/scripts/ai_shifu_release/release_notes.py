@@ -60,6 +60,14 @@ _GITHUB_URL = re.compile(
 )
 
 
+class _GitHubLookupError(ValueError):
+    """Keep HTTP failures distinct from malformed or incomplete metadata."""
+
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
+
+
 def github_repository_name(source_repository: str) -> str:
     """Return owner/repository for a GitHub URL, never infer from local origin."""
     match = _GITHUB_URL.fullmatch(str(source_repository))
@@ -196,8 +204,10 @@ def _github_json(endpoint: str, *, paginate: bool = False):
             message,
         )
         if attempt == 2 or permanent or not transient:
-            raise ValueError(
-                f"GitHub metadata lookup failed for {endpoint}: {result.stderr.strip()}"
+            status = re.search(r"http\s+(\d{3})\b", message)
+            raise _GitHubLookupError(
+                f"GitHub metadata lookup failed for {endpoint}: {result.stderr.strip()}",
+                int(status.group(1)) if status else None,
             )
         time.sleep(0.25 * (attempt + 1))
     try:
@@ -340,7 +350,7 @@ def _collect(
         )
     changes: list[dict] = []
     seen_prs: set[int] = set()
-    details: dict[int, dict] = {}
+    details: dict[int, dict | None] = {}
     pr_files: dict[int, list[str]] = {}
     unmerged_shas = (
         set(mainline) - set(_git(repo, "rev-list", target_head).splitlines())
@@ -377,17 +387,18 @@ def _collect(
                     or number <= 0
                 ):
                     raise ValueError(f"Missing PR identity associated with {sha}")
-            hint = hinted_prs.get(sha)
-            if hint is not None and not any(
-                association["number"] == hint for association in associations
-            ):
-                # Commit subjects are only hints. Missing associations must be
-                # checked against authoritative PR details and Git ancestry.
-                associations = [*associations, {"number": hint}]
             return sha, associations
 
-        def detail_metadata(number: int) -> tuple[int, dict]:
-            return number, _github_json(f"repos/{repository}/pulls/{number}")
+        def detail_metadata(number: int) -> tuple[int, dict | None]:
+            try:
+                return number, _github_json(f"repos/{repository}/pulls/{number}")
+            except _GitHubLookupError as error:
+                # An issue reference can resemble a squash-merge PR suffix.
+                # Only a missing hint is optional; authoritative PR failures
+                # and all other API failures must still abort collection.
+                if error.status == 404 and number not in associated_numbers:
+                    return number, None
+                raise
 
         # Read-only requests are independent; consume their results in source
         # order so request completion order can never change the notes.
@@ -398,21 +409,30 @@ def _collect(
                     (sha for sha in mainline if sha not in unmerged_shas),
                 )
             )
-            numbers = sorted(
-                {
-                    association["number"]
-                    for associations in associations_by_sha.values()
-                    for association in associations
-                }
-            )
+            associated_numbers = {
+                association["number"]
+                for associations in associations_by_sha.values()
+                for association in associations
+            }
+            numbers = sorted(associated_numbers | set(hinted_prs.values()))
             details = dict(executor.map(detail_metadata, numbers))
     for sha in mainline:
         commit = commit_data[sha]
         unmerged = sha in unmerged_shas
         found_pr = False
         if repository and not unmerged:
-            for association in associations_by_sha[sha]:
-                number = association["number"]
+            candidates = [
+                (association["number"], False)
+                for association in associations_by_sha[sha]
+            ]
+            hint = hinted_prs.get(sha)
+            if (
+                hint is not None
+                and not any(number == hint for number, _ in candidates)
+                and details[hint] is not None
+            ):
+                candidates.append((hint, True))
+            for number, hint_only in candidates:
                 pr = details[number]
                 if not isinstance(pr, dict) or pr.get("number") != number:
                     raise ValueError(f"Invalid details for PR #{number}")
@@ -425,17 +445,11 @@ def _collect(
                         f"Missing merge status for PR #{number}"
                     )
                 if not pr["merged"] or base.get("ref") != target_branch:
-                    if hinted_prs.get(sha) == number:
-                        raise ValueError(
-                            f"Commit {sha} claims PR #{number}, which was not merged into the target branch"
-                        )
                     continue
                 merge_sha = pr.get("merge_commit_sha")
+                if hint_only and merge_sha != sha:
+                    continue
                 if merge_sha not in all_commits or merge_sha not in mainline_set:
-                    if hinted_prs.get(sha) == number:
-                        raise ValueError(
-                            f"Commit {sha} claims PR #{number}, whose integration is outside the release range"
-                        )
                     continue
                 found_pr = True
                 if number in seen_prs:
