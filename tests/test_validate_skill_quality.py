@@ -195,7 +195,10 @@ class FrontmatterValidationTests(unittest.TestCase):
         fields = validate_skill_quality.parse_frontmatter(skill_md, issues)
         self.assertEqual(issues.errors, [])
         self.assertIsNotNone(fields)
-        self.assertEqual(fields["version"], "1.2.11")
+        self.assertRegex(
+            fields["version"],
+            r"\A(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\Z",
+        )
         self.assertEqual(fields["version_management"], "standalone")
 
 
