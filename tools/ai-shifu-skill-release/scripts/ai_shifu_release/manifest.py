@@ -94,7 +94,14 @@ def collect_changes(
     subjects = []
     for change in collected["changes"]:
         title = change["title"]
-        if not title.strip() or bump_noise.search(title):
+        flow_bump = re.fullmatch(
+            r"chore: flow version to v(\S+)(?: \(#\d+\))?", title.strip()
+        )
+        if (
+            not title.strip()
+            or bump_noise.search(title)
+            or (flow_bump and SEMVER.fullmatch(flow_bump.group(1)))
+        ):
             continue
         number = change.get("number")
         if number and not re.search(rf"\(#{number}\)", title):

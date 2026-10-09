@@ -90,6 +90,10 @@ class BumpVersionTest(unittest.TestCase):
             str(check),
             cwd=Path(self.tmp.name),
         )
+        self.assertEqual(
+            git("log", "-1", "--format=%s", cwd=check),
+            "chore: flow version to v1.2.0",
+        )
         text = (check / "skills/demo-skill/SKILL.md").read_text(encoding="utf-8")
         self.assertIn(
             "metadata:\n  version: 1.2.0\n  version_management: standalone", text

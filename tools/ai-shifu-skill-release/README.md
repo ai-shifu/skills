@@ -150,7 +150,7 @@ python3 scripts/release.py bump --skill-name ai-shifu-course-creator \
   --skill-version <X.Y.Z>
 ```
 
-`bump` creates a source-repository branch in a temporary clone, changes the frontmatter version without changing the skill body, pushes the branch, and opens a PR with `gh`. It does not edit the current checkout or merge the PR. A human must merge before `build` can read the new version from remote `main`.
+`bump` creates a source-repository branch in a temporary clone, changes the frontmatter version without changing the skill body, pushes the branch, and opens a PR with `gh`. Release PRs follow the [version-bump title requirement](SKILL.md#upgrade-the-skill-version). It does not edit the current checkout or merge the PR. A human must merge before `build` can read the new version from remote `main`.
 
 Options include `--level major|minor|patch`, `--changelog <text>`, `--draft`, and `--no-pr`. The optional changelog text also adds a CHANGELOG entry. With `--no-pr`, or when `gh` is missing, the branch is still pushed but PR creation is left to the operator. A channel-shell-only update still uses the primary skill version; there is no independent plugin version override.
 

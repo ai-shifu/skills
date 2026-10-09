@@ -222,7 +222,8 @@ class ActivateManifestTest(unittest.TestCase):
         commit("chore: bump demo-skill to 1.1.1", "1.1.1")
         commit("fix: improve lesson pacing (#103)", "1.1.1", extra="pacing\n")
         commit("feat: add analytics guidance (#110)", "1.1.1", extra="analytics\n")
-        commit("chore: bump demo-skill to 1.2.0", "1.2.0", extra="analytics\n")
+        commit("chore: bump demo-skill to 1.1.2", "1.1.2", extra="analytics\n")
+        commit("chore: flow version to v1.2.0", "1.2.0", extra="analytics\n")
         other_skill = seed / "skills/other-skill"
         other_skill.mkdir()
         (other_skill / "SKILL.md").write_text("Other skill.\n", encoding="utf-8")
@@ -303,7 +304,18 @@ class ActivateManifestTest(unittest.TestCase):
                     {"number": 120, "title": "feat!: require a new course format"},
                     {"number": 110, "title": "feat: add analytics guidance"},
                     {"number": 103, "title": "fix: improve lesson pacing (#103)"},
+                    {"number": 140, "title": "fix: explain flow version to v1.2.0"},
                     {"number": 130, "title": "chore: bump demo-skill to 1.2.0"},
+                    {"number": 131, "title": "chore: flow version to v1.2.0"},
+                    {"number": 132, "title": "chore: flow version to v1.2.1 (#132)"},
+                    {
+                        "number": 133,
+                        "title": "chore: flow version to v1.3.0-rc.1+build.2",
+                    },
+                    {
+                        "number": 141,
+                        "title": "chore: flow version to v1.2.0 with clearer notes",
+                    },
                 ]
             },
         ) as collect:
@@ -323,6 +335,8 @@ class ActivateManifestTest(unittest.TestCase):
                 "feat!: require a new course format (#120)",
                 "feat: add analytics guidance (#110)",
                 "fix: improve lesson pacing (#103)",
+                "fix: explain flow version to v1.2.0 (#140)",
+                "chore: flow version to v1.2.0 with clearer notes (#141)",
             ],
         )
         self.assertIn(
