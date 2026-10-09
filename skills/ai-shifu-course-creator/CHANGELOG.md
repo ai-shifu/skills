@@ -1,3 +1,7 @@
+
+## 1.2.11 - 2026-10-09
+
+- Preserve Course Prompts during reimport and lesson revision baselines during sync; correct lesson history, validate course ordering, and simplify course CLI output. Deliver verified ClawHub, SkillHub, WorkBuddy, and Doubao packages through the tagged GitHub release workflow, with automatic ClawHub and SkillHub submission.
 ## Unreleased
 
 - Omit model temperature settings from local course snapshots and generated import files.
