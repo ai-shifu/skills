@@ -223,7 +223,6 @@ class ActivateManifestTest(unittest.TestCase):
         commit("fix: improve lesson pacing (#103)", "1.1.1", extra="pacing\n")
         commit("feat: add analytics guidance (#110)", "1.1.1", extra="analytics\n")
         commit("chore: bump demo-skill to 1.1.2", "1.1.2", extra="analytics\n")
-        commit("fix: bump demo-skill to 1.1.3", "1.1.3", extra="analytics\n")
         commit("chore: flow version to v1.2.0", "1.2.0", extra="analytics\n")
         other_skill = seed / "skills/other-skill"
         other_skill.mkdir()

@@ -56,7 +56,7 @@ python3 scripts/release.py bump --skill-name ai-shifu-course-creator \
 
 Use `--level major|minor|patch` instead of an explicit version when requested. `--draft` creates a draft PR; `--no-pr` pushes the branch without opening a PR. `--changelog <text>` optionally adds a CHANGELOG entry.
 
-Version-bump PR titles must use `chore: flow version to vX.Y.Z`, replacing `X.Y.Z` with the target version; for example, `chore: flow version to v1.2.12`. Follow this format for both automatically and manually created release PRs. Set the version commit subject separately, following the source repository's skill-content commit classification requirements.
+Version-bump PR titles must use `chore: flow version to vX.Y.Z`, replacing `X.Y.Z` with the target version; for example, `chore: flow version to v1.2.12`. Follow this format for both automatically and manually created release PRs. `bump` uses the same title for the version commit.
 
 `bump` modifies the frontmatter version in a temporary source-repository clone without changing the skill body, pushes a branch, and uses `gh` to create a PR. It does not edit the current checkout. **Never merge the PR.** Return its URL for human review; only after merge can `build` read the version from remote `main`. SSH write access is required. If `gh` is missing, the branch is still pushed and a PR must be created manually.
 
