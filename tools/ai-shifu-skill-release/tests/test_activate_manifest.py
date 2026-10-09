@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from ai_shifu_release import manifest as manifest_workflow
 
@@ -49,6 +50,25 @@ def make_args(release_dir: Path, repo_url: str, **overrides) -> SimpleNamespace:
 
 
 class ActivateManifestTest(unittest.TestCase):
+    def test_collect_changes_requires_a_fixed_source_sha(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            patch.object(manifest_workflow, "run") as git,
+        ):
+            for upper in ("", "HEAD", "main"):
+                with (
+                    self.subTest(upper=upper),
+                    self.assertRaisesRegex(ValueError, "full source commit SHA"),
+                ):
+                    manifest_workflow.collect_changes(
+                        "unused",
+                        "ai-shifu-course-creator",
+                        "1.0.0",
+                        upper,
+                        Path(temporary),
+                    )
+            git.assert_not_called()
+
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory(prefix="manifest-test-")
         self.addCleanup(self.tmp.cleanup)
@@ -96,7 +116,9 @@ class ActivateManifestTest(unittest.TestCase):
 
     def test_activate_pushes_manifest_branch(self) -> None:
         args = make_args(self.release_dir, self.repo_url)
-        result = manifest_workflow.activate(args)
+        with patch.object(manifest_workflow, "collect_changes") as collect:
+            result = manifest_workflow.activate(args)
+        collect.assert_not_called()
         self.assertEqual(result["branch"], "codex/bump-demo-skill-manifest-v1.2.0")
         self.assertEqual(result["manifest"]["latest"], "1.2.0")
         self.assertEqual(result["manifest"]["notes"], "Release 1.2.0")
@@ -155,6 +177,23 @@ class ActivateManifestTest(unittest.TestCase):
         result = manifest_workflow.activate(make_args(self.release_dir, self.repo_url))
         self.assertEqual(result["manifest"]["latest"], "1.2.0")
 
+    def test_activate_preserves_manual_notes(self) -> None:
+        notes = "请按原计划升级，保留手写说明。"
+        with patch.object(manifest_workflow, "collect_changes") as collect:
+            result = manifest_workflow.activate(
+                make_args(self.release_dir, self.repo_url, notes=notes)
+            )
+        collect.assert_not_called()
+        self.assertEqual(result["manifest"]["notes"], notes)
+
+    def test_activate_rejects_manual_and_automatic_notes_together(self) -> None:
+        with self.assertRaisesRegex(ValueError, "either --notes or --auto-notes"):
+            manifest_workflow.activate(
+                make_args(
+                    self.release_dir, self.repo_url, notes="manual", auto_notes=True
+                )
+            )
+
     def test_collect_changes_between_versions(self) -> None:
         root = Path(self.tmp.name)
         skills_origin = root / "skills.git"
@@ -184,15 +223,22 @@ class ActivateManifestTest(unittest.TestCase):
         commit("fix: improve lesson pacing (#103)", "1.1.1", extra="pacing\n")
         commit("feat: add analytics guidance (#110)", "1.1.1", extra="analytics\n")
         commit("chore: bump demo-skill to 1.2.0", "1.2.0", extra="analytics\n")
-        git("push", "--quiet", "origin", "main", cwd=seed)
+        other_skill = seed / "skills/other-skill"
+        other_skill.mkdir()
+        (other_skill / "SKILL.md").write_text("Other skill.\n", encoding="utf-8")
+        git("add", "--all", cwd=seed)
+        git("commit", "--quiet", "-m", "feat!: replace another skill (#115)", cwd=seed)
         head = git("rev-parse", "HEAD", cwd=seed)
+        commit("feat: add later guidance (#120)", "1.1.1", extra="later\n")
+        git("push", "--quiet", "origin", "main", cwd=seed)
 
         workdir = root / "collect-work"
         workdir.mkdir()
         changes = manifest_workflow.collect_changes(
             f"file://{skills_origin}", "demo-skill", "1.1.1", head, workdir
         )
-        # Exclude the upper-bound bump commit; keep content changes newest first.
+        # Use the previous version's introduction at the frozen source commit;
+        # exclude bumps, other skills, and changes made after that source.
         self.assertEqual(
             changes,
             [
@@ -206,12 +252,106 @@ class ActivateManifestTest(unittest.TestCase):
             "Release 1.2.0: add analytics guidance (#110); improve lesson pacing (#103)",
         )
 
-    def test_compose_notes_truncates_to_schema_limit(self) -> None:
-        notes = manifest_workflow.compose_notes(
-            "1.2.0", [f"fix: change {i} " + "x" * 40 for i in range(20)]
+    def test_collect_changes_keeps_more_than_thirty_prs(self) -> None:
+        root = Path(self.tmp.name)
+        source = root / "large-source"
+        git("init", "--quiet", "--initial-branch=main", str(source), cwd=root)
+        skill_dir = source / "skills/demo-skill"
+        skill_dir.mkdir(parents=True)
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text(
+            "---\nname: Demo\nversion: 1.1.1\nversion_management: standalone\n---\n\nBody.\n",
+            encoding="utf-8",
         )
+        git("add", "--all", cwd=source)
+        git("commit", "--quiet", "-m", "chore: bump demo-skill to 1.1.1", cwd=source)
+        titles = []
+        for number in range(100, 135):
+            (skill_dir / "guide.md").write_text(f"Change {number}.\n", encoding="utf-8")
+            title = f"fix: correct lesson {number} (#{number})"
+            titles.append(title)
+            git("add", "--all", cwd=source)
+            git("commit", "--quiet", "-m", title, cwd=source)
+        head = git("rev-parse", "HEAD", cwd=source)
+        workdir = root / "large-collect"
+        workdir.mkdir()
+        changes = manifest_workflow.collect_changes(
+            f"file://{source}", "demo-skill", "1.1.1", head, workdir
+        )
+        self.assertEqual(changes, list(reversed(titles)))
+
+    def test_collect_changes_uses_structured_pr_titles(self) -> None:
+        root = Path(self.tmp.name)
+        source = root / "structured-source"
+        git("init", "--quiet", "--initial-branch=main", str(source), cwd=root)
+        skill_dir = source / "skills/demo-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: Demo\nversion: 1.1.1\nversion_management: standalone\n---\n\nBody.\n",
+            encoding="utf-8",
+        )
+        git("add", "--all", cwd=source)
+        git("commit", "--quiet", "-m", "chore: bump demo-skill to 1.1.1", cwd=source)
+        boundary = git("rev-parse", "HEAD", cwd=source)
+        workdir = root / "structured-collect"
+        workdir.mkdir()
+        with patch.object(
+            manifest_workflow.release_notes,
+            "collect_changes",
+            return_value={
+                "changes": [
+                    {"number": 120, "title": "feat!: require a new course format"},
+                    {"number": 110, "title": "feat: add analytics guidance"},
+                    {"number": 103, "title": "fix: improve lesson pacing (#103)"},
+                    {"number": 130, "title": "chore: bump demo-skill to 1.2.0"},
+                ]
+            },
+        ) as collect:
+            changes = manifest_workflow.collect_changes(
+                f"file://{source}", "demo-skill", "1.1.1", boundary, workdir
+            )
+        collect.assert_called_once_with(
+            workdir / "skills-history",
+            boundary,
+            base_ref=boundary,
+            github_repository="",
+            paths=("skills/demo-skill/",),
+        )
+        self.assertEqual(
+            changes,
+            [
+                "feat!: require a new course format (#120)",
+                "feat: add analytics guidance (#110)",
+                "fix: improve lesson pacing (#103)",
+            ],
+        )
+        self.assertIn(
+            "! require a new course format (#120)",
+            manifest_workflow.compose_notes("1.2.0", changes),
+        )
+
+    def test_compose_notes_omits_whole_changes_at_schema_limit(self) -> None:
+        changes = [f"fix: change {i} " + "x" * 40 + f" (#{i + 100})" for i in range(20)]
+        notes = manifest_workflow.compose_notes("1.2.0", changes)
         self.assertLessEqual(len(notes), 500)
-        self.assertTrue(notes.endswith("..."))
+        parts = notes.removeprefix("Release 1.2.0: ").split("; ")
+        remaining = int(parts[-1].split()[1])
+        self.assertEqual(
+            parts[:-1],
+            [change.removeprefix("fix: ") for change in changes[: len(parts) - 1]],
+        )
+        self.assertEqual(remaining + len(parts) - 1, len(changes))
+
+    def test_compose_notes_handles_an_oversized_first_change(self) -> None:
+        notes = manifest_workflow.compose_notes(
+            "1.2.0", ["feat: " + "x" * 600 + " (#123)", "fix: improve pacing (#124)"]
+        )
+        self.assertEqual(notes, "Release 1.2.0: 2 changes; see the release changelog")
+
+    def test_compose_notes_preserves_a_change_at_the_exact_limit(self) -> None:
+        title = "x" * (500 - len("Release 1.2.0: "))
+        notes = manifest_workflow.compose_notes("1.2.0", [f"fix: {title}"])
+        self.assertEqual(notes, f"Release 1.2.0: {title}")
 
     def test_update_manifest_rejects_min_supported_above_latest(self) -> None:
         manifest_path = Path(self.tmp.name) / "manifest.json"

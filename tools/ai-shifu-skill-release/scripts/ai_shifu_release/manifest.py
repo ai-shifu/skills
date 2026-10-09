@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
+from . import release_notes
 from .publishing import AUTOMATED_TARGETS
 from .skill_metadata import SEMVER, parse_frontmatter, split_skill_document
 from .source import SOURCE_REPOSITORY, run
@@ -57,14 +58,18 @@ def collect_changes(
     upper_commit: str,
     workdir: Path,
 ) -> list[str]:
-    """Commit subjects (squash-merged PR titles) that touched this skill between
-    the commit where SKILL.md last became previous_version and upper_commit."""
+    """Ordered PR titles touching this skill since its previous version began."""
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", upper_commit):
+        raise ValueError("A full source commit SHA is required for manifest notes")
     clone = workdir / "skills-history"
     run("git", "clone", "--quiet", "--single-branch", repo_url, str(clone), cwd=workdir)
+    head = run("git", "rev-parse", f"{upper_commit}^{{commit}}", cwd=clone)
     skill_md = f"skills/{skill_name}/SKILL.md"
     boundary = ""
     seen_previous = False
-    for sha in run("git", "log", "--format=%H", "--", skill_md, cwd=clone).split():
+    for sha in run(
+        "git", "log", "--format=%H", head, "--", skill_md, cwd=clone
+    ).split():
         frontmatter, _ = split_skill_document(
             run("git", "show", f"{sha}:{skill_md}", cwd=clone), sha
         )
@@ -78,29 +83,46 @@ def collect_changes(
         raise ValueError(
             f"Cannot locate the commit where {skill_name} became {previous_version}"
         )
-    subjects = run(
-        "git",
-        "log",
-        "--format=%s",
-        f"{boundary}..{upper_commit or 'HEAD'}",
-        "--",
-        f"skills/{skill_name}/",
-        cwd=clone,
+    collected = release_notes.collect_changes(
+        clone,
+        head,
+        base_ref=boundary,
+        github_repository=release_notes.github_repository_name(repo_url),
+        paths=(f"skills/{skill_name}/",),
     )
     bump_noise = re.compile(rf"bump {re.escape(skill_name)} to ")
-    return [
-        line
-        for line in subjects.splitlines()
-        if line.strip() and not bump_noise.search(line)
-    ]
+    subjects = []
+    for change in collected["changes"]:
+        title = change["title"]
+        if not title.strip() or bump_noise.search(title):
+            continue
+        number = change.get("number")
+        if number and not re.search(rf"\(#{number}\)", title):
+            title += f" (#{number})"
+        subjects.append(title)
+    return subjects
 
 
 def compose_notes(version: str, changes: list[str]) -> str:
     if not changes:
         return f"Release {version}"
-    cleaned = [re.sub(r"^\w+(\(.*?\))?!?:\s*", "", change) for change in changes]
-    notes = f"Release {version}: " + "; ".join(cleaned)
-    return notes[:497] + "..." if len(notes) > 500 else notes
+    cleaned = [release_notes.title_body(change) for change in changes]
+    prefix = f"Release {version}: "
+    notes = prefix + "; ".join(cleaned)
+    if len(notes) <= 500:
+        return notes
+    selected = []
+    for change in cleaned:
+        remaining = len(cleaned) - len(selected) - 1
+        suffix = f"; ...and {remaining} more changes" if remaining else ""
+        candidate = prefix + "; ".join([*selected, change]) + suffix
+        if len(candidate) > 500:
+            break
+        selected.append(change)
+    if not selected:
+        return prefix + f"{len(cleaned)} changes; see the release changelog"
+    remaining = len(cleaned) - len(selected)
+    return prefix + "; ".join(selected) + f"; ...and {remaining} more changes"
 
 
 def assert_channels_ready(

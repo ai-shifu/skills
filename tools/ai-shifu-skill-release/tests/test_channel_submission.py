@@ -16,6 +16,7 @@ from ai_shifu_release import (
     config,
     github_releases,
     publishing,
+    release_notes,
     release_state,
 )
 from support import ReleaseFixture
@@ -332,6 +333,9 @@ class ChannelSubmissionTest(unittest.TestCase):
         self.addCleanup(fixture.tearDown)
         old_commit = fixture.git("rev-parse", "main")
         candidate = fixture.build(source_ref=old_commit)
+        notes = release_notes.generate_notes(
+            str(fixture.source_repo), old_commit, "1.2.3"
+        )
         old_metadata = json.loads((candidate / "release.json").read_text())
         source_repository = "https://github.com/ai-shifu/skills.git"
         old_metadata["source"]["repository"] = source_repository
@@ -342,9 +346,12 @@ class ChannelSubmissionTest(unittest.TestCase):
         fixture.git("commit", "-m", "advance source after release")
         new_commit = fixture.git("rev-parse", "main")
         self.assertNotEqual(new_commit, old_commit)
-        assets, _ = github_releases.prepare_assets(
-            candidate, "v1.2.3", old_commit, fixture.root / "attachments"
-        )
+        # Isolate PR metadata collection while retaining the real trusted-source
+        # rebuild and channel-submission checks below.
+        with patch.object(release_notes, "generate_notes", return_value=notes):
+            assets, _ = github_releases.prepare_assets(
+                candidate, "v1.2.3", old_commit, fixture.root / "attachments"
+            )
         attachment_paths = {path.name: path for path in assets}
         github_calls = []
         registry_commands = []

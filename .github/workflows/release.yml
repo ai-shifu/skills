@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: skill-release-${{ github.ref_name }}
@@ -53,6 +54,7 @@ jobs:
 
       - name: Build and verify selected commit
         env:
+          GH_TOKEN: ${{ github.token }}
           PREVIEW_VERSION: ${{ inputs.expected_version }}
         run: |
           python3 tools/ai-shifu-skill-release/scripts/release.py build \
@@ -62,19 +64,31 @@ jobs:
           python3 tools/ai-shifu-skill-release/scripts/release.py verify "$release_dir"
           python3 tools/ai-shifu-skill-release/scripts/release.py github-release "$release_dir" \
             --tag "v$PREVIEW_VERSION" --commit "$GITHUB_SHA" \
-            --prepare-only --output preview-assets
+            --prepare-only --preview --output preview-assets
+          cat preview-assets/notes/release-notes.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save preview attachments
         uses: actions/upload-artifact@v4
         with:
           name: skill-release-preview-${{ github.sha }}
-          path: preview-assets/*
+          path: |
+            preview-assets/*.zip
+            preview-assets/release.json
+            preview-assets/SHA256SUMS
+          retention-days: 7
+
+      - name: Save preview release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: skill-release-notes-preview-${{ github.sha }}
+          path: preview-assets/notes/
           retention-days: 7
 
   preview-draft:
     if: github.event_name == 'workflow_dispatch' && inputs.preview_type == 'draft'
     permissions:
       contents: write
+      pull-requests: read
     runs-on: ubuntu-24.04
     steps:
       - name: Require a development branch
@@ -129,13 +143,22 @@ jobs:
           preview_tag="preview-v${PREVIEW_VERSION}-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           python3 tools/ai-shifu-skill-release/scripts/release.py github-release "$release_dir" \
             --tag "v$PREVIEW_VERSION" --commit "$GITHUB_SHA" \
-            --draft-preview-tag "$preview_tag"
+            --draft-preview-tag "$preview_tag" --preview --notes-output release-notes
           echo "Test Draft Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${preview_tag}" >> "$GITHUB_STEP_SUMMARY"
+          cat release-notes/release-notes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save Draft Release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: skill-release-notes-draft-${{ github.sha }}
+          path: release-notes/
+          retention-days: 7
 
   publish:
     if: github.event_name == 'push'
     permissions:
       contents: write
+      pull-requests: read
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout tagged source
@@ -178,7 +201,14 @@ jobs:
         run: |
           release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
           python3 tools/ai-shifu-skill-release/scripts/release.py github-release "$release_dir" \
-            --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA"
+            --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --notes-output release-notes
+          cat release-notes/release-notes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save published release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: skill-release-notes-${{ github.ref_name }}
+          path: release-notes/
 
   publish-clawhub:
     needs: publish

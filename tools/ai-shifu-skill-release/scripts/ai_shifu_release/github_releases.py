@@ -12,7 +12,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from types import SimpleNamespace
 
-from . import build
+from . import build, release_notes
 from .artifacts import CHANNEL_ORDER, artifact_path, verify_zip
 from .artifacts import file_hash as sha256
 from .release_state import ReleaseContext
@@ -23,57 +23,44 @@ TAG_PATTERN = re.compile(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 PREVIEW_TAG_PATTERN = re.compile(
     r"preview-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-([0-9a-f]{40})-([1-9]\d*)-([1-9]\d*)$"
 )
+NOTES_START = "<!-- ai-shifu-release-notes:start -->"
+NOTES_END = "<!-- ai-shifu-release-notes:end -->"
 
 
 def gh(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["gh", *args], check=check, capture_output=True, text=True)
 
 
-def change_notes(tag: str, commit: str) -> str:
-    try:
-        tags = subprocess.run(
-            [
-                "git",
-                "for-each-ref",
-                "--sort=-version:refname",
-                "--format=%(refname:short)",
-                "refs/tags/v*",
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.splitlines()
-        previous = next(
-            (
-                candidate
-                for candidate in tags
-                if TAG_PATTERN.fullmatch(candidate)
-                and candidate != tag
-                and subprocess.run(
-                    ["git", "merge-base", "--is-ancestor", candidate, commit],
-                    capture_output=True,
-                ).returncode
-                == 0
-            ),
-            None,
-        )
-        span = f"{previous}..{commit}" if previous else commit
-        subjects = subprocess.run(
-            ["git", "log", "--format=%s", span],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.splitlines()
-        return (
-            "\n".join(f"- {subject}" for subject in subjects[:30])
-            or "- Initial release"
-        )
-    except (OSError, subprocess.CalledProcessError):
-        return f"- Source commit {commit}"
+def managed_notes(notes: str) -> str:
+    """Mark only generated text so a refresh can preserve surrounding edits."""
+    return f"{NOTES_START}\n{notes.rstrip()}\n{NOTES_END}\n"
+
+
+def refresh_body(body: str, notes: str) -> str:
+    """Replace an owned region, or an explicitly refreshed legacy draft body."""
+    if NOTES_START not in body and NOTES_END not in body:
+        return notes
+    if body.count(NOTES_START) != 1 or body.count(NOTES_END) != 1:
+        raise ValueError("Draft contains invalid generated release note markers")
+    start = body.index(NOTES_START)
+    end_start = body.index(NOTES_END)
+    if end_start <= start:
+        raise ValueError("Draft contains invalid generated release note markers")
+    end = end_start + len(NOTES_END)
+    return body[:start] + notes.rstrip() + body[end:]
 
 
 def prepare_assets(
-    release_dir: Path, tag: str, commit: str, destination: Path
+    release_dir: Path,
+    tag: str,
+    commit: str,
+    destination: Path,
+    *,
+    base_ref: str | None = None,
+    github_repository: str = "",
+    preview: bool = False,
+    notes_output: Path | None = None,
+    draft_preview: bool = False,
 ) -> tuple[list[Path], str]:
     """Copy the four-channel attachment set from an exact tagged source build."""
     match = TAG_PATTERN.fullmatch(tag)
@@ -90,6 +77,18 @@ def prepare_assets(
         raise ValueError("Release packages were not built from the exact tagged commit")
     if set(report["artifacts"]) != set(CHANNEL_ORDER):
         raise ValueError("Release must contain exactly four channel packages")
+
+    snapshot = release_notes.generate_notes(
+        report["source"]["repository"],
+        commit,
+        version,
+        base_ref=base_ref,
+        github_repository=github_repository,
+        preview=preview,
+    )
+    snapshot["draft_preview"] = draft_preview
+    release_notes.write_notes(snapshot, notes_output or destination / "notes")
+    notes = managed_notes(release_notes.render_notes(snapshot))
 
     destination.mkdir(parents=True, exist_ok=True)
     assets = []
@@ -108,14 +107,6 @@ def prepare_assets(
         encoding="utf-8",
     )
     assets.append(checksums)
-    notes = (
-        f"AI-Shifu Skills {version}\n\n"
-        f"Source commit: {commit}\n\n"
-        "Packages: ClawHub and SkillHub standalone skills; WorkBuddy expert plugin; "
-        "Doubao Work partner package. These are downloadable installation packages. "
-        "Publication to each channel is tracked separately.\n\n"
-        f"Changes:\n{change_notes(tag, commit)}\n"
-    )
     return assets, notes
 
 
@@ -127,6 +118,7 @@ def publish(
     *,
     draft_preview: bool = False,
     version_tag: str | None = None,
+    refresh_notes: bool = False,
 ) -> str:
     if draft_preview:
         match = PREVIEW_TAG_PATTERN.fullmatch(tag)
@@ -138,7 +130,13 @@ def publish(
             raise ValueError(
                 "Preview tag must contain the package version and exact source commit"
             )
-        notes = "TEST DRAFT ONLY — do not publish this Release.\n\n" + notes
+        warning = "TEST DRAFT ONLY — do not publish this Release.\n\n"
+        if warning.strip() not in notes:
+            notes = (
+                notes.replace(NOTES_START + "\n", NOTES_START + "\n" + warning, 1)
+                if notes.startswith(NOTES_START)
+                else warning + notes
+            )
     elif not TAG_PATTERN.fullmatch(tag):
         raise ValueError("Published Release tag must use vX.Y.Z")
     repository = os.environ.get("GITHUB_REPOSITORY", "")
@@ -151,7 +149,7 @@ def publish(
         "--repo",
         repository,
         "--json",
-        "isDraft,assets",
+        "isDraft,assets,body",
         check=False,
     )
     if existing.returncode:
@@ -176,7 +174,13 @@ def publish(
                 command.append("--verify-tag")
             gh(*command)
         existing = gh(
-            "release", "view", tag, "--repo", repository, "--json", "isDraft,assets"
+            "release",
+            "view",
+            tag,
+            "--repo",
+            repository,
+            "--json",
+            "isDraft,assets,body",
         )
     release = json.loads(existing.stdout)
     if draft_preview and not release["isDraft"]:
@@ -187,6 +191,28 @@ def publish(
         raise ValueError(
             f"Unexpected existing Release assets: {sorted(remote_assets - expected_assets)}"
         )
+    if not release["isDraft"] and remote_assets != expected_assets:
+        raise ValueError("Published Release is missing assets; use a new version")
+    expected_body = refresh_body(release.get("body", ""), notes)
+    if release.get("body", "").strip() != expected_body.strip():
+        if not release["isDraft"]:
+            raise ValueError("Published Release notes differ; refusing to change them")
+        if not refresh_notes:
+            raise ValueError(
+                "Draft release notes differ; review and use --refresh-notes"
+            )
+        with tempfile.TemporaryDirectory() as temporary:
+            notes_file = Path(temporary) / "notes.md"
+            notes_file.write_text(expected_body, encoding="utf-8")
+            gh(
+                "release",
+                "edit",
+                tag,
+                "--repo",
+                repository,
+                "--notes-file",
+                str(notes_file),
+            )
     for asset in assets:
         if asset.name in remote_assets:
             continue
@@ -198,11 +224,19 @@ def publish(
             )
     final = json.loads(
         gh(
-            "release", "view", tag, "--repo", repository, "--json", "isDraft,assets,url"
+            "release",
+            "view",
+            tag,
+            "--repo",
+            repository,
+            "--json",
+            "isDraft,assets,url,body",
         ).stdout
     )
     if {item["name"] for item in final["assets"]} != expected_assets:
         raise ValueError("Release asset set is incomplete")
+    if final.get("body", "").strip() != expected_body.strip():
+        raise ValueError("Draft release notes readback differs from the expected body")
     with tempfile.TemporaryDirectory() as temporary:
         for asset in assets:
             gh(
