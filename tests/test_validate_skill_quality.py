@@ -195,7 +195,7 @@ class FrontmatterValidationTests(unittest.TestCase):
         fields = validate_skill_quality.parse_frontmatter(skill_md, issues)
         self.assertEqual(issues.errors, [])
         self.assertIsNotNone(fields)
-        self.assertEqual(fields["version"], "1.2.10")
+        self.assertEqual(fields["version"], "1.2.11")
         self.assertEqual(fields["version_management"], "standalone")
 
 
