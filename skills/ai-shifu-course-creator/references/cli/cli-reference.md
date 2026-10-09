@@ -45,7 +45,7 @@ Process environment variables take precedence over the corresponding `.env` valu
 check-update [--force] [--dev-manifest-url <loopback-url>]
 ```
 
-`check-update` reads the public Skill-version manifest and prints a compact JSON result. `--force` bypasses the local TTL. `--dev-manifest-url` accepts only a localhost or loopback URL and exists for end-to-end development checks.
+`check-update` reads the latest published stable GitHub Release and prints a compact JSON result. Version-source validation and result handling are defined in [session controls](../session-controls.md#version-check). `--force` bypasses the local TTL. `--dev-manifest-url` accepts only a localhost or loopback URL serving the development manifest format and exists for end-to-end development checks.
 
 ## Profiles
 

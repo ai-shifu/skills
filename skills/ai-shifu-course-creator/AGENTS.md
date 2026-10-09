@@ -80,7 +80,7 @@
 | `scripts/shifu-cli.py` | Implement the unified deterministic interface for site configuration, authentication, course queries and writes, sync, import and build, image upload, analytics, state, and structured command results. Reference files own workflow policy. |
 | `scripts/profile_store.py` | Implement named profile configuration, default selection, execution-context resolution, isolated authorization-file storage, URL validation, and recoverable migration from legacy configuration. The CLI consumes one resolved context; references own user workflow. |
 | `scripts/image_utils.py` | Implement local image decoding, orientation correction, resizing, recompression, output-format selection, and content-hash naming for upload preparation. |
-| `scripts/skill_update.py` | Implement fail-open version discovery, update availability checks, manifest validation, and local update state used by session controls and the CLI. |
+| `scripts/skill_update.py` | Implement fail-open GitHub Release discovery, update availability checks, release and development manifest validation, and source-bound local update state used by session controls and the CLI. |
 | `scripts/requirements.txt` | Declare Python runtime dependencies used by the course-creator scripts. |
 
 ## Change Placement Guide

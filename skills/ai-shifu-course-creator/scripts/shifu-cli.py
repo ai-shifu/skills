@@ -3209,12 +3209,12 @@ def build_parser():
     # ── check-update (public, no login required) ──
     p = sub.add_parser(
         "check-update",
-        help="Check the public AI-Shifu website manifest for a newer Skill version",
+        help="Check GitHub Releases for a newer Skill version",
     )
     p.add_argument(
         "--force",
         action="store_true",
-        help="Revalidate the website manifest even when the local TTL is fresh",
+        help="Revalidate GitHub Releases even when the local TTL is fresh",
     )
     p.add_argument(
         "--dev-manifest-url",
