@@ -28,6 +28,7 @@ COMMANDS = (
     "record-channel",
     "activate-manifest",
     "github-release",
+    "notes",
     "submit-channel",
 )
 
@@ -221,6 +222,79 @@ class ReleaseEntrypointTest(unittest.TestCase):
                     digest = hashlib.sha256(path.read_bytes()).hexdigest()
                     self.assertIn(f"{digest}  {path.name}", checksums)
             self.assertFalse(marker.exists())
+            snapshot = json.loads(
+                (root / "attachments/notes/release-notes.json").read_text()
+            )
+            self.assertEqual(snapshot["head_sha"], self.commit)
+            self.assertTrue((root / "attachments/notes/release-notes.md").is_file())
+
+    def test_notes_is_read_only_and_uses_candidate_source_from_another_directory(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            result = self.invoke(
+                root, "notes", str(self.release_dir), "--output", "notes", check=True
+            )
+            snapshot = json.loads((root / "notes/release-notes.json").read_text())
+            self.assertEqual(
+                snapshot["source_repository"], str(self.fixture.source_repo)
+            )
+            self.assertEqual(snapshot["head_sha"], self.commit)
+            self.assertEqual(
+                (root / "notes/release-notes.md").read_text().strip(),
+                result.stdout.strip(),
+            )
+            self.assertFalse((self.release_dir / "release-report.json").exists())
+
+    def test_preview_cannot_enter_formal_publication(self) -> None:
+        result = self.invoke(
+            TOOL_ROOT,
+            "github-release",
+            str(self.release_dir),
+            "--tag",
+            "v1.2.3",
+            "--commit",
+            self.commit,
+            "--preview",
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--preview requires", result.stderr)
+
+    def test_formal_publication_requires_verified_github_identity(self) -> None:
+        result = self.invoke(
+            TOOL_ROOT,
+            "github-release",
+            str(self.release_dir),
+            "--tag",
+            "v1.2.3",
+            "--commit",
+            self.commit,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("requires --github-repo", result.stderr)
+
+    def test_prepare_only_supports_a_separate_notes_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            result = self.invoke(
+                root,
+                "github-release",
+                str(self.release_dir),
+                "--tag",
+                "v1.2.3",
+                "--commit",
+                self.commit,
+                "--prepare-only",
+                "--output",
+                "assets",
+                "--notes-output",
+                str(root / "notes"),
+                check=True,
+            )
+            self.assertEqual(len(result.stdout.splitlines()), 6)
+            self.assertTrue((root / "notes/release-notes.md").is_file())
+            self.assertFalse((root / "assets/notes").exists())
 
     def test_submit_channel_preserves_result_file_and_exit_status(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

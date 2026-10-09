@@ -15,11 +15,28 @@ from . import (
     github_releases,
     manifest,
     publishing,
+    release_notes,
     version,
 )
 from .release_state import ReleaseContext
 from .source import SOURCE_REF, SOURCE_REPOSITORY, SOURCE_SKILL_NAME
 from .verify import verify
+
+
+def add_notes_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--base-ref", default=None, help="Override the previous release tag or commit"
+    )
+    parser.add_argument(
+        "--github-repo",
+        default="",
+        help="GitHub owner/name for a local source checkout",
+    )
+    parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="Separate unmerged preview changes from merged PRs",
+    )
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -158,6 +175,13 @@ def create_parser() -> argparse.ArgumentParser:
     )
     activate.add_argument("--repo-url", default=manifest.WEBSITE_REPOSITORY)
 
+    notes = commands.add_parser(
+        "notes", help="Generate release notes without publishing or changing a manifest"
+    )
+    notes.add_argument("release_dir", type=Path)
+    notes.add_argument("--output", type=Path, required=True)
+    add_notes_arguments(notes)
+
     github = commands.add_parser(
         "github-release", help="Publish immutable GitHub Release attachments"
     )
@@ -175,6 +199,17 @@ def create_parser() -> argparse.ArgumentParser:
     github.add_argument(
         "--output", type=Path, help="Required output directory for --prepare-only"
     )
+    github.add_argument(
+        "--notes-output",
+        type=Path,
+        help="Directory for the separate JSON and Markdown notes",
+    )
+    github.add_argument(
+        "--refresh-notes",
+        action="store_true",
+        help="Explicitly refresh differing draft notes while preserving surrounding edits",
+    )
+    add_notes_arguments(github)
 
     submit = commands.add_parser(
         "submit-channel",
@@ -194,17 +229,46 @@ def run_github_release(
     """Prepare or publish GitHub attachments with the existing release gates."""
     if args.prepare_only and args.draft_preview_tag:
         parser.error("--prepare-only and --draft-preview-tag cannot be combined")
+    if args.preview and not (args.prepare_only or args.draft_preview_tag):
+        parser.error("--preview requires --prepare-only or --draft-preview-tag")
     if args.prepare_only:
         if args.output is None:
             parser.error("--prepare-only requires --output")
         assets, _ = github_releases.prepare_assets(
-            args.release_dir.resolve(), args.tag, args.commit, args.output.resolve()
+            args.release_dir.resolve(),
+            args.tag,
+            args.commit,
+            args.output.resolve(),
+            base_ref=args.base_ref,
+            github_repository=args.github_repo,
+            preview=args.preview,
+            notes_output=args.notes_output,
         )
         print("\n".join(str(asset) for asset in assets))
         return
+    context = ReleaseContext.load(args.release_dir)
+    source_repo = args.github_repo or release_notes.github_repository_name(
+        context.source_repository
+    )
+    if not source_repo:
+        parser.error(
+            "Publishing from a local source requires --github-repo for verified PR metadata"
+        )
+    if source_repo.lower() != os.environ.get("GITHUB_REPOSITORY", "").lower():
+        parser.error(
+            "GITHUB_REPOSITORY must match the release source's GitHub repository"
+        )
     with tempfile.TemporaryDirectory() as temporary:
         assets, notes = github_releases.prepare_assets(
-            args.release_dir.resolve(), args.tag, args.commit, Path(temporary)
+            args.release_dir.resolve(),
+            args.tag,
+            args.commit,
+            Path(temporary),
+            base_ref=args.base_ref,
+            github_repository=args.github_repo,
+            preview=args.preview or bool(args.draft_preview_tag),
+            notes_output=args.notes_output,
+            draft_preview=bool(args.draft_preview_tag),
         )
         url = github_releases.publish(
             args.draft_preview_tag or args.tag,
@@ -213,6 +277,7 @@ def run_github_release(
             notes,
             draft_preview=bool(args.draft_preview_tag),
             version_tag=args.tag,
+            refresh_notes=args.refresh_notes,
         )
         print(url)
 
@@ -252,6 +317,18 @@ def main(argv: list[str] | None = None) -> None:
         print(json.dumps(manifest.activate(args), ensure_ascii=False, indent=2))
     elif args.command == "github-release":
         run_github_release(args, parser)
+    elif args.command == "notes":
+        context = ReleaseContext.load(args.release_dir)
+        snapshot = release_notes.generate_notes(
+            context.source_repository,
+            context.source_commit,
+            context.version,
+            base_ref=args.base_ref,
+            github_repository=args.github_repo,
+            preview=args.preview,
+        )
+        release_notes.write_notes(snapshot, args.output.expanduser().resolve())
+        print(release_notes.render_notes(snapshot))
     elif args.command == "submit-channel":
         run_channel_submission(args)
     elif args.command == "verify":

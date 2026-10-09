@@ -6,7 +6,7 @@ Moving the implementation does not change the release source: GitHub `ai-shifu/s
 
 ## Quick Start
 
-Python 3.11+ and Git are required for building and testing. The implementation uses the Python standard library. Publication has additional CLI and authentication requirements; see [Publishing Environment](references/publishing.md).
+Python 3.11+ and Git are required for building and testing. The implementation uses the Python standard library. Authoritative GitHub release-note collection also requires `gh` with read access to the source repository's contents, Releases, and pull requests. Publication has additional CLI and authentication requirements; see [Publishing Environment](references/publishing.md).
 
 `scripts/release.py` is the only command entrypoint. It delegates to the internal `scripts/ai_shifu_release/` package: `build` and `verify` own orchestration, `config` owns release configuration, while `source`, `skill_metadata`, and `artifacts` own shared operations, and the package's `channels/` owns each channel's package format through `clawhub_skillhub`, `workbuddy`, and `doubao`. Publication state, channel submission, GitHub Releases, version changes, and manifest activation have separate modules. Copy the complete `scripts/` directory with the tool.
 
@@ -16,7 +16,7 @@ The former standalone `github_release.py`, `platform_publish.py`, and `download_
 
 The repository workflow `.github/workflows/release.yml` runs for `vX.Y.Z` tags. It builds the tagged commit, verifies all four ZIP files, creates a draft GitHub Release, uploads four ZIPs plus `release.json` and `SHA256SUMS`, then publishes it after checking the complete asset set. A rerun fills missing draft assets. Existing assets must have identical bytes; a published Release is never changed. Only after the Release is public do independent ClawHub and SkillHub jobs read and verify those six attachments. The channel jobs never rebuild an old version from the current `main` branch.
 
-Every PR also runs a trial build from its checked-out commit and saves six preview attachments for seven days. The PR artifact is only for review and must not be published. **Actions → Release Skills → Run workflow** offers two preview types after this workflow has been merged into `main`: `artifact` saves the same six attachments as a seven-day Actions artifact, while `draft` creates and verifies a test Draft Release from a selected development branch. Enter the branch's existing `X.Y.Z` version for either type. Both run the tests, pinned build, and package verification. Neither submits to a platform. The WorkBuddy ZIP uses the author in the `release.toml` committed with the selected source revision. A failed preview should be fixed and rerun.
+Every PR also runs a trial build from its checked-out commit and saves six preview attachments for seven days. The PR artifact is only for review and must not be published. **Actions → Release Skills → Run workflow** offers two preview types after this workflow has been merged into `main`: `artifact` saves the same six attachments as a seven-day Actions artifact, while `draft` creates and verifies a test Draft Release from a selected development branch. Enter the branch's existing `X.Y.Z` version for either type. Both run the tests, pinned build, and package verification. Neither submits to a platform. All previews save release-note JSON and Markdown in a separate Actions artifact and show the Markdown in the job summary; unmerged branch changes are explicitly identified in the preview. The WorkBuddy ZIP uses the author in the `release.toml` committed with the selected source revision. A failed preview should be fixed and rerun.
 
 The `draft` preview is for a future version PR before an administrator merges it. Select that PR's development branch, set `preview_type` to `draft`, and enter the version in its `SKILL.md`. Each run uses a distinct `preview-vX.Y.Z-<commit>-<run>-<attempt>` test tag that does not match the formal `v*` release trigger. The job creates a Draft Release, uploads all six attachments, downloads them to verify their hashes, and leaves the Release unpublished. Review its URL in the job summary. Re-run the preview after changing the branch; do not publish a test draft or use its tag as the formal version tag. After review, remove obsolete test drafts and their tags with `gh release delete <preview-tag> --repo ai-shifu/skills --cleanup-tag --yes`. The `draft` job uses GitHub's repository write token, not ClawHub or SkillHub credentials. GitHub currently requires extra workflow-write permission when a draft targets an unmerged commit that changes `.github/workflows/`; the built-in Actions token cannot provide that permission. In that exceptional case, use the `artifact` preview and review the workflow change separately rather than granting a broad token to the PR job.
 
@@ -97,6 +97,30 @@ python3 scripts/release.py github-release dist/<release-id> \
 ```
 
 Without `--prepare-only`, `github-release` uses the existing draft/upload/verify/publish flow. `--draft-preview-tag` instead keeps a test Release unpublished. Run `github-release --help` for these options.
+
+## Release Notes and Changelog
+
+Generate release notes for a verified, pinned release directory without creating a Release, opening a PR, or activating the website manifest:
+
+```bash
+python3 scripts/release.py notes dist/<release-id> --output release-notes
+```
+
+Use `--preview` for an unmerged development commit, `--base-ref <tag-or-commit>` to select an explicit ancestor, and `--github-repo owner/name` when the source URL is a local checkout. Source history comes from the repository and full commit SHA recorded in `release.json`, independently of the caller's working directory. The default range starts after the previous published formal Release in that commit's history; the first release includes the initial history. Preview tags, drafts, prereleases, and unrelated branches do not become the default base. The command fetches complete history and follows GitHub API pagination. A missing history or API result fails collection rather than silently shortening the changelog.
+
+A local Git source without `--github-repo` supports an offline preview using local version tags and commit subjects. Its snapshot records `metadata_source: git-subjects` and `pr_metadata_verified: false`, and the Markdown identifies the unverified metadata. Supply the actual GitHub repository to collect authoritative PR titles, authors, and merge times for publication.
+
+The complete changelog includes every merged PR in the range once, grouped in this fixed order:
+
+`feat → fix → perf → refactor → docs → test → build → ci → chore → revert → other`
+
+Groups appear only when nonempty. Within a group, PRs appear by merge time descending, then PR number descending. Historical scope prefixes and breaking-change markers are supported, `feature` is treated as `feat`, and unknown or absent types appear in Other Changes. Direct commits and unmerged preview changes appear separately. PR trial builds and notes retain Actions' synthetic merge commit as their source pin; the preview also includes the unmerged branch commits reachable through that merge, so reviewers see the proposed changes. Formal release notes continue to follow first-parent integration history. Sorting does not call a model or remove maintenance PRs.
+
+The output directory contains `release-notes.json`, with the pinned range, PR facts, collection status, and reproducibility fingerprint, and `release-notes.md`, with the rendered Release body. Inspect both before publication. `github-release --prepare-only --output preview-assets` saves the same files under `preview-assets/notes/`; they are excluded from the six package attachments. To save the notes while creating a Draft or formal Release, pass `--notes-output release-notes`. The release workflows upload that directory as a separate Actions artifact and display the body in the job summary.
+
+Draft reruns compare the expected generated body with the saved Draft. A mismatch requires `--refresh-notes`; refreshing replaces only the marked generated section and preserves text outside it. A legacy Draft without generated-section markers also requires an explicit refresh. Published Releases are checked without rewriting their body. Collection and body verification must pass before a formal Release can be published.
+
+Website activation keeps its own range: the website's current skill version to the pinned source commit, filtered to the primary skill's path. Its automatic summary reuses the same PR collection and type order, preserves the complete `changes` list, and fits whole entries into the 500-character limit with an omitted-item count. Reviewed `--notes` text and the default `Release <version>` behavior remain available; see [the release skill](SKILL.md#activate-the-website-manifest).
 
 ## Build and Verification Contract
 
@@ -218,6 +242,6 @@ From this tool directory:
 PYTHONPATH=scripts python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-The repository CI runs these tests separately from the business-skill tests. Release tests import the dedicated `ai_shifu_release` package. Tests use temporary Git repositories and mocked external publication commands. Do not run live `bump`, `publish`, or `activate-manifest` operations to validate a code migration.
+The repository CI runs these tests separately from the business-skill tests. Release tests import the dedicated `ai_shifu_release` package. Tests use temporary Git repositories and mocked external publication commands, including offline GitHub fixtures for release-note collection. Do not run live `bump`, `publish`, or `activate-manifest` operations to validate a code migration.
 
 Maintain the executable code, channel assets, and [release skill](SKILL.md) here. Root README files provide the repository-level entrypoint; this README owns the detailed tool guide. Existing release artifacts, credentials, local agent state, and the old project's Git history are not part of the migration.

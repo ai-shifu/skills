@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   validate:
@@ -15,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -36,6 +39,8 @@ jobs:
 
       - name: Trial build from PR commit
         if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python3 tools/ai-shifu-skill-release/scripts/release.py build \
             --source-repo-url "$GITHUB_WORKSPACE" --source-ref "$GITHUB_SHA" --output dist
@@ -45,14 +50,26 @@ jobs:
           version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["skill"]["version"])' "$release_dir/release.json")"
           python3 tools/ai-shifu-skill-release/scripts/release.py github-release "$release_dir" \
             --tag "v$version" --commit "$GITHUB_SHA" \
-            --prepare-only --output preview-assets
+            --prepare-only --preview --github-repo "$GITHUB_REPOSITORY" --output preview-assets
+          cat preview-assets/notes/release-notes.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save PR trial packages
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: skill-preview-pr-${{ github.event.pull_request.number }}
-          path: preview-assets/*
+          path: |
+            preview-assets/*.zip
+            preview-assets/release.json
+            preview-assets/SHA256SUMS
+          retention-days: 7
+
+      - name: Save PR trial release notes
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: skill-release-notes-pr-${{ github.event.pull_request.number }}
+          path: preview-assets/notes/
           retention-days: 7
 
   profile-concurrency-windows:

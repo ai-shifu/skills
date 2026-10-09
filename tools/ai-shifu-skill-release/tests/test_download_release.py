@@ -15,6 +15,7 @@ from ai_shifu_release import (
     channel_submission,
     github_releases,
     publishing,
+    release_notes,
     skill_metadata,
     source,
 )
@@ -31,12 +32,20 @@ class DownloadReleaseTest(unittest.TestCase):
         cls.addClassCleanup(cls.fixture.tearDown)
         cls.commit = cls.fixture.git("rev-parse", "main")
         cls.original = cls.fixture.build(source_ref=cls.commit)
+        cls.notes = release_notes.generate_notes(
+            str(cls.fixture.source_repo), cls.commit, "1.2.3"
+        )
         cls.original_report = json.loads((cls.original / "release.json").read_text())
         cls.original_report["source"]["repository"] = source.SOURCE_REPOSITORY
         (cls.original / "release.json").write_text(json.dumps(cls.original_report))
 
     def setUp(self) -> None:
         self.last_transport = None
+        # These tests exercise package transport and the independent source build.
+        # Keep unrelated PR metadata collection on the local fixture history.
+        notes = patch.object(release_notes, "generate_notes", return_value=self.notes)
+        notes.start()
+        self.addCleanup(notes.stop)
 
     def test_recovers_and_verifies_exact_release_assets(self) -> None:
         for repository in (

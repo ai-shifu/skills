@@ -14,6 +14,12 @@ from support import ReleaseFixture
 
 
 class GitHubReleaseTest(unittest.TestCase):
+    def test_reversed_note_markers_are_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "invalid generated"):
+            github_releases.refresh_body(
+                github_releases.NOTES_END + github_releases.NOTES_START, "New notes"
+            )
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.fixture = ReleaseFixture()
@@ -41,6 +47,11 @@ class GitHubReleaseTest(unittest.TestCase):
                 self.assertIn(
                     f"{github_releases.sha256(asset)}  {asset.name}", checksums
                 )
+            snapshot = json.loads(
+                (Path(temporary) / "notes/release-notes.json").read_text()
+            )
+            self.assertEqual(snapshot["head_sha"], self.commit)
+            self.assertTrue((Path(temporary) / "notes/release-notes.md").is_file())
 
     def test_rejects_wrong_tag_or_commit(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -97,6 +108,7 @@ class GitHubReleaseTest(unittest.TestCase):
                         return type("Response", (), {"returncode": 1, "stdout": ""})()
                     payload = {
                         "isDraft": not published,
+                        "body": notes,
                         "assets": [{"name": name} for name in remote],
                         "url": "https://github.com/ai-shifu/skills/releases/tag/v1.2.3"
                         if published
@@ -145,9 +157,10 @@ class GitHubReleaseTest(unittest.TestCase):
             remote = {}
             created = False
             calls = []
+            body = ""
 
             def fake_gh(*args, check=True):
-                nonlocal created
+                nonlocal created, body
                 action = args[1]
                 calls.append(action)
                 if action == "view":
@@ -155,6 +168,7 @@ class GitHubReleaseTest(unittest.TestCase):
                         return type("Response", (), {"returncode": 1, "stdout": ""})()
                     payload = {
                         "isDraft": True,
+                        "body": body,
                         "assets": [{"name": name} for name in remote],
                         "url": f"https://github.com/ai-shifu/skills/releases/tag/{preview_tag}",
                     }
@@ -169,6 +183,7 @@ class GitHubReleaseTest(unittest.TestCase):
                     self.assertIn(
                         "TEST DRAFT ONLY", notes_path.read_text(encoding="utf-8")
                     )
+                    body = notes_path.read_text(encoding="utf-8")
                     created = True
                 elif action == "upload":
                     asset = Path(args[3])
@@ -260,6 +275,7 @@ class GitHubReleaseTest(unittest.TestCase):
                 if action == "view":
                     payload = {
                         "isDraft": not published,
+                        "body": notes,
                         "assets": [{"name": name} for name in remote],
                         "url": "https://github.com/ai-shifu/skills/releases/tag/v1.2.3",
                     }
@@ -306,3 +322,112 @@ class GitHubReleaseTest(unittest.TestCase):
                     github_releases.publish("v1.2.3", self.commit, assets, notes)
             self.assertTrue(published)
             self.assertEqual(set(remote), {asset.name for asset in assets})
+
+    def test_draft_refresh_preserves_edits_and_verifies_the_new_body(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets, notes = github_releases.prepare_assets(
+                self.release_dir, "v1.2.3", self.commit, Path(temporary)
+            )
+            body = (
+                "Human introduction\n"
+                + github_releases.managed_notes("Old notes")
+                + "\nHuman ending"
+            )
+            calls = []
+            published = False
+
+            def fake_gh(*args, check=True):
+                nonlocal body, published
+                calls.append(args)
+                if args[1] == "view":
+                    result = {
+                        "isDraft": not published,
+                        "body": body,
+                        "assets": [{"name": asset.name} for asset in assets],
+                        "url": "https://example.test/release",
+                    }
+                    return type(
+                        "Response", (), {"returncode": 0, "stdout": json.dumps(result)}
+                    )()
+                if args[1] == "edit":
+                    if "--notes-file" in args:
+                        body = Path(args[args.index("--notes-file") + 1]).read_text()
+                    else:
+                        published = True
+                if args[1] == "download":
+                    name = args[args.index("--pattern") + 1]
+                    directory = Path(args[args.index("--dir") + 1])
+                    source = next(asset for asset in assets if asset.name == name)
+                    (directory / name).write_bytes(source.read_bytes())
+                return type("Response", (), {"returncode": 0, "stdout": ""})()
+
+            with (
+                patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                patch.object(github_releases, "gh", side_effect=fake_gh),
+            ):
+                with self.assertRaisesRegex(ValueError, "--refresh-notes"):
+                    github_releases.publish("v1.2.3", self.commit, assets, notes)
+                self.assertFalse(published)
+                self.assertEqual(len(calls), 1)
+                github_releases.publish(
+                    "v1.2.3", self.commit, assets, notes, refresh_notes=True
+                )
+            self.assertTrue(published)
+            self.assertTrue(body.startswith("Human introduction\n"))
+            self.assertTrue(body.endswith("\nHuman ending"))
+            self.assertIn(notes.strip(), body)
+
+    def test_published_notes_cannot_be_refreshed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets, notes = github_releases.prepare_assets(
+                self.release_dir, "v1.2.3", self.commit, Path(temporary)
+            )
+            result = {
+                "isDraft": False,
+                "body": "Existing published notes",
+                "assets": [{"name": asset.name} for asset in assets],
+            }
+            response = type(
+                "Response", (), {"returncode": 0, "stdout": json.dumps(result)}
+            )()
+            with (
+                patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                patch.object(github_releases, "gh", return_value=response) as remote,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError, "Published Release notes differ"
+                ):
+                    github_releases.publish(
+                        "v1.2.3", self.commit, assets, notes, refresh_notes=True
+                    )
+            self.assertEqual(remote.call_count, 1)
+
+    def test_notes_readback_failure_blocks_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets, notes = github_releases.prepare_assets(
+                self.release_dir, "v1.2.3", self.commit, Path(temporary)
+            )
+            responses = [
+                type(
+                    "Response",
+                    (),
+                    {
+                        "returncode": 0,
+                        "stdout": json.dumps(
+                            {
+                                "isDraft": True,
+                                "body": body,
+                                "assets": [{"name": asset.name} for asset in assets],
+                            }
+                        ),
+                    },
+                )()
+                for body in (notes, "Unexpected changed body")
+            ]
+            with (
+                patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                patch.object(github_releases, "gh", side_effect=responses) as remote,
+            ):
+                with self.assertRaisesRegex(ValueError, "readback differs"):
+                    github_releases.publish("v1.2.3", self.commit, assets, notes)
+            self.assertEqual(remote.call_count, 2)

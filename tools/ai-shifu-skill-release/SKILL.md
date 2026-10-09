@@ -1,6 +1,6 @@
 ---
 name: ai-shifu-skill-release
-description: "Release AI-Shifu skills using the maintained release.py workflow: open version-bump PRs, build and verify channel packages, run preflight checks, publish to ClawHub and SkillHub, prepare and record manual WorkBuddy/Doubao uploads, and open website manifest activation PRs. Use for skill version upgrades, packaging, release checks, publication, or manifest activation. Source and website PRs require human merge; never bypass that workflow by editing local business-skill source."
+description: "Release AI-Shifu skills using the maintained release.py workflow: open version-bump PRs, build and verify channel packages, preview complete PR changelogs grouped by type, run preflight checks, publish to ClawHub and SkillHub, prepare and record manual WorkBuddy/Doubao uploads, and open website manifest activation PRs. Use for skill version upgrades, packaging, release notes, release checks, publication, or manifest activation. Source and website PRs require human merge; never bypass that workflow by editing local business-skill source."
 ---
 
 ## Execution Environment
@@ -18,7 +18,7 @@ Building and publishing do not modify skill source. Version changes go through `
 ## Safety Rules
 
 - Use the exact release directory printed by `build`, or explicitly identified by the user. Do not guess which `dist/` directory is newest.
-- `build`, `verify`, `check`, and `manual-plan` do not upload packages and do not require publication authorization.
+- `build`, `verify`, `notes`, `check`, and `manual-plan` do not upload packages and do not require publication authorization.
 - Before real publication, confirm the tool's enclosing worktree is clean, verification succeeds, and all selected automated channels report `ready`. For a standalone copy, do not treat unavailable Git provenance as proof of a clean worktree.
 - Before `publish ... --execute`, show the release ID, source commit, skill and plugin versions, artifact hashes, selected targets, and preflight results. Obtain explicit authorization for that candidate and those channels.
 - Packaging, checking, preparation, or inspection requests do not authorize publication.
@@ -36,6 +36,7 @@ Building and publishing do not modify skill source. Version changes go through `
 | Preview a future version before its PR is merged | Run **Release Skills** with `preview_type=draft` on the version branch and its matching expected version | Report the test Draft Release and six verified attachments; leave the draft unpublished and wait for administrator merge |
 | Upgrade a version | `bump` | Return the source PR and wait for human merge |
 | Build or package | `build`, then `verify` | Report artifacts |
+| Preview release notes or a changelog | Verify the specified candidate, then `notes` | Return the JSON facts and Markdown preview; no Release or manifest is created |
 | Check or dry-run | Build if needed, then `verify` and `check` | Report channel readiness |
 | Publish automated channels | Build if needed, verify, check, obtain authorization, publish | Report channel results |
 | Prepare manual channels | Build if needed, then `verify` and `manual-plan` | Return exact upload paths and hashes |
@@ -86,6 +87,18 @@ Read `$RELEASE_DIR/release.json` and report:
 - Whether the builder's enclosing worktree had uncommitted changes, or whether provenance was unavailable.
 
 If the user only requested packaging, stop here.
+
+## Preview Release Notes
+
+After verifying the specified release directory, generate its complete changelog with the read-only command:
+
+```bash
+python3 scripts/release.py notes "$RELEASE_DIR" --output release-notes
+```
+
+Use `--preview` when the source commit contains unmerged branch changes. Report the pinned base and head, collection status, PR count, and the generated `release-notes.json` and `release-notes.md` paths. Read the Markdown to confirm that the requested changes are present. The [README release-note contract](README.md#release-notes-and-changelog) owns the range rules, fixed type order, tie breaking, explicit base and local-repository options, Draft refresh behavior, and output details. A collection error must be resolved before formal publication.
+
+For `github-release --prepare-only`, review the notes under the output directory's `notes/` subdirectory alongside the six package attachments. For Draft or formal publication, pass `--notes-output <directory>` to retain the same JSON and Markdown. Actions keeps these files in a separate artifact and displays the Markdown in its summary. A release-note preview does not authorize publication or website activation.
 
 ## Check the ClawHub Registry Version
 
@@ -174,7 +187,7 @@ python3 scripts/release.py activate-manifest "$RELEASE_DIR" \
 
 `--notes` and `--auto-notes` are mutually exclusive:
 
-1. `--auto-notes` gathers PR titles from squash-merge commits touching this skill between the previous manifest version and the release source commit, excludes the version-bump commit, and joins them into an English summary capped at 500 characters. The output `changes` field contains the original list.
+1. `--auto-notes` collects the primary skill's PR changes from the previous manifest version to the pinned release source commit, excludes mechanical version updates, and generates a summary within 500 characters using the shared type order. The output `changes` field retains the complete list. See the [README release-note contract](README.md#release-notes-and-changelog) for collection and summary rules.
 2. Prefer a reviewed, concise Chinese summary for the Chinese website, supplied with `--notes`. If using `--auto-notes` to obtain the list, remember that the command still creates or updates a branch/PR: it is not a read-only preview and requires authorization for manifest activation.
 3. With neither option, notes default to `Release <version>`.
 
