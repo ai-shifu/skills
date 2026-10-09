@@ -263,7 +263,7 @@ class SkillUpdateTests(unittest.TestCase):
         metadata = skill_update.read_skill_metadata(skill_md)
         self.assertIsNotNone(metadata)
         self.assertEqual(metadata["name"], "ai-shifu-course-creator")
-        self.assertEqual(metadata["version"], "1.2.10")
+        self.assertEqual(metadata["version"], "1.2.11")
         self.assertEqual(metadata["version_management"], "standalone")
 
     def test_nested_plugin_managed_skill_skips_without_network(self):
