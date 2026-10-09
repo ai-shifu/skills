@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-open Skill update checks backed by the AI-Shifu website manifest."""
+"""Fail-open Skill update checks backed by published GitHub Releases."""
 
 from __future__ import annotations
 
@@ -18,16 +18,16 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 SKILL_MD = SKILL_ROOT / "SKILL.md"
 CACHE_FILE = SKILL_ROOT / ".update-check.json"
 DEV_CACHE_FILE = SKILL_ROOT / ".update-check.dev.json"
-MANIFEST_URL = (
-    "https://ai-shifu.cn/skill-manifests/ai-shifu-course-creator.json"
-)
+GITHUB_RELEASES_URL = "https://github.com/ai-shifu/skills/releases"
+MANIFEST_URL = "https://api.github.com/repos/ai-shifu/skills/releases/latest"
 
 SCHEMA_VERSION = 1
 SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
-ALLOWED_MANIFEST_HOSTS = frozenset({"ai-shifu.cn", "www.ai-shifu.cn"})
 LOOPBACK_MANIFEST_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 MAX_MANIFEST_BYTES = 64 * 1024
 MAX_NOTES_CHARS = 500
+CHECK_INTERVAL_HOURS = 24
+RELEASE_TAG_PATTERN = re.compile(r"^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 VERSION_MANAGEMENT_STANDALONE = "standalone"
 VERSION_MANAGEMENT_PLUGIN = "plugin"
 
@@ -48,8 +48,8 @@ def _validate_manifest_source_url(url: str, *, allow_loopback: bool) -> None:
         ):
             raise ManifestError("development manifest URL must use a loopback host")
         return
-    if parsed.scheme != "https" or parsed.hostname not in ALLOWED_MANIFEST_HOSTS:
-        raise ManifestError("manifest URL must use the official HTTPS host")
+    if url != MANIFEST_URL:
+        raise ManifestError("version source must use the official GitHub Releases endpoint")
 
 
 def _utc_now() -> datetime:
@@ -153,6 +153,36 @@ def validate_manifest(
     return dict(raw)
 
 
+def validate_github_release(raw: object) -> dict[str, Any]:
+    """Normalize the latest published stable release into local update metadata."""
+    if not isinstance(raw, dict):
+        raise ManifestError("release must be an object")
+    if raw.get("draft") is not False or raw.get("prerelease") is not False:
+        raise ManifestError("release must be published and stable")
+    tag = raw.get("tag_name")
+    if not isinstance(tag, str) or not RELEASE_TAG_PATTERN.fullmatch(tag):
+        raise ManifestError("release tag must use vMAJOR.MINOR.PATCH")
+    update_url = f"{GITHUB_RELEASES_URL}/tag/{tag}"
+    if raw.get("html_url") != update_url:
+        raise ManifestError("release URL must match its official repository and tag")
+    notes = raw.get("body")
+    if notes is None:
+        notes = ""
+    if not isinstance(notes, str):
+        raise ManifestError("release notes must be text")
+    return validate_manifest({
+        "schema_version": SCHEMA_VERSION,
+        "skill_name": SKILL_NAME,
+        "latest": tag[1:],
+        # Releases do not declare an unsupported-version policy.
+        "min_supported": "0.0.0",
+        "notes": notes[:MAX_NOTES_CHARS],
+        "check_interval_hours": CHECK_INTERVAL_HOURS,
+        "published_at": raw.get("published_at"),
+        "update_url": update_url,
+    })
+
+
 def determine_update(
     local_version: str,
     manifest: dict[str, Any],
@@ -188,12 +218,14 @@ def determine_update(
     }
 
 
-def _read_cache(cache_file: Path) -> dict[str, Any] | None:
+def _read_cache(cache_file: Path, source_url: str) -> dict[str, Any] | None:
     try:
         raw = json.loads(cache_file.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
     if not isinstance(raw, dict):
+        return None
+    if raw.get("source_url") != source_url:
         return None
     checked_at = _parse_utc(raw.get("checked_at"))
     if checked_at is None:
@@ -214,8 +246,10 @@ def _write_cache(
     manifest: dict[str, Any],
     etag: str,
     checked_at: datetime,
+    source_url: str,
 ) -> None:
     payload = {
+        "source_url": source_url,
         "checked_at": _format_utc(checked_at),
         "etag": etag,
         "manifest": manifest,
@@ -241,6 +275,7 @@ def _try_write_cache(
     manifest: dict[str, Any],
     etag: str,
     checked_at: datetime,
+    source_url: str,
 ) -> None:
     """Cache persistence is an optimization and must never break a valid check."""
     try:
@@ -249,6 +284,7 @@ def _try_write_cache(
             manifest=manifest,
             etag=etag,
             checked_at=checked_at,
+            source_url=source_url,
         )
     except OSError:
         pass
@@ -302,14 +338,16 @@ def fetch_manifest(
     http_get: Callable[..., Any] = requests.get,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], str]:
-    """Return a validated manifest and its source (network/cache/revalidated)."""
+    """Read release metadata, or an explicit loopback development manifest."""
     _validate_manifest_source_url(manifest_url, allow_loopback=allow_loopback)
     current_time = (now or _utc_now()).astimezone(timezone.utc)
-    cache = _read_cache(cache_file)
+    cache = _read_cache(cache_file, manifest_url)
     if cache is not None and not force and _cache_is_fresh(cache, current_time):
         return cache["manifest"], "cache"
 
-    headers = {"Accept": "application/json"}
+    headers = {"Accept": "application/vnd.github+json"}
+    if allow_loopback:
+        headers["Accept"] = "application/json"
     if cache is not None and cache["etag"]:
         headers["If-None-Match"] = cache["etag"]
 
@@ -336,6 +374,7 @@ def fetch_manifest(
             manifest=cache["manifest"],
             etag=cache["etag"],
             checked_at=current_time,
+            source_url=manifest_url,
         )
         return cache["manifest"], "revalidated"
 
@@ -351,13 +390,14 @@ def fetch_manifest(
         raw = json.loads(body.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ManifestError("manifest is not valid UTF-8 JSON") from exc
-    manifest = validate_manifest(raw)
+    manifest = validate_manifest(raw) if allow_loopback else validate_github_release(raw)
     etag = _response_header(response, "ETag")
     _try_write_cache(
         cache_file,
         manifest=manifest,
         etag=etag,
         checked_at=current_time,
+        source_url=manifest_url,
     )
     return manifest, "network"
 

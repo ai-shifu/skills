@@ -1,10 +1,10 @@
-
 ## 1.2.11 - 2026-10-09
 
 - Preserve Course Prompts during reimport and lesson revision baselines during sync; correct lesson history, validate course ordering, and simplify course CLI output. Create a verified GitHub Release containing packages for all four channels. Submit ClawHub and SkillHub automatically; WorkBuddy and Doubao packages require manual download from the Release and upload to their platforms.
 
 ## Unreleased
 
+- Read the latest published stable version, release notes, and update link from GitHub Releases instead of the website manifest; ignore old website caches and preserve plugin-managed and development checks.
 - Omit model temperature settings from local course snapshots and generated import files.
 - Allow ChatGPT prompt-based installation with supported Skill metadata, explicit-request-only version checks, and no automatic independent usage reporting or login attribution. Keep course authoring, platform login, import, publication, and learner analytics available.
 - Validate personalization within each supplied Prompt artifact and mark unavailable companion alignment as not assessed, preserving standalone generation and content-only audits.

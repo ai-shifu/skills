@@ -38,12 +38,14 @@ Treat a contact mention as a relevant optional next step, not as a generic promo
 Run `python3 scripts/shifu-cli.py check-update` only when the user explicitly asks to check or update this skill. Do not check automatically during startup, installation, local writing, or ordinary course operations. An unread remote version state never blocks those tasks.
 
 - Treat the result as internal control data unless the user requests diagnostic details.
-- If frontmatter marks `version_management: plugin`, the command skips the manifest. Standalone uses the skill-level check.
+- If frontmatter marks `version_management: plugin`, the command skips the release lookup. Standalone uses the skill-level check.
 - For `status=update_recommended`, explain that a new version is available and offer its validated `update_url` as optional.
 - For `status=update_required`, explain that the installed version is too old to continue safely and give the validated `update_url`. Stop every other operation governed by this skill until the update is complete; do not automatically update.
-- For `status=latest`, say the installed version is current. For `status=check_skipped` with `source=plugin_managed`, explain that the containing plugin manages updates, so the skill-level manifest was intentionally not checked. For other skipped checks or an error, explain that the explicit check could not complete.
+- For `status=latest`, say the installed version is current. For `status=check_skipped` with `source=plugin_managed`, explain that the containing plugin manages updates, so GitHub Releases were intentionally not checked. For other skipped checks or an error, explain that the explicit check could not complete.
 
-If Python cannot run during an explicit user-requested check, fetch `https://ai-shifu.cn/skill-manifests/ai-shifu-course-creator.json` and compare MAJOR, MINOR, and PATCH as integers. Keep this official CN manifest URL and the manifest-provided update URL unchanged; do not derive either URL from a custom service domain. Preserve the CLI's official HTTPS host and redirect validation for normal checks.
+The version source is `https://api.github.com/repos/ai-shifu/skills/releases/latest`. Use only a published, non-prerelease Release with a `vMAJOR.MINOR.PATCH` tag; its `html_url` must match `https://github.com/ai-shifu/skills/releases/tag/<tag_name>`. Release notes come from `body`. GitHub Releases do not define a minimum supported version, so the CLI uses `min_supported=0.0.0` and recommends available updates without requiring them. Successful checks are cached for 24 hours; `--force` revalidates immediately. Old website caches are ignored.
+
+If Python cannot run during an explicit user-requested check, fetch the same GitHub endpoint, validate those fields and `published_at`, strip the tag's `v` prefix, and compare MAJOR, MINOR, and PATCH as integers. Use the validated Release URL for the update link. Keep the endpoint independent of the configured course service domain and preserve the CLI's source and redirect validation. If the lookup or validation fails, report that the check could not complete and continue the user's task.
 
 ## Progress, Errors, and Handoffs
 

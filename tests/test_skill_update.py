@@ -48,6 +48,14 @@ class SkillUpdateTests(unittest.TestCase):
             "published_at": "2026-07-12T00:00:00Z",
             "update_url": "https://github.com/ai-shifu/skills",
         }
+        self.release = {
+            "tag_name": "v1.10.0",
+            "draft": False,
+            "prerelease": False,
+            "body": "A safe update note",
+            "published_at": "2026-07-12T00:00:00Z",
+            "html_url": "https://github.com/ai-shifu/skills/releases/tag/v1.10.0",
+        }
         self.now = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc)
 
     def test_parse_semver_compares_integer_segments(self):
@@ -82,8 +90,75 @@ class SkillUpdateTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "update_required")
 
+    def test_stable_github_release_uses_tag_version_and_release_page(self):
+        manifest = skill_update.validate_github_release(self.release)
+        self.assertEqual(manifest["skill_name"], "ai-shifu-course-creator")
+        self.assertEqual(manifest["latest"], "1.10.0")
+        self.assertEqual(manifest["min_supported"], "0.0.0")
+        self.assertEqual(manifest["notes"], self.release["body"])
+        self.assertEqual(manifest["published_at"], self.release["published_at"])
+        self.assertEqual(manifest["update_url"], self.release["html_url"])
+        self.assertEqual(manifest["check_interval_hours"], 24)
+        result = skill_update.determine_update("0.9.9", manifest, source="network")
+        self.assertEqual(result["status"], "update_recommended")
+
+    def test_github_release_requires_explicit_stable_public_flags(self):
+        for flag in ("draft", "prerelease"):
+            for value in (True, None, 0, 1, "false"):
+                with self.subTest(flag=flag, value=value):
+                    release = dict(self.release, **{flag: value})
+                    with self.assertRaises(skill_update.ManifestError):
+                        skill_update.validate_github_release(release)
+            with self.subTest(flag=flag, missing=True):
+                release = dict(self.release)
+                del release[flag]
+                with self.assertRaises(skill_update.ManifestError):
+                    skill_update.validate_github_release(release)
+
+    def test_github_release_rejects_noncanonical_or_preview_tags(self):
+        for tag in (
+            "1.10.0", "v1.10", "v1.10.0-beta.1", "v01.10.0",
+            "preview-v1.10.0-deadbeef", None, 110,
+        ):
+            with self.subTest(tag=tag):
+                release = dict(self.release, tag_name=tag)
+                with self.assertRaises(skill_update.ManifestError):
+                    skill_update.validate_github_release(release)
+
+    def test_github_release_requires_matching_official_release_page(self):
+        for url in (
+            "http://github.com/ai-shifu/skills/releases/tag/v1.10.0",
+            "https://attacker.example/ai-shifu/skills/releases/tag/v1.10.0",
+            "https://github.com/another/skills/releases/tag/v1.10.0",
+            "https://github.com/ai-shifu/skills/releases/tag/v1.9.0",
+            "https://github.com/ai-shifu/skills/releases/tag/v1.10.0?download=1",
+            "https://github.com/ai-shifu/skills/releases/tag/v1.10.0#changes",
+            None,
+        ):
+            with self.subTest(url=url):
+                release = dict(self.release, html_url=url)
+                with self.assertRaises(skill_update.ManifestError):
+                    skill_update.validate_github_release(release)
+
+    def test_github_release_allows_empty_notes_and_bounds_long_notes(self):
+        empty = skill_update.validate_github_release(dict(self.release, body=None))
+        self.assertEqual(empty["notes"], "")
+        long_notes = "Release change\n" * 100
+        manifest = skill_update.validate_github_release(
+            dict(self.release, body=long_notes)
+        )
+        self.assertTrue(manifest["notes"].startswith("Release change"))
+        self.assertLessEqual(len(manifest["notes"]), skill_update.MAX_NOTES_CHARS)
+        skill_update.validate_manifest(manifest)
+
+    def test_github_release_rejects_invalid_timestamp_or_notes(self):
+        for change in ({"published_at": None}, {"published_at": "yesterday"}, {"body": {}}):
+            with self.subTest(change=change):
+                with self.assertRaises(skill_update.ManifestError):
+                    skill_update.validate_github_release(dict(self.release, **change))
+
     def test_network_result_is_cached_and_reused(self):
-        body = json.dumps(self.manifest).encode("utf-8")
+        body = json.dumps(self.release).encode("utf-8")
         calls: list[dict[str, object]] = []
 
         def fake_get(_url, **kwargs):
@@ -104,6 +179,10 @@ class SkillUpdateTests(unittest.TestCase):
             self.assertEqual(source, "network")
             self.assertEqual(manifest["latest"], "1.10.0")
             self.assertTrue(cache.is_file())
+            self.assertEqual(
+                json.loads(cache.read_text(encoding="utf-8"))["source_url"],
+                "https://api.github.com/repos/ai-shifu/skills/releases/latest",
+            )
 
             def unexpected_get(*_args, **_kwargs):
                 raise AssertionError("fresh cache should avoid the network")
@@ -118,7 +197,7 @@ class SkillUpdateTests(unittest.TestCase):
             self.assertEqual(len(calls), 1)
 
     def test_force_revalidates_with_etag(self):
-        body = json.dumps(self.manifest).encode("utf-8")
+        body = json.dumps(self.release).encode("utf-8")
         seen_headers: list[dict[str, str]] = []
 
         def initial_get(_url, **_kwargs):
@@ -147,7 +226,7 @@ class SkillUpdateTests(unittest.TestCase):
             self.assertEqual(seen_headers[0]["If-None-Match"], '"manifest-v1"')
 
     def test_cache_expires_after_manifest_interval(self):
-        body = json.dumps(self.manifest).encode("utf-8")
+        body = json.dumps(self.release).encode("utf-8")
         calls = 0
 
         def fake_get(_url, **_kwargs):
@@ -165,13 +244,54 @@ class SkillUpdateTests(unittest.TestCase):
             _manifest, source = skill_update.fetch_manifest(
                 cache_file=cache,
                 http_get=fake_get,
-                now=self.now + timedelta(hours=2, seconds=1),
+                now=self.now + timedelta(hours=24, seconds=1),
             )
             self.assertEqual(source, "network")
             self.assertEqual(calls, 2)
 
+    def test_legacy_and_other_source_caches_do_not_hide_github_release(self):
+        for previous_source in (
+            None,
+            "https://ai-shifu.cn/skill-manifests/ai-shifu-course-creator.json",
+            "http://127.0.0.1:8088/skill-manifests/test.json",
+        ):
+            with self.subTest(previous_source=previous_source):
+                calls = []
+
+                def fake_get(url, **kwargs):
+                    calls.append((url, kwargs["headers"]))
+                    return FakeResponse(
+                        status_code=200,
+                        body=json.dumps(self.release).encode("utf-8"),
+                        headers={"ETag": '"github-release"'},
+                    )
+
+                with tempfile.TemporaryDirectory() as tmp:
+                    cache = Path(tmp) / ".update-check.json"
+                    cached = {
+                        "checked_at": self.now.isoformat(),
+                        "etag": '"old-website-manifest"',
+                        "manifest": dict(self.manifest, latest="9.0.0"),
+                    }
+                    if previous_source is not None:
+                        cached["source_url"] = previous_source
+                    cache.write_text(json.dumps(cached), encoding="utf-8")
+                    manifest, source = skill_update.fetch_manifest(
+                        cache_file=cache,
+                        http_get=fake_get,
+                        now=self.now + timedelta(minutes=1),
+                    )
+                    self.assertEqual(source, "network")
+                    self.assertEqual(manifest["latest"], "1.10.0")
+                    self.assertEqual(len(calls), 1)
+                    self.assertEqual(
+                        calls[0][0],
+                        "https://api.github.com/repos/ai-shifu/skills/releases/latest",
+                    )
+                    self.assertNotIn("If-None-Match", calls[0][1])
+
     def test_cache_write_failure_does_not_discard_network_result(self):
-        body = json.dumps(self.manifest).encode("utf-8")
+        body = json.dumps(self.release).encode("utf-8")
 
         def fake_get(_url, **_kwargs):
             return FakeResponse(status_code=200, body=body)
@@ -188,7 +308,7 @@ class SkillUpdateTests(unittest.TestCase):
             self.assertEqual(manifest["latest"], "1.10.0")
 
     def test_untrusted_redirect_is_rejected(self):
-        body = json.dumps(self.manifest).encode("utf-8")
+        body = json.dumps(self.release).encode("utf-8")
 
         def fake_get(_url, **_kwargs):
             return FakeResponse(
