@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from ai_shifu_release import version
 
@@ -92,7 +93,7 @@ class BumpVersionTest(unittest.TestCase):
         )
         self.assertEqual(
             git("log", "-1", "--format=%s", cwd=check),
-            "chore: flow version to v1.2.0",
+            "fix: bump demo-skill to 1.2.0",
         )
         text = (check / "skills/demo-skill/SKILL.md").read_text(encoding="utf-8")
         self.assertIn(
@@ -107,6 +108,30 @@ class BumpVersionTest(unittest.TestCase):
             "version: 1.1.1",
             git("show", "origin/main:skills/demo-skill/SKILL.md", cwd=check),
         )
+
+    def test_bump_opens_release_pr_with_a_separate_commit_subject(self) -> None:
+        args = make_args(
+            skill_version="1.2.0", repo_url=self.repo_url, no_pr=False
+        )
+        run = version.run
+        pr_url = "https://github.com/ai-shifu/skills/pull/123"
+
+        def run_with_mocked_github(*command: str, cwd: Path) -> str:
+            if command[:3] == ("gh", "pr", "create"):
+                self.assertEqual(
+                    command[command.index("--title") + 1],
+                    "chore: flow version to v1.2.0",
+                )
+                self.assertEqual(
+                    git("log", "-1", "--format=%s", cwd=cwd),
+                    "fix: bump demo-skill to 1.2.0",
+                )
+                return pr_url
+            return run(*command, cwd=cwd)
+
+        with patch.object(version, "run", side_effect=run_with_mocked_github):
+            result = version.bump(args)
+        self.assertEqual(result["pr_url"], pr_url)
 
     def test_bump_rejects_non_increasing_version(self) -> None:
         args = make_args(skill_version="1.1.1", repo_url=self.repo_url)

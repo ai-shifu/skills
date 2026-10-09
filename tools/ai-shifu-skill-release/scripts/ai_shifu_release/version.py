@@ -101,13 +101,14 @@ def bump(args: BumpOptions) -> dict:
 
         branch = f"bump/{args.skill_name}-v{new_version}"
         title = f"chore: flow version to v{new_version}"
+        commit_title = f"fix: bump {args.skill_name} to {new_version}"
         body = (
             f"Changed:\nRaised the {args.skill_name} skill version from {current} to {new_version}.\n\n"
             f"Benefit:\nChannels and users can identify and receive the {new_version} release."
         )
         run("git", "checkout", "--quiet", "-b", branch, cwd=clone)
         run("git", "add", "--all", cwd=clone)
-        run("git", "commit", "--quiet", "-m", title, "-m", body, cwd=clone)
+        run("git", "commit", "--quiet", "-m", commit_title, "-m", body, cwd=clone)
         run("git", "push", "--quiet", "-u", "origin", branch, cwd=clone)
 
         result = {
