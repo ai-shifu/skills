@@ -100,7 +100,7 @@ def bump(args: BumpOptions) -> dict:
             )
 
         branch = f"bump/{args.skill_name}-v{new_version}"
-        title = f"chore: bump {args.skill_name} to {new_version}"
+        title = f"chore: flow version to v{new_version}"
         body = (
             f"Changed:\nRaised the {args.skill_name} skill version from {current} to {new_version}.\n\n"
             f"Benefit:\nChannels and users can identify and receive the {new_version} release."
