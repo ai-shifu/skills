@@ -6,7 +6,7 @@ Reusable AI-Shifu skills for course production and improvement, from topic selec
 
 ## Included Skills
 
-- **AI-Shifu Course Creator（AI 师傅课程创作器）**: create, edit, review, publish, manage, and analyze AI-Shifu courses through capabilities that the using agent selects and combines for the task.
+- **AI-Shifu Course Creator（AI 师傅课程创作器）**: teaching design, MarkdownFlow expression, and CLI operations for creating, editing, reviewing, publishing, managing, and analyzing AI-Shifu courses. The using agent selects and combines capabilities for the task.
 - **AI-Shifu Learning Report（AI 师傅学习报告）**: analyze one AI-Shifu course and produce a privacy-safe `course-learning-report.json` plus a polished, self-contained, printable `course-learning-report.html` for teaching managers and teachers.
 - **Course Direction Advisor（课程选题顾问）**: turn source materials into evidence-bound, market-fit course-topic decisions with competitor analysis, pricing guidance, and GO/HOLD/REWORK/NO-GO recommendations.
 

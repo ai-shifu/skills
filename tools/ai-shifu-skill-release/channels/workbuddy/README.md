@@ -24,7 +24,7 @@ Agent 型（单专家）
 
 | 技能名 | 说明 |
 | --- | --- |
-| `ai-shifu-course-creator` | AI 师傅课程制作核心技能，提供创作、审查、发布、管理和分析能力，由智能体按任务自主组合 |
+| `ai-shifu-course-creator` | AI 师傅课程制作核心技能，按教学设计、MarkdownFlow 表达、CLI 操作三类提供能力，由智能体按任务自主组合 |
 
 ## 使用示例
 

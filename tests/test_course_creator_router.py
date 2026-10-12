@@ -24,10 +24,12 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
         )
         self.assertIn("$ai-shifu-course-creator", ui_metadata)
 
-    def test_entrypoint_discovers_authoring_platform_and_analytics_capabilities(self):
+    def test_entrypoint_discovers_design_expression_and_cli_capabilities(self):
         for capability in (
             "course-design-intake.md",
             "segmentation-workflow.md",
+            "pedagogy.md",
+            "markdownflow.md",
             "teaching-prompt.md",
             "course-prompt.md",
             "course-description.md",

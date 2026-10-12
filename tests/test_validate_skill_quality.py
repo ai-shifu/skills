@@ -998,6 +998,12 @@ class CourseCreatorContractTests(unittest.TestCase):
             ("audit", "not-assessed", "navigation comments", "without rewriting"),
         )
 
+    def test_evals_cover_design_only_and_faithful_runtime_expression(self):
+        self.assert_eval_family(
+            (102, 103),
+            ("teaching design", "source", "unchanged", "feedback", "MarkdownFlow", "CLI", "intermediate"),
+        )
+
     def test_discovery_evals_include_isolated_capabilities_and_other_platforms(self):
         cases = json.loads(
             (self.skill_root / "evals" / "trigger_eval.json").read_text(encoding="utf-8")

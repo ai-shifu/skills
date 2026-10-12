@@ -4,7 +4,7 @@
 
 - Apply the [repository workflow ownership rules](../../AGENTS.md#workflow-ownership-and-change-scope); the ownership map below specializes them for this skill.
 - Give each capability, contract, and validation criterion one canonical owner in the map below. Other files link to or cite that owner and add only their own local application.
-- Keep `SKILL.md` focused on discovery, shared conventions, the capability catalog, and the default full-course outcome. The using agent owns task decomposition and invocation order; references own how their capabilities work.
+- Keep `SKILL.md` focused on discovery, shared conventions, the three-category capability catalog, and the default full-course outcome. Preserve its teaching design, MarkdownFlow expression, and CLI operation boundaries without turning them into phases. The using agent owns task decomposition and invocation order; references own how their capabilities work.
 - Separate decisions from representations: `pedagogy.md` owns teaching recommendations and their tradeoffs, `markdownflow.md` owns runtime syntax and effects, and `teaching-prompt.md` owns translation of resolved lesson decisions into a runnable, author-editable Teaching Prompt.
 - Separate optional authoring controls from runtime and platform contracts. `data-contracts.md` owns supported controls and semantic consistency; capability references explain operations, checklists and evals verify results, and scripts implement deterministic interfaces. Do not reintroduce mandatory phase envelopes or plans.
 - When a change crosses an ownership boundary, update the canonical owner first. Update consumers only for navigation, integration, or validation consequences, and link back to the owner instead of restating its rules.
@@ -15,7 +15,7 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `AGENTS.md` | Define this skill's maintenance-time ownership map and cross-file editing rules. It guides contributors and does not define learner-time or authoring behavior. |
-| `SKILL.md` | Define skill discovery metadata, shared conventions, user-facing Markdown links, the capability catalog, and full-course default publication with the completed-content confirmation boundary. It leaves invocation order to the using agent and capability mechanics to references. |
+| `SKILL.md` | Define skill discovery metadata, shared conventions, user-facing Markdown links, the teaching design / MarkdownFlow expression / CLI operation categories, and full-course default publication with the completed-content confirmation boundary. It leaves invocation order to the using agent and capability mechanics to references. |
 | `agents/openai.yaml` | Define ChatGPT's display label, short description, and starter prompt for this skill. Discovery behavior remains in `SKILL.md`. |
 | `.env.example` | Document supported service-selection and token environment variables with safe empty defaults and credential-storage guidance. |
 | `CHANGELOG.md` | Record user-visible and maintainer-relevant changes in chronological release history. Current behavior remains defined by `SKILL.md`, references, and scripts. |
@@ -37,7 +37,7 @@
 | `references/prompt-contracts.md` | Own semantics shared by Course Prompts and Teaching Prompts, including personalization-direction effects and the responsibility boundary between the two artifact types. It is the integration owner, not the owner of syntax, pedagogy, schemas, or materialization. |
 | `references/pedagogy.md` | Own teaching recommendations, pattern examples, interaction-purpose guidance, variable-persistence advice, and visual-text tradeoffs. The using agent selects pedagogy within explicit author constraints. |
 | `references/markdownflow.md` | Own the runtime-recognized MarkdownFlow syntax and its observable preprocessing, variable, interaction, branching, deterministic-block, image, and preservation behavior. |
-| `references/image-authoring.md` | Own intake, understanding, upload, composition, embedding, and output validation for lesson image assets. Teacher avatars remain platform metadata under `course-management.md`. |
+| `references/image-authoring.md` | Own intake, understanding, upload, composition, embedding, and output validation for lesson image assets. Teaching purpose, MarkdownFlow representation, and CLI upload remain separate actions within the entrypoint's categories. Teacher avatars remain platform metadata under `course-management.md`. |
 
 ## Authoring and Artifact Reference Responsibilities
 
@@ -47,7 +47,7 @@
 | `references/teaching-prompt.md` | Own writing or revising one runnable Teaching Prompt from available inputs, required source-only block comments, optional layout templates, and interaction, variable, branch, preservation, and image integration. Runtime syntax remains in `markdownflow.md`; no phase envelope or fixed planning run is required. |
 | `references/course-prompt.md` | Own materialization of the six-section course-wide Course Prompt, including fill sources and uniform presentation requirements. Lesson pedagogy, sequence, interactions, and position-specific slide decisions remain Teaching Prompt concerns. |
 | `references/course-description.md` | Own the learner-facing course listing and SEO description artifact, its supported source claims, output form, and validation. |
-| `references/optimization-workflow.md` | Own scoped review and requested minimal repairs of available artifacts, findings, uncertainty, and truthful validation results. It consumes applicable acceptance criteria from the checklist without orchestrating other capabilities. |
+| `references/optimization-workflow.md` | Own scoped review and requested minimal repairs of available artifacts, findings, uncertainty, and truthful validation results. It applies teaching-design or MarkdownFlow-expression criteria from the checklist without orchestrating other capabilities; platform readback remains with the relevant CLI capability. |
 | `references/optimization-checklist.md` | Own observable pass, fail, and not-assessed acceptance criteria for existing Teaching Prompts, Course Prompts, descriptions, language, fidelity, runtime safety, and repair scope. Linked owners define the underlying behavior. |
 
 ## Platform Capability Reference Responsibilities

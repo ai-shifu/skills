@@ -2,6 +2,8 @@
 
 Review the available Teaching Prompts, Course Prompt, or learner-facing description and make repairs within the requested scope. The using agent decides whether review is needed and whether it is an audit, focused correction, or broader rewrite; this capability does not schedule authoring or platform operations.
 
+Review teaching design, MarkdownFlow expression, or both according to the request. Platform readback and publication verification belong to the corresponding CLI capability rather than this content review.
+
 ## Available Scope
 
 Work with one pasted Prompt body, selected files, or a complete course. Identify the version being reviewed when multiple candidates could differ. An absent companion artifact or source is a limit on what can be assessed, not a reason to invent an envelope or create unrelated content.

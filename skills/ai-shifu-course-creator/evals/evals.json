@@ -1258,6 +1258,33 @@
         "It presents 62.5%, a currency-labeled amount with two decimals, and the supplied credit-detail credit amount rounded to two decimals rather than re-deriving credits from model price or tokens.",
         "It reports only the supplied observations with no invented comparison, extra aggregate, platform query, or publication claim."
       ]
+    },
+    {
+      "id": 102,
+      "prompt": "只帮我做教学设计，现在不要写 Teaching Prompt、Course Prompt 或 MarkdownFlow，也不要操作平台。我想给普通团队负责人上一节约 15 分钟的课，目标是让他们分清‘记录了讨论’和‘记录了决定’。来源事实只有：讨论记录可以包含意见和备选方案；决定记录需要明确要做什么、谁负责、何时完成；没有形成决定时应如实记录未决事项，不能把某个人的建议当成团队决定。请提出有用的教学安排，说明要解决的理解难点、怎样让人理解，以及怎样判断已经学会。采用什么教法和怎样组织由你判断，不用固定模板或中间 JSON。",
+      "expected_output": "Provides a usable teaching design within a design-only request without producing runtime Prompts or invoking CLI operations.",
+      "files": [],
+      "expectations": [
+        "It provides a concrete teaching design suited to ordinary team leads and the approximate available time, connecting the learning difficulty, chosen explanatory support, and observable evidence of understanding rather than only naming a teaching technique.",
+        "The design preserves all three source distinctions: opinions and alternatives may remain discussion, an actual decision identifies action, owner and deadline, and unresolved matters must not become invented agreements.",
+        "The proposed understanding check can distinguish a learner who identifies a real decision from one who merely copies discussion or assumes a suggestion was approved; no particular question count, universal lesson loop, or named pedagogy pattern is required.",
+        "It stays within teaching design: it does not output Teaching Prompt or Course Prompt bodies, MarkdownFlow interaction controls, deterministic markers, a course directory, CLI commands, authentication, or publication work.",
+        "It uses the sufficient supplied context directly without requiring a questionnaire, approved execution plan, segmentation JSON, or another intermediate representation before completing the design."
+      ]
+    },
+    {
+      "id": 103,
+      "prompt": "教学设计已经确定，这一轮只负责把它表达为可运行的 MarkdownFlow 授课提示词，不能改教法或扩展课节，不访问平台。面向普通成年人，纯文字，不按个人背景适配。已批准的教学动作及顺序只有：1. 并列呈现 A=[40,50,60] 和 B=[0,50,100]，讲清两组平均数都是 50，但原始数值的分布不同。2. 问‘仅凭两组平均数都为 50，能得出什么？’，单选项依次为‘每个数值的分布也相同’和‘不能据此认定分布相同’，答案只用于本课即时反馈。3. 回答后立即反馈：选第一项就用给定两组数值指出推断越界；选第二项就确认平均数没有提供每个数值的分布，并同时保留‘平均数相同也不能反过来证明所有分布都不同’的边界。4. 独立、逐字输出固定结论‘平均数相同，不代表分布相同。’。只输出授课提示词 Markdown 正文，每个有意义的教学块前添加中文 HTML 说明注释；不要 JSON、变量表、额外开场、类比、幻灯片、练习或总结。",
+      "expected_output": "Expresses an approved teaching design faithfully in runnable MarkdownFlow without redesigning its pedagogy or invoking CLI operations.",
+      "files": [],
+      "expectations": [
+        "It directly produces a runnable Teaching Prompt and preserves the supplied four teaching actions, their order, both number sets, their mean of 50, and the source boundary; the approved teaching design remains unchanged rather than becoming a proposal or a different lesson method.",
+        "The exact learner-facing question is immediately followed by the standalone unprefixed control ?[每个数值的分布也相同 | 不能据此认定分布相同], with the supplied option order and immediate option-specific feedback carrying the stated reasoning and limits.",
+        "The lesson-local answer remains unnamed, with no named assignment, learner-answer variable, collection question, cross-lesson dependency, or mandatory variable-table output.",
+        "The conclusion appears exactly once as the standalone deterministic line ===平均数相同，不代表分布相同。===; its wording and markers remain intact outside HTML comments and ordinary layout formatting.",
+        "Each meaningful teaching block has a standalone localized HTML explanatory comment, while all numbers, instructions, controls, feedback and exact content remain in the runtime body after comments are removed. Readable source layout is free within the explicit Markdown output request.",
+        "It does not add or replace a teaching action, change the comparison method, introduce a universal pedagogical loop, or add the prohibited opening, analogy, visual, exercise or summary. It requires no intermediate JSON or redesign approval and performs no CLI or platform operation."
+      ]
     }
   ]
 }
