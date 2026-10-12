@@ -16,14 +16,16 @@ Build a local import payload, create a new platform draft from it, or verify an 
 
 Run `build --course-dir <dir>` to generate `<dir>/shifu-import.json`. Inspect the effective title, description, Course Prompt, structure, lesson bodies, variables, and interaction syntax in that payload against the source artifacts. Apply `language-policy.md#language-audit` to both the source files and generated payload. A failing payload must be repaired before import.
 
+Keep the inspected payload as the input to import. The completed-content approval in `../SKILL.md` must cover its effective content and selected attributes. If source edits, configuration, build overrides, or another build change that content, inspect the resulting payload and obtain renewed approval under that policy before creating the course.
+
 **Output:** the generated payload path and the checks actually performed. Building or previewing a file does not create a platform course.
 
 ## Import a New Course
 
 **Input:** explicit new-course intent, a valid import payload, the completed-content approval required by `../SKILL.md`, and access to the intended platform context. A same-title course does not change new-course intent; do not run duplicate-title lookup merely to import a new course.
 
-- Run `import --new --json-file <dir>/shifu-import.json` and capture the returned Shifu BID. Run `pull <shifu_bid> --course-dir <dir>` to establish the synchronized revision before a later management write using that directory.
-- `import --new --course-dir <dir>` is an equivalent build-and-import form that seeds synchronization state automatically. Use a separate build when the payload must be inspected before mutation.
+- Run `import --new --json-file <dir>/shifu-import.json` on the inspected, approved payload file and capture the returned Shifu BID. Do not rebuild or replace that file between inspection, approval, and import. Run `pull <shifu_bid> --course-dir <dir>` to establish the synchronized revision before a later management write using that directory.
+- The CLI also supports `import --new --course-dir <dir>`, which rebuilds the payload and immediately writes it to the platform before seeding synchronization state. It provides no pre-import inspection checkpoint. Use the separate build and `--json-file` form for this new-course capability so the actual imported payload is the one inspected and approved.
 - `import --new` creates a draft and does not publish it. If a later operation fails, keep the returned BID and resume the outstanding work instead of creating another course.
 - Preserve local artifacts when authentication or import cannot complete, and report the actual partial result.
 
