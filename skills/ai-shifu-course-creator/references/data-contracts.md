@@ -13,7 +13,7 @@ Optional context includes audience, prerequisites, lesson granularity, tone, des
 
 Their absence does not require collection. Preserve explicit author constraints; ask or state a consequential assumption when available context cannot resolve them. [course-design-intake.md](course-design-intake.md) describes the available choices and their effects.
 
-`course_author_name` is an optional teacher identity. A blank or absent value means no named identity in the Course Prompt. `course_author_avatar_source` is an optional transient JPG or PNG attachment/path for platform avatar management. Do not serialize the local avatar source into course content, import payloads, or platform metadata; synchronized state may retain the returned platform avatar URL.
+`course_author_name` is an optional teacher identity. A blank or absent value means no named identity in the Course Prompt. `course_author_avatar_source` is an optional transient JPG or PNG attachment/path for platform avatar management. Do not serialize the local avatar source into course content, any course-directory file, an import payload, or platform metadata. Consume it through [avatar management](course-management.md#operations) after the course exists; synchronized state may retain only the returned platform avatar URL.
 
 ### Personalization Directions
 
