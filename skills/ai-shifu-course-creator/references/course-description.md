@@ -6,7 +6,6 @@ Create and validate the learner-facing SEO and listing description for a course.
 
 - `language-policy.md`
 - `data-contracts.md#input-contract`
-- `data-contracts.md#output-contract`
 
 ## Authoring
 
@@ -20,7 +19,7 @@ Derive the description from the approved course topic, target learner, prerequis
 
 ## Output
 
-Populate `course_description` and write the same learner-facing content to `course-description.md` in the generated course directory.
+Populate `course_description` as a learner-facing description string and write the same content to `course-description.md` in the generated course directory.
 
 ## Validation
 

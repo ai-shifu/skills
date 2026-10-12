@@ -55,6 +55,7 @@ On the first invocation in a session:
 
 ## Routing Guardrails
 
+- Full-course authoring requires all five artifacts: `lesson_teaching_prompts`, `course_index`, `global_variable_table`, `course_prompt`, and `course_description`. Each producing reference owns its output definition; isolated phase routes require only their selected outputs.
 - Route to analytics for current course-title metadata or observed facts, metrics, records, and trends from an existing course. Design questions such as “how many lessons should this material become?” remain authoring tasks.
 - Distinguish new-course creation, existing-platform-course editing, and local/artifact-only work from the user's request. If new-versus-existing intent is unclear, ask before platform access; do not authenticate or query courses merely to infer intent.
 - A request such as “create a course on AI-Shifu named X” follows the full-course authoring row even when it contains only a title. Keep the original Course Design Intake and authoring stages; missing details are collected through that workflow. Do not infer an empty platform draft from “on the platform”, “draft”, or a missing outline, and do not replace authoring with the CLI `create` command. Before the course preview is approved, no deployment-related `site`, `verify`, or `login` is needed.

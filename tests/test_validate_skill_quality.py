@@ -863,12 +863,14 @@ class CourseCreatorContractTests(unittest.TestCase):
             )
 
         cls.language_policy = load("language-policy.md")
+        cls.authoring_mode = load("authoring-mode.md")
         cls.data_contracts = load("data-contracts.md")
         cls.course_design_intake = load("course-design-intake.md")
         cls.prompt_contracts = load("prompt-contracts.md")
         cls.pedagogy = load("pedagogy.md")
         cls.markdownflow = load("markdownflow.md")
         cls.source_preservation = load("source-preservation.md")
+        cls.segmentation_workflow = load("segmentation-workflow.md")
         cls.teaching_prompt = load("teaching-prompt.md")
         cls.image_authoring = load("image-authoring.md")
         cls.orchestration_workflow = load("orchestration-workflow.md")
@@ -1276,16 +1278,22 @@ class CourseCreatorContractTests(unittest.TestCase):
 
     def test_schema_enums_match_the_validator(self):
         transfer_section = markdown_section(
-            self.data_contracts, "Transfer Signals"
+            self.segmentation_workflow, "Transfer Signals"
         )
-        data_contract_keys = markdown_table_first_column(
+        transfer_signal_keys = markdown_table_first_column(
             transfer_section, "Key"
         )
-        self.assertEqual(len(data_contract_keys), len(set(data_contract_keys)))
+        self.assertEqual(len(transfer_signal_keys), len(set(transfer_signal_keys)))
         self.assertEqual(
-            set(data_contract_keys),
+            set(transfer_signal_keys),
             validate_skill_quality.TRANSFER_SIGNAL_KEYS,
         )
+        segment_types = markdown_table_first_column(
+            markdown_section(self.segmentation_workflow, "Segment Types"),
+            "Value",
+        )
+        self.assertEqual(len(segment_types), len(set(segment_types)))
+        self.assertEqual(set(segment_types), validate_skill_quality.SEGMENT_TYPES)
 
         policy_section = markdown_section(
             self.pedagogy, "Interaction Policy Precedence"
@@ -1338,7 +1346,24 @@ class CourseCreatorContractTests(unittest.TestCase):
         ):
             self.assertIn(excluded_surface, normalized)
         for output_surface in (
-            markdown_section(self.data_contracts, "Output Contract"),
+            markdown_section(self.segmentation_workflow, "Outputs"),
+            markdown_section(self.orchestration_workflow, "Outputs"),
+            markdown_section(self.teaching_prompt, "Outputs"),
+            markdown_section(self.teaching_prompt, "Lesson Schema"),
+            markdown_section(self.orchestration_workflow, "Course Index Schema"),
+            markdown_section(self.data_contracts, "Variable Table"),
+            markdown_section(self.course_prompt, "Fillable Template"),
+            markdown_section(self.course_description, "Output"),
+            markdown_section(
+                self.segmentation_workflow, "Segmentation Fallback Fields"
+            ),
+            markdown_section(
+                self.orchestration_workflow, "Orchestration Fallback Fields"
+            ),
+            markdown_section(self.teaching_prompt, "Generation Fallback Fields"),
+            markdown_section(
+                self.optimization_workflow, "Optimization Fallback Fields"
+            ),
             self.course_directory_spec,
             self.cli_reference,
         ):
@@ -1455,7 +1480,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertIn("not by the presence of authoring vocabulary alone", repair)
 
     def test_runtime_schema_markdownflow_and_variable_contracts_stay_stable(self):
-        lesson_schema = markdown_section(self.data_contracts, "Lesson Schema")
+        lesson_schema = markdown_section(self.teaching_prompt, "Lesson Schema")
         variable_table = markdown_section(self.data_contracts, "Variable Table")
         interactions = markdown_section(self.markdownflow, "Interactions")
         variables = markdown_section(self.markdownflow, "Variables")
@@ -1811,6 +1836,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             [
                 "Required References",
                 "Conditional References",
+                "Lesson Schema",
                 "Generation",
                 "Source Encoding",
                 "Outputs and Validation",
@@ -1831,6 +1857,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "### Preservation Encoding",
             "## Outputs and Validation",
             "### Outputs",
+            "### Generation Fallback Fields",
             "### Validation",
             "#### Encoding Checks",
         )
@@ -3149,28 +3176,117 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertEqual(3, len(author_name_eval["expectations"]))
         self.assertIn("normal Course Design Intake", author_name_eval["expected_output"])
 
-    def test_phase_workflows_directly_load_their_fallback_schemas(self):
-        expected = {
-            "segmentation-fallback-fields": (
-                COURSE_CREATOR_REFERENCES / "segmentation-workflow.md"
-            ),
-            "orchestration-fallback-fields": (
-                COURSE_CREATOR_REFERENCES / "orchestration-workflow.md"
-            ),
-            "generation-fallback-fields": (
-                COURSE_CREATOR_REFERENCES / "teaching-prompt.md"
-            ),
-            "optimization-fallback-fields": (
-                COURSE_CREATOR_REFERENCES / "optimization-workflow.md"
-            ),
+    def test_shared_data_contract_excludes_phase_only_schemas(self):
+        headings = validate_skill_quality.github_heading_slugs(
+            COURSE_CREATOR_REFERENCES / "data-contracts.md"
+        )
+        phase_only = {
+            "recommended-object-shapes",
+            "output-contract",
+            "course-index-schema",
+            "course_index-schema",
+            "segment-schema",
+            "segment-types",
+            "transfer-signals",
+            "lesson-schema",
+            "fallback-output-extensions",
+            "segmentation-fallback-fields",
+            "orchestration-fallback-fields",
+            "generation-fallback-fields",
+            "optimization-fallback-fields",
         }
+        self.assertTrue(phase_only.isdisjoint(headings))
 
-        for anchor, path in expected.items():
-            with self.subTest(path=path.name):
-                required = markdown_section(
-                    path.read_text(encoding="utf-8"), "Required References"
-                )
-                self.assertIn(f"data-contracts.md#{anchor}", required)
+    def test_shared_source_spans_preserve_tracking_and_immutability(self):
+        source_spans = markdown_section(self.data_contracts, "Source Spans")
+        for field in (
+            "`preserve_block` (boolean, required)",
+            "`source_span` (object, required)",
+            "`source_id` (string, required)",
+            "`start` (non-negative integer, required)",
+            "`end` (integer greater than `start`, required)",
+        ):
+            self.assertIn(field, source_spans)
+        self.assertRegex(
+            source_spans, r"`true` exactly when.*immutable; otherwise `false`"
+        )
+        self.assertIn("inclusive character offset", source_spans)
+        self.assertIn("exclusive character offset", source_spans)
+        self.assertIn("`course_index.source_span_map`", source_spans)
+
+    def test_full_course_completion_retains_all_five_artifacts(self):
+        guardrails = markdown_section(self.skill_doc, "Routing Guardrails")
+        full_course = next(
+            line for line in guardrails.splitlines()
+            if line.startswith("- Full-course authoring requires")
+        )
+        self.assertEqual(
+            [
+                "lesson_teaching_prompts",
+                "course_index",
+                "global_variable_table",
+                "course_prompt",
+                "course_description",
+            ],
+            re.findall(r"`([^`]+)`", full_course),
+        )
+        self.assertRegex(full_course, r"isolated phase routes.*selected outputs")
+        outputs = markdown_section(self.orchestration_workflow, "Outputs")
+        for owner in (
+            "teaching-prompt.md#lesson-schema",
+            "#course-index-schema",
+            "data-contracts.md#variable-table",
+            "cli/course-directory-spec.md",
+        ):
+            self.assertIn(owner, outputs)
+        self.assertIn("structured phase-handoff data", outputs)
+        self.assertIn(
+            "course-level Markdown string", markdown_section(self.course_prompt, "Purpose")
+        )
+        description = markdown_section(self.course_description, "Output")
+        self.assertIn("learner-facing description string", description)
+        self.assertIn("course-description.md", description)
+
+    def test_phase_workflows_own_additive_fallback_schemas(self):
+        mode = markdown_section(self.authoring_mode, "Mode Selection")
+        self.assertRegex(mode, r"(?i)standard mode.*omit phase-specific fallback fields")
+        self.assertRegex(mode, r"(?i)fallback mode.*selected phase.*additive fallback fields")
+        expected = (
+            (
+                self.segmentation_workflow,
+                "Segmentation Fallback Fields",
+                ["uncertainty", "rerun_hints"],
+                "`low|medium|high`",
+            ),
+            (
+                self.orchestration_workflow,
+                "Orchestration Fallback Fields",
+                ["uncertainty", "rerun_plan", "lessons_to_rerun", "reason"],
+                "`low|medium|high`",
+            ),
+            (
+                self.teaching_prompt,
+                "Generation Fallback Fields",
+                ["fallback_mode", "assumptions", "upgrade_notes"],
+                "boolean constant `true`",
+            ),
+            (
+                self.optimization_workflow,
+                "Optimization Fallback Fields",
+                ["coverage_status", "follow_up"],
+                "`complete|partial|unknown_without_source`",
+            ),
+        )
+        for workflow, title, fields, enum in expected:
+            with self.subTest(title=title):
+                fallback = markdown_section(workflow, title)
+                self.assertEqual(fields, re.findall(r"(?m)^\s*- `([^`]+)`", fallback))
+                self.assertIn(enum, fallback)
+                self.assertIn(f"(#{title.lower().replace(' ', '-')})", workflow)
+        orchestration = markdown_section(
+            self.orchestration_workflow, "Orchestration Fallback Fields"
+        )
+        self.assertIn("required when any lesson is uncertain", orchestration)
 
     def test_platform_workflows_have_disjoint_mutation_responsibilities(self):
         self.assertIn("import --new", self.deployment_workflow)

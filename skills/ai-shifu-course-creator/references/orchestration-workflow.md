@@ -6,12 +6,22 @@ Drive Segmentation and Teaching Prompt generation, then produce the cross-lesson
 
 - `language-policy.md`
 - `authoring-mode.md#mode-selection`
-- `data-contracts.md#output-contract`
+- `data-contracts.md#source-spans`
 - `data-contracts.md#variable-table`
-- `data-contracts.md#orchestration-fallback-fields`
 - `segmentation-workflow.md`
 - `teaching-prompt.md`
 - `pedagogy.md`
+
+## Course Index Schema
+
+Each array item contains:
+
+- `lesson_id` (string, required).
+- `lesson_title` (string, required).
+- `core_question` (string, required).
+- `source_span_map` (array of `{source_id, start, end}`, required).
+
+Entries in `course_index.source_span_map` use the shared `source_span` object shape in [Source Spans](data-contracts.md#source-spans).
 
 ## Lesson Structure Finalization
 
@@ -60,11 +70,15 @@ Do not partially pass a phase or lesson.
 
 ## Fallback Handling
 
-Under fallback mode, deliver coarse lesson drafts, mark uncertain `course_index` entries, and emit the `rerun_plan` defined in `data-contracts.md#orchestration-fallback-fields`. Keep best-effort work separate from artifacts that passed all gates.
+Under fallback mode, deliver coarse lesson drafts, mark uncertain `course_index` entries, and emit the `rerun_plan` defined in [Orchestration Fallback Fields](#orchestration-fallback-fields). Keep best-effort work separate from artifacts that passed all gates.
 
 ## Outputs
 
-Produce `lesson_teaching_prompts`, `course_index`, and `global_variable_table` exactly as defined in `data-contracts.md#output-contract`.
+Produce these required outputs:
+
+1. `lesson_teaching_prompts` — one item per lesson, conforming to [Lesson Schema](teaching-prompt.md#lesson-schema).
+2. `course_index` — an array conforming to [Course Index Schema](#course-index-schema).
+3. `global_variable_table` — an array conforming to [Variable Table](data-contracts.md#variable-table).
 
 Keep these as structured phase-handoff data. When a local course directory is materialized, follow the closed artifact set owned by `cli/course-directory-spec.md`.
 
@@ -75,3 +89,15 @@ In the Orchestration report, summarize the input materials, execution mode, cons
 - All three Orchestration outputs are present and mutually consistent.
 - Every lesson passes the Mandatory Gates.
 - Fallback outputs include the required uncertainty and rerun fields.
+
+## Orchestration Fallback Fields
+
+Per `course_index` item:
+
+- `uncertainty` (string enum `low|medium|high`).
+
+Top-level, required when any lesson is uncertain:
+
+- `rerun_plan` (object):
+  - `lessons_to_rerun` (array of lesson ids).
+  - `reason` (string) — why the rerun is needed.

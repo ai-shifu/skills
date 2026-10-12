@@ -4,7 +4,7 @@ Select the smallest source spans that must survive authoring without semantic or
 
 ## Required References
 
-- `data-contracts.md#segment-schema`
+- `data-contracts.md#source-spans`
 
 ## Preservation Decisions
 
@@ -13,7 +13,7 @@ Treat required code and fence languages, image URLs, immutable alt text and orde
 - Select only spans whose exact wording, value, ordering, or structure is a source requirement.
 - Keep surrounding explanations adaptive.
 - Never preserve an entire lesson; doing so removes the adaptive generation the lesson depends on.
-- Record each selected segment through the `preserve_block` and `source_span` fields defined in `data-contracts.md#segment-schema`.
+- Record each selected segment through the `preserve_block` and `source_span` fields defined in `data-contracts.md#source-spans`.
 - Preserve author-selected immutable content even when nearby authored text is localized.
 
 ## Verification

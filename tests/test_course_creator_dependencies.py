@@ -205,6 +205,38 @@ class CourseCreatorDependencyTests(unittest.TestCase):
         for path in graph:
             visit(path)
 
+    def test_shared_mode_and_source_tracking_do_not_load_phase_contracts(self):
+        graph = dependency_graph()
+        mode = (REFERENCES / "authoring-mode.md").resolve()
+        self.assertEqual({mode}, transitive_closure([mode], graph))
+        phase_owners = {
+            "segmentation-workflow.md",
+            "orchestration-workflow.md",
+            "teaching-prompt.md",
+            "optimization-workflow.md",
+        }
+        for filename in phase_owners - {"orchestration-workflow.md"}:
+            closure = transitive_closure([REFERENCES / filename], graph)
+            self.assertTrue(
+                (phase_owners - {filename}).isdisjoint(path.name for path in closure)
+            )
+        for filename in (
+            "segmentation-workflow.md",
+            "source-preservation.md",
+            "orchestration-workflow.md",
+        ):
+            source = REFERENCES / filename
+            self.assertIn(
+                "data-contracts.md#source-spans",
+                declared_paths(
+                    source.read_text(encoding="utf-8"), "Required References"
+                ),
+            )
+        preservation = transitive_closure(
+            [REFERENCES / "source-preservation.md"], graph
+        )
+        self.assertTrue(phase_owners.isdisjoint(path.name for path in preservation))
+
     def test_router_paths_resolve_without_loading_plain_markdown_links(self):
         for line in markdown_h2_section(self.router, "Task Router").splitlines():
             if not line.startswith("| ") or "Required files" in line:

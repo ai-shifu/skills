@@ -6,7 +6,6 @@ Audit an existing, substantially complete course artifact set and apply the smal
 
 - `language-policy.md`
 - `authoring-mode.md#mode-selection`
-- `data-contracts.md#optimization-fallback-fields`
 - `optimization-checklist.md`
 
 ## Conditional References
@@ -61,7 +60,7 @@ Return the minimally repaired existing artifacts plus the Optimization report, a
 
 Start the report with the conclusion and overall risk (`low|medium|high`). Name each target Teaching Prompt, Course Prompt, or course description in the declared audit scope, along with the source materials and execution mode. Group findings using [Issue Taxonomy](#issue-taxonomy); for each change, include the file reference and minimal-edit rationale. Summarize the results of [Validation](#validation), including checks not assessed. For unresolved findings, distinguish blockers from non-blocking suggestions and name the affected artifacts or checks to rerun.
 
-Under fallback mode, add only the Optimization extensions defined in `data-contracts.md#optimization-fallback-fields`.
+Under fallback mode, add only the Optimization extensions defined in [Optimization Fallback Fields](#optimization-fallback-fields).
 
 Optimization must not create a Course Prompt, course description, or Teaching Prompt from scratch, choose new preservation scope on behalf of an earlier phase, build a course directory, or publish a course.
 
@@ -71,4 +70,14 @@ Optimization must not create a Course Prompt, course description, or Teaching Pr
 - Each repair is the smallest coherent change and retains the meaning and density observable in the supplied scope. When source material is in scope, it also retains source coverage and immutable content.
 - Repaired artifacts still satisfy their owning contracts.
 - Checks that require unprovided schema-envelope data are reported as `not-assessed`, never guessed or silently marked as passing.
-- Any fallback extension matches `data-contracts.md#optimization-fallback-fields` and remains additive to the standard output.
+- Any fallback extension matches [Optimization Fallback Fields](#optimization-fallback-fields) and remains additive to the standard output.
+
+## Optimization Fallback Fields
+
+Inside `risk_and_issue_report`:
+
+- `coverage_status` (string enum `complete|partial|unknown_without_source`).
+
+Top-level:
+
+- `follow_up` (array of strings) — inputs needed to complete a full-coverage audit.

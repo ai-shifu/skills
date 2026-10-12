@@ -7,8 +7,6 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 - `language-policy.md`
 - `prompt-contracts.md`
 - `data-contracts.md#personalization-directions`
-- `data-contracts.md#lesson-schema`
-- `data-contracts.md#generation-fallback-fields`
 - `data-contracts.md#variable-table`
 - `pedagogy.md`
 - `markdownflow.md`
@@ -17,6 +15,20 @@ Generate one runnable per-lesson Teaching Prompt from approved segments and desi
 
 - When an image asset must be understood, uploaded, embedded, or validated: `image-authoring.md`
 - When immutable source spans were selected for encoding: `source-preservation.md`
+
+## Lesson Schema
+
+Each `lesson_teaching_prompts` item contains:
+
+- `lesson_id` (string, required) — stable and deterministic.
+- `lesson_title` (string, required) — concise learner-facing title.
+- `teaching_prompt` (string, required) — per-lesson Teaching Prompt content in MarkdownFlow.
+- `used_variables` (array of strings, required) — every named variable collected or referenced in the lesson; no-variable interactions are excluded.
+- `depends_on_lessons` (array of lesson ids, required) — empty when none.
+
+Every item in `used_variables` has a matching `global_variable_table` entry. The matching entry lists the lesson in `used_in` when the variable is referenced outside its collection control, and also lists `course_prompt` when the Course Prompt references it.
+
+Chapter titles, numbering, hierarchy labels, and ordering markers belong in `course_index` or `structure.json`, not in the Teaching Prompt body.
 
 ## Generation
 
@@ -220,19 +232,27 @@ Image composition is owned by `image-authoring.md` and is loaded conditionally b
 
 ### Outputs
 
-- Produce one `lesson_teaching_prompts` item per lesson using `data-contracts.md#lesson-schema`.
+- Produce one `lesson_teaching_prompts` item per lesson using [Lesson Schema](#lesson-schema).
   - Apply `language-policy.md` to authored strings.
   - Preserve machine-facing values and immutable source spans.
-- In fallback mode, add only the Generation extensions in `data-contracts.md#generation-fallback-fields`.
+- In fallback mode, add only the Generation extensions in [Generation Fallback Fields](#generation-fallback-fields).
 - In the Generation report:
   - Identify the lesson and summarize generation status, execution mode, constraints, interaction count, and variables used.
   - Report [Validation](#validation).
   - If issues remain, include blockers, suggestions, whether a rerun is needed, and upstream dependencies.
 
+### Generation Fallback Fields
+
+Per lesson:
+
+- `fallback_mode` (boolean constant `true`) — identifies a lesson generated in fallback mode.
+- `assumptions` (array of strings) — assumptions made because input is incomplete or conflicting.
+- `upgrade_notes` (array of strings) — additional input that would allow a standard-mode lesson.
+
 ### Validation
 
 - Validate the artifact and its ownership boundaries:
-  - Every `teaching_prompt` is runnable MarkdownFlow, every item passes `data-contracts.md#lesson-schema`, and authored human-facing content passes `language-policy.md`.
+  - Every `teaching_prompt` is runnable MarkdownFlow, every item passes [Lesson Schema](#lesson-schema), and authored human-facing content passes `language-policy.md`.
   - The Prompt contains the selected teaching method and locally executable objective, facts and boundaries, sequence, interaction effect, and close rather than outsourcing pedagogy to the Course Prompt.
   - Slide instructions contain lesson-specific order, content, teaching function, and position- or purpose-specific treatment without restating general presentation requirements owned by the Course Prompt.
 - Validate the lesson execution:

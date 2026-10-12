@@ -18,7 +18,7 @@ Course-level materialization contract for the Course Prompt artifact.
 
 ## Purpose
 
-Use this file to materialize one course-wide artifact from the six-section template below. It defines the template, fill-value sources, context used while filling those values, and completion checks; it does not redefine shared Prompt semantics, lesson pedagogy, or MarkdownFlow runtime behavior.
+Use this file to materialize `course_prompt` as a course-level Markdown string from the six-section template below. It defines the template, fill-value sources, context used while filling those values, and completion checks; it does not redefine shared Prompt semantics, lesson pedagogy, or MarkdownFlow runtime behavior.
 
 The template's `# Slides` section is the single runtime owner for presentation requirements that apply uniformly to every slide rather than to a particular slide position or teaching purpose. Teaching Prompts decide each lesson's slide count, order, teaching purposes, required content, relationship to explanatory text, and any position- or purpose-specific treatment; the Course Prompt applies the shared presentation rules without changing those decisions.
 

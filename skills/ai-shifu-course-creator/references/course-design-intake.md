@@ -39,6 +39,33 @@ Produce these controls once and pass them unchanged to downstream workflows:
 - **Course author name**: preserve the supplied free-form `course_author_name`. If the supplied value is blank, or the question is skipped or unanswered, use an empty string; an empty value means the Course Prompt has no named teacher identity.
 - **Course author avatar source**: preserve an accepted local JPG/PNG attachment or path as transient `course_author_avatar_source`. It is a platform-management handoff, not course content or a Course Prompt field. An empty value means leave the platform avatar unchanged.
 
+## Supporting Context
+
+Reuse supplied learner persona, lesson granularity (`short`, `medium`, `long`), tone, non-negotiable source fragments, and any `course_profile` or `delivery_constraints`. These are optional context, not additional required intake questions. Recommended object shapes:
+
+### `course_profile`
+
+```json
+{
+  "audience_level": "beginner|intermediate|advanced",
+  "prerequisite_level": "none|basic|strong",
+  "lesson_duration_minutes": 12,
+  "lesson_count_target": 8,
+  "assessment_mode": "quiz|project|discussion|mixed"
+}
+```
+
+### `delivery_constraints`
+
+```json
+{
+  "platform_limits": ["no_iframe", "markdown_only"],
+  "must_cover_topics": ["topic-a", "topic-b"],
+  "avoid_topics": ["topic-x"],
+  "non_negotiable_fragments": ["required source fragment or code block id"]
+}
+```
+
 ## Validation
 
 - Every answer available from existing context is reused rather than asked again.
@@ -49,4 +76,4 @@ Produce these controls once and pass them unchanged to downstream workflows:
 - The normalized `personalization_directions` passes `data-contracts.md#personalization-directions`; invalid values are rejected rather than converted or treated as a skip. Missing, explicitly empty, and legacy-only inputs follow their distinct handling above.
 - The normalized interaction policy passes the data-contract invariants.
 - The selected delivery mode and structure constraints are internally consistent.
-- The optional avatar follow-up is asked only after a non-empty teacher name and only for a platform-bound course with an empty or default avatar; it never blocks course authoring when skipped.
+- The optional avatar follow-up is asked only after a non-empty teacher name and only for a platform-bound course with an empty or default avatar; it never blocks course authoring when the source is absent or skipped.
