@@ -20,7 +20,7 @@ These capabilities do not resolve the target, author content, publish the course
 
 ## Pull Before Editing
 
-Run `pull <shifu_bid> --course-dir <dir>` to obtain the current cloud draft and `.shifu-sync.json` baseline before preparing an edit that will be synchronized back to this course. Preserve any already unpushed work before a pull overwrites the directory. Inspecting a local artifact alone does not require a pull.
+Run `pull <shifu_bid> --course-dir <dir>` to obtain the current cloud draft and `.shifu-sync.json` baseline before preparing lesson, Course Prompt, or description edits that will be synchronized back to this existing platform course. This baseline is required even when the eventual write is a course-wide `update-meta` operation under [course management](course-management.md#operations). Preserve any already unpushed work before a pull overwrites the directory, then reapply it to the pulled baseline. Inspecting a local artifact alone does not require a pull.
 
 Run `status --course-dir <dir>` when cloud/local divergence needs inspection. Before pushing changed content, apply `language-policy.md#language-audit` to the actual changed artifacts.
 

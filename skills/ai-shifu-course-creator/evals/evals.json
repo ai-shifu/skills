@@ -1299,6 +1299,20 @@
         "The conditional import command uses import --new --json-file with the same JSON file whose unchanged contents passed inspection and received renewed approval. It does not rebuild through --course-dir or silently overwrite that file between approval and import; a further user-visible content change requires renewed inspection and approval.",
         "It stays within simulation, makes no platform or authentication calls, claims no renewed approval, created BID, synchronized revision, or successful verification, and does not publish the explicitly requested draft. Any pull or platform readback is described only as later conditional work."
       ]
+    },
+    {
+      "id": 105,
+      "prompt": "只做本地规则模拟，不执行命令、不访问平台。下面四个请求彼此独立，已有平台课程的 BID 都已明确，平台上下文也已确定。A：修改既有课程 course-a 的 Course Prompt，把语言规则改为始终使用中文，其余内容保留；没有拉取过云端内容，也没有本地同步基线。B：把既有课程 course-b 的简介改为本地已经写好的‘学习如何记录行动、负责人和截止时间’；这份未推送编辑目前在 /tmp/course-b/course-description.md，不能丢失，目录里的其它文件来自旧快照，当前没有可用的同步基线。C：只把既有课程 course-c 显式改名为‘会议决定记录’，不改简介、Prompt 或其它内容；没有本地目录或同步基线。D：只读审查我已有的本地 Course Prompt，检查它是否把课节内容混进课程级规则，不修改正文，也不查询或更新平台。请分别说明必要的处理及条件满足后的命令草案，尤其说明 A/B 能否因为最终命令叫 update-meta 就省掉 pull、B 的已有编辑怎么保护，以及 C/D 是否需要建立同步目录。不要实际修改文件或声称命令已经成功。",
+      "expected_output": "Distinguishes version-protected existing-course artifact edits from standalone rename and local-only audit, preserving unpushed work before a baseline pull.",
+      "files": [],
+      "expectations": [
+        "A treats the existing-platform Course Prompt change as a content edit: first pull course-a into a course directory to establish the current cloud content and revision baseline, then apply the requested language-rule edit without replacing unrelated Course Prompt content. Calling the later operation update-meta does not remove this dependency.",
+        "A's conditional write uses update-meta course-a --course-prompt-file <edited-prompt-file> --course-dir <the-same-pulled-dir>; the edited file reflects the current pulled content plus the intended change, and the recorded version baseline remains intact rather than being manually created or altered.",
+        "B preserves the existing unpushed description before pull can overwrite the directory, obtains the current course-b cloud baseline, then reapplies the intended description to that baseline. It writes through update-meta course-b --course-dir /tmp/course-b, optionally with the explicit description flag, and does not send the stale tree through whole-course import or lose the saved edit.",
+        "A and B preserve unrelated lessons and platform attributes, verify the requested fields with the appropriate later readback, and use the existing conflict-convergence behavior if the version-aware write reports a concurrent change. They do not bypass the baseline by omitting --course-dir or by passing a different directory without the matching course revision.",
+        "C may remain a standalone explicit rename using update-meta course-c --name with the requested title; because this independent request neither edits course-content artifacts nor has an established sync directory, it need not pull or create a directory merely to rename. D remains a local-only audit with no authentication, course lookup, pull, update-meta, or other CLI operation and no forced rewrite.",
+        "All four answers remain simulated: no command, file mutation, platform access, or successful write is claimed. The response does not add new-course creation approval, publication, a questionnaire, or a universal authoring sequence to these scoped requests."
+      ]
     }
   ]
 }

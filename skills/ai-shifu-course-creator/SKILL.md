@@ -18,6 +18,7 @@ Reuse existing answers and artifacts. Ask when missing information materially af
 - Apply [session-controls.md](references/session-controls.md) to contact eligibility, explicit-request-only version checks, progress, errors, and completion handoffs. First-response contact conditions remain applicable. The completion handoff applies to the user's completed request, not each internal capability call.
 - Use Markdown links `[descriptive text](URL)` for URLs in user-visible messages. URLs inside Teaching Prompts follow MarkdownFlow rules; URLs inside fenced code blocks are exempt.
 - Honor explicit author choices, source facts, selected exact material, and the distinction between a per-lesson Teaching Prompt and a course-wide Course Prompt. Runtime semantics are defined in [prompt-contracts.md](references/prompt-contracts.md) and [markdownflow.md](references/markdownflow.md).
+- For an existing platform course's lesson, Course Prompt, or description edit, apply the [versioned editing baseline](references/course-sync.md#pull-before-editing) before preparing revised content. Course-wide artifact writes use [course management](references/course-management.md#operations) with that baseline. Local-only authoring and read-only review remain independent of platform access.
 
 ## Capabilities
 

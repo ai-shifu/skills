@@ -970,8 +970,8 @@ class CourseCreatorContractTests(unittest.TestCase):
 
     def test_evals_preserve_existing_course_sync_and_conflict_boundaries(self):
         self.assert_eval_family(
-            (5, 57, 58, 59, 61, 68, 69, 78),
-            ("existing", "version", "conflict", "no-match", "access"),
+            (5, 57, 58, 59, 61, 68, 69, 78, 105),
+            ("existing", "version", "conflict", "no-match", "access", "unpushed", "standalone explicit rename", "local-only audit"),
         )
 
     def test_evals_preserve_contact_browser_and_analytics_boundaries(self):
