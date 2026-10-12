@@ -1,9 +1,5 @@
 # Course Directory Specification
 
-## Required References
-
-None.
-
 ## Directory Layout
 
 ```text
@@ -36,7 +32,7 @@ None.
 | `assets/image-manifest.json` | `upload-image --course-dir` | asset lookup | No. |
 | `assets/raw/` | user | no direct build consumer | No; conventional storage only. |
 
-The directory contract above is the complete set of recognized and managed course-directory paths. When writing only author-owned inputs, write only the relevant author-owned files; those writes must not synthesize CLI-managed outputs. Do not add an `authoring-manifest.json` or another root-level file to persist Segmentation or Orchestration handoffs; retain that phase data in the active handoff or report instead. New directory artifacts require an explicit CLI specification update.
+The directory contract above is the complete set of recognized and managed course-directory paths. When writing only author-owned inputs, write only the relevant author-owned files; those writes must not synthesize CLI-managed outputs. Planning and review notes are not managed course-directory artifacts; keep any optional notes outside this directory. Do not add an `authoring-manifest.json` or another unsupported root-level input. New directory artifacts require an explicit CLI specification update.
 
 ## Build Precedence
 
@@ -58,7 +54,7 @@ When `structure.json` is absent or has no chapters, only files matching `lesson-
 
 ## README.md
 
-Only the first line is inspected. If it begins with one or more `#` characters, the remaining trimmed text is the course title. Other README content is not mapped into the import payload. New authoring workflows should write only that title heading; do not duplicate the author, description, audience, or design controls here because their owners and consumers are elsewhere.
+Only the first line is inspected. If it begins with one or more `#` characters, the remaining trimmed text is the course title. Other README content is not mapped into the import payload. When materializing a course title, write only that title heading; do not duplicate the author, description, audience, or design controls here because their owners and consumers are elsewhere.
 
 ## Lesson Files
 

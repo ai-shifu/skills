@@ -1,9 +1,5 @@
 # CLI Reference
 
-## Required References
-
-None.
-
 ## Invocation
 
 All commands use:
@@ -115,7 +111,7 @@ site --url https://your-service.example
 
 `site` output and setup commands are internal control data. During normal setup, ask the user to select their current region with two options: China or Other countries or regions, then configure silently; do not present these URLs, fields, or commands. Custom deployment is used only when explicitly requested or already configured.
 
-`build`, `check-update`, and `site` do not require site selection. Agent intake behavior is defined in `../authentication.md#select-site-before-connecting`.
+`build`, `check-update`, and `site` do not require site selection. Service selection is defined in `../authentication.md#select-site-before-connecting`.
 
 ## Authentication
 

@@ -1,99 +1,55 @@
-# Optimization Checklist
+# Course Review Checks
 
-Observable acceptance criteria for Optimization. Use each linked owner to interpret the rule; this checklist records `pass`, `fail`, or `not-assessed` without redefining that rule.
-
-For a pasted content-only Prompt, run every check observable from the body and record any check that needs an unprovided schema envelope or metadata table as `not-assessed`; do not manufacture the missing wrapper.
-
-## Required References
-
-- `language-policy.md#language-audit`
-
-## Conditional References
-
-- When authoritative source material or selected immutable spans are in the audit scope: `source-preservation.md#verification`
-- When a Teaching Prompt is audited without an explicit rewrite or layout normalization: `teaching-prompt.md#source-encoding`
-- When a Teaching Prompt is audited without an explicit rewrite or layout normalization: `teaching-prompt.md#validation`
-- When an explicit Teaching Prompt rewrite or layout normalization is in scope: `teaching-prompt.md`
-- When a Course Prompt is in scope: `course-prompt.md#materialization-checks`
-- When a course description is in scope: `course-description.md#validation`
-- When the audited artifacts use image assets: `image-authoring.md#image-output-validation`
+Observable criteria for the artifacts and scope actually available. Use `pass`, `fail`, or `not-assessed` when useful; a complete checklist report is not required. These checks do not prescribe the authoring process or make optional teaching choices mandatory.
 
 ## Coverage and Fidelity
 
-- When authoritative source material is supplied, every critical source point in scope is represented and no unsupported addition changes its meaning.
-- Meaning and information density observable in the supplied artifact remain intact after repair.
-- When selected immutable spans are in scope, every span passes `source-preservation.md#verification`.
-- A content-only audit does not claim coverage of or fidelity to an external source that was not supplied.
+- With authoritative source material, required points remain represented and generated additions do not change their meaning. Without it, do not claim external-source coverage or fidelity.
+- A focused repair retains the supplied content's intended meaning and information density. A requested rewrite respects its explicit content constraints.
+- Required exact content passes [source-preservation.md#verification](source-preservation.md#verification). Missing evidence is reported rather than invented.
 
-## Artifact Boundaries
+## Prompt Boundaries
 
-- Teaching Prompts contain lesson method and flow; the Course Prompt contributes course-wide role, presentation behavior, and bounded cross-lesson personalization.
-- Chapter titles, numbering, hierarchy, and ordering remain in structure metadata rather than Teaching Prompt bodies.
-- No artifact relies on another artifact to supply behavior that its owner requires locally.
-- After MarkdownFlow removes source-only navigation comments, every remaining part of a Teaching Prompt body serves learner-time execution as a teaching, presentation, interaction, feedback, branch, or close instruction, or as learner-visible exact material. Internal execution plans and authoring controls remain in their owning handoff and references.
+- Each artifact serves its responsibility under [prompt-contracts.md#artifact-responsibilities](prompt-contracts.md#artifact-responsibilities).
+- Teaching Prompts provide executable local teaching directions, required content and relationships, and any chosen feedback or branch behavior. A Course Prompt is not relied on to invent missing lesson pedagogy.
+- After MarkdownFlow removes source-only comments, every remaining part of a Teaching Prompt serves runtime delivery. No executable requirement, variable, option, URL, command, or exact span exists only in a comment.
+- Authoring controls, selection interfaces, pipeline notes, and learner-profile data do not leak into runtime instructions. Second-person forms obey [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics).
 
-## Teaching Prompt Behavior
+## Teaching Design and Layout
 
-- Each lesson resolves one core question through a complete loop and valid teaching pattern under `pedagogy.md`.
-- Example and analogy choices address observable comprehension needs under [pedagogy.md#examples-and-analogies](pedagogy.md#examples-and-analogies), with executable relationships, takeaways, and necessary limits. Flag misleading correspondence, unsupported assumptions of familiarity, cosmetic-only background substitutions, and redundant additions. Their local materialization follows `teaching-prompt.md#personalization-directions`; when learner context or the approved plan is not supplied, mark checks that depend on it as `not-assessed` rather than inventing it.
-- Examples and analogies with their personalization direction selected carry the local background-based teaching instruction required by `teaching-prompt.md#personalization-directions`; a course-wide personalization statement alone does not satisfy this check. When author-time learner context is absent, verify the runtime direction and neutral fallback without claiming actual background fit has been tested. Required detailed explanations name the supplied content and relationships to expand at the correct position; flag outline-only directions, unsupported expansion, or a brevity instruction that suppresses required reasoning. Preserve pure-slide delivery.
-- A newly generated or explicitly rewritten Teaching Prompt uses the source-layout applicability, teaching-block grouping, and block-result navigation from `teaching-prompt.md#author-editable-layout`. Its comments use concise, naturally varied result phrases that keep adjacent results distinguishable at a glance. For an audit-only request that does not ask for rewriting or layout normalization, record this layout check as `not-assessed` and do not reformat the existing Prompt.
-- When the author-editable layout applies, its exact source serialization passes `teaching-prompt.md#encoding-checks`, including navigation comments, meaningful unordered-list hierarchy, syntax-owned structures, interaction adjacency, and format equivalence. Flag a dense compound item or a flat run of related items when their separable details or subordinate actions have a clear parent; do not flag a standalone or independent action, a syntax-separated action, or preserved text that cannot be split without changing it. For an audit-only request where the layout does not apply, record the navigation-comment, unordered-list hierarchy, and format-equivalence portions as `not-assessed`; continue auditing observable interaction, variable, branch, preservation, and runtime syntax without reformatting.
-- When `personalization_directions` is supplied, validate its array shape against `data-contracts.md#personalization-directions` and verify each supplied Prompt artifact's owned behavior against exactly the selected effects under `prompt-contracts.md#personalization-directions`. Mark companion-artifact alignment as `not-assessed` when the companion is unavailable or outside the declared audit scope. Flag a generic personalization instruction that silently enables an unselected direction.
-- When the selection is absent from a content-only audit or supplied metadata, record selection alignment as `not-assessed`; do not infer a set from the Prompt body or silently enable all directions. Still audit observable teaching completeness and runtime behavior.
-- Unselected directions and `[]` retain the source-, author-, and audience-based course baseline. Flag deleted examples or analogies, omitted detailed explanations, or instructions that personalize an unselected direction to an individual's background. Ordinary fluency remains allowed and is not exact output.
-- Selected local instructions retain the core question, intended understanding, critical facts and boundaries, required example or analogy relationships, and required meaning and effect. Flag an empty outline or unnecessarily fixed scenario details that prevent the selected adaptation; source-required cases stay fixed.
-- For every selection, recover the execution signature from the actual ordered runtime instructions. The complete teaching sequence, each slide's teaching function, slide count and order, content grouping and hierarchy, required teaching actions, and the placement of interactions, images, feedback, and the close match the approved internal execution plan. Treat a selection-driven difference in that signature as a defect.
-- When multiple direction variants or an approved execution plan are in scope, compare the actual instruction sequences explicitly. For an isolated content-only Prompt with no supplied structure reference, record cross-variant structural consistency as `not-assessed` rather than inferring a plan.
-- For every selection, unrequested font or color choices, pixel coordinates, and animations remain defects, and every item selected for exact preservation remains complete and exact at its resolved runtime position under its owning MarkdownFlow authoring, source-preservation, or image-authoring rule.
-- In the standard visual-text scope—standard one-on-one teaching and the standard teaching branch of combined delivery, except under an explicit text-only constraint—after navigation comments are removed, the first remaining instruction makes the first learner-visible block one brief text lead-in; no arbitrary word-count or sentence-count quota is imposed.
-- Within that scope, the lesson contains at least one substantive visual unit and repeats one visual-and-explanation pair per substantive teaching turn. Flag a visual opening, consecutive visual units, several visuals followed by one delayed explanation, and any unpaired learner-visible text turn after the lead-in as cadence defects.
-- Across visual delivery modes, flag any visual unit whose sole purpose is to pad the lesson's length or pacing, whether newly proposed or already present. Do not treat a unit with a defined framing, orientation, transition, atmosphere, or teaching purpose as padding merely because it is non-substantive.
-- Within that scope, each explanation appears before the next visual and adds context, relationship, reasoning, inference, or application rather than merely restating the preceding visual. The final explanation also performs the required close instead of leaving an isolated closing page or paragraph.
-- Within that scope, a question-bearing interaction follows the question-only visual → unchanged `?[]` control → immediate feedback or explanation sequence. The question visual contains no duplicated option labels, input hint, simulated control, or answer, while an action-only control does not require an invented question visual.
-- Pure classroom slides do not use Teaching Agent narration or paired explanatory text; explicit text-only delivery uses no visual units.
-- A heading used to teach Markdown syntax, a code comment beginning with `#`, or a heading explicitly permitted by the author is flagged for review rather than automatically deleted.
-- Interaction presence, placement, selection type, feedback effect, and lesson close match the resolved interaction policy.
-- Each action or carryover has the downstream use required by `pedagogy.md`.
-- Pure-slide, explicit text-only, and standard visual-text behavior match `pedagogy.md#visual-text-coordination`.
-- A schema-bearing Teaching Prompt item passes all of `teaching-prompt.md#validation`. A content-only Prompt body passes every observable body and runtime check there; its schema envelope is `not-assessed`.
+- The lesson's chosen approach makes its intended learning result achievable with supported facts, sufficient reasoning, and useful evidence. Do not fail an artifact for omitting a recommended pattern, fixed loop, single-question structure, visual, cover, cadence, deliverable, or interaction count.
+- Examples and analogies, when used, have meaningful conditions or correspondences, explanatory value, and necessary limits under [pedagogy.md#examples-and-analogies](pedagogy.md#examples-and-analogies). Avoid misleading comparisons and unsupported assumptions of familiarity.
+- Explicit author decisions about order, delivery experience, interaction restrictions, and other constraints are respected. The agent may choose or revise unspecified design elements within the task.
+- New or explicitly rewritten Teaching Prompts have concise source-only navigation comments for useful teaching blocks under [teaching-prompt.md](teaching-prompt.md). Optional layouts and agent-created layouts are valid when readable and runtime-safe.
+- In audit-only existing content, comment and layout normalization is `not-assessed`; do not reformat or add comments. Continue checking observable syntax and runtime behavior.
+- Syntax-owned structures and immutable source content retain their required form and scope in any layout. Removing source-only comments does not remove runtime content.
+- Pure classroom slides retain their intended instructor-paced behavior; explicit text-only constraints contain no visual instructions. Visuals serve a defined purpose rather than padding length. General slide presentation requirements belong in the Course Prompt.
 
-## Interaction and Variable Safety
+## Personalization
 
-- Every interaction has the observable instructional effect and branch behavior selected by `pedagogy.md`.
-- Each control, option set, input hint, assignment, and branch instruction passes `teaching-prompt.md#encoding-checks`.
-- Variable lifecycle is represented by the resolved control syntax, `used_variables`, and `global_variable_table`; adjacent Teaching Prompt prose states only feedback, branch, or carryover behavior performed during delivery.
-- Every named variable has exactly one valid collection, complete supplied metadata, and a cross-lesson or Course Prompt consumer; lesson-local answers remain unnamed. Metadata checks are `not-assessed` when a content-only input does not supply the required table.
-- The observed interaction and variable counts stay within `pedagogy.md` and `data-contracts.md`.
-- Learner-facing content contains no unresolved authoring placeholder; runtime `UNKNOWN` behavior remains valid only where `markdownflow.md#variables` defines it.
+- Resolved directions implement exactly the effects in [prompt-contracts.md#personalization-directions](prompt-contracts.md#personalization-directions), including a neutral fallback for missing relevant context. Do not enable an unselected direction through a generic instruction.
+- Unselected directions and an explicit empty selection retain the source-, author-, and audience-based baseline without deleting needed examples, analogies, practical value, or explanation.
+- Selected adaptations are executable where needed. A generic course-wide claim does not replace a required local example or analogy instruction.
+- Runtime personalization preserves the authored objectives, required facts and boundaries, needed explanation depth, sequence, visual structure, and selected interaction or feedback effects. It does not authorize new context collection or branches.
+- With no supplied selection, assess observable behavior without inferring an enum array from the Prompt. Selection alignment or absent companion alignment may be `not-assessed`; no missing intermediate plan or schema is manufactured.
+- Reusable artifacts contain no specific learner profile, platform learner-profile tags, internal profile variable names, or authoring selection interface.
 
-## Runtime Stability
+## Interaction and Runtime Safety
 
-- MarkdownFlow syntax produces the observable effects defined in `markdownflow.md`.
-- Deterministic and inline preservation forms match their selected scope.
-- Code fences, required source spans, and applicable image records survive preprocessing and generation unchanged where required.
-- When images are present, each one passes `image-authoring.md#image-output-validation`; when none are present, image authoring is not loaded or required.
+- Questions and options are clear and answerable, and selected instructional interactions have a meaningful feedback or teaching effect under [pedagogy.md#interaction-design](pedagogy.md#interaction-design).
+- Every control, assignment, reference, and branch follows [markdownflow.md](markdownflow.md) and [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding). Controls stay recognizable and distinct from simulated visual controls.
+- Named answers have valid collection and meaningful cross-lesson or Course Prompt consumers; local answers remain unnamed. Check actual artifacts under [data-contracts.md#variable-table](data-contracts.md#variable-table); no variable-table JSON is required.
+- Branches use natural language and literal `UNKNOWN` for unavailable named values where applicable. No learner-visible authoring placeholders remain.
+- Deterministic blocks, code fences, required source spans, and image records survive preprocessing as required. Images use [image-authoring.md#image-output-validation](image-authoring.md#image-output-validation) when present; absent images do not require image work.
 
-## Course Prompt
+## Course Prompt and Description
 
-- The existing Course Prompt keeps all six required sections in order and has no unresolved `XXX` placeholder.
-- Every non-placeholder instruction remains behaviorally represented after localization.
-- The Course Prompt materializes exactly the selected directions through `course-prompt.md#placeholder-sources-and-context`, within the shared boundaries in `prompt-contracts.md#personalization-directions`; an empty selection produces the course baseline. Do not infer an absent selection during audit. Pure classroom slides retain their prohibition on Teaching Agent narration and addressing a single learner.
-- Empty, `UNKNOWN`, irrelevant, or unavailable learner context falls back to neutral course-appropriate defaults without inferred facts. The Course Prompt does not quote, summarize, or reveal the learner profile and contains no platform learner-profile tags or internal learner-profile variable names.
-- Standard and pure-slide delivery behavior matches `course-prompt.md`; its `# Slides` section contains the general presentation requirements applied uniformly to every slide, without special handling for a cover or any other slide position or teaching purpose and without duplicating or changing lesson pedagogy or lesson-specific slide structure.
-- The complete artifact passes `course-prompt.md#materialization-checks` and `prompt-contracts.md`.
-
-## Course Description
-
-- The existing description clearly states audience fit, course topic, and supported outcomes.
-- It contains no authoring notes, workflow state, unsupported guarantee, Prompt content, or structure dump.
-- The complete artifact passes `course-description.md#validation`.
+- The Course Prompt keeps its six sections in order and all non-placeholder template behavior under [course-prompt.md#materialization-checks](course-prompt.md#materialization-checks), with no unresolved `XXX`.
+- Its fill values match the available topic, goals, audience, delivery experience, and resolved personalization. Its shared slide rules do not redefine lesson-specific structure or pedagogy.
+- The description clearly states audience fit, topic, and supported outcomes under [course-description.md#validation](course-description.md#validation). It contains no unsupported guarantee, authoring notes, Prompt dump, or deployment state.
 
 ## Language and Repair Scope
 
-- Every applicable human-readable surface passes `language-policy.md#language-audit`, including effective build values when those are in scope.
-- When a Teaching Prompt contains an authoring rationale or a summary of its internal execution plan, classify each encoded requirement by its owning artifact. Fold lesson-specific behavior into the corresponding local teaching, slide, interaction, feedback, or close instruction; keep exact material at its original runtime position; and leave course-wide uniform presentation behavior with the Course Prompt. After any source-only navigation comments are removed, the repaired Teaching Prompt's first remaining instruction is the first learner-time instruction, followed by the rest in execution order.
-- When repairing personalization instructions, retain the required learner-time content and effect, the selected local adaptations in `teaching-prompt.md#personalization-directions`, and the detailed expansion requirements in `teaching-prompt.md#lesson-materialization`. Preserve unselected baseline behavior and omit authoring commentary about the selection.
-- Classify a passage by its function in learner-time execution, not by the presence of authoring vocabulary alone.
-- Each applied change is the smallest coherent repair and has a traceable rationale.
-- Remaining gaps are reported with their risk and owner instead of being hidden by broad rewriting.
+- Human-readable content passes [language-policy.md#language-audit](language-policy.md#language-audit), including effective build values when they are in scope.
+- Repairs respect the requested scope and retain executable requirements in their owning artifact. Consequential changes have a clear reason.
+- Unresolved correctness, source, or runtime risks and unavailable checks are visible rather than hidden by cosmetic rewriting or a claimed full pass.

@@ -4,7 +4,7 @@
     "should_trigger": true
   },
   {
-    "query": "我在写 AI师傅 MDF 脚本，第一节课收集了学员的姓名和公司名，帮我写第三节课的脚本片段，用变量引用这两个信息来个性化开场白",
+    "query": "我在写 AI师傅 MarkdownFlow 脚本，第一节课收集了学员的姓名和公司名，帮我写第三节课的脚本片段，用变量引用这两个信息来个性化开场白",
     "should_trigger": true
   },
   {
@@ -60,7 +60,7 @@
     "should_trigger": true
   },
   {
-    "query": "我在写 MDF 脚本，现在想做一个个性化开场：先让学员填写他们的岗位和入职年限，然后后面的内容根据这两个变量来调整讲解的深度。帮我把这段逻辑写成 MarkdownFlow 脚本",
+    "query": "我在写 MarkdownFlow 脚本，现在想做一个个性化开场：先让学员填写他们的岗位和入职年限，然后后面的内容根据这两个变量来调整讲解的深度。帮我把这段逻辑写成 MarkdownFlow 脚本",
     "should_trigger": true
   },
   {
@@ -72,7 +72,7 @@
     "should_trigger": true
   },
   {
-    "query": "帮我把这段对话式培训稿转成 AI师傅 MDF 脚本：每个问答环节要变成互动块，培训师的话变成模型指令，学员的回答选项用 MDF 互动语法表达",
+    "query": "帮我把这段对话式培训稿转成 AI师傅 MarkdownFlow 脚本：每个问答环节要变成互动块，培训师的话变成模型指令，学员的回答选项用 MarkdownFlow 互动语法表达",
     "should_trigger": true
   },
   {
@@ -119,7 +119,7 @@
     "query": "I want to write a Markdown template with conditional sections — show different content blocks based on a YAML front-matter variable. Is this possible with Jekyll?",
     "should_trigger": false,
     "distance": "close",
-    "trap": "Markdown+变量+条件分支，但是 Jekyll 模板不是 MDF"
+    "trap": "Markdown+变量+条件分支，但是 Jekyll 模板不是 MarkdownFlow"
   },
   {
     "query": "我在用 mdBook 写技术文档，想给某些章节加上交互式代码练习，读者可以在页面上直接运行代码，怎么配置？",
@@ -155,7 +155,7 @@
     "query": "我想把一份3万字的培训手册拆成知识点，每个知识点配一个短视频脚本和一道测验题，输出成结构化 JSON",
     "should_trigger": false,
     "distance": "medium",
-    "trap": "培训材料拆分+知识点+测验，但目标是视频脚本和 JSON 不是 MDF 课程"
+    "trap": "培训材料拆分+知识点+测验，但目标是视频脚本和 JSON 不是 MarkdownFlow 课程"
   },
   {
     "query": "帮我用 LangChain 搭一个 RAG 教学助手，学生提问之后从课件 PDF 里检索相关内容再回答",
@@ -198,5 +198,21 @@
     "should_trigger": false,
     "distance": "far",
     "trap": "变量管理，但是环境变量不是课程变量"
+  },
+  {
+    "query": "只帮我写 AI 师傅课程简介，课节以后再做，不连接平台。",
+    "should_trigger": true
+  },
+  {
+    "query": "从这两条事实直接写一节 AI 师傅 Teaching Prompt，不需要中间 JSON、课程大纲或部署。",
+    "should_trigger": true
+  },
+  {
+    "query": "把 AI 师傅授课提示词改成我指定的标题加自然段版式，每个教学块保留 HTML 学习结果导航注释。",
+    "should_trigger": true
+  },
+  {
+    "query": "只读检查我的 AI 师傅 Teaching Prompt 的互动语法，不要替我重新排版。",
+    "should_trigger": true
   }
 ]

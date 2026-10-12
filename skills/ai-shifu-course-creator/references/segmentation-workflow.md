@@ -1,45 +1,25 @@
-# Segmentation Workflow
+# Source Analysis and Course Structure
 
-Turn course source material into traceable semantic segments and lesson-boundary candidates. This file does not orchestrate downstream generation.
+Turn source materials, a brief, or an existing course into an understandable chapter and lesson structure. The using agent may analyze sources, propose boundaries, or revise structure independently; segmentation is an available technique, not a required phase before writing.
 
-## Required References
+## Inputs and Representations
 
-- `language-policy.md`
-- `authoring-mode.md#mode-selection`
-- `data-contracts.md#segment-schema`
-- `data-contracts.md#segmentation-fallback-fields`
-- `source-preservation.md`
+Work from the information available: documents, transcripts, topic notes, a supplied outline, existing Teaching Prompts, or a course directory. There is no required segment schema, fixed source type, or intermediate JSON.
 
-## Segmentation
+For long or noisy material, semantic segments can help preserve traceability. Record a source file and heading, page, line range, quotation, or other locator sufficient to find important evidence. Code, images, and tables may be kept as coherent units. Exact-source decisions and verification belong to [source-preservation.md](source-preservation.md).
 
-### Segmentation Methodology
+## Structure Design
 
-#### Objective
+- Choose lesson boundaries around teachable questions, skills, or outcomes rather than heading depth alone. A single core question is useful when it makes a lesson coherent; it is not a universal quota.
+- Choose chapter grouping, lesson granularity, and ordering for the audience, prerequisites, source relationships, and requested result. Honor explicit ordering and count constraints.
+- When reconstructing an existing course faithfully, preserve its required coverage and ordering. When restructuring is requested or useful within the task, keep required facts and source relationships intact and make consequential rearrangements clear.
+- Keep required source points and immutable spans represented. Do not drop difficult material merely to fit a lesson count.
+- Separate uncertainty in the source from a design choice. Identify missing evidence or conflicting constraints without inventing source claims; a useful draft may state its assumptions.
 
-Produce stable lesson-oriented semantic segments from noisy source material while preserving immutable artifacts.
+[pedagogy.md](pedagogy.md) offers teaching approaches. [course-design-intake.md](course-design-intake.md) explains author-facing choices when clarification would help.
 
-#### Core Rules
+## Results and Checks
 
-1. Preserve source order unless explicit ordering hints are provided.
-2. Keep each code block, image reference, and table block as one traceable source span. Apply `source-preservation.md` and set `preserve_block` before Teaching Prompt generation.
-3. Segment by semantic shift, not heading depth alone.
-4. Keep each lesson candidate centered on one teachable question.
-5. Attach source spans to every segment.
+Return the requested structure at the useful level of detail: chapter and lesson titles, objectives or core questions, source associations, and unresolved assumptions where relevant. The caller decides whether it needs an outline, a local `structure.json`, or information for another capability. The actual directory format belongs to [cli/course-directory-spec.md](cli/course-directory-spec.md).
 
-#### Failure Handling
-
-If structure is weak, output a fallback segmentation, mark uncertain spans, and provide focused rerun hints using `data-contracts.md#segmentation-fallback-fields`.
-
-### Outputs
-
-Produce a segment list that conforms to `data-contracts.md#segment-schema`, including its canonical segment types and transfer signals, plus workflow-local lesson-boundary candidates with one core question each.
-
-At Segmentation handoff, summarize the source files, execution mode, total segment count, and lesson-boundary candidates. Summarize the results of [Validation](#validation), including immutable-block preservation. If issues remain, include blockers, non-blocking suggestions, focused rerun hints, and downstream handoff notes.
-
-Apply `language-policy.md` to the complete Segmentation output.
-
-### Validation
-
-- Segment output covers all valid source spans in traceable order.
-- Every segment passes [data-contracts.md#segment-schema](data-contracts.md#segment-schema).
-- The preservation and one-core-question rules in [Core Rules](#core-rules) pass; each immutable span is marked according to `source-preservation.md`.
+Check coherence, requested source coverage, explicit counts and order, and exact preservation within the affected scope. Do not generate Teaching Prompts, cross-lesson tables, or a phase report merely because a structure was requested.

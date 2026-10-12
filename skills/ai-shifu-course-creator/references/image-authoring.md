@@ -4,19 +4,7 @@ Understand, upload, compose, embed, and validate image assets used by Teaching P
 
 Teacher avatars are platform metadata rather than Teaching Prompt image assets. Route avatar work to `course-management.md` and do not add it to `assets/image-manifest.json`.
 
-## Required References
-
-- `language-policy.md`
-- `pedagogy.md#visual-text-coordination`
-- `markdownflow.md#deterministic-blocks`
-- `markdownflow.md#images`
-- `cli/cli-reference.md#image-upload`
-- `cli/course-directory-spec.md#assets`
-
-## Conditional References
-
-- When an image URL, alt, caption, or ordering was selected as immutable source content: `source-preservation.md`
-- Immediately before uploading an image to the platform: `authentication.md`
+Runtime image and deterministic forms are defined in [markdownflow.md](markdownflow.md#images). Upload mechanics and provenance are defined in [image upload](cli/cli-reference.md#image-upload) and [assets](cli/course-directory-spec.md#assets). Use [source preservation](source-preservation.md) for selected immutable image text or ordering, and [authentication](authentication.md) when an upload needs platform access.
 
 ## Asset Intake
 
@@ -25,9 +13,9 @@ Understand every image before choosing its lesson, position, or alt text:
 - If the image is visible, identify in one sentence the concept, relation, or example it conveys.
 - If only an opaque path or URL is available, ask the author for a one-sentence description or a semantically meaningful filename. Do not guess from an opaque filename.
 
-When the selected route permits platform access and an upload is needed, complete `authentication.md` at this boundary, then upload local or remote assets with `shifu-cli.py upload-image`, always passing `--course-dir` and an informative `--alt`. An upload needs neither a course BID nor a title lookup or course creation. Use the exact resource URL returned by the selected deployment and the stored manifest record as the authoritative asset identity. If authentication or upload is deferred or fails, preserve local assets and report the blocked image and missing resource URL to the caller; do not fabricate a URL or pass Image Output Validation.
+When the user's task permits platform access and an upload is needed, complete `authentication.md` at this boundary, then upload local or remote assets with `shifu-cli.py upload-image`, always passing `--course-dir` and an informative `--alt`. An upload needs neither a course BID nor a title lookup or course creation. Use the exact resource URL returned by the selected deployment and the stored manifest record as the authoritative asset identity. If authentication or upload is deferred or fails, preserve local assets and report the blocked image and missing resource URL to the caller; do not fabricate a URL or pass Image Output Validation.
 
-For explicitly local artifact-only work where upload is excluded, do not call `upload-image`. Use the authoritative URL and metadata supplied by the source record instead. Stop when that record lacks the remote URL, informative alt, or another field required by the selected image form; never invent a missing value from a filename.
+For explicitly local artifact-only work where upload is excluded, do not call `upload-image`. Use the authoritative URL and metadata supplied by the source record instead. Report an unresolved image dependency when that record lacks the remote URL, informative alt, or another field required by the selected image form; never invent a missing value from a filename.
 
 ## Image Composition
 
@@ -59,7 +47,7 @@ The preservation wording constrains the Teaching Agent but is not parser-level l
 ## Image Output Validation
 
 1. Build an expected-image record from `assets/image-manifest.json`, selecting the upload for the task's service under the provenance rules in `cli/course-directory-spec.md#assets`, then adding the selected form, caption, position, layout constraints, ordering, and aspect-ratio behavior. For explicitly local artifact-only work where upload is excluded, use the authoritative source record instead.
-2. Stop before generation when the authoritative record lacks `remote`, informative `alt`, or a field required by the selected form.
+2. Do not finalize the affected image instruction when the authoritative record lacks `remote`, informative `alt`, or a field required by the selected form.
 3. Compare the generated Teaching Prompt with every expected record. Verify URL, description or alt, caption, position, layout constraints, ordering, aspect-ratio behavior, and form.
 4. Regenerate only the affected image instruction or lesson when a field is missing, changed, duplicated, or reordered.
-5. If the second comparison still fails, stop that lesson and report the mismatched fields as blocking. Do not finalize or hand off the Teaching Prompt.
+5. If a mismatch remains unresolved, report the affected image and fields. Preserve valid independent work and do not claim the image-dependent artifact is complete.

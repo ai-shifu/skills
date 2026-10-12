@@ -2,20 +2,6 @@
 
 Course-level materialization contract for the Course Prompt artifact.
 
-## Required References
-
-- `language-policy.md`
-- `prompt-contracts.md#prompt-semantics`
-- `prompt-contracts.md#artifact-responsibilities`
-- `prompt-contracts.md#personalization-directions`
-- `data-contracts.md#input-contract`
-- `data-contracts.md#variable-table`
-- `markdownflow.md#variables`
-
-## Conditional References
-
-- When applying the Authoring Workflow to materialize a new or revised Course Prompt, rather than only auditing an existing artifact: `course-design-intake.md`
-
 ## Purpose
 
 Use this file to materialize one course-wide artifact from the six-section template below. It defines the template, fill-value sources, context used while filling those values, and completion checks; it does not redefine shared Prompt semantics, lesson pedagogy, or MarkdownFlow runtime behavior.
@@ -27,14 +13,13 @@ The course author's intended audience and course constraints remain hard boundar
 - Apply shared Prompt semantics and the Course Prompt versus Teaching Prompt authority boundary from [prompt-contracts.md](prompt-contracts.md).
 - Resolve any variable references in the completed artifact against [markdownflow.md#variables](markdownflow.md#variables).
 
-## Authoring Workflow
+## Materialization
 
-1. Resolve `resolved_target_language` using [language-policy.md#language-resolution](language-policy.md#language-resolution).
-2. Copy the complete [Fillable Template](#fillable-template), preserving its six sections and their order.
-3. Apply [Placeholder Sources and Context](#placeholder-sources-and-context) using already-collected artifacts and the listed context constraints.
-4. Render section headings and body text in `resolved_target_language`. The English template is canonical structure, not a language default.
-5. Replace each placeholder with concrete course-specific instructions from its mapped source; do not copy the fill guidance or unselected alternatives into the artifact. Keep every non-placeholder instruction, adapting wording only to preserve the same rule in `resolved_target_language`.
-6. Run the [Materialization Checks](#materialization-checks).
+Use the available course topic, title, objectives, audience, and resolved design choices to fill the complete [Fillable Template](#fillable-template). A segmentation run, course index, internal plan, local directory, or prior questionnaire is not required.
+
+Preserve all six sections in order and every non-placeholder instruction. Render headings and body in the language resolved under [language-policy.md#language-resolution](language-policy.md#language-resolution); the English template defines structure rather than a default language. Replace placeholders with concrete course-specific instructions under [Placeholder Sources and Context](#placeholder-sources-and-context), without copying fill guidance or unselected alternatives. Check the result with [Materialization Checks](#materialization-checks).
+
+[course-design-intake.md](course-design-intake.md) explains design choices when they need clarification. [data-contracts.md#input-contract](data-contracts.md#input-contract) describes optional structured controls; neither document requires an intermediate artifact.
 
 ## Fillable Template
 
@@ -86,19 +71,19 @@ The course author's intended audience and course constraints remain hard boundar
 
 | Placeholder | Source |
 | --- | --- |
-| Role identity (`You are XXX`) | `course_author_name` from Course Design Intake. When it is empty, omit the corresponding list item in the Fillable Template instead of filling the placeholder. |
-| Specialty (`You specialize in XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
-| Teaching field (`the field of XXX`) | Dominant topic from Segmentation, cross-checked with `course_index` core questions. |
-| Course name (`The current course is *XXX*`) | First heading in `README.md`. |
-| Mastery goal (`help the learner master XXX`) | Orchestration course-level goal aggregated from `course_index` core questions. |
-| Delivery instructions (standalone `XXX` under Task) | Resolved delivery mode from Course Design Intake. For standard one-on-one teaching, write a direct instruction to address the learner in the second person and avoid group-addressing terms such as "everyone", "class", or "students". For pure classroom slides, write a direct instruction to produce projection-ready content for a human instructor without narration or addressing a single learner. Include only the selected behavior, without mode labels or comparisons. Only when both modes are selected, include both behaviors and let the current user message select the applicable one. |
-| Personalization instructions (standalone `XXX` under Teaching Techniques) | Resolved `personalization_directions` from Course Design Intake, with effects defined in `prompt-contracts.md#personalization-directions`. Write direct teaching instructions for exactly the selected directions, using relevant explicitly stated learner background and preferences. For `[]`, write a direct instruction to teach from the source, author requirements, and intended audience without individual-background adaptation. Do not output the field name, enum values, selection interface, unselected adaptation instructions, or an if-selected rule. |
+| Role identity (`You are XXX`) | The supplied teacher identity, optionally represented as `course_author_name`. When it is empty, omit the corresponding list item in the Fillable Template instead of filling the placeholder. |
+| Specialty (`You specialize in XXX`) | The course's dominant topic from the request, source material, or existing content. |
+| Teaching field (`the field of XXX`) | The subject field supported by the available course content and intended objectives. |
+| Course name (`The current course is *XXX*`) | The resolved course title from the request or existing course metadata. When a local directory is in scope, keep its build title consistent under [cli/course-directory-spec.md#build-precedence](cli/course-directory-spec.md#build-precedence). |
+| Mastery goal (`help the learner master XXX`) | The course-level learning goal supported by the source, author requirements, and lesson objectives. |
+| Delivery instructions (standalone `XXX` under Task) | The resolved delivery experience. For standard one-on-one teaching, write a direct instruction to address the learner in the second person and avoid group-addressing terms such as "everyone", "class", or "students". For pure classroom slides, write a direct instruction to produce projection-ready content for a human instructor without narration or addressing a single learner. Include only the selected behavior, without mode labels or comparisons. Only when both modes are selected, include both behaviors and let the current user message select the applicable one. |
+| Personalization instructions (standalone `XXX` under Teaching Techniques) | The resolved directions, with effects defined in [prompt-contracts.md#personalization-directions](prompt-contracts.md#personalization-directions). Write direct teaching instructions for exactly those directions, using relevant explicitly stated learner background and preferences. For no selected directions, write a direct instruction to teach from the source, author requirements, and intended audience without individual-background adaptation. Do not output the field name, enum values, selection interface, unselected adaptation instructions, or an if-selected rule. |
 
 Use these inputs as context constraints while wording the applicable fill values; they do not add placeholders to the template:
 
-- Calibrate specificity to `course_profile.audience_level` and `course_profile.prerequisite_level`.
-- Keep fill values within `delivery_constraints.must_cover_topics`, bounded by `avoid_topics` and source coverage.
-- Match the stated delivery mode from the Course Design Intake.
+- Calibrate specificity to the available audience and prerequisite information, whether supplied naturally or in `course_profile`.
+- Keep fill values within required topics, excluded topics, source support, and explicit author constraints.
+- Match the resolved delivery experience.
 
 ## Materialization Checks
 
@@ -106,7 +91,7 @@ Use these inputs as context constraints while wording the applicable fill values
 - The optional named Role identity item is either absent or contains a non-empty name. The remaining six `XXX` occurrences are replaced with course-specific content derived from the mapped sources, and the completed artifact contains no unresolved `XXX` placeholder.
 - Delivery instructions state the selected behavior directly. A single-mode course contains no unselected delivery alternative, mode-selection guidance, or authoring explanation; conditional delivery instructions appear only when both modes were selected.
 - Every non-placeholder template instruction remains represented with the same behavior.
-- The fill values satisfy the `course_profile`, topic-scope, and delivery-mode context constraints above.
+- The fill values satisfy the available audience, topic-scope, and delivery context constraints above.
 - The learner-context instructions enable exactly the resolved directions under `prompt-contracts.md#personalization-directions`; `[]` produces the uniform course baseline. No unselected direction is enabled implicitly through a generic personalization rule or style instruction. Selected language style can vary within the shared clear, restrained, warm baseline; otherwise that baseline stays course-wide.
 - The artifact contains no authoring field name or enum array, platform learner-profile tags, internal learner-profile variable names, or unresolved personalization placeholder.
 - Every presentation requirement that applies uniformly to every slide remains in the `# Slides` section. The section does not special-case a cover or any other slide position or teaching purpose, and it does not change lesson-specific slide structure or pedagogy supplied by the current user message.

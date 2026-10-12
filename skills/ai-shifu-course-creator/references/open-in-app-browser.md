@@ -1,17 +1,13 @@
 # Open in App Browser
 
-Open the supplied URL in the host application's built-in browser, in a visible tab or panel that the user can directly click, type into, and continue using. The calling workflow owns the URL, when to open it, and any task-specific explanation or next steps.
-
-## Required References
-
-None.
+Open the supplied URL in the host application's built-in browser, in a visible tab or panel that the user can directly click, type into, and continue using. The calling agent owns the URL, when to open it, and any task-specific explanation or next steps.
 
 ## Open the URL
 
-1. Use the URL supplied by the user or calling workflow unchanged, including its query string and fragment. If no URL is available, obtain it from that workflow or ask for it.
+1. Use the URL supplied by the user or calling agent unchanged, including its query string and fragment. If no URL is available, obtain it from that agent or ask for it.
 2. If the user asked not to open pages or browsers, skip the browser call and provide the clickable Markdown link.
 3. Inspect the current host's built-in browser tabs when available. If a tab already has the exact supplied URL, including its query string and fragment, reuse and focus that tab without reloading it. Otherwise, open the URL in a **new visible tab**. Never navigate an existing tab to a different URL: it may contain the user's unfinished work. A matching title, domain, or course is not a URL match.
-4. Interpret the result using the table below. Always include the same URL as a clickable Markdown link in the reply, even when a browser panel or tool result is already visible. Let the calling workflow supply the link label and task-specific explanation.
+4. Interpret the result using the table below. Always include the same URL as a clickable Markdown link in the reply, even when a browser panel or tool result is already visible. Let the calling agent supply the link label and task-specific explanation.
 
 Use the current tool schema to select an existing matching tab or explicitly create a new one, and keep it open for the user. If tab inspection is unavailable, use explicit new-tab creation. If no available capability can preserve existing tabs, keep the link available for manual opening instead. Do not substitute a web fetch, hidden or headless browser, external browser, or system `open` command.
 
@@ -36,4 +32,4 @@ Use only tools exposed by the current host; UI labels below are destinations, no
 | Unavailable, failed, or unconfirmed | Briefly explain that opening is unavailable, failed, or could not be confirmed, and keep the link available for manual opening. Do not automatically retry with another browser. |
 | Skipped at the user's request | Provide the link without claiming the page opened or treating the opt-out as an error. |
 
-A browser failure does not undo completed work or justify repeating the operation that produced the URL. Return control to the calling workflow so it can continue its own next step.
+A browser failure does not undo completed work or justify repeating the operation that produced the URL. Return the opening result to the calling agent.

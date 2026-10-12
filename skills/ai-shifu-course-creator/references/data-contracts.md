@@ -1,76 +1,38 @@
-# Data Contracts
+# Author Controls and Artifact Invariants
 
-Authoritative source for schemas, enum values, and cross-field invariants at the boundaries between authoring phases.
-
-## Required References
-
-None.
+Optional controls express author intent; artifact invariants protect reusable, runnable courses. These are not a required authoring pipeline or intermediate exchange format. The actual course files and CLI payloads are defined in [cli/course-directory-spec.md](cli/course-directory-spec.md).
 
 ## Input Contract
 
-### Required
+Use whatever the task provides: source material, a course brief, an outline, existing artifacts, or a platform course. No particular document set or structured control object is required to begin useful work.
 
-Provide one of:
+Optional context includes audience, prerequisites, lesson granularity, tone, desired chapter or lesson counts, delivery experience, required topics, excluded topics, and exact source fragments. Two useful optional objects are:
 
-- A single long transcript or course document.
-- A set of topic-aligned documents with intended order.
+- `course_profile`: audience level, prerequisite level, lesson duration or count preferences, and assessment intent.
+- `delivery_constraints`: platform limits, must-cover topics, avoided topics, and non-negotiable source fragments.
 
-### Optional
+Their absence does not require collection. Preserve explicit author constraints; ask or state a consequential assumption when available context cannot resolve them. [course-design-intake.md](course-design-intake.md) describes the available choices and their effects.
 
-- Learner persona.
-- Lesson granularity preference (`short`, `medium`, `long`).
-- Tone constraints.
-- Non-negotiable source fragments.
-- `course_author_name` (string): the optional name the author wants the Teaching Agent to use as the teacher identity during course delivery. A blank or unanswered value normalizes to an empty string, which produces no named teacher identity in the Course Prompt.
-- `course_author_avatar_source` (local path or attached-file reference): an optional, transient platform-management handoff. Accept only a JPG or PNG source. Do not serialize it into a Teaching Prompt, Course Prompt, course directory, import payload, or platform metadata; after the course exists, consume it through `set-avatar` and retain only the returned platform avatar URL in platform state and `course-config.json` when synchronized.
-- `course_profile` object.
-- `delivery_constraints` object.
-- `interaction_policy` object.
-- `personalization_directions` (array of strings): a course-wide, transient authoring input selecting which aspects of teaching may adapt to learner background and preferences. It does not control teaching or slide structure.
+`course_author_name` is an optional teacher identity. A blank or absent value means no named identity in the Course Prompt. `course_author_avatar_source` is an optional transient JPG or PNG attachment/path for platform avatar management. Do not serialize the local avatar source into course content, import payloads, or platform metadata; synchronized state may retain the returned platform avatar URL.
 
 ### Personalization Directions
 
-`personalization_directions` is a top-level, duplicate-free array of strings and a transient authoring input. It is not a member of `course_profile`, `delivery_constraints`, or `interaction_policy`. Each entry must be one of the following enum values; author-facing names and behavior belong to `prompt-contracts.md#personalization-directions`.
+When a structured `personalization_directions` control is used, it is a duplicate-free array containing only:
 
-| Value |
-| --- |
-| `examples` |
-| `analogies` |
-| `language_style` |
-| `value_relevance` |
+| Value             | Meaning                    |
+| ----------------- | -------------------------- |
+| `examples`        | Examples / 举例            |
+| `analogies`       | Analogies / 类比           |
+| `language_style`  | Language style / 语言风格  |
+| `value_relevance` | Practical value / 价值阐述 |
 
-Array order has no behavioral meaning. An empty array explicitly selects no background-based personalization; an absent field is unresolved, not an empty selection. Reject non-array values, non-string entries, unknown values, and duplicates rather than coercing them. Intake owns collection and skip handling. The former `teaching_prompt_personalization_level` is not a valid substitute for this array and has no numeric mapping to directions; intake owns handling an old selection.
+Order has no meaning. `[]` explicitly selects no individual-background personalization. Reject invalid types, unknown values, and duplicates instead of silently broadening the selection. An absent field leaves the agent to resolve the intended behavior from the request or existing course; it does not mandate a question or enable every direction. The old `teaching_prompt_personalization_level` has no numeric mapping to these directions.
 
-This is a content-expression control, not a structure control. It never changes the internal lesson execution plan, including the teaching sequence, required actions and effects, slide count and order, or interaction and feedback placement.
+The effects and boundaries belong to [prompt-contracts.md#personalization-directions](prompt-contracts.md#personalization-directions). Materialize the resolved effects as runtime instructions. Keep this transient field name, enum array, and selection rationale out of Prompt bodies, course-directory files, CLI configuration, import payloads, and platform metadata.
 
-Pass the normalized selection unchanged through the in-memory authoring handoff to Teaching Prompt and Course Prompt generation and, when applicable, optimization review. Materialize its teaching effects as direct runtime instructions. Keep the control's name, enum array, and authoring semantics absent from Prompt bodies, output fields, course-directory files, CLI inputs or configuration, all build or deployment payloads including `shifu-import.json`, and platform metadata. In particular, do not serialize this control as a field in `lesson_teaching_prompts`, `course_index`, `global_variable_table`, `course_prompt`, `course_description`, or fallback output extensions.
+### Interaction Policy
 
-### Recommended Object Shapes
-
-#### `course_profile`
-
-```json
-{
-  "audience_level": "beginner|intermediate|advanced",
-  "prerequisite_level": "none|basic|strong",
-  "lesson_duration_minutes": 12,
-  "lesson_count_target": 8,
-  "assessment_mode": "quiz|project|discussion|mixed"
-}
-```
-
-#### `delivery_constraints`
-
-```json
-{
-  "platform_limits": ["no_iframe", "markdown_only"],
-  "must_cover_topics": ["topic-a", "topic-b"],
-  "avoid_topics": ["topic-x"],
-  "non_negotiable_fragments": ["required source fragment or code block id"]
-}
-```
-
-#### Interaction Policy
+If a structured `interaction_policy` is useful, use:
 
 ```json
 {
@@ -83,147 +45,28 @@ Pass the normalized selection unchanged through the in-memory authoring handoff 
 }
 ```
 
-- `mode` is required and must be exactly `enabled`, `disabled`, or `unspecified`.
-- `purposes` is required, duplicate-free, and may contain only `learner_context`, `pre_content_thinking`, and `lesson_end_self_check`.
-- `enabled` requires a non-empty `purposes` array. `disabled` and `unspecified` require an empty `purposes` array.
+- `mode` is exactly `enabled`, `disabled`, or `unspecified`.
+- `purposes` is duplicate-free and contains only the three values shown.
+- `enabled` has at least one purpose; `disabled` and `unspecified` have an empty array.
 
-### Input Invariants
+This optional representation does not make those three purposes exhaustive for unconstrained agent-designed teaching. Explicit author restrictions remain binding; [pedagogy.md#interaction-policy-precedence](pedagogy.md#interaction-policy-precedence) explains their effects.
 
-- Input files must be readable text or Markdown.
-- When multiple files are provided, their order must be explicit.
-- `interaction_policy` must satisfy its mode and purpose invariants.
-- When present, `personalization_directions` must satisfy [Personalization Directions](#personalization-directions).
-- `course_author_avatar_source` never changes course content and never blocks authoring when absent or skipped.
+## Artifact Invariants
 
-## Output Contract
-
-Full-course authoring produces these required artifacts:
-
-1. `lesson_teaching_prompts` — one item per lesson; see [Lesson Schema](#lesson-schema).
-2. `course_index` — an array of course-index items.
-3. `global_variable_table` — see [Variable Table](#variable-table).
-4. `course_prompt` — a course-level Markdown string.
-5. `course_description` — a learner-facing description string stored in `course-description.md`.
-
-### `course_index` Schema
-
-Each array item contains:
-
-- `lesson_id` (string, required).
-- `lesson_title` (string, required).
-- `core_question` (string, required).
-- `source_span_map` (array of `{source_id, start, end}`, required).
-
-## Segment Schema
-
-Each Segmentation item contains:
-
-- `segment_id` (string, required) — stable within the run.
-- `segment_type` (string enum, required) — one value from [Segment Types](#segment-types).
-- `core_point` (string, required) — the single teachable point.
-- `preserve_block` (boolean, required) — `true` exactly when the source span is selected as immutable; otherwise `false`.
-- `source_span` (object, required):
-  - `source_id` (string, required).
-  - `start` (non-negative integer, required) — inclusive character offset.
-  - `end` (integer greater than `start`, required) — exclusive character offset.
-- `transfer_signals` (object, required) — satisfies [Transfer Signals](#transfer-signals).
-
-Entries in `course_index.source_span_map` use the same `source_span` object shape.
-
-### Segment Types
-
-| Value        | Meaning                                   |
-| ------------ | ----------------------------------------- |
-| `concept`    | Explanatory statements and definitions.   |
-| `example`    | Concrete demonstrations and walkthroughs. |
-| `code`       | Executable or pseudo-code blocks.         |
-| `image`      | Image files and their source references.  |
-| `exercise`   | Learner action prompts.                   |
-| `transition` | Bridge text that links ideas.             |
-
-### Transfer Signals
-
-`transfer_signals` must be non-empty. Include every applicable canonical key, omit inapplicable keys, and give every included key a non-empty, concise string value.
-
-| Key | Meaning |
-| --- | --- |
-| `learner_hook` | Teaching entry point. |
-| `evidence_type` | Form of source evidence. |
-| `visual_cue` | Cue for expressing the segment as a slide. |
-| `concept_conflict` | Conceptual conflict or misconception. |
-| `boundary_cue` | Applicability boundary. |
-| `action_cue` | Executable application. |
-| `density_cue` | Information that must not be compressed away. |
-| `quote_cue` | Quotation that should be preserved or used. |
-| `visual_text_pair_cue` | Division of work between slide and text. |
-| `interaction_intent_cue` | Interaction purpose and expected instructional effect. |
-| `compare_cue` | Comparison objects or dimensions. |
+- Teaching Prompts contain executable lesson instructions in MarkdownFlow; Course Prompts contain shared course instructions; descriptions contain learner-facing listing prose. [prompt-contracts.md#artifact-responsibilities](prompt-contracts.md#artifact-responsibilities) defines the boundary.
+- Produce the artifacts required by the task. A single lesson or a pasted Prompt body does not require a full-course envelope, `course_index`, segment list, variable-table JSON, or uncertainty extensions.
+- A complete authored course includes its lesson content, Course Prompt, learner-facing description, and suitable course/chapter structure. Use the recognized directory files when materializing it; do not invent additional manifest files to preserve authoring state.
+- Course hierarchy and platform lesson titles belong in structure metadata. Source-only navigation and explanatory comments are defined in [teaching-prompt.md](teaching-prompt.md); runtime content must not exist only in a removed comment.
+- Keep authoring assumptions and incomplete work separate from claims that an artifact is ready. Uncertainty may be explained directly without a fixed fallback schema.
 
 ## Variable Table
 
-`global_variable_table` is an array. Each item contains:
+Named learner-answer variables need consistent collection and use, whether checked directly in the artifacts or recorded in optional bookkeeping:
 
-- `name` (string, required) — the name referenced by `{{var}}` or `?[%{{var}} ...]`; letters, numbers, and underscores only.
-- `collected_in` (string, required) — `lesson_id` where the variable is first collected.
-- `used_in` (array of strings, required) — every lesson that references the variable through `{{var}}`, plus reserved value `course_prompt` when the Course Prompt references it. Include `collected_in` only if that lesson also references `{{var}}` after collection.
-- `effect_scope` (string constant `cross_lesson`, required).
+- Names use letters, numbers, and underscores. Preserve existing names when renaming would break consumers.
+- A named answer has a valid `%{{name}}` collection and a real use outside its collection lesson, including a Course Prompt reference. Lesson-local answers use unnamed interactions.
+- Every `{{name}}` reference has an identified collection and meaningful consumer. Reuse an existing value instead of collecting a semantic duplicate; repeated collection needs an intentional staged-comparison purpose.
+- If a table is helpful, record the name, collection lesson, and every consuming lesson or Course Prompt. No `global_variable_table` or `used_variables` envelope is required.
+- An unavailable value follows literal `UNKNOWN` behavior defined in [markdownflow.md#variables](markdownflow.md#variables). Do not invent values or test whether the template marker exists.
 
-Only named variables belong in `global_variable_table`; no-variable `?[...]` interactions do not create entries. Every referenced learner-answer variable has exactly one variable-backed collection and one matching table entry. Every table entry has cross-lesson or Course Prompt use and lists every consumer in `used_in`.
-
-## Lesson Schema
-
-Each `lesson_teaching_prompts` item contains:
-
-- `lesson_id` (string, required) — stable and deterministic.
-- `lesson_title` (string, required) — concise learner-facing title.
-- `teaching_prompt` (string, required) — per-lesson Teaching Prompt content in MarkdownFlow.
-- `used_variables` (array of strings, required) — every named variable collected or referenced in the lesson; no-variable interactions are excluded.
-- `depends_on_lessons` (array of lesson ids, required) — empty when none.
-
-Every item in `used_variables` has a matching `global_variable_table` entry. The matching entry lists the lesson in `used_in` when the variable is referenced outside its collection control, and also lists `course_prompt` when the Course Prompt references it.
-
-Chapter titles, numbering, hierarchy labels, and ordering markers belong in `course_index` or `structure.json`, not in the Teaching Prompt body.
-
-## Fallback Output Extensions
-
-Fallback mode augments the standard schema with the fields below. Standard mode omits them.
-
-### Segmentation Fallback Fields
-
-Per segment:
-
-- `uncertainty` (string enum `low|medium|high`) — confidence in the segment's interpretation.
-
-Top-level:
-
-- `rerun_hints` (array of strings) — focused prompts describing the authoritative input needed to resolve uncertainty.
-
-### Orchestration Fallback Fields
-
-Per `course_index` item:
-
-- `uncertainty` (string enum `low|medium|high`).
-
-Top-level, required when any lesson is uncertain:
-
-- `rerun_plan` (object):
-  - `lessons_to_rerun` (array of lesson ids).
-  - `reason` (string) — why the rerun is needed.
-
-### Generation Fallback Fields
-
-Per lesson:
-
-- `fallback_mode` (boolean constant `true`) — identifies a lesson generated in fallback mode.
-- `assumptions` (array of strings) — assumptions made because input is incomplete or conflicting.
-- `upgrade_notes` (array of strings) — additional input that would allow a standard-mode lesson.
-
-### Optimization Fallback Fields
-
-Inside `risk_and_issue_report`:
-
-- `coverage_status` (string enum `complete|partial|unknown_without_source`).
-
-Top-level:
-
-- `follow_up` (array of strings) — inputs needed to complete a full-coverage audit.
+Variable-persistence decisions belong to [pedagogy.md#variable-strategy](pedagogy.md#variable-strategy); MarkdownFlow owns collection and substitution syntax.
