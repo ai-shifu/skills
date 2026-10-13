@@ -1,14 +1,17 @@
 # Analytics Overview
 
-Use this page to classify analytics intent and plan the query after `SKILL.md` selects the analytics route. Apply the execution path owned by `workflow.md` and read deeper references on demand.
+Use these capabilities to translate a course author's question into a query and a readable answer. The agent decides which queries and supporting references are needed; this page does not impose an end-to-end task sequence.
 
-## Required References
+## Related Guidance
 
-None.
+- `../authentication.md` establishes access to the intended platform context when needed.
+- `dsl.md` defines query syntax; `tables.md` defines available fields, codes, identifier relationships, and data traps; `recipes.md` supplies scenario templates.
+- `privacy-and-presentation.md` defines access restrictions and the Translation Gate for every user-facing result.
+- `../cli/cli-reference.md#analytics-query` defines analytics invocation and output; `../cli/cli-reference.md#query-commands` covers course/outline lookups.
 
 ## When to Use
 
-Enter the analytics path when a course author or admin asks about:
+These capabilities answer course-author or admin questions about:
 
 - learner count, completion rate, stuck lessons, recent activity
 - orders, revenue, refunds, payment-channel distribution
@@ -23,19 +26,22 @@ Enter the analytics path when a course author or admin asks about:
 
 > Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits — query via `shifu-cli.py credit-detail`.
 
-Do **not** enter the analytics path when the user asks only "how many courses do I have?" — that is a `shifu-cli.py list` call.
+The question "how many courses do I have?" is answered by `shifu-cli.py list` without analytics queries.
 
-## Execution Contract
+## CLI-Only Rule
 
-Apply the execution contract in `workflow.md#cli-only-rule`. Use this overview to translate the user's question into the appropriate CLI command and DSL query plan.
+**All analytics traffic goes through `scripts/shifu-cli.py`. Never write raw HTTP, never read tokens directly, never compose `Authorization` / `Token` headers by hand.** Reuse the intended context and valid access under `../authentication.md`.
+
+- `shifu-cli.py analytics-query <bid> --dsl '<json-body>'` queries the 10 whitelisted tables in `tables.md`. Use `--dsl-file query.json` for long bodies.
+- `shifu-cli.py credit-detail <bid> [--start … --end … --scene 1203 --usage-type 1101 …]` answers credit/spend questions. Do not query `bill_daily_usage_metrics` for credit data: production daily aggregation is not enabled. Scene `1203` is learner spend; `1202` is preview and `1201` is debug.
 
 ## Query Planning
 
-1. For a DSL-backed question, translate the user's request into a DSL body using `dsl.md` (syntax), `tables.md` (which table answers which question + which fields exist), and `recipes.md` (Course Metadata resolution, Course Overview 0d, + 23 numbered scenario recipes).
-2. Apply the privacy rules in `privacy-and-presentation.md` if the query touches `user_users`, `generated_content`, or `var_variable_values.value`.
-3. Apply the Translation Gate in `privacy-and-presentation.md` before presenting any result.
-4. **If the user mentioned a course by title**, follow the Course Metadata resolution path in `recipes.md` and interpret the result through `tables.md#course-title-is-current-published-not-history`.
-5. **If the user asks about credit consumption**, use `shifu-cli.py credit-detail` instead of issuing a DSL query against `bill_daily_usage_metrics` — that table is empty in production pending the daily aggregation cron.
+- For a DSL-backed question, construct the body from the actual syntax, table/field semantics, and relevant recipe. Recipe 0d supports a one-glance course overview; narrow questions need only their relevant queries.
+- Use a known course BID in the intended account, or resolve the course from the supplied context. **When the user names a course by title**, complete the applicable Course Metadata lookup in `recipes.md` before querying that course. It chooses the current published-title lookup and includes the draft lookup when no published row exists, when the request asks for the draft title, or when it compares published and draft titles. `list` alone is a draft snapshot and can show historical or stale titles.
+- For lesson dimensions, use `show <shifu_bid>` to establish the `outline_item_bid → name / position` mapping needed for correct filters and readable results.
+- Apply the access restrictions in `privacy-and-presentation.md` to every query, including `user_users`, `generated_content`, and `var_variable_values.value`. Apply its Translation Gate before presenting any result; do not expose raw status codes or BIDs.
+- Credit consumption uses `credit-detail` as specified above rather than the empty daily DSL table.
 
 ## Error Codes the CLI May Surface
 
@@ -51,8 +57,8 @@ When an analytics response carries a business `code`, interpret it as follows:
 | `11005` | Operator not in whitelist | Use one of the 12 operators in `dsl.md` |
 | `11006` | Aggregate function not in whitelist | Use one of the 6 aggregate functions in `dsl.md` |
 | `11007` | `limit` or `offset` out of range | `limit ∈ [1, 1000]`, `offset ≥ 0` |
-| `1001` | User not found / token expired | Run `shifu-cli.py login` again to refresh the token |
-| `1004` / `1005` | Token not logged in / expired | Same as `1001` — re-login |
+| `1001` | User not found / token expired | Apply `../authentication.md#verify-before-login`; verify before deciding whether a login is needed. |
+| `1004` / `1005` | Token not logged in / expired | Apply the same verify-first authentication recovery. |
 
 ## Scope Reminder
 
@@ -106,7 +112,16 @@ Do not guess table names — the schema has 10 tables and many sound-alike names
 
 ### Pitfall 5 — Missing `outline_item_bid` in output
 
-When querying lesson-level data (stuck lessons, follow-ups per lesson, ratings), you must run `shifu-cli.py show <shifu_bid>` first to build the `outline_item_bid → name` mapping. Showing raw `outline_item_bid` hashes to the user is unreadable and violates the Translation Gate.
+For lesson-level data (stuck lessons, follow-ups per lesson, ratings), obtain the `outline_item_bid → name` mapping with `shifu-cli.py show <shifu_bid>` before using lesson filters or presenting dimensions. Showing raw `outline_item_bid` hashes to the user is unreadable and violates the Translation Gate.
+
+## Validation
+
+- Queries use the intended authenticated context and a uniquely resolved course. When the user supplied a title, the applicable metadata lookup establishes its current published or explicitly identified draft meaning.
+- DSL grammar, table names, fields, filters, and limits match their reference definitions. For example, "paid" uses `status = 502`, not `>= 502`; table names are never guessed.
+- Credit queries use `credit-detail`. Follow-up counts use `type = 321`, not `role = 2`, and rely on the API's injected `status = 1` filter.
+- User-facing results pass the Translation Gate, including course/lesson names, enum meanings, and privacy refusals for inaccessible identity fields.
+- If Chinese CLI output is garbled, write output to a UTF-8 file and read it with the file-reading tool under `../cli/cli-reference.md#cli-output--encoding`.
+- Report actual query results, gaps, and failed checks. An empty or failed query does not justify inventing data or substituting another course.
 
 ## What Lives Where
 

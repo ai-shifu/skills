@@ -4,11 +4,11 @@ Collect only what is needed to diagnose teaching quality for one course, and kee
 
 ## Required References
 
-For live AI-Shifu data, read these current files completely and follow their own required references:
+For live AI-Shifu data, use these current capability and policy references:
 
 1. `../../ai-shifu-course-creator/SKILL.md`
 2. `../../ai-shifu-course-creator/references/authentication.md`
-3. `../../ai-shifu-course-creator/references/analytics/workflow.md`
+3. `../../ai-shifu-course-creator/references/analytics/overview.md`
 
 For supplied or synthetic input, no external reference is required; the privacy and normalization rules in this file still apply.
 
@@ -28,7 +28,7 @@ This skill owns only:
 - deriving calibrated teaching interpretations and recommendations;
 - rendering the final JSON into HTML.
 
-For live data, run the course creator skill's current `scripts/shifu-cli.py` commands exactly as its analytics route specifies. Never write raw HTTP, inspect `.env`, read a token, create auth headers, or reproduce analytics query recipes in this skill. If the dependency changes, follow the dependency rather than these descriptive signal names.
+For live data, use the course creator skill's current analytics capabilities and `scripts/shifu-cli.py` command contracts. Never write raw HTTP, inspect `.env`, read a token, create auth headers, or reproduce analytics query recipes in this skill. If the dependency changes, follow the dependency rather than these descriptive signal names.
 
 ## Reporting Window
 
@@ -42,7 +42,7 @@ Collect the smallest set that supports the report. Preserve counts and display l
 
 | Signal | Safe report use | Important boundary |
 | --- | --- | --- |
-| Current course metadata and published outline | Course title, visible lesson order, required final lesson assessment | Resolve the current published learner-facing outline through the course creator's workflow; never show course or lesson IDs. |
+| Current course metadata and published outline | Course title, visible lesson order, required final lesson assessment | Resolve the current published learner-facing outline through the course creator's capabilities; never show course or lesson IDs. |
 | Distinct learners who entered an eligible lesson | Overview denominator and lesson reach comparison | Count distinct learners with progress in at least one published, visible teaching leaf lesson, using the course creator's canonical learner definition. |
 | Per-lesson distinct learner progress states | Learning-path reach and recorded in-progress distribution | Deduplicate learners as the analytics guidance requires. A recorded in-progress state is not proof of a blockage. |
 | Required-path completions | Course completion rate | Count only learners from the denominator cohort who complete every required lesson or one valid required branch path by the report cutoff; otherwise use `null`. |
@@ -57,7 +57,7 @@ Learning duration, grades, retention, attendance, or other familiar education me
 
 Apply this gate before querying or aggregating any lesson-scoped signal:
 
-1. Confirm the course and outline source represent the current published, learner-facing version through the course creator's current workflow. A draft outline or a source with ambiguous publication state is not an acceptable fallback.
+1. Confirm the course and outline source represent the current published, learner-facing version through the course creator's current capabilities. A draft outline or a source with ambiguous publication state is not an acceptable fallback.
 2. Define the eligible lesson set as teaching leaf lessons that belong to that published outline and are visible to learners. Exclude hidden lessons, draft-only or otherwise unpublished lessons, and chapter/container nodes.
 3. Apply the same eligible set to lesson reach and progress, ratings, learning-mode feedback, follow-up counts and theme attribution, lesson health, recommendations, and course completion. Do not render excluded lessons as zero-value or insufficient-data cards, and do not cite their historical records as evidence.
 4. Define course entrants as distinct learners with progress in at least one eligible lesson. Learners observed only on excluded lessons must not inflate the denominator.
@@ -83,7 +83,7 @@ Do not impose a fixed 30-day or other maturation window unless the user explicit
 Theme analysis uses raw text only as a transient input to aggregate reporting:
 
 1. Before fetching text, tell the user that the report normally reads the latest audited follow-up questions for theme analysis, capped at 100, and that they can opt out. This is a default collection step, so continue unless the user opts out; honor an opt-out received before the query runs.
-2. Use the course creator analytics route for the audited `generated_content` access. Fetch learner follow-up questions only, using the current canonical follow-up type and server-enforced active-row behavior. Do not fetch learner identity or answers when aggregate question themes are sufficient.
+2. Use the course creator analytics capability for the audited `generated_content` access. Fetch learner follow-up questions only, using the current canonical follow-up type and server-enforced active-row behavior. Do not fetch learner identity or answers when aggregate question themes are sufficient.
 3. Select the newest `N` questions where `N <= 100`. Record the cap, actual sample size, and audited-access status in `engagement.follow_up_analysis`; keep the newest-first sampling rule and effective time span, if known, in an affected metric's `source_notes` or `data_quality.limitations`.
 4. Classify questions into a small, useful theme set. Store only theme labels, counts, lesson display labels, and short generalized intent paraphrases. A paraphrase must describe the shared learning need without reproducing a distinctive sentence.
 5. Do not persist raw text in the report directory, JSON, HTML, logs intended for delivery, or recommendation evidence. Do not retain source row IDs.
@@ -101,7 +101,7 @@ Recent questions are a convenience sample, not the voice of all learners. Every 
 
 ## Operations Appendix Opt-In
 
-Do not collect orders, revenue, payment channels, refunds, or AI-Shifu credit consumption for the default teaching report. Collect them only after the user explicitly asks for business or operating context. Use the course creator skill's current analytics route, keep the results in the optional `operations` appendix, and never use revenue or credit spend as evidence that teaching is effective.
+Do not collect orders, revenue, payment channels, refunds, or AI-Shifu credit consumption for the default teaching report. Collect them only after the user explicitly asks for business or operating context. Use the course creator skill's current analytics capabilities, keep the results in the optional `operations` appendix, and never use revenue or credit spend as evidence that teaching is effective.
 
 ## Supplied Data
 

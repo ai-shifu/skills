@@ -1,13 +1,13 @@
 # Platform Authentication
 
-## Required References
+## Related Guidance
 
 - `language-policy.md`
 - `cli/cli-reference.md#authentication`
 
-## Conditional References
-
 - When opening a browser authorization link: `open-in-app-browser.md`
+
+Use this capability when an operation needs platform access or the user requests account/profile setup. The agent decides when access is needed; local authoring and builds do not require it. Reuse valid access and keep the resolved task context fixed across platform capabilities.
 
 ## Select Site Before Connecting
 

@@ -1,6 +1,6 @@
 ---
 name: ai-shifu-course-creator
-description: Use when the user works with AI-Shifu (AI师傅) courses in any capacity of creating, writing, editing, rewriting, optimizing, reordering, deploying, publishing, previewing, or managing Teaching Prompts (per-lesson) and Course Prompts (course-level) — both written in MarkdownFlow (MDF). Covers the full course lifecycle — from converting raw material into structured lessons, to authoring interactions (single-select, multi-select, input, branching), adding variables, images, and course prompts, to deploying and managing live courses on the AI-Shifu platform. Also covers post-deployment analytics on those courses — learner count, completion rate, stuck lessons, orders, revenue, ratings, credit consumption, audience profiles, and individual learner tracking. Trigger on any mention of AI-Shifu, AI师傅, MarkdownFlow, Teaching Prompt, Course Prompt authoring, course analytics, creator analytics, 学习人数, 完成率, 卡课节, 订单收入, 积分消耗, or learner progress.
+description: Create, edit, review, publish, manage, or analyze AI-Shifu (AI师傅) courses and their Teaching Prompts and Course Prompts in MarkdownFlow (MDF). Use for course materials, lesson design, interactions, variables, images, deployment, platform administration, learner progress, orders, revenue, and credit-consumption questions.
 metadata:
   version: 1.2.12
   version_management: standalone
@@ -8,57 +8,70 @@ metadata:
 
 # AI-Shifu Course Creator
 
-Route each request to the smallest complete instruction set needed to create, edit, optimize, deploy, manage, or analyze an AI-Shifu course. Teaching Prompts and Course Prompts use MarkdownFlow.
+Use these capabilities to complete the user's course goal. The using agent owns task decomposition, capability selection, execution order, and teaching design. Start from the available topic, brief, source material, outline, Prompt, or course directory; no questionnaire, segmentation run, intermediate JSON, or separate execution plan is a universal prerequisite.
 
-## User-Facing Links
+Reuse existing answers and artifacts. Ask when missing information materially affects the result; otherwise make reasonable design choices within the user's constraints. Capabilities can be combined, revisited, or used alone. A reference explains how to perform its capability, not what the agent must do next. Read the relevant guidance as needed rather than loading a transitive reference graph.
 
-Use Markdown links `[descriptive text](URL)` for URLs in every user-visible message. URLs inside Teaching Prompts follow MarkdownFlow rules, and URLs shown inside fenced code blocks are exempt.
+## Shared Conventions
 
-## Startup Sequence
+- Apply [language-policy.md](references/language-policy.md) to conversation and authored content, including target-language resolution and terminology.
+- Apply [session-controls.md](references/session-controls.md) to contact eligibility, explicit-request-only version checks, progress, errors, and completion handoffs. First-response contact conditions remain applicable. The completion handoff applies to the user's completed request, not each internal capability call.
+- Use Markdown links `[descriptive text](URL)` for URLs in user-visible messages. URLs inside Teaching Prompts follow MarkdownFlow rules; URLs inside fenced code blocks are exempt.
+- Honor explicit author choices, source facts, selected exact material, and the distinction between a per-lesson Teaching Prompt and a course-wide Course Prompt. Runtime semantics are defined in [prompt-contracts.md](references/prompt-contracts.md) and [markdownflow.md](references/markdownflow.md).
+- For an existing platform course's lesson, Course Prompt, or description edit, apply the [versioned editing baseline](references/course-sync.md#pull-before-editing) before preparing revised content. Course-wide artifact writes use [course management](references/course-management.md#operations) with that baseline. Local-only authoring and read-only review remain independent of platform access.
 
-On the first invocation in a session:
+## Capabilities
 
-1. Read `references/language-policy.md` and resolve `resolved_target_language` before the first user-visible response.
-2. Read `references/session-controls.md` completely before the first user-visible response.
-3. Apply its contact, explicit-request-only version-check, progress/error, and handoff rules.
-4. Classify the request with the routing table below.
-5. Read every file or anchored section listed for the selected Task Router row, then execute the listed stages in order. Reading a later-stage reference does not execute its steps early; in particular, do not authenticate while preparing local content merely because deployment follows. When one file appears at multiple anchored stages, read it once and apply each named section at its listed point. The Task Router declares the required workflow stages.
-6. In each selected reference, read the ordered bullets under `## Required References` before applying that reference. Resolve those strong dependencies transitively.
-7. Load a reference's `## Conditional References` only when its stated condition applies. Outside the Task Router, `## Required References`, and applicable `## Conditional References`, every file-path mention is navigation only and never changes the selected stages.
-8. For mixed requests, combine the relevant rows and preserve their dependency order.
+Capabilities fall into three categories: **teaching design**, **expressing that design in MarkdownFlow**, and **operating the CLI**. These categories describe responsibilities, not execution phases. Use one alone, combine them, or revisit them in any useful order. Inputs describe useful starting points, not mandatory upstream outputs.
 
-## Task Router
+### Teaching Design
 
-| User intent | Required files, in order |
-| --- | --- |
-| Create a full course or run new-course authoring end to end, including requests with only a name or topic | `references/authoring-mode.md` → `references/course-design-intake.md` → `references/orchestration-workflow.md` → `references/course-prompt.md` → `references/course-description.md` → `references/optimization-workflow.md` → `references/deployment-workflow.md` |
-| Restructure an existing platform course or revise course-wide teaching design | `references/authentication.md` → `references/course-target.md` → `references/course-sync.md#pull-before-editing` → `references/authoring-mode.md` → `references/course-design-intake.md` → `references/orchestration-workflow.md` → `references/course-prompt.md` → `references/course-description.md` → `references/optimization-workflow.md` → `references/course-sync.md#push-existing-course-content` → `references/course-sync.md#conflict-convergence` → `references/course-management.md` |
-| Revise lesson-level teaching design in an existing platform course without changing structure or course-wide artifacts | `references/authentication.md` → `references/course-target.md` → `references/course-sync.md#pull-before-editing` → `references/authoring-mode.md` → `references/course-design-intake.md` → `references/teaching-prompt.md` → `references/optimization-workflow.md` → `references/course-sync.md#push-existing-course-content` → `references/course-sync.md#conflict-convergence` |
-| Replace an existing lesson Teaching Prompt with provided content | `references/authentication.md` → `references/course-target.md` → `references/course-sync.md#pull-before-editing` → `references/authoring-mode.md` → `references/optimization-workflow.md` → `references/course-sync.md#push-existing-course-content` → `references/course-sync.md#conflict-convergence` |
-| Plan course structure or decide chapter and lesson counts from supplied material | `references/authoring-mode.md` → `references/course-design-intake.md` → `references/segmentation-workflow.md` → `references/orchestration-workflow.md#lesson-structure-finalization` |
-| Segment supplied material only | `references/authoring-mode.md` → `references/segmentation-workflow.md` |
-| Generate Teaching Prompts from existing segments | `references/authoring-mode.md` → `references/course-design-intake.md` → `references/teaching-prompt.md` |
-| Produce local Teaching Prompts from existing segments without platform access | `references/authoring-mode.md` → `references/course-design-intake.md` → `references/teaching-prompt.md` |
-| Produce local Teaching Prompts from raw supplied material without platform access | `references/authoring-mode.md` → `references/course-design-intake.md` → `references/segmentation-workflow.md` → `references/teaching-prompt.md` |
-| Create or revise a Course Prompt from approved local artifacts | `references/course-prompt.md` |
-| Create or revise a course description from approved local artifacts | `references/course-description.md` |
-| Review or audit pasted Teaching Prompt or Course Prompt content without accessing a platform course | `references/authoring-mode.md` → `references/optimization-workflow.md` |
-| Optimize Teaching Prompt content in an existing platform course without changing structure or teaching design | `references/authentication.md` → `references/course-target.md` → `references/course-sync.md#pull-before-editing` → `references/authoring-mode.md` → `references/optimization-workflow.md` → `references/course-sync.md#push-existing-course-content` → `references/course-sync.md#conflict-convergence` |
-| Create or revise a Course Prompt in an existing platform course | `references/authentication.md` → `references/course-target.md` → `references/course-sync.md#pull-before-editing` → `references/course-prompt.md` → `references/authoring-mode.md` → `references/optimization-workflow.md` → `references/course-management.md` |
-| Create or revise a course description in an existing platform course | `references/authentication.md` → `references/course-target.md` → `references/course-sync.md#pull-before-editing` → `references/course-description.md` → `references/authoring-mode.md` → `references/optimization-workflow.md` → `references/course-management.md` |
-| Deploy a new course | `references/deployment-workflow.md` |
-| Sync edited lesson content to an existing course draft | `references/authentication.md` → `references/course-target.md` → `references/course-sync.md` |
-| List platform courses without changing them | `references/authentication.md` → `references/course-management.md` |
-| Publish, preview, archive, reorder, or manage metadata, teacher avatar, access, or Listen Mode for a specific course without changing prompt content | `references/authentication.md` → `references/course-target.md` → `references/course-management.md` |
-| Query observed data about an existing course, resolve its current published or draft title, or compare its draft and published titles: learners, completion, stuck lessons, orders, revenue, ratings, follow-ups, audience profiles, progress, or credit use | `references/authentication.md` → `references/analytics/workflow.md` |
-| Author or deploy, then query live-course data | Complete the relevant authoring/deployment route first, then `references/analytics/workflow.md` |
+Decide what learners should understand or do and how teaching can help them get there. Use existing choices directly; resolve missing choices within the task without requiring a separate design artifact.
 
-## Routing Guardrails
+| Capability | Useful inputs | Result and guidance |
+| --- | --- | --- |
+| Resolve course design | Topic, learner needs, source material, existing choices | Design choices and their effects; ask only material unresolved questions. [Course design](references/course-design-intake.md) |
+| Analyze material and plan structure | Source material, topic, outline, existing lessons | Relevant source analysis, chapter and lesson structure, or optional traceable segments. [Structure and segmentation](references/segmentation-workflow.md) |
+| Design lesson teaching | Goals, audience, source, existing teaching choices | Suitable explanations, examples, practice, interactions, visual purposes, and feedback. [Teaching options](references/pedagogy.md) |
+| Write listing copy | Course topic, audience, goals, and supported outcomes | Learner-facing course description; this prose does not require MarkdownFlow. [Course description](references/course-description.md) |
+| Review teaching quality | Available material, design, or course content | Scoped findings and requested repairs for factual support, source coverage, and learning effectiveness. [Review](references/optimization-workflow.md), [checks](references/optimization-checklist.md) |
 
-- Route to analytics for current course-title metadata or observed facts, metrics, records, and trends from an existing course. Design questions such as “how many lessons should this material become?” remain authoring tasks.
-- Distinguish new-course creation, existing-platform-course editing, and local/artifact-only work from the user's request. If new-versus-existing intent is unclear, ask before platform access; do not authenticate or query courses merely to infer intent.
-- A request such as “create a course on AI-Shifu named X” follows the full-course authoring row even when it contains only a title. Keep the original Course Design Intake and authoring stages; missing details are collected through that workflow. Do not infer an empty platform draft from “on the platform”, “draft”, or a missing outline, and do not replace authoring with the CLI `create` command. Before the course preview is approved, no deployment-related `site`, `verify`, or `login` is needed.
-- For a new-course request, record kind `new` and the working title locally, then follow the selected new-course row without authentication, duplicate-title lookup, or loading course-target resolution. A known same-title course does not change this intent; do not claim the title is unique. Existing-platform-course editing requires authentication, unique target resolution, and a fresh pull before authoring. Supplied-material and local/artifact-only routes have no platform target; a request to edit a platform course must use an existing-course row instead.
-- When an edit title lookup returns no matches, explain the result and ask whether to create a new course, preserving the original no-match behavior. Keep the target unresolved until the user explicitly confirms creation; only then select kind `new` and reclassify the remaining work. A failed request or missing permission is not a no-match result.
-- Compare the resolved target kind with the kind assumed by the active row. If it changes from new to existing or existing to new, stop that row, reclassify the remaining work against the Task Router, and never enter an incompatible new-only or existing-only stage.
-- Full-course authoring continues through new-course deployment and publication by default, pausing once to confirm the completed content and that create-and-publish sequence. Only an explicit user request not to publish changes it to draft-only; the agent must not choose that default. New-course confirmation and the subsequent authentication call are part of `references/deployment-workflow.md#deploy-and-publish`. Existing-course synchronization retains its original workflow without this new confirmation step.
+Teaching patterns, interaction counts, and visual rhythms in [pedagogy.md](references/pedagogy.md) are recommendations. The agent chooses teaching strategy within the user's explicit constraints.
+
+### Express in MarkdownFlow
+
+Make the intended teaching behavior executable in Teaching Prompts and Course Prompts. Preserve supplied design choices; use the teaching-design capabilities for choices that remain open rather than letting syntax or a layout template determine pedagogy.
+
+| Capability | Useful inputs | Result and guidance |
+| --- | --- | --- |
+| Write or revise a lesson | Topic, source, existing Prompt, or supplied design | Runnable Teaching Prompt with required source-only explanatory comments and a suitable layout. A separate design run is not required. [Teaching Prompt](references/teaching-prompt.md) |
+| Write or revise a Course Prompt | Course title, topic, goals, audience, and design context | Course-wide Prompt using the existing six-section template. [Course Prompt](references/course-prompt.md) |
+| Encode interactions, variables, and exact content | Intended response behavior, variable uses, selected exact material | Valid runtime controls, references, branches, and deterministic output. [MarkdownFlow](references/markdownflow.md), [Prompt semantics](references/prompt-contracts.md) |
+| Express lesson images | Teaching intent, authoritative asset URLs and metadata | Correct image embedding or HTML-view instructions. [Image authoring](references/image-authoring.md) |
+| Review Prompt expression | One Prompt or selected artifacts | Scoped findings and repairs for runtime syntax, variables, comments, layout, and artifact contracts. [Review](references/optimization-workflow.md), [checks](references/optimization-checklist.md) |
+
+### Operate the CLI
+
+Use deterministic commands for local course files, platform access and changes, and observed course data. Existing Prompts and directories can be used directly without redoing teaching design or Prompt authoring. The [CLI reference](references/cli/cli-reference.md) owns command mechanics; the [course-directory specification](references/cli/course-directory-spec.md) owns recognized files, build precedence, and import format.
+
+| Capability | Useful inputs | Result and guidance |
+| --- | --- | --- |
+| Establish platform access | Selected service/profile and existing authorization | Verified access and recoverable browser authorization when needed. [Authentication](references/authentication.md) |
+| Identify an existing course | BID or title and selected platform context | Unique target or an explicit unresolved result. [Course target](references/course-target.md) |
+| Upload lesson images | Image assets, informative alt text, and selected platform context | Real resource URLs and provenance records for later embedding. [Image upload](references/cli/cli-reference.md#image-upload), [asset handling](references/image-authoring.md) |
+| Synchronize existing content | Existing course and local edits/directory | Pull, divergence inspection, version-protected writes, and conflict convergence. [Course sync](references/course-sync.md) |
+| Build or import a new course | Authored course directory or import payload | Built payload, new draft, and verified imported content. [Deployment capabilities](references/deployment-workflow.md) |
+| Manage and publish a course | Resolved course and requested operation | Metadata, structure, access, avatar, Listen Mode, publication, preview, or archive changes. [Course management](references/course-management.md) |
+| Analyze course data | Course/question, dimensions, and time range | Queries and readable, privacy-respecting findings. [Analytics](references/analytics/overview.md) |
+
+Shared references support the relevant category: [data-contracts.md](references/data-contracts.md) defines optional author controls and artifact consistency; [source-preservation.md](references/source-preservation.md) defines exact-source decisions. An image's teaching purpose, MarkdownFlow representation, and CLI upload are separate actions even when they share a reference. Review likewise applies the criteria for the requested design, expression, or platform result.
+
+Local teaching design, Prompt expression, content-only review, and builds do not require platform access; invoke authentication when a selected platform operation needs it. Analytics may inform a later teaching decision when relevant, but querying data does not itself request a course rewrite.
+
+## Full-Course Creation Outcome
+
+A request to create a complete AI-Shifu course includes deployment and publication by default. An explicit local-only, unpublished-draft, or narrower deliverable request determines that narrower outcome. A title-only creation request is still course authoring; it does not mean creating an empty platform draft. This outcome does not prescribe the order of authoring capabilities.
+
+Before creating a new platform course, show the completed title, structure, content preview, and selected platform attributes, and obtain confirmation to create and publish that concrete result. Use draft-only wording when the user requested an unpublished draft. Reuse approval of the same completed result and scope; revise and obtain approval again if the approved result changes. Keep local work when confirmation is deferred. Browser login approval is separate from this content confirmation. This checkpoint applies to new-course creation and does not add a confirmation step to existing-course synchronization or independent management requests.
+
+Keep new-course intent distinct from an existing-course edit. A no-match lookup does not authorize creating a replacement course. Reuse the BID of an already-created course when resuming incomplete work. Report the operations and verification that actually completed; an imported draft or a printed public URL alone does not establish successful publication.

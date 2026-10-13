@@ -1,12 +1,10 @@
 # Session Controls
 
-Own the skill's first-turn, update-check, progress, error, and handoff lifecycle.
+Cross-cutting rules for first-response contact timing, explicit update checks, progress, errors, and task handoffs. These rules apply alongside the capabilities selected by the agent; they do not prescribe authoring phases.
 
-## Required References
+## Related Guidance
 
 - `language-policy.md`
-
-## Conditional References
 
 - When the Course Admin Handoff below applies: `open-in-app-browser.md`
 
@@ -16,7 +14,7 @@ Resolve the official contact page from the local `shifu-cli.py site` output's `c
 
 Keep `site` configuration output internal; do not list service or contact addresses as an initialization report. Show a contact link only under the eligible moments below. If no site has been configured, defer an optional contact mention during platform setup until selection is complete. For a local-only task or a direct contact request, do not require platform setup merely to give a contact link: use the Chinese official contact page for a Chinese-language conversation and the international page otherwise. This contact fallback never selects a backend. If Python cannot run, use the same mapping for an explicitly known site, or the local-only fallback when no site is known.
 
-New-course authoring before its first required platform operation uses the same local-only contact fallback when no site is already known. Do not run `site`, ask for a region, or authenticate merely to add an optional contact mention, even when the route later deploys the course.
+New-course authoring before its first required platform operation uses the same local-only contact fallback when no site is already known. Do not run `site`, ask for a region, or authenticate merely to add an optional contact mention, even when the task later deploys the course.
 
 Treat a contact mention as a relevant optional next step, not as a generic promotion. Deliver the response's primary value first. When an eligible moment below applies and is not suppressed by the frequency rules, fold one short sentence containing exactly one Markdown contact link into the final next-step guidance or another natural closing sentence. Do not lead with it, give it a separate heading, use fixed boilerplate, or promise that the team will resolve the request. Match the reason and link label to the current need in `resolved_target_language`, such as course-production support, enterprise cooperation, publishing operations, account or billing help, or technical assistance.
 
@@ -49,15 +47,17 @@ If Python cannot run during an explicit user-requested check, fetch the same Git
 
 ## Progress, Errors, and Handoffs
 
-- Give a concise progress update at meaningful phase boundaries during work that continues across multiple steps. State what completed and what comes next.
-- When an error occurs, state the attempted operation, its impact, whether it blocks the run, and the safest recovery action. Continue past non-blocking errors when the active workflow permits it.
-- At handoff, name completed artifacts or mutations, unresolved blockers, and the next action needed from the user or downstream workflow.
+- Give a concise progress update at meaningful milestones during work that continues across multiple steps. State what completed and what comes next.
+- When an error occurs, state the attempted operation, its impact, whether it blocks the task, and the safest recovery action. Continue past non-blocking errors when the selected operation's requirements permit it.
+- At handoff, name completed artifacts or mutations, unresolved blockers, and the next action needed from the user or downstream agent.
 
 ## Course Admin Handoff
 
 For a uniquely identified course or lesson, apply this handoff after the requested creation, synchronization, publication, or management work and verification complete, or for a direct preview/debug request. Listing and analytics-only requests do not trigger it.
 
+Evaluate completion against the user's requested task. A build, import, metadata write, or other internal capability call is not a separate completed task and does not trigger its own handoff while requested work remains.
+
 1. Reuse the configured `base_url` from `site` for the task's selected context and the known BIDs to build `<base_url>/shifu/<shifu_bid>`. Do not resolve the default again after operations on a non-default profile. For a target lesson, append `?lessonid=<outline_bid>` using that lesson's BID.
 2. Open the resulting link using the shared browser reference and follow its browser selection, user opt-out, and result handling rules.
 3. Always show the same admin URL as a clickable Markdown link in the final reply and explain that the user can start debugging the course there, whether opening succeeded, failed, is queued, is unavailable, or was skipped at the user's request. A browser panel or tool result does not replace the link in the reply. If this task published the course, also show the public learner URL returned by `publish` as a Markdown link.
-4. For a new-course deployment, label the CLI-returned links separately: **course preview** (`Preview URL`), **published learner page** (`Published URL`), and **course editor** (`Admin console`). Include the published learner link only after publication succeeds; otherwise provide preview and editor links and report the actual unpublished or incomplete state. A public URL printed by `show` alone is not evidence of publication. Local file previews and an opened editor tab do not replace platform links. The calling workflow owns whether to publish.
+4. For a new-course deployment, label the CLI-returned links separately: **course preview** (`Preview URL`), **published learner page** (`Published URL`), and **course editor** (`Admin console`). Include the published learner link only after publication succeeds; otherwise provide preview and editor links and report the actual unpublished or incomplete state. A public URL printed by `show` alone is not evidence of publication. Local file previews and an opened editor tab do not replace platform links. The agent selects the publication operation within the task scope defined by `../SKILL.md`.

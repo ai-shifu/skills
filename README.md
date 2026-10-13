@@ -6,7 +6,7 @@ Reusable AI-Shifu skills for course production and improvement, from topic selec
 
 ## Included Skills
 
-- **AI-Shifu Course Creator（AI 师傅课程创作器）**: convert raw course material into optimized MarkdownFlow teaching scripts and deploy them as live AI-Shifu courses through a five-phase pipeline (segmentation, orchestration, generation, optimization, deployment).
+- **AI-Shifu Course Creator（AI 师傅课程创作器）**: teaching design, MarkdownFlow expression, and CLI operations for creating, editing, reviewing, publishing, managing, and analyzing AI-Shifu courses. The using agent selects and combines capabilities for the task.
 - **AI-Shifu Learning Report（AI 师傅学习报告）**: analyze one AI-Shifu course and produce a privacy-safe `course-learning-report.json` plus a polished, self-contained, printable `course-learning-report.html` for teaching managers and teachers.
 - **Course Direction Advisor（课程选题顾问）**: turn source materials into evidence-bound, market-fit course-topic decisions with competitor analysis, pricing guidance, and GO/HOLD/REWORK/NO-GO recommendations.
 
@@ -37,7 +37,7 @@ Use the exact release directory printed by `build`. Building and verifying do no
 
 ## Learning Report Path
 
-Use **AI-Shifu Learning Report** after a course has learning activity and you need an actionable single-course review. It reuses the course creator's authenticated analytics workflow, then turns aggregate progress, lesson health, engagement, audience, and audited follow-up signals into:
+Use **AI-Shifu Learning Report** after a course has learning activity and you need an actionable single-course review. It reuses the course creator's authenticated analytics capabilities, then turns aggregate progress, lesson health, engagement, audience, and audited follow-up signals into:
 
 - a versioned, privacy-safe JSON data artifact with metric definitions and data-quality notes;
 - an executive-first HTML report that works without external assets and prints cleanly to PDF;
@@ -49,46 +49,24 @@ The report does not expose learner identities, raw course identifiers, or raw fo
 
 Each skill keeps `SKILL.md` as the behavior source of truth. The `name` frontmatter field must match the directory name, using lowercase letters, digits, and hyphens only, as required by the [Agent Skills](https://agentskills.io/specification) standard. That format was originally developed by Anthropic and released as an open standard, and the [Claude Code documentation](https://code.claude.com/docs/en/skills) states that its skills follow it. Claude Code itself is more permissive and treats `name` as an optional display label, but this repository follows the stricter standard rule so the skills stay portable across every skills-compatible agent. Human-readable display names live in the skill list above.
 
-## Course Authoring & Deployment Paths
+## Course Capabilities and Example Requests
 
-Choose one path based on control needs:
+The [Course Creator](skills/ai-shifu-course-creator/SKILL.md#capabilities) groups independently usable capabilities into teaching design, MarkdownFlow expression, and CLI operations. The agent chooses the useful combination and order from the request and available materials; a topic, existing Prompt, or course directory is enough to start relevant work.
 
-### Path A: End-to-End (Recommended)
+| Request | Useful capabilities | Result |
+| --- | --- | --- |
+| Design a lesson or plan a course structure | Teaching design and source analysis | A teaching plan or chapter and lesson structure |
+| Write one lesson from supplied material | MarkdownFlow expression, with teaching choices resolved as needed | A runnable Teaching Prompt |
+| Write the course description first | Course positioning and listing copy | A learner-facing description |
+| Review an existing Prompt | Teaching-quality or MarkdownFlow checks in the requested scope | Findings and requested repairs |
+| Create a complete course | Agent-selected design and expression capabilities, plus CLI build, import, and publication | A verified published course by default, after completed-content confirmation |
+| Deploy an existing course directory | CLI build, payload inspection, import, and requested publication | The requested verified platform result |
+| Modify or manage an existing course | CLI synchronization or the selected management operation | Verified changes to the existing course |
+| Analyze learning, orders, or credits | CLI analytics and privacy-aware interpretation | Answers grounded in observed course data |
 
-Use when you want the fastest route from raw material to a live deployed course.
+Return the artifacts needed for the request. Segmentation records, a course index, a global variable table, and a fixed risk report are not universal deliverables. A complete authored course contains its lesson content, Course Prompt, description, and structure; a focused request can end with only its requested artifact.
 
-1. Prepare source material (transcript or course documents).
-2. Run Phase 1–4 to produce optimized MarkdownFlow lesson scripts.
-3. Run Phase 5 to build, import, and publish to the AI-Shifu platform.
-
-Expected artifacts:
-
-- Structured segmentation
-- Lesson-by-lesson MarkdownFlow scripts
-- Course index and global variable table
-- Optimized lesson prompts and risk report
-- Live course on the AI-Shifu platform
-
-### Path B: Focused Authoring Steps
-
-Use when you need one authoring step rather than a complete course:
-
-- **Segment only**: Phase 1 for semantic segments and manual review.
-- **Generate only**: Phase 3 on pre-existing segments.
-- **Optimize only**: Phase 4 to audit and improve existing scripts.
-
-### Path C: Deploy Only
-
-Use when you have pre-existing MarkdownFlow files ready to deploy:
-
-1. Organize MarkdownFlow files in a course directory.
-2. Run `build --course-dir ./course-a/` to generate the import file.
-3. Run `import --new --json-file ./course-a/shifu-import.json` to create the course.
-4. Run `publish <shifu_bid>` to make it live.
-
-### Path D: Manage Existing
-
-Use management commands (list, show, update, rename, reorder, delete, publish, archive) on courses already on the platform.
+Full-course creation follows the [default publication and completed-content confirmation policy](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome). Explicit local-only or unpublished-draft requests determine that narrower result. For existing artifacts, use the relevant [build and import](skills/ai-shifu-course-creator/references/deployment-workflow.md), [synchronization](skills/ai-shifu-course-creator/references/course-sync.md), or [management](skills/ai-shifu-course-creator/references/course-management.md) guidance directly.
 
 ## Validate Metadata
 

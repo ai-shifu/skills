@@ -2,10 +2,6 @@
 
 All examples are CLI invocations. Analytics task orientation is documented in `overview.md`.
 
-## Required References
-
-None.
-
 ## Body Shape
 
 ```json

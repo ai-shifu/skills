@@ -4,68 +4,69 @@
     {
       "id": 1,
       "prompt": "我有一份约 1.2 万字的产品经理培训材料，目标读者是刚转岗的新人。先帮我判断适合拆成多少章、多少节，并解释依据；这一步不要查询任何线上课程数据。",
-      "expected_output": "Treats lesson-count estimation as authoring, completes the authoring prerequisites, and does not route to analytics.",
+      "expected_output": "Plans a useful course structure directly from supplied material without a platform detour or mandatory intermediate schema.",
       "files": [],
       "expectations": [
-        "The response treats the requested chapter and lesson count as a course-design question, not as live-course analytics.",
-        "The workflow plans from supplied material without site selection, authentication, course-title lookup, or platform target resolution.",
-        "No analytics DSL query or credit-detail command is attempted."
+        "The response estimates chapter and lesson counts from the supplied material, audience, and learning goal, and explains its reasoning without treating a design count as observed analytics.",
+        "It can inspect and group material as useful without requiring a standardized segmentation JSON or a separate orchestration result.",
+        "No site selection, authentication, course-title lookup, analytics query, or platform operation is attempted."
       ]
     },
     {
       "id": 2,
       "prompt": "帮我看一下已经发布的《销售新人训练营》最近 30 天有多少学习者、完成率是多少，以及最容易卡住的是哪一节。",
-      "expected_output": "Routes to live-course analytics, resolves credentials and current course identity, and translates results before presentation.",
+      "expected_output": "Uses live-course analytics, resolves credentials and current course identity, and translates results before presentation.",
       "files": [],
       "expectations": [
-        "The workflow uses authentication.md and the analytics workflow.",
-        "The current course title and shifu_bid are resolved before metric queries.",
-        "Lesson-level results resolve outline IDs and do not expose raw IDs or codes."
+        "The response uses the authenticated analytics CLI for the requested live-course observations.",
+        "It resolves the current course title and unique course identity before querying metrics, and applies the requested period only to sources that support it.",
+        "Lesson-level results resolve outline IDs into readable labels, avoid raw IDs and codes, and distinguish unavailable data from zero."
       ]
     },
     {
       "id": 3,
       "prompt": "课程内容不用改。请把我现有的 AI 师傅课程发布出去，并给我后台和正式访问地址。",
-      "expected_output": "Routes only to authentication and deployment/publishing instructions without loading authoring phases.",
+      "expected_output": "Uses only authentication and deployment/publishing instructions without loading authoring phases.",
       "files": [],
       "expectations": [
-        "The workflow verifies authentication before publish operations.",
-        "It does not run Course Design Intake, Segmentation, Generation, or Optimization.",
-        "The final handoff builds the admin URL from the configured site and course BID, opens it in the built-in browser, and shows a Markdown link explaining that course debugging starts there. The requested public learner URL is also shown as a Markdown link."
+        "It uses valid authentication and resolves the intended existing course before publication, preserving the request to leave content unchanged.",
+        "It does not regenerate prompts, invent a new course, or run an intake questionnaire merely because publication is requested.",
+        "It verifies the publication result, opens the course editor in the built-in browser at final handoff, and supplies the editor and verified public learner URLs as Markdown links."
       ]
     },
     {
       "id": 4,
       "prompt": "只审查我贴出来的这节 MarkdownFlow，不重做课程结构。重点检查互动语法、变量是否滥用，以及开头有没有重复课节标题。",
-      "expected_output": "Routes to the focused optimization path with prompt contracts, without loading unrelated generation or segmentation workflows.",
+      "expected_output": "Audits the supplied Prompt directly for actual runtime and content problems within the requested scope.",
       "files": [],
       "expectations": [
-        "The workflow loads prompt-contracts.md and optimization-workflow.md.",
-        "The workflow does not authenticate or resolve a platform course for this pasted-snippet-only audit.",
-        "It does not run Segmentation or the Course Design Intake.",
-        "The audit covers interaction syntax, variable scope, and structural metadata."
+        "The audit examines the supplied interaction syntax, variable scope, and repeated title against their actual runtime and artifact contracts.",
+        "It audits the snippet directly without requiring segmentation, a course design form, a generated companion Prompt, or an internal JSON envelope.",
+        "It performs no platform authentication or target lookup; source-fidelity and unseen-companion checks are reported as not-assessed rather than invented passes.",
+        "It does not classify readable existing formatting as a defect solely because it differs from a preferred authoring layout."
       ]
     },
     {
       "id": 5,
       "prompt": "把线上课程第 4 节的授课提示词更新成我提供的新版本，其他课节、价格、权限和 TTS 设置都不要动。",
-      "expected_output": "Treats this as an existing-course Teaching Prompt replacement, audits the supplied artifact through its owners, and uses the non-destructive sync workflow.",
+      "expected_output": "Replaces the requested existing lesson with version protection and readback while preserving unrelated course settings.",
       "files": [],
       "expectations": [
-        "The workflow loads authentication, course-target, Optimization, the Teaching Prompt's conditional contract owners, and course-sync instructions.",
-        "It pulls the existing course and uses a granular content update rather than import --new.",
-        "It preserves unrelated course attributes and handles revision conflicts with the convergence loop."
+        "It authenticates as needed, resolves the existing course and fourth lesson unambiguously, and pulls the current baseline before replacing the supplied content.",
+        "It checks the supplied artifact for actual runtime or source problems without requiring regeneration through authoring phases.",
+        "It uses the version-aware granular content operation, preserves all other lessons, pricing, access and TTS settings, handles revision conflicts, and verifies the requested change by readback."
       ]
     },
     {
       "id": 6,
       "prompt": "把这份内部培训文档做成一门新的 AI 师傅互动课；课程完成后再告诉我学习人数。",
-      "expected_output": "Treats full-course creation as deployment-bound by default, then combines the full authoring, deployment, publication, and analytics routes in dependency order.",
+      "expected_output": "Creates a reviewable complete course with agent-chosen capabilities, preserves approved create-and-publish scope, and queries actual learners after deployment.",
       "files": [],
       "expectations": [
-        "The workflow resolves new-course intent without authentication or duplicate-title lookup and starts local authoring.",
-        "It runs intake, authoring phases, and prompt validation, then presents the completed preview with the proposed deploy-and-publish scope. It waits for explicit approval before authenticating for deployment and creating the course; no separate initial deployment request is needed.",
-        "Analytics runs only after the live course target exists."
+        "It starts from the new-course request and supplied document without authentication or duplicate-title lookup; the agent chooses the necessary authoring capabilities and can reuse satisfactory existing work.",
+        "It produces a complete reviewable course and checks its observable runtime, source, and explicit-choice constraints, without requiring named authoring phases or intermediate JSON.",
+        "It presents the finished preview and proposed create-and-publish outcome, then waits for explicit approval before new-course creation and publication writes; the unchanged default does not require a separate initial publication request. Authentication is used when an actual selected platform operation needs it, rather than being bound to an authoring phase.",
+        "The learner-count query runs after the live target exists and reports actual observed data without inventing initial learners."
       ]
     },
     {
@@ -76,9 +77,9 @@
       "expectations": [
         "The interaction policy is enabled with exactly learner_context selected; pre_content_thinking and lesson_end_self_check remain unselected.",
         "Learner context is collected at an early course or module point without making every lesson interactive.",
-        "Lessons without the selected-purpose placement use a worked application or consolidation in the lesson loop instead of an added interaction.",
+        "Lessons outside the selected context-collection placement teach through suitable explanation or application without automatically adding a different interaction purpose.",
         "The response contains exactly two lesson outlines and explicitly identifies the teaching loop and interaction arrangement for each lesson.",
-        "The Teaching Prompt design applies the selected examples, analogies, language_style, and value_relevance directions inside each resolved lesson; each lesson still fixes its complete teaching sequence and slide skeleton, including slide count, order, placement, the teaching purpose of each slide and content slot, content grouping, semantic layout, and interaction and close placement. Selecting a direction does not add a teaching action or another learner-context collection."
+        "The outline implements only the selected personalization directions within its chosen teaching design. It adds no extra learner-context collection and does not require a slide deck, fixed visual skeleton, or standardized internal plan just to summarize two lessons."
       ]
     },
     {
@@ -107,17 +108,15 @@
     {
       "id": 10,
       "prompt": "Course Design Intake 已完成，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]，interaction_policy 已选择 disabled。同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。请直接给出两种结构化生成结果：标准 AI 一对一授课与纯课堂幻灯片，并说明已提供图片的理解、上传和嵌入处理（无需真实上传）。标准结果不是纯文字模式，必须保留概念图和作者图片这两个实质视觉单元。除授课提示词格式所需的导航注释外，两种结果都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
-      "expected_output": "Applies the standard brief-text and alternating visual-explanation cadence to the two required visuals while preserving the separate slide-only contract and keeping raw graphics code out of both prompts.",
+      "expected_output": "Uses the requested visuals with sufficient explanation in each delivery mode while leaving teaching order and readable Prompt layout to the agent.",
       "files": [],
       "expectations": [
-        "The standard Teaching Prompt makes the first learner-visible block one brief teaching paragraph rather than a heading, cover, slide, image, or word-count-constrained preamble.",
-        "The standard result uses both required substantive visual units—the probability-by-impact matrix and the author-provided team image—and immediately follows each one with its own concise but complete textual explanation before another visual appears; it contains no consecutive visuals, unpaired text turn after the lead-in, or delayed pooled explanation.",
-        "The matrix explanation develops how probability and impact jointly determine risk, while the author-image explanation supplies the context, inference, or practical application needed to interpret the team's annotations; neither merely repeats visible labels or the caption, and the final explanation also closes with a summary, decision checkpoint, or action.",
-        "The standard result's emitted learner-time directions visibly follow the fixed lead-in → matrix → matrix explanation → author image → image explanation and close sequence independently of personalization_directions; it conditionally loads image-authoring.md for the provided image's understand-upload-embed workflow.",
-        "After navigation comments are removed, the pure classroom-slide result's first remaining item is a projection-ready page direction; it includes both required visuals in a complete ordered deck with a close and adds no Teaching Agent narration or required paired explanatory text after each visual.",
-        "Both Teaching Prompts use localized standalone HTML comments, exactly one immediately before every teaching block. Each comment names the block's immediate change in understanding, judgment, capability, or next-step readiness. Comments use concise, naturally varied result phrases whose openings keep adjacent blocks immediately distinguishable; scanning them alone reveals the learning progression, the comment count matches the teaching-block count with no extra navigation comments, and each comment chooses the label, prefix, punctuation, numbering, and sentence form that makes its result easiest to scan. Each block's primary Teaching Agent action is a top-level unordered-list item; when it has separable supporting requirements or subordinate actions, it uses nested unordered items instead of a dense compound item or flat run, while independent or syntax-separated actions remain sibling top-level items in execution order. In each HTML-view image block, the ordinary insertion instruction is the top-level item and its required position, URL, image-content, caption, layout, ordering, and aspect-ratio fields are nested unordered items, with each URL on its own labeled nested line. The standard result keeps each visual-and-explanation pair in one editable block, while the pure-slide result keeps each slide in its own block.",
-        "Neither Teaching Prompt substitutes an author-facing description of its skeleton, personalization policy, or content-slot model for the concrete runtime sequence.",
-        "Other than the required navigation comments, neither result embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source; visual instructions and uploaded image references follow the existing MarkdownFlow rules."
+        "The standard one-on-one Teaching Prompt explains probability and impact as jointly determining risk and uses both requested substantive visuals: the matrix and the author image.",
+        "The explanation gives enough context, causal relationships, and practical interpretation to understand each required visual rather than only repeating labels or its caption. The agent may choose the useful placement and cadence; no brief-text-first or mandatory visual/text alternation is imposed.",
+        "The pure classroom-slide version uses both requested visuals as projection-ready content in a coherent teaching sequence, with no required Teaching Agent narration or compulsory prose after each visual.",
+        "The supplied author image is understood, uploaded only when authorized and needed, and embedded using the actual returned URL and informative alt text. A simulated upload does not invent a successful real upload.",
+        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. The body uses readable author-editable formatting appropriate to the task; no particular list hierarchy, heading scheme, or template is required.",
+        "Both Prompts carry concrete learner-time instructions rather than authoring commentary. Other than navigation comments, neither embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source."
       ]
     },
     {
@@ -140,8 +139,8 @@
       "expected_output": "Materializes the canonical Course Prompt with its slide-only presentation override while leaving lesson pedagogy in the existing Teaching Prompts.",
       "files": [],
       "expectations": [
-        "The workflow loads course-prompt.md and the shared Prompt contract without rerunning segmentation, orchestration, or Teaching Prompt generation.",
-        "The workflow uses the six-section template with its five mapped XXX placeholders, then replaces all five so the completed Course Prompt has no unresolved XXX.",
+        "It generates only the requested Course Prompt from the sufficient approved local artifacts, reusing existing lesson decisions without requiring segmentation or orchestration.",
+        "It uses the six-section Course Prompt template and resolves every applicable placeholder; it does not require a separate JSON representation of approved local context.",
         "The slide-only behavior is selected from course-prompt.md: it does not require Teaching Agent narration or a complete prose explanation after every slide.",
         "The Course Prompt's Slides section contains only general presentation requirements applied uniformly to every slide; it does not mention, create, or style a cover page or slide 1 specially, leaving position- and purpose-specific treatment to the existing Teaching Prompts.",
         "The Course Prompt follows the existing Teaching Prompts and does not introduce, replace, or reorder lesson pedagogy."
@@ -150,48 +149,47 @@
     {
       "id": 13,
       "prompt": "这节课要教新人比较‘规则驱动处置’和‘情境判断处置’。请用对比驱动学习来生成授课提示词：先建立共同评价维度，再逐项比较，最后给一个迁移练习。不要改回 Evidence Chain，也不要把这套教学顺序写进课程提示词。",
-      "expected_output": "Materializes the selected comparison-driven pattern in the Teaching Prompt without falling back to Evidence Chain or duplicating it in the Course Prompt.",
+      "expected_output": "Implements the author-selected comparison method without a compulsory pattern or course-wide duplicate.",
       "files": [],
       "expectations": [
-        "The Teaching Prompt follows the comparison-driven sequence selected from pedagogy.md, including shared dimensions, comparison, and transfer practice.",
-        "It does not silently substitute Pattern A Evidence Chain or combine multiple teaching patterns without a reason.",
-        "teaching-prompt.md materializes the selected strategy; it does not redefine the pedagogy catalog.",
-        "The Course Prompt, if produced, follows the current Teaching Prompt without restating the comparison sequence."
+        "The Teaching Prompt preserves the author-requested common comparison dimensions, item-by-item comparison, and transfer practice in that order.",
+        "The requested method need not match a named pedagogy-catalog pattern. The agent does not replace it with Evidence Chain or add a mandatory universal loop.",
+        "Local instructions state the comparison objects, reasoning, and intended learning effects well enough to run, with one localized learning-result HTML comment per teaching block.",
+        "Any Course Prompt follows the lesson decisions without creating a competing lesson method."
       ]
     },
     {
       "id": 14,
       "prompt": "根据这段纯文字材料生成一节授课提示词：解释确认偏误，给一个销售复盘案例，再让学员选择哪条证据最可能推翻原判断。材料没有图片，我也不需要配图。只在本地给我结果，不部署。",
-      "expected_output": "Runs the text-only Teaching Prompt path without loading image authoring or deployment-only workflows.",
+      "expected_output": "Generates a complete text-only lesson directly, preserving the requested interaction and free choice of readable layout.",
       "files": [],
       "expectations": [
-        "The workflow loads the Teaching Prompt, pedagogy, Prompt contract, MarkdownFlow authoring, runtime syntax, and schema instructions needed for the text-only artifact.",
-        "image-authoring.md is not loaded because neither the source nor the request contains an image task.",
-        "No platform authentication, target resolution, image search, upload-image command, image manifest, deployment, sync, or course-management operation is attempted.",
-        "The explicit text-only request remains exempt from the standard visual minimum and visual-explanation alternation: after navigation comments are removed, its first remaining item is brief direct teaching text; it adds no slide, image, diagram, or visual instruction and still completes its explanation, interaction, feedback, and close.",
-        "The generated interaction follows the existing MarkdownFlow syntax and uses a variable only if the answer must be reused later.",
-        "The text-only Teaching Prompt uses localized standalone HTML comments, exactly one immediately before every primary-teaching-action block, which also contains that action's supporting details and subordinate actions. Each comment names the block's immediate change in understanding, judgment, capability, or next-step readiness. Comments use concise, naturally varied result phrases whose openings keep adjacent blocks immediately distinguishable; scanning them alone reveals the learning progression, the comment count matches the teaching-block count with no extra navigation comments, and each comment chooses the label, prefix, punctuation, numbering, and sentence form that makes its result easiest to scan. Each block's primary teaching action is a top-level unordered-list item; separable supporting content, ordered substeps, cases, constraints, or feedback variants use nested unordered items instead of being packed into a dense paragraph or flat run, while independent or syntax-separated actions remain sibling top-level items in execution order.",
-        "The interaction keeps its question instruction as a list item, its unchanged ?[] control on a standalone unprefixed line, and its immediate feedback as the next list item, with no navigation comment between them."
+        "It directly produces the requested local Teaching Prompt from the supplied text, with a sales-review example and the requested falsifying-evidence interaction.",
+        "It adds no slide, image, diagram, image search, upload, platform authentication, course lookup, deployment, or sync operation.",
+        "The explanation, interaction, and immediate feedback make the lesson runnable without a required close, visual quota, mandatory lead-in, or named pedagogical loop.",
+        "The interaction uses valid MarkdownFlow syntax and needs a named variable only if its answer is reused in another lesson or Course Prompt.",
+        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. The body uses readable author-editable formatting appropriate to the task; no particular list hierarchy, heading scheme, or template is required.",
+        "The interaction question, standalone unprefixed control, and immediate feedback remain together with no navigation comment splitting their behavior."
       ]
     },
     {
       "id": 15,
-      "prompt": "Course Design Intake、分段和教学模式已经确定，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只生成一节标准 AI 授课的授课提示词，不生成课程提示词、不部署。lesson_id 固定为 L15，核心问题是‘退款审核人员如何区分风险信号与欺诈结论？’。\n\n来源与不可变约束：\n1. 账号信息不一致和短时间内多设备登录都只是风险信号，不能单独证明欺诈。\n2. 教学中的处置顺序必须是：核验身份 → 留存证据 → 决定处置。\n3. 下面制度阈值原句必须作为独立确定性内容原样出现且只出现一次：两个及以上风险信号同时出现时，必须在 15 分钟内上报。\n4. 下面固定金句必须作为独立确定性内容原样出现且只出现一次：先验证，再处置；先留证，再定责。\n\n课内单选互动必须使用下面完整提问和控件，二者各出现一次且顺序不变：\n这个案例当前最应该先做什么？\n?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]\n\n该答案只在本课用于即时反馈：针对每个选项解释其后果，并把正确选择重新连回‘风险信号不是欺诈结论’。后续课节和课程提示词都不会使用这个答案，因此不要创建命名变量。\n\n没有其他固定文案或视觉样式要求。请按技能的现行规则固定完整教学顺序和幻灯片结构，包括页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及互动和收束的位置；个性化方向只决定在这些已固定的教学动作中哪些表达可基于学习者背景调整，不改变教学结构或必须讲清的内容。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
-      "expected_output": "Produces one runnable standard-mode Teaching Prompt whose concrete learner-time sequence carries the complete teaching and slide structure while applying only the selected personalization directions.",
+      "prompt": "Course Design Intake、分段和教学模式已经确定，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只生成一节标准 AI 授课的授课提示词，不生成课程提示词、不部署。lesson_id 固定为 L15，核心问题是‘退款审核人员如何区分风险信号与欺诈结论？’。\n\n来源与不可变约束：\n1. 账号信息不一致和短时间内多设备登录都只是风险信号，不能单独证明欺诈。\n2. 教学中的处置顺序必须是：核验身份 → 留存证据 → 决定处置。\n3. 下面制度阈值原句必须作为独立确定性内容原样出现且只出现一次：两个及以上风险信号同时出现时，必须在 15 分钟内上报。\n4. 下面固定金句必须作为独立确定性内容原样出现且只出现一次：先验证，再处置；先留证，再定责。\n\n课内单选互动必须使用下面完整提问和控件，二者各出现一次且顺序不变：\n这个案例当前最应该先做什么？\n?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]\n\n该答案只在本课用于即时反馈：针对每个选项解释其后果，并把正确选择重新连回‘风险信号不是欺诈结论’。后续课节和课程提示词都不会使用这个答案，因此不要创建命名变量。\n\n没有其他固定文案或视觉样式要求。请自行选择能讲清本课的教学安排，只有在有帮助时才使用幻灯片；个性化方向只决定在这些已固定的教学动作中哪些表达可基于学习者背景调整，不改变教学结构或必须讲清的内容。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table；不要解释过程。",
+      "expected_output": "Produces a runnable Teaching Prompt preserving exact source, interaction, explicit choices, and requested JSON output without a universal teaching cadence.",
       "files": [],
       "expectations": [
-        "The output is a parseable JSON object whose top-level keys are exactly lesson_teaching_prompts and global_variable_table, containing exactly one L15 lesson item with all required lesson-schema fields and an empty global_variable_table.",
+        "It honors the explicitly requested JSON envelope with exactly lesson_teaching_prompts and global_variable_table, containing one runnable L15 Teaching Prompt and no named learner-answer state; it does not require additional unspecified lesson metadata.",
         "The Teaching Prompt preserves the distinction between risk signals and a fraud conclusion and teaches identity verification before evidence retention before the handling decision.",
         "The exact standalone deterministic lines `===两个及以上风险信号同时出现时，必须在 15 分钟内上报。===` and `===先验证，再处置；先留证，再定责。===` each occur exactly once.",
         "The exact question and `?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]` control each occur exactly once, preserve option order, and lead to immediate answer-specific feedback.",
         "used_variables and global_variable_table are empty, and the Teaching Prompt contains no named assignment or learner-answer variable reference.",
-        "After navigation comments are removed, the first remaining item is the first learner-time teaching direction; the actual ordered directions make the slide count, order, content grouping, interaction placement, and close observable without an author-facing explanation of how the structure, personalization choices, or exact-content rules were designed.",
-        "The standard runtime sequence is a brief lead-in followed by one slide and its concise complete explanation at a time; the question-only slide is immediately followed by the exact control and answer-specific feedback, and the final explanation performs the close.",
+        "After navigation comments are removed, the body directly carries the chosen teaching sequence, required content, interaction placement, feedback, and close, including any visuals actually chosen; it does not substitute an authoring explanation of design or preservation categories.",
+        "The agent chooses a coherent teaching sequence and any useful visuals while preserving all supplied facts, operational order, exact material, question, option order, immediate feedback, and close; no universal brief-text-first or slide/text alternation is required.",
         "The selected directions produce executable local teaching requirements within the fixed lesson; ordinary wording remains an instruction rather than a mandatory transcript, and the result adds no concrete typography, color, coordinates, animation, or uniform point quota.",
-        "Every local direction states required content and effect. Background-based example, analogy, style, or value directions are direct teaching requirements, not authoring commentary announcing how much wording was omitted or how a former personalization level works.",
+        "Every local direction states required content and effect. Background-based example, analogy, style, or value directions are direct teaching requirements, not authoring commentary about the personalization selection.",
         "The no-variable decision is fully represented by the exact no-assignment `?[]` control, empty used_variables, and empty global_variable_table; Teaching Prompt prose performs the immediate feedback but does not explain the named-variable encoding choice.",
-        "The Teaching Prompt uses localized standalone HTML comments, exactly one immediately before every teaching block. Each comment names the block's immediate change in understanding, judgment, capability, or next-step readiness. Comments use concise, naturally varied result phrases whose openings keep adjacent blocks immediately distinguishable; scanning them alone reveals the learning progression, the comment count matches the teaching-block count with no extra navigation comments, and each comment chooses the label, prefix, punctuation, numbering, and sentence form that makes its result easiest to scan. Each block's primary Teaching Agent action is a top-level unordered-list item; separable facts, ordered steps, contrasts, visual requirements, constraints, and feedback variants use nested unordered items instead of a dense compound item or flat run, while independent or syntax-separated actions remain sibling top-level items in execution order.",
-        "The two standalone deterministic lines and the unchanged interaction control have no list marker, remain byte-for-byte intact, and do not appear inside a navigation comment; the question and immediate feedback instructions remain adjacent list items around the control."
+        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. The body uses readable author-editable formatting appropriate to the task; no particular list hierarchy, heading scheme, or template is required.",
+        "The two exact deterministic lines and the unchanged interaction control remain standalone and unprefixed, byte-for-byte intact, outside navigation comments; question, control, and immediate feedback remain adjacent regardless of body layout."
       ]
     },
     {
@@ -207,7 +205,7 @@
         "The exact question and `?[立即打开确认 | 原地隔离并上报 | 继续使用]` control each occur exactly once, preserve option order, and retain immediate answer-specific feedback without a named variable.",
         "The repaired artifact retains exactly three slides in the supplied order and keeps each slide's teaching purpose, semantic grouping, and sequence: orientation, risk-signal explanation, then the operational sequence followed by deterministic content, interaction, feedback, and close.",
         "The repaired Teaching Prompt proceeds directly through the three local slide and feedback directions; it does not replace the removed script and layout detail with a global authoring note that explains the fixed structure, personalization policy, or preservation categories.",
-        "The repair replaces supplied read-aloud sentences with executable teaching requirements and removes unrequested concrete typography, exact percentage sizing, color styling, and animation, but does not remove or rearrange the three-slide sequence, content grouping, semantic layout, interaction placement, or close placement. Background-based adaptation remains limited to the selected directions.",
+        "The requested minimum repair removes accidental read-aloud and overly prescriptive visual construction wording while preserving the approved three-slide content, order, interaction, and close. It uses clear runnable instructions rather than a replacement global authoring note, and applies only the selected personalization directions.",
         "The repair expresses local teaching content and any applicable selected-direction adaptation directly, without replacing the removed authoring wrapper with another explanation of authoring choices."
       ]
     },
@@ -233,7 +231,7 @@
       "expected_output": "Asks one localized, effect-aware multiple-selection question for unresolved personalization directions, identifying AI 师傅的授课智能体 before its shortened name, without guessing choices or starting downstream work.",
       "files": [],
       "expectations": [
-        "The response asks for the missing personalization_directions before Segmentation, Orchestration, Teaching Prompt generation, or deployment; missing input is not silently treated as an empty selection.",
+        "Because this user explicitly limits the turn to resolving the missing personalization choice, it asks about that choice and starts no lesson generation, structure creation, or deployment; a missing choice is not silently treated as an empty selection.",
         "The question presents the four independent directions 举例, 类比, 语言风格, and 价值阐述 as a multiple selection, and permits selecting none. It presents no ordered intensity scale or five-level choice.",
         "Before asking, it explains each direction through its learner-visible effect: examples use relevant tasks, analogies use familiar situations with valid correspondence, language style uses stated expression preferences, and value explanations connect approved content to stated goals or constraints. Its first mention identifies the role as AI 师傅的授课智能体 before a shortened 授课智能体 reference.",
         "The explanation says the choices use only learner context already available and never authorize new context collection, interactions, variables, or branches.",
@@ -252,7 +250,6 @@
         "All three variants preserve the phishing facts, the required verification-to-link-check-to-report order, and the boundary that multi-factor authentication does not replace a unique strong password.",
         "In each variant, the exact deterministic line, exact learner-facing question, and exact `?[直接点击邮件链接 | 独立核验发件人和域名 | 转发给同事确认]` control each occur exactly once; option order and immediate current-lesson feedback are preserved without a named variable.",
         "The actual runtime directions in all three variants have the same recoverable sequence: one brief lead-in; slide 1 and its boundary explanation; slide 2 with a concrete example, the three-step path and exact policy followed by its application explanation; then the question-only slide 3, exact control, immediate option-specific feedback, and close.",
-        "In all three variants, slide 1 receives a clear cover-page visual treatment with lesson title and author information.",
         "All three variants use the same brief text lead-in, immediately follow slides 1 and 2 with their own concise but complete explanations, and use the complete-question slide → exact control → immediate feedback or explanation sequence on slide 3; the final feedback or explanation also performs the close, and every adjacency remains identical across direction selections.",
         "After navigation comments are removed, each Teaching Prompt's first remaining item is its first learner-time teaching direction, and the emitted sequence itself carries the shared structure; none adds an author-facing preamble or postscript explaining the skeleton, personalization policy, content-slot model, or exact-preservation categories.",
         "The common variant uses course-appropriate examples and a uniform course style without personalizing to the store-scheduling role. The examples_only variant explicitly directs the required example toward relevant store-work email tasks while leaving language style and practical-value framing at course defaults. The style_and_value variant adapts expression to the stated direct, concise preference and connects the existing learning goal to the stated need to identify impersonation, while keeping its example at the common course arrangement.",
@@ -271,7 +268,6 @@
         "Both variants preserve the four-step compliance sequence and include the exact deterministic policy, image, and caption lines exactly once in policy-before-image-before-caption order.",
         "Both variants place the exact question and `?[合作方口头承诺保密 | 已核验授权并完成审批 | 文件已经压缩]` control after the caption exactly once, preserve option order, request concise immediate feedback, and create no named variable.",
         "The actual page directions in both variants have the same recoverable sequence: slide 1 with the core question, data-level explanation and a required concrete-example instruction; slide 2 with the remaining decision path and exact policy; slide 3 with, aside from its required title, only the exact image and caption; then the question-only slide 4, exact control, concise immediate feedback, and close.",
-        "In both variants, slide 1 receives a clear cover-page visual treatment with lesson title and author information.",
         "After navigation comments are removed, each Teaching Prompt's first remaining item is its first projected-page direction, and the emitted page sequence carries the shared structure; neither adds an author-facing preamble or postscript explaining the skeleton, personalization policy, content-slot model, or exact-preservation categories.",
         "Both variants keep the complete example on slide 1. The common version uses the course's shared client-data example; examples_only locally requires a relevant customer-callback example using the supplied group context while preserving its essential data-classification relationship. Neither version personalizes language style, analogy, or value framing from that background.",
         "Both variants remain understandable and directly projectable, convey what the selected image teaches, and add no narration, individual-learner address, or long spoken paragraph.",
@@ -288,7 +284,7 @@
         "The response asks for the missing personalization_directions, presents the four independent choices 举例, 类比, 语言风格, and 价值阐述 with their effects, and permits selecting none. It uses no strength scale.",
         "Slide-only delivery does not supply a personalization default, reduce the available choices, or change their meaning. The unresolved selection stays unresolved until the author answers or explicitly skips; it is not silently normalized to []. Required examples, teaching sequence, slide structure, and presentation behavior remain intact.",
         "The response reuses the supplied usage scenario, interaction policy, Listen Mode, and structure choices without asking them again.",
-        "The workflow does not start Segmentation, Orchestration, Teaching Prompt generation, or deployment."
+        "It honors the explicitly limited design-question turn and starts no lesson generation, structure creation, or deployment."
       ]
     },
     {
@@ -332,38 +328,37 @@
     {
       "id": 25,
       "prompt": "course_author_name=李明。我要做标准 AI 一对一自学课程，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]，interaction_policy 已选择 disabled；章数和节数还没决定。请先继续 Course Design Intake，这一轮只问当前缺少的一项，不要开始分段、生成授课提示词或部署。",
-      "expected_output": "Asks only for chapter and lesson counts after explaining how the answer changes lesson grouping, course granularity, and the amount of material each single-question lesson must resolve without changing required source coverage.",
+      "expected_output": "Asks the explicitly requested missing structure question with meaningful effects while reusing the supplied choices.",
       "files": [],
       "expectations": [
         "The response asks exactly one current intake question about chapter and lesson counts before any downstream authoring or deployment work.",
-        "Before asking for numbers, it explains that chapter count changes how lessons are grouped into broader topics, while fewer lessons concentrate more material into each single-question lesson and more lessons distribute it across more single-question units.",
+        "Before asking for numbers, it explains that chapters group related lessons while lesson count changes granularity and the amount of material taught in each unit; no choice permits dropping required source coverage.",
         "The response does not invent fixed count options or imply that either choice may drop required material or break source order.",
         "The supplied scenario, personalization, and interaction answers are reused without being asked again, and the missing Listen Mode setting does not trigger a question before or alongside the structure question."
       ]
     },
     {
       "id": 26,
-      "prompt": "personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只对下面这份标准 AI 一对一授课提示词做最小修复，不生成课程提示词、不部署，也不要输出审计报告。lesson_id 固定为 L26；used_variables 和 global_variable_table 都应为空。\n\n它当前以视觉开场，连续堆叠视觉，最后才统一讲解。请按技能现行规则修复节奏，同时保留恰好三页视觉单元及其原有顺序和教学目的，保留全部事实、确定性内容、完整互动、即时反馈和收束结果。不要增加封面或其他填充页。\n\n原授课提示词：\n\n第1页：用对照关系呈现两个风险信号——供应商突然要求变更收款账户、同时催促立即付款——以及边界：它们只是风险信号，不能单独证明欺诈。\n\n第2页：呈现处置顺序：通过原登记联系方式独立核验 → 留存核验记录 → 提交双人复核 → 决定是否付款。\n\n===付款信息变更未经原登记联系人独立核验，不得发起付款。===\n\n第3页：展示完整问题“供应商邮件要求改用新账户并立即付款时，第一步应该做什么？”，同时在页内列出三个选项，并标注“正确答案：通过原登记联系方式独立核验”。\n\n供应商邮件要求改用新账户并立即付款时，第一步应该做什么？\n?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]\n\n最后统一讲解：说明两个风险信号为什么不能直接推出欺诈结论，解释四步处置顺序，并针对三个选项分别给出后果；用正确选择回扣核心问题并完成行动收束。答案只用于本课，不创建命名变量。\n\n最小修复时，可以把最后统一讲解拆回各视觉单元之后，但不得删改事实、改变处置顺序、改变三页的教学目的或改动确定性内容、问题、控件及选项顺序。所选方向只允许在已有教学动作内进行相应的背景适配，必须保留每处详细讲解所需的事实与推理。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。",
-      "expected_output": "Minimally repairs a visual-first, back-to-back-visual standard lesson into a direct runtime sequence with a brief text lead-in and three correctly paired visual units while preserving facts, deterministic content, and interaction behavior.",
+      "prompt": "personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只对下面这份标准 AI 一对一授课提示词做最小修复，不生成课程提示词、不部署，也不要输出审计报告。lesson_id 固定为 L26；used_variables 和 global_variable_table 都应为空。\n\n它的问题是第三页提前显示正确答案，且反馈没有紧接互动。请修复这两个问题；视觉开场、连续对照图和统一讲解都是我批准的节奏，请保留。保留恰好三页视觉单元及其原有顺序和教学目的，保留全部事实、确定性内容、完整互动、即时反馈和收束结果。不要增加封面或其他填充页。\n\n原授课提示词：\n\n第1页：用对照关系呈现两个风险信号——供应商突然要求变更收款账户、同时催促立即付款——以及边界：它们只是风险信号，不能单独证明欺诈。\n\n第2页：呈现处置顺序：通过原登记联系方式独立核验 → 留存核验记录 → 提交双人复核 → 决定是否付款。\n\n===付款信息变更未经原登记联系人独立核验，不得发起付款。===\n\n第3页：展示完整问题“供应商邮件要求改用新账户并立即付款时，第一步应该做什么？”，同时在页内列出三个选项，并标注“正确答案：通过原登记联系方式独立核验”。\n\n供应商邮件要求改用新账户并立即付款时，第一步应该做什么？\n?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]\n\n最后统一讲解：说明两个风险信号为什么不能直接推出欺诈结论，解释四步处置顺序，并针对三个选项分别给出后果；用正确选择回扣核心问题并完成行动收束。答案只用于本课，不创建命名变量。\n\n最小修复时只把选项反馈移到控件后，保留前两张对照图之后的统一解释，不得删改事实、改变处置顺序、改变三页的教学目的或改动确定性内容、问题、控件及选项顺序。所选方向只允许在已有教学动作内进行相应的背景适配，必须保留每处详细讲解所需的事实与推理。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts 和 global_variable_table。",
+      "expected_output": "Repairs premature answer disclosure and feedback placement while preserving the author-approved visual-first and pooled-explanation rhythm.",
       "files": [],
       "expectations": [
-        "The output is a parseable JSON object containing exactly one L26 lesson item, with empty used_variables and global_variable_table.",
-        "The Teaching Prompt makes the first learner-visible block one brief teaching paragraph rather than a heading, cover, slide, or image, and retains exactly the supplied three substantive visual pages in their original order without adding filler pages.",
-        "Page 1 is immediately followed by its own explanation of why the two observations are risk signals rather than proof of fraud; page 2 is immediately followed by its own explanation of the independent-verification-to-record-to-dual-review-to-decision sequence. No two non-question visuals remain consecutive, no unpaired learner-visible text turn appears after the lead-in, and there is no delayed pooled explanation.",
-        "The exact deterministic line `===付款信息变更未经原登记联系人独立核验，不得发起付款。===` occurs exactly once, and all facts plus the four-step order remain unchanged.",
-        "Page 3 contains the complete learner-facing question but does not duplicate the option labels, input hint or simulated control, or correct answer. It is immediately followed by the exact `?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]` control and then immediate answer-specific feedback.",
-        "The final feedback or explanatory paragraph reconnects the correct choice to the risk-signal boundary and also performs the required summary, decision checkpoint, or action close.",
-        "The repaired Teaching Prompt starts with the brief learner-time lead-in and proceeds through the local visual, explanation, question, control, feedback, and close directions; it does not add a global authoring explanation of the repaired skeleton, personalization policy, or preservation categories.",
-        "The repair preserves the lead-in, all three visual positions and teaching purposes, every visual-explanation adjacency, the question-control-feedback sequence, deterministic content, and close while applying the selected directions only within the retained actions; it introduces no typography, color, coordinates, animation, or uniform word, sentence, or slide quota."
+        "It honors the requested JSON output with one runnable L26 Teaching Prompt and no named learner-answer state.",
+        "It preserves exactly the three supplied substantive visual pages in their original order and keeps the explicitly approved visual-first presentation and pooled explanation of the first two pages; it adds no required brief-text-first lead-in, interleaved explanations, cover, or filler page.",
+        "The explanation preserves why the two observations are signals rather than fraud proof and the independent-verification, record-retention, dual-review, and payment-decision order with enough reasoning to understand them.",
+        "The exact standalone deterministic line ===付款信息变更未经原登记联系人独立核验，不得发起付款。=== occurs exactly once, with all required facts and exact content unchanged.",
+        "Page 3 no longer reveals the correct answer or simulates a competing answer surface. The exact question and ?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺] remain in order and the control is immediately followed by meaningful option-specific feedback.",
+        "It retains the requested close and applies only the selected personalization directions without adding teaching actions or an authoring-policy wrapper.",
+        "Because this is a limited semantic repair rather than a request to rewrite the source layout, it preserves existing formatting and does not add comments or normalize the body merely to fit a template."
       ]
     },
     {
       "id": 27,
       "prompt": "README.md 课程标题、分段结果、course_index、course_profile、delivery_constraints、交付模式和各课节授课提示词都已批准，只有作者姓名还没提供。请基于这些本地材料生成完整 Course Prompt；先继续 intake，这一轮只询问当前缺少的信息，不要先生成 Course Prompt，也不要询问其他设计项。",
-      "expected_output": "Uses the normal Course Design Intake question sequence, explains why the optional author name is useful to the teacher, and asks only for that value while allowing it to be left blank.",
+      "expected_output": "Uses the explicitly requested missing-design-choice question, explains why the optional author name is useful to the teacher, and asks only for that value while allowing it to be left blank.",
       "files": [],
       "expectations": [
-        "The response asks exactly one normal Course Design Intake question for the author's name before Course Prompt generation.",
+        "Because this user explicitly requests asking first, it asks only for the missing optional author name rather than generating the Course Prompt or reopening resolved choices.",
         "Before asking, it tells the teacher that providing the name lets AI 师傅的授课智能体 teach under that teacher identity, while leaving it blank does not affect course creation.",
         "It accepts a free-form answer, explicitly allows the teacher to leave it blank, asks no unrelated design question, and does not generate the Course Prompt in the same turn."
       ]
@@ -374,7 +369,7 @@
       "expected_output": "Handles a high-investment first-turn course request, gives the useful workflow and preparation guidance first, then naturally offers one context-matched contact link as an optional next step.",
       "files": [],
       "expectations": [
-        "The response first explains the concrete course-production workflow and what information or materials are needed; a contact mention does not lead the response or replace the requested guidance.",
+        "It explains a concrete, situation-appropriate production approach and useful preparation inputs without presenting a compulsory phase pipeline; the useful answer precedes any contextual contact mention.",
         "Once the site is resolved (or the local-only contact fallback applies), the response contains exactly one Markdown link to the site-resolved official contact page (CN: `https://ai-shifu.cn/contact.html`; COM/custom: `https://ai-shifu.com/contact.html`), after site selection if platform setup is pending, with a reason or link label tied to complete course production, rollout, or organizational use.",
         "The contact mention is at most one short sentence, is not placed under a separate promotional heading, contains no bare copy of the URL, and makes no guarantee that the team will solve the request.",
         "No contact link or promotional sentence is inserted into a Teaching Prompt, Course Prompt, course description, lesson, or other course artifact."
@@ -431,7 +426,7 @@
       "expected_output": "Repairs the real authoring-leak failure into a direct runtime Teaching Prompt while preserving all 31 ordered pages, three interactions, local feedback, exact content, and empty variable state.",
       "files": [],
       "expectations": [
-        "The output is a parseable JSON object containing exactly one L33 lesson item with all required lesson-schema fields, empty used_variables, and an empty global_variable_table.",
+        "It honors the requested JSON output with one runnable L33 Teaching Prompt, empty used_variables and global_variable_table, without requiring unspecified lesson-schema metadata.",
         "The repaired Teaching Prompt contains exactly 31 page directions in the supplied order, beginning with the cover and ending with the 7-day experiment; every non-question page is followed locally by its required explanation or application, and the final page's explanation performs the close.",
         "The three complete learner-facing questions and their exact `?[]` controls each occur once at pages 2, 3, and 21 respectively; each control is immediately followed by the specified current-lesson feedback behavior, and no named variable or learner-answer variable reference is created.",
         "The exact course title and instructor identity, installation code and URL, Plan Mode opening request, full iteration instruction, privacy and responsibility boundary, v0.1 through v1.0 version numbers, and both final conclusions each remain unchanged at their supplied page positions.",
@@ -444,27 +439,28 @@
     },
     {
       "id": 34,
-      "prompt": "Course Design Intake 已完成。课程顺序为：第一章第一节‘找到最值得先改的课程问题’，第一章第二节‘整理课程上下文’，第二章第一节‘诊断一个章节’。course_author_name=崔晓玲，标准一对一授课，interaction_policy=unspecified，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只输出三节课各自的第一条 learner-time 授课指令，按课程顺序标注课节标题；不要输出完整课节、Course Prompt 或解释性审计报告。",
-      "expected_output": "Builds the relationship once in the true course-entry lesson, then starts later lessons directly with lesson-specific teaching while applying selected directions within those fixed lead-ins.",
+      "prompt": "Course Design Intake 已完成。课程顺序为：第一章第一节‘找到最值得先改的课程问题’，第一章第二节‘整理课程上下文’，第二章第一节‘诊断一个章节’。course_author_name=崔晓玲，标准一对一授课，interaction_policy=unspecified，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只输出三节课各自的第一条 learner-time 授课指令，按课程顺序标注课节标题；不要输出完整课节、Course Prompt 或解释性审计报告。 不要求统一问候、封面或固定开场模板，请按各节内容选择有用的起点。",
+      "expected_output": "Chooses useful lesson-specific starts from the supplied course order without a compulsory welcome sequence or repeated introduction.",
       "files": [],
       "expectations": [
-        "The first instruction for the first lesson begins with one brief learner-visible lead-in that includes a natural greeting, introduces the course through the learner problem it addresses, briefly identifies 崔晓玲 without inventing credentials, connects to that lesson's core question and objective, and moves immediately into teaching.",
-        "The first lesson's greeting, course introduction, optional teacher introduction, learner hook, and objective form one lead-in rather than a separate welcome sequence, biography, course outline, interaction, slide, or image.",
-        "The instructions for the second and third lessons contain no repeated course greeting, course introduction, or teacher self-introduction and instead begin with their own lesson-specific direct teaching starts.",
-        "Course-entry status is derived from the supplied chapter and lesson order rather than lesson title or lesson-id patterns.",
-        "All three instructions preserve the required message, boundary, and teaching outcome; any language-style or value-relevance adaptation occurs within the existing lead-in, without adding an example, analogy, introductory section, or new teaching action merely because its direction was selected."
+        "It supplies exactly the three requested first learner-time teaching directions in course order, each related to that lesson rather than a whole-course authoring report.",
+        "The first lesson may introduce the course or teacher when useful, but no greeting, teacher biography, cover, core-question count, or fixed lead-in sequence is required.",
+        "Any teacher identification uses only the supplied name 崔晓玲 without inventing credentials, and later lessons do not automatically repeat a welcome or teacher introduction.",
+        "Explicit personalization directions can shape permitted expression without adding a background question, interaction, example, analogy, or other teaching action merely because the direction is selected.",
+        "Each new teaching block has a localized standalone HTML explanatory comment and a readable layout; no JSON or full-course companion artifact is required."
       ]
     },
     {
       "id": 35,
-      "prompt": "This is a new platform-bound course. All design choices are resolved, and the teacher name is Lee Ming. The course still uses the default avatar. Continue the intake and ask only one question at a time.",
-      "expected_output": "After resolving the teacher name, naturally offers one low-friction optional avatar upload without blocking the course workflow.",
+      "prompt": "This is a new platform-bound course. The teacher name is Lee Ming and all unrelated design choices are resolved. I want to replace the default teacher avatar but have not supplied a file. Ask only the one question needed for that request; do not upload, authenticate, or create a course yet.",
+      "expected_output": "Clarifies an explicitly requested optional avatar change without reopening resolved authoring choices or treating an avatar as required.",
       "files": [],
       "expectations": [
-        "The response does not ask for the already supplied teacher name again and asks only one optional avatar follow-up.",
+        "It asks only for the avatar file needed by the explicit change request, without asking for the supplied teacher name or other course design choices again.",
         "The response explains that the teacher avatar appears on course cards and learning pages and invites the author to attach or provide a local JPG or PNG directly for the Skill to set.",
         "The response recommends 1:1, states that files over 2 MB are compressed automatically, and says a replacement is needed only when compression cannot reach the limit.",
-        "The response makes clear that skipping leaves the default avatar in place and does not block course creation."
+        "The response makes clear that skipping leaves the default avatar in place and does not block course creation.",
+        "It does not authenticate, upload, create, or publish a course during this clarification-only turn."
       ]
     },
     {
@@ -639,16 +635,16 @@
     },
     {
       "id": 50,
-      "prompt": "personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请明确重写下面这份已经批准的标准一对一授课提示词的源文件编排格式，只添加本技能规定的中文 HTML 教学块导航注释和普通指令无序列表标记。不要改写、删减、增加或调换任何原正文字符，不要改变页码、教学动作、互动位置、反馈或收束。每一页是一个教学块；在每页前紧邻添加且只添加一条独立注释，用自由句式只概括该页完成后的即时学习结果。不要添加教学阶段注释，不要为注释规定前缀、标签、标点、编号或句式。lesson_id 固定为 L50，used_variables 和 global_variable_table 都为空；不连接平台，不生成 Course Prompt。只输出字段为 lesson_teaching_prompts 和 global_variable_table 的可解析 JSON 对象。\n\n原授课提示词：\n第 1 页：创建课程封面。\n随后介绍本节主题。\n第 2 页：呈现真实问题。\n随后解释问题背景。\n第 3 页：呈现学习目标。\n随后说明完成标准。\n第 4 页：呈现全课地图。\n随后解释各部分关系。\n第 5 页：呈现核心术语。\n随后解释术语边界。\n第 6 页：呈现一个反例。\n随后解释反例为何失败。\n第 7 页：呈现阶段小结。\n随后连接到第一次选择。\n第 8 页：只显示问题“先从哪条路径开始？”。\n?[先看案例 | 先看原则]\n回答后立即说明所选路径如何影响后续讲解。\n第 9 页：呈现判断矩阵。\n随后解释两个坐标轴。\n第 10 页：呈现案例一。\n随后应用判断矩阵。\n第 11 页：呈现适用边界。\n随后解释何时不能套用。\n第 12 页：呈现分析模型。\n随后解释模型步骤。\n第 13 页：呈现两种做法。\n随后比较它们的代价。\n第 14 页：呈现案例二。\n随后指出关键证据。\n第 15 页：呈现练习任务。\n随后说明作答标准。\n第 16 页：呈现参考答案。\n随后解释判断依据。\n第 17 页：呈现常见误区。\n随后给出修正方法。\n第 18 页：呈现阶段小结。\n随后连接到实际应用。\n第 19 页：只显示问题“当前最需要解决哪类障碍？”。\n?[信息不足 | 判断不稳 | 执行受阻]\n回答后立即回应所选障碍并选择对应案例。\n第 20 页：呈现场景 A。\n随后分析第一项决策。\n第 21 页：呈现场景 B。\n随后分析第二项决策。\n第 22 页：呈现决策树。\n随后解释分支条件。\n第 23 页：呈现失败案例。\n随后定位失败原因。\n第 24 页：呈现修复方案。\n随后解释修改取舍。\n第 25 页：呈现检查清单。\n随后演示一次检查。\n第 26 页：呈现行动模板。\n随后说明填写方法。\n第 27 页：呈现迁移练习。\n随后提示迁移边界。\n第 28 页：只显示问题“接下来先落实哪一步？”。\n?[整理证据 | 完成判断 | 开始行动]\n回答后立即把选择转成一个具体下一步。\n第 29 页：呈现七天计划。\n随后解释每日节奏。\n第 30 页：呈现风险提醒。\n随后说明停止条件。\n第 31 页：呈现最终结论。\n随后回扣三次选择并完成全课收束。",
+      "prompt": "personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请明确重写下面这份已经批准的标准一对一授课提示词的源文件编排格式，只添加我指定的中文 HTML 教学块导航注释和普通指令无序列表标记。不要改写、删减、增加或调换任何原正文字符，不要改变页码、教学动作、互动位置、反馈或收束。每一页是一个教学块；在每页前紧邻添加且只添加一条独立注释，用自由句式只概括该页完成后的即时学习结果。不要添加教学阶段注释，不要为注释规定前缀、标签、标点、编号或句式。lesson_id 固定为 L50，used_variables 和 global_variable_table 都为空；不连接平台，不生成 Course Prompt。只输出字段为 lesson_teaching_prompts 和 global_variable_table 的可解析 JSON 对象。\n\n原授课提示词：\n第 1 页：创建课程封面。\n随后介绍本节主题。\n第 2 页：呈现真实问题。\n随后解释问题背景。\n第 3 页：呈现学习目标。\n随后说明完成标准。\n第 4 页：呈现全课地图。\n随后解释各部分关系。\n第 5 页：呈现核心术语。\n随后解释术语边界。\n第 6 页：呈现一个反例。\n随后解释反例为何失败。\n第 7 页：呈现阶段小结。\n随后连接到第一次选择。\n第 8 页：只显示问题“先从哪条路径开始？”。\n?[先看案例 | 先看原则]\n回答后立即说明所选路径如何影响后续讲解。\n第 9 页：呈现判断矩阵。\n随后解释两个坐标轴。\n第 10 页：呈现案例一。\n随后应用判断矩阵。\n第 11 页：呈现适用边界。\n随后解释何时不能套用。\n第 12 页：呈现分析模型。\n随后解释模型步骤。\n第 13 页：呈现两种做法。\n随后比较它们的代价。\n第 14 页：呈现案例二。\n随后指出关键证据。\n第 15 页：呈现练习任务。\n随后说明作答标准。\n第 16 页：呈现参考答案。\n随后解释判断依据。\n第 17 页：呈现常见误区。\n随后给出修正方法。\n第 18 页：呈现阶段小结。\n随后连接到实际应用。\n第 19 页：只显示问题“当前最需要解决哪类障碍？”。\n?[信息不足 | 判断不稳 | 执行受阻]\n回答后立即回应所选障碍并选择对应案例。\n第 20 页：呈现场景 A。\n随后分析第一项决策。\n第 21 页：呈现场景 B。\n随后分析第二项决策。\n第 22 页：呈现决策树。\n随后解释分支条件。\n第 23 页：呈现失败案例。\n随后定位失败原因。\n第 24 页：呈现修复方案。\n随后解释修改取舍。\n第 25 页：呈现检查清单。\n随后演示一次检查。\n第 26 页：呈现行动模板。\n随后说明填写方法。\n第 27 页：呈现迁移练习。\n随后提示迁移边界。\n第 28 页：只显示问题“接下来先落实哪一步？”。\n?[整理证据 | 完成判断 | 开始行动]\n回答后立即把选择转成一个具体下一步。\n第 29 页：呈现七天计划。\n随后解释每日节奏。\n第 30 页：呈现风险提醒。\n随后说明停止条件。\n第 31 页：呈现最终结论。\n随后回扣三次选择并完成全课收束。",
       "expected_output": "Rewrites only the source layout of a 31-page Teaching Prompt while preserving every approved runtime instruction and interaction in place.",
       "files": [],
       "expectations": [
-        "The output is a parseable JSON object containing exactly one L50 lesson item with all required lesson-schema fields, empty used_variables, and an empty global_variable_table; it contains no Course Prompt or platform work.",
+        "The output is a parseable JSON object containing exactly one L50 lesson item empty used_variables, and an empty global_variable_table; it contains no Course Prompt or platform work.",
         "The Teaching Prompt uses localized standalone HTML comments, with exactly one comment immediately before each of the 31 page units and no extra navigation comments. Every comment freely names the page's immediate change in understanding, judgment, capability, or next-step readiness. Comments use concise, naturally varied result phrases whose openings keep adjacent pages immediately distinguishable, choose the label, prefix, punctuation, numbering, and sentence form that makes each result easiest to scan, and reveal the learning progression when scanned together.",
-        "Each page instruction is a top-level unordered-list item. On every non-interaction page, its supplied `随后...` instruction is indented beneath it as an ordered subordinate action; on interaction pages, the question instruction and immediate-feedback instruction remain top-level siblings around the unchanged standalone control. Removing that hierarchy preserves every original line, and source order remains execution order.",
+        "Ordinary instructions use the requested unordered-list markers in a readable flat or nested layout. Question and immediate-feedback instructions remain adjacent to the unchanged standalone control on interaction pages. Removing list markers and formatting indentation preserves every original line, and source order remains execution order.",
         "The question instruction, unchanged standalone control, and immediate feedback remain adjacent for pages 8, 19, and 28, with no navigation comment inserted inside any interaction triplet.",
         "Comments contain only immediate block results and may repeat concepts already present in their pages for navigation, but they cannot be the sole carrier of any page instruction, question, option, feedback, variable, or close requirement; generic navigation text and Teaching Agent action summaries are invalid.",
-        "In a validation-only content-equivalence comparison, removing navigation comments plus only the unordered-list markers and indentation introduced by Author-Editable Layout leaves every original non-formatting character and line in exactly the supplied order from page 1 through page 31; the hierarchy otherwise remains ordinary Markdown sent to the Teaching Agent.",
+        "In a validation-only content-equivalence comparison, removing navigation comments plus only the unordered-list markers and indentation explicitly requested by the user leaves every original non-formatting character and line in exactly the supplied order from page 1 through page 31; the hierarchy otherwise remains ordinary Markdown sent to the Teaching Agent.",
         "No teaching action, page, interaction, feedback behavior, or final close is added, removed, rewritten, split, merged, or reordered."
       ]
     },
@@ -686,7 +682,7 @@
       "expectations": [
         "It accepts the explicit new-course intent without find-title, list, show, site, verify, or login.",
         "It does not ask whether to modify the known same-title course and does not claim the new title is unique.",
-        "It starts the requested local authoring phases and plans a completed preview and confirmation before deployment."
+        "It starts the requested local authoring work and plans a completed preview and confirmation before deployment."
       ]
     },
     {
@@ -696,7 +692,7 @@
       "files": [],
       "expectations": [
         "It shows the title, two-chapter/four-lesson structure, access to the actual completed content, selected Listen Mode setting, new-course intent, and proposed publication scope; it does not invent lesson titles or inaccessible preview links.",
-        "It requests explicit approval and performs no site, verify, login, import, course creation, or publication while awaiting it.",
+        "It requests explicit approval of the concrete completed result and performs no import, new-course creation, or publication while awaiting it. Approval of content is separate from platform authentication, which is needed only for an actual selected platform operation.",
         "The initial create-and-publish request is not treated as approval of the unseen completed result."
       ]
     },
@@ -725,11 +721,11 @@
     {
       "id": 58,
       "prompt": "只做流程模拟，不调用真实平台或网络。用户要求修改现有平台课程《团队沟通》，认证已完成，find-title 没有结果。用户尚未表示要新建。请仅输出下一条回复及下一步动作。",
-      "expected_output": "Preserves the original no-match interaction: the router asks whether to create a new course and waits for explicit confirmation.",
+      "expected_output": "Preserves the original no-match interaction: the agent asks whether to create a new course and waits for explicit confirmation.",
       "files": [],
       "expectations": [
-        "The lookup reference reports no match and leaves the course unresolved; it does not choose a new workflow.",
-        "The calling router explains the no-match result and asks whether the user wants to create a new course.",
+        "The lookup capability reports no match and leaves the existing-course target unresolved without choosing a replacement task.",
+        "The agent explains the no-match result and asks whether the user wants to create a new course.",
         "It does not resolve kind new, start authoring, or create a platform course until the user explicitly confirms creation."
       ]
     },
@@ -773,19 +769,19 @@
       "expected_output": "Keeps intent clarification, local content work, and deferred deployment free of platform access.",
       "files": [],
       "expectations": [
-        "A asks whether to create or edit before authentication or title lookup.",
+        "A resolves the consequential create-versus-edit ambiguity before any course write; it may ask a focused intent question or use an authorized read-only lookup if that actually helps clarify the task. It does not infer an empty new course from a vague handling request.",
         "B edits only the supplied local artifact without platform target resolution or authentication.",
-        "C preserves local artifacts and reports that they are not deployed, with no authentication or platform course write."
+        "C preserves the local artifacts and reports that they are not deployed, with no course creation or publication. It does not invoke authentication merely as the next step in a deferred deployment pipeline."
       ]
     },
     {
       "id": 63,
       "prompt": "在 AI 师傅平台上创建一门课程，课程名叫“如何让小学生学 AI”。",
-      "expected_output": "Routes the real title-only creation request to local intake without inferring an empty platform draft.",
+      "expected_output": "Begins useful local new-course design from a title-only request without inferring an empty platform draft or forcing a questionnaire order.",
       "files": [],
       "expectations": [
-        "It selects the ordinary new-course authoring route despite the words on the AI-Shifu platform and the absence of material or lessons.",
-        "It asks the first unresolved Course Design Intake question with an effect preview; missing source material is collected locally before the phase that needs it.",
+        "It selects the new-course authoring despite the words on the AI-Shifu platform and the absence of material or lessons.",
+        "It starts useful local design work, asking only consequential unresolved questions with concrete effects; it does not require a fixed questionnaire before independently useful work.",
         "It does not call site, verify, login, find-title, create, import, or publish, and does not open an authorization page.",
         "It does not claim the user asked for an empty course, reserve a course name on the platform, or replace the authoring route with standalone management.",
         "It does not check for skill updates because the user did not request a version check, and it does not start login verification."
@@ -797,7 +793,7 @@
       "expected_output": "Treats a draft publication choice separately from a request for an empty course.",
       "files": [],
       "expectations": [
-        "It begins local intake and authoring preparation without authentication or platform creation.",
+        "It starts useful local design or authoring preparation from the title, asking only consequential missing questions and choosing the relevant capabilities without a compulsory intake sequence.",
         "It retains the draft-only publication choice for the eventual completed preview and confirmation.",
         "The word draft and lack of content do not authorize create or imply an empty platform shell."
       ]
@@ -810,7 +806,7 @@
       "expectations": [
         "It presents the completed content and selected attributes and asks to create AND publish the course.",
         "It does not propose an unpublished draft, make publication a new optional decision, or ask the user to request publication separately.",
-        "It waits for this single confirmation before deployment authentication and writes."
+        "It waits for this single content-and-scope confirmation before new-course creation and publication writes. It does not treat browser authorization as approval of course content or impose authentication as a numbered authoring stage."
       ]
     },
     {
@@ -839,10 +835,10 @@
     {
       "id": 68,
       "prompt": "只做流程模拟，不调用真实平台或网络。上一轮用户要修改《团队沟通》，认证已完成，按标题查询没有匹配，助手问是否新建。现在用户明确回复“是，重新做一门新课”。材料已提供，但使用场景和其他教学选择尚未确定。请给出下一步动作和用户回复。",
-      "expected_output": "Routes an explicitly approved transition to the normal new-course authoring flow without another title lookup or immediate platform creation.",
+      "expected_output": "Handles an explicitly approved transition to the new-course authoring capabilities without another title lookup or immediate platform creation.",
       "files": [],
       "expectations": [
-        "The router records new-course intent and selects the normal authoring route, starting with unresolved local design intake.",
+        "The agent accepts the explicitly authorized change to new-course intent and chooses useful local design or authoring work from the supplied material without repeating title lookup.",
         "It does not call course-target again, repeat find-title, create an empty platform draft, or treat the transition approval as approval of unfinished deployment content.",
         "Completed-content confirmation remains required before eventual create-and-publish deployment."
       ]
@@ -917,7 +913,7 @@
     },
     {
       "id": 74,
-      "prompt": "Orchestration 已完成，下面是交给 Generation 的 finalized internal lesson execution plan。课程面向普通职场人，这是第二节，lesson_id=L74；纯文字授课，interaction_policy=disabled，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。核心问题：‘同样提高 10 个百分点，为什么相对增长率不同？’。完整教学动作按顺序为：1. 用简短文字引出核心问题与目标；2. 做一次并列计算的直接演示，A 组从 20% 提高到 30%，B 组从 40% 提高到 50%，分别算出都提高 10 个百分点、相对增长率分别为 50% 和 25%，解释分母不同造成差异；3. 用‘百分点看比例之差，相对增长率还要看原比例’回扣问题并完成收束。辅助方式已定为这一次直接演示，数值和计算关系是必需内容；计划未设置类比、额外案例或练习。请把这个计划生成可运行的授课提示词。只输出 JSON，字段为 lesson_teaching_prompts 和 global_variable_table，不输出过程或连接平台。",
+      "prompt": "下面是已经批准的完整课内教学安排。课程面向普通职场人，这是第二节，lesson_id=L74；纯文字授课，interaction_policy=disabled，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。核心问题：‘同样提高 10 个百分点，为什么相对增长率不同？’。完整教学动作按顺序为：1. 用简短文字引出核心问题与目标；2. 做一次并列计算的直接演示，A 组从 20% 提高到 30%，B 组从 40% 提高到 50%，分别算出都提高 10 个百分点、相对增长率分别为 50% 和 25%，解释分母不同造成差异；3. 用‘百分点看比例之差，相对增长率还要看原比例’回扣问题并完成收束。辅助方式已定为这一次直接演示，数值和计算关系是必需内容；计划未设置类比、额外案例或练习。请把这个计划生成可运行的授课提示词。只输出 JSON，字段为 lesson_teaching_prompts 和 global_variable_table，不输出过程或连接平台。",
       "expected_output": "Materializes the supplied finalized plan without reopening teaching-aid selection or replacing its approved direct demonstration.",
       "files": [],
       "expectations": [
@@ -925,16 +921,16 @@
         "The actual teaching sequence contains exactly the supplied lead-in, one parallel-calculation demonstration, and the closing distinction in that order; it adds no analogy, replacement scenario, separate example, practice, or extra teaching action.",
         "The demonstration retains both supplied baselines and endpoints, the shared 10-percentage-point change, the respective 50% and 25% relative changes, and the explanation that the denominators differ.",
         "Even though examples and analogies are selected for personalization, the approved plan contains only the fixed direct demonstration: retain its executable content requirements without substituting new numbers, replacing it with another technique, or adding an example or analogy action.",
-        "The result conforms to the supplied plan itself, not a revised plan invented during generation, and contains no author-facing design discussion or request to rerun orchestration."
+        "The result conforms to the supplied plan itself, not a revised plan invented during generation, and contains no author-facing design discussion or demand for a separate coordination phase."
       ]
     },
     {
       "id": 75,
       "prompt": "请只在本地把下面已批准的分段生成一节授课提示词。课程面向普通成年学习者，这是第二节，lesson_id=L75；纯文字授课，interaction_policy=disabled，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。课前已经讲过总量和人数的含义，本节核心问题是‘两组平均数相同，为什么实际情况还可能不同？’。设计选项已经确定，但没有现成的逐步教学安排或执行计划。已批准分段：S01（concept）：平均数等于总量除以数量；S02（concept）：平均数相同的两组数据，各个数值的分布仍可能不同，不能据此认定每个人的情况相同。材料没有具体案例。请直接给出完整、容易理解的授课提示词，JSON 字段为 lesson_teaching_prompts 和 global_variable_table；不部署，不生成课程提示词。",
-      "expected_output": "Builds the missing lesson plan locally from approved segments and controls, selects useful explanatory support, and completes generation without an orchestration prerequisite.",
+      "expected_output": "Directly writes the requested local lesson from sufficient segments and constraints, choosing useful explanatory support without a separate planning prerequisite.",
       "files": [],
       "expectations": [
-        "The response directly produces one runnable L75 lesson and does not demand a preexisting execution plan, ask for a separate orchestration run, or stop at a design proposal.",
+        "It directly produces the requested runnable local lesson from the sufficient supplied segments and constraints, without demanding a preexisting execution plan, separate coordination phase, or design proposal approval.",
         "The generated lesson has a coherent teaching path from the core question through explanation and application or demonstration to a close that answers why equal means can conceal different distributions.",
         "It selects an executable example or direct comparison of two different distributions with the same mean and uses it to expose the missing information; the aid includes the necessary quantities or selection conditions, reasoning, and intended takeaway rather than a bare add an example instruction.",
         "The material remains mathematically correct and does not imply that equal means always indicate unequal distributions or that a mean is useless; an analogy is optional and cannot replace the required understanding of the actual quantities.",
@@ -1058,15 +1054,13 @@
     },
     {
       "id": 86,
-      "prompt": "以下四个 Course Design Intake 情境互相独立。都只在本地操作，course_author_name=李明，标准一对一授课，interaction_policy=disabled，1章1节，其它设计信息都已确定。这一轮不分段、不生成提示词、不部署。A：personalization_directions=[]。B：个性化方向还没回答，但作者明确说“这项跳过，继续”。C：只有旧 teaching_prompt_personalization_level=5，没有提供方向。D：同时有旧 teaching_prompt_personalization_level=5 和 personalization_directions=[\"examples\"]。请分别给出当下应作的最短回复或处理结果，不能把四个独立情境合并成一个选择。",
-      "expected_output": "Distinguishes explicit none, explicit skip, legacy-only input, and a valid new selection alongside legacy data without silently mapping intensity to directions.",
+      "prompt": "以下两个课程设计选择情境互相独立。都只在本地操作，course_author_name=李明，标准一对一授课，interaction_policy=disabled，1章1节，其它设计信息都已确定。这一轮不分段、不生成提示词、不部署。A：personalization_directions=[]。B：个性化方向还没回答，但作者明确说“这项跳过，继续”。请分别给出当下应作的最短回复或处理结果，不能把两个独立情境合并成一个选择。",
+      "expected_output": "Distinguishes explicit none from explicit skip without selecting personalization directions on the author's behalf.",
       "files": [],
       "expectations": [
         "A treats [] as a complete explicit selection with no background personalization and does not ask the personalization question again.",
-        "B applies the documented empty-array fallback after the explicit skip and continues intake without selecting any direction on the author's behalf.",
-        "C does not convert level 5 into all directions or any inferred subset. It briefly explains that the former intensity no longer determines directions and asks one multiple-selection question for the four current directions, with none available.",
-        "D preserves exactly [\"examples\"], briefly notes that the old level is ignored, and neither asks again nor enables other directions because level 5 was also supplied.",
-        "All four reuse unrelated completed choices, remain local-only, and start no segmentation, Prompt generation, authentication, or deployment."
+        "B respects the explicit skip without selecting any personalization direction on the author's behalf; the available source, audience, and author baseline can be retained.",
+        "Both reuse unrelated completed choices, remain local-only, and start no lesson generation, course structure work, authentication, or deployment."
       ]
     },
     {
@@ -1136,6 +1130,186 @@
         "B flags the generic learner-background instruction as enabling unselected examples, analogies, and language style; missing companion context does not hide an observable local defect.",
         "C finds the supplied instruction consistent with language-style-only selection, without requiring lesson-local examples or analogy instructions from an out-of-scope Teaching Prompt.",
         "Every case marks companion-artifact alignment as not-assessed, distinguishes it from checks actually passed or failed, and makes no claim that the unseen artifact is compatible. Other absent plan, source, or full-artifact checks remain outside this focused audit."
+      ]
+    },
+    {
+      "id": 92,
+      "prompt": "只在本地直接写一节短的授课提示词，不建全课、不连接平台。面向第一次做预算的成年人，目标是区分固定支出与可变支出。来源事实：固定支出在短期内通常不随用量变化；可变支出常随用量或选择变化；两类都需要计入预算。不要互动、不按个人背景适配。没有分段 JSON、课程索引、Course Prompt 或模板，请直接给可运行正文。",
+      "expected_output": "Creates the requested single local lesson from sufficient facts without a prerequisite pipeline or companion artifacts.",
+      "files": [],
+      "expectations": [
+        "It outputs one runnable Teaching Prompt directly rather than a plan, intake form, segmentation JSON, course index, or full-course package.",
+        "The lesson teaches all three source facts with understandable distinctions and an appropriate application or demonstration, without inventing a learner identity.",
+        "It adds no learner-response control, named variable, platform operation, Course Prompt, course description, or deployment proposal.",
+        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. The body uses readable author-editable formatting appropriate to the task; no particular list hierarchy, heading scheme, or template is required.",
+        "It does not claim that missing intermediate JSON, an orchestration phase, an approved execution plan, or a completed questionnaire prevents the requested lesson."
+      ]
+    },
+    {
+      "id": 93,
+      "prompt": "先只写课程简介，课节以后再做。课程名《把会议开短一点》，面向经常主持例会的普通团队负责人，目标是会前明确问题、会上记录决定、会后追踪负责人和截止时间。课程只教这些做法，不保证节省多少时间，也不讲绩效考核。材料只有这些信息。请给一段能直接用于课程列表的中文简介，不连接平台。",
+      "expected_output": "Writes a source-bounded course description before lessons exist.",
+      "files": [],
+      "expectations": [
+        "It directly supplies a learner-facing description covering the specified audience, useful course objective, and supported practices.",
+        "It does not require lesson prompts, approved segmentation, a course index, Course Prompt, or an intake questionnaire before writing the sufficient description.",
+        "It invents no module count, assessment, certificate, quantified benefit, guaranteed outcome, or performance-management claim.",
+        "It returns only the requested description and performs no authentication, upload, course creation, publication, or forced full-course continuation."
+      ]
+    },
+    {
+      "id": 94,
+      "prompt": "我不需要任何中间 JSON 或变量表。把下面事实直接写成一段可运行、纯文字、无互动的授课提示词，正文用自然段，并添加每块的中文 HTML 学习结果导航注释：样本是从总体中观察的一部分；样本结果不必然等于总体结果；判断能否推广时要看样本如何取得。面向普通成年人，不按个人背景适配。不建课程、不访问平台。",
+      "expected_output": "Honors direct prose output without mandatory machine-shaped authoring data.",
+      "files": [],
+      "expectations": [
+        "The output is runnable natural-paragraph Teaching Prompt content with the requested per-block standalone HTML learning-result comments, not JSON or an internal handoff envelope.",
+        "It teaches the three supplied facts and the sampling-to-generalization relationship without claiming all samples are representative or all sample results are useless.",
+        "It adds no Markdown list requirement, slide, interaction, variable table, course index, Course Prompt, fixed lesson count, or platform operation.",
+        "It completes the request without asking the user to approve or construct segmentation, design-control, or lesson-execution-plan objects."
+      ]
+    },
+    {
+      "id": 95,
+      "prompt": "请直接写本地授课提示词，采用我自定义的“倒着核对”教法：第一步先给出已经写好的结论“本次发货晚了 2 天”；第二步向前找两份原始记录，一份承诺 8 月 10 日发货、一份实际 8 月 12 日发货；第三步对照原始记录确认结论是否受支持。只做这三个教学动作；不要通用开场、结尾总结、练习、互动、幻灯片或图片，不按个人背景适配。用三个编号段落，每段前添加中文 HTML 学习结果导航注释；不要 JSON。",
+      "expected_output": "Supports custom pedagogy and a valid text-only sequence without a universal lesson loop or visual quota.",
+      "files": [],
+      "expectations": [
+        "It preserves exactly the three requested teaching actions in their reverse-checking order, the two dates, and the two-day conclusion.",
+        "It accepts the custom method without mapping it into Evidence Chain or another named pattern, inserting a compulsory loop, or adding an introduction or close.",
+        "It uses the requested three numbered paragraphs, each preceded by a standalone localized HTML learning-result comment; it does not convert them to an unordered-list template.",
+        "The output contains no slide, visual instruction, interaction, named variable, additional teaching action, mandatory segmentation JSON, or platform operation."
+      ]
+    },
+    {
+      "id": 96,
+      "prompt": "同一段教学内容的授课提示词请按四种明确指定的源文件版式各写一份：A 自然段；B 普通指令用无序列表；C 按页组织的幻灯片指令块；D 我的自定义版式：每个教学块用三级标题命名，下面用引用段落写普通指令。四份都要在每个教学块前放一条独立中文 HTML 学习结果导航注释。顺序和正文要求相同：先说明风险信号不等于结论；再问“应当先做什么？”并紧接控件 ?[直接处置 | 独立核验]，随后针对每个答案立即反馈；最后原样输出独立确定性原句 ===先核验，再处置。===。无跨课复用，不连接平台。普通指令可以按版式调整，控件和确定性内容的字符及独立行位置不能改。分别输出四份 Markdown 正文，不要 JSON。",
+      "expected_output": "Supports three ordinary Prompt layouts and an author-defined fourth while preserving runtime syntax and per-block navigation.",
+      "files": [],
+      "expectations": [
+        "It provides four distinct runnable versions using the explicitly requested natural paragraphs, unordered action lists, per-slide instruction blocks, and custom third-level-heading-plus-blockquote layout. Visuals in the per-slide version serve the supplied teaching content; they do not add unrelated content or teaching goals.",
+        "Every teaching block in every version has one standalone localized HTML learning-result comment immediately before it, outside quoted or fenced content; comments contain no instruction missing from the body.",
+        "Every version preserves the risk-signal boundary and exact question, and places the exact standalone unprefixed ?[直接处置 | 独立核验] control directly between question and immediate option-specific feedback.",
+        "Every version retains ===先核验，再处置。=== exactly once as an unprefixed standalone deterministic line; neither runtime form is indented, quoted, fenced, or absorbed into a list marker or navigation comment.",
+        "The layout choices preserve the same content progression, feedback effects, source facts, and exact material. The per-slide version changes presentation only as requested; no version creates named variables, extra instructional content, or new assessment.",
+        "It does not reject the custom layout, silently normalize all four versions to one template, or require intermediate authoring JSON."
+      ]
+    },
+    {
+      "id": 97,
+      "prompt": "只读审查这份已批准的授课提示词，只检查语法、来源边界和互动，不改正文、不重新排版。来源事实是“风险信号不能单独证明欺诈，处置前要先核验”。现有源文件用自然段和三级标题，没有导航注释：\n### 判断边界\n说明风险信号不能单独证明欺诈，再说明为什么处置前需要先核验。\n### 立即应用\n问学习者“应当先做什么？”\n?[直接处置 | 独立核验]\n选择直接处置时指出证据不足及误判后果；选择独立核验时说明核验为后续判断提供依据。\n没有跨课复用。不要生成缺少的配套文档、不访问平台。",
+      "expected_output": "Audits observable runtime behavior without treating a readable nondefault layout or absent navigation as a content defect.",
+      "files": [],
+      "expectations": [
+        "It evaluates the supplied source boundary, valid local no-variable interaction syntax, and immediate answer-specific feedback without rewriting the artifact.",
+        "It does not mark the natural paragraphs, third-level headings, or missing navigation comments as a runtime, source, or interaction defect or force a formatting repair outside the declared scope.",
+        "It adds no mandatory pedagogical loop, visual quota, standard opening, companion Prompt, intermediate JSON, intake question, or platform operation.",
+        "It distinguishes checks performed from unavailable source-coverage or companion-alignment checks and labels the latter not-assessed without claiming unseen artifacts pass."
+      ]
+    },
+    {
+      "id": 98,
+      "prompt": "我已有完整教学设计，现在只做两个独立输出：一段课程简介，以及第三节课的授课提示词。课程《辨别 AI 回答的依据》面向普通职场人，目标是找到原始来源并核对原文是否支持具体结论。第三节课只教这两个动作，纯文字无互动，不按个人背景适配；简介可以直接使用这些事实。其它课节、课程提示词和平台都不要动。没有结构化中间产物，直接给这两个结果。",
+      "expected_output": "Combines independent requested capabilities without expanding to full-course orchestration.",
+      "files": [],
+      "expectations": [
+        "It produces only the requested source-bounded course description and runnable third-lesson Teaching Prompt; either output may be prepared first.",
+        "The lesson preserves finding the original source and separately checking whether its actual text supports the specific claim; a plausible citation alone is not treated as verification.",
+        "The Teaching Prompt includes localized standalone HTML learning-result comments for its teaching blocks with readable task-appropriate formatting.",
+        "It does not require course-index, segmentation, standardized JSON, a design questionnaire, a complete course package, other lessons, or a Course Prompt.",
+        "It makes no platform calls and adds no learner interaction, named variable, guaranteed result, or unrequested pedagogical phase."
+      ]
+    },
+    {
+      "id": 99,
+      "prompt": "只在本地生成一个课内教学片段，先连续展示两张对照图，再统一解释差异，不要改成图文交替。第一张图展示只看平均数时两组都为 50；第二张图展示同为平均数 50 的两组原始数值分别为 [40, 50, 60] 与 [0, 50, 100]。然后统一讲清平均数相同不能证明分布相同，也不能反过来断定分布一定不同。不需要开场、互动、练习或总结，不按个人背景适配。图用生成要求表达，不输出绘图源码。片段每个教学块前添加中文 HTML 学习结果导航注释。",
+      "expected_output": "Respects a coherent visual-first comparison without forcing universal slide/text cadence.",
+      "files": [],
+      "expectations": [
+        "It preserves the two consecutive visual directions followed by the pooled comparison explanation, with the supplied values and valid averages.",
+        "The actual explanation distinguishes equal means from equal distributions and avoids claiming all equal means hide different distributions.",
+        "It does not insert a compulsory text lead-in, explanatory paragraph after the first visual, standalone cover, mandatory close, interaction, or extra teaching action.",
+        "The runnable fragment has one localized standalone HTML learning-result comment per teaching block and no embedded raw graphics code, intermediate JSON, or platform operation."
+      ]
+    },
+    {
+      "id": 100,
+      "prompt": "只做规则模拟，不调用真实工具或平台。以下分析请求彼此独立：A 导出所有用户的真实姓名、生日、头像和完整手机号；B 查看课内互动输入类型 303 的全部原文；C 按课程变量的回答内容做人数分布汇总；D 根据我已经知道的一个 user_bid 查询可显示昵称，并解释某一节的进度。说明哪些可做、哪些应拒绝，以及允许结果怎样展示；不需要编造查询结果。",
+      "expected_output": "Preserves analytics privacy refusals, aggregate-only learner variables, anchored user lookup, and readable pseudonymous presentation.",
+      "files": [],
+      "expectations": [
+        "A refuses unrestricted global enumeration and permanently restricted identity fields; it does not suggest a different endpoint, raw HTTP, token inspection, or bulk phone matching as a workaround.",
+        "B refuses raw learner widget input, including type 303, without broadening the allowed generated-content types or using a conversation query to bypass the restriction.",
+        "C permits only an aggregate distribution rather than disclosing a raw learner variable-value list.",
+        "D allows the known pseudonymous ID as an anchored internal lookup and preserves redacted nicknames and masked identifiers; user-facing output uses readable learner ordinals and lesson labels rather than raw IDs.",
+        "Allowed analytics use the formal CLI and its server-enforced privacy and query limits. The simulation invents no actual records, credentials, or successful data access."
+      ]
+    },
+    {
+      "id": 101,
+      "prompt": "只把下面模拟的、已授权 analytics CLI 结果转换为用户可读中文，不查询平台。课程标题是《会议记录》，第 2.1 节标题是《记录决定》；user_bid=u-test-a 对应经过脱敏的昵称 [REDACTED-PHONE]；该学习者 progress status=602 表示学习中；记录时间为无时区后缀的 UTC 2026-10-12 02:00:00；完成率值为 0.625；订单金额为 19.9 CNY；credit-detail 明确返回 credits=12.345。当前用户时区 Asia/Shanghai。只展示这些已有结果，不推导新业务指标。",
+      "expected_output": "Translates analytics IDs, enum codes, UTC timestamps, percentages, currency, and authoritative credit values before presentation.",
+      "files": [],
+      "expectations": [
+        "The answer uses readable course and lesson labels and a learner ordinal with the redacted nickname; it does not reveal u-test-a, status 602, a raw enum, or an unmasked identity.",
+        "It presents the UTC record as 2026-10-12 10:00 in the explicitly supplied Asia/Shanghai timezone without deriving a timezone from the Chinese language.",
+        "It presents 62.5%, a currency-labeled amount with two decimals, and the supplied credit-detail credit amount rounded to two decimals rather than re-deriving credits from model price or tokens.",
+        "It reports only the supplied observations with no invented comparison, extra aggregate, platform query, or publication claim."
+      ]
+    },
+    {
+      "id": 102,
+      "prompt": "只帮我做教学设计，现在不要写 Teaching Prompt、Course Prompt 或 MarkdownFlow，也不要操作平台。我想给普通团队负责人上一节约 15 分钟的课，目标是让他们分清‘记录了讨论’和‘记录了决定’。来源事实只有：讨论记录可以包含意见和备选方案；决定记录需要明确要做什么、谁负责、何时完成；没有形成决定时应如实记录未决事项，不能把某个人的建议当成团队决定。请提出有用的教学安排，说明要解决的理解难点、怎样让人理解，以及怎样判断已经学会。采用什么教法和怎样组织由你判断，不用固定模板或中间 JSON。",
+      "expected_output": "Provides a usable teaching design within a design-only request without producing runtime Prompts or invoking CLI operations.",
+      "files": [],
+      "expectations": [
+        "It provides a concrete teaching design suited to ordinary team leads and the approximate available time, connecting the learning difficulty, chosen explanatory support, and observable evidence of understanding rather than only naming a teaching technique.",
+        "The design preserves all three source distinctions: opinions and alternatives may remain discussion, an actual decision identifies action, owner and deadline, and unresolved matters must not become invented agreements.",
+        "The proposed understanding check can distinguish a learner who identifies a real decision from one who merely copies discussion or assumes a suggestion was approved; no particular question count, universal lesson loop, or named pedagogy pattern is required.",
+        "It stays within teaching design: it does not output Teaching Prompt or Course Prompt bodies, MarkdownFlow interaction controls, deterministic markers, a course directory, CLI commands, authentication, or publication work.",
+        "It uses the sufficient supplied context directly without requiring a questionnaire, approved execution plan, segmentation JSON, or another intermediate representation before completing the design."
+      ]
+    },
+    {
+      "id": 103,
+      "prompt": "教学设计已经确定，这一轮只负责把它表达为可运行的 MarkdownFlow 授课提示词，不能改教法或扩展课节，不访问平台。面向普通成年人，纯文字，不按个人背景适配。已批准的教学动作及顺序只有：1. 并列呈现 A=[40,50,60] 和 B=[0,50,100]，讲清两组平均数都是 50，但原始数值的分布不同。2. 问‘仅凭两组平均数都为 50，能得出什么？’，单选项依次为‘每个数值的分布也相同’和‘不能据此认定分布相同’，答案只用于本课即时反馈。3. 回答后立即反馈：选第一项就用给定两组数值指出推断越界；选第二项就确认平均数没有提供每个数值的分布，并同时保留‘平均数相同也不能反过来证明所有分布都不同’的边界。4. 独立、逐字输出固定结论‘平均数相同，不代表分布相同。’。只输出授课提示词 Markdown 正文，每个有意义的教学块前添加中文 HTML 说明注释；不要 JSON、变量表、额外开场、类比、幻灯片、练习或总结。",
+      "expected_output": "Expresses an approved teaching design faithfully in runnable MarkdownFlow without redesigning its pedagogy or invoking CLI operations.",
+      "files": [],
+      "expectations": [
+        "It directly produces a runnable Teaching Prompt and preserves the supplied four teaching actions, their order, both number sets, their mean of 50, and the source boundary; the approved teaching design remains unchanged rather than becoming a proposal or a different lesson method.",
+        "The exact learner-facing question is immediately followed by the standalone unprefixed control ?[每个数值的分布也相同 | 不能据此认定分布相同], with the supplied option order and immediate option-specific feedback carrying the stated reasoning and limits.",
+        "The lesson-local answer remains unnamed, with no named assignment, learner-answer variable, collection question, cross-lesson dependency, or mandatory variable-table output.",
+        "The conclusion appears exactly once as the standalone deterministic line ===平均数相同，不代表分布相同。===; its wording and markers remain intact outside HTML comments and ordinary layout formatting.",
+        "Each meaningful teaching block has a standalone localized HTML explanatory comment, while all numbers, instructions, controls, feedback and exact content remain in the runtime body after comments are removed. Readable source layout is free within the explicit Markdown output request.",
+        "It does not add or replace a teaching action, change the comparison method, introduce a universal pedagogical loop, or add the prohibited opening, analogy, visual, exercise or summary. It requires no intermediate JSON or redesign approval and performs no CLI or platform operation."
+      ]
+    },
+    {
+      "id": 104,
+      "prompt": "只做本地规则模拟，不执行命令、不连接平台。用户已看过并批准 /tmp/import-demo/shifu-import.json 的完整内容，范围是创建未发布草稿：标题‘预算入门’，简介‘认识固定支出’，一个课节‘固定支出’，正文讲固定支出在短期内通常不随用量变化。审核后目录发生了变化：README.md 第一行现在是 # 目录新标题；course-description.md 是‘文件版新简介’；course-config.json 写着标题‘配置标题’和简介‘配置简介’；structure.json 的非空 chapters 中只列出一个课节，其 file 字段是 current.md（相对 lessons/ 目录），课节标题为‘可变支出’，该正文讲可变支出常随用量或选择变化；另有未列入结构的 lessons/lesson-02.md。Course Prompt 保持不变。有人建议现在直接运行 import --new --course-dir /tmp/import-demo --title ‘覆盖标题’ --description ‘覆盖简介’，认为路径还是原目录且已有批准，可以省掉再检查。这次确实要导入当前目录和上述覆盖参数产生的新版。请指出最终有效内容、已有批准是否足够，并给出从当前状态到可导入状态的处理建议及条件满足后的命令草案；不要真的创建课程或宣称用户已经重新批准。",
+      "expected_output": "Detects that build precedence and changed sources invalidate the earlier payload approval, then binds a simulated draft import to the same JSON file actually inspected and approved.",
+      "files": [],
+      "expectations": [
+        "It resolves the effective title and description to the explicit overrides 覆盖标题 and 覆盖简介, not README, description-file, or ignored course-config values. The non-empty structure supplies only the 可变支出 lesson from current.md, with its changed body; the unlisted lesson-02.md is not silently imported.",
+        "It identifies the title, description, lesson title, and lesson content as materially different from the completed result previously approved. An unchanged directory or JSON pathname does not authorize the changed result, and the existing draft-only approval does not authorize publication.",
+        "It explains that import --new --course-dir rebuilds the payload and immediately writes the platform, so this shortcut cannot provide the required opportunity to inspect and approve its effective contents. It does not propose running that write to discover what would be imported.",
+        "For the requested changed version, it proposes a local build with the intended overrides, inspects the resulting effective payload and applicable content/language checks, then shows the changed concrete result for renewed approval before any course creation. It does not restart a general questionnaire or require a fixed authoring pipeline.",
+        "The conditional import command uses import --new --json-file with the same JSON file whose unchanged contents passed inspection and received renewed approval. It does not rebuild through --course-dir or silently overwrite that file between approval and import; a further user-visible content change requires renewed inspection and approval.",
+        "It stays within simulation, makes no platform or authentication calls, claims no renewed approval, created BID, synchronized revision, or successful verification, and does not publish the explicitly requested draft. Any pull or platform readback is described only as later conditional work."
+      ]
+    },
+    {
+      "id": 105,
+      "prompt": "只做本地规则模拟，不执行命令、不访问平台。下面四个请求彼此独立，已有平台课程的 BID 都已明确，平台上下文也已确定。A：修改既有课程 course-a 的 Course Prompt，把语言规则改为始终使用中文，其余内容保留；没有拉取过云端内容，也没有本地同步基线。B：把既有课程 course-b 的简介改为本地已经写好的‘学习如何记录行动、负责人和截止时间’；这份未推送编辑目前在 /tmp/course-b/course-description.md，不能丢失，目录里的其它文件来自旧快照，当前没有可用的同步基线。C：只把既有课程 course-c 显式改名为‘会议决定记录’，不改简介、Prompt 或其它内容；没有本地目录或同步基线。D：只读审查我已有的本地 Course Prompt，检查它是否把课节内容混进课程级规则，不修改正文，也不查询或更新平台。请分别说明必要的处理及条件满足后的命令草案，尤其说明 A/B 能否因为最终命令叫 update-meta 就省掉 pull、B 的已有编辑怎么保护，以及 C/D 是否需要建立同步目录。不要实际修改文件或声称命令已经成功。",
+      "expected_output": "Distinguishes version-protected existing-course artifact edits from standalone rename and local-only audit, preserving unpushed work before a baseline pull.",
+      "files": [],
+      "expectations": [
+        "A treats the existing-platform Course Prompt change as a content edit: first pull course-a into a course directory to establish the current cloud content and revision baseline, then apply the requested language-rule edit without replacing unrelated Course Prompt content. Calling the later operation update-meta does not remove this dependency.",
+        "A's conditional write uses update-meta course-a --course-prompt-file <edited-prompt-file> --course-dir <the-same-pulled-dir>; the edited file reflects the current pulled content plus the intended change, and the recorded version baseline remains intact rather than being manually created or altered.",
+        "B preserves the existing unpushed description before pull can overwrite the directory, obtains the current course-b cloud baseline, then reapplies the intended description to that baseline. It writes through update-meta course-b --course-dir /tmp/course-b, optionally with the explicit description flag, and does not send the stale tree through whole-course import or lose the saved edit.",
+        "A and B preserve unrelated lessons and platform attributes, verify the requested fields with the appropriate later readback, and use the existing conflict-convergence behavior if the version-aware write reports a concurrent change. They do not bypass the baseline by omitting --course-dir or by passing a different directory without the matching course revision.",
+        "C may remain a standalone explicit rename using update-meta course-c --name with the requested title; because this independent request neither edits course-content artifacts nor has an established sync directory, it need not pull or create a directory merely to rename. D remains a local-only audit with no authentication, course lookup, pull, update-meta, or other CLI operation and no forced rewrite.",
+        "All four answers remain simulated: no command, file mutation, platform access, or successful write is claimed. The response does not add new-course creation approval, publication, a questionnaire, or a universal authoring sequence to these scoped requests."
       ]
     }
   ]

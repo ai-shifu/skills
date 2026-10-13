@@ -6,7 +6,7 @@
 
 ## 包含的 Skills
 
-- **AI-Shifu Course Creator（AI 师傅课程创作器）**：通过五阶段流水线（分段、编排、生成、优化、部署）将原始课程素材转换为优化后的可运行 MarkdownFlow 授课脚本，并部署为 AI 师傅平台上的在线课程。
+- **AI-Shifu Course Creator（AI 师傅课程创作器）**：按教学设计、MarkdownFlow 表达、CLI 操作三类提供课程创作、编辑、审查、发布、管理和分析能力，由智能体按任务自主选择与组合。
 - **AI-Shifu Learning Report（AI 师傅学习报告）**：分析单门 AI 师傅课程，为教学管理者和老师生成脱敏的 `course-learning-report.json`，以及美观、自包含、可打印的 `course-learning-report.html`。
 - **Course Direction Advisor（课程选题顾问）**：将素材转化为基于证据的、市场适配的课程选题决策，包含竞品分析、定价建议和 GO/HOLD/REWORK/NO-GO 推荐。
 
@@ -37,7 +37,7 @@ python3 scripts/release.py verify dist/<release-id>
 
 ## 学习报告路径
 
-课程产生学习数据后，如需复盘单门课程并形成改进动作，使用 **AI-Shifu Learning Report**。它复用课程制作 skill 已认证的分析流程，再将汇总后的学习进度、课节健康度、参与信号、学员画像和受审计追问转化为：
+课程产生学习数据后，如需复盘单门课程并形成改进动作，使用 **AI-Shifu Learning Report**。它复用课程制作 skill 已认证的分析能力，再将汇总后的学习进度、课节健康度、参与信号、学员画像和受审计追问转化为：
 
 - 带版本、指标口径和数据质量说明的脱敏 JSON 数据文件；
 - 首屏先呈现管理结论、无需外部资源且可直接打印为 PDF 的 HTML 报告；
@@ -49,46 +49,24 @@ python3 scripts/release.py verify dist/<release-id>
 
 skill 以 `SKILL.md` 作为行为定义。按照 [Agent Skills](https://agentskills.io/specification) 标准，`name` frontmatter 字段必须与目录名一致，只允许小写字母、数字和连字符。该格式最初由 Anthropic 开发并作为开放标准发布，[Claude Code 官方文档](https://code.claude.com/docs/en/skills)声明其 skill 遵循这一标准。Claude Code 自身的实现更宽松，把 `name` 当作可选的展示标签；本仓库采用标准中更严格的规则，以保证 skill 在所有兼容 Agent Skills 的 agent 中都能正常使用。面向人的展示名维护在上方的 skill 列表中。
 
-## 课程生产与部署路径
+## 课程能力与指令示例
 
-按控制粒度选择其一：
+[课程创作器](skills/ai-shifu-course-creator/SKILL.md#capabilities) 按教学设计、MarkdownFlow 表达、CLI 操作三类提供可独立使用的能力。智能体根据请求和已有素材选择组合与顺序；主题、现成 Prompt 或课程目录都可以作为相关工作的起点。
 
-### 路径 A：端到端（推荐）
+| 用户请求 | 可用能力 | 交付结果 |
+| --- | --- | --- |
+| 设计一节课或规划课程结构 | 教学设计与来源分析 | 教学方案或章节、课节结构 |
+| 根据素材写一节课 | MarkdownFlow 表达，按需补充教学选择 | 可运行的 Teaching Prompt |
+| 先写课程简介 | 课程定位与简介撰写 | 面向学员的课程简介 |
+| 审查现成 Prompt | 指定范围内的教学质量或 MarkdownFlow 检查 | 问题与用户要求的修复 |
+| 创建一门完整课程 | 自主组合设计、表达与 CLI 构建、导入、发布能力 | 确认完成稿后，默认交付经核验的已发布课程 |
+| 部署已有课程目录 | CLI 构建、payload 检查、导入及所需发布操作 | 用户要求的平台结果及核验 |
+| 修改或管理已有课程 | CLI 同步或指定管理操作 | 对已有课程的经核验改动 |
+| 分析学习、订单或积分数据 | CLI 分析及隐私、可读性处理 | 基于实际课程数据的答案 |
 
-适合希望从原始素材快速得到在线课程的场景。
+只交付任务需要的产物。分段记录、课程索引、全局变量表和固定风险报告都不是所有任务的必需结果。完整创作的课程包含课节内容、Course Prompt、简介和结构；单项请求可以在完成所需产物后结束。
 
-1. 准备素材（逐字稿或课程文档）。
-2. 运行 Phase 1–4 生成优化后的 MarkdownFlow 课节脚本。
-3. 运行 Phase 5 构建、导入并发布到 AI 师傅平台。
-
-预期产物：
-
-- 结构化分段
-- 分课节 MarkdownFlow 脚本
-- 课程索引与全局变量表
-- 优化后脚本与风险报告
-- AI 师傅平台上的在线课程
-
-### 路径 B：单项创作步骤
-
-适合只需要某一个创作步骤、而不是完整做课的场景：
-
-- **仅分段**：Phase 1 生成语义分段供人工审核。
-- **仅生成**：Phase 3 基于已有分段生成课节脚本。
-- **仅优化**：Phase 4 审计并改进现有脚本。
-
-### 路径 C：仅部署
-
-适合已有 MarkdownFlow 文件需要部署的场景：
-
-1. 将 MarkdownFlow 文件组织到课程目录中。
-2. 运行 `build --course-dir ./course-a/` 生成导入文件。
-3. 运行 `import --new --json-file ./course-a/shifu-import.json` 创建课程。
-4. 运行 `publish <shifu_bid>` 发布上线。
-
-### 路径 D：管理已有课程
-
-使用管理命令（list/show/update/rename/reorder/delete/publish/archive）操作平台上已有的课程。
+完整建课遵循[默认发布及完成稿确认规则](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome)。用户明确要求本地交付或不发布的草稿时，按该范围完成。已有成果可以直接使用对应的[构建与导入](skills/ai-shifu-course-creator/references/deployment-workflow.md)、[同步](skills/ai-shifu-course-creator/references/course-sync.md)或[管理](skills/ai-shifu-course-creator/references/course-management.md)能力。
 
 ## 元数据校验
 

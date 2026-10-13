@@ -1,74 +1,26 @@
-# Optimization Workflow
+# Course Review and Repair
 
-Audit an existing, substantially complete course artifact set and apply the smallest repairs that restore correctness, fidelity, pedagogy, and runtime safety. Optimization does not perform first-time course authoring or deployment.
+Review the available Teaching Prompts, Course Prompt, or learner-facing description and make repairs within the requested scope. The using agent decides whether review is needed and whether it is an audit, focused correction, or broader rewrite; this capability does not schedule authoring or platform operations.
 
-## Required References
+Review teaching design, MarkdownFlow expression, or both according to the request. Platform readback and publication verification belong to the corresponding CLI capability rather than this content review.
 
-- `language-policy.md`
-- `authoring-mode.md#mode-selection`
-- `data-contracts.md#optimization-fallback-fields`
-- `optimization-checklist.md`
+## Available Scope
 
-## Conditional References
+Work with one pasted Prompt body, selected files, or a complete course. Identify the version being reviewed when multiple candidates could differ. An absent companion artifact or source is a limit on what can be assessed, not a reason to invent an envelope or create unrelated content.
 
-- When authoritative source material or selected immutable spans are in the audit scope: `source-preservation.md`
+Use [optimization-checklist.md](optimization-checklist.md) for observable criteria relevant to the artifacts and requested scope. With authoritative source material, compare source coverage and required exact content under [source-preservation.md](source-preservation.md). Without it, assess the supplied content without claiming external-source fidelity.
 
-## Entry Conditions
+## Review and Repair
 
-Use this workflow only when the supplied artifact set already contains the Teaching Prompts and any Course Prompt or course description that the requested audit covers. If a required artifact is absent, report it as outside the Optimization scope instead of silently creating it here.
+- Prioritize factual correctness, source fidelity, runtime behavior, and learner impact over cosmetic polish.
+- For an audit or focused fix, preserve existing meaning and information density and use the smallest coherent repair. A requested rewrite permits broader changes within the author's constraints.
+- Teaching patterns, lesson sequences, visual cadence, interaction quotas, and optional source layouts are design choices; do not classify the absence of a preferred option as a defect.
+- Audit-only work does not add navigation comments or normalize an existing Teaching Prompt's layout. A new or explicitly rewritten Prompt uses the mandatory source-only comments and an appropriate layout under [teaching-prompt.md](teaching-prompt.md).
+- Do not introduce silent factual changes or omit required evidence. Explain consequential structural or content changes when repairing them.
+- Recheck the behavior actually affected by an interaction, variable, branch, image, or deterministic-span change. Check available consumers when a shared value or course-wide instruction changes.
 
-Declare the audit scope before editing: one lesson, selected artifacts, or the complete existing course. When multiple versions exist, identify the authoritative version.
+## Results
 
-A pasted Prompt body may be audited as a content-only artifact. Apply every check observable from that body, but do not invent an absent lesson-schema envelope, variable table, or other metadata. Record checks that require unprovided envelope data as `not-assessed` in the Optimization report.
+Report the conclusion and actionable findings at a level useful for the request. Distinguish actual defects, optional design suggestions, and checks that could not be assessed. Include locations and the reason for material repairs when helpful; no fixed report envelope, phase status, fallback mode, or exhaustive issue taxonomy is required.
 
-## Optimization Method
-
-1. When authoritative source material is supplied, build a source-to-artifact coverage map for the declared scope. Otherwise, declare a content-only audit and do not claim external-source fidelity.
-2. Run every applicable observable check in `optimization-checklist.md`.
-3. Classify each finding and rank it by learner risk and runtime risk.
-4. Repair blockers first with the narrowest coherent edit.
-5. Revalidate the changed artifact and every directly affected consumer.
-6. Return the [Outputs](#outputs).
-
-Apply these priorities throughout:
-
-1. Correctness before style.
-2. Minimal safe edits before broad rewrites.
-3. Learner impact before formatting polish.
-4. Traceable changes before unexplained cleanup.
-
-## Controlled Rewriting
-
-- With authoritative source material in scope, preserve its coverage, intended meaning, information density, and every selected immutable span. In a content-only audit, preserve the meaning and information density expressed by the supplied artifact without claiming comparison against an absent source.
-- Allow filler removal, sentence smoothing, and local structural repair only when those invariants still pass.
-- Never introduce a silent factual change or an unmarked omission of required evidence.
-- Broaden a rewrite only when a smaller edit cannot resolve the issue coherently; record why and revalidate affected source coverage when source material is in scope.
-- After touching an interaction, variable, branch instruction, image instruction, or deterministic span, rerun its owner-defined authoring and runtime checks.
-
-## Issue Taxonomy
-
-- Coverage gap
-- Meaning shift
-- Explanation clarity
-- Interaction effect or branching gap
-- Visual requirement missing
-- Variable or syntax risk
-- Artifact-boundary violation
-
-## Outputs
-
-Return the minimally repaired existing artifacts plus the Optimization report, applying `language-policy.md` to every changed or reported value.
-
-Start the report with the conclusion and overall risk (`low|medium|high`). Name each target Teaching Prompt, Course Prompt, or course description in the declared audit scope, along with the source materials and execution mode. Group findings using [Issue Taxonomy](#issue-taxonomy); for each change, include the file reference and minimal-edit rationale. Summarize the results of [Validation](#validation), including checks not assessed. For unresolved findings, distinguish blockers from non-blocking suggestions and name the affected artifacts or checks to rerun.
-
-Under fallback mode, add only the Optimization extensions defined in `data-contracts.md#optimization-fallback-fields`.
-
-Optimization must not create a Course Prompt, course description, or Teaching Prompt from scratch, choose new preservation scope on behalf of an earlier phase, build a course directory, or publish a course.
-
-## Validation
-
-- Every applicable item in `optimization-checklist.md` passes, or the remaining gap is explicitly reported.
-- Each repair is the smallest coherent change and retains the meaning and density observable in the supplied scope. When source material is in scope, it also retains source coverage and immutable content.
-- Repaired artifacts still satisfy their owning contracts.
-- Checks that require unprovided schema-envelope data are reported as `not-assessed`, never guessed or silently marked as passing.
-- Any fallback extension matches `data-contracts.md#optimization-fallback-fields` and remains additive to the standard output.
+An unverifiable source claim, absent companion, or unavailable metadata is `not-assessed`, never silently passed. Return only repairs in scope and make remaining correctness or runtime blockers clear. Human-facing output follows [language-policy.md](language-policy.md).

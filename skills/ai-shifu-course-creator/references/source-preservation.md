@@ -1,24 +1,18 @@
 # Source Preservation
 
-Select the smallest source spans that must survive authoring without semantic or structural drift, then verify them after every affected rewrite. This file decides preservation scope; it does not define MarkdownFlow encoding.
-
-## Required References
-
-- `data-contracts.md#segment-schema`
+Identify source material whose wording, values, order, or structure must remain exact and verify it after affected transformations. MarkdownFlow encoding belongs to [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding).
 
 ## Preservation Decisions
 
-Treat required code and fence languages, image URLs, immutable alt text and ordering, regulated wording, fixed numeric thresholds, required quotations, and table blocks as preservation candidates.
+Required code and fence languages, fixed numeric thresholds, regulated wording, quotations, tables, image URLs, alt text, and ordering may need exact preservation. Select the smallest spans whose exactness is required by the source or author; keep surrounding explanation adaptable.
 
-- Select only spans whose exact wording, value, ordering, or structure is a source requirement.
-- Keep surrounding explanations adaptive.
-- Never preserve an entire lesson; doing so removes the adaptive generation the lesson depends on.
-- Record each selected segment through the `preserve_block` and `source_span` fields defined in `data-contracts.md#segment-schema`.
-- Preserve author-selected immutable content even when nearby authored text is localized.
+- Honor explicit immutable content even when nearby text is localized.
+- Do not freeze a whole lesson merely for convenience. An explicit requirement for exact content remains binding.
+- Retain enough source information to verify a span, such as file and heading, page, line range, or a quotation. No formal segmentation record, character-offset map, or `preserve_block` field is required.
+- Keep authoritative source content distinct from authoring assumptions and generated additions.
 
 ## Verification
 
-- Compare every selected span with its authoritative source after Segmentation, Teaching Prompt generation, and Optimization.
-- Verify exact content, fence language, numeric value, URL, alt or caption, order, and table structure as applicable.
-- Re-run MarkdownFlow runtime checks after any rewrite that touches a selected span.
-- Treat missing, altered, duplicated, or reordered immutable content as blocking.
+Compare affected immutable spans with their source after authoring or repair. Verify applicable content, fence language, numeric value, URL, alt or caption text, order, and table structure. Check the runtime encoding when a change touches a deterministic or preserved span.
+
+Missing, altered, duplicated, or incorrectly reordered required exact content is a correctness defect. Report an unverifiable span as uncertain rather than claiming source fidelity without evidence.

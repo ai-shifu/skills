@@ -2,10 +2,6 @@
 
 The 10 tables you can query, the fields each carries, the code/enum tables to translate raw values, the ID translation rules, and the data traps to be aware of.
 
-## Required References
-
-None.
-
 ## 10 Tables at a Glance
 
 | Table | Answers | Key fields |

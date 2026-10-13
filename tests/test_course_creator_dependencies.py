@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 import sys
+import tempfile
 import unittest
-from collections.abc import Iterable
 from pathlib import Path
 
 
@@ -15,493 +15,236 @@ import validate_skill_quality  # noqa: E402
 
 SKILL_ROOT = REPO_ROOT / "skills" / "ai-shifu-course-creator"
 REFERENCES = SKILL_ROOT / "references"
-SKILL_MD = SKILL_ROOT / "SKILL.md"
-DEPENDENCY_ITEM = re.compile(r"^- `([^`]+\.md(?:#[^`]+)?)`$")
+MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
+REFERENCE_PATH = re.compile(r"`(references/[A-Za-z0-9_./-]+\.md(?:#[A-Za-z0-9-]+)?)`")
+BACKTICKED_NAVIGATION_PATH = re.compile(
+    r"`((?:\.\.?/)*(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+\.md"
+    r"(?:#[A-Za-z0-9-]+)?)`"
+)
+NAVIGATION_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
+INLINE_CODE = re.compile(r"(?<!`)(`+).*?\1(?!`)")
+HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
 
 
-def markdown_h2_section(markdown: str, title: str) -> str | None:
-    lines = markdown.splitlines()
-    start = None
-    for index, line in enumerate(lines):
-        if line == f"## {title}":
-            start = index + 1
-            break
-    if start is None:
-        return None
-
-    end = len(lines)
-    for index in range(start, len(lines)):
-        if lines[index].startswith("## "):
-            end = index
-            break
-    return "\n".join(lines[start:end]).strip()
-
-
-def declared_paths(markdown: str, section: str) -> list[str]:
-    body = markdown_h2_section(markdown, section)
-    if body is None:
-        return []
-    if body == "None.":
-        return []
-
-    dependencies = []
-    for raw_line in body.splitlines():
-        line = raw_line.strip()
-        if not line:
-            continue
-        if section == "Required References":
-            match = DEPENDENCY_ITEM.fullmatch(line)
-            values = [match.group(1)] if match else []
-        else:
-            values = re.findall(r"`([^`]+\.md(?:#[^`]+)?)`", line)
-            if not line.startswith("- "):
-                values = []
-        if len(values) != 1:
-            raise AssertionError(
-                f"{section} accepts only bullets containing exactly one "
-                f"backticked Markdown path; got {line!r}"
-            )
-        dependencies.append(values[0])
-    return dependencies
-
-
-def route_line(markdown: str, intent_prefix: str) -> str:
-    for line in markdown_h2_section(markdown, "Task Router").splitlines():
-        if line.startswith(f"| {intent_prefix}"):
-            return line
-    raise AssertionError(f"missing route for {intent_prefix!r}")
-
-
-def route_paths(markdown: str, intent_prefix: str) -> list[str]:
+def markdown_link_targets(content: str) -> list[str]:
     return [
-        value
-        for value in re.findall(r"`([^`]+\.md(?:#[^`]+)?)`", route_line(markdown, intent_prefix))
-        if value.startswith("references/")
+        target
+        for target in MARKDOWN_LINK.findall(INLINE_CODE.sub("", content))
+        if ".md" in target and "://" not in target
     ]
 
 
-def split_reference(value: str) -> tuple[str, str | None]:
-    path, separator, anchor = value.partition("#")
-    return path, anchor if separator else None
+def local_markdown_targets(path: Path) -> list[str]:
+    text = validate_skill_quality.markdown_without_fenced_code_or_html_comments(
+        path.read_text(encoding="utf-8")
+    )
+    return markdown_link_targets(text)
 
 
-def resolve_reference(source: Path, value: str) -> tuple[Path, str | None]:
-    path_value, anchor = split_reference(value)
-    if path_value.startswith("references/"):
-        path_value = path_value.removeprefix("references/")
-
-    raw_path = Path(path_value)
-    candidates = [source.parent / raw_path, REFERENCES / raw_path]
-    resolved_candidates = []
-    for candidate in candidates:
-        resolved = candidate.resolve()
-        if resolved.is_file() and resolved not in resolved_candidates:
-            resolved_candidates.append(resolved)
-
-    if not resolved_candidates:
-        raise AssertionError(f"{source} declares missing reference {value!r}")
-    if len(resolved_candidates) > 1:
-        raise AssertionError(f"{source} declares ambiguous reference {value!r}")
-    target = resolved_candidates[0]
-    if REFERENCES.resolve() not in target.parents:
-        raise AssertionError(f"{source} declares out-of-tree reference {value!r}")
-    return target, anchor
+def active_reference_targets(content: str) -> list[str]:
+    text = validate_skill_quality.markdown_without_fenced_code_or_html_comments(content)
+    targets = markdown_link_targets(text)
+    for line in text.splitlines():
+        if NAVIGATION_ITEM.match(line):
+            targets.extend(BACKTICKED_NAVIGATION_PATH.findall(line))
+    return targets
 
 
-def dependency_graph() -> dict[Path, list[Path]]:
-    graph = {}
-    for path in sorted(REFERENCES.rglob("*.md")):
-        markdown = path.read_text(encoding="utf-8")
-        dependencies = []
-        for value in declared_paths(markdown, "Required References"):
-            target, anchor = resolve_reference(path, value)
-            if anchor is not None:
-                anchors = validate_skill_quality.github_heading_slugs(target)
-                if anchor not in anchors:
-                    raise AssertionError(
-                        f"{path} declares missing anchor {value!r}"
-                    )
-            dependencies.append(target)
-        graph[path.resolve()] = dependencies
-    return graph
+def related_guidance_targets(content: str) -> list[str]:
+    text = validate_skill_quality.markdown_without_fenced_code_or_html_comments(content)
+    guidance_lines: list[str] = []
+    section_level: int | None = None
+    for line in text.splitlines():
+        heading = HEADING.match(line)
+        if heading:
+            level = len(heading.group(1))
+            if section_level is not None and level <= section_level:
+                section_level = None
+            if heading.group(2) == "Related Guidance":
+                section_level = level
+        if section_level is not None:
+            guidance_lines.append(line)
+    return active_reference_targets("\n".join(guidance_lines))
 
 
-def transitive_closure(
-    roots: Iterable[Path], graph: dict[Path, list[Path]]
-) -> set[Path]:
-    closure: set[Path] = set()
-    pending = [path.resolve() for path in roots]
-    while pending:
-        path = pending.pop()
-        if path in closure:
-            continue
-        closure.add(path)
-        pending.extend(graph[path])
-    return closure
+class ReferenceTargetParsingTests(unittest.TestCase):
+    def test_links_and_relative_navigation_paths_are_active(self):
+        content = """[Guidance](references/guide.md#inputs)
+- `../authentication.md` establishes access.
+* When needed: `analytics/overview.md#queries`
+1. `./local.md`
+2) `nested/example.md` and `other.md#output`
+"""
+        self.assertEqual(
+            active_reference_targets(content),
+            [
+                "references/guide.md#inputs",
+                "../authentication.md",
+                "analytics/overview.md#queries",
+                "./local.md",
+                "nested/example.md",
+                "other.md#output",
+            ],
+        )
+
+    def test_examples_comments_and_prose_are_not_navigation(self):
+        content = """Historical guidance mentioned `old-guide.md` and analytics/old.md.
+An inline example is `[Example](inline-example.md)`.
+``[Another example](double-backtick-example.md)``
+[External](https://example.org/external.md)
+```markdown
+- `fenced-navigation.md`
+[Example](fenced-link.md)
+```
+~~~markdown
+- `tilde-fenced.md`
+~~~
+<!--
+- `commented-navigation.md`
+[Comment](commented-link.md)
+-->
+- `active.md` <!-- [Comment](inline-comment.md) -->
+Ordinary prose can still contain an active [link](active-link.md).
+"""
+        self.assertEqual(
+            active_reference_targets(content), ["active-link.md", "active.md"]
+        )
+
+    def test_related_guidance_excludes_artifact_lists_in_other_sections(self):
+        content = """# Capability
+## Related Guidance
+- `../guide.md#inputs`
+### Additional references
+- `analytics/overview.md`
+## Output
+- `lesson.md` is an authored artifact.
+```markdown
+## Related Guidance
+- `example.md`
+```
+"""
+        self.assertEqual(
+            related_guidance_targets(content),
+            ["../guide.md#inputs", "analytics/overview.md"],
+        )
 
 
-class CourseCreatorDependencyTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.router = SKILL_MD.read_text(encoding="utf-8")
+class CourseCreatorReferenceTests(unittest.TestCase):
+    """Capabilities may cross-reference each other without an execution DAG."""
 
-    def route_roots(self, intent_prefix: str) -> list[Path]:
-        roots = []
-        for value in route_paths(self.router, intent_prefix):
-            target, anchor = resolve_reference(SKILL_MD, value)
-            if anchor is not None:
-                anchors = validate_skill_quality.github_heading_slugs(target)
-                self.assertIn(anchor, anchors, f"missing route anchor: {value}")
-            roots.append(target)
-        return roots
+    def assert_target_exists(self, source: Path, value: str):
+        relative_path, _, anchor = value.partition("#")
+        target = (source.parent / relative_path).resolve()
+        self.assertTrue(target.is_file(), f"{source}: missing target {value}")
+        if anchor:
+            self.assertIn(
+                anchor,
+                validate_skill_quality.github_heading_slugs(target),
+                f"{source}: missing anchor {value}",
+            )
 
-    def test_every_reference_starts_with_required_references_contract(self):
+    def test_capability_links_and_anchors_resolve(self):
+        for path in [SKILL_ROOT / "SKILL.md", *sorted(REFERENCES.rglob("*.md"))]:
+            for target in local_markdown_targets(path):
+                with self.subTest(source=path.relative_to(SKILL_ROOT), target=target):
+                    self.assert_target_exists(path, target)
+
+    def test_backticked_entrypoint_references_resolve(self):
+        entrypoint = SKILL_ROOT / "SKILL.md"
+        for value in REFERENCE_PATH.findall(entrypoint.read_text(encoding="utf-8")):
+            with self.subTest(value=value):
+                self.assert_target_exists(entrypoint, value)
+
+    def test_related_guidance_links_and_anchors_resolve(self):
         for path in sorted(REFERENCES.rglob("*.md")):
-            markdown = path.read_text(encoding="utf-8")
-            h2_headings = re.findall(r"^## (.+)$", markdown, re.MULTILINE)
-            with self.subTest(path=path.relative_to(REFERENCES)):
-                self.assertTrue(h2_headings, "reference must have an H2 heading")
-                self.assertEqual("Required References", h2_headings[0])
-                declared_paths(markdown, "Required References")
-                declared_paths(markdown, "Conditional References")
+            for target in related_guidance_targets(path.read_text(encoding="utf-8")):
+                with self.subTest(source=path.relative_to(SKILL_ROOT), target=target):
+                    self.assert_target_exists(path, target)
 
-    def test_required_reference_targets_and_anchors_exist(self):
-        graph = dependency_graph()
-        self.assertEqual(
-            len(list(REFERENCES.rglob("*.md"))),
-            len(graph),
-        )
-        for source in graph:
-            markdown = source.read_text(encoding="utf-8")
-            for value in declared_paths(markdown, "Conditional References"):
-                target, anchor = resolve_reference(source, value)
-                if anchor is not None:
-                    self.assertIn(
-                        anchor,
-                        validate_skill_quality.github_heading_slugs(target),
-                        f"missing conditional-reference anchor: {value}",
-                    )
-
-    def test_required_reference_graph_is_a_dag(self):
-        graph = dependency_graph()
-        active: list[Path] = []
-        complete: set[Path] = set()
-
-        def visit(path: Path) -> None:
-            if path in complete:
-                return
-            if path in active:
-                cycle = active[active.index(path) :] + [path]
-                names = " -> ".join(
-                    str(item.relative_to(REFERENCES)) for item in cycle
+    def test_navigation_validation_rejects_missing_files_and_anchors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "capability.md"
+            (source.parent / "guide.md").write_text("# Inputs\n", encoding="utf-8")
+            cases = [
+                ("missing.md#inputs", "missing target"),
+                ("guide.md#missing", "missing anchor"),
+            ]
+            for target, error in cases:
+                source.write_text(
+                    f"# Capability\n\n## Related Guidance\n\n- `{target}`\n",
+                    encoding="utf-8",
                 )
-                self.fail(f"required-reference cycle: {names}")
-            active.append(path)
-            for dependency in graph[path]:
-                visit(dependency)
-            active.pop()
-            complete.add(path)
+                with self.subTest(target=target):
+                    targets = related_guidance_targets(source.read_text(encoding="utf-8"))
+                    self.assertEqual(targets, [target])
+                    with self.assertRaisesRegex(AssertionError, error):
+                        self.assert_target_exists(source, targets[0])
 
-        for path in graph:
-            visit(path)
+    def test_reference_owners_are_in_the_maintenance_map(self):
+        ownership = (SKILL_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        for path in REFERENCES.rglob("*.md"):
+            relative = path.relative_to(SKILL_ROOT).as_posix()
+            with self.subTest(reference=relative):
+                self.assertIn(f"`{relative}`", ownership)
 
-    def test_router_paths_resolve_without_loading_plain_markdown_links(self):
-        for line in markdown_h2_section(self.router, "Task Router").splitlines():
-            if not line.startswith("| ") or "Required files" in line:
-                continue
-            for value in re.findall(r"`([^`]+\.md(?:#[^`]+)?)`", line):
-                if value.startswith("references/"):
-                    resolve_reference(SKILL_MD, value)
-
-        sample = (
-            "# Example\n\n"
-            "## Required References\n\n"
-            "  - `prompt-contracts.md`  \n\n"
-            "## Notes\n\n"
-            "See [ordinary navigation](pedagogy.md).\n\n"
-            "## Conditional References\n\n"
-            "  - When images are present: `image-authoring.md`  \n"
+    def test_learning_report_uses_the_current_analytics_capability(self):
+        report_reference = (
+            REPO_ROOT / "skills" / "ai-shifu-learning-report" / "references"
+            / "data-collection-and-privacy.md"
         )
-        self.assertEqual(
-            ["prompt-contracts.md"],
-            declared_paths(sample, "Required References"),
-        )
-        self.assertEqual(
-            ["image-authoring.md"],
-            declared_paths(sample, "Conditional References"),
-        )
+        content = report_reference.read_text(encoding="utf-8")
+        self.assertIn("ai-shifu-course-creator/references/analytics/overview.md", content)
+        self.assertNotIn("ai-shifu-course-creator/references/analytics/workflow.md", content)
+        for target in re.findall(r"`([^`]+\.md(?:#[^`]+)?)`", content):
+            if "ai-shifu-course-creator/" in target:
+                self.assert_target_exists(report_reference, target)
 
-    def test_full_course_closure_excludes_unrelated_routes_and_images(self):
-        graph = dependency_graph()
-        closure = transitive_closure(
-            self.route_roots("Create a full course"), graph
-        )
-        relative_paths = {
-            str(path.relative_to(REFERENCES)) for path in closure
-        }
-
-        self.assertFalse(
-            any(path.startswith("analytics/") for path in relative_paths)
-        )
-        self.assertTrue(
-            {
-                "segmentation-workflow.md",
-                "orchestration-workflow.md",
-                "teaching-prompt.md",
-                "course-prompt.md",
-                "course-description.md",
-                "optimization-workflow.md",
-                "deployment-workflow.md",
-            }.issubset(relative_paths)
-        )
-        self.assertTrue(
-            {
-                "course-sync.md",
-                "course-management.md",
-                "image-authoring.md",
-                "authentication.md",
-                "course-target.md",
-            }.isdisjoint(relative_paths)
-        )
-
-    def test_local_planning_and_generation_closures_exclude_authentication(self):
-        graph = dependency_graph()
-        forbidden = {
-            "authentication.md",
-            "course-target.md",
-            "course-sync.md",
-            "course-management.md",
-            "deployment-workflow.md",
-        }
-        for prefix in (
-            "Plan course structure",
-            "Segment supplied material only",
-            "Generate Teaching Prompts from existing segments",
-        ):
-            with self.subTest(prefix=prefix):
-                closure = transitive_closure(self.route_roots(prefix), graph)
-                self.assertTrue(forbidden.isdisjoint(path.name for path in closure))
-
-    def test_existing_sync_does_not_load_new_course_deployment(self):
-        graph = dependency_graph()
-        for filename in ("course-sync.md", "course-management.md"):
-            with self.subTest(filename=filename):
-                closure = transitive_closure([REFERENCES / filename], graph)
-                self.assertNotIn("deployment-workflow.md", {path.name for path in closure})
-
-    def test_authentication_is_conditional_at_new_course_platform_boundaries(self):
-        graph = dependency_graph()
-        authentication = (REFERENCES / "authentication.md").resolve()
-        for filename in (
-            "deployment-workflow.md",
-            "image-authoring.md",
-        ):
-            with self.subTest(filename=filename):
-                owner = REFERENCES / filename
-                self.assertNotIn(authentication, graph[owner.resolve()])
-                self.assertIn(
-                    "authentication.md",
-                    declared_paths(owner.read_text(encoding="utf-8"), "Conditional References"),
-                )
-
-    def test_existing_course_lookup_depends_only_on_access_and_query_guides(self):
-        graph = dependency_graph()
-        lookup = (REFERENCES / "course-target.md").resolve()
-        self.assertIn((REFERENCES / "authentication.md").resolve(), graph[lookup])
-        closure = transitive_closure([lookup], graph)
-        self.assertTrue(
-            {
+    def assert_no_removed_coordinator_targets(self, source: Path, content: str):
+        removed_paths = {
+            (REFERENCES / relative).resolve()
+            for relative in (
                 "authoring-mode.md",
-                "course-design-intake.md",
                 "orchestration-workflow.md",
-                "deployment-workflow.md",
-                "course-sync.md",
-            }.isdisjoint(path.name for path in closure)
-        )
-
-    def test_offline_prompt_audit_closure_excludes_platform_access(self):
-        graph = dependency_graph()
-        roots = self.route_roots("Review or audit pasted")
-        checklist = (REFERENCES / "optimization-checklist.md").resolve()
-        teaching_prompt = None
-        for value in declared_paths(
-            checklist.read_text(encoding="utf-8"),
-            "Conditional References",
-        ):
-            target, _ = resolve_reference(checklist, value)
-            if target.name == "teaching-prompt.md":
-                teaching_prompt = target
-                break
-        self.assertIsNotNone(
-            teaching_prompt,
-            "offline Teaching Prompt audit needs a declared conditional owner",
-        )
-
-        closure = transitive_closure([*roots, teaching_prompt], graph)
-        relative_paths = {
-            str(path.relative_to(REFERENCES)) for path in closure
+                "analytics/workflow.md",
+            )
         }
-        self.assertTrue(
-            {
-                "optimization-workflow.md",
-                "teaching-prompt.md",
-                "prompt-contracts.md",
-                "pedagogy.md",
-                "markdownflow.md",
-            }.issubset(relative_paths)
-        )
-        self.assertTrue(
-            {
-                "authentication.md",
-                "course-target.md",
-                "deployment-workflow.md",
-                "course-sync.md",
-                "course-management.md",
-                "course-prompt.md",
-                "course-description.md",
-                "image-authoring.md",
-                "source-preservation.md",
-            }.isdisjoint(relative_paths)
-        )
-        self.assertFalse(
-            any(path.startswith("analytics/") for path in relative_paths)
-        )
+        for value in active_reference_targets(content):
+            target = (source.parent / value.partition("#")[0]).resolve()
+            self.assertNotIn(
+                target,
+                removed_paths,
+                f"{source}: active reference to removed coordinator {value}",
+            )
 
-    def test_local_course_prompt_closure_excludes_platform_access(self):
-        graph = dependency_graph()
-        closure = transitive_closure(
-            self.route_roots("Create or revise a Course Prompt"), graph
+    def test_removed_coordinator_validation_resolves_relative_navigation(self):
+        source = REFERENCES / "analytics" / "capability.md"
+        targets = (
+            "workflow.md",
+            "./workflow.md#queries",
+            "../analytics/workflow.md",
+            "../analytics/../analytics/workflow.md",
+            "../authoring-mode.md",
+            "../../references/orchestration-workflow.md",
         )
-        relative_paths = {
-            str(path.relative_to(REFERENCES)) for path in closure
-        }
-        self.assertIn("course-prompt.md", relative_paths)
-        self.assertTrue(
-            {
-                "authentication.md",
-                "course-target.md",
-                "course-sync.md",
-                "course-management.md",
-                "deployment-workflow.md",
-                "pedagogy.md",
-            }.isdisjoint(relative_paths)
-        )
+        for target in targets:
+            content = f"# Capability\n\n## More capabilities\n\n- `{target}`\n"
+            with self.subTest(target=target):
+                with self.assertRaisesRegex(AssertionError, "removed coordinator"):
+                    self.assert_no_removed_coordinator_targets(source, content)
 
-    def test_raw_local_teaching_prompt_closure_stays_authoring_only(self):
-        graph = dependency_graph()
-        closure = transitive_closure(
-            self.route_roots(
-                "Produce local Teaching Prompts from raw supplied material"
-            ),
-            graph,
-        )
-        relative_paths = {
-            str(path.relative_to(REFERENCES)) for path in closure
-        }
-        self.assertTrue(
-            {
-                "segmentation-workflow.md",
-                "teaching-prompt.md",
-                "pedagogy.md",
-            }.issubset(relative_paths)
-        )
-        self.assertTrue(
-            {
-                "authentication.md",
-                "course-target.md",
-                "orchestration-workflow.md",
-                "course-prompt.md",
-                "course-description.md",
-                "deployment-workflow.md",
-            }.isdisjoint(relative_paths)
-        )
+    def test_removed_coordinator_validation_allows_different_target_paths(self):
+        source = REFERENCES / "analytics" / "capability.md"
+        content = """# Capability
+## More capabilities
+- `examples/analytics/workflow.md`
+- `examples/authoring-mode.md`
+"""
+        self.assert_no_removed_coordinator_targets(source, content)
 
-    def test_existing_structural_edit_uses_sync_not_new_deployment(self):
-        graph = dependency_graph()
-        closure = transitive_closure(
-            self.route_roots("Restructure an existing platform course"),
-            graph,
-        )
-        relative_paths = {
-            str(path.relative_to(REFERENCES)) for path in closure
-        }
-        self.assertIn("course-sync.md", relative_paths)
-        self.assertIn("course-management.md", relative_paths)
-        self.assertNotIn("deployment-workflow.md", relative_paths)
-
-    def test_structure_planning_route_loads_orchestration_finalizer(self):
-        route = route_line(self.router, "Plan course structure")
-        self.assertIn("segmentation-workflow.md", route)
-        self.assertIn(
-            "orchestration-workflow.md#lesson-structure-finalization",
-            route,
-        )
-
-    def test_existing_course_prompt_update_uses_management_not_content_push(self):
-        route = route_line(
-            self.router,
-            "Create or revise a Course Prompt in an existing",
-        )
-        self.assertIn("course-sync.md#pull-before-editing", route)
-        self.assertNotIn("course-sync.md#push-existing-course-content", route)
-        graph = dependency_graph()
-        closure = transitive_closure(
-            self.route_roots("Create or revise a Course Prompt in an existing"),
-            graph,
-        )
-        relative_paths = {
-            str(path.relative_to(REFERENCES)) for path in closure
-        }
-        self.assertIn("course-management.md", relative_paths)
-        self.assertNotIn("deployment-workflow.md", relative_paths)
-
-    def test_image_authoring_is_conditional_not_a_strong_dependency(self):
-        graph = dependency_graph()
-        image_authoring = (REFERENCES / "image-authoring.md").resolve()
-        strong_consumers = {
-            source for source, dependencies in graph.items() if image_authoring in dependencies
-        }
-        conditional_consumers = set()
-        for source in graph:
-            markdown = source.read_text(encoding="utf-8")
-            for value in declared_paths(markdown, "Conditional References"):
-                target, _ = resolve_reference(source, value)
-                if target == image_authoring:
-                    conditional_consumers.add(source)
-
-        self.assertEqual(set(), strong_consumers)
-        self.assertTrue(
-            conditional_consumers,
-            "at least one authoring guide must conditionally load image-authoring.md",
-        )
-
-    def test_optimization_artifact_owners_are_scope_conditional(self):
-        graph = dependency_graph()
-        checklist = (REFERENCES / "optimization-checklist.md").resolve()
-        required_names = {
-            path.name for path in graph[checklist]
-        }
-        self.assertTrue(
-            {
-                "teaching-prompt.md",
-                "course-prompt.md",
-                "course-description.md",
-                "pedagogy.md",
-            }.isdisjoint(required_names)
-        )
-        conditional_names = set()
-        markdown = checklist.read_text(encoding="utf-8")
-        for value in declared_paths(markdown, "Conditional References"):
-            target, _ = resolve_reference(checklist, value)
-            conditional_names.add(target.name)
-        self.assertTrue(
-            {
-                "teaching-prompt.md",
-                "course-prompt.md",
-                "course-description.md",
-                "image-authoring.md",
-            }.issubset(conditional_names)
-        )
+    def test_removed_coordinators_have_no_active_reference_links(self):
+        for path in [SKILL_ROOT / "SKILL.md", SKILL_ROOT / "AGENTS.md", *REFERENCES.rglob("*.md")]:
+            with self.subTest(source=path.relative_to(SKILL_ROOT)):
+                self.assert_no_removed_coordinator_targets(path, path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
