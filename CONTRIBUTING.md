@@ -11,16 +11,12 @@ Use English for tool code, comments, CLI messages, maintainer documentation, and
 ## Before You Open a PR
 
 1. Keep each skill under `skills/<skill-slug>/`.
-2. Ensure the skill contains:
-   - `SKILL.md`
-   - `agents/openai.yaml`
-   - `skill.yaml`
+2. Ensure the skill contains `SKILL.md`. Include `agents/openai.yaml` when the skill provides provider-specific UI metadata.
 3. Keep metadata and docs aligned:
-   - `SKILL.md` describes capability and trigger context.
-   - `agents/openai.yaml` provides UI-facing metadata.
-   - `skill.yaml` defines machine-readable skill contracts.
+   - `SKILL.md` frontmatter defines machine-readable skill identity and discovery metadata; its body describes capabilities and usage.
+   - `agents/openai.yaml`, when present, provides UI-facing metadata.
 4. Use international English across all skill artifacts:
-   - `SKILL.md`, `agents/openai.yaml`, `skill.yaml`, `examples/`, and `references/`.
+   - `SKILL.md`, optional `agents/openai.yaml`, `examples/`, and `references/`.
    - Do not introduce Han-script content into skill artifacts.
 5. Run local checks:
 
