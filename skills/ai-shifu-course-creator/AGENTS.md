@@ -2,7 +2,6 @@
 
 ## Ownership Rules
 
-- Apply the [repository workflow ownership rules](https://github.com/ai-shifu/skills/blob/main/AGENTS.md#workflow-ownership-and-change-scope); the ownership map below specializes them for this skill.
 - Give each capability, contract, and validation criterion one canonical owner in the map below. Other files link to or cite that owner and add only their own local application.
 - Keep `SKILL.md` focused on discovery, shared conventions, the three-category capability catalog, and the default full-course outcome. Preserve its teaching design, MarkdownFlow expression, and CLI operation boundaries without turning them into phases. The using agent owns task decomposition and invocation order; references own how their capabilities work.
 - Separate decisions from representations: `teaching-design.md` owns teaching recommendations and their tradeoffs, `markdownflow-syntax.md` owns runtime syntax and effects, and `teaching-prompt.md` owns translation of resolved lesson decisions into a runnable, author-editable Teaching Prompt.
