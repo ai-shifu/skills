@@ -27,20 +27,20 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
     def test_entrypoint_discovers_design_expression_and_cli_capabilities(self):
         for capability in (
             "course-design-choices.md",
-            "source-analysis-and-course-structure.md",
-            "teaching-design-options.md",
-            "markdownflow-runtime-syntax.md",
+            "course-structure.md",
+            "teaching-design.md",
+            "markdownflow-syntax.md",
             "teaching-prompt.md",
             "course-prompt.md",
             "course-description.md",
-            "course-review-and-repair.md",
+            "course-review.md",
             "image-authoring.md",
             "authentication.md",
-            "course-target-resolution.md",
-            "course-build-and-import.md",
+            "course-lookup.md",
+            "build-and-import.md",
             "course-sync.md",
             "course-management.md",
-            "analytics/analytics-guide.md",
+            "analytics/guide.md",
         ):
             with self.subTest(capability=capability):
                 self.assertIn(f"references/{capability}", self.entrypoint)

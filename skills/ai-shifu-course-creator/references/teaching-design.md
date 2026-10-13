@@ -2,7 +2,7 @@
 
 Teaching approaches available to the authoring agent. Choose, adapt, combine, or replace them for the audience, source, objectives, and author requirements. Patterns, lesson steps, visual cadence, interaction counts, and per-lesson deliverables below are options rather than universal acceptance gates.
 
-Prompt semantics and personalization boundaries belong to [prompt-semantics.md](prompt-semantics.md). [markdownflow-runtime-syntax.md](markdownflow-runtime-syntax.md) defines actual runtime controls; [author-controls-and-artifact-invariants.md](author-controls-and-artifact-invariants.md) describes optional author controls and artifact invariants.
+Prompt semantics and personalization boundaries belong to [prompt-semantics.md](prompt-semantics.md). [markdownflow-syntax.md](markdownflow-syntax.md) defines actual runtime controls; [authoring-contracts.md](authoring-contracts.md) describes optional author controls and artifact invariants.
 
 ## Interaction Policy Precedence
 
@@ -69,13 +69,13 @@ For a selected interaction, make the question concrete and answerable and give t
 - If a choice is intended to drive distinct next steps, provide the corresponding response behavior. Honor an explicit answer-specific branching requirement.
 - Choose the number and placement of interactions for their teaching value. There is no universal count limit or required interaction slide.
 
-Questions, controls, feedback, and branches must remain executable together. [teaching-prompt.md](teaching-prompt.md) owns their source encoding; [markdownflow-runtime-syntax.md#interactions](markdownflow-runtime-syntax.md#interactions) owns control syntax.
+Questions, controls, feedback, and branches must remain executable together. [teaching-prompt.md](teaching-prompt.md) owns their source encoding; [markdownflow-syntax.md#interactions](markdownflow-syntax.md#interactions) owns control syntax.
 
 ## Variable Strategy
 
 Persist an answer only when it must leave the current lesson, such as a later lesson or Course Prompt using it. Lesson-local answers use unnamed interactions, including local branching and feedback. Reuse existing values and avoid semantic duplicates. Intentional staged comparison can justify recollection; accidental recollection is not useful personalization.
 
-Explicitly disabled interactions collect no learner-answer variables. Each named value needs valid collection, meaningful consumers, and appropriate unavailable-value behavior under [author-controls-and-artifact-invariants.md#variable-table](author-controls-and-artifact-invariants.md#variable-table) and [markdownflow-runtime-syntax.md#variables](markdownflow-runtime-syntax.md#variables). No table or JSON envelope is required to check those relationships.
+Explicitly disabled interactions collect no learner-answer variables. Each named value needs valid collection, meaningful consumers, and appropriate unavailable-value behavior under [authoring-contracts.md#variable-table](authoring-contracts.md#variable-table) and [markdownflow-syntax.md#variables](markdownflow-syntax.md#variables). No table or JSON envelope is required to check those relationships.
 
 ## Visual-Text Coordination
 

@@ -6,7 +6,7 @@ The agent chooses an image's teaching purpose under teaching design, expresses i
 
 Teacher avatars are platform metadata rather than Teaching Prompt image assets. Route avatar work to `course-management.md` and do not add it to `assets/image-manifest.json`.
 
-Runtime image and deterministic forms are defined in [markdownflow-runtime-syntax.md](markdownflow-runtime-syntax.md#images). Upload mechanics and provenance are defined in [image upload](cli/cli-reference.md#image-upload) and [assets](cli/course-directory-spec.md#assets). Use [source preservation](source-preservation.md) for selected immutable image text or ordering, and [authentication](authentication.md) when an upload needs platform access.
+Runtime image and deterministic forms are defined in [markdownflow-syntax.md](markdownflow-syntax.md#images). Upload mechanics and provenance are defined in [image upload](cli/cli-reference.md#image-upload) and [assets](cli/course-directory-spec.md#assets). Use [source preservation](source-preservation.md) for selected immutable image text or ordering, and [authentication](authentication.md) when an upload needs platform access.
 
 ## Asset Intake
 

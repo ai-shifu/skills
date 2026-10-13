@@ -18,7 +18,7 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 ## Teaching Design and Layout
 
 - The lesson's chosen approach makes its intended learning result achievable with supported facts, sufficient reasoning, and useful evidence. Do not fail an artifact for omitting a recommended pattern, fixed loop, single-question structure, visual, cover, cadence, deliverable, or interaction count.
-- Examples and analogies, when used, have meaningful conditions or correspondences, explanatory value, and necessary limits under [teaching-design-options.md#examples-and-analogies](teaching-design-options.md#examples-and-analogies). Avoid misleading comparisons and unsupported assumptions of familiarity.
+- Examples and analogies, when used, have meaningful conditions or correspondences, explanatory value, and necessary limits under [teaching-design.md#examples-and-analogies](teaching-design.md#examples-and-analogies). Avoid misleading comparisons and unsupported assumptions of familiarity.
 - Explicit author decisions about order, delivery experience, interaction restrictions, and other constraints are respected. The agent may choose or revise unspecified design elements within the task.
 - New or explicitly rewritten Teaching Prompts have concise source-only navigation comments for useful teaching blocks under [teaching-prompt.md](teaching-prompt.md). Optional layouts and agent-created layouts are valid when readable and runtime-safe.
 - In audit-only existing content, comment and layout normalization is `not-assessed`; do not reformat or add comments. Continue checking observable syntax and runtime behavior.
@@ -36,9 +36,9 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 
 ## Interaction and Runtime Safety
 
-- Questions and options are clear and answerable, and selected instructional interactions have a meaningful feedback or teaching effect under [teaching-design-options.md#interaction-design](teaching-design-options.md#interaction-design).
-- Every control, assignment, reference, and branch follows [markdownflow-runtime-syntax.md](markdownflow-runtime-syntax.md) and [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding). Controls stay recognizable and distinct from simulated visual controls.
-- Named answers have valid collection and meaningful cross-lesson or Course Prompt consumers; local answers remain unnamed. Check actual artifacts under [author-controls-and-artifact-invariants.md#variable-table](author-controls-and-artifact-invariants.md#variable-table); no variable-table JSON is required.
+- Questions and options are clear and answerable, and selected instructional interactions have a meaningful feedback or teaching effect under [teaching-design.md#interaction-design](teaching-design.md#interaction-design).
+- Every control, assignment, reference, and branch follows [markdownflow-syntax.md](markdownflow-syntax.md) and [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding). Controls stay recognizable and distinct from simulated visual controls.
+- Named answers have valid collection and meaningful cross-lesson or Course Prompt consumers; local answers remain unnamed. Check actual artifacts under [authoring-contracts.md#variable-table](authoring-contracts.md#variable-table); no variable-table JSON is required.
 - Branches use natural language and literal `UNKNOWN` for unavailable named values where applicable. No learner-visible authoring placeholders remain.
 - Deterministic blocks, code fences, required source spans, and image records survive preprocessing as required. Images use [image-authoring.md#image-output-validation](image-authoring.md#image-output-validation) when present; absent images do not require image work.
 

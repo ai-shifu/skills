@@ -11,7 +11,7 @@ The template's `# Slides` section is the single runtime owner for presentation r
 The course author's intended audience and course constraints remain hard boundaries. The platform may supply learner context at delivery time; the Course Prompt tells the Teaching Agent how to use that context within the authored boundaries without serializing platform-owned learner-profile fields into the course artifact.
 
 - Apply shared Prompt semantics and the Course Prompt versus Teaching Prompt authority boundary from [prompt-semantics.md](prompt-semantics.md).
-- Resolve any variable references in the completed artifact against [markdownflow-runtime-syntax.md#variables](markdownflow-runtime-syntax.md#variables).
+- Resolve any variable references in the completed artifact against [markdownflow-syntax.md#variables](markdownflow-syntax.md#variables).
 
 ## Materialization
 
@@ -19,7 +19,7 @@ Use the available course topic, title, objectives, audience, and resolved design
 
 Preserve all six sections in order and every non-placeholder instruction. Render headings and body in the language resolved under [language-policy.md#language-resolution](language-policy.md#language-resolution); the English template defines structure rather than a default language. Replace placeholders with concrete course-specific instructions under [Placeholder Sources and Context](#placeholder-sources-and-context), without copying fill guidance or unselected alternatives. Check the result with [Materialization Checks](#materialization-checks).
 
-[course-design-choices.md](course-design-choices.md) explains design choices when they need clarification. [author-controls-and-artifact-invariants.md#input-contract](author-controls-and-artifact-invariants.md#input-contract) describes optional structured controls; neither document requires an intermediate artifact.
+[course-design-choices.md](course-design-choices.md) explains design choices when they need clarification. [authoring-contracts.md#input-contract](authoring-contracts.md#input-contract) describes optional structured controls; neither document requires an intermediate artifact.
 
 ## Fillable Template
 
@@ -95,4 +95,4 @@ Use these inputs as context constraints while wording the applicable fill values
 - The learner-context instructions enable exactly the resolved directions under `prompt-semantics.md#personalization-directions`; `[]` produces the uniform course baseline. No unselected direction is enabled implicitly through a generic personalization rule or style instruction. Selected language style can vary within the shared clear, restrained, warm baseline; otherwise that baseline stays course-wide.
 - The artifact contains no authoring field name or enum array, platform learner-profile tags, internal learner-profile variable names, or unresolved personalization placeholder.
 - Every presentation requirement that applies uniformly to every slide remains in the `# Slides` section. The section does not special-case a cover or any other slide position or teaching purpose, and it does not change lesson-specific slide structure or pedagogy supplied by the current user message.
-- The completed artifact follows [prompt-semantics.md](prompt-semantics.md), and any variable references have the runtime behavior defined in [markdownflow-runtime-syntax.md#variables](markdownflow-runtime-syntax.md#variables), without copying those rules into this file.
+- The completed artifact follows [prompt-semantics.md](prompt-semantics.md), and any variable references have the runtime behavior defined in [markdownflow-syntax.md#variables](markdownflow-syntax.md#variables), without copying those rules into this file.

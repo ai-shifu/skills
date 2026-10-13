@@ -5,7 +5,7 @@ Use these capabilities to translate a course author's question into a query and 
 ## Related Guidance
 
 - `../authentication.md` establishes access to the intended platform context when needed.
-- `query-language.md` defines query syntax; `table-and-field-reference.md` defines available fields, codes, identifier relationships, and data traps; `query-recipes.md` supplies scenario templates.
+- `query-language.md` defines query syntax; `tables.md` defines available fields, codes, identifier relationships, and data traps; `query-recipes.md` supplies scenario templates.
 - `privacy-and-presentation.md` defines access restrictions and the Translation Gate for every user-facing result.
 - `../cli/cli-reference.md#analytics-query` defines analytics invocation and output; `../cli/cli-reference.md#query-commands` covers course/outline lookups.
 
@@ -32,7 +32,7 @@ The question "how many courses do I have?" is answered by `shifu-cli.py list` wi
 
 **All analytics traffic goes through `scripts/shifu-cli.py`. Never write raw HTTP, never read tokens directly, never compose `Authorization` / `Token` headers by hand.** Reuse the intended context and valid access under `../authentication.md`.
 
-- `shifu-cli.py analytics-query <bid> --dsl '<json-body>'` queries the 10 whitelisted tables in `table-and-field-reference.md`. Use `--dsl-file query.json` for long bodies.
+- `shifu-cli.py analytics-query <bid> --dsl '<json-body>'` queries the 10 whitelisted tables in `tables.md`. Use `--dsl-file query.json` for long bodies.
 - `shifu-cli.py credit-detail <bid> [--start … --end … --scene 1203 --usage-type 1101 …]` answers credit/spend questions. Do not query `bill_daily_usage_metrics` for credit data: production daily aggregation is not enabled. Scene `1203` is learner spend; `1202` is preview and `1201` is debug.
 
 ## Query Planning
@@ -52,7 +52,7 @@ When an analytics response carries a business `code`, interpret it as follows:
 | `0` | Success | Parse `data.columns` / `data.rows`, then apply the Translation Gate |
 | `11001` | No access to this course | Confirm the `shifu_bid` is owned by the logged-in user; switch course or stop |
 | `11002` | Invalid DSL | Re-check required fields, duplicate `alias`, or leading-wildcard `like` |
-| `11003` | Table not in whitelist | Use one of the 10 tables in `table-and-field-reference.md` |
+| `11003` | Table not in whitelist | Use one of the 10 tables in `tables.md` |
 | `11004` | Field not in whitelist | Check field name or pick a different table |
 | `11005` | Operator not in whitelist | Use one of the 12 operators in `query-language.md` |
 | `11006` | Aggregate function not in whitelist | Use one of the 6 aggregate functions in `query-language.md` |
@@ -90,7 +90,7 @@ These are the mistakes that most commonly cause repeated failed queries and wast
 
 ### Pitfall 1 — Follow-up questions: use `type = 321`, NOT `role = 2`
 
-`role = 2` (learner) matches ALL learner input widgets — follow-up questions, form inputs, phone numbers, verification codes. To count follow-up questions specifically, filter `type = 321` (`mdask`). This is the single most common analytics mistake — full trap explanation in `table-and-field-reference.md`.
+`role = 2` (learner) matches ALL learner input widgets — follow-up questions, form inputs, phone numbers, verification codes. To count follow-up questions specifically, filter `type = 321` (`mdask`). This is the single most common analytics mistake — full trap explanation in `tables.md`.
 
 ### Pitfall 2 — Credit queries: `credit-detail` vs `bill_daily_usage_metrics`
 
@@ -105,7 +105,7 @@ The DSL requires `where` to be an array of filter objects, even for a single con
 
 ### Pitfall 4 — Table name guessing
 
-Do not guess table names — the schema has 10 tables and many sound-alike names. Always check the full list in `table-and-field-reference.md` first. Common wrong guesses:
+Do not guess table names — the schema has 10 tables and many sound-alike names. Always check the full list in `tables.md` first. Common wrong guesses:
 
 - "user logs" or "user_logs" → does not exist. Use `learn_generated_blocks` for interaction data, `learn_progress_records` for progress data.
 - "billing" or "usage" → `bill_daily_usage_metrics` (currently empty) or `shifu-cli.py credit-detail` for actual credit data.
@@ -126,6 +126,6 @@ For lesson-level data (stuck lessons, follow-ups per lesson, ratings), obtain th
 ## What Lives Where
 
 - `query-language.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)
-- `table-and-field-reference.md` — the 10 tables, their fields, all code/enum translation tables, ID translation rules, the duplicate-row trap, the `role = 2 ≠ follow-up` trap, and the "course title is not history" rule
+- `tables.md` — the 10 tables, their fields, all code/enum translation tables, ID translation rules, the duplicate-row trap, the `role = 2 ≠ follow-up` trap, and the "course title is not history" rule
 - `query-recipes.md` — ready-to-run DSL templates by scenario (Course Metadata resolution, Course Overview 0d, then 23 numbered scenario recipes including follow-up four-key pairing and follow-up per lesson)
 - `privacy-and-presentation.md` — `user_users` / `generated_content` / `var_variable_values` privacy rules, plus the Translation Gate for user-facing output

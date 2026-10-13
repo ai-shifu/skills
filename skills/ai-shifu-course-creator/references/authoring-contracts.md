@@ -49,7 +49,7 @@ If a structured `interaction_policy` is useful, use:
 - `purposes` is duplicate-free and contains only the three values shown.
 - `enabled` has at least one purpose; `disabled` and `unspecified` have an empty array.
 
-This optional representation does not make those three purposes exhaustive for unconstrained agent-designed teaching. Explicit author restrictions remain binding; [teaching-design-options.md#interaction-policy-precedence](teaching-design-options.md#interaction-policy-precedence) explains their effects.
+This optional representation does not make those three purposes exhaustive for unconstrained agent-designed teaching. Explicit author restrictions remain binding; [teaching-design.md#interaction-policy-precedence](teaching-design.md#interaction-policy-precedence) explains their effects.
 
 ## Artifact Invariants
 
@@ -67,6 +67,6 @@ Named learner-answer variables need consistent collection and use, whether check
 - A named answer has a valid `%{{name}}` collection and a real use outside its collection lesson, including a Course Prompt reference. Lesson-local answers use unnamed interactions.
 - Every `{{name}}` reference has an identified collection and meaningful consumer. Reuse an existing value instead of collecting a semantic duplicate; repeated collection needs an intentional staged-comparison purpose.
 - If a table is helpful, record the name, collection lesson, and every consuming lesson or Course Prompt. No `global_variable_table` or `used_variables` envelope is required.
-- An unavailable value follows literal `UNKNOWN` behavior defined in [markdownflow-runtime-syntax.md#variables](markdownflow-runtime-syntax.md#variables). Do not invent values or test whether the template marker exists.
+- An unavailable value follows literal `UNKNOWN` behavior defined in [markdownflow-syntax.md#variables](markdownflow-syntax.md#variables). Do not invent values or test whether the template marker exists.
 
-Variable-persistence decisions belong to [teaching-design-options.md#variable-strategy](teaching-design-options.md#variable-strategy); MarkdownFlow owns collection and substitution syntax.
+Variable-persistence decisions belong to [teaching-design.md#variable-strategy](teaching-design.md#variable-strategy); MarkdownFlow owns collection and substitution syntax.

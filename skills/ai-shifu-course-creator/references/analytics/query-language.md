@@ -1,6 +1,6 @@
 # Analytics Query Language
 
-All examples are CLI invocations. Analytics task orientation is documented in `analytics-guide.md`.
+All examples are CLI invocations. Analytics task orientation is documented in `guide.md`.
 
 ## Body Shape
 
@@ -81,7 +81,7 @@ When `select` includes `generated_content` (only meaningful on `learn_generated_
 2. `limit ≤ 100`
 3. Every access is audited server-side (the CLI does not show this — it happens in the backend)
 
-The remaining `type` values (`303` input, `309` phone, `310` checkcode, etc.) contain learner PII and are blocked at the protocol level. Full type-code table is in `table-and-field-reference.md`.
+The remaining `type` values (`303` input, `309` phone, `310` checkcode, etc.) contain learner PII and are blocked at the protocol level. Full type-code table is in `tables.md`.
 
 ## Auto-Applied Filters
 

@@ -1,6 +1,6 @@
 # Analytics Query Recipes
 
-Ready-to-run templates, grouped by scenario. Most examples run through `shifu-cli.py analytics-query <bid> --dsl '…'` (the DSL path); the **Credit Consumption** section is the exception — it uses `shifu-cli.py credit-detail <bid> …` (why the DSL path is unavailable: `table-and-field-reference.md`). Substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Grammar and field meanings are documented in `query-language.md` and `table-and-field-reference.md`.
+Ready-to-run templates, grouped by scenario. Most examples run through `shifu-cli.py analytics-query <bid> --dsl '…'` (the DSL path); the **Credit Consumption** section is the exception — it uses `shifu-cli.py credit-detail <bid> …` (why the DSL path is unavailable: `tables.md`). Substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Grammar and field meanings are documented in `query-language.md` and `tables.md`.
 
 ## Invocation Notes
 
@@ -21,7 +21,7 @@ For DSL recipes, the bodies omit `shifu_bid` — the CLI injects it from the pos
 
 ## Course Metadata (resolve `shifu_bid ↔ current title`)
 
-> Whenever the user mentions a course by **title**, resolve the current `shifu_bid → title` mapping via the metadata tables **before** issuing any downstream analytics query — `shifu-cli.py list` is a draft snapshot and is not a substitute. Which row is authoritative, the draft fallback, and the historical-title phrasing rule: `table-and-field-reference.md` → "Course title is 'current published', not 'history'".
+> Whenever the user mentions a course by **title**, resolve the current `shifu_bid → title` mapping via the metadata tables **before** issuing any downstream analytics query — `shifu-cli.py list` is a draft snapshot and is not a substitute. Which row is authoritative, the draft fallback, and the historical-title phrasing rule: `tables.md` → "Course title is 'current published', not 'history'".
 >
 > When matching by user-supplied keyword, normalize whitespace client-side (`replace(title, ' ', '')`) before comparing — the DB stores titles with whatever spacing the author used.
 
@@ -113,7 +113,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 口径说明（present these definitions alongside the numbers so they are unambiguous):
 
-- **学员数 (learners)** = `count_distinct(user_bid)` on `learn_progress_records` — everyone who entered the course (Method ① in `table-and-field-reference.md`). This is the dashboard's "学员数".
+- **学员数 (learners)** = `count_distinct(user_bid)` on `learn_progress_records` — everyone who entered the course (Method ① in `tables.md`). This is the dashboard's "学员数".
 - **订单数 (orders)** = `count` of `order_orders` rows with `status = 502` — paid orders (includes ¥0 free enrolments). For _strictly paid_ (`paid_price > 0`) use Recipe 3; for the full funnel use Recipe 5.
 - **营收 (revenue)** = `sum(paid_price)` over the same `status = 502` rows. Round to 2 decimals (`¥5,870.70`).
 - **最近活跃 (last_active)** = the `created_at` of the latest `learn_progress_records` row (query 1b). Convert to local time before presenting.
@@ -219,11 +219,11 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-> Each row's `progress_record_bid` must be translated to a chapter/lesson name via the two-step lookup in `table-and-field-reference.md` (ID Field Translation Rules).
+> Each row's `progress_record_bid` must be translated to a chapter/lesson name via the two-step lookup in `tables.md` (ID Field Translation Rules).
 
 ## Credit Consumption (use `shifu-cli.py credit-detail`)
 
-> The DSL `bill_daily_usage_metrics` recipes that lived here previously are deprecated — that table is empty in production until the daily aggregation job is enabled (details: `table-and-field-reference.md`). Until then `credit-detail` is the only working path for credit data.
+> The DSL `bill_daily_usage_metrics` recipes that lived here previously are deprecated — that table is empty in production until the daily aggregation job is enabled (details: `tables.md`). Until then `credit-detail` is the only working path for credit data.
 
 ### Recipe 8 — Today's credit consumption
 
@@ -355,11 +355,11 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-> See the duplicate-row trap in `table-and-field-reference.md` — `count` on `learn_progress_records` can double-count re-taken lessons. State this caveat when presenting Top-N.
+> See the duplicate-row trap in `tables.md` — `count` on `learn_progress_records` can double-count re-taken lessons. State this caveat when presenting Top-N.
 
 ## Follow-up Q&A
 
-> **All Recipe 17–22 templates below**: the API auto-filters `status = 1` on `learn_generated_blocks` (do not add it yourself — redundant), and follow-up counts always anchor on `type = 321`, never `role = 2`. Both traps explained in `table-and-field-reference.md`.
+> **All Recipe 17–22 templates below**: the API auto-filters `status = 1` on `learn_generated_blocks` (do not add it yourself — redundant), and follow-up counts always anchor on `type = 321`, never `role = 2`. Both traps explained in `tables.md`.
 
 ### Recipe 17 — Total follow-up questions + unique questioners
 
@@ -488,7 +488,7 @@ Returns `(user_bid, nickname, user_identify)` rows. `nickname` is auto-redacted 
 Apply the Translation Gate in `privacy-and-presentation.md`:
 
 - Never paste the raw `user_bid`; replace with ordinal labels (`Learner A / B / C`).
-- Translate `progress_record_bid` to a chapter/lesson name via the two-step lookup in `table-and-field-reference.md`.
+- Translate `progress_record_bid` to a chapter/lesson name via the two-step lookup in `tables.md`.
 - Convert `created_at` (UTC; offsetless values are UTC) to local-timezone (`2026-05-13 21:42`).
 - Display the masked `user_identify` as-is — do not strip the `*****`.
 

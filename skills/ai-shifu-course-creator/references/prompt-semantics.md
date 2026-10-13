@@ -1,6 +1,6 @@
 # Prompt Semantics
 
-Shared semantics and responsibility boundaries for Teaching Prompts and Course Prompts. Runtime syntax belongs to [markdownflow-runtime-syntax.md](markdownflow-runtime-syntax.md); optional author controls belong to [author-controls-and-artifact-invariants.md](author-controls-and-artifact-invariants.md).
+Shared semantics and responsibility boundaries for Teaching Prompts and Course Prompts. Runtime syntax belongs to [markdownflow-syntax.md](markdownflow-syntax.md); optional author controls belong to [authoring-contracts.md](authoring-contracts.md).
 
 ## Prompt Semantics
 
@@ -10,7 +10,7 @@ Teaching Prompts and Course Prompts are instructions consumed by the Teaching Ag
 
 The authoring agent chooses teaching approaches, lesson steps, visuals, and layouts suited to the task. No fixed teaching pattern, internal execution plan, or authoring phase is a prerequisite. Once written, a Prompt makes its intended learner-time behavior concrete; optionality during authoring does not make runtime instructions optional.
 
-Address imperative instructions to the Teaching Agent. Name the learner explicitly when referring to learner actions, for example, "Ask the learner to compare the cases." Every second-person form in Prompt instructions, including English `you` and Chinese `你` or `您`, refers to the Teaching Agent. Learner-visible text inside a MarkdownFlow `?[]` interaction or [standalone deterministic output](markdownflow-runtime-syntax.md#deterministic-blocks) may address the learner directly.
+Address imperative instructions to the Teaching Agent. Name the learner explicitly when referring to learner actions, for example, "Ask the learner to compare the cases." Every second-person form in Prompt instructions, including English `you` and Chinese `你` or `您`, refers to the Teaching Agent. Learner-visible text inside a MarkdownFlow `?[]` interaction or [standalone deterministic output](markdownflow-syntax.md#deterministic-blocks) may address the learner directly.
 
 The intended audience, source facts, and explicit author constraints remain boundaries. Platform-supplied learner context is additive within them: use only explicitly stated, relevant background and preferences for the resolved personalization directions. Do not retarget the course, infer missing facts, or quote, summarize, or reveal the learner profile. Empty, `UNKNOWN`, irrelevant, or unavailable context uses neutral course-appropriate defaults.
 
@@ -20,7 +20,7 @@ Use deterministic forms only when exactness protects correctness, teaching effec
 
 ## Personalization Directions
 
-These independent directions describe what learner background may change. The optional structured selection is defined in [author-controls-and-artifact-invariants.md#personalization-directions](author-controls-and-artifact-invariants.md#personalization-directions); natural-language requirements can express the same choices.
+These independent directions describe what learner background may change. The optional structured selection is defined in [authoring-contracts.md#personalization-directions](authoring-contracts.md#personalization-directions); natural-language requirements can express the same choices.
 
 | Direction | Author-facing name | Effect when selected |
 | --- | --- | --- |

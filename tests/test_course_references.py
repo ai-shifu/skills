@@ -71,7 +71,7 @@ class ReferenceTargetParsingTests(unittest.TestCase):
     def test_links_and_relative_navigation_paths_are_active(self):
         content = """[Guidance](references/guide.md#inputs)
 - `../authentication.md` establishes access.
-* When needed: `analytics/analytics-guide.md#queries`
+* When needed: `analytics/guide.md#queries`
 1. `./local.md`
 2) `nested/example.md` and `other.md#output`
 """
@@ -80,7 +80,7 @@ class ReferenceTargetParsingTests(unittest.TestCase):
             [
                 "references/guide.md#inputs",
                 "../authentication.md",
-                "analytics/analytics-guide.md#queries",
+                "analytics/guide.md#queries",
                 "./local.md",
                 "nested/example.md",
                 "other.md#output",
@@ -115,7 +115,7 @@ Ordinary prose can still contain an active [link](active-link.md).
 ## Related Guidance
 - `../guide.md#inputs`
 ### Additional references
-- `analytics/analytics-guide.md`
+- `analytics/guide.md`
 ## Output
 - `lesson.md` is an authored artifact.
 ```markdown
@@ -125,7 +125,7 @@ Ordinary prose can still contain an active [link](active-link.md).
 """
         self.assertEqual(
             related_guidance_targets(content),
-            ["../guide.md#inputs", "analytics/analytics-guide.md"],
+            ["../guide.md#inputs", "analytics/guide.md"],
         )
 
 
@@ -190,10 +190,10 @@ class CourseCreatorReferenceTests(unittest.TestCase):
     def test_learning_report_uses_the_current_analytics_capability(self):
         report_reference = (
             REPO_ROOT / "skills" / "ai-shifu-learning-report" / "references"
-            / "data-collection-and-privacy.md"
+            / "data-collection.md"
         )
         content = report_reference.read_text(encoding="utf-8")
-        self.assertIn("ai-shifu-course-creator/references/analytics/analytics-guide.md", content)
+        self.assertIn("ai-shifu-course-creator/references/analytics/guide.md", content)
         self.assertNotIn("ai-shifu-course-creator/references/analytics/workflow.md", content)
         for target in re.findall(r"`([^`]+\.md(?:#[^`]+)?)`", content):
             if "ai-shifu-course-creator/" in target:

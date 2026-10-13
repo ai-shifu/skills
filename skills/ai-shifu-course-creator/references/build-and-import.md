@@ -12,7 +12,7 @@ Build a local import payload, create a new platform draft from it, or verify an 
 
 ## Build Import Payload
 
-**Input:** a course directory conforming to `cli/course-directory-spec.md`, with the lesson files and course artifacts needed for the requested result. A complete authored course includes a completed `course-prompt.md` and learner-facing description under [author-controls-and-artifact-invariants.md#artifact-invariants](author-controls-and-artifact-invariants.md#artifact-invariants). For a standalone or narrower build/import request, a missing description retains the CLI's empty-description fallback unless the author requested non-empty listing copy.
+**Input:** a course directory conforming to `cli/course-directory-spec.md`, with the lesson files and course artifacts needed for the requested result. A complete authored course includes a completed `course-prompt.md` and learner-facing description under [authoring-contracts.md#artifact-invariants](authoring-contracts.md#artifact-invariants). For a standalone or narrower build/import request, a missing description retains the CLI's empty-description fallback unless the author requested non-empty listing copy.
 
 Run `build --course-dir <dir>` to generate `<dir>/shifu-import.json`. Inspect the effective title, description, Course Prompt, structure, lesson bodies, variables, and interaction syntax in that payload against the source artifacts. Apply `language-policy.md#language-audit` to both the source files and generated payload. A failing payload must be repaired before import.
 

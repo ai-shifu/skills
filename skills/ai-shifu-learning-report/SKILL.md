@@ -11,9 +11,9 @@ Turn observed data from one course into a decision-ready report for teaching man
 
 Read these files completely, in order, for every report:
 
-1. `references/data-collection-and-privacy.md`
+1. `references/data-collection.md`
 2. `references/analysis-guidelines.md`
-3. `references/report-format-and-rendering.md`
+3. `references/report-format.md`
 
 Resolve every `## Required References` declaration in those files transitively before acting.
 
@@ -30,11 +30,11 @@ Resolve every `## Required References` declaration in those files transitively b
 ## Workflow
 
 1. **Resolve the request.** Identify exactly one course and any requested time range. Default to `zh-CN` and cumulative-to-date data. Use `en-US` only when the user explicitly asks for English; schema keys, enum values, commands, and file names stay unchanged.
-2. **Collect or validate.** Follow `data-collection-and-privacy.md`. Live collection delegates authentication, course resolution, outline resolution, analytics syntax, and platform privacy controls to the current `ai-shifu-course-creator`; never recreate those mechanisms here. Resolve the current published outline and remove hidden, unpublished, and container nodes before normalizing any lesson-scoped signal.
+2. **Collect or validate.** Follow `data-collection.md`. Live collection delegates authentication, course resolution, outline resolution, analytics syntax, and platform privacy controls to the current `ai-shifu-course-creator`; never recreate those mechanisms here. Resolve the current published outline and remove hidden, unpublished, and container nodes before normalizing any lesson-scoped signal.
 3. **Normalize.** Create a `schema_version: "1.0"` report object. Keep unavailable data as `null` with an explicit quality explanation instead of guessing or converting it to zero.
 4. **Analyze.** Follow `analysis-guidelines.md`. Separate observations from interpretations, preserve conflicting signals, and write 3–5 evidence-linked recommendations.
 5. **Write the data artifact.** Save the privacy-safe object as `course-learning-report.json`. This file is the single source for the rendered report.
-6. **Validate and render.** Follow `report-format-and-rendering.md`, validate the JSON, then run the bundled renderer to create `course-learning-report.html` from that exact JSON.
+6. **Validate and render.** Follow `report-format.md`, validate the JSON, then run the bundled renderer to create `course-learning-report.html` from that exact JSON.
 7. **Run the release gate.** Confirm that both files describe one course, use the requested language, contain no raw learner text or identifiers, label metric definitions and time scopes, show missing-data states honestly, and contain no external runtime assets.
 8. **Deliver both files.** Summarize the reporting window, major data limitations, and whether follow-up text was sampled. Do not paste private source rows into the handoff.
 
@@ -47,7 +47,7 @@ Resolve every `## Required References` declaration in those files transitively b
 - Calculate `课程完成率` from one consistent learner cohort: the denominator is distinct learners whose first progress on an eligible lesson falls inside the metric's time scope, and the numerator is the subset of those learners who complete every required lesson or one valid required branch path by the report cutoff. Count each learner once. Do not impose a fixed 30-day or other maturation window, and do not remove late starters to improve the rate. Put the exact cohort dates, cutoff, numerator, denominator, eligible lesson scope, and completion rule in the metric definition and source notes. Do not append `代理` or `近似` to reader-facing Chinese content. Treat `进行中` / `In progress` as a recorded state, never proof that learners are stuck.
 - Keep orders, revenue, payment channels, and AI-Shifu credit consumption out of the teaching report unless the user explicitly requests an operations appendix.
 - The JSON is the factual contract and the HTML is its presentation. Do not add claims to HTML that are absent from JSON.
-- Present the HTML in the Swiss International Style defined by `report-format-and-rendering.md`; preserve its modular grid, typographic hierarchy, flat square geometry, and restrained color system when applying brand overrides.
+- Present the HTML in the Swiss International Style defined by `report-format.md`; preserve its modular grid, typographic hierarchy, flat square geometry, and restrained color system when applying brand overrides.
 
 ## Completion Checklist
 

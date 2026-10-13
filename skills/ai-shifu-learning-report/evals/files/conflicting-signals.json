@@ -1,6 +1,6 @@
 {
   "fixture_version": "1.0",
-  "fixture_name": "conflicting-bottleneck-signals",
+  "fixture_name": "conflicting-signals",
   "synthetic": true,
   "request_context": {
     "audience": [

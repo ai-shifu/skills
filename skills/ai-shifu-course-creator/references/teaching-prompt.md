@@ -2,7 +2,7 @@
 
 Write or revise one runnable per-lesson Teaching Prompt from a topic, brief, source material, existing Prompt, or supplied design. Use the available context directly; a segmentation schema, separate planning run, Course Prompt, or fixed intermediate JSON is not a prerequisite. The authoring agent chooses teaching strategies and layout; the learner-time Teaching Agent follows the resulting instructions.
 
-Shared Prompt meaning and artifact boundaries are in [prompt-semantics.md](prompt-semantics.md), runtime syntax in [markdownflow-runtime-syntax.md](markdownflow-runtime-syntax.md), optional author controls in [author-controls-and-artifact-invariants.md](author-controls-and-artifact-invariants.md), and teaching suggestions in [teaching-design-options.md](teaching-design-options.md). Consult [image-authoring.md](image-authoring.md) for actual image assets and [source-preservation.md](source-preservation.md) for selected exact material.
+Shared Prompt meaning and artifact boundaries are in [prompt-semantics.md](prompt-semantics.md), runtime syntax in [markdownflow-syntax.md](markdownflow-syntax.md), optional author controls in [authoring-contracts.md](authoring-contracts.md), and teaching suggestions in [teaching-design.md](teaching-design.md). Consult [image-authoring.md](image-authoring.md) for actual image assets and [source-preservation.md](source-preservation.md) for selected exact material.
 
 ## Lesson Materialization
 
@@ -89,7 +89,7 @@ Create a slide with the rent and raw-materials cases. Show the relevant time per
 
 ## Source Encoding
 
-Encode the chosen teaching design without changing author requirements or exact material. Parser recognition and runtime effects belong to [markdownflow-runtime-syntax.md](markdownflow-runtime-syntax.md).
+Encode the chosen teaching design without changing author requirements or exact material. Parser recognition and runtime effects belong to [markdownflow-syntax.md](markdownflow-syntax.md).
 
 ### Layout Encoding
 

@@ -867,7 +867,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         cls.by_id = {case["id"]: case for case in cls.evals["evals"]}
 
     def test_optional_personalization_control_keeps_supported_values(self):
-        controls = (COURSE_CREATOR_REFERENCES / "author-controls-and-artifact-invariants.md").read_text(
+        controls = (COURSE_CREATOR_REFERENCES / "authoring-contracts.md").read_text(
             encoding="utf-8"
         )
         values = markdown_table_first_column(
@@ -876,7 +876,7 @@ class CourseCreatorContractTests(unittest.TestCase):
         self.assertCountEqual(PERSONALIZATION_DIRECTIONS, values)
 
     def test_documented_markdownflow_controls_keep_the_runtime_syntax(self):
-        runtime = (COURSE_CREATOR_REFERENCES / "markdownflow-runtime-syntax.md").read_text(
+        runtime = (COURSE_CREATOR_REFERENCES / "markdownflow-syntax.md").read_text(
             encoding="utf-8"
         )
         for syntax in (

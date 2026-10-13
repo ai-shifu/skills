@@ -1,6 +1,6 @@
 {
   "fixture_version": "1.0",
-  "fixture_name": "sparse-new-course-with-privacy-traps",
+  "fixture_name": "sparse-course",
   "synthetic": true,
   "privacy_test_notice": "All identities and identifiers in this fixture are synthetic traps. They are source evidence only and must never appear in either report artifact.",
   "request_context": {

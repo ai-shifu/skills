@@ -15,7 +15,7 @@ EVALS_PATH = SKILL_DIR / "evals" / "evals.json"
 RENDERER_PATH = SKILL_DIR / "scripts" / "render_report.py"
 SCHEMA_PATH = SKILL_DIR / "references" / "report-data.schema.json"
 SKILL_PATH = SKILL_DIR / "SKILL.md"
-DATA_COLLECTION_PATH = SKILL_DIR / "references" / "data-collection-and-privacy.md"
+DATA_COLLECTION_PATH = SKILL_DIR / "references" / "data-collection.md"
 ANALYSIS_GUIDELINES_PATH = SKILL_DIR / "references" / "analysis-guidelines.md"
 
 
@@ -227,9 +227,9 @@ class LearningReportEvaluationFixtureTests(unittest.TestCase):
         self.assertEqual("ai-shifu-learning-report", self.manifest["skill_name"])
         self.assertEqual(
             {
-                "healthy-course-with-excluded-lessons",
-                "conflicting-bottleneck-signals",
-                "sparse-new-course-with-privacy-traps",
+                "healthy-course",
+                "conflicting-signals",
+                "sparse-course",
             },
             {Path(eval_case["files"][0]).stem for eval_case in self.evals},
         )
@@ -262,7 +262,7 @@ class LearningReportEvaluationFixtureTests(unittest.TestCase):
                 self.assertIsInstance(fixture["course"]["title"], str)
 
     def test_healthy_fixture_has_exact_same_cohort_completion_rate(self):
-        fixture = self.fixtures["healthy-course-with-excluded-lessons"]
+        fixture = self.fixtures["healthy-course"]
         progress = fixture["analytics"]["progress"]
         lesson_scope = fixture["course"]["lesson_scope"]
 
@@ -298,7 +298,7 @@ class LearningReportEvaluationFixtureTests(unittest.TestCase):
         )
 
     def test_conflicting_fixture_preserves_positive_and_negative_signals(self):
-        fixture = self.fixtures["conflicting-bottleneck-signals"]
+        fixture = self.fixtures["conflicting-signals"]
         analytics = fixture["analytics"]
         reach = {
             item["lesson_key"]: item["learners_reached"]
@@ -323,7 +323,7 @@ class LearningReportEvaluationFixtureTests(unittest.TestCase):
         self.assertEqual(19, l3_mode["response_count"])
 
     def test_sparse_fixture_contains_deliberate_source_only_privacy_traps(self):
-        fixture = self.fixtures["sparse-new-course-with-privacy-traps"]
+        fixture = self.fixtures["sparse-course"]
         analytics = fixture["analytics"]
         follow_ups = analytics["audited_follow_ups"]
         source_text = json.dumps(fixture, ensure_ascii=False)
