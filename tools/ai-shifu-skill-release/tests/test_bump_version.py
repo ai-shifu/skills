@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from ai_shifu_release import version
+from ai_shifu_release import version_bump
 
 SKILL_MD = """---
 name: Demo Skill
@@ -75,7 +75,7 @@ class BumpVersionTest(unittest.TestCase):
 
     def test_bump_pushes_branch_without_touching_main(self) -> None:
         args = make_args(skill_version="1.2.0", repo_url=self.repo_url)
-        result = version.bump(args)
+        result = version_bump.bump(args)
         self.assertEqual(result["previous_version"], "1.1.1")
         self.assertEqual(result["new_version"], "1.2.0")
         self.assertEqual(result["branch"], "bump/demo-skill-v1.2.0")
@@ -111,12 +111,12 @@ class BumpVersionTest(unittest.TestCase):
     def test_bump_rejects_non_increasing_version(self) -> None:
         args = make_args(skill_version="1.1.1", repo_url=self.repo_url)
         with self.assertRaises(ValueError):
-            version.bump(args)
+            version_bump.bump(args)
 
     def test_bumped_version_levels(self) -> None:
-        self.assertEqual(version.bumped_version("1.1.1", "major"), "2.0.0")
-        self.assertEqual(version.bumped_version("1.1.1", "minor"), "1.2.0")
-        self.assertEqual(version.bumped_version("1.1.1", "patch"), "1.1.2")
+        self.assertEqual(version_bump.bumped_version("1.1.1", "major"), "2.0.0")
+        self.assertEqual(version_bump.bumped_version("1.1.1", "minor"), "1.2.0")
+        self.assertEqual(version_bump.bumped_version("1.1.1", "patch"), "1.1.2")
 
 
 if __name__ == "__main__":

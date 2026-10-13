@@ -250,7 +250,7 @@ def validate_skill(skill_dir: Path, issues: IssueBag) -> None:
         )
 
     version = front.get("version", "").strip()
-    update_checker = skill_dir / "scripts" / "skill_update.py"
+    update_checker = skill_dir / "scripts" / "skill_update_check.py"
     if update_checker.is_file():
         if not version:
             issues.add_error(f"{skill_md}: frontmatter 'version' field is required")

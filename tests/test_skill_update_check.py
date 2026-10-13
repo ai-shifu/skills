@@ -14,7 +14,7 @@ SCRIPT_DIR = (
 )
 sys.path.insert(0, str(SCRIPT_DIR))
 
-import skill_update  # noqa: E402
+import skill_update_check  # noqa: E402
 
 
 class FakeResponse:
@@ -24,7 +24,7 @@ class FakeResponse:
         status_code: int,
         body: bytes = b"",
         headers: dict[str, str] | None = None,
-        url: str = skill_update.MANIFEST_URL,
+        url: str = skill_update_check.MANIFEST_URL,
     ) -> None:
         self.status_code = status_code
         self.body = body
@@ -60,38 +60,38 @@ class SkillUpdateTests(unittest.TestCase):
 
     def test_parse_semver_compares_integer_segments(self):
         self.assertGreater(
-            skill_update.parse_semver("1.10.0"),
-            skill_update.parse_semver("1.9.0"),
+            skill_update_check.parse_semver("1.10.0"),
+            skill_update_check.parse_semver("1.9.0"),
         )
-        self.assertIsNone(skill_update.parse_semver("v1.0.0"))
-        self.assertIsNone(skill_update.parse_semver("1.0"))
+        self.assertIsNone(skill_update_check.parse_semver("v1.0.0"))
+        self.assertIsNone(skill_update_check.parse_semver("1.0"))
 
     def test_manifest_rejects_impossible_forced_update(self):
         broken = json.loads(json.dumps(self.manifest))
         broken["min_supported"] = "1.11.0"
-        with self.assertRaises(skill_update.ManifestError):
-            skill_update.validate_manifest(broken)
+        with self.assertRaises(skill_update_check.ManifestError):
+            skill_update_check.validate_manifest(broken)
 
     def test_update_decision_uses_global_latest(self):
-        manifest = skill_update.validate_manifest(self.manifest)
-        latest = skill_update.determine_update(
+        manifest = skill_update_check.validate_manifest(self.manifest)
+        latest = skill_update_check.determine_update(
             "1.10.0", manifest, source="network"
         )
-        recommended = skill_update.determine_update(
+        recommended = skill_update_check.determine_update(
             "1.9.0", manifest, source="network"
         )
         self.assertEqual(latest["status"], "latest")
         self.assertEqual(recommended["status"], "update_recommended")
 
     def test_update_decision_requires_old_unsupported_version(self):
-        manifest = skill_update.validate_manifest(self.manifest)
-        result = skill_update.determine_update(
+        manifest = skill_update_check.validate_manifest(self.manifest)
+        result = skill_update_check.determine_update(
             "0.9.9", manifest, source="network"
         )
         self.assertEqual(result["status"], "update_required")
 
     def test_stable_github_release_uses_tag_version_and_release_page(self):
-        manifest = skill_update.validate_github_release(self.release)
+        manifest = skill_update_check.validate_github_release(self.release)
         self.assertEqual(manifest["skill_name"], "ai-shifu-course-creator")
         self.assertEqual(manifest["latest"], "1.10.0")
         self.assertEqual(manifest["min_supported"], "0.0.0")
@@ -99,7 +99,7 @@ class SkillUpdateTests(unittest.TestCase):
         self.assertEqual(manifest["published_at"], self.release["published_at"])
         self.assertEqual(manifest["update_url"], self.release["html_url"])
         self.assertEqual(manifest["check_interval_hours"], 24)
-        result = skill_update.determine_update("0.9.9", manifest, source="network")
+        result = skill_update_check.determine_update("0.9.9", manifest, source="network")
         self.assertEqual(result["status"], "update_recommended")
 
     def test_github_release_requires_explicit_stable_public_flags(self):
@@ -107,13 +107,13 @@ class SkillUpdateTests(unittest.TestCase):
             for value in (True, None, 0, 1, "false"):
                 with self.subTest(flag=flag, value=value):
                     release = dict(self.release, **{flag: value})
-                    with self.assertRaises(skill_update.ManifestError):
-                        skill_update.validate_github_release(release)
+                    with self.assertRaises(skill_update_check.ManifestError):
+                        skill_update_check.validate_github_release(release)
             with self.subTest(flag=flag, missing=True):
                 release = dict(self.release)
                 del release[flag]
-                with self.assertRaises(skill_update.ManifestError):
-                    skill_update.validate_github_release(release)
+                with self.assertRaises(skill_update_check.ManifestError):
+                    skill_update_check.validate_github_release(release)
 
     def test_github_release_rejects_noncanonical_or_preview_tags(self):
         for tag in (
@@ -122,8 +122,8 @@ class SkillUpdateTests(unittest.TestCase):
         ):
             with self.subTest(tag=tag):
                 release = dict(self.release, tag_name=tag)
-                with self.assertRaises(skill_update.ManifestError):
-                    skill_update.validate_github_release(release)
+                with self.assertRaises(skill_update_check.ManifestError):
+                    skill_update_check.validate_github_release(release)
 
     def test_github_release_requires_matching_official_release_page(self):
         for url in (
@@ -137,25 +137,25 @@ class SkillUpdateTests(unittest.TestCase):
         ):
             with self.subTest(url=url):
                 release = dict(self.release, html_url=url)
-                with self.assertRaises(skill_update.ManifestError):
-                    skill_update.validate_github_release(release)
+                with self.assertRaises(skill_update_check.ManifestError):
+                    skill_update_check.validate_github_release(release)
 
     def test_github_release_allows_empty_notes_and_bounds_long_notes(self):
-        empty = skill_update.validate_github_release(dict(self.release, body=None))
+        empty = skill_update_check.validate_github_release(dict(self.release, body=None))
         self.assertEqual(empty["notes"], "")
         long_notes = "Release change\n" * 100
-        manifest = skill_update.validate_github_release(
+        manifest = skill_update_check.validate_github_release(
             dict(self.release, body=long_notes)
         )
         self.assertTrue(manifest["notes"].startswith("Release change"))
-        self.assertLessEqual(len(manifest["notes"]), skill_update.MAX_NOTES_CHARS)
-        skill_update.validate_manifest(manifest)
+        self.assertLessEqual(len(manifest["notes"]), skill_update_check.MAX_NOTES_CHARS)
+        skill_update_check.validate_manifest(manifest)
 
     def test_github_release_rejects_invalid_timestamp_or_notes(self):
         for change in ({"published_at": None}, {"published_at": "yesterday"}, {"body": {}}):
             with self.subTest(change=change):
-                with self.assertRaises(skill_update.ManifestError):
-                    skill_update.validate_github_release(dict(self.release, **change))
+                with self.assertRaises(skill_update_check.ManifestError):
+                    skill_update_check.validate_github_release(dict(self.release, **change))
 
     def test_network_result_is_cached_and_reused(self):
         body = json.dumps(self.release).encode("utf-8")
@@ -171,7 +171,7 @@ class SkillUpdateTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp) / ".update-check.json"
-            manifest, source = skill_update.fetch_manifest(
+            manifest, source = skill_update_check.fetch_manifest(
                 cache_file=cache,
                 http_get=fake_get,
                 now=self.now,
@@ -187,7 +187,7 @@ class SkillUpdateTests(unittest.TestCase):
             def unexpected_get(*_args, **_kwargs):
                 raise AssertionError("fresh cache should avoid the network")
 
-            cached, cached_source = skill_update.fetch_manifest(
+            cached, cached_source = skill_update_check.fetch_manifest(
                 cache_file=cache,
                 http_get=unexpected_get,
                 now=self.now + timedelta(hours=1),
@@ -213,10 +213,10 @@ class SkillUpdateTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp) / ".update-check.json"
-            skill_update.fetch_manifest(
+            skill_update_check.fetch_manifest(
                 cache_file=cache, http_get=initial_get, now=self.now
             )
-            _manifest, source = skill_update.fetch_manifest(
+            _manifest, source = skill_update_check.fetch_manifest(
                 cache_file=cache,
                 force=True,
                 http_get=revalidate_get,
@@ -236,12 +236,12 @@ class SkillUpdateTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp) / ".update-check.json"
-            skill_update.fetch_manifest(
+            skill_update_check.fetch_manifest(
                 cache_file=cache,
                 http_get=fake_get,
                 now=self.now,
             )
-            _manifest, source = skill_update.fetch_manifest(
+            _manifest, source = skill_update_check.fetch_manifest(
                 cache_file=cache,
                 http_get=fake_get,
                 now=self.now + timedelta(hours=24, seconds=1),
@@ -276,7 +276,7 @@ class SkillUpdateTests(unittest.TestCase):
                     if previous_source is not None:
                         cached["source_url"] = previous_source
                     cache.write_text(json.dumps(cached), encoding="utf-8")
-                    manifest, source = skill_update.fetch_manifest(
+                    manifest, source = skill_update_check.fetch_manifest(
                         cache_file=cache,
                         http_get=fake_get,
                         now=self.now + timedelta(minutes=1),
@@ -297,9 +297,9 @@ class SkillUpdateTests(unittest.TestCase):
             return FakeResponse(status_code=200, body=body)
 
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(
-            skill_update, "_write_cache", side_effect=OSError("read-only install")
+            skill_update_check, "_write_cache", side_effect=OSError("read-only install")
         ):
-            manifest, source = skill_update.fetch_manifest(
+            manifest, source = skill_update_check.fetch_manifest(
                 cache_file=Path(tmp) / "cache.json",
                 http_get=fake_get,
                 now=self.now,
@@ -318,8 +318,8 @@ class SkillUpdateTests(unittest.TestCase):
             )
 
         with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaises(skill_update.ManifestError):
-                skill_update.fetch_manifest(
+            with self.assertRaises(skill_update_check.ManifestError):
+                skill_update_check.fetch_manifest(
                     cache_file=Path(tmp) / "cache.json",
                     http_get=fake_get,
                     now=self.now,
@@ -335,7 +335,7 @@ class SkillUpdateTests(unittest.TestCase):
             return FakeResponse(status_code=200, body=body, url=local_url)
 
         with tempfile.TemporaryDirectory() as tmp:
-            manifest, source = skill_update.fetch_manifest(
+            manifest, source = skill_update_check.fetch_manifest(
                 cache_file=Path(tmp) / "cache.json",
                 manifest_url=local_url,
                 allow_loopback=True,
@@ -351,8 +351,8 @@ class SkillUpdateTests(unittest.TestCase):
             raise AssertionError("invalid development URL must not be requested")
 
         with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaises(skill_update.ManifestError):
-                skill_update.fetch_manifest(
+            with self.assertRaises(skill_update_check.ManifestError):
+                skill_update_check.fetch_manifest(
                     cache_file=Path(tmp) / "cache.json",
                     manifest_url="https://attacker.example/manifest.json",
                     allow_loopback=True,
@@ -370,7 +370,7 @@ class SkillUpdateTests(unittest.TestCase):
                 "---\nname: Test\nversion: 1.0.0\n---\n",
                 encoding="utf-8",
             )
-            result = skill_update.check_for_update(
+            result = skill_update_check.check_for_update(
                 skill_md=skill_md,
                 cache_file=Path(tmp) / "cache.json",
                 http_get=failing_get,
@@ -380,7 +380,7 @@ class SkillUpdateTests(unittest.TestCase):
 
     def test_installed_skill_reads_supported_nested_version_metadata(self):
         skill_md = REPO_ROOT / "skills" / "ai-shifu-course-creator" / "SKILL.md"
-        metadata = skill_update.read_skill_metadata(skill_md)
+        metadata = skill_update_check.read_skill_metadata(skill_md)
         self.assertIsNotNone(metadata)
         self.assertEqual(metadata["name"], "ai-shifu-course-creator")
         self.assertRegex(
@@ -400,7 +400,7 @@ class SkillUpdateTests(unittest.TestCase):
                 "  version: 1.0.0\n  version_management: plugin\n---\n",
                 encoding="utf-8",
             )
-            result = skill_update.check_for_update(
+            result = skill_update_check.check_for_update(
                 skill_md=skill_md,
                 cache_file=Path(tmp) / "cache.json",
                 http_get=unexpected_get,
@@ -427,7 +427,7 @@ class SkillUpdateTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            result = skill_update.check_for_update(
+            result = skill_update_check.check_for_update(
                 skill_md=skill_md,
                 cache_file=Path(tmp) / "cache.json",
                 http_get=unexpected_get,
@@ -454,7 +454,7 @@ class SkillUpdateTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            result = skill_update.check_for_update(
+            result = skill_update_check.check_for_update(
                 skill_md=skill_md,
                 cache_file=Path(tmp) / "cache.json",
                 http_get=unexpected_get,

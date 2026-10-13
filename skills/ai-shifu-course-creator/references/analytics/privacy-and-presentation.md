@@ -86,7 +86,7 @@ The remaining `type` values — `303` input, `309` phone, `310` checkcode and si
 
 ## Course title is not history — hard rule
 
-When the user names a course by title and asks for data, follow the Course Metadata path in `recipes.md` to resolve the **current** `shifu_bid → title` mapping before issuing any downstream query. Present the result under the published-versus-draft semantics and phrasing in `tables.md` → "Course title is 'current published', not 'history'".
+When the user names a course by title and asks for data, follow the Course Metadata path in `query-recipes.md` to resolve the **current** `shifu_bid → title` mapping before issuing any downstream query. Present the result under the published-versus-draft semantics and phrasing in `tables.md` → "Course title is 'current published', not 'history'".
 
 ## `var_variable_values.value` — Aggregate-Only
 

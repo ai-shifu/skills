@@ -17,7 +17,7 @@ Reuse existing answers and artifacts. Ask when missing information materially af
 - Apply [language-policy.md](references/language-policy.md) to conversation and authored content, including target-language resolution and terminology.
 - Apply [session-controls.md](references/session-controls.md) to contact eligibility, explicit-request-only version checks, progress, errors, and completion handoffs. First-response contact conditions remain applicable. The completion handoff applies to the user's completed request, not each internal capability call.
 - Use Markdown links `[descriptive text](URL)` for URLs in user-visible messages. URLs inside Teaching Prompts follow MarkdownFlow rules; URLs inside fenced code blocks are exempt.
-- Honor explicit author choices, source facts, selected exact material, and the distinction between a per-lesson Teaching Prompt and a course-wide Course Prompt. Runtime semantics are defined in [prompt-contracts.md](references/prompt-contracts.md) and [markdownflow.md](references/markdownflow.md).
+- Honor explicit author choices, source facts, selected exact material, and the distinction between a per-lesson Teaching Prompt and a course-wide Course Prompt. Runtime semantics are defined in [prompt-semantics.md](references/prompt-semantics.md) and [markdownflow-syntax.md](references/markdownflow-syntax.md).
 - For an existing platform course's lesson, Course Prompt, or description edit, apply the [versioned editing baseline](references/course-sync.md#pull-before-editing) before preparing revised content. Course-wide artifact writes use [course management](references/course-management.md#operations) with that baseline. Local-only authoring and read-only review remain independent of platform access.
 
 ## Capabilities
@@ -30,13 +30,13 @@ Decide what learners should understand or do and how teaching can help them get 
 
 | Capability | Useful inputs | Result and guidance |
 | --- | --- | --- |
-| Resolve course design | Topic, learner needs, source material, existing choices | Design choices and their effects; ask only material unresolved questions. [Course design](references/course-design-intake.md) |
-| Analyze material and plan structure | Source material, topic, outline, existing lessons | Relevant source analysis, chapter and lesson structure, or optional traceable segments. [Structure and segmentation](references/segmentation-workflow.md) |
-| Design lesson teaching | Goals, audience, source, existing teaching choices | Suitable explanations, examples, practice, interactions, visual purposes, and feedback. [Teaching options](references/pedagogy.md) |
+| Resolve course design | Topic, learner needs, source material, existing choices | Design choices and their effects; ask only material unresolved questions. [Course design](references/course-design-choices.md) |
+| Analyze material and plan structure | Source material, topic, outline, existing lessons | Relevant source analysis, chapter and lesson structure, or optional traceable segments. [Structure and segmentation](references/course-structure.md) |
+| Design lesson teaching | Goals, audience, source, existing teaching choices | Suitable explanations, examples, practice, interactions, visual purposes, and feedback. [Teaching options](references/teaching-design.md) |
 | Write listing copy | Course topic, audience, goals, and supported outcomes | Learner-facing course description; this prose does not require MarkdownFlow. [Course description](references/course-description.md) |
-| Review teaching quality | Available material, design, or course content | Scoped findings and requested repairs for factual support, source coverage, and learning effectiveness. [Review](references/optimization-workflow.md), [checks](references/optimization-checklist.md) |
+| Review teaching quality | Available material, design, or course content | Scoped findings and requested repairs for factual support, source coverage, and learning effectiveness. [Review](references/course-review.md), [checks](references/review-checklist.md) |
 
-Teaching patterns, interaction counts, and visual rhythms in [pedagogy.md](references/pedagogy.md) are recommendations. The agent chooses teaching strategy within the user's explicit constraints.
+Teaching patterns, interaction counts, and visual rhythms in [teaching-design.md](references/teaching-design.md) are recommendations. The agent chooses teaching strategy within the user's explicit constraints.
 
 ### Express in MarkdownFlow
 
@@ -46,9 +46,9 @@ Make the intended teaching behavior executable in Teaching Prompts and Course Pr
 | --- | --- | --- |
 | Write or revise a lesson | Topic, source, existing Prompt, or supplied design | Runnable Teaching Prompt with required source-only explanatory comments and a suitable layout. A separate design run is not required. [Teaching Prompt](references/teaching-prompt.md) |
 | Write or revise a Course Prompt | Course title, topic, goals, audience, and design context | Course-wide Prompt using the existing six-section template. [Course Prompt](references/course-prompt.md) |
-| Encode interactions, variables, and exact content | Intended response behavior, variable uses, selected exact material | Valid runtime controls, references, branches, and deterministic output. [MarkdownFlow](references/markdownflow.md), [Prompt semantics](references/prompt-contracts.md) |
+| Encode interactions, variables, and exact content | Intended response behavior, variable uses, selected exact material | Valid runtime controls, references, branches, and deterministic output. [MarkdownFlow](references/markdownflow-syntax.md), [Prompt semantics](references/prompt-semantics.md) |
 | Express lesson images | Teaching intent, authoritative asset URLs and metadata | Correct image embedding or HTML-view instructions. [Image authoring](references/image-authoring.md) |
-| Review Prompt expression | One Prompt or selected artifacts | Scoped findings and repairs for runtime syntax, variables, comments, layout, and artifact contracts. [Review](references/optimization-workflow.md), [checks](references/optimization-checklist.md) |
+| Review Prompt expression | One Prompt or selected artifacts | Scoped findings and repairs for runtime syntax, variables, comments, layout, and artifact contracts. [Review](references/course-review.md), [checks](references/review-checklist.md) |
 
 ### Operate the CLI
 
@@ -57,14 +57,14 @@ Use deterministic commands for local course files, platform access and changes, 
 | Capability | Useful inputs | Result and guidance |
 | --- | --- | --- |
 | Establish platform access | Selected service/profile and existing authorization | Verified access and recoverable browser authorization when needed. [Authentication](references/authentication.md) |
-| Identify an existing course | BID or title and selected platform context | Unique target or an explicit unresolved result. [Course target](references/course-target.md) |
+| Identify an existing course | BID or title and selected platform context | Unique target or an explicit unresolved result. [Course target](references/course-lookup.md) |
 | Upload lesson images | Image assets, informative alt text, and selected platform context | Real resource URLs and provenance records for later embedding. [Image upload](references/cli/cli-reference.md#image-upload), [asset handling](references/image-authoring.md) |
 | Synchronize existing content | Existing course and local edits/directory | Pull, divergence inspection, version-protected writes, and conflict convergence. [Course sync](references/course-sync.md) |
-| Build or import a new course | Authored course directory or import payload | Built payload, new draft, and verified imported content. [Deployment capabilities](references/deployment-workflow.md) |
+| Build or import a new course | Authored course directory or import payload | Built payload, new draft, and verified imported content. [Build and import](references/build-and-import.md) |
 | Manage and publish a course | Resolved course and requested operation | Metadata, structure, access, avatar, Listen Mode, publication, preview, or archive changes. [Course management](references/course-management.md) |
-| Analyze course data | Course/question, dimensions, and time range | Queries and readable, privacy-respecting findings. [Analytics](references/analytics/overview.md) |
+| Analyze course data | Course/question, dimensions, and time range | Queries and readable, privacy-respecting findings. [Analytics](references/analytics/guide.md) |
 
-Shared references support the relevant category: [data-contracts.md](references/data-contracts.md) defines optional author controls and artifact consistency; [source-preservation.md](references/source-preservation.md) defines exact-source decisions. An image's teaching purpose, MarkdownFlow representation, and CLI upload are separate actions even when they share a reference. Review likewise applies the criteria for the requested design, expression, or platform result.
+Shared references support the relevant category: [authoring-contracts.md](references/authoring-contracts.md) defines optional author controls and artifact consistency; [source-preservation.md](references/source-preservation.md) defines exact-source decisions. An image's teaching purpose, MarkdownFlow representation, and CLI upload are separate actions even when they share a reference. Review likewise applies the criteria for the requested design, expression, or platform result.
 
 Local teaching design, Prompt expression, content-only review, and builds do not require platform access; invoke authentication when a selected platform operation needs it. Analytics may inform a later teaching decision when relevant, but querying data does not itself request a course rewrite.
 

@@ -66,7 +66,7 @@ skill 以 `SKILL.md` 作为行为定义。按照 [Agent Skills](https://agentski
 
 只交付任务需要的产物。分段记录、课程索引、全局变量表和固定风险报告都不是所有任务的必需结果。完整创作的课程包含课节内容、Course Prompt、简介和结构；单项请求可以在完成所需产物后结束。
 
-完整建课遵循[默认发布及完成稿确认规则](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome)。用户明确要求本地交付或不发布的草稿时，按该范围完成。已有成果可以直接使用对应的[构建与导入](skills/ai-shifu-course-creator/references/deployment-workflow.md)、[同步](skills/ai-shifu-course-creator/references/course-sync.md)或[管理](skills/ai-shifu-course-creator/references/course-management.md)能力。
+完整建课遵循[默认发布及完成稿确认规则](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome)。用户明确要求本地交付或不发布的草稿时，按该范围完成。已有成果可以直接使用对应的[构建与导入](skills/ai-shifu-course-creator/references/build-and-import.md)、[同步](skills/ai-shifu-course-creator/references/course-sync.md)或[管理](skills/ai-shifu-course-creator/references/course-management.md)能力。
 
 ## 元数据校验
 

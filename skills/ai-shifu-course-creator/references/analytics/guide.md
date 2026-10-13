@@ -1,11 +1,11 @@
-# Analytics Overview
+# Analytics Guide
 
 Use these capabilities to translate a course author's question into a query and a readable answer. The agent decides which queries and supporting references are needed; this page does not impose an end-to-end task sequence.
 
 ## Related Guidance
 
 - `../authentication.md` establishes access to the intended platform context when needed.
-- `dsl.md` defines query syntax; `tables.md` defines available fields, codes, identifier relationships, and data traps; `recipes.md` supplies scenario templates.
+- `query-language.md` defines query syntax; `tables.md` defines available fields, codes, identifier relationships, and data traps; `query-recipes.md` supplies scenario templates.
 - `privacy-and-presentation.md` defines access restrictions and the Translation Gate for every user-facing result.
 - `../cli/cli-reference.md#analytics-query` defines analytics invocation and output; `../cli/cli-reference.md#query-commands` covers course/outline lookups.
 
@@ -22,7 +22,7 @@ These capabilities answer course-author or admin questions about:
 - which wallet absorbed the deduction for a given course
 - audience profile distribution (goals, level, preferences)
 - individual learner tracking — with the privacy rules in `privacy-and-presentation.md`
-- **course title resolution** — "what is my course `<title>` currently called", "did I rename it", "is the draft title diverging from the published title" (follow the Course Metadata path in `recipes.md`)
+- **course title resolution** — "what is my course `<title>` currently called", "did I rename it", "is the draft title diverging from the published title" (follow the Course Metadata path in `query-recipes.md`)
 
 > Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits — query via `shifu-cli.py credit-detail`.
 
@@ -38,7 +38,7 @@ The question "how many courses do I have?" is answered by `shifu-cli.py list` wi
 ## Query Planning
 
 - For a DSL-backed question, construct the body from the actual syntax, table/field semantics, and relevant recipe. Recipe 0d supports a one-glance course overview; narrow questions need only their relevant queries.
-- Use a known course BID in the intended account, or resolve the course from the supplied context. **When the user names a course by title**, complete the applicable Course Metadata lookup in `recipes.md` before querying that course. It chooses the current published-title lookup and includes the draft lookup when no published row exists, when the request asks for the draft title, or when it compares published and draft titles. `list` alone is a draft snapshot and can show historical or stale titles.
+- Use a known course BID in the intended account, or resolve the course from the supplied context. **When the user names a course by title**, complete the applicable Course Metadata lookup in `query-recipes.md` before querying that course. It chooses the current published-title lookup and includes the draft lookup when no published row exists, when the request asks for the draft title, or when it compares published and draft titles. `list` alone is a draft snapshot and can show historical or stale titles.
 - For lesson dimensions, use `show <shifu_bid>` to establish the `outline_item_bid → name / position` mapping needed for correct filters and readable results.
 - Apply the access restrictions in `privacy-and-presentation.md` to every query, including `user_users`, `generated_content`, and `var_variable_values.value`. Apply its Translation Gate before presenting any result; do not expose raw status codes or BIDs.
 - Credit consumption uses `credit-detail` as specified above rather than the empty daily DSL table.
@@ -54,8 +54,8 @@ When an analytics response carries a business `code`, interpret it as follows:
 | `11002` | Invalid DSL | Re-check required fields, duplicate `alias`, or leading-wildcard `like` |
 | `11003` | Table not in whitelist | Use one of the 10 tables in `tables.md` |
 | `11004` | Field not in whitelist | Check field name or pick a different table |
-| `11005` | Operator not in whitelist | Use one of the 12 operators in `dsl.md` |
-| `11006` | Aggregate function not in whitelist | Use one of the 6 aggregate functions in `dsl.md` |
+| `11005` | Operator not in whitelist | Use one of the 12 operators in `query-language.md` |
+| `11006` | Aggregate function not in whitelist | Use one of the 6 aggregate functions in `query-language.md` |
 | `11007` | `limit` or `offset` out of range | `limit ∈ [1, 1000]`, `offset ≥ 0` |
 | `1001` | User not found / token expired | Apply `../authentication.md#verify-before-login`; verify before deciding whether a login is needed. |
 | `1004` / `1005` | Token not logged in / expired | Apply the same verify-first authentication recovery. |
@@ -101,7 +101,7 @@ These are **different tools for different questions**:
 
 ### Pitfall 3 — `where` must be an array, not a single object
 
-The DSL requires `where` to be an array of filter objects, even for a single condition — a bare object is rejected with `11002`. WRONG/CORRECT examples in `dsl.md` → Syntax Gotchas.
+The DSL requires `where` to be an array of filter objects, even for a single condition — a bare object is rejected with `11002`. WRONG/CORRECT examples in `query-language.md` → Syntax Gotchas.
 
 ### Pitfall 4 — Table name guessing
 
@@ -125,7 +125,7 @@ For lesson-level data (stuck lessons, follow-ups per lesson, ratings), obtain th
 
 ## What Lives Where
 
-- `dsl.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)
+- `query-language.md` — DSL grammar (operators, aggregates, constraints, per-learner guard rail, auto-applied filters, creator-scoped metadata tables)
 - `tables.md` — the 10 tables, their fields, all code/enum translation tables, ID translation rules, the duplicate-row trap, the `role = 2 ≠ follow-up` trap, and the "course title is not history" rule
-- `recipes.md` — ready-to-run DSL templates by scenario (Course Metadata resolution, Course Overview 0d, then 23 numbered scenario recipes including follow-up four-key pairing and follow-up per lesson)
+- `query-recipes.md` — ready-to-run DSL templates by scenario (Course Metadata resolution, Course Overview 0d, then 23 numbered scenario recipes including follow-up four-key pairing and follow-up per lesson)
 - `privacy-and-presentation.md` — `user_users` / `generated_content` / `var_variable_values` privacy rules, plus the Translation Gate for user-facing output

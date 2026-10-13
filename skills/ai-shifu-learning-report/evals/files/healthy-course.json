@@ -1,6 +1,6 @@
 {
   "fixture_version": "1.0",
-  "fixture_name": "healthy-complete-course",
+  "fixture_name": "healthy-course",
   "synthetic": true,
   "request_context": {
     "audience": [

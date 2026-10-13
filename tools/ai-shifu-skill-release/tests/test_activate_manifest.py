@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from ai_shifu_release import manifest as manifest_workflow
+from ai_shifu_release import website_manifest as manifest_workflow
 
 MANIFEST = {
     "schema_version": 1,

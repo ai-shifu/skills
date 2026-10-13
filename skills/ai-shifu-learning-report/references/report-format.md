@@ -1,4 +1,4 @@
-# Report Structure
+# Report Format and Rendering
 
 Build one validated data artifact and one polished, self-contained presentation artifact. The JSON is authoritative; the HTML must render it without adding new claims.
 

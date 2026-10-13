@@ -4,7 +4,7 @@ Convert course signals into calibrated teaching decisions. The report should hel
 
 ## Required References
 
-- `data-collection-and-privacy.md`
+- `data-collection.md`
 
 ## Metric Contract
 

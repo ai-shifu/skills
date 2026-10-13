@@ -1,6 +1,6 @@
-# Analytics Recipes
+# Analytics Query Recipes
 
-Ready-to-run templates, grouped by scenario. Most examples run through `shifu-cli.py analytics-query <bid> --dsl '…'` (the DSL path); the **Credit Consumption** section is the exception — it uses `shifu-cli.py credit-detail <bid> …` (why the DSL path is unavailable: `tables.md`). Substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Grammar and field meanings are documented in `dsl.md` and `tables.md`.
+Ready-to-run templates, grouped by scenario. Most examples run through `shifu-cli.py analytics-query <bid> --dsl '…'` (the DSL path); the **Credit Consumption** section is the exception — it uses `shifu-cli.py credit-detail <bid> …` (why the DSL path is unavailable: `tables.md`). Substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Grammar and field meanings are documented in `query-language.md` and `tables.md`.
 
 ## Invocation Notes
 

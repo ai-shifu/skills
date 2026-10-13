@@ -1315,8 +1315,8 @@ class CourseCreatorSetAvatarTests(unittest.TestCase):
             original_height=900,
         )
 
-    def _image_utils_module(self, path: Path):
-        module = types.ModuleType("image_utils")
+    def _image_preparation_module(self, path: Path):
+        module = types.ModuleType("image_preparation")
         module.prepare_image = mock.Mock(return_value=self._prepared(path))
         return module
 
@@ -1341,10 +1341,10 @@ class CourseCreatorSetAvatarTests(unittest.TestCase):
             remote = "https://res.ai-shifu.cn/avatar-resource"
             stdout, stderr = io.StringIO(), io.StringIO()
             events = []
-            image_utils = self._image_utils_module(source)
+            image_preparation = self._image_preparation_module(source)
 
             with (
-                mock.patch.dict(sys.modules, {"image_utils": image_utils}),
+                mock.patch.dict(sys.modules, {"image_preparation": image_preparation}),
                 mock.patch.object(
                     course_creator_cli,
                     "resolve_auth",
@@ -1384,18 +1384,18 @@ class CourseCreatorSetAvatarTests(unittest.TestCase):
                 events[1],
                 (
                     "upload",
-                    image_utils.prepare_image.return_value.data,
-                    image_utils.prepare_image.return_value.mime,
+                    image_preparation.prepare_image.return_value.data,
+                    image_preparation.prepare_image.return_value.mime,
                 ),
             )
             self.assertEqual(events[2], ("bind", {"avatar": remote}))
             self.assertIn("600x900", stderr.getvalue())
             self.assertIn("1:1", stderr.getvalue())
             self.assertIn(remote, stdout.getvalue())
-            image_utils.prepare_image.assert_called_once_with(source.resolve())
+            image_preparation.prepare_image.assert_called_once_with(source.resolve())
             self.assertLess(
-                len(image_utils.prepare_image.return_value.data),
-                image_utils.prepare_image.return_value.original_bytes,
+                len(image_preparation.prepare_image.return_value.data),
+                image_preparation.prepare_image.return_value.original_bytes,
             )
 
     def test_invalid_extension_stops_before_auth_or_upload(self):
@@ -1420,9 +1420,9 @@ class CourseCreatorSetAvatarTests(unittest.TestCase):
             args = self._args(source)
             args.course_dir = tmp
             manifest = {"shifu_bid": "course-bid"}
-            image_utils = self._image_utils_module(source)
+            image_preparation = self._image_preparation_module(source)
             with (
-                mock.patch.dict(sys.modules, {"image_utils": image_utils}),
+                mock.patch.dict(sys.modules, {"image_preparation": image_preparation}),
                 mock.patch.object(
                     course_creator_cli,
                     "resolve_auth",
@@ -1451,9 +1451,9 @@ class CourseCreatorSetAvatarTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             source = self._image(tmp)
             remote = "https://res.ai-shifu.cn/new-avatar"
-            image_utils = self._image_utils_module(source)
+            image_preparation = self._image_preparation_module(source)
             with (
-                mock.patch.dict(sys.modules, {"image_utils": image_utils}),
+                mock.patch.dict(sys.modules, {"image_preparation": image_preparation}),
                 mock.patch.object(
                     course_creator_cli,
                     "resolve_auth",

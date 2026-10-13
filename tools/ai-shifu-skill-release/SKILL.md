@@ -9,7 +9,7 @@ All operations go through this tool's `scripts/release.py`. Publisher identity a
 
 1. Locate the directory containing **this** `SKILL.md`. In `ai-shifu/skills`, it is `tools/ai-shifu-skill-release/`, not the Git repository root. Use it as the working directory for the commands below. A standalone copy uses the same sibling layout.
 2. Confirm that `scripts/release.py` and `channels/workbuddy/.codebuddy-plugin/plugin.json` exist there. Stop if the intended tool cannot be located.
-3. Read `python3 scripts/release.py --help` if the implementation may have changed. Read [Publishing Environment](references/publishing.md) for runtime, publisher configuration, and authentication requirements.
+3. Read `python3 scripts/release.py --help` if the implementation may have changed. Read [Publishing Environment](references/publishing-environment.md) for runtime, publisher configuration, and authentication requirements.
 4. Before packaging, check `git status --short` and `git log -1 --oneline` in the enclosing repository when present. The builder supports standalone copies without Git and records unavailable provenance as null; do not claim a clean repository without evidence.
 5. GitHub `ai-shifu/skills` remote `main`, or a specified commit from it, is the source of business skills and channel templates. Sharing a repository with the tool does not make local skill edits build inputs. Tagged commits create downloadable GitHub Releases. Platform Actions jobs download and verify the published Release attachments before submission; they do not rebuild or require the old tag to remain the current `main` tip.
 
@@ -110,7 +110,7 @@ Before ClawHub publication, inspect version history:
 npx --yes clawhub@latest inspect ai-shifu-course-creator --versions --json
 ```
 
-Use the Node version and CLI package configured under `[channels.clawhub]` in `release.toml`; the example commands use its defaults. The publisher resolves npx from `CLAWHUB_NPX` or `--clawhub-npx`, then PATH, then the nvm fallback for the configured Node version; see [Publishing Environment](references/publishing.md).
+Use the Node version and CLI package configured under `[channels.clawhub]` in `release.toml`; the example commands use its defaults. The publisher resolves npx from `CLAWHUB_NPX` or `--clawhub-npx`, then PATH, then the nvm fallback for the configured Node version; see [Publishing Environment](references/publishing-environment.md).
 
 Publishing an existing version can overwrite that version's content. Point out the existing version and obtain explicit confirmation before proceeding.
 

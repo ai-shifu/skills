@@ -1,4 +1,4 @@
-# Analytics Tables & Codes
+# Analytics Table and Field Reference
 
 The 10 tables you can query, the fields each carries, the code/enum tables to translate raw values, the ID translation rules, and the data traps to be aware of.
 
@@ -7,7 +7,7 @@ The 10 tables you can query, the fields each carries, the code/enum tables to tr
 | Table | Answers | Key fields |
 | --- | --- | --- |
 | `learn_progress_records` | Learner count / completion rate / stuck lesson / recent activity / **lessons completed per learner** | `user_bid`, `outline_item_bid`, `status` (601-608, see code table), `created_at` |
-| `learn_generated_blocks` | Content interaction count / likes / type popularity / **interactions per learner** / **follow-up Q&A replay** | `user_bid`, `progress_record_bid`, `outline_item_bid`, `type` (see code table), `role` (1 teacher/Teaching Agent · 2 learner · 3 UI, **integer**), `status` (1 active / 0 history — **API auto-filters to 1**), `position` (block ordering within a `progress_record_bid`), `liked` (-1/0/1), `generated_content` (raw text, restricted — see `dsl.md`) |
+| `learn_generated_blocks` | Content interaction count / likes / type popularity / **interactions per learner** / **follow-up Q&A replay** | `user_bid`, `progress_record_bid`, `outline_item_bid`, `type` (see code table), `role` (1 teacher/Teaching Agent · 2 learner · 3 UI, **integer**), `status` (1 active / 0 history — **API auto-filters to 1**), `position` (block ordering within a `progress_record_bid`), `liked` (-1/0/1), `generated_content` (raw text, restricted — see `query-language.md`) |
 | `learn_lesson_feedbacks` | Lesson ratings / Read Mode vs Listen Mode preference / **avg rating per learner** | `user_bid`, `progress_record_bid`, `mode` (read/listen), `score` (1-5) |
 | `order_orders` | Enrolments / revenue / channel distribution / refund rate / **total spend per learner** | `user_bid`, `status` (501-505, see code table; **paid** = `502`), `payment_channel` (pingxx/stripe/alipay/wechatpay/…), `paid_price` |
 | `var_variable_values` | Learner profile distribution (goals / level / preferences) | `user_bid`, `variable_bid`, `value` (aggregate only — **do not select raw value**; see `privacy-and-presentation.md`) |
@@ -71,7 +71,7 @@ The 2026-05-15 query handbook PDF §6 recommends pairing a `type = 321` learner 
 - `outline_item_bid` distinguishes simultaneous threads if the learner is in multiple lessons.
 - `position` is the within-thread ordering — the question's `position`, plus the next `position` value for the answer.
 
-`created_at` time-ordering still works as a fallback when `position` is missing or two blocks share a position (rare but possible during concurrent generation). Recipe 22 in `recipes.md` shows the canonical 3-step pairing.
+`created_at` time-ordering still works as a fallback when `position` is missing or two blocks share a position (rare but possible during concurrent generation). Recipe 22 in `query-recipes.md` shows the canonical 3-step pairing.
 
 ## `learn_progress_records.status`
 

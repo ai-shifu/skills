@@ -16,7 +16,7 @@ For long or noisy material, semantic segments can help preserve traceability. Re
 - Keep required source points and immutable spans represented. Do not drop difficult material merely to fit a lesson count.
 - Separate uncertainty in the source from a design choice. Identify missing evidence or conflicting constraints without inventing source claims; a useful draft may state its assumptions.
 
-[pedagogy.md](pedagogy.md) offers teaching approaches. [course-design-intake.md](course-design-intake.md) explains author-facing choices when clarification would help.
+[teaching-design.md](teaching-design.md) offers teaching approaches. [course-design-choices.md](course-design-choices.md) explains author-facing choices when clarification would help.
 
 ## Results and Checks
 

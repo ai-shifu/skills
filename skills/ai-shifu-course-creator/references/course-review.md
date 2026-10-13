@@ -8,7 +8,7 @@ Review teaching design, MarkdownFlow expression, or both according to the reques
 
 Work with one pasted Prompt body, selected files, or a complete course. Identify the version being reviewed when multiple candidates could differ. An absent companion artifact or source is a limit on what can be assessed, not a reason to invent an envelope or create unrelated content.
 
-Use [optimization-checklist.md](optimization-checklist.md) for observable criteria relevant to the artifacts and requested scope. With authoritative source material, compare source coverage and required exact content under [source-preservation.md](source-preservation.md). Without it, assess the supplied content without claiming external-source fidelity.
+Use [review-checklist.md](review-checklist.md) for observable criteria relevant to the artifacts and requested scope. With authoritative source material, compare source coverage and required exact content under [source-preservation.md](source-preservation.md). Without it, assess the supplied content without claiming external-source fidelity.
 
 ## Review and Repair
 

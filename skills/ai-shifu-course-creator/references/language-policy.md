@@ -50,7 +50,7 @@ Localize natural-language values embedded inside MarkdownFlow controls while pre
 ## Localization Exclusions
 
 - Do not translate JSON keys, ids or BIDs, file names and paths, CLI commands and flags, API or DSL fields, code symbols, contract enum values, MarkdownFlow syntax, URLs, code samples, or fixed numeric values.
-- Preserve existing variable names when changing them would break references. For new variable names, apply [variable naming and consistency](data-contracts.md#variable-table) while localizing natural-language names. Runtime parser behavior remains defined in `markdownflow.md#variables`.
+- Preserve existing variable names when changing them would break references. For new variable names, apply [variable naming and consistency](authoring-contracts.md#variable-table) while localizing natural-language names. Runtime parser behavior remains defined in `markdownflow-syntax.md#variables`.
 - Preserve exact source quotations, regulated wording, source-selected immutable image text, tables, and every other span selected by `source-preservation.md`. Localize only newly authored surrounding text.
 
 ## Language Audit

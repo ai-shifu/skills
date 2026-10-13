@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ai_shifu_release import TOOL_ROOT, channel_results, manifest
+from ai_shifu_release import TOOL_ROOT, channel_results, website_manifest
 from ai_shifu_release.release_state import ReleaseContext, ReleaseReport
 from support import ReleaseFixture
 
@@ -62,7 +62,7 @@ class ChannelResultsTest(unittest.TestCase):
         self.assertEqual(imported["skillhub"]["status"], "verified")
         report = json.loads((self.release_dir / "release-report.json").read_text())
         self.assertEqual(report["channels"]["workbuddy"], manual)
-        manifest.assert_channels_ready(self.release_dir)
+        website_manifest.assert_channels_ready(self.release_dir)
 
     def test_failed_or_uncertain_receipts_do_not_open_gate(self) -> None:
         for status in ("failed", "needs_review"):
@@ -71,7 +71,7 @@ class ChannelResultsTest(unittest.TestCase):
                     self.release_dir, [self.receipt("clawhub", status)]
                 )
                 with self.assertRaisesRegex(ValueError, f"clawhub={status}"):
-                    manifest.assert_channels_ready(self.release_dir)
+                    website_manifest.assert_channels_ready(self.release_dir)
 
     def test_mismatched_receipt_does_not_partially_update_report(self) -> None:
         ReleaseReport(self.release).update({"workbuddy": {"status": "submitted"}})

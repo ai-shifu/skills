@@ -6,7 +6,7 @@ Moving the implementation does not change the release source: GitHub `ai-shifu/s
 
 ## Quick Start
 
-Python 3.11+ and Git are required for building and testing. The implementation uses the Python standard library. Authoritative GitHub release-note collection also requires `gh` with read access to the source repository's contents, Releases, and pull requests. Publication has additional CLI and authentication requirements; see [Publishing Environment](references/publishing.md).
+Python 3.11+ and Git are required for building and testing. The implementation uses the Python standard library. Authoritative GitHub release-note collection also requires `gh` with read access to the source repository's contents, Releases, and pull requests. Publication has additional CLI and authentication requirements; see [Publishing Environment](references/publishing-environment.md).
 
 `scripts/release.py` is the only command entrypoint. It delegates to the internal `scripts/ai_shifu_release/` package: `build` and `verify` own orchestration, `config` owns release configuration, while `source`, `skill_metadata`, and `artifacts` own shared operations, and the package's `channels/` owns each channel's package format through `clawhub_skillhub`, `workbuddy`, and `doubao`. Publication state, channel submission, GitHub Releases, version changes, and manifest activation have separate modules. Copy the complete `scripts/` directory with the tool.
 
@@ -224,7 +224,7 @@ Edge caching may delay the visible update by about five minutes.
 
 ## Configuration and Channel Assets
 
-`release.toml` owns publisher identity and non-secret channel settings. Builds and channel submissions read the configuration committed with the release source, including when an older release is retried with newer runtime code. Channel profiles and templates retain their native formats and are referenced by the configuration. See [Publishing Environment](references/publishing.md) for fields, local overrides, and legacy-source compatibility.
+`release.toml` owns publisher identity and non-secret channel settings. Builds and channel submissions read the configuration committed with the release source, including when an older release is retried with newer runtime code. Channel profiles and templates retain their native formats and are referenced by the configuration. See [Publishing Environment](references/publishing-environment.md) for fields, local overrides, and legacy-source compatibility.
 
 - WorkBuddy reads `author.name` and `author.email` from the packaged `.codebuddy-plugin/plugin.json`. The build fills the source template's placeholders from the committed `release.toml` at the same source revision. GitHub Actions and local builds use that one file; no publisher repository variables are needed. The name and email are public in the package, so review changes to this file in a PR. The build fails if either value is missing or is a placeholder.
 - ClawHub preserves the exported `SKILL.md` unchanged. Its slug and display name are CLI arguments. SkillHub only adds or replaces `slug` and `displayName` in frontmatter.

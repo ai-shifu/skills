@@ -1,4 +1,4 @@
-# MarkdownFlow Spec
+# MarkdownFlow Runtime Syntax
 
 MarkdownFlow is a prompt-processing format used by Teaching Prompts and Course Prompts. This file describes only the syntax the runtime recognizes and the observable result of that syntax.
 
