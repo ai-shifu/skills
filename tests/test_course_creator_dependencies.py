@@ -199,26 +199,52 @@ class CourseCreatorReferenceTests(unittest.TestCase):
             if "ai-shifu-course-creator/" in target:
                 self.assert_target_exists(report_reference, target)
 
-    def test_removed_coordinators_have_no_active_reference_links(self):
-        removed_paths = (
-            "authoring-mode.md",
-            "orchestration-workflow.md",
-            "analytics/workflow.md",
+    def assert_no_removed_coordinator_targets(self, source: Path, content: str):
+        removed_paths = {
+            (REFERENCES / relative).resolve()
+            for relative in (
+                "authoring-mode.md",
+                "orchestration-workflow.md",
+                "analytics/workflow.md",
+            )
+        }
+        for value in active_reference_targets(content):
+            target = (source.parent / value.partition("#")[0]).resolve()
+            self.assertNotIn(
+                target,
+                removed_paths,
+                f"{source}: active reference to removed coordinator {value}",
+            )
+
+    def test_removed_coordinator_validation_resolves_relative_navigation(self):
+        source = REFERENCES / "analytics" / "capability.md"
+        targets = (
+            "workflow.md",
+            "./workflow.md#queries",
+            "../analytics/workflow.md",
+            "../analytics/../analytics/workflow.md",
+            "../authoring-mode.md",
+            "../../references/orchestration-workflow.md",
         )
+        for target in targets:
+            content = f"# Capability\n\n## More capabilities\n\n- `{target}`\n"
+            with self.subTest(target=target):
+                with self.assertRaisesRegex(AssertionError, "removed coordinator"):
+                    self.assert_no_removed_coordinator_targets(source, content)
+
+    def test_removed_coordinator_validation_allows_different_target_paths(self):
+        source = REFERENCES / "analytics" / "capability.md"
+        content = """# Capability
+## More capabilities
+- `examples/analytics/workflow.md`
+- `examples/authoring-mode.md`
+"""
+        self.assert_no_removed_coordinator_targets(source, content)
+
+    def test_removed_coordinators_have_no_active_reference_links(self):
         for path in [SKILL_ROOT / "SKILL.md", SKILL_ROOT / "AGENTS.md", *REFERENCES.rglob("*.md")]:
-            targets = [
-                target.partition("#")[0]
-                for target in active_reference_targets(path.read_text(encoding="utf-8"))
-            ]
-            for removed in removed_paths:
-                with self.subTest(source=path.relative_to(SKILL_ROOT), removed=removed):
-                    self.assertFalse(
-                        any(
-                            target == removed or target.endswith("/" + removed)
-                            for target in targets
-                        ),
-                        f"{path}: active reference to removed coordinator {removed}",
-                    )
+            with self.subTest(source=path.relative_to(SKILL_ROOT)):
+                self.assert_no_removed_coordinator_targets(path, path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
