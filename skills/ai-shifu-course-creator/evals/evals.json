@@ -186,7 +186,7 @@
         "After navigation comments are removed, the body directly carries the chosen teaching sequence, required content, interaction placement, feedback, and close, including any visuals actually chosen; it does not substitute an authoring explanation of design or preservation categories.",
         "The agent chooses a coherent teaching sequence and any useful visuals while preserving all supplied facts, operational order, exact material, question, option order, immediate feedback, and close; no universal brief-text-first or slide/text alternation is required.",
         "The selected directions produce executable local teaching requirements within the fixed lesson; ordinary wording remains an instruction rather than a mandatory transcript, and the result adds no concrete typography, color, coordinates, animation, or uniform point quota.",
-        "Every local direction states required content and effect. Background-based example, analogy, style, or value directions are direct teaching requirements, not authoring commentary announcing how much wording was omitted or how a former personalization level works.",
+        "Every local direction states required content and effect. Background-based example, analogy, style, or value directions are direct teaching requirements, not authoring commentary about the personalization selection.",
         "The no-variable decision is fully represented by the exact no-assignment `?[]` control, empty used_variables, and empty global_variable_table; Teaching Prompt prose performs the immediate feedback but does not explain the named-variable encoding choice.",
         "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. The body uses readable author-editable formatting appropriate to the task; no particular list hierarchy, heading scheme, or template is required.",
         "The two exact deterministic lines and the unchanged interaction control remain standalone and unprefixed, byte-for-byte intact, outside navigation comments; question, control, and immediate feedback remain adjacent regardless of body layout."
@@ -1054,15 +1054,13 @@
     },
     {
       "id": 86,
-      "prompt": "以下四个 Course Design Intake 情境互相独立。都只在本地操作，course_author_name=李明，标准一对一授课，interaction_policy=disabled，1章1节，其它设计信息都已确定。这一轮不分段、不生成提示词、不部署。A：personalization_directions=[]。B：个性化方向还没回答，但作者明确说“这项跳过，继续”。C：只有旧 teaching_prompt_personalization_level=5，没有提供方向。D：同时有旧 teaching_prompt_personalization_level=5 和 personalization_directions=[\"examples\"]。请分别给出当下应作的最短回复或处理结果，不能把四个独立情境合并成一个选择。",
-      "expected_output": "Distinguishes explicit none, explicit skip, legacy-only input, and a valid new selection alongside legacy data without silently mapping intensity to directions.",
+      "prompt": "以下两个课程设计选择情境互相独立。都只在本地操作，course_author_name=李明，标准一对一授课，interaction_policy=disabled，1章1节，其它设计信息都已确定。这一轮不分段、不生成提示词、不部署。A：personalization_directions=[]。B：个性化方向还没回答，但作者明确说“这项跳过，继续”。请分别给出当下应作的最短回复或处理结果，不能把两个独立情境合并成一个选择。",
+      "expected_output": "Distinguishes explicit none from explicit skip without selecting personalization directions on the author's behalf.",
       "files": [],
       "expectations": [
         "A treats [] as a complete explicit selection with no background personalization and does not ask the personalization question again.",
         "B respects the explicit skip without selecting any personalization direction on the author's behalf; the available source, audience, and author baseline can be retained.",
-        "C explains that level 5 has no numeric mapping to directions and does not infer all directions or a subset. It clarifies the intended effect only when it materially affects further requested work; this input-only request does not require starting a fixed questionnaire.",
-        "D preserves exactly [\"examples\"], briefly notes that the old level is ignored, and neither asks again nor enables other directions because level 5 was also supplied.",
-        "All four reuse unrelated completed choices, remain local-only, and start no lesson generation, course structure work, authentication, or deployment."
+        "Both reuse unrelated completed choices, remain local-only, and start no lesson generation, course structure work, authentication, or deployment."
       ]
     },
     {

@@ -26,7 +26,7 @@ When a structured `personalization_directions` control is used, it is a duplicat
 | `language_style`  | Language style / 语言风格  |
 | `value_relevance` | Practical value / 价值阐述 |
 
-Order has no meaning. `[]` explicitly selects no individual-background personalization. Reject invalid types, unknown values, and duplicates instead of silently broadening the selection. An absent field leaves the agent to resolve the intended behavior from the request or existing course; it does not mandate a question or enable every direction. The old `teaching_prompt_personalization_level` has no numeric mapping to these directions.
+Order has no meaning. `[]` explicitly selects no individual-background personalization. Reject invalid types, unknown values, and duplicates instead of silently broadening the selection. An absent field leaves the agent to resolve the intended behavior from the request or existing course; it does not mandate a question or enable every direction.
 
 The effects and boundaries belong to [prompt-contracts.md#personalization-directions](prompt-contracts.md#personalization-directions). Materialize the resolved effects as runtime instructions. Keep this transient field name, enum array, and selection rationale out of Prompt bodies, course-directory files, CLI configuration, import payloads, and platform metadata.
 

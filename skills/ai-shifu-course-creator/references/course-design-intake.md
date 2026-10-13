@@ -25,7 +25,6 @@ Use the shapes in [data-contracts.md#input-contract](data-contracts.md#input-con
 
 - Preserve explicit delivery requirements, counts, teacher identity, interaction restrictions, and personalization selections.
 - Resolve personalization from the request or existing course instructions. With no basis for individual-background adaptation, use the source, author requirements, and intended audience baseline. An explicit none is an empty selection, not permission to remove needed examples or explanations.
-- The former `teaching_prompt_personalization_level` does not map numerically to directions. If it is the only personalization instruction and its intended effect matters, explain the supported directions and clarify the intended effect; a valid direction selection takes precedence.
 - For structured interaction policy, selected purposes map to `enabled`, explicit none to `disabled`, and no constraint to `unspecified`. Teaching effects are described in [pedagogy.md#interaction-policy-precedence](pedagogy.md#interaction-policy-precedence).
 - Keep `course_author_avatar_source` transient. An absent source leaves the platform avatar unchanged; accepted files follow the platform's upload and compression requirements.
 
