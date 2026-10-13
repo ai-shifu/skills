@@ -8,7 +8,7 @@ Moving the implementation does not change the release source: GitHub `ai-shifu/s
 
 Python 3.11+ and Git are required for building and testing. The implementation uses the Python standard library. Authoritative GitHub release-note collection also requires `gh` with read access to the source repository's contents, Releases, and pull requests. Publication has additional CLI and authentication requirements; see [Publishing Environment](references/publishing-environment.md).
 
-`scripts/release.py` is the only command entrypoint. It delegates to the internal `scripts/ai_shifu_release/` package: `build` and `verify` own orchestration, `config` owns release configuration, while `source`, `skill_metadata`, and `artifacts` own shared operations, and the package's `channels/` owns each channel's package format through `clawhub_skillhub`, `workbuddy`, and `doubao`. Publication state, channel submission, GitHub Releases, version changes, and manifest activation have separate modules. Copy the complete `scripts/` directory with the tool.
+`scripts/release.py` is the only command entrypoint. It delegates to the internal `scripts/ai_shifu_release/` package: `build` and `verify` own orchestration, `config` owns release configuration, while `source`, `skill_metadata`, and `artifacts` own shared operations, and the package's `channels/` owns each channel's package format through `clawhub_skillhub`, `workbuddy`, and `doubao`. Publication state, channel submission, GitHub Releases, and version changes have separate modules. Copy the complete `scripts/` directory with the tool.
 
 The former standalone `github_release.py`, `platform_publish.py`, and `download_release.py` commands are removed. Use `github-release` and `submit-channel` below. Download and verification are internal steps of channel submission; there is no standalone `download` subcommand.
 
@@ -60,7 +60,7 @@ The official SkillHub CLI archive was checked on 2026-10-07: version `2026.8.5` 
 
 To retry one platform from an existing Release, open **Actions → Publish Skill Channel → Run workflow**, enter the existing `vX.Y.Z` tag and select only the failed platform. The selected job compares the Release's four ZIPs with a temporary trusted-source build and submits only the selected channel. If an exact ClawHub version already exists, the job stops for content review instead of overwriting it. SkillHub runs its documented exact-version ZIP verification first; a signed matching version is recorded as `already_verified`, and any uncertain result stops. Before a SkillHub retry, also check its dashboard for an existing or pending submission and select the confirmation checkbox only when none exists; the workflow refuses a SkillHub retry without it. Do not use **Re-run jobs** for SkillHub: a rerun is rejected because it reuses the old confirmation. Start a new manual run after checking the platform again. WorkBuddy and Doubao remain manual downloads from the Release. No documented official WorkBuddy expert-package submission API has been confirmed for this integration.
 
-Before website manifest activation, import each channel's Actions receipt into the matching verified local release directory. Download the result artifact from that channel's Actions run, keeping the two channels in separate directories:
+To record channel submission results, import each channel's Actions receipt into the matching verified local release directory. Download the result artifact from that channel's Actions run, keeping the two channels in separate directories:
 
 ```bash
 gh run download <clawhub-run-id> --repo ai-shifu/skills \
@@ -73,7 +73,7 @@ python3 scripts/release.py record-channel "$RELEASE_DIR" \
   --result "$RELEASE_DIR/receipts/skillhub/platform-result.json"
 ```
 
-Use the published `vX.Y.Z` tag for `<tag>`. `record-channel` checks the receipt's channel, source commit, version, tag, and archive hash against the candidate before updating `release-report.json`. It never submits again. `submitted` and `pending_review` become `published`, retaining `submission_status`; this records accepted upload rather than independent listing or fresh-install verification. `already_verified` becomes `verified` only for the remote exact version that matched the Release ZIP. Failed or uncertain receipts leave the activation gates unsatisfied. Then complete the manual WorkBuddy gate and run `activate-manifest` as described below.
+Use the published `vX.Y.Z` tag for `<tag>`. `record-channel` checks the receipt's channel, source commit, version, tag, and archive hash against the candidate before updating `release-report.json`. It never submits again. `submitted` and `pending_review` become `published`, retaining `submission_status`; this records accepted upload rather than independent listing or fresh-install verification. `already_verified` becomes `verified` only for the remote exact version that matched the Release ZIP. `failed` and `needs_review` retain those states in the report. Read `release-report.json` and report each channel's actual state, alongside any recorded manual WorkBuddy and Doubao results.
 
 From the repository root:
 
@@ -100,7 +100,7 @@ Without `--prepare-only`, `github-release` uses the existing draft/upload/verify
 
 ## Release Notes and Changelog
 
-Generate release notes for a verified, pinned release directory without creating a Release, opening a PR, or activating the website manifest:
+Generate release notes for a verified, pinned release directory without creating a Release or opening a PR:
 
 ```bash
 python3 scripts/release.py notes dist/<release-id> --output release-notes
@@ -119,8 +119,6 @@ Groups appear only when nonempty. Within a group, PRs appear by merge time desce
 The output directory contains `release-notes.json`, with the pinned range, PR facts, collection status, and reproducibility fingerprint, and `release-notes.md`, with the rendered Release body. Inspect both before publication. `github-release --prepare-only --output preview-assets` saves the same files under `preview-assets/notes/`; they are excluded from the six package attachments. To save the notes while creating a Draft or formal Release, pass `--notes-output release-notes`. The release workflows upload that directory as a separate Actions artifact and display the body in the job summary.
 
 Draft reruns compare the expected generated body with the saved Draft. A mismatch requires `--refresh-notes`; refreshing replaces only the marked generated section and preserves text outside it. A legacy Draft without generated-section markers also requires an explicit refresh. Published Releases are checked without rewriting their body. Collection and body verification must pass before a formal Release can be published.
-
-Website activation keeps its own range: the website's current skill version to the pinned source commit, filtered to the primary skill's path. Its automatic summary reuses the same PR collection and type order, preserves the complete `changes` list, and fits whole entries into the 500-character limit with an omitted-item count. Reviewed `--notes` text and the default `Release <version>` behavior remain available; see [the release skill](SKILL.md#activate-the-website-manifest).
 
 ## Build and Verification Contract
 
@@ -204,24 +202,6 @@ Use `doubao` for the other manual targets. Valid states are `submitted`, `verifi
 
 The Doubao plan lists every embedded skill, the recommended instructions, and runtime checks. Platform testing should cover starting a course from scratch, choosing a course direction, and converting uploaded material into a course, plus the retained learning-report capability. Record the result after the platform checks.
 
-## Website Manifest Activation
-
-The website gate requires ClawHub and SkillHub to be `published` and WorkBuddy to be `submitted` or `verified`. Doubao is tracked independently and does not block activation.
-
-```bash
-python3 scripts/release.py activate-manifest dist/<release-id> --notes <release-notes>
-```
-
-The command opens a `codex/` branch PR in `ai-shifu-website`, updating `zh/skill-manifests/<skill_name>.json`. It never merges. See the [release skill](SKILL.md) for notes options and explicit manual-channel waivers.
-
-Merging the PR is not deployment: the website embeds the manifest in its Docker image, which must be rebuilt and deployed. After deployment:
-
-```bash
-python3 scripts/release.py activate-manifest dist/<release-id> --check-online
-```
-
-Edge caching may delay the visible update by about five minutes.
-
 ## Configuration and Channel Assets
 
 `release.toml` owns publisher identity and non-secret channel settings. Builds and channel submissions read the configuration committed with the release source, including when an older release is retried with newer runtime code. Channel profiles and templates retain their native formats and are referenced by the configuration. See [Publishing Environment](references/publishing-environment.md) for fields, local overrides, and legacy-source compatibility.
@@ -242,6 +222,6 @@ From this tool directory:
 PYTHONPATH=scripts python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-The repository CI runs these tests separately from the business-skill tests. Release tests import the dedicated `ai_shifu_release` package. Tests use temporary Git repositories and mocked external publication commands, including offline GitHub fixtures for release-note collection. Do not run live `bump`, `publish`, or `activate-manifest` operations to validate a code migration.
+The repository CI runs these tests separately from the business-skill tests. Release tests import the dedicated `ai_shifu_release` package. Tests use temporary Git repositories and mocked external publication commands, including offline GitHub fixtures for release-note collection. Do not run live `bump` or `publish` operations to validate a code migration.
 
 Maintain the executable code, channel assets, and [release skill](SKILL.md) here. Root README files provide the repository-level entrypoint; this README owns the detailed tool guide. Existing release artifacts, credentials, local agent state, and the old project's Git history are not part of the migration.

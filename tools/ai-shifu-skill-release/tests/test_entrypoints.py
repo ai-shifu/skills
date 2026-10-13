@@ -26,7 +26,6 @@ COMMANDS = (
     "manual-plan",
     "record-manual",
     "record-channel",
-    "activate-manifest",
     "github-release",
     "notes",
     "submit-channel",
@@ -67,10 +66,12 @@ class ReleaseEntrypointTest(unittest.TestCase):
                         result = self.invoke(cwd, command, "--help", check=True)
                         self.assertIn(f"release.py {command}", result.stdout)
 
-    def test_download_is_not_a_public_command(self) -> None:
-        result = self.invoke(TOOL_ROOT, "download", "--help")
-        self.assertEqual(result.returncode, 2)
-        self.assertIn("invalid choice", result.stderr)
+    def test_retired_commands_are_rejected(self) -> None:
+        for command in ("download", "activate-manifest"):
+            with self.subTest(command=command):
+                result = self.invoke(TOOL_ROOT, command, "--help")
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("invalid choice", result.stderr)
 
     def test_verify_and_manual_plan_work_from_any_working_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
