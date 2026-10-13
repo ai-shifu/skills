@@ -22,7 +22,7 @@ from . import release_notes
 from .publishing import AUTOMATED_TARGETS
 from .skill_metadata import SEMVER, parse_frontmatter, split_skill_document
 from .source import SOURCE_REPOSITORY, run
-from .version import semver_key
+from .version_bump import semver_key
 
 WEBSITE_REPOSITORY = "git@github.com:ai-shifu/ai-shifu-website.git"
 MANIFEST_BASE_URL = "https://ai-shifu.cn/skill-manifests"

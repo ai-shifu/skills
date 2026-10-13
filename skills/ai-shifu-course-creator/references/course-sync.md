@@ -3,7 +3,7 @@
 ## Related Guidance
 
 - `authentication.md`
-- `course-target.md`
+- `course-target-resolution.md`
 - `language-policy.md#language-audit`
 - `cli/cli-reference.md#version-sync-pull--status`
 - `cli/cli-reference.md#create-commands`

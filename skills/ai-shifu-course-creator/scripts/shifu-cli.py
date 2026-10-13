@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 
 import profile_store as profiles
 
-from skill_update import DEV_CACHE_FILE, check_for_update
+from skill_update_check import DEV_CACHE_FILE, check_for_update
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
@@ -561,7 +561,7 @@ def _device_description():
 
 def _client_version():
     try:
-        from skill_update import SKILL_MD, read_skill_metadata
+        from skill_update_check import SKILL_MD, read_skill_metadata
 
         metadata = read_skill_metadata(SKILL_MD)
     except Exception:  # noqa: BLE001 - version is cosmetic, never fail login
@@ -2029,7 +2029,7 @@ def cmd_set_avatar(args):
         print("Error: teacher avatar must be a JPG or PNG file.", file=sys.stderr)
         sys.exit(1)
 
-    from image_utils import prepare_image  # local import keeps Pillow optional
+    from image_preparation import prepare_image  # local import keeps Pillow optional
     try:
         prepared = prepare_image(src_path)
     except ValueError as e:
@@ -2841,7 +2841,7 @@ def cmd_find_title(args):
     keyword = args.keyword or ""
     needle = keyword.replace(" ", "").lower()
     # Mirror the backend metadata-table `title like` floor (>= 2 non-wildcard
-    # characters, see references/analytics/dsl.md). A 1-character keyword
+    # characters, see references/analytics/query-language.md). A 1-character keyword
     # would substring-match almost every title client-side and rarely help
     # the user; reject early with a clear message rather than fan out a
     # cascade of low-signal API calls.
@@ -3103,7 +3103,7 @@ def cmd_upload_image(args):
             mime = mime_guess
             original_bytes = len(file_bytes)
         else:
-            from image_utils import prepare_image  # local import keeps Pillow optional
+            from image_preparation import prepare_image  # local import keeps Pillow optional
             try:
                 prepared = prepare_image(src_path)
             except ValueError as e:

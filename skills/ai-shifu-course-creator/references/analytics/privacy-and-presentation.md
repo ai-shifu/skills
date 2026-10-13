@@ -86,7 +86,7 @@ The remaining `type` values — `303` input, `309` phone, `310` checkcode and si
 
 ## Course title is not history — hard rule
 
-When the user names a course by title and asks for data, follow the Course Metadata path in `recipes.md` to resolve the **current** `shifu_bid → title` mapping before issuing any downstream query. Present the result under the published-versus-draft semantics and phrasing in `tables.md` → "Course title is 'current published', not 'history'".
+When the user names a course by title and asks for data, follow the Course Metadata path in `query-recipes.md` to resolve the **current** `shifu_bid → title` mapping before issuing any downstream query. Present the result under the published-versus-draft semantics and phrasing in `table-and-field-reference.md` → "Course title is 'current published', not 'history'".
 
 ## `var_variable_values.value` — Aggregate-Only
 
@@ -104,8 +104,8 @@ Refuse with a short explanation when:
 
 Pass every result through these checks before showing it to the user:
 
-1. **Integer / string enums** (status, type, scene, mode) → translate via the code tables in `tables.md`. Never show raw codes like `601`, `502`, `1101`, `"read"`.
-2. **ID fields** → apply the ID Field Translation Rules in `tables.md`: never display a raw `*_bid`; `user_bid` → ordinal labels ("Learner A / B / C"); `outline_item_bid` → "Lesson X.Y: \<title\>"
+1. **Integer / string enums** (status, type, scene, mode) → translate via the code tables in `table-and-field-reference.md`. Never show raw codes like `601`, `502`, `1101`, `"read"`.
+2. **ID fields** → apply the ID Field Translation Rules in `table-and-field-reference.md`: never display a raw `*_bid`; `user_bid` → ordinal labels ("Learner A / B / C"); `outline_item_bid` → "Lesson X.Y: \<title\>"
 3. **Monetary values** → add currency unit (¥/CNY/USD), 2 decimal places
 4. **Timestamps** (`created_at`, `updated_at` etc.) → backend timestamps are UTC (treat values without an explicit offset as UTC); convert to the user's local-timezone readable format (`2026-05-12 14:23`); never show raw ISO timestamps. Convert using the machine's timezone rules; do not substitute a session-fixed numeric UTC offset (DST-observing zones shift), and never assume a timezone from the conversation language
 5. **Ratios / percentages** → use percent form ("62%" not "0.623")

@@ -1,6 +1,6 @@
-# Analytics DSL Syntax
+# Analytics Query Language
 
-All examples are CLI invocations. Analytics task orientation is documented in `overview.md`.
+All examples are CLI invocations. Analytics task orientation is documented in `analytics-guide.md`.
 
 ## Body Shape
 
@@ -81,7 +81,7 @@ When `select` includes `generated_content` (only meaningful on `learn_generated_
 2. `limit ≤ 100`
 3. Every access is audited server-side (the CLI does not show this — it happens in the backend)
 
-The remaining `type` values (`303` input, `309` phone, `310` checkcode, etc.) contain learner PII and are blocked at the protocol level. Full type-code table is in `tables.md`.
+The remaining `type` values (`303` input, `309` phone, `310` checkcode, etc.) contain learner PII and are blocked at the protocol level. Full type-code table is in `table-and-field-reference.md`.
 
 ## Auto-Applied Filters
 
@@ -96,7 +96,7 @@ The endpoint automatically applies these filters — do **not** add them to your
 
 ## Creator-Scoped Tables (`shifu_published_shifus` / `shifu_draft_shifus`)
 
-These two tables are row-lookup only: no aggregates, no `group_by`, hard limit of 50, `title` `like` requires ≥ 2 non-wildcard characters (anti-enumeration). Use them via the Course Metadata recipes (0a–0c) in `recipes.md` to resolve "what is `shifu_bid` X currently called". The author-secret fields (`llm_system_prompt`, `ask_*`, `keywords`, `description`, etc.) are **not** selectable — even the owner cannot read them through this DSL.
+These two tables are row-lookup only: no aggregates, no `group_by`, hard limit of 50, `title` `like` requires ≥ 2 non-wildcard characters (anti-enumeration). Use them via the Course Metadata recipes (0a–0c) in `query-recipes.md` to resolve "what is `shifu_bid` X currently called". The author-secret fields (`llm_system_prompt`, `ask_*`, `keywords`, `description`, etc.) are **not** selectable — even the owner cannot read them through this DSL.
 
 ## Syntax Gotchas (common DSL construction mistakes)
 

@@ -66,7 +66,7 @@ The [Course Creator](skills/ai-shifu-course-creator/SKILL.md#capabilities) group
 
 Return the artifacts needed for the request. Segmentation records, a course index, a global variable table, and a fixed risk report are not universal deliverables. A complete authored course contains its lesson content, Course Prompt, description, and structure; a focused request can end with only its requested artifact.
 
-Full-course creation follows the [default publication and completed-content confirmation policy](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome). Explicit local-only or unpublished-draft requests determine that narrower result. For existing artifacts, use the relevant [build and import](skills/ai-shifu-course-creator/references/deployment-workflow.md), [synchronization](skills/ai-shifu-course-creator/references/course-sync.md), or [management](skills/ai-shifu-course-creator/references/course-management.md) guidance directly.
+Full-course creation follows the [default publication and completed-content confirmation policy](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome). Explicit local-only or unpublished-draft requests determine that narrower result. For existing artifacts, use the relevant [build and import](skills/ai-shifu-course-creator/references/course-build-and-import.md), [synchronization](skills/ai-shifu-course-creator/references/course-sync.md), or [management](skills/ai-shifu-course-creator/references/course-management.md) guidance directly.
 
 ## Validate Metadata
 

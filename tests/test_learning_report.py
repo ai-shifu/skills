@@ -227,7 +227,7 @@ class LearningReportEvaluationFixtureTests(unittest.TestCase):
         self.assertEqual("ai-shifu-learning-report", self.manifest["skill_name"])
         self.assertEqual(
             {
-                "healthy-complete-course",
+                "healthy-course-with-excluded-lessons",
                 "conflicting-bottleneck-signals",
                 "sparse-new-course-with-privacy-traps",
             },
@@ -262,7 +262,7 @@ class LearningReportEvaluationFixtureTests(unittest.TestCase):
                 self.assertIsInstance(fixture["course"]["title"], str)
 
     def test_healthy_fixture_has_exact_same_cohort_completion_rate(self):
-        fixture = self.fixtures["healthy-complete-course"]
+        fixture = self.fixtures["healthy-course-with-excluded-lessons"]
         progress = fixture["analytics"]["progress"]
         lesson_scope = fixture["course"]["lesson_scope"]
 

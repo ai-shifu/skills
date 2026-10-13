@@ -10,15 +10,15 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 
 ## Prompt Boundaries
 
-- Each artifact serves its responsibility under [prompt-contracts.md#artifact-responsibilities](prompt-contracts.md#artifact-responsibilities).
+- Each artifact serves its responsibility under [prompt-semantics.md#artifact-responsibilities](prompt-semantics.md#artifact-responsibilities).
 - Teaching Prompts provide executable local teaching directions, required content and relationships, and any chosen feedback or branch behavior. A Course Prompt is not relied on to invent missing lesson pedagogy.
 - After MarkdownFlow removes source-only comments, every remaining part of a Teaching Prompt serves runtime delivery. No executable requirement, variable, option, URL, command, or exact span exists only in a comment.
-- Authoring controls, selection interfaces, pipeline notes, and learner-profile data do not leak into runtime instructions. Second-person forms obey [prompt-contracts.md#prompt-semantics](prompt-contracts.md#prompt-semantics).
+- Authoring controls, selection interfaces, pipeline notes, and learner-profile data do not leak into runtime instructions. Second-person forms obey [prompt-semantics.md#prompt-semantics](prompt-semantics.md#prompt-semantics).
 
 ## Teaching Design and Layout
 
 - The lesson's chosen approach makes its intended learning result achievable with supported facts, sufficient reasoning, and useful evidence. Do not fail an artifact for omitting a recommended pattern, fixed loop, single-question structure, visual, cover, cadence, deliverable, or interaction count.
-- Examples and analogies, when used, have meaningful conditions or correspondences, explanatory value, and necessary limits under [pedagogy.md#examples-and-analogies](pedagogy.md#examples-and-analogies). Avoid misleading comparisons and unsupported assumptions of familiarity.
+- Examples and analogies, when used, have meaningful conditions or correspondences, explanatory value, and necessary limits under [teaching-design-options.md#examples-and-analogies](teaching-design-options.md#examples-and-analogies). Avoid misleading comparisons and unsupported assumptions of familiarity.
 - Explicit author decisions about order, delivery experience, interaction restrictions, and other constraints are respected. The agent may choose or revise unspecified design elements within the task.
 - New or explicitly rewritten Teaching Prompts have concise source-only navigation comments for useful teaching blocks under [teaching-prompt.md](teaching-prompt.md). Optional layouts and agent-created layouts are valid when readable and runtime-safe.
 - In audit-only existing content, comment and layout normalization is `not-assessed`; do not reformat or add comments. Continue checking observable syntax and runtime behavior.
@@ -27,7 +27,7 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 
 ## Personalization
 
-- Resolved directions implement exactly the effects in [prompt-contracts.md#personalization-directions](prompt-contracts.md#personalization-directions), including a neutral fallback for missing relevant context. Do not enable an unselected direction through a generic instruction.
+- Resolved directions implement exactly the effects in [prompt-semantics.md#personalization-directions](prompt-semantics.md#personalization-directions), including a neutral fallback for missing relevant context. Do not enable an unselected direction through a generic instruction.
 - Unselected directions and an explicit empty selection retain the source-, author-, and audience-based baseline without deleting needed examples, analogies, practical value, or explanation.
 - Selected adaptations are executable where needed. A generic course-wide claim does not replace a required local example or analogy instruction.
 - Runtime personalization preserves the authored objectives, required facts and boundaries, needed explanation depth, sequence, visual structure, and selected interaction or feedback effects. It does not authorize new context collection or branches.
@@ -36,9 +36,9 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 
 ## Interaction and Runtime Safety
 
-- Questions and options are clear and answerable, and selected instructional interactions have a meaningful feedback or teaching effect under [pedagogy.md#interaction-design](pedagogy.md#interaction-design).
-- Every control, assignment, reference, and branch follows [markdownflow.md](markdownflow.md) and [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding). Controls stay recognizable and distinct from simulated visual controls.
-- Named answers have valid collection and meaningful cross-lesson or Course Prompt consumers; local answers remain unnamed. Check actual artifacts under [data-contracts.md#variable-table](data-contracts.md#variable-table); no variable-table JSON is required.
+- Questions and options are clear and answerable, and selected instructional interactions have a meaningful feedback or teaching effect under [teaching-design-options.md#interaction-design](teaching-design-options.md#interaction-design).
+- Every control, assignment, reference, and branch follows [markdownflow-runtime-syntax.md](markdownflow-runtime-syntax.md) and [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding). Controls stay recognizable and distinct from simulated visual controls.
+- Named answers have valid collection and meaningful cross-lesson or Course Prompt consumers; local answers remain unnamed. Check actual artifacts under [author-controls-and-artifact-invariants.md#variable-table](author-controls-and-artifact-invariants.md#variable-table); no variable-table JSON is required.
 - Branches use natural language and literal `UNKNOWN` for unavailable named values where applicable. No learner-visible authoring placeholders remain.
 - Deterministic blocks, code fences, required source spans, and image records survive preprocessing as required. Images use [image-authoring.md#image-output-validation](image-authoring.md#image-output-validation) when present; absent images do not require image work.
 

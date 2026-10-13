@@ -2,7 +2,7 @@
 
 Write or revise one runnable per-lesson Teaching Prompt from a topic, brief, source material, existing Prompt, or supplied design. Use the available context directly; a segmentation schema, separate planning run, Course Prompt, or fixed intermediate JSON is not a prerequisite. The authoring agent chooses teaching strategies and layout; the learner-time Teaching Agent follows the resulting instructions.
 
-Shared Prompt meaning and artifact boundaries are in [prompt-contracts.md](prompt-contracts.md), runtime syntax in [markdownflow.md](markdownflow.md), optional author controls in [data-contracts.md](data-contracts.md), and teaching suggestions in [pedagogy.md](pedagogy.md). Consult [image-authoring.md](image-authoring.md) for actual image assets and [source-preservation.md](source-preservation.md) for selected exact material.
+Shared Prompt meaning and artifact boundaries are in [prompt-semantics.md](prompt-semantics.md), runtime syntax in [markdownflow-runtime-syntax.md](markdownflow-runtime-syntax.md), optional author controls in [author-controls-and-artifact-invariants.md](author-controls-and-artifact-invariants.md), and teaching suggestions in [teaching-design-options.md](teaching-design-options.md). Consult [image-authoring.md](image-authoring.md) for actual image assets and [source-preservation.md](source-preservation.md) for selected exact material.
 
 ## Lesson Materialization
 
@@ -17,7 +17,7 @@ Shared Prompt meaning and artifact boundaries are in [prompt-contracts.md](promp
 
 ## Personalization Directions
 
-Apply the shared effects and boundaries in [prompt-contracts.md#personalization-directions](prompt-contracts.md#personalization-directions). Explicit selections, including an empty selection, are author constraints. Where the author has left design open, the using agent can choose suitable behavior without a compulsory selection question or plan-then-generation phase.
+Apply the shared effects and boundaries in [prompt-semantics.md#personalization-directions](prompt-semantics.md#personalization-directions). Explicit selections, including an empty selection, are author constraints. Where the author has left design open, the using agent can choose suitable behavior without a compulsory selection question or plan-then-generation phase.
 
 For an enabled example or analogy direction, give the Teaching Agent enough selection criteria, essential reasoning or correspondence, limits, and intended takeaway to adapt the expression using relevant known learner context. Keep an author-fixed example or analogy and adapt only what that author permits. Use a neutral course-appropriate fallback when relevant context is unavailable.
 
@@ -89,7 +89,7 @@ Create a slide with the rent and raw-materials cases. Show the relevant time per
 
 ## Source Encoding
 
-Encode the chosen teaching design without changing author requirements or exact material. Parser recognition and runtime effects belong to [markdownflow.md](markdownflow.md).
+Encode the chosen teaching design without changing author requirements or exact material. Parser recognition and runtime effects belong to [markdownflow-runtime-syntax.md](markdownflow-runtime-syntax.md).
 
 ### Layout Encoding
 

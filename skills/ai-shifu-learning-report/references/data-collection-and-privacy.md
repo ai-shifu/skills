@@ -8,7 +8,7 @@ For live AI-Shifu data, use these current capability and policy references:
 
 1. `../../ai-shifu-course-creator/SKILL.md`
 2. `../../ai-shifu-course-creator/references/authentication.md`
-3. `../../ai-shifu-course-creator/references/analytics/overview.md`
+3. `../../ai-shifu-course-creator/references/analytics/analytics-guide.md`
 
 For supplied or synthetic input, no external reference is required; the privacy and normalization rules in this file still apply.
 

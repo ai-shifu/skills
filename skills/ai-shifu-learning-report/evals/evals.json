@@ -6,7 +6,7 @@
       "prompt": "附件是《新经理的高质量一对一》截至 2026-07-31 的合成课程分析快照。请面向教学管理者和任课老师生成累计至今的单课学习报告。只使用附件数据，不连接真实课程环境，不加入经营或积分信息。请在当前输出目录交付脱敏的 course-learning-report.json 和自包含、可打印的 course-learning-report.html。",
       "expected_output": "A management-first Chinese report that uses only the current published-visible lessons, accurately presents the healthy course signals, names the metric 课程完成率 without proxy wording, keeps unavailable metrics empty, and provides privacy-safe evidence-linked actions in both required artifacts.",
       "files": [
-        "evals/files/healthy-complete-course.json"
+        "evals/files/healthy-course-with-excluded-lessons.json"
       ],
       "expectations": [
         "course-learning-report.json is valid JSON with schema_version 1.0 and the required meta, metric_definitions, overview, lesson_health, engagement, audience, recommendations, and data_quality sections; operations is absent.",
