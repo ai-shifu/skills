@@ -1311,6 +1311,21 @@
         "C may remain a standalone explicit rename using update-meta course-c --name with the requested title; because this independent request neither edits course-content artifacts nor has an established sync directory, it need not pull or create a directory merely to rename. D remains a local-only audit with no authentication, course lookup, pull, update-meta, or other CLI operation and no forced rewrite.",
         "All four answers remain simulated: no command, file mutation, platform access, or successful write is claimed. The response does not add new-course creation approval, publication, a questionnaire, or a universal authoring sequence to these scoped requests."
       ]
+    },
+    {
+      "id": 106,
+      "prompt": "请只写一节本地、纯文字的授课提示词，不连接平台，不生成 Course Prompt。目标是让学习者区分观察和因果结论。材料只有：团队上线新欢迎邮件后，一周内注册转付费率从 5% 变成 7%；同一周也调整了投放渠道，没有对照组，所以不能仅凭前后变化确定欢迎邮件造成了增长。先讲清材料，再用一次自由文本互动问“这些数据能说明什么，暂时不能说明什么？”。回答能同时指出转付费率上升的观察和不能据此确定因果的边界时，简短确认后继续到“下一步如何验证”；回答遗漏边界或直接断言邮件带来增长时，针对缺项给提示，再次发起自由文本互动，等待实际回答后重新判断。最多允许两次再次互动，初次作答不计入；用完后仍未达标就示范完整判断，再继续。后续教学只需说明可以用可比较的对照来进一步验证。答案和重试次数仅本课使用。请给出完整可运行的 Markdown 正文，含中文教学块注释；不预设学习者已经回答，不要把所有人都要作答的第二道固定问题当成条件重试。",
+      "expected_output": "Authors an answer-dependent follow-up loop with a direct continue path, targeted conditional retries, real-answer waits, and a bounded fallback without parser-level control flow or persistent learner variables.",
+      "files": [],
+      "expectations": [
+        "The Teaching Prompt preserves the 5% to 7% observation, the simultaneous channel change, the absence of a control group, and the boundary that these facts alone cannot establish email causation.",
+        "It contains a complete initial question followed immediately by a standalone unnamed text-input control and uses natural-language instructions rather than invented if/while/jump syntax.",
+        "The success criterion requires both the observed increase and the causal uncertainty; a sufficient answer receives confirmation and proceeds directly to the specified validation content without a compulsory retry.",
+        "An insufficient answer receives a targeted hint and a conditionally initiated new text-input interaction. The Teaching Agent waits for a real submission and reassesses it before advancing, rather than simulating the learner or relying on a second unconditional source control.",
+        "The limit is exactly two additional interactions excluding the initial attempt. After an insufficient final retry, it provides a model judgment and proceeds without claiming that the learner answered correctly.",
+        "Lesson-local answers and retry state do not create named learner variables or cross-lesson dependencies. Required content and executable follow-up rules survive removal of source-only Chinese teaching-block comments.",
+        "It stays within the requested local text-only Teaching Prompt, without Course Prompt, platform access, an authoring questionnaire, extra teaching actions, or a mandatory loop policy for other lessons."
+      ]
     }
   ]
 }

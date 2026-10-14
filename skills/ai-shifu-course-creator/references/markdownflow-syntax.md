@@ -22,7 +22,7 @@ Inside an interaction, `%{{name}}` is an assignment prefix rather than a substit
 
 ## Interactions
 
-An unescaped control matching `?[...]` is rendered as an interaction. The runtime pauses document progression and resumes after an answer is submitted. The answer then enters the current document context.
+An unescaped control matching `?[...]` is rendered as an interaction. The runtime pauses document progression until an answer is submitted. The answer enters the current document context for follow-up processing, which can continue the document or initiate another interaction as described below.
 
 The interaction body is interpreted as follows:
 
@@ -42,7 +42,9 @@ The first separator determines selection mode: `|` represents one selected value
 
 ## Branching on User Input
 
-MarkdownFlow has no parser-level conditionals, loops, boolean expressions, `if` blocks, `switch` blocks, or ternary expressions. Natural-language statements that describe different responses for different answers remain ordinary prompt content. The Teaching Agent interprets those statements using the current document context and substituted variable values; the MarkdownFlow parser does not create or evaluate a branch graph.
+Interaction follow-up supports branches and loops. According to the authored instructions and the learner's answer, the Teaching Agent can continue to subsequent content or initiate another interaction and wait for the learner's response. Each new answer enters the document context and can be assessed again, so follow-up can repeat until the authored exit condition is reached. A lesson-local loop can use that context without assigning a named learner variable.
+
+These behaviors are expressed through natural-language instructions interpreted by the Teaching Agent using the current document context and substituted variable values. MarkdownFlow has no parser-level conditionals, loops, boolean expressions, `if` blocks, `switch` blocks, or ternary expressions; the parser does not create or evaluate a branch graph. A later standalone `?[]` in the source is a subsequent interaction, not a conditional retry merely because nearby prose describes a branch. Author conditional follow-up using [Teaching Prompt encoding](teaching-prompt.md#interaction-follow-up-encoding).
 
 ## Deterministic Blocks
 

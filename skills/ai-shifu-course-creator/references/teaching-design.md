@@ -67,6 +67,7 @@ For a selected interaction, make the question concrete and answerable and give t
 - Free text suits information that predefined categories cannot capture well. A specific question and a concise input hint usually work better than an open-ended invitation with no purpose.
 - Multi-select can use combined feedback or prioritization; it does not require an exhaustive branch for every combination.
 - If a choice is intended to drive distinct next steps, provide the corresponding response behavior. Honor an explicit answer-specific branching requirement.
+- Use follow-up interaction when a targeted hint, clarification, correction, or revised attempt can improve understanding. Let a sufficient answer move the lesson forward, and choose a useful exit or fallback when repetition would stop helping. A loop is an option, not a requirement for every interaction; [Teaching Prompt encoding](teaching-prompt.md#interaction-follow-up-encoding) explains how to express the chosen behavior.
 - Choose the number and placement of interactions for their teaching value. There is no universal count limit or required interaction slide.
 
 Questions, controls, feedback, and branches must remain executable together. [teaching-prompt.md](teaching-prompt.md) owns their source encoding; [markdownflow-syntax.md#interactions](markdownflow-syntax.md#interactions) owns control syntax.

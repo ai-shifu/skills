@@ -40,6 +40,7 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 - Every control, assignment, reference, and branch follows [markdownflow-syntax.md](markdownflow-syntax.md) and [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding). Controls stay recognizable and distinct from simulated visual controls.
 - Named answers have valid collection and meaningful cross-lesson or Course Prompt consumers; local answers remain unnamed. Check actual artifacts under [authoring-contracts.md#variable-table](authoring-contracts.md#variable-table); no variable-table JSON is required.
 - Branches use natural language and account for unavailable named values where applicable. No learner-visible authoring placeholders remain.
+- When a follow-up loop is selected, the answer criterion, continue path, conditional retry, real-answer wait, and exit behavior are coherent under [Teaching Prompt encoding](teaching-prompt.md#interaction-follow-up-encoding). Honor any author-specified retry limit or fallback; do not require a loop where the design calls for one-time feedback.
 - Deterministic blocks, code fences, required source spans, and image records survive preprocessing as required. Images use [image-authoring.md#image-output-validation](image-authoring.md#image-output-validation) when present; absent images do not require image work.
 
 ## Course Prompt and Description

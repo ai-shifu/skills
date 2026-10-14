@@ -113,6 +113,41 @@ Ordinary instructions may use lists, paragraphs, or another suitable source layo
 - New variable names follow [language-policy.md](language-policy.md); preserve existing names where renaming would break references.
 - Prompt prose carries the teaching response, not an explanation of the machine-facing encoding decision.
 
+### Interaction Follow-up Encoding
+
+Use the [runtime follow-up behavior](markdownflow-syntax.md#branching-on-user-input) to express the selected design:
+
+- Immediately after the initial question and control, describe how to assess the learner's answer and which subsequent content the successful path reaches.
+- For a retry path, specify the feedback or hint, instruct the Teaching Agent to initiate a new interaction of the needed type, and wait for the learner's actual answer before reassessing. Keep the retry conditional; do not add a second standalone source control to represent an interaction that only some answers should trigger.
+- Make the exit condition clear. If the design includes a retry limit or another fallback, state what counts toward it and what happens when it is reached. A retry limit is a design choice, not a universal requirement.
+- Keep local answers and retry state in the lesson context unless a learner answer has a genuine cross-lesson consumer. Do not simulate the learner's reply or continue past an unanswered retry.
+
+#### Complete Example: Continue or Ask Again
+
+This Chinese Teaching Prompt checks a learner's action plan. A complete answer proceeds immediately; an incomplete answer receives targeted help and another interaction. The two-retry fallback belongs to this example only.
+
+```markdown
+<!-- 学习者知道一条可执行安排需要哪些信息 -->
+
+讲清一条可执行的安排需要明确行动、负责人和截止时间。用“整理客户反馈”说明：只有行动名称，还不能知道由谁在何时完成。
+
+<!-- 学习者补齐安排中的关键信息后再继续 -->
+
+请为“整理客户反馈”写一条可执行的安排，包含具体行动、负责人和截止时间。
+
+?[...写出由谁在何时完成什么]
+
+每次收到学习者的真实回答后，检查三项信息：行动是否具体、负责人是否明确、截止时间是否明确。按以下规则处理：
+
+- 如果三项齐全，简短指出回答中对应的三项信息，结束本轮练习，继续下面的“检查另一条安排”。不要再要求学习者重复作答。
+- 如果仍有缺项，而且尚未用完两次再次互动机会，只指出本次缺少或含糊的信息，给一个针对性的提示，再发起一次自由文本互动，请学习者补充或改写安排。输入提示为“补齐缺少的信息后重新提交”。等待学习者实际提交后，按同样三项标准重新判断；等待期间不代写学习者回答，也不进入后续教学。
+- 初次作答不计入这两次再次互动机会。如果两次再次互动后的回答仍不完整，展示示例“由项目负责人在本周五 17:00 前汇总客户反馈，按问题类型整理成一份清单”，指出它如何明确三项信息，说明本次练习到此结束，然后继续下面的“检查另一条安排”。不要把示例当作学习者已答对的证据。
+
+<!-- 学习者把检查标准迁移到另一条安排 -->
+
+检查另一条安排：展示“由产品经理在明天 12:00 前列出本周待确认的需求”，示范如何找出行动、负责人和截止时间，回扣这三项信息如何帮助协作双方确认任务。
+```
+
 ### Preservation Encoding
 
 Use [source-preservation.md](source-preservation.md) to identify the selected exact span and authoritative source. No segment record or character-offset JSON is required.
