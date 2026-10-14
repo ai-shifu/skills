@@ -47,7 +47,7 @@ MarkdownFlow has no parser-level conditionals, loops, boolean expressions, `if` 
 MarkdownFlow recognizes two preservation forms:
 
 - Single-line or inline marker: `===...===`, for example `===fixed text===`.
-- Multi-line fence: `!===...!===`.
+- Multi-line fence, with each `!===` delimiter on its own line:
 
 ```markdown
 !===
