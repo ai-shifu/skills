@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import sys
+import tempfile
 import unittest
 from pathlib import Path, PurePosixPath
 
@@ -82,16 +83,24 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
             with self.subTest(path=path.relative_to(SKILL_ROOT)):
                 self.assertNotRegex(content, r"\bMDF\b")
 
-    def test_package_retires_the_named_learner_state_contract(self):
+    def assert_retired_contract_absent(self, skill_root: Path):
         retired_contract = re.compile(
-            r"variable|变量|\{\{|%\{\{|"
-            r"collected_in|effect_scope|#variables|#pre-collection-references",
+            r"%\{\{[^{}]*\}\}|"
+            r"\b(?:global_variable_table|used_variables|collected_in|"
+            r"effect_scope|var_variable_values|variable_bid)\b|"
+            r"markdownflow-syntax\.md#(?:variables|pre-collection-references)\b|"
+            r"authoring-contracts\.md#variable-table\b|"
+            r"teaching-design\.md#variable-strategy\b",
             re.IGNORECASE,
         )
-        for path in sorted(SKILL_ROOT.rglob("*")):
+        runtime_references = re.compile(
+            r"\{\{[^{}\n]*\}\}|^#{1,6}[ \t]+Variables?[ \t]*$",
+            re.IGNORECASE | re.MULTILINE,
+        )
+        for path in sorted(skill_root.rglob("*")):
             if path.is_symlink() or not path.is_file():
                 continue
-            relative = PurePosixPath(path.relative_to(SKILL_ROOT).as_posix())
+            relative = PurePosixPath(path.relative_to(skill_root).as_posix())
             # Evals are maintained source even though release archives omit them.
             release_path = (
                 PurePosixPath(*relative.parts[1:])
@@ -105,10 +114,56 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
             except UnicodeDecodeError:
                 continue
             match = retired_contract.search(content)
+            if not match and relative.as_posix() == "references/markdownflow-syntax.md":
+                match = runtime_references.search(content)
             if match:
                 self.fail(
                     f"Retired learner-state contract in {relative}: {match.group(0)!r}"
                 )
+
+    def test_package_retires_the_named_learner_state_contract(self):
+        self.assert_retired_contract_absent(SKILL_ROOT)
+
+    def test_contract_scan_allows_other_domains_and_skips_runtime_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skill_root = Path(tmp)
+            sources = {
+                ".env": "SENSITIVE_TOKEN=canary global_variable_table",
+                ".update-check.json": '{"used_variables": []}',
+                "evals/.env": "%{{private_key}}",
+                ".env.example": "# Configure environment variables here.",
+                "references/other-template.md": (
+                    "An environment variable is configuration.\n"
+                    "Jekyll 使用模板变量 {{ site.title }}。\n"
+                ),
+                "evals/other-template.json": '{"query": "Render {{ page.title }}"}',
+            }
+            for name, content in sources.items():
+                path = skill_root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+
+            self.assert_retired_contract_absent(skill_root)
+
+    def test_contract_scan_rejects_retired_source_with_short_errors(self):
+        cases = (
+            ("evals/case.json", '{"used_variables": []}'),
+            ("references/lesson.md", "?[%{{learner_goal}} ...Goal]"),
+            ("references/analytics/tables.md", "var_variable_values"),
+            ("references/markdownflow-syntax.md", "Read {{learner_goal}}."),
+            ("references/consumer.md", "markdownflow-syntax.md#variables"),
+        )
+        for name, content in cases:
+            with self.subTest(source=name), tempfile.TemporaryDirectory() as tmp:
+                skill_root = Path(tmp)
+                path = skill_root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("source_secret_canary\n" + content, encoding="utf-8")
+
+                with self.assertRaises(AssertionError) as error:
+                    self.assert_retired_contract_absent(skill_root)
+                self.assertIn(name, str(error.exception))
+                self.assertNotIn("source_secret_canary", str(error.exception))
 
 
 if __name__ == "__main__":
