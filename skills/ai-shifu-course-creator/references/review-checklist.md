@@ -12,7 +12,7 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 
 - Each artifact serves its responsibility under [prompt-semantics.md#artifact-responsibilities](prompt-semantics.md#artifact-responsibilities).
 - Teaching Prompts provide executable local teaching directions, required content and relationships, and any chosen feedback or branch behavior. A Course Prompt is not relied on to invent missing lesson pedagogy.
-- After MarkdownFlow removes source-only comments, every remaining part of a Teaching Prompt serves runtime delivery. No executable requirement, variable, option, URL, command, or exact span exists only in a comment.
+- Outside the [author-facing comments](teaching-prompt.md#required-comments), every part of a Teaching Prompt serves runtime delivery. No executable requirement, variable, option, URL, command, or exact span exists only in a comment.
 - Authoring controls, selection interfaces, pipeline notes, and learner-profile data do not leak into runtime instructions. Second-person forms obey [prompt-semantics.md#prompt-semantics](prompt-semantics.md#prompt-semantics).
 
 ## Teaching Design and Layout
@@ -22,7 +22,7 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 - Explicit author decisions about order, delivery experience, interaction restrictions, and other constraints are respected. The agent may choose or revise unspecified design elements within the task.
 - New or explicitly rewritten Teaching Prompts have concise source-only navigation comments for useful teaching blocks under [teaching-prompt.md](teaching-prompt.md). Optional layouts and agent-created layouts are valid when readable and runtime-safe.
 - In audit-only existing content, comment and layout normalization is `not-assessed`; do not reformat or add comments. Continue checking observable syntax and runtime behavior.
-- Syntax-owned structures and immutable source content retain their required form and scope in any layout. Removing source-only comments does not remove runtime content.
+- Syntax-owned structures and immutable source content retain their required form and scope in any layout. Required runtime content remains complete outside source-only comments.
 - Pure classroom slides retain their intended instructor-paced behavior; explicit text-only constraints contain no visual instructions. Visuals serve a defined purpose rather than padding length. General slide presentation requirements belong in the Course Prompt.
 
 ## Personalization

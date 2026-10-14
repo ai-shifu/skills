@@ -56,7 +56,7 @@ This optional representation does not make those three purposes exhaustive for u
 - Teaching Prompts contain executable lesson instructions in MarkdownFlow; Course Prompts contain shared course instructions; descriptions contain learner-facing listing prose. [prompt-semantics.md#artifact-responsibilities](prompt-semantics.md#artifact-responsibilities) defines the boundary.
 - Produce the artifacts required by the task. A single lesson or a pasted Prompt body does not require a full-course envelope, `course_index`, segment list, variable-table JSON, or uncertainty extensions.
 - A complete authored course includes its lesson content, Course Prompt, learner-facing description, and suitable course/chapter structure. Use the recognized directory files when materializing it; do not invent additional manifest files to preserve authoring state.
-- Course hierarchy and platform lesson titles belong in structure metadata. Source-only navigation and explanatory comments are defined in [teaching-prompt.md](teaching-prompt.md); runtime content must not exist only in a removed comment.
+- Course hierarchy and platform lesson titles belong in structure metadata. Source-only navigation and explanatory comments are defined in [teaching-prompt.md](teaching-prompt.md); runtime content must not exist only in a comment.
 - Keep authoring assumptions and incomplete work separate from claims that an artifact is ready. Uncertainty may be explained directly without a fixed fallback schema.
 
 ## Variable Table
