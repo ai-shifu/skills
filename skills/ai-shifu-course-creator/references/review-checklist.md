@@ -39,7 +39,7 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 - Questions and options are clear and answerable, and selected instructional interactions have a meaningful feedback or teaching effect under [teaching-design.md#interaction-design](teaching-design.md#interaction-design).
 - Every control, assignment, reference, and branch follows [markdownflow-syntax.md](markdownflow-syntax.md) and [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding). Controls stay recognizable and distinct from simulated visual controls.
 - Named answers have valid collection and meaningful cross-lesson or Course Prompt consumers; local answers remain unnamed. Check actual artifacts under [authoring-contracts.md#variable-table](authoring-contracts.md#variable-table); no variable-table JSON is required.
-- Branches use natural language. Unavailable information follows [prompt-semantics.md](prompt-semantics.md#prompt-semantics), without requiring a fixed learner-visible reply. No learner-visible authoring placeholders remain.
+- Branches use natural language and account for unavailable named values where applicable. No learner-visible authoring placeholders remain.
 - Deterministic blocks, code fences, required source spans, and image records survive preprocessing as required. Images use [image-authoring.md#image-output-validation](image-authoring.md#image-output-validation) when present; absent images do not require image work.
 
 ## Course Prompt and Description

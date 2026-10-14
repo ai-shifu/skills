@@ -109,7 +109,7 @@ Ordinary instructions may use lists, paragraphs, or another suitable source layo
 - Refer to lesson-local answers naturally without inventing a global variable.
 - For a named learner answer, ensure a real collection and each intended consumer are consistent. A variable table is optional bookkeeping, not a required output.
 - Bind a substituted value naturally, for example `The learner goal is {{learning_goal}}.`, before explaining behavior that depends on it.
-- Where reading before collection is possible, account for [runtime substitution](markdownflow-syntax.md#variables) and apply [missing-information semantics](prompt-semantics.md#prompt-semantics) instead of testing whether a marker exists.
+- Where reading before collection is possible, handle unavailable information rather than testing whether a marker exists.
 - New variable names follow [language-policy.md](language-policy.md); preserve existing names where renaming would break references.
 - Prompt prose carries the teaching response, not an explanation of the machine-facing encoding decision.
 
@@ -121,7 +121,6 @@ Use [source-preservation.md](source-preservation.md) to identify the selected ex
 - Use paired standalone `!===` delimiter lines for multi-line deterministic output, including the original code fence and language tag when required.
 - Inline `===...===` preserves a position-sensitive span within generated content.
 - Keep adaptive content outside deterministic markers and preserve each selected span at its intended runtime position.
-- Put active runtime-variable references inside deterministic spans only when usable values are available at that delivery point; a collection declaration alone does not establish availability. Otherwise keep value-dependent content outside deterministic markers for [natural missing-information handling](prompt-semantics.md#prompt-semantics). Preserve protected literal examples and required exact source spans; if exact output depends on unavailable data, report that dependency rather than weaken preservation.
 
 ## Outputs
 
@@ -136,7 +135,7 @@ Check the observable result within the requested scope:
 - The Prompt contains executable learner-time instructions with enough content and explanation to fulfill its goal, within the shared Prompt responsibility boundary.
 - Explicit source, audience, delivery, interaction, personalization, and approved design constraints are honored.
 - Newly written or explicitly rewritten Prompts have useful explanatory comments before meaningful blocks. Essential teaching content survives comment removal, and the chosen layout preserves runtime controls and exact spans.
-- Questions, controls, feedback, named-variable collections and consumers, and natural-language branches are coherent and use valid MarkdownFlow; unavailable information follows [prompt-semantics.md](prompt-semantics.md#prompt-semantics).
+- Questions, controls, feedback, named-variable collections and consumers, natural-language branches, and handling of unavailable information are coherent and use valid MarkdownFlow.
 - Source material selected for exact preservation matches its authoritative source. Do not claim source coverage when the source is unavailable.
 - Image-specific checks apply when actual image assets are used.
 - Available companion artifacts are consistent; unavailable or out-of-scope checks are not assessed. A recommended pattern, visual cadence, interaction quota, or optional layout is never a pass/fail criterion.

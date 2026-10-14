@@ -885,7 +885,6 @@ class CourseCreatorContractTests(unittest.TestCase):
             "?[...Input hint]",
             "?[%{{name}} Option A | Option B]",
             "?[%{{name}} ...Input hint]",
-            "UNKNOWN",
             "===...===",
             "\n!===\n",
         ):
@@ -953,7 +952,7 @@ class CourseCreatorContractTests(unittest.TestCase):
     def test_evals_preserve_runtime_source_and_variable_regressions(self):
         self.assert_eval_family(
             (8, 9, 15, 16, 17, 33, 51, 52),
-            ("UNKNOWN", "deterministic", "exact", "feedback", "named variable"),
+            ("unavailable", "deterministic", "exact", "feedback", "named variable"),
         )
 
     def test_evals_preserve_selected_and_empty_personalization(self):
