@@ -547,6 +547,14 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Do not create static slides but generate context-aware multi-select interaction.",
             "Do not create static slides but generate context-aware interaction "
             "asking the learner which action to take.",
+            "发起一次单选互动。",
+            "创建一个文本输入响应界面。",
+            "生成一次多选互动，提供三个选项。",
+            "不要发起一次单选互动。创建一个文本输入响应界面。",
+            "Lancez une interaction à choix unique.",
+            "Créez une interface de réponse textuelle.",
+            "Ne lancez pas d’interaction à choix unique. "
+            "Créez une surface de réponse textuelle.",
         )
         for prompt in prompts:
             for artifact in ("lesson", "course_prompt"):
@@ -594,6 +602,18 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Create training material covering context-aware multi-select interaction.",
             "Present a single-select interaction as a static worked example from an earlier "
             "lesson. Read the actual earlier selection from memory without requesting new input.",
+            "不要发起一次单选互动。",
+            "避免创建一个文本输入响应界面。",
+            "不要创建一个单选互动要求学习者选择行动。",
+            "创建一个单选互动图示。",
+            "生成一个单选互动示意图。",
+            "创建一个文本输入响应界面作为静态图片。",
+            "从 memory 读取先前实际回答，无需创建一个文本输入响应界面。",
+            "Ne lancez pas d’interaction à choix unique.",
+            "Ne créez pas d’interface de réponse textuelle.",
+            "Créez un exemple statique d’interface de réponse textuelle.",
+            "Créez une interface de réponse textuelle comme un exemple statique.",
+            "Utilisez la réponse précédente en mémoire sans créer une nouvelle interaction.",
         )
         for prompt in prompts:
             with self.subTest(prompt=prompt):

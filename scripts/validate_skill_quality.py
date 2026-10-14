@@ -116,9 +116,35 @@ RE_INTERACTION_CREATION_DIRECTIVE = re.compile(
     + r")",
     re.IGNORECASE,
 )
+CHINESE_INTERACTION_CREATION_PATTERN = (
+    r"(?:发起|启动|创建|生成)[ \t]*(?:一(?:次|个|项|轮)[ \t]*)?"
+    r"(?:(?:单选|多选|文本输入|自由文本)[ \t]*)?"
+    r"(?:互动|响应界面)"
+)
+FRENCH_INTERACTION_CREATION_PATTERN = (
+    r"\b(?:lancez|initiez|démarrez|créez)[ \t]+"
+    r"(?:(?:une?|la|le)[ \t]+)?"
+    r"(?:interaction(?:[ \t]+à[ \t]+choix[ \t]+(?:unique|multiples?))?"
+    r"(?![ \t]+à[ \t]+choix\b)|"
+    r"(?:interface|surface)[ \t]+de[ \t]+réponse"
+    r"(?:[ \t]+(?:textuelle|libre))?(?![ \t]+(?:textuelle|libre)\b))\b"
+)
+RE_LOCALIZED_INTERACTION_CREATION_DIRECTIVE = re.compile(
+    # Keep localized creation checks to common, explicit interface phrases.
+    rf"(?={CHINESE_INTERACTION_CREATION_PATTERN}"
+    r"(?![ \t]*(?:(?:流程|示意)?图(?:示|片)?|示例|说明|描述|"
+    r"作为(?:一个)?(?:静态|历史|演示)*(?:示例|图片|图示))))|"
+    rf"(?={FRENCH_INTERACTION_CREATION_PATTERN}"
+    r"(?![ \t]+(?:comme[ \t]+(?:un[ \t]+)?(?:exemple|image)|"
+    r"sous[ \t]+forme[ \t]+d['’](?:image|exemple))))",
+    re.IGNORECASE,
+)
 RE_NEGATED_LEARNER_RESPONSE_PREFIX = re.compile(
-    r"\b(?:not|don['’]t|never|without|avoid|instead\s+of|rather\s+than)\s+"
-    rf"(?:{INTERACTION_CREATION_PATTERN}\s+)?$",
+    r"(?:\b(?:not|don['’]t|never|without|avoid|instead\s+of|rather\s+than)\s+"
+    rf"(?:{INTERACTION_CREATION_PATTERN}\s+)?|"
+    r"(?:不要|不得|禁止|避免|无需|无须|不必)[ \t]*"
+    rf"(?:{CHINESE_INTERACTION_CREATION_PATTERN}[ \t]*)?|"
+    r"\bne[ \t]+|n['’])$",
     re.IGNORECASE,
 )
 RE_ANSWER_DEPENDENT_BRANCH = re.compile(
@@ -686,6 +712,7 @@ def validate_disabled_prompt_text(
         for directive in (
             RE_LEARNER_RESPONSE_DIRECTIVE,
             RE_INTERACTION_CREATION_DIRECTIVE,
+            RE_LOCALIZED_INTERACTION_CREATION_DIRECTIVE,
         )
         for match in directive.finditer(prompt)
     ):
