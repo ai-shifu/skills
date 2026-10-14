@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import subprocess
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
@@ -27,7 +26,6 @@ class BumpOptions(Protocol):
     skill_name: str
     skill_version: str
     level: str
-    changelog: str
     draft: bool
     no_pr: bool
     repo_url: str
@@ -49,22 +47,6 @@ def bumped_version(current: str, level: str) -> str:
     if level == "patch":
         return f"{major}.{minor}.{patch + 1}"
     raise ValueError(f"Unknown bump level: {level!r}")
-
-
-def append_changelog(path: Path, version: str, note: str) -> None:
-    date = datetime.now(timezone.utc).date().isoformat()
-    section = f"## {version} - {date}\n\n- {note}\n"
-    if not path.exists():
-        path.write_text(f"# Changelog\n\n{section}", encoding="utf-8")
-        return
-    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-    insert_at = 0
-    for index, line in enumerate(lines):
-        if line.startswith("# "):
-            insert_at = index + 1
-            break
-    lines.insert(insert_at, f"\n{section}")
-    path.write_text("".join(lines), encoding="utf-8")
 
 
 def bump(args: BumpOptions) -> dict:
@@ -94,10 +76,6 @@ def bump(args: BumpOptions) -> dict:
             text, {"version": new_version}, str(skill_file)
         )
         skill_file.write_bytes(updated.encode("utf-8"))
-        if args.changelog:
-            append_changelog(
-                skill_file.parent / "CHANGELOG.md", new_version, args.changelog
-            )
 
         branch = f"bump/{args.skill_name}-v{new_version}"
         title = f"chore: flow version to v{new_version}"
