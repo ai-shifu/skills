@@ -53,7 +53,7 @@ python3 scripts/release.py bump --skill-name ai-shifu-course-creator \
   --skill-version <X.Y.Z>
 ```
 
-Use `--level major|minor|patch` instead of an explicit version when requested. `--draft` creates a draft PR; `--no-pr` pushes the branch without opening a PR. `--changelog <text>` optionally adds a CHANGELOG entry.
+Use `--level major|minor|patch` instead of an explicit version when requested. `--draft` creates a draft PR; `--no-pr` pushes the branch without opening a PR.
 
 Version-bump PR titles must use `chore: flow version to vX.Y.Z`, replacing `X.Y.Z` with the target version; for example, `chore: flow version to v1.2.12`. Follow this format for both automatically and manually created release PRs. `bump` uses the same title for the version commit.
 

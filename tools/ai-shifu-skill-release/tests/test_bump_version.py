@@ -32,7 +32,6 @@ def make_args(**overrides) -> SimpleNamespace:
         "skill_name": "demo-skill",
         "skill_version": "",
         "level": "",
-        "changelog": "",
         "draft": False,
         "no_pr": True,
         "repo_url": "",
@@ -93,6 +92,10 @@ class BumpVersionTest(unittest.TestCase):
         self.assertEqual(
             git("log", "-1", "--format=%s", cwd=check),
             "chore: flow version to v1.2.0",
+        )
+        self.assertEqual(
+            git("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD", cwd=check),
+            "skills/demo-skill/SKILL.md",
         )
         text = (check / "skills/demo-skill/SKILL.md").read_text(encoding="utf-8")
         self.assertIn(
