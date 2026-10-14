@@ -102,7 +102,7 @@ Ordinary instructions may use lists, paragraphs, or another suitable source layo
 - For input, use a specific preceding question and a short hint. For select-plus-input, put `...` at the start of the custom-answer option.
 - Use `%{{name}}` when a persisted answer is needed; lesson-local answers use the no-variable form. A blank name is invalid.
 - An action-only control such as `?[Continue]` advances the preceding content and does not require an invented question or slide.
-- In the prompt immediately after the interaction, describe how to respond to different answers and, when needed, ask the learner to interact again, using the [runtime follow-up behavior](markdownflow-syntax.md#branching-on-user-input).
+- The prompt immediately after an interaction can describe how to respond to different answers and, when needed, ask the learner to interact again, using the [runtime follow-up behavior](markdownflow-syntax.md#branching-on-user-input).
 
 For example:
 
