@@ -97,12 +97,12 @@
     {
       "id": 9,
       "prompt": "设计两节课：第一节先让学员选 A 或 B，并立刻给出对应解释，这个答案后面不再使用；另问一个学习目标，第二节和 Course Prompt 都要用到，而且 Course Prompt 可能在目标采集前先运行。请展示两种交互写法、global_variable_table，以及目标尚未填写时的处理。",
-      "expected_output": "Separates lesson-local answers from cross-lesson state and preserves the UNKNOWN substitution fallback.",
+      "expected_output": "Separates lesson-local answers from cross-lesson state and handles unavailable information before collection.",
       "files": [],
       "expectations": [
         "The lesson-local A/B interaction uses no-variable ?[...] syntax and creates no global_variable_table entry.",
         "The learning goal uses one named variable whose global_variable_table entry is collected_in L01, has cross_lesson scope, and lists the later lesson and course_prompt in used_in.",
-        "Any pre-collection reference binds the substituted value and branches on the literal UNKNOWN fallback rather than testing variable availability or readiness."
+        "Any pre-collection reference binds the substituted value and branches on unavailable information rather than testing variable availability or readiness."
       ]
     },
     {
@@ -488,7 +488,7 @@
         "Practical-value explanations remain grounded in the course content and stated learner context; neither Course Prompt invents benefits, guarantees outcomes, or treats a role label as proof that a proposed analogy is familiar.",
         "Both Course Prompts preserve the existing Teaching Prompts' objectives, facts and boundaries, methods, sequence, pacing, required examples, interactions, exact material, slide count and order, and close.",
         "Pure classroom slides still contain no Teaching Agent narration or address to a single learner even while relevant learner context shapes open projected content.",
-        "Empty, UNKNOWN, unavailable, or irrelevant learner context falls back to neutral course-appropriate defaults without inferred facts or a summary or disclosure of the learner profile.",
+        "Empty, unknown, unavailable, or irrelevant learner context falls back to neutral course-appropriate defaults without inferred facts or a summary or disclosure of the learner profile.",
         "Neither Course Prompt contains a concrete learner profile value, platform learner-profile tag, internal learner-profile variable name, learner-profile placeholder, or added global_variable_table entry."
       ]
     },
@@ -505,7 +505,7 @@
         "The approved objectives, facts and boundaries, teaching method, sequence, pacing, required examples, interactions, exact material, four-page structure, and close remain unchanged.",
         "Pure classroom slides remain projection-ready without Teaching Agent narration or addressing a single learner.",
         "The result removes `{{sys_user_background}}` and contains no other internal learner-profile variable, platform learner-profile tag, learner-profile placeholder, concrete learner profile value, or global_variable_table entry.",
-        "Empty, UNKNOWN, unavailable, or irrelevant context uses neutral course-appropriate defaults and the Course Prompt neither infers missing facts nor quotes, summarizes, or reveals the learner profile."
+        "Empty, unknown, unavailable, or irrelevant context uses neutral course-appropriate defaults and the Course Prompt neither infers missing facts nor quotes, summarizes, or reveals the learner profile."
       ]
     },
     {

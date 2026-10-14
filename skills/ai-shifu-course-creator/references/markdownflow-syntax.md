@@ -12,7 +12,7 @@ HTML comments are removed before content is sent to the Teaching Agent. Variable
 
 A variable reference has the form `{{name}}`. The parser captures the non-empty text between the braces exactly, including any whitespace, and uses that exact text as the lookup key. It does not enforce an identifier-character policy.
 
-Before content is generated or an interaction is rendered, each `{{name}}` reference is replaced with the corresponding runtime value. List values are joined into a comma-separated string. A missing value, an empty string, or an empty list is replaced with `UNKNOWN`. Values sent to the Teaching Agent are quoted for prompt isolation; values in deterministic output are inserted directly.
+Before content is generated or an interaction is rendered, each `{{name}}` reference is replaced with the corresponding runtime value. List values are joined into a comma-separated string. Values sent to the Teaching Agent are quoted for prompt isolation; values in deterministic output are inserted directly.
 
 Substitution always produces a value. A variable reference does not create a separate present/absent, ready/not-ready, or boolean state.
 
