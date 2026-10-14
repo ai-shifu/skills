@@ -30,7 +30,7 @@ Choose one form after the visual intent is known:
 | Display the uploaded image without layout customization | `===![informative alt](url)===` on its own line |
 | Control width, alignment, caption, or multi-image layout | A natural-language HTML-view instruction |
 
-For fixed display, write informative alt text. When an alt was selected as immutable source content, load `source-preservation.md` and retain it exactly. The deterministic line bypasses the Teaching Agent.
+For fixed display, write informative alt text. When an alt was selected as immutable source content, load `source-preservation.md` and retain it exactly. Apply the runtime-specific [preservation behavior](markdownflow-syntax.md#deterministic-blocks) to the image line; the marker alone does not verify the delivered URL or alt text.
 
 For HTML-view, keep the instruction outside deterministic markers and require the Teaching Agent to render each image with an HTML `<figure>` element and, when a caption is selected, a `<figcaption>` element. Encode every applicable image property below in natural language:
 

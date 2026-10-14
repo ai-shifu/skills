@@ -1311,6 +1311,19 @@
         "C may remain a standalone explicit rename using update-meta course-c --name with the requested title; because this independent request neither edits course-content artifacts nor has an established sync directory, it need not pull or create a directory merely to rename. D remains a local-only audit with no authentication, course lookup, pull, update-meta, or other CLI operation and no forced rewrite.",
         "All four answers remain simulated: no command, file mutation, platform access, or successful write is claimed. The response does not add new-course creation approval, publication, a questionnaire, or a universal authoring sequence to these scoped requests."
       ]
+    },
+    {
+      "id": 106,
+      "prompt": "只做本地只读审查，不改文件、不调用平台、不运行课堂。目标课程使用 MarkdownFlow 2.0，已有 Teaching Prompt 正文包含四处作者要求原样保留的内容：独立行 ===先核验，再处置。===；普通指令中的 inline 片段 ===风险信号不等于结论===；完整的 !=== 多行围栏中有两行“第一步：核验身份。”“第二步：留存证据。”；独立图片行 ===![核验流程](https://assets.example.test/course/diagram.png)===。全课输出语言为英文，但上述中文固定内容不得翻译。手上只有这份源码，没有任何课堂实际输出。同事写了审查结论：“独立行、完整多行围栏和固定图片都绕过授课智能体，inline 则可以随英文输出翻译；这些标记已经证明实际输出逐字一致。”请审查这段结论，说明四处内容如何处理、源码检查和实际输出检查各能得出什么结论，并简述目标仍为 MarkdownFlow 1.0 时哪些机制不同。保留原有作者要求、正文、标记和布局，不扩展到变量、注释、互动、上传或部署问题。",
+      "expected_output": "Corrects preservation guarantees for MarkdownFlow 2.0 while retaining exact author requirements, MarkdownFlow 1.0 compatibility, and the source-only review boundary.",
+      "files": [],
+      "expectations": [
+        "For MarkdownFlow 2.0, standalone, inline, complete multi-line and fixed-image preservation all remain model-mediated. The host removes preservation markers from delivered text but does not compare or restore the marked content; the review does not claim a model bypass or guaranteed delivered fidelity.",
+        "All four selected spans retain their exact wording, punctuation, line order and position in the artifact. The Chinese fixed text is not authorized for translation by the English output language; the image URL and selected alt remain exact. The review changes no source text, markers, layout or author requirement.",
+        "It separates source fidelity and correct encoding from observed runtime fidelity. With no classroom output, runtime fidelity is not assessed; marker presence is insufficient evidence. It describes comparing the actual delivered content with the authoritative selected spans when runtime verification is in scope, without initiating a platform call or paid preview.",
+        "It preserves the MarkdownFlow 1.0 distinction: standalone lines and complete multi-line fences bypass the Teaching Agent, while inline spans remain model-mediated and may undergo the legacy output-language transformation. It does not generalize that inline translation permission to MarkdownFlow 2.0 or waive the author's explicit exactness requirement.",
+        "It stays within the requested read-only preservation review and does not rewrite unrelated variable, comment, interaction, upload, authentication, publication or runtime-selection policy."
+      ]
     }
   ]
 }

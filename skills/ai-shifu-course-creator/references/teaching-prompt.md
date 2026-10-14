@@ -117,9 +117,9 @@ Ordinary instructions may use lists, paragraphs, or another suitable source layo
 
 Use [source-preservation.md](source-preservation.md) to identify the selected exact span and authoritative source. No segment record or character-offset JSON is required.
 
-- Use standalone `===...===` for a complete single-line span that must bypass the Teaching Agent.
-- Use complete `!===...!===` fences for multi-line deterministic output, including the original code fence and language tag when required.
-- Inline `===...===` preserves a position-sensitive span within generated content and remains mediated by the Teaching Agent; it is not equivalent to standalone deterministic output.
+- Use standalone `===...===` for a complete single-line span that must appear verbatim.
+- Use complete `!===...!===` fences for multi-line verbatim content, including the original code fence and language tag when required.
+- Use inline `===...===` for a position-sensitive span within generated content. Apply the runtime-specific execution and translation behavior in [markdownflow-syntax.md#deterministic-blocks](markdownflow-syntax.md#deterministic-blocks); do not infer a model bypass from the notation.
 - Keep adaptive content outside deterministic markers and preserve each selected span at its intended runtime position.
 
 ## Outputs
@@ -136,6 +136,6 @@ Check the observable result within the requested scope:
 - Explicit source, audience, delivery, interaction, personalization, and approved design constraints are honored.
 - Newly written or explicitly rewritten Prompts have useful explanatory comments before meaningful blocks. Essential teaching content survives comment removal, and the chosen layout preserves runtime controls and exact spans.
 - Questions, controls, feedback, named-variable collections and consumers, natural-language branches, and literal `UNKNOWN` handling are coherent and use valid MarkdownFlow.
-- Source material selected for exact preservation matches its authoritative source. Do not claim source coverage when the source is unavailable.
+- Source material selected for exact preservation passes [source-preservation.md#verification](source-preservation.md#verification). Report source checks and observed runtime fidelity within the available scope.
 - Image-specific checks apply when actual image assets are used.
 - Available companion artifacts are consistent; unavailable or out-of-scope checks are not assessed. A recommended pattern, visual cadence, interaction quota, or optional layout is never a pass/fail criterion.
