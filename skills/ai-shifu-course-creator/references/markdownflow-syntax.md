@@ -20,7 +20,7 @@ Use the learner's actual inputs and account for later corrections. If relevant i
 
 ## Interactions
 
-An interaction can be authored as an explicit `?[...]` control or as a natural-language instruction to the Teaching Agent. The runtime pauses document progression and resumes after an answer is submitted.
+An interaction can be authored as an explicit `?[...]` control or as a natural-language instruction to the Teaching Agent. A supported interaction pauses document progression and resumes after the learner submits an answer.
 
 ### Explicit Controls
 
@@ -38,6 +38,8 @@ The interaction body is interpreted as follows:
 The first separator determines selection mode: `|` represents one selected value and `||` represents multiple selected values. The token `...` marks a free-text entry field, and the text immediately after it is the rendered input hint.
 
 ### Natural-Language Interactions
+
+These instructions require a Teaching Agent that can create a real response surface and wait for the learner's answer before continuing. Rendering explicit controls alone does not execute natural-language interaction instructions.
 
 A Teaching Prompt can directly describe what the Teaching Agent should ask the learner to do, without a `?[]` control or a fixed option list. The Teaching Agent generates the question and response surface at learner time using the lesson context and relevant course memory. Selection mode, option constraints, and whether a custom text answer is allowed can be stated in words.
 
