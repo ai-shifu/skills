@@ -185,7 +185,7 @@ RE_ANSWER_DEPENDENT_BRANCH = re.compile(
 )
 RE_PRIOR_LEARNER_CONTEXT_SUFFIX = re.compile(
     r"[ \t]+(?:"
-    r"from[ \t]+(?:the[ \t]+)?(?:previous|earlier)[ \t]+lessons?\b|"
+    r"from[ \t]+(?:(?:an?|the)[ \t]+)?(?:previous|earlier)[ \t]+lessons?\b|"
     r"(?:already|previously)[ \t]+(?:recorded|stored|available)[ \t]+"
     r"in[ \t]+(?:course[ \t]+)?memory\b)"
     r"(?=[ \t]*(?:[,;.!?\r\n]|$))",

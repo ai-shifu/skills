@@ -728,6 +728,8 @@ class InteractionPolicyValidationTests(unittest.TestCase):
     def test_disabled_policy_accepts_attached_prior_answer_context(self):
         prompts = (
             "Based on the learner's answer from the previous lesson, choose a worked example.",
+            "Based on the learner's answer from an earlier lesson, choose a worked example.",
+            "Based on the learner's answer from a previous lesson, choose a worked example.",
             "Based on the learner's choice from earlier lessons, choose a worked example.",
             "Based on the learner's answer already recorded in memory, choose a worked example.",
             "Based on the learner's input previously stored in course memory, choose a worked example.",
