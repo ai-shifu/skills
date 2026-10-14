@@ -11,7 +11,7 @@ on:
         required: true
         type: string
       preview_type:
-        description: "Save an Actions artifact, or create a test Draft Release from a development branch"
+        description: "Save an Actions artifact, or create a test Draft Release after the version PR is merged"
         required: true
         default: artifact
         type: choice
@@ -91,23 +91,20 @@ jobs:
       pull-requests: read
     runs-on: ubuntu-24.04
     steps:
-      - name: Require a development branch
+      - name: Require main after the version PR is merged
         run: |
           test "$GITHUB_REF_TYPE" = branch
-          test "$GITHUB_REF_NAME" != main
+          test "$GITHUB_REF_NAME" = main
 
       - name: Checkout selected commit
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Check Draft Release permission boundary
+      - name: Ensure Draft Release source is on main
         run: |
           git fetch origin main
-          if test -n "$(git diff --name-only origin/main "$GITHUB_SHA" -- .github/workflows/)"; then
-            echo "::error::This branch changes GitHub workflow files relative to main. GitHub will not let the built-in Actions token create a Draft Release for this commit. Use the artifact preview and review the workflow changes separately."
-            exit 1
-          fi
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -143,7 +140,7 @@ jobs:
           preview_tag="preview-v${PREVIEW_VERSION}-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           python3 tools/ai-shifu-skill-release/scripts/release.py github-release "$release_dir" \
             --tag "v$PREVIEW_VERSION" --commit "$GITHUB_SHA" \
-            --draft-preview-tag "$preview_tag" --preview --notes-output release-notes
+            --draft-preview-tag "$preview_tag" --notes-output release-notes
           echo "Test Draft Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${preview_tag}" >> "$GITHUB_STEP_SUMMARY"
           cat release-notes/release-notes.md >> "$GITHUB_STEP_SUMMARY"
 

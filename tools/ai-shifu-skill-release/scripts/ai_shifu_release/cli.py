@@ -162,7 +162,8 @@ def create_parser() -> argparse.ArgumentParser:
         help="Prepare assets without creating a Release",
     )
     github.add_argument(
-        "--draft-preview-tag", help="Create and verify a branch-only test Draft Release"
+        "--draft-preview-tag",
+        help="Create and verify a test Draft Release from merged source",
     )
     github.add_argument(
         "--output", type=Path, help="Required output directory for --prepare-only"
@@ -197,8 +198,10 @@ def run_github_release(
     """Prepare or publish GitHub attachments with the existing release gates."""
     if args.prepare_only and args.draft_preview_tag:
         parser.error("--prepare-only and --draft-preview-tag cannot be combined")
-    if args.preview and not (args.prepare_only or args.draft_preview_tag):
-        parser.error("--preview requires --prepare-only or --draft-preview-tag")
+    if args.preview and not args.prepare_only:
+        parser.error(
+            "--preview requires --prepare-only; Draft Releases require merged source"
+        )
     if args.prepare_only:
         if args.output is None:
             parser.error("--prepare-only requires --output")
@@ -234,7 +237,7 @@ def run_github_release(
             Path(temporary),
             base_ref=args.base_ref,
             github_repository=args.github_repo,
-            preview=args.preview or bool(args.draft_preview_tag),
+            preview=False,
             notes_output=args.notes_output,
             draft_preview=bool(args.draft_preview_tag),
         )

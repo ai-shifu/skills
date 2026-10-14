@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 import unittest
 from unittest.mock import patch
 
-from ai_shifu_release import github_releases, release_notes
+from ai_shifu_release import cli, github_releases, release_notes
 from support import ReleaseFixture
 
 
@@ -98,6 +99,95 @@ class PullRequestPreviewTest(unittest.TestCase):
         self.assertIn("### Unmerged preview changes", markdown)
         self.assertIn("Preview the proposed authoring flow", markdown)
         self.assertIn("Keep the learner continuation", markdown)
+
+    def test_draft_preview_rejects_unmerged_source(self) -> None:
+        release_dir = self.fixture.build(source_ref=self.merge_commit)
+
+        def github_json(endpoint: str, *, paginate: bool = False):
+            if endpoint == "repos/example/skills":
+                return {"default_branch": "main"}
+            if endpoint == "repos/example/skills/releases?per_page=100":
+                return [{"tag_name": "v1.2.2", "draft": False, "prerelease": False}]
+            self.fail(f"Unexpected GitHub request before source validation: {endpoint}")
+
+        with (
+            patch.object(release_notes, "_github_json", side_effect=github_json),
+            patch.dict(os.environ, {"GITHUB_REPOSITORY": "example/skills"}),
+            patch.object(github_releases, "publish") as publish,
+        ):
+            with self.assertRaisesRegex(ValueError, "Source commit is not on"):
+                cli.main(
+                    [
+                        "github-release",
+                        str(release_dir),
+                        "--tag",
+                        "v1.2.3",
+                        "--commit",
+                        self.merge_commit,
+                        "--github-repo",
+                        "example/skills",
+                        "--draft-preview-tag",
+                        f"preview-v1.2.3-{self.merge_commit}-123-1",
+                    ]
+                )
+        publish.assert_not_called()
+
+    def test_draft_preview_accepts_merged_source_and_collects_merged_notes(
+        self,
+    ) -> None:
+        self.fixture.git("update-ref", "refs/remotes/origin/main", self.merge_commit)
+        release_dir = self.fixture.build(source_ref=self.merge_commit)
+
+        def github_json(endpoint: str, *, paginate: bool = False):
+            if endpoint == "repos/example/skills":
+                return {"default_branch": "main"}
+            if endpoint == "repos/example/skills/releases?per_page=100":
+                self.assertTrue(paginate)
+                return [{"tag_name": "v1.2.2", "draft": False, "prerelease": False}]
+            if "/commits/" in endpoint:
+                self.assertTrue(paginate)
+                sha = endpoint.split("/commits/", 1)[1].split("/", 1)[0]
+                return [{"number": 77}] if sha == self.merge_commit else []
+            if endpoint == "repos/example/skills/pulls/77":
+                return {
+                    "number": 77,
+                    "title": "feat: Improve course authoring and continuation",
+                    "html_url": "https://github.com/example/skills/pull/77",
+                    "user": {"login": "author"},
+                    "merged": True,
+                    "merged_at": "2026-10-09T04:00:00Z",
+                    "merge_commit_sha": self.merge_commit,
+                    "base": {
+                        "ref": "main",
+                        "repo": {"full_name": "example/skills"},
+                    },
+                }
+            self.fail(f"Unexpected GitHub request: {endpoint}")
+
+        output = self.fixture.root / "draft-assets"
+        with patch.object(release_notes, "_github_json", side_effect=github_json):
+            assets, markdown = github_releases.prepare_assets(
+                release_dir,
+                "v1.2.3",
+                self.merge_commit,
+                output,
+                github_repository="example/skills",
+                draft_preview=True,
+            )
+
+        snapshot = json.loads((output / "notes/release-notes.json").read_text())
+        self.assertEqual(len(assets), 6)
+        self.assertEqual(snapshot["head_sha"], self.merge_commit)
+        self.assertEqual(snapshot["collection_status"], "complete")
+        self.assertTrue(snapshot["pr_metadata_verified"])
+        self.assertTrue(snapshot["draft_preview"])
+        self.assertFalse(snapshot["preview"])
+        self.assertEqual(snapshot["pr_count"], 1)
+        self.assertEqual(len(snapshot["changes"]), 2)
+        self.assertIn("#77", markdown)
+        self.assertIn("Improve course authoring and continuation", markdown)
+        self.assertIn("TEST DRAFT ONLY", markdown)
+        self.assertNotIn("Unmerged preview changes", markdown)
 
     def test_formal_notes_keep_one_first_parent_pr_after_the_merge(self) -> None:
         self.fixture.git("update-ref", "refs/remotes/origin/main", self.merge_commit)

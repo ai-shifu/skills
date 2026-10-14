@@ -262,6 +262,22 @@ class ReleaseEntrypointTest(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("--preview requires", result.stderr)
 
+    def test_unmerged_preview_cannot_create_a_draft_release(self) -> None:
+        result = self.invoke(
+            TOOL_ROOT,
+            "github-release",
+            str(self.release_dir),
+            "--tag",
+            "v1.2.3",
+            "--commit",
+            self.commit,
+            "--draft-preview-tag",
+            f"preview-v1.2.3-{self.commit}-123-1",
+            "--preview",
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--preview requires --prepare-only", result.stderr)
+
     def test_formal_publication_requires_verified_github_identity(self) -> None:
         result = self.invoke(
             TOOL_ROOT,
