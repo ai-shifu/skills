@@ -165,6 +165,10 @@ RE_NEGATED_LEARNER_RESPONSE_PREFIX = re.compile(
     r"\bne[ \t]+|n['’])$",
     re.IGNORECASE,
 )
+RE_EXPLANATORY_CREATION_PREFIX = re.compile(
+    r"(?:\b(?:how|when|why|whether)\s+to\s+|如何|何时|为什么|是否)$",
+    re.IGNORECASE,
+)
 RE_ANSWER_DEPENDENT_BRANCH = re.compile(
     r"(?:"
     r"\b(?:after|when|once)\s+(?:the\s+)?"
@@ -735,6 +739,10 @@ def validate_disabled_prompt_text(
     # Exclude only a request's immediate prohibition, not earlier instructions.
     if any(
         not RE_NEGATED_LEARNER_RESPONSE_PREFIX.search(prompt[:match.start()])
+        and not (
+            directive is not RE_LEARNER_RESPONSE_DIRECTIVE
+            and RE_EXPLANATORY_CREATION_PREFIX.search(prompt[:match.start()])
+        )
         for directive in (
             RE_LEARNER_RESPONSE_DIRECTIVE,
             RE_INTERACTION_CREATION_DIRECTIVE,

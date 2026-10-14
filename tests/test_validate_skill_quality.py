@@ -563,6 +563,10 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Do not ask or prompt the learner to answer, but ask the learner to choose an action.",
             "Never generate or present a response surface; create a text-input interaction.",
             "Do not ask or prompt the learner to answer. Prompt the learner for a goal.",
+            "Explain how to create a single-select interaction. "
+            "Then create a multi-select interaction.",
+            "Ask the learner how to create a single-select interaction.",
+            "解释如何创建单选互动。发起一次单选互动。",
         )
         for prompt in prompts:
             for artifact in ("lesson", "course_prompt"):
@@ -605,6 +609,11 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Use relevant memory instead of asking the learner to describe the situation again.",
             "Explain why single-select interactions help learners compare options.",
             "Explain why asking the learner to share a password is inappropriate.",
+            "Explain how to create a single-select interaction.",
+            "Describe when to generate a multi-select interaction.",
+            "Explain how to offer two options for the learner to choose from.",
+            "解释如何创建单选互动。",
+            "说明如何发起一次单选互动。",
             "Explain the phrase 'asking the learner to describe a goal' as a teaching example.",
             "Present an example of a single-select interaction from a previous lesson.",
             "Offer two options as a static worked example from memory.",
