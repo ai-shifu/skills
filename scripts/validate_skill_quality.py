@@ -40,7 +40,7 @@ RE_COURSE_PROMPT_ARTIFACT = re.compile(
 )
 RE_LEARNER_RESPONSE_DIRECTIVE = re.compile(
     r"(?:"
-    r"\b(?:ask(?:ing)?|have|prompt|invite)\s+(?:the\s+)?"
+    r"\b(?:ask|have|prompt|invite)\s+(?:the\s+)?"
     r"(?:learner|learners|student|students)(?:"
     r"\s+(?:(?:to\s+)?(?:answer|choose|select|respond|enter|write|name|describe|"
     r"share|identify|decide|rank|reflect|recall|consider)|"
@@ -94,6 +94,9 @@ INTERACTION_RESPONSE_PURPOSE_PATTERN = (
     r"(?:choosing|selecting|entering|answering|responding|writing|describing)\b)"
     r"|in\s+which\s+(?:the\s+)?(?:learner|learners|student|students)\s+"
     r"(?:chooses?|selects?|enters?|answers?|responds?|writes?|describes?)\b"
+    r"|asking\s+(?:the\s+)?(?:learner|learners|student|students)\s+"
+    r"(?:(?:to\s+)?(?:choose|select|enter|answer|respond|write|describe)\b|"
+    r"(?:where|what|which|how|why|whether)\b)"
     r"))"
 )
 INTERACTION_STATIC_SUFFIX_PATTERN = (

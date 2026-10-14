@@ -590,6 +590,8 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "which action they chose.",
             "Use relevant memory instead of asking the learner to describe the situation again.",
             "Explain why single-select interactions help learners compare options.",
+            "Explain why asking the learner to share a password is inappropriate.",
+            "Explain the phrase 'asking the learner to describe a goal' as a teaching example.",
             "Present an example of a single-select interaction from a previous lesson.",
             "Create an interaction diagram showing how the components communicate.",
             "Generate a single-select interaction diagram showing the earlier choices.",
