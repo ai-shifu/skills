@@ -71,7 +71,6 @@ def create_parser() -> argparse.ArgumentParser:
     bump.add_argument(
         "--level", choices=version_bump.BUMP_LEVELS, default="", help="SemVer bump level"
     )
-    bump.add_argument("--changelog", default="", help="Optional CHANGELOG entry text")
     bump.add_argument("--draft", action="store_true", help="Open the PR as a draft")
     bump.add_argument(
         "--no-pr", action="store_true", help="Push the branch but skip gh pr create"
