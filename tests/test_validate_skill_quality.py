@@ -535,11 +535,18 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Create a multi-select interaction",
             "Present a text-input response surface.",
             "Offer a free-text interaction.\nThen continue after the actual answer.",
+            "Create a two-option single-select interaction.",
+            "Generate a context-aware multi-select interaction.",
+            "Generate a multi-select interaction with three options.",
+            "Present a personalized reflection interaction for the learner to describe a goal.",
             "Do not ask about background. Initiate a single-select interaction "
             "asking the learner which action to take.",
             "Do not ask the learner to choose a goal. Ask the learner to choose an action.",
             "Do not initiate a single-select interaction. "
             "Present a text-input response surface for the learner to enter a goal.",
+            "Do not create static slides but generate context-aware multi-select interaction.",
+            "Do not create static slides but generate context-aware interaction "
+            "asking the learner which action to take.",
         )
         for prompt in prompts:
             for artifact in ("lesson", "course_prompt"):
@@ -566,6 +573,8 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Do not create a real response surface asking the learner to choose an action.",
             "Do not generate a single-select interaction.",
             "Never offer a free-text interaction.",
+            "Do not generate a context-aware multi-select interaction asking "
+            "the learner which actions to take.",
             "Do not ask the learner to choose an action.",
             "Never prompt students for an answer.",
             "Avoid asking the learner to describe a goal.",
@@ -577,6 +586,12 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Create an interaction diagram showing how the components communicate.",
             "Generate a single-select interaction diagram showing the earlier choices.",
             "Present a text-input response surface as a static image.",
+            "Present an explanation of interaction.",
+            "Create a visual explanation about a single-select interaction.",
+            "Create a picture showing an interaction.",
+            "Create training material covering interaction.",
+            "Create training material covering a context-aware multi-select interaction.",
+            "Create training material covering context-aware multi-select interaction.",
             "Present a single-select interaction as a static worked example from an earlier "
             "lesson. Read the actual earlier selection from memory without requesting new input.",
         )

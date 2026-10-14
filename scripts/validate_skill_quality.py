@@ -55,28 +55,65 @@ RE_LEARNER_RESPONSE_DIRECTIVE = re.compile(
     r")",
     re.IGNORECASE,
 )
+INTERACTION_CREATION_VERB_PATTERN = (
+    r"\b(?:initiate|start|launch|create|generate|present|render|offer|open)\s+"
+)
+INTERACTION_ARTICLE_PATTERN = r"(?:(?:an?|the)[ \t]+)?"
+INTERACTION_MODIFIERS_PATTERN = (
+    # Accept modifiers without crossing a clause or consuming the surface head.
+    r"(?:(?!(?:a|an|the|of|about|on|in|for|with|without|as|to|from|"
+    r"that|which|who|where|when|why|how|and|or|but|then|instead|"
+    r"showing|explaining|illustrating|covering|depicting|discussing|"
+    r"interaction|response|surface)\b)"
+    r"[A-Za-z0-9][\w-]*[ \t]+)*"
+)
 INTERACTION_SURFACE_PATTERN = (
-    r"(?:(?:an?|the)\s+)?"
-    r"(?:(?:(?:single|multi)[ -]select|text[ -]input|free[ -]text|"
-    r"natural[ -]language|real|new)\s+){0,2}"
-    r"(?:interaction|response[ -]surface)\b"
+    INTERACTION_ARTICLE_PATTERN
+    + INTERACTION_MODIFIERS_PATTERN
+    + r"(?:interaction|response[ -]surface)\b"
+)
+DIRECT_INTERACTION_SURFACE_PATTERN = (
+    INTERACTION_ARTICLE_PATTERN
+    + r"(?:"
+    + INTERACTION_MODIFIERS_PATTERN
+    + r"response[ -]surface\b|"
+    + r"(?="
+    + INTERACTION_MODIFIERS_PATTERN
+    + r"(?:(?:single|multi)[ -]select|text[ -]input|free[ -]text|"
+    r"natural[ -]language)[ \t]+)"
+    + INTERACTION_MODIFIERS_PATTERN
+    + r"interaction\b|interaction\b)"
 )
 INTERACTION_CREATION_PATTERN = (
-    r"\b(?:initiate|start|launch|create|generate|present|render|offer|open)\s+"
-    + INTERACTION_SURFACE_PATTERN
+    INTERACTION_CREATION_VERB_PATTERN + INTERACTION_SURFACE_PATTERN
 )
-RE_INTERACTION_CREATION_DIRECTIVE = re.compile(
-    r"\b(?:initiate|start|launch|open)\s+"
-    + INTERACTION_SURFACE_PATTERN
-    + r"|"
-    + INTERACTION_CREATION_PATTERN
-    + r"(?=(?:[ \t]*(?:[.!?;\r\n]|$)|\s+(?:"
+INTERACTION_RESPONSE_PURPOSE_PATTERN = (
+    r"(?=\s+(?:"
     r"for\s+(?:(?:the\s+)?(?:learner|learners|student|students)\s+to\s+"
     r"(?:choose|select|enter|answer|respond|write|describe)\b|"
     r"(?:choosing|selecting|entering|answering|responding|writing|describing)\b)"
     r"|in\s+which\s+(?:the\s+)?(?:learner|learners|student|students)\s+"
     r"(?:chooses?|selects?|enters?|answers?|responds?|writes?|describes?)\b"
-    r")))",
+    r"))"
+)
+INTERACTION_STATIC_SUFFIX_PATTERN = (
+    r"(?![ \t]+(?:"
+    r"(?:diagram|image|picture|illustration|description|example|screenshot)\b|"
+    r"as[ \t]+(?:an?[ \t]+)?(?:(?:static|worked)[ \t]+)*"
+    r"(?:diagram|image|picture|illustration|description|example|screenshot)\b))"
+)
+RE_INTERACTION_CREATION_DIRECTIVE = re.compile(
+    # A lookahead checks each verb position without consuming a later directive.
+    r"(?="
+    + INTERACTION_CREATION_VERB_PATTERN
+    + r"(?:"
+    + DIRECT_INTERACTION_SURFACE_PATTERN
+    + r"|"
+    + INTERACTION_SURFACE_PATTERN
+    + INTERACTION_RESPONSE_PURPOSE_PATTERN
+    + r")"
+    + INTERACTION_STATIC_SUFFIX_PATTERN
+    + r")",
     re.IGNORECASE,
 )
 RE_NEGATED_LEARNER_RESPONSE_PREFIX = re.compile(
