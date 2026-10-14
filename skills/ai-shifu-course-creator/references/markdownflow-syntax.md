@@ -42,7 +42,7 @@ The first separator determines selection mode: `|` represents one selected value
 
 ## Branching on User Input
 
-The prompt after an interaction can tell the Teaching Agent to give different responses based on the learner's answer, including asking the learner to interact again. Express these instructions in natural language; see the [interaction encoding example](teaching-prompt.md#interaction-encoding).
+The prompt after an interaction can tell the Teaching Agent to give different responses based on the learner's answer, including asking the learner to interact again. Express these instructions in natural language.
 
 MarkdownFlow has no parser-level conditionals, loops, boolean expressions, `if` blocks, `switch` blocks, or ternary expressions. Natural-language statements that describe different responses for different answers remain ordinary prompt content. The Teaching Agent interprets those statements using the current document context and substituted variable values; the MarkdownFlow parser does not create or evaluate a branch graph.
 
