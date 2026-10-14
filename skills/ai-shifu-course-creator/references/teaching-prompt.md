@@ -107,16 +107,16 @@ Ordinary instructions may use lists, paragraphs, or another suitable source layo
 For example:
 
 ```markdown
-<!-- 学习者通过补充信息形成明确的行动安排 -->
+<!-- This activity checks whether an action plan specifies the action, owner, and deadline. -->
 
-请把“整理客户反馈”改写成一条包含具体行动、负责人和截止时间的安排。
+Rewrite "Organize customer feedback" as a plan with a specific action, an owner, and a deadline.
 
-?[...写出由谁在何时完成什么]
+?[...State who will do what and by when]
 
-根据学习者的回答给出响应：
+Respond based on the learner's answer:
 
-- 如果三项信息齐全，指出这条安排为什么明确，然后继续后续内容。
-- 如果缺少某项信息，指出缺少的信息并给一个提示，再次发起自由文本互动，请学习者补充后重新回答。等待学习者实际提交后，再根据新的回答按上述要求给出响应。
+- If all three details are present, explain why the plan is clear, then continue with the subsequent content.
+- If a detail is missing, identify it and give a hint. Initiate another interaction and ask the learner to complete the plan. Wait for the learner's actual response, then respond to the new answer using the same criteria.
 ```
 
 ### Variable and Branch Encoding
