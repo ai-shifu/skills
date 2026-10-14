@@ -12,17 +12,15 @@ The Teaching Agent ignores HTML comments (`<!-- ... -->`) in Prompt content.
 
 ## Variables
 
-A variable reference has the form `{{name}}`. The 1.0 parser captures the non-empty text between the braces exactly, including any whitespace, and uses that exact text as the lookup key. It does not enforce an identifier-character policy.
+A variable reference has the form `{{name}}`. It reads the named value from the learner context.
 
-In the parser-based 1.0 runtime, before content is generated or an interaction is rendered, each ordinary `{{name}}` reference is replaced with the corresponding runtime value. List values are joined into a comma-separated string. Values sent to the Teaching Agent are quoted for prompt isolation; values in deterministic output are inserted directly.
+Use `%{{name}}` to name an answer the lesson collects. In an explicit `?[]` control, it is an assignment prefix; in a natural-language interaction, include it in the instruction, for example `Initiate a single-select interaction and save the learner's choice as %{{selected_action}}`. The marker is preserved rather than substituted with an existing value.
 
-In that runtime, substitution always produces a value. A variable reference does not create a separate present/absent, ready/not-ready, or boolean state.
+When preparing the lesson, the runtime substitutes known existing values into ordinary references. List values are joined into a comma-separated string. Collection markers, references to names this lesson collects, and references with missing, null, or empty-string values remain for the Teaching Agent to interpret.
 
-Inside an explicit `?[]` control, `%{{name}}` is an assignment prefix rather than a substitution reference. The interaction result is written to `name`; ordinary `{{name}}` references read the resulting value in later processing.
+Older values for names collected by this lesson are excluded from the initial learner context. After the learner actually submits an answer, the runtime saves it under the collection name. The Teaching Agent uses that answer to interpret later references such as `{{selected_action}}`. Lesson-local answers need no name.
 
-AI-Shifu's MarkdownFlow 2.0 agent runtime also recognizes `%{{name}}` as a collection marker in ordinary instructions outside `?[]`. It preserves the marker rather than substituting an existing value. When a natural-language interaction needs a persisted answer, include that marker in its instruction, for example `Initiate a single-select interaction and save the learner's choice as %{{selected_action}}`. The Teaching Agent names the requested answer `selected_action`, and the runtime saves the actual submitted answer under that name.
-
-This agent runtime substitutes known existing values when preparing the lesson, but leaves collection markers, references to names this lesson collects, and unknown references for the Teaching Agent to interpret. It excludes older values for collected names from the initial learner context, so later `{{selected_action}}` references use this lesson's actual answer. A remaining reference is not a parser-level boolean or readiness test. The 1.0 substitution rules above do not define this agent behavior. Lesson-local answers need no name.
+A reference does not create a parser-level boolean or readiness test. Give the Teaching Agent instructions for handling unavailable information without inventing a value.
 
 ## Interactions
 
@@ -49,8 +47,6 @@ The interaction body is interpreted as follows:
 The first separator determines selection mode: `|` represents one selected value and `||` represents multiple selected values. The token `...` marks a free-text entry field, and the text immediately after it is the rendered input hint.
 
 ### Natural-Language Interactions
-
-This form requires a Teaching Agent runtime that can initiate interactions from instructions, such as AI-Shifu's MarkdownFlow 2.0 agent engine. The 1.0 parser alone does not provide it. A local Prompt can target this capability without platform access; do not claim it works in an existing course whose runtime support has not been established.
 
 A Teaching Prompt can directly describe what the Teaching Agent should ask the learner to do, without a `?[]` control or a fixed option list. The Teaching Agent generates the question and response surface at learner time using the current lesson context and the learner's actual prior answers. Selection mode, option constraints, and whether a custom text answer is allowed can be stated in words.
 

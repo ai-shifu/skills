@@ -1326,7 +1326,7 @@
     },
     {
       "id": 107,
-      "prompt": "只写一个本地授课提示词片段，不连接平台；目标是已支持自然语言发起互动的 MarkdownFlow 2.0 授课环境。我想让互动选项根据当时的对话动态生成，不要现在替学习者写死选项。教学情境是：学习者已经在本课描述了一次沟通困难。请用自然语言要求授课智能体结合这段实际回答，发起一次单选互动，让学习者选择下一步最想练习的沟通动作；届时生成三个具体、互不重复的行动选项，并允许自行补充。等实际作答后，围绕所选或补充的行动给出一条可执行的练习建议。答案只用于本课，不需要变量，不新增背景采集、开场、总结或幻灯片。每个教学块前写中文 HTML 说明注释。",
+      "prompt": "只写一个本地授课提示词片段，不连接平台；目标环境已支持自然语言发起互动。我想让互动选项根据当时的对话动态生成，不要现在替学习者写死选项。教学情境是：学习者已经在本课描述了一次沟通困难。请用自然语言要求授课智能体结合这段实际回答，发起一次单选互动，让学习者选择下一步最想练习的沟通动作；届时生成三个具体、互不重复的行动选项，并允许自行补充。等实际作答后，围绕所选或补充的行动给出一条可执行的练习建议。答案只用于本课，不需要变量，不新增背景采集、开场、总结或幻灯片。每个教学块前写中文 HTML 说明注释。",
       "expected_output": "Authors a natural-language interaction that generates contextual choices at learner time and waits for the actual answer before giving feedback.",
       "files": [],
       "expectations": [
@@ -1345,21 +1345,21 @@
       "expectations": [
         "The first question and standalone control ?[%{{learning_path}} 核验来源 | 核对计算] remain unchanged in wording, order, single-select mode, and persisted variable name, preserving the supplied cross-lesson consumer.",
         "The second interaction is an ordinary natural-language instruction to generate two to four suitable practice tasks at learner time from the first actual answer and the current case, allow multiple selections, and disallow custom input. It does not precompute the choices or rewrite the first control as dynamic.",
-        "The natural-language second interaction includes the %{{practice_tasks}} collection marker outside ?[] and saves the actual selections under that name. In the supporting agent runtime, the marker and its later {{practice_tasks}} consumer remain available for this lesson's new answer instead of binding to an older stored value; a plain unmarked save-as instruction alone is insufficient. It does not overwrite learning_path or apply 1.0 substitution rules to reject this supported collection form.",
+        "The natural-language second interaction includes the %{{practice_tasks}} collection marker outside ?[] and saves the actual selections under that name. The marker and its later {{practice_tasks}} consumer remain available for this lesson's new answer instead of binding to an older stored value; a plain unmarked save-as instruction alone does not protect against binding the old answer. It does not overwrite learning_path or require a fixed ?[] control for this collection form.",
         "The Teaching Agent waits for the real second answer before giving a first-step suggestion for each selected task, without inventing answers, using stale values, or adding another collection to resolve the variable.",
         "The output keeps both interactions and their intended response behavior executable outside comments and deterministic markers, adds no authoring schema or prohibited teaching or platform action, and makes no live-runtime verification claim."
       ]
     },
     {
       "id": 109,
-      "prompt": "只读检查下面四个互相独立的授课提示词片段，不改写、不执行、不连接平台。只判断互动表达是否符合意图。A（允许互动，目标环境支持自然语言发起互动）：‘根据本课刚才讨论的案例，发起一次单选互动，动态生成三个适合案例的后续行动选项。等待学习者实际选择后，针对该行动给出第一步建议。’ B（同样支持自然语言互动，但作者明确禁止所有互动）：‘请学习者输入自己最想解决的问题，等待其回答后继续讲解。’ C（作者想要动态选项）：‘请选择下一步行动。\n?[根据上下文动态生成三个选项]\n回答后给出建议。’ D（只使用不支持自然语言互动的 1.0 解析器）：正文与 A 相同。对缺少固定 ?[]、自然语言收集、方括号内生成指令及运行环境分别给出判断，并说明没有实际运行时哪些结果仍不能确认。",
+      "prompt": "只读检查下面四个互相独立的授课提示词片段，不改写、不执行、不连接平台。只判断互动表达是否符合意图。A（允许互动，目标环境支持自然语言发起互动）：‘根据本课刚才讨论的案例，发起一次单选互动，动态生成三个适合案例的后续行动选项。等待学习者实际选择后，针对该行动给出第一步建议。’ B（同样支持自然语言互动，但作者明确禁止所有互动）：‘请学习者输入自己最想解决的问题，等待其回答后继续讲解。’ C（作者想要动态选项）：‘请选择下一步行动。\n?[根据上下文动态生成三个选项]\n回答后给出建议。’ D（目标环境只渲染显式控件，不执行自然语言互动指令）：正文与 A 相同。对缺少固定 ?[]、自然语言收集、方括号内生成指令及运行环境分别给出判断，并说明没有实际运行时哪些结果仍不能确认。",
       "expected_output": "Reviews natural-language interaction intent without requiring fixed controls, overlooking disabled interactions, or treating a generation instruction inside brackets as dynamic syntax.",
       "files": [],
       "expectations": [
         "A is a valid natural-language interaction description: the missing prewritten question, fixed options, and ?[] control are not defects. Its context, single-select mode, three-option requirement, wait for the actual answer, and subsequent teaching effect are assessable from the supplied text.",
         "B violates the explicit no-interaction constraint because it collects learner input and waits, even though it has no ?[] control. The review does not silently repair or reinterpret the author's disabled policy.",
         "C does not encode the intended dynamic choices: the text inside ?[] is an explicit button label, not a generation directive. The review identifies this concrete mismatch without inventing a new syntax.",
-        "D cannot execute the requested dynamic interaction with only the specified 1.0 parser. The review identifies the missing runtime capability without claiming that a skill edit upgrades it, replacing the requested dynamic choices with fixed options, or making platform changes.",
+        "D cannot execute the requested dynamic interaction in an environment that only renders explicit controls. The review identifies the missing runtime capability without claiming that a skill edit upgrades it, replacing the requested dynamic choices with fixed options, or making platform changes.",
         "The review remains read-only and scoped to interaction expression, with no comment or layout normalization, file mutation, platform action, or fabricated learner result. Generated choices and actual pause/resume behavior remain not-assessed without a learner-time run."
       ]
     }
