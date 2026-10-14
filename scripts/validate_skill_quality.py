@@ -119,6 +119,15 @@ RE_INTERACTION_CREATION_DIRECTIVE = re.compile(
     + r")",
     re.IGNORECASE,
 )
+RE_OPTION_RESPONSE_DIRECTIVE = re.compile(
+    r"(?=\b(?:offer|present|provide)\s+"
+    + INTERACTION_ARTICLE_PATTERN
+    + INTERACTION_MODIFIERS_PATTERN
+    + r"(?:options|choices)\b"
+    + INTERACTION_RESPONSE_PURPOSE_PATTERN
+    + r")",
+    re.IGNORECASE,
+)
 CHINESE_INTERACTION_CREATION_PATTERN = (
     r"(?:发起|启动|创建|生成)[ \t]*(?:一(?:次|个|项|轮)[ \t]*)?"
     r"(?:(?:单选|多选|文本输入|自由文本)[ \t]*)?"
@@ -715,6 +724,7 @@ def validate_disabled_prompt_text(
         for directive in (
             RE_LEARNER_RESPONSE_DIRECTIVE,
             RE_INTERACTION_CREATION_DIRECTIVE,
+            RE_OPTION_RESPONSE_DIRECTIVE,
             RE_LOCALIZED_INTERACTION_CREATION_DIRECTIVE,
         )
         for match in directive.finditer(prompt)

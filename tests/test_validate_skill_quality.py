@@ -531,6 +531,10 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Initiate a single-select interaction in which the learner selects an action.",
             "Present a text-input response surface for the learner to enter a goal.",
             "Create a real response surface for choosing the next action.",
+            "Offer two options for the learner to choose from and wait for their response.",
+            "Present three choices for the learner to select an action.",
+            "Do not offer two options for the learner to choose from. "
+            "Provide two choices for the learner to choose an action.",
             "Generate a single-select interaction.",
             "Create a multi-select interaction",
             "Present a text-input response surface.",
@@ -580,6 +584,7 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Do not present a text-input response surface for the learner to enter a goal.",
             "Do not create a real response surface asking the learner to choose an action.",
             "Do not generate a single-select interaction.",
+            "Do not offer two options for the learner to choose from.",
             "Never offer a free-text interaction.",
             "Do not generate a context-aware multi-select interaction asking "
             "the learner which actions to take.",
@@ -593,6 +598,7 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Explain why asking the learner to share a password is inappropriate.",
             "Explain the phrase 'asking the learner to describe a goal' as a teaching example.",
             "Present an example of a single-select interaction from a previous lesson.",
+            "Offer two options as a static worked example from memory.",
             "Create an interaction diagram showing how the components communicate.",
             "Generate a single-select interaction diagram showing the earlier choices.",
             "Present a text-input response surface as a static image.",
