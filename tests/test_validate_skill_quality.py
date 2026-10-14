@@ -602,6 +602,7 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Never generate or present a response surface.",
             "Never generate or\npresent a response surface.",
             "Do not ask and invite the learner to share a goal.",
+            "Do not provide or offer two choices for the learner to choose an action.",
             "Do not initiate or generate a multi-select interaction.",
             "Avoid asking the learner to describe a goal.",
             "Use the earlier answer already in memory without asking the learner "

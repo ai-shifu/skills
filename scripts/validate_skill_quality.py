@@ -154,7 +154,7 @@ RE_LOCALIZED_INTERACTION_CREATION_DIRECTIVE = re.compile(
 NEGATED_COORDINATED_VERBS_PATTERN = (
     # Only bare verbs joined within the same phrase share a prohibition.
     r"(?:(?:ask|have|prompt|invite|initiate|start|launch|create|generate|"
-    r"present|render|offer|open)\s+(?:or|and)\s+)*"
+    r"present|render|offer|provide|open)\s+(?:or|and)\s+)*"
 )
 RE_NEGATED_LEARNER_RESPONSE_PREFIX = re.compile(
     r"(?:\b(?:not|don['’]t|never|without|avoid|instead\s+of|rather\s+than)\s+"
