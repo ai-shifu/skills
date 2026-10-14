@@ -119,7 +119,7 @@ Use [source-preservation.md](source-preservation.md) to identify the selected ex
 
 - Use standalone `===...===` for deterministic output of a complete single-line span.
 - Use paired standalone `!===` delimiter lines for multi-line deterministic output, including the original code fence and language tag when required.
-- Inline `===...===` preserves a position-sensitive span exactly within generated content.
+- Inline `===...===` preserves a position-sensitive span within generated content.
 - Keep adaptive content outside deterministic markers and preserve each selected span at its intended runtime position.
 
 ## Outputs
