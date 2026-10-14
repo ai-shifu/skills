@@ -887,7 +887,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             "?[%{{name}} ...Input hint]",
             "UNKNOWN",
             "===...===",
-            "!===...!===",
+            "\n!===\n",
         ):
             with self.subTest(syntax=syntax):
                 self.assertIn(syntax, runtime)

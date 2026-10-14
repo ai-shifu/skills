@@ -93,7 +93,7 @@ Encode the chosen teaching design without changing author requirements or exact 
 
 ### Layout Encoding
 
-Ordinary instructions may use lists, paragraphs, or another suitable source layout. Keep syntax-owned and exact structures intact: do not prefix or newly indent standalone `?[]` controls, `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, tables, or fixed-display image lines merely to fit a layout. Preserve source-required list markers and indentation as content.
+Ordinary instructions may use lists, paragraphs, or another suitable source layout. Keep syntax-owned and exact structures intact: do not prefix or newly indent standalone `?[]` controls, `===...===` lines, multi-line fences with standalone `!===` delimiters, fenced code, Markdown images, tables, or fixed-display image lines merely to fit a layout. Preserve source-required list markers and indentation as content.
 
 ### Interaction Encoding
 
@@ -117,9 +117,9 @@ Ordinary instructions may use lists, paragraphs, or another suitable source layo
 
 Use [source-preservation.md](source-preservation.md) to identify the selected exact span and authoritative source. No segment record or character-offset JSON is required.
 
-- Use standalone `===...===` for a complete single-line span that must bypass the Teaching Agent.
-- Use complete `!===...!===` fences for multi-line deterministic output, including the original code fence and language tag when required.
-- Inline `===...===` preserves a position-sensitive span within generated content and remains mediated by the Teaching Agent; it is not equivalent to standalone deterministic output.
+- Use standalone `===...===` for deterministic output of a complete single-line span.
+- Use paired standalone `!===` delimiter lines for multi-line deterministic output, including the original code fence and language tag when required.
+- Inline `===...===` preserves a position-sensitive span within generated content.
 - Keep adaptive content outside deterministic markers and preserve each selected span at its intended runtime position.
 
 ## Outputs
