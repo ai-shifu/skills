@@ -168,9 +168,9 @@ RE_ANSWER_DEPENDENT_BRANCH = re.compile(
     r"|\bif\s+(?:the\s+)?(?:learner|learners|student|students)\s+"
     r"(?:answers?|responds?|chooses?|selects?|decides?|enters?|writes?|names?|"
     r"describes?|shares?|identif(?:y|ies))\b"
-    r"|\bbased on (?:the )?"
+    r"|(?P<context_reference>\bbased on (?:the )?"
     r"(?:learner's|learners'|student's|students'|learner|learners|student|students) "
-    r"(?:answer|response|choice|input)\b"
+    r"(?:answer|response|choice|input)\b)"
     r"|(?:学习者|学员|学生).{0,16}(?:回答|选择|输入|填写|作答|决定)后"
     r"|如果.{0,8}(?:学习者|学员|学生).{0,16}"
     r"(?:回答|选择|输入|填写|作答|决定)"
@@ -181,6 +181,14 @@ RE_ANSWER_DEPENDENT_BRANCH = re.compile(
     r"|\bsi\s+(?:l['’])?(?:apprenant|élève).{0,24}"
     r"(?:répond|choisit|sélectionne|saisit|écrit)\b"
     r")",
+    re.IGNORECASE,
+)
+RE_PRIOR_LEARNER_CONTEXT_SUFFIX = re.compile(
+    r"[ \t]+(?:"
+    r"from[ \t]+(?:the[ \t]+)?(?:previous|earlier)[ \t]+lessons?\b|"
+    r"(?:already|previously)[ \t]+(?:recorded|stored|available)[ \t]+"
+    r"in[ \t]+(?:course[ \t]+)?memory\b)"
+    r"(?=[ \t]*(?:[,;.!?\r\n]|$))",
     re.IGNORECASE,
 )
 FORBIDDEN_WORDS = {"claude", "anthropic"}
@@ -732,7 +740,14 @@ def validate_disabled_prompt_text(
         issues.add_error(
             f"{md_file}: {owner} must not solicit a learner response"
         )
-    if RE_ANSWER_DEPENDENT_BRANCH.search(prompt):
+    # A prior-input qualifier applies only to its attached context reference.
+    if any(
+        not (
+            match.group("context_reference") is not None
+            and RE_PRIOR_LEARNER_CONTEXT_SUFFIX.match(prompt, match.end())
+        )
+        for match in RE_ANSWER_DEPENDENT_BRANCH.finditer(prompt)
+    ):
         issues.add_error(
             f"{md_file}: {owner} must not branch on a learner response"
         )

@@ -725,6 +725,54 @@ class InteractionPolicyValidationTests(unittest.TestCase):
 
         self.assertEqual([], issues.errors)
 
+    def test_disabled_policy_accepts_attached_prior_answer_context(self):
+        prompts = (
+            "Based on the learner's answer from the previous lesson, choose a worked example.",
+            "Based on the learner's choice from earlier lessons, choose a worked example.",
+            "Based on the learner's answer already recorded in memory, choose a worked example.",
+            "Based on the learner's input previously stored in course memory, choose a worked example.",
+        )
+        for prompt in prompts:
+            with self.subTest(prompt=prompt):
+                issues = validate_skill_quality.IssueBag()
+                validate_skill_quality.validate_disabled_lesson_examples(
+                    [{"teaching_prompt": prompt}], Path("example.md"), issues
+                )
+                validate_skill_quality.validate_disabled_course_prompt_example(
+                    prompt, Path("example.md"), issues
+                )
+
+                self.assertEqual([], issues.errors)
+
+    def test_disabled_policy_keeps_new_answer_dependencies_alongside_memory(self):
+        prompts = (
+            "Read relevant memory. Based on the learner's answer, show matching feedback.",
+            "Based on the learner's answer, choose a worked example from the previous lesson.",
+            "Based on the learner's answer from the previous lesson and the current response, "
+            "choose a worked example.",
+            "Based on the learner's answer from the previous lesson, choose a worked example. "
+            "After the learner answers, show matching feedback.",
+            "Based on the learner's answer already recorded in memory, choose a worked example. "
+            "Based on the learner's response, adjust the next example.",
+            "After the learner answers from the previous lesson, show matching feedback.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertTrue(
+                        any("branch on a learner response" in error for error in issues.errors)
+                    )
+
     def test_disabled_policy_carries_across_example_json_blocks(self):
         with tempfile.TemporaryDirectory() as tmp:
             skill_dir = Path(tmp) / "ai-shifu-course-creator"
