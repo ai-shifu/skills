@@ -559,6 +559,10 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Créez une interface de réponse textuelle.",
             "Ne lancez pas d’interaction à choix unique. "
             "Créez une surface de réponse textuelle.",
+            "Ask or prompt the learner to answer.",
+            "Do not ask or prompt the learner to answer, but ask the learner to choose an action.",
+            "Never generate or present a response surface; create a text-input interaction.",
+            "Do not ask or prompt the learner to answer. Prompt the learner for a goal.",
         )
         for prompt in prompts:
             for artifact in ("lesson", "course_prompt"):
@@ -590,6 +594,11 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "the learner which actions to take.",
             "Do not ask the learner to choose an action.",
             "Never prompt students for an answer.",
+            "Do not ask or prompt the learner to answer.",
+            "Never generate or present a response surface.",
+            "Never generate or\npresent a response surface.",
+            "Do not ask and invite the learner to share a goal.",
+            "Do not initiate or generate a multi-select interaction.",
             "Avoid asking the learner to describe a goal.",
             "Use the earlier answer already in memory without asking the learner "
             "which action they chose.",

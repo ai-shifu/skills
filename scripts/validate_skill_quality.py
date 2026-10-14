@@ -151,9 +151,15 @@ RE_LOCALIZED_INTERACTION_CREATION_DIRECTIVE = re.compile(
     r"sous[ \t]+forme[ \t]+d['’](?:image|exemple))))",
     re.IGNORECASE,
 )
+NEGATED_COORDINATED_VERBS_PATTERN = (
+    # Only bare verbs joined within the same phrase share a prohibition.
+    r"(?:(?:ask|have|prompt|invite|initiate|start|launch|create|generate|"
+    r"present|render|offer|open)\s+(?:or|and)\s+)*"
+)
 RE_NEGATED_LEARNER_RESPONSE_PREFIX = re.compile(
     r"(?:\b(?:not|don['’]t|never|without|avoid|instead\s+of|rather\s+than)\s+"
-    rf"(?:{INTERACTION_CREATION_PATTERN}\s+)?|"
+    + NEGATED_COORDINATED_VERBS_PATTERN
+    + rf"(?:{INTERACTION_CREATION_PATTERN}\s+)?|"
     r"(?:不要|不得|禁止|避免|无需|无须|不必)[ \t]*"
     rf"(?:{CHINESE_INTERACTION_CREATION_PATTERN}[ \t]*)?|"
     r"\bne[ \t]+|n['’])$",
