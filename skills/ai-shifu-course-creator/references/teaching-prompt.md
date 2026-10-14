@@ -12,7 +12,7 @@ Shared Prompt meaning and artifact boundaries are in [prompt-semantics.md](promp
 - Make needed explanations concrete: identify the facts or steps, relationships, relevant limits, and understanding or application to reach. An empty instruction such as "explain the concept" or "add an example" is insufficient when it leaves those matters unresolved.
 - When a delivery mode is specified, honor it. Classroom slides need usable projected content and instructor pacing; text-only requests exclude visuals. Choose whether and where visuals help when the user has left that choice open.
 - Give each included visual its necessary content and teaching purpose. Position-specific slide treatment belongs in this lesson; presentation rules shared by every slide belong in the Course Prompt. A cover, greeting, summary, or visual-and-explanation rhythm may be useful without being mandatory.
-- For an instructional interaction, keep the complete question, runtime control, and intended feedback or visible instructional effect together. Honor author-requested branching and disabled interactions. A question slide is optional unless requested; the real control remains the response surface.
+- For an instructional interaction, keep its question or generation instructions, response requirements, and intended feedback or visible instructional effect together. Honor author-requested branching and disabled interactions. A question slide is optional unless requested; the real interaction remains the response surface.
 - Keep reusable learner context out of reusable course artifacts except through the authorized runtime mechanisms. A lesson can stand alone without a Course Prompt; include the concise runtime guidance it needs and identify any genuine unresolved cross-artifact conflict.
 
 ## Personalization Directions
@@ -35,7 +35,7 @@ Every newly generated or explicitly rewritten Teaching Prompt must have source-o
 - Choose useful editing units from the actual lesson; a block need not correspond to a slide, a visual-text pair, or a fixed lesson phase.
 - Use naturally worded labels that distinguish neighboring blocks. Prefixes, numbering, punctuation, and sentence form are optional.
 - Keep all facts, teaching instructions, variables, options, URLs, exact spans, feedback, and branch rules outside comments, consistent with the [runtime comment semantics](markdownflow-syntax.md#html-comments). Essential content must remain complete when comments are ignored.
-- Keep the interaction question, unchanged standalone control, and immediate feedback in one editing unit rather than inserting navigation comments inside that sequence.
+- Keep the interaction question and unchanged standalone control, or its natural-language generation instructions, together with immediate feedback in one editing unit rather than inserting navigation comments inside that sequence.
 - Do not put the literal delimiters `<!--` or `-->` inside a comment body.
 
 ### Optional Layout Templates
@@ -97,10 +97,11 @@ Ordinary instructions may use lists, paragraphs, or another suitable source layo
 
 ### Interaction Encoding
 
-- Put a complete learner-facing question immediately before its standalone `?[]` control. Keep option wording and order in the actual control; avoid competing simulated controls.
-- Use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label, according to the required answer semantics.
-- For input, use a specific preceding question and a short hint. For select-plus-input, put `...` at the start of the custom-answer option.
-- Use `%{{name}}` when a persisted answer is needed; lesson-local answers use the no-variable form. A blank name is invalid.
+- Choose an [explicit control or natural-language interaction](markdownflow-syntax.md#interactions) according to the intended behavior. Preserve author-fixed questions and choices; when dynamic generation is requested, keep that generation instruction executable at learner time rather than replacing it with an author-time option list.
+- For an explicit control, put a complete learner-facing question immediately before its standalone `?[]` control. Keep option wording and order in the actual control; avoid competing simulated controls.
+- In explicit controls, use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label, according to the required answer semantics. For input, use a specific preceding question and a short hint. For select-plus-input, put `...` at the start of the custom-answer option.
+- For a natural-language interaction, describe the intended learner decision or task, the context used to generate the question or options, and any required answer mode or option constraints. Keep these instructions outside `?[]`, comments, and deterministic blocks. Specify how the actual answer affects the next teaching action; do not invent the learner's answer or continue before it arrives.
+- When a persisted answer is needed, use the chosen interaction form's [named-answer mechanism](markdownflow-syntax.md#variables); lesson-local answers stay unnamed. A blank name is invalid.
 - An action-only control such as `?[Continue]` advances the preceding content and does not require an invented question or slide.
 - The prompt immediately after an interaction can describe how to respond to different answers and, when needed, ask the learner to interact again, using the [runtime follow-up behavior](markdownflow-syntax.md#branching-on-user-input).
 

@@ -36,8 +36,9 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 
 ## Interaction and Runtime Safety
 
-- Questions and options are clear and answerable, and selected instructional interactions have a meaningful feedback or teaching effect under [teaching-design.md#interaction-design](teaching-design.md#interaction-design).
+- Questions and options, or the instructions for generating them at learner time, are clear and answerable, and selected instructional interactions have a meaningful feedback or teaching effect under [teaching-design.md#interaction-design](teaching-design.md#interaction-design).
 - Every control, assignment, reference, and branch follows [markdownflow-syntax.md](markdownflow-syntax.md) and [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding). Controls stay recognizable and distinct from simulated visual controls.
+- Natural-language interactions retain the requested context, answer mode, option constraints, and use of the actual answer under [teaching-prompt.md#interaction-encoding](teaching-prompt.md#interaction-encoding), and target a [supporting runtime](markdownflow-syntax.md#natural-language-interactions). A prewritten question or option list is not required for this form; dynamic generation instructions are not frozen into fixed controls. Author-fixed controls retain their wording and order. Without a learner-time run, generated options and pause/resume behavior are `not-assessed`.
 - Named answers have valid collection and meaningful cross-lesson or Course Prompt consumers; local answers remain unnamed. Check actual artifacts under [authoring-contracts.md#variable-table](authoring-contracts.md#variable-table); no variable-table JSON is required.
 - Branches use natural language and account for unavailable named values where applicable. No learner-visible authoring placeholders remain.
 - Deterministic blocks, code fences, required source spans, and image records survive preprocessing as required. Images use [image-authoring.md#image-output-validation](image-authoring.md#image-output-validation) when present; absent images do not require image work.

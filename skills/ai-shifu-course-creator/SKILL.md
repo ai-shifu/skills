@@ -46,7 +46,7 @@ Make the intended teaching behavior executable in Teaching Prompts and Course Pr
 | --- | --- | --- |
 | Write or revise a lesson | Topic, source, existing Prompt, or supplied design | Runnable Teaching Prompt with required source-only explanatory comments and a suitable layout. A separate design run is not required. [Teaching Prompt](references/teaching-prompt.md) |
 | Write or revise a Course Prompt | Course title, topic, goals, audience, and design context | Course-wide Prompt using the existing six-section template. [Course Prompt](references/course-prompt.md) |
-| Encode interactions, variables, and exact content | Intended response behavior, variable uses, selected exact material | Valid runtime controls, references, branches, and deterministic output. [MarkdownFlow](references/markdownflow-syntax.md), [Prompt semantics](references/prompt-semantics.md) |
+| Encode interactions, variables, and exact content | Intended response behavior, variable uses, selected exact material | Explicit controls or natural-language interactions with context-generated options, valid references, branches, and deterministic output. [MarkdownFlow](references/markdownflow-syntax.md), [Prompt semantics](references/prompt-semantics.md) |
 | Express lesson images | Teaching intent, authoritative asset URLs and metadata | Correct image embedding or HTML-view instructions. [Image authoring](references/image-authoring.md) |
 | Review Prompt expression | One Prompt or selected artifacts | Scoped findings and repairs for runtime syntax, variables, comments, layout, and artifact contracts. [Review](references/course-review.md), [checks](references/review-checklist.md) |
 

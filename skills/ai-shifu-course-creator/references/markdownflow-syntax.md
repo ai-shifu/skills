@@ -20,9 +20,15 @@ Substitution always produces a value. A variable reference does not create a sep
 
 Inside an interaction, `%{{name}}` is an assignment prefix rather than a substitution reference. The interaction result is written to `name`; ordinary `{{name}}` references read the resulting value in later processing.
 
+When a natural-language interaction needs a persisted answer, include the same `%{{name}}` collection marker in its instruction, for example `发起单选互动，并将学习者的选择保存为 %{{selected_action}}。`. The marker identifies the answer this lesson collects so later references do not bind to an older stored value before the learner answers. Lesson-local answers need no name.
+
 ## Interactions
 
-An unescaped control matching `?[...]` is rendered as an interaction. The runtime pauses document progression and resumes after an answer is submitted. The answer then enters the current document context.
+An interaction can be authored as an explicit `?[...]` control or as a natural-language instruction to the Teaching Agent. The runtime pauses document progression and resumes after an answer is submitted. The answer then enters the current document context.
+
+### Explicit Controls
+
+An unescaped control matching `?[...]` specifies the response surface directly.
 
 The interaction body is interpreted as follows:
 
@@ -39,6 +45,24 @@ The interaction body is interpreted as follows:
 - `?[%{{name}} Option A || ...Other]`: named multi-select plus text input; the answers also write `name`.
 
 The first separator determines selection mode: `|` represents one selected value and `||` represents multiple selected values. The token `...` marks a free-text entry field, and the text immediately after it is the rendered input hint.
+
+### Natural-Language Interactions
+
+This form requires a Teaching Agent runtime that can initiate interactions from instructions, such as AI-Shifu's MarkdownFlow 2.0 agent engine. The 1.0 parser alone does not provide it. A local Prompt can target this capability without platform access; do not claim it works in an existing course whose runtime support has not been established.
+
+A Teaching Prompt can directly describe what the Teaching Agent should ask the learner to do, without a `?[]` control or a fixed option list. The Teaching Agent generates the question and response surface at learner time using the current lesson context and the learner's actual prior answers. Selection mode, option constraints, and whether a custom text answer is allowed can be stated in words.
+
+This is ordinary Prompt content interpreted by the Teaching Agent, not additional parser syntax. Put the instruction outside `?[]`: `?[Generate suitable options]` specifies a button with that text rather than requesting dynamic options. Generated choices still require a real interaction and an actual learner answer before subsequent feedback or teaching proceeds.
+
+For example:
+
+```markdown
+结合刚才讨论的沟通情境，发起一次单选互动，让学习者选择下一步最想练习的沟通动作。根据当前对话动态生成三个具体、互不重复的行动选项，并允许学习者自行输入其他行动。
+
+等待学习者实际作答后，针对所选或补充的行动给出一条可执行的练习建议。
+```
+
+Explicit controls and natural-language interactions may coexist in one lesson. An author-fixed question, option list, order, or answer mode remains fixed unless the author permits adaptation. Dynamic generation does not create parser-level branches or guarantee a particular generated wording.
 
 ## Branching on User Input
 
