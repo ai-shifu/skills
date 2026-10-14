@@ -93,7 +93,7 @@ Encode the chosen teaching design without changing author requirements or exact 
 
 ### Layout Encoding
 
-Ordinary instructions may use lists, paragraphs, or another suitable source layout. Keep syntax-owned and exact structures intact: do not prefix or newly indent standalone `?[]` controls, `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, or tables merely to fit a layout. Preserve source-required list markers and indentation as content.
+Ordinary instructions may use lists, paragraphs, or another suitable source layout. Keep syntax-owned and exact structures intact: do not prefix or newly indent standalone `?[]` controls, `===...===` lines, paired `!===` delimiter lines, fenced code, Markdown images, or tables merely to fit a layout. Preserve source-required list markers and indentation as content.
 
 ### Interaction Encoding
 
@@ -117,10 +117,10 @@ Ordinary instructions may use lists, paragraphs, or another suitable source layo
 
 Use [source-preservation.md](source-preservation.md) to identify the selected exact span and authoritative source. No segment record or character-offset JSON is required.
 
-- Use standalone `===...===` for a complete single-line span that must appear verbatim.
-- Use complete `!===...!===` fences for multi-line verbatim content, including the original code fence and language tag when required.
-- Use inline `===...===` for a position-sensitive span within generated content. Apply the preservation behavior in [markdownflow-syntax.md#verbatim-content](markdownflow-syntax.md#verbatim-content).
-- Keep adaptive content outside preservation markers and preserve each selected span at its intended runtime position.
+- Use standalone `===...===` for deterministic output of a complete single-line span.
+- Use paired standalone `!===` delimiter lines for multi-line deterministic output, including the original code fence and language tag when required.
+- Use inline `===...===` for deterministic preservation of a position-sensitive span within generated content. Apply the guarantee in [markdownflow-syntax.md#deterministic-blocks](markdownflow-syntax.md#deterministic-blocks).
+- Keep adaptive content outside deterministic markers and preserve each selected span at its intended runtime position.
 
 ## Outputs
 

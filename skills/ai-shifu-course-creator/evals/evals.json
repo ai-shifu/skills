@@ -1314,26 +1314,26 @@
     },
     {
       "id": 106,
-      "prompt": "只做本地只读审查，不改文件、不调用平台、不运行课堂。已有 Teaching Prompt 正文包含三处作者要求原样保留的内容：独立行 ===先核验，再处置。===；普通指令中的 inline 片段 ===风险信号不等于结论===；完整的 !=== 多行围栏中有两行“第一步：核验身份。”“第二步：留存证据。”。全课输出语言为英文，但上述中文固定内容不得翻译。手上只有这份源码，没有任何课堂实际输出。同事写了审查结论：“独立行和完整多行围栏都绕过授课智能体，inline 则可以随英文输出翻译；这些标记已经证明实际输出逐字一致。”请审查这段结论，说明三处内容如何处理、源码检查和实际输出检查各能得出什么结论。保留原有作者要求、正文、标记和布局，不扩展到变量、注释、互动、上传或部署问题。",
-      "expected_output": "Explains one current MarkdownFlow preservation behavior while retaining exact author requirements and the source-only review boundary.",
+      "prompt": "只做本地只读审查，不改文件、不调用平台、不运行课堂。已有 Teaching Prompt 正文包含三处作者要求原样保留的内容：独立行 ===先核验，再处置。===；普通指令中的 inline 片段 ===风险信号不等于结论===；完整的 !=== 多行围栏中有两行“第一步：核验身份。”“第二步：留存证据。”。全课输出语言为英文，但上述中文固定内容不得翻译。同事写了说明：“确定性输出必须由代码绕过授课智能体直接发出；经过授课智能体就只能尽量保留，不能承诺确定性；inline 内容可以随英文输出翻译。”请修正这段机理说明，保留确定性输出承诺和已有正文、标记及布局。手上只有源码，没有课堂实际输出；可以说明本次核验范围，但不要把尚未核验某次运行当成撤销产品承诺的理由，也不要扩展到变量、注释、互动、上传或部署问题。",
+      "expected_output": "Retains deterministic output as the MarkdownFlow guarantee while correcting implementation explanations and keeping particular-run verification within scope.",
       "files": [],
       "expectations": [
-        "In MarkdownFlow, standalone, inline and complete multi-line preservation all remain model-mediated. The host removes preservation markers from delivered text but does not compare or restore the marked content; the review does not claim a model bypass or guaranteed delivered fidelity.",
+        "It explicitly retains deterministic output for standalone lines, complete multi-line fences and marked inline spans. All selected content is guaranteed to remain exact without rewording, omission or translation; it does not downgrade this to best effort or merely an instruction.",
         "All three selected spans retain their exact wording, punctuation, line order and position in the artifact. The Chinese fixed text is not authorized for translation by the English output language. The review changes no source text, markers, layout or author requirement.",
-        "It separates source fidelity and correct encoding from observed runtime fidelity. With no classroom output, runtime fidelity is not assessed; marker presence is insufficient evidence. It describes comparing the actual delivered content with the authoritative selected spans when runtime verification is in scope, without initiating a platform call or paid preview.",
+        "It removes the unsupported claim that deterministic output depends on code bypassing the Teaching Agent. With no classroom output, it does not claim that a particular run was inspected; this evidence boundary does not weaken the product guarantee or require a live platform run.",
         "It describes one current MarkdownFlow behavior without engine version labels, legacy comparisons or a choice of runtime contracts. The author's exactness requirement applies to all three preservation forms, including inline text.",
         "It stays within the requested read-only preservation review and does not rewrite unrelated variable, comment, interaction, upload, authentication, publication or runtime-selection policy."
       ]
     },
     {
       "id": 107,
-      "prompt": "只做本地只读审查，不改文件、不访问平台。已有授课提示词包含普通指令“学习者姓名是 {{name}}。”和要求逐字保留的独立行 ===你好，{{name}}。===；本次运行已知 name 的完整值为 Ada \"Lovelace\"。同事称普通指令会自动给代入值额外加引号，保留行则直接绕过授课智能体输出，所以这行已经保证实际输出无误。请只审查这项变量代入与精确保留说明，给出两处代入后的内容，并区分已知的处理规则与尚未检查的课堂输出。不扩展到缺失值、变量命名、注释、互动或部署问题。",
-      "expected_output": "Uses the same known-value substitution for ordinary and preserved script content without adding quoting wrappers or promising deterministic delivery.",
+      "prompt": "只做本地只读审查，不改文件、不访问平台。已有授课提示词包含普通指令“学习者姓名是 {{name}}。”和要求确定性输出的独立行 ===你好，{{name}}。===；本次运行已知 name 的完整值为 Ada \"Lovelace\"。同事称普通指令会自动给代入值额外加引号，保留行则必须靠代码绕过授课智能体才能承诺确定性输出。请只修正这项变量代入与机理说明，给出两处代入后的内容，并保留确定性输出承诺。没有课堂实际输出，不要声称已核验某次运行；不扩展到缺失值、变量命名、注释、互动或部署问题。",
+      "expected_output": "Uses the same known-value substitution without extra quoting wrappers and retains the deterministic output guarantee for the substituted preserved content.",
       "files": [],
       "expectations": [
         "It substitutes the complete known value Ada \"Lovelace\" into both ordinary content and the preserved line, retaining its internal quote characters without adding extra surrounding quotes. The preserved source becomes ===你好，Ada \"Lovelace\"。===.",
-        "It explains that the Teaching Agent receives the substituted script and executes the preservation instruction; the marker creates no separate direct-output path or alternative variable-substitution mode. The expected delivered span is 你好，Ada \"Lovelace\"。 without the syntax markers.",
-        "It keeps the author's exactness requirement and distinguishes expected substituted content from observed runtime fidelity. With no classroom output supplied, it does not claim delivery has been verified or require platform access.",
+        "It retains deterministic output for the marked span after substitution: the guaranteed delivered text is 你好，Ada \"Lovelace\"。 without the syntax markers. It removes the code-bypass explanation without weakening that guarantee.",
+        "It distinguishes the deterministic output guarantee from evidence that a particular run has been inspected. With no classroom output supplied, it does not fabricate a completed check or require platform access, and it does not say deterministic delivery is unguaranteed.",
         "It describes one current MarkdownFlow behavior and keeps the review limited to known-value substitution and preservation."
       ]
     }
