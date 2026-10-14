@@ -12,9 +12,14 @@ HTML comments are removed before content is sent to the Teaching Agent. Variable
 
 A variable reference has the form `{{name}}`. The parser captures the non-empty text between the braces exactly, including any whitespace, and uses that exact text as the lookup key. It does not enforce an identifier-character policy.
 
-Before content is generated or an interaction is rendered, each `{{name}}` reference is replaced with the corresponding runtime value. List values are joined into a comma-separated string. A missing value, an empty string, or an empty list is replaced with `UNKNOWN`. Values sent to the Teaching Agent are quoted for prompt isolation; values in deterministic output are inserted directly.
+Variable substitution depends on the active engine path:
 
-Substitution always produces a value. A variable reference does not create a separate present/absent, ready/not-ready, or boolean state.
+- In MarkdownFlow 1.0 (`markdown-flow` 0.3.4), references are replaced before generation or interaction rendering. Lists are comma-separated; a missing value, `None`, an empty string, or an empty list becomes `UNKNOWN`. Values sent to the Teaching Agent are quoted for prompt isolation; deterministic output inserts values directly and can therefore display `UNKNOWN` literally.
+- In AI-Shifu's 2.0 initial-prompt rendering, missing values, `None`, and empty strings in ordinary prompt text become internal `<unavailable_learner_value name="name" />` metadata; an empty list becomes an empty string. Variables collected by the current script retain their markers for later processing; missing variables in protected literal spans retain their literal notation.
+
+These internal representations do not prescribe a Teaching Agent reply. Generated learner-visible wording depends on the Prompt and the Teaching Agent. Authoring behavior for missing information belongs to [prompt-semantics.md](prompt-semantics.md#prompt-semantics); do not assume a universal `UNKNOWN` substitution or fixed reply across engine versions.
+
+A variable reference does not create parser-level conditionals or a separate readiness flag.
 
 Inside an interaction, `%{{name}}` is an assignment prefix rather than a substitution reference. The interaction result is written to `name`; ordinary `{{name}}` references read the resulting value in later processing.
 

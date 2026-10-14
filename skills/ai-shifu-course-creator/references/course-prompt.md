@@ -42,7 +42,8 @@ Preserve all six sections in order and every non-placeholder instruction. Render
 - Treat the current user message as authoritative for the lesson's teaching method, explanation path, content sequence, pacing, examples, practice, interactions, feedback, and close.
 - Follow those instructions faithfully. Do not replace, reorder, omit, or supplement them.
 - XXX
-- Do not quote, summarize, or mention the learner profile. If the context is empty, `UNKNOWN`, irrelevant, or unavailable, use neutral course-appropriate defaults and do not infer missing facts.
+- Do not quote, summarize, or mention the learner profile. If the context is empty, irrelevant, or unavailable, use neutral course-appropriate defaults and do not infer missing facts.
+- Teach normally from what is known without inventing unknown facts or using a fixed reply for missing information. Continue when the gap does not affect the teaching; when it matters, handle it naturally in context, which may involve explaining uncertainty or asking for needed information.
 
 # Writing Style
 

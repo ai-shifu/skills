@@ -67,6 +67,6 @@ Named learner-answer variables need consistent collection and use, whether check
 - A named answer has a valid `%{{name}}` collection and a real use outside its collection lesson, including a Course Prompt reference. Lesson-local answers use unnamed interactions.
 - Every `{{name}}` reference has an identified collection and meaningful consumer. Reuse an existing value instead of collecting a semantic duplicate; repeated collection needs an intentional staged-comparison purpose.
 - If a table is helpful, record the name, collection lesson, and every consuming lesson or Course Prompt. No `global_variable_table` or `used_variables` envelope is required.
-- An unavailable value follows literal `UNKNOWN` behavior defined in [markdownflow-syntax.md#variables](markdownflow-syntax.md#variables). Do not invent values or test whether the template marker exists.
+- Runtime substitution follows [markdownflow-syntax.md#variables](markdownflow-syntax.md#variables); teaching with unavailable information follows [prompt-semantics.md](prompt-semantics.md#prompt-semantics). Do not test whether the template marker exists.
 
 Variable-persistence decisions belong to [teaching-design.md#variable-strategy](teaching-design.md#variable-strategy); MarkdownFlow owns collection and substitution syntax.

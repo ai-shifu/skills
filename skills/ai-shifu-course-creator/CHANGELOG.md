@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- Handle missing information naturally in context without fixed learner replies or invented facts, and distinguish runtime variable placeholders from teaching instructions and delivered text.
 - Correct deterministic output implementation descriptions and use ordinary Markdown for direct image display.
 - Read the latest published stable version, release notes, and update link from GitHub Releases instead of the website manifest; ignore old website caches and preserve plugin-managed and development checks.
 - Omit model temperature settings from local course snapshots and generated import files.
