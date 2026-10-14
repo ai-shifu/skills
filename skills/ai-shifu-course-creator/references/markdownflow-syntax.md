@@ -4,7 +4,7 @@ MarkdownFlow is a prompt-processing format used by Teaching Prompts and Course P
 
 ## Preprocessing
 
-CommonMark fenced code is protected before MarkdownFlow syntax is recognized. Its complete fence, language tag, and body are restored before downstream generation or deterministic output. MarkdownFlow-looking text inside the fence remains code content rather than an active variable, interaction, or deterministic marker.
+CommonMark fenced code is protected before MarkdownFlow syntax is recognized. Its complete fence, language tag, and body are restored before downstream generation. MarkdownFlow-looking text inside the fence remains code content rather than an active variable, interaction, or preservation marker.
 
 HTML comments are removed before content is sent to the Teaching Agent. Variable and interaction markers inside those comments do not participate in runtime recognition or substitution.
 
@@ -12,7 +12,7 @@ HTML comments are removed before content is sent to the Teaching Agent. Variable
 
 A variable reference has the form `{{name}}`. The parser captures the non-empty text between the braces exactly, including any whitespace, and uses that exact text as the lookup key. It does not enforce an identifier-character policy.
 
-Before content is generated or an interaction is rendered, each `{{name}}` reference is replaced with the corresponding runtime value. List values are joined into a comma-separated string. A missing value, an empty string, or an empty list is replaced with `UNKNOWN`. Values sent to the Teaching Agent are quoted for prompt isolation; values in deterministic output are inserted directly.
+Before content is generated or an interaction is rendered, each `{{name}}` reference is replaced with the corresponding runtime value. List values are joined into a comma-separated string. A missing value, an empty string, or an empty list is replaced with `UNKNOWN`. Known values are inserted into ordinary script content and preservation forms without additional quoting wrappers. The Teaching Agent receives the resulting script.
 
 Substitution always produces a value. A variable reference does not create a separate present/absent, ready/not-ready, or boolean state.
 
@@ -42,7 +42,7 @@ The first separator determines selection mode: `|` represents one selected value
 
 MarkdownFlow has no parser-level conditionals, loops, boolean expressions, `if` blocks, `switch` blocks, or ternary expressions. Natural-language statements that describe different responses for different answers remain ordinary prompt content. The Teaching Agent interprets those statements using the current document context and substituted variable values; the MarkdownFlow parser does not create or evaluate a branch graph.
 
-## Deterministic Blocks
+## Verbatim Content
 
 MarkdownFlow recognizes two preservation forms:
 
@@ -77,6 +77,6 @@ MarkdownFlow has no image-specific control-flow primitive. Standard Markdown ima
 Preservation combines preprocessing with the selected form:
 
 - Fenced code blocks are hidden from MarkdownFlow syntax parsing and restored before downstream processing.
-- Standalone, multi-line, and inline forms follow [Deterministic Blocks](#deterministic-blocks).
+- Standalone, multi-line, and inline forms follow [Verbatim Content](#verbatim-content).
 - An HTML-view image instruction remains ordinary Teaching Agent input.
 - Content outside these mechanisms may be paraphrased, reorganized, or omitted by the Teaching Agent.

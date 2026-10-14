@@ -119,8 +119,8 @@ Use [source-preservation.md](source-preservation.md) to identify the selected ex
 
 - Use standalone `===...===` for a complete single-line span that must appear verbatim.
 - Use complete `!===...!===` fences for multi-line verbatim content, including the original code fence and language tag when required.
-- Use inline `===...===` for a position-sensitive span within generated content. Apply the preservation behavior in [markdownflow-syntax.md#deterministic-blocks](markdownflow-syntax.md#deterministic-blocks).
-- Keep adaptive content outside deterministic markers and preserve each selected span at its intended runtime position.
+- Use inline `===...===` for a position-sensitive span within generated content. Apply the preservation behavior in [markdownflow-syntax.md#verbatim-content](markdownflow-syntax.md#verbatim-content).
+- Keep adaptive content outside preservation markers and preserve each selected span at its intended runtime position.
 
 ## Outputs
 

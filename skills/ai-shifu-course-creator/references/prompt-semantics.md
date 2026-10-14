@@ -10,13 +10,13 @@ Teaching Prompts and Course Prompts are instructions consumed by the Teaching Ag
 
 The authoring agent chooses teaching approaches, lesson steps, visuals, and layouts suited to the task. No fixed teaching pattern, internal execution plan, or authoring phase is a prerequisite. Once written, a Prompt makes its intended learner-time behavior concrete; optionality during authoring does not make runtime instructions optional.
 
-Address imperative instructions to the Teaching Agent. Name the learner explicitly when referring to learner actions, for example, "Ask the learner to compare the cases." Every second-person form in Prompt instructions, including English `you` and Chinese `你` or `您`, refers to the Teaching Agent. Learner-visible text inside a MarkdownFlow `?[]` interaction or [standalone verbatim content](markdownflow-syntax.md#deterministic-blocks) may address the learner directly.
+Address imperative instructions to the Teaching Agent. Name the learner explicitly when referring to learner actions, for example, "Ask the learner to compare the cases." Every second-person form in Prompt instructions, including English `you` and Chinese `你` or `您`, refers to the Teaching Agent. Learner-visible text inside a MarkdownFlow `?[]` interaction or [standalone verbatim content](markdownflow-syntax.md#verbatim-content) may address the learner directly.
 
 The intended audience, source facts, and explicit author constraints remain boundaries. Platform-supplied learner context is additive within them: use only explicitly stated, relevant background and preferences for the resolved personalization directions. Do not retarget the course, infer missing facts, or quote, summarize, or reveal the learner profile. Empty, `UNKNOWN`, irrelevant, or unavailable context uses neutral course-appropriate defaults.
 
 Each Prompt body serves learner-time delivery. Keep authoring decisions, selection interfaces, workflow notes, and rationale outside runtime instructions. Teaching Prompt source-only comments may help an author navigate the content, as defined in [teaching-prompt.md](teaching-prompt.md); all executable content remains outside comments. Express interaction and variable behavior using MarkdownFlow controls and direct feedback, branch, or carryover instructions; no intermediate variable-table envelope is required.
 
-Use deterministic forms only when exactness protects correctness, teaching effect, runtime behavior, source fidelity, or an explicit requirement. Unselected personalization does not make ordinary prose immutable. [source-preservation.md](source-preservation.md) owns exact-source decisions.
+Use preservation forms only when exactness protects correctness, teaching effect, runtime behavior, source fidelity, or an explicit requirement. Unselected personalization does not make ordinary prose immutable. [source-preservation.md](source-preservation.md) owns exact-source decisions.
 
 ## Personalization Directions
 

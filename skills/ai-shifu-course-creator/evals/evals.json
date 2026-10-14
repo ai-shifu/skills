@@ -1324,6 +1324,18 @@
         "It describes one current MarkdownFlow behavior without engine version labels, legacy comparisons or a choice of runtime contracts. The author's exactness requirement applies to all three preservation forms, including inline text.",
         "It stays within the requested read-only preservation review and does not rewrite unrelated variable, comment, interaction, upload, authentication, publication or runtime-selection policy."
       ]
+    },
+    {
+      "id": 107,
+      "prompt": "只做本地只读审查，不改文件、不访问平台。已有授课提示词包含普通指令“学习者姓名是 {{name}}。”和要求逐字保留的独立行 ===你好，{{name}}。===；本次运行已知 name 的完整值为 Ada \"Lovelace\"。同事称普通指令会自动给代入值额外加引号，保留行则直接绕过授课智能体输出，所以这行已经保证实际输出无误。请只审查这项变量代入与精确保留说明，给出两处代入后的内容，并区分已知的处理规则与尚未检查的课堂输出。不扩展到缺失值、变量命名、注释、互动或部署问题。",
+      "expected_output": "Uses the same known-value substitution for ordinary and preserved script content without adding quoting wrappers or promising deterministic delivery.",
+      "files": [],
+      "expectations": [
+        "It substitutes the complete known value Ada \"Lovelace\" into both ordinary content and the preserved line, retaining its internal quote characters without adding extra surrounding quotes. The preserved source becomes ===你好，Ada \"Lovelace\"。===.",
+        "It explains that the Teaching Agent receives the substituted script and executes the preservation instruction; the marker creates no separate direct-output path or alternative variable-substitution mode. The expected delivered span is 你好，Ada \"Lovelace\"。 without the syntax markers.",
+        "It keeps the author's exactness requirement and distinguishes expected substituted content from observed runtime fidelity. With no classroom output supplied, it does not claim delivery has been verified or require platform access.",
+        "It describes one current MarkdownFlow behavior and keeps the review limited to known-value substitution and preservation."
+      ]
     }
   ]
 }
