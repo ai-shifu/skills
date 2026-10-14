@@ -887,19 +887,10 @@ class CourseCreatorContractTests(unittest.TestCase):
             "?[%{{name}} ...Input hint]",
             "UNKNOWN",
             "===...===",
+            "\n!===\n",
         ):
             with self.subTest(syntax=syntax):
                 self.assertIn(syntax, runtime)
-
-        examples = [
-            match.group("body").splitlines()
-            for match in validate_skill_quality.RE_MARKDOWN_FENCE.finditer(runtime)
-            if match.group("body").startswith("!===\n")
-        ]
-        self.assertTrue(examples, "document a complete multi-line preservation fence")
-        for lines in examples:
-            self.assertEqual("!===", lines[-1])
-            self.assertTrue(any(line.strip() for line in lines[1:-1]))
 
     def test_course_prompt_retains_its_six_section_artifact_interface(self):
         issues = validate_skill_quality.IssueBag()

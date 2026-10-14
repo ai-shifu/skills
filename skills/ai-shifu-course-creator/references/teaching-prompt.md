@@ -93,7 +93,7 @@ Encode the chosen teaching design without changing author requirements or exact 
 
 ### Layout Encoding
 
-Ordinary instructions may use lists, paragraphs, or another suitable source layout. Keep syntax-owned and exact structures intact: do not prefix or newly indent standalone `?[]` controls, `===...===` lines, paired `!===` delimiter lines, fenced code, Markdown images, or tables merely to fit a layout. Preserve source-required list markers and indentation as content.
+Ordinary instructions may use lists, paragraphs, or another suitable source layout. Keep syntax-owned and exact structures intact: do not prefix or newly indent standalone `?[]` controls, `===...===` lines, multi-line fences with standalone `!===` delimiters, fenced code, Markdown images, tables, or fixed-display image lines merely to fit a layout. Preserve source-required list markers and indentation as content.
 
 ### Interaction Encoding
 
@@ -119,7 +119,7 @@ Use [source-preservation.md](source-preservation.md) to identify the selected ex
 
 - Use standalone `===...===` for deterministic output of a complete single-line span.
 - Use paired standalone `!===` delimiter lines for multi-line deterministic output, including the original code fence and language tag when required.
-- Use inline `===...===` for deterministic preservation of a position-sensitive span within generated content. Apply the guarantee in [markdownflow-syntax.md#deterministic-blocks](markdownflow-syntax.md#deterministic-blocks).
+- Inline `===...===` preserves a position-sensitive span exactly within generated content.
 - Keep adaptive content outside deterministic markers and preserve each selected span at its intended runtime position.
 
 ## Outputs
@@ -136,6 +136,6 @@ Check the observable result within the requested scope:
 - Explicit source, audience, delivery, interaction, personalization, and approved design constraints are honored.
 - Newly written or explicitly rewritten Prompts have useful explanatory comments before meaningful blocks. Essential teaching content survives comment removal, and the chosen layout preserves runtime controls and exact spans.
 - Questions, controls, feedback, named-variable collections and consumers, natural-language branches, and literal `UNKNOWN` handling are coherent and use valid MarkdownFlow.
-- Source material selected for exact preservation passes [source-preservation.md#verification](source-preservation.md#verification). Report source checks and observed runtime fidelity within the available scope.
+- Source material selected for exact preservation matches its authoritative source. Do not claim source coverage when the source is unavailable.
 - Image-specific checks apply when actual image assets are used.
 - Available companion artifacts are consistent; unavailable or out-of-scope checks are not assessed. A recommended pattern, visual cadence, interaction quota, or optional layout is never a pass/fail criterion.

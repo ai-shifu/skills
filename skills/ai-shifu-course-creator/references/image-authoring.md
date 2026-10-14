@@ -6,7 +6,7 @@ The agent chooses an image's teaching purpose under teaching design, expresses i
 
 Teacher avatars are platform metadata rather than Teaching Prompt image assets. Route avatar work to `course-management.md` and do not add it to `assets/image-manifest.json`.
 
-Runtime image behavior is defined in [markdownflow-syntax.md](markdownflow-syntax.md#images). Upload mechanics and provenance are defined in [image upload](cli/cli-reference.md#image-upload) and [assets](cli/course-directory-spec.md#assets). Use [source preservation](source-preservation.md) for selected immutable image text or ordering, and [authentication](authentication.md) when an upload needs platform access.
+Runtime image forms are defined in [markdownflow-syntax.md](markdownflow-syntax.md#images). Upload mechanics and provenance are defined in [image upload](cli/cli-reference.md#image-upload) and [assets](cli/course-directory-spec.md#assets). Use [source preservation](source-preservation.md) for selected immutable image text or ordering, and [authentication](authentication.md) when an upload needs platform access.
 
 ## Asset Intake
 
@@ -30,9 +30,9 @@ Choose one form after the visual intent is known:
 | Display the uploaded image without layout customization | `![informative alt](url)` on its own line |
 | Control width, alignment, caption, or multi-image layout | A natural-language HTML-view instruction |
 
-For direct display, write informative alt text and use the authoritative resource URL.
+For fixed display, write informative alt text. When an alt was selected as immutable source content, load `source-preservation.md` and retain it exactly.
 
-For HTML-view, require the Teaching Agent to render each image with an HTML `<figure>` element and, when a caption is selected, a `<figcaption>` element. Encode every applicable image property below in natural language:
+For HTML-view, keep the instruction outside deterministic markers and require the Teaching Agent to render each image with an HTML `<figure>` element and, when a caption is selected, a `<figcaption>` element. Encode every applicable image property below in natural language:
 
 | Image property | Required instruction |
 | --- | --- |
@@ -43,6 +43,8 @@ For HTML-view, require the Teaching Agent to render each image with an HTML `<fi
 | Layout | Describe alignment, width, grouping, and responsive behavior without fixed pixel values. |
 | Ordering | Preserve the selected order when the view contains multiple images. |
 | Aspect ratio | Preserve the original aspect ratio unless the approved design explicitly requires another treatment. |
+
+The preservation wording constrains the Teaching Agent but is not parser-level locking.
 
 ## Image Output Validation
 

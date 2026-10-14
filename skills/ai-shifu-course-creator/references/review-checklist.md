@@ -6,7 +6,7 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 
 - With authoritative source material, required points remain represented and generated additions do not change their meaning. Without it, do not claim external-source coverage or fidelity.
 - A focused repair retains the supplied content's intended meaning and information density. A requested rewrite respects its explicit content constraints.
-- Required exact content passes [source-preservation.md#verification](source-preservation.md#verification), with source fidelity and observed runtime fidelity reported separately for the available scope. Missing evidence is reported rather than invented.
+- Required exact content passes [source-preservation.md#verification](source-preservation.md#verification). Missing evidence is reported rather than invented.
 
 ## Prompt Boundaries
 
