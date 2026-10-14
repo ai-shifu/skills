@@ -55,10 +55,33 @@ RE_LEARNER_RESPONSE_DIRECTIVE = re.compile(
     r")",
     re.IGNORECASE,
 )
+INTERACTION_SURFACE_PATTERN = (
+    r"(?:(?:an?|the)\s+)?"
+    r"(?:(?:(?:single|multi)[ -]select|text[ -]input|free[ -]text|"
+    r"natural[ -]language|real|new)\s+){0,2}"
+    r"(?:interaction|response[ -]surface)\b"
+)
+INTERACTION_CREATION_PATTERN = (
+    r"\b(?:initiate|start|launch|create|generate|present|render|offer|open)\s+"
+    + INTERACTION_SURFACE_PATTERN
+)
+RE_INTERACTION_CREATION_DIRECTIVE = re.compile(
+    r"\b(?:initiate|start|launch|open)\s+"
+    + INTERACTION_SURFACE_PATTERN
+    + r"|"
+    + INTERACTION_CREATION_PATTERN
+    + r"(?=\s+(?:"
+    r"for\s+(?:(?:the\s+)?(?:learner|learners|student|students)\s+to\s+"
+    r"(?:choose|select|enter|answer|respond|write|describe)\b|"
+    r"(?:choosing|selecting|entering|answering|responding|writing|describing)\b)"
+    r"|in\s+which\s+(?:the\s+)?(?:learner|learners|student|students)\s+"
+    r"(?:chooses?|selects?|enters?|answers?|responds?|writes?|describes?)\b"
+    r"))",
+    re.IGNORECASE,
+)
 RE_NEGATED_LEARNER_RESPONSE_PREFIX = re.compile(
     r"\b(?:not|don['’]t|never|without|avoid|instead\s+of|rather\s+than)\s+"
-    r"(?:(?:initiate|start)\s+(?:an?\s+)?"
-    r"(?:(?:(?:single|multi)[ -]select|text[ -]input)\s+)?interaction\s+)?$",
+    rf"(?:{INTERACTION_CREATION_PATTERN}\s+)?$",
     re.IGNORECASE,
 )
 RE_ANSWER_DEPENDENT_BRANCH = re.compile(
@@ -619,10 +642,15 @@ def validate_disabled_prompt_text(
         issues.add_error(
             f"{md_file}: {owner} must not contain interaction syntax"
         )
+    # These are explicit request heuristics, not a general language parser.
     # Exclude only a request's immediate prohibition, not earlier instructions.
     if any(
         not RE_NEGATED_LEARNER_RESPONSE_PREFIX.search(prompt[:match.start()])
-        for match in RE_LEARNER_RESPONSE_DIRECTIVE.finditer(prompt)
+        for directive in (
+            RE_LEARNER_RESPONSE_DIRECTIVE,
+            RE_INTERACTION_CREATION_DIRECTIVE,
+        )
+        for match in directive.finditer(prompt)
     ):
         issues.add_error(
             f"{md_file}: {owner} must not solicit a learner response"

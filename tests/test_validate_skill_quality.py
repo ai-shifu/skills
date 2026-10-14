@@ -528,9 +528,14 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Initiate a single-select interaction asking the learner which action to take.",
             "Initiate a multi-select interaction asking students which actions to take.",
             "Initiate a text-input interaction asking the learner to describe a goal.",
+            "Initiate a single-select interaction in which the learner selects an action.",
+            "Present a text-input response surface for the learner to enter a goal.",
+            "Create a real response surface for choosing the next action.",
             "Do not ask about background. Initiate a single-select interaction "
             "asking the learner which action to take.",
             "Do not ask the learner to choose a goal. Ask the learner to choose an action.",
+            "Do not initiate a single-select interaction. "
+            "Present a text-input response surface for the learner to enter a goal.",
         )
         for prompt in prompts:
             for artifact in ("lesson", "course_prompt"):
@@ -553,6 +558,8 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Do not initiate a single-select interaction asking the learner which action to take.",
             "Do not initiate a multi-select interaction asking students which actions to take.",
             "Do not initiate a text-input interaction asking the learner to describe a goal.",
+            "Do not present a text-input response surface for the learner to enter a goal.",
+            "Do not create a real response surface asking the learner to choose an action.",
             "Do not ask the learner to choose an action.",
             "Never prompt students for an answer.",
             "Avoid asking the learner to describe a goal.",
@@ -560,6 +567,10 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "which action they chose.",
             "Use relevant memory instead of asking the learner to describe the situation again.",
             "Explain why single-select interactions help learners compare options.",
+            "Present an example of a single-select interaction from a previous lesson.",
+            "Create an interaction diagram showing how the components communicate.",
+            "Present a single-select interaction as a static worked example from an earlier "
+            "lesson. Read the actual earlier selection from memory without requesting new input.",
         )
         for prompt in prompts:
             with self.subTest(prompt=prompt):
