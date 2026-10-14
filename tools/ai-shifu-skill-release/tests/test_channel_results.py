@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ai_shifu_release import TOOL_ROOT, channel_results, website_manifest
+from ai_shifu_release import TOOL_ROOT, channel_results
 from ai_shifu_release.release_state import ReleaseContext, ReleaseReport
 from support import ReleaseFixture
 
@@ -47,9 +47,20 @@ class ChannelResultsTest(unittest.TestCase):
         path.write_text(json.dumps(result), encoding="utf-8")
         return path
 
-    def test_actions_receipts_complete_existing_manifest_gate(self) -> None:
-        manual = {"status": "submitted", "url": "https://example.com/workbuddy"}
-        ReleaseReport(self.release).update({"workbuddy": manual})
+    def test_actions_receipts_update_report_and_preserve_manual_results(self) -> None:
+        manual = {
+            "workbuddy": {
+                "status": "submitted",
+                "url": "https://example.com/workbuddy",
+                "note": "Awaiting platform review",
+            },
+            "doubao": {
+                "status": "verified",
+                "url": "https://example.com/doubao",
+                "note": "Runtime checks passed",
+            },
+        }
+        ReleaseReport(self.release).update(manual)
         imported = channel_results.import_results(
             self.release_dir,
             [
@@ -60,18 +71,30 @@ class ChannelResultsTest(unittest.TestCase):
         self.assertEqual(imported["clawhub"]["status"], "published")
         self.assertEqual(imported["clawhub"]["submission_status"], "pending_review")
         self.assertEqual(imported["skillhub"]["status"], "verified")
+        self.assertEqual(imported["skillhub"]["submission_status"], "already_verified")
         report = json.loads((self.release_dir / "release-report.json").read_text())
-        self.assertEqual(report["channels"]["workbuddy"], manual)
-        website_manifest.assert_channels_ready(self.release_dir)
+        self.assertEqual(report["channels"], {**manual, **imported})
 
-    def test_failed_or_uncertain_receipts_do_not_open_gate(self) -> None:
+    def test_failed_or_uncertain_receipts_replace_previous_success(self) -> None:
+        retained = {
+            "skillhub": {"status": "verified", "submission_status": "already_verified"},
+            "workbuddy": {"status": "submitted", "url": "https://example.com/workbuddy"},
+            "doubao": {"status": "verified", "url": "https://example.com/doubao"},
+        }
         for status in ("failed", "needs_review"):
             with self.subTest(status=status):
-                channel_results.import_results(
-                    self.release_dir, [self.receipt("clawhub", status)]
+                ReleaseReport(self.release).update(
+                    {**retained, "clawhub": {"status": "published"}}
                 )
-                with self.assertRaisesRegex(ValueError, f"clawhub={status}"):
-                    website_manifest.assert_channels_ready(self.release_dir)
+                reason = f"Channel submission {status}"
+                imported = channel_results.import_results(
+                    self.release_dir, [self.receipt("clawhub", status, reason=reason)]
+                )
+                self.assertEqual(imported["clawhub"]["status"], status)
+                self.assertEqual(imported["clawhub"]["submission_status"], status)
+                self.assertEqual(imported["clawhub"]["response"], reason)
+                report = json.loads((self.release_dir / "release-report.json").read_text())
+                self.assertEqual(report["channels"], {**retained, **imported})
 
     def test_mismatched_receipt_does_not_partially_update_report(self) -> None:
         ReleaseReport(self.release).update({"workbuddy": {"status": "submitted"}})
@@ -128,4 +151,8 @@ class ChannelResultsTest(unittest.TestCase):
             capture_output=True,
             check=True,
         )
-        self.assertEqual(json.loads(result.stdout)["clawhub"]["status"], "published")
+        imported = json.loads(result.stdout)
+        self.assertEqual(imported["clawhub"]["status"], "published")
+        self.assertEqual(imported["clawhub"]["submission_status"], "submitted")
+        report = json.loads((self.release_dir / "release-report.json").read_text())
+        self.assertEqual(report["channels"], imported)

@@ -1,6 +1,6 @@
 ---
 name: ai-shifu-skill-release
-description: "Release AI-Shifu skills using the maintained release.py workflow: open version-bump PRs, build and verify channel packages, preview complete PR changelogs grouped by type, run preflight checks, publish to ClawHub and SkillHub, prepare and record manual WorkBuddy/Doubao uploads, and open website manifest activation PRs. Use for skill version upgrades, packaging, release notes, release checks, publication, or manifest activation. Source and website PRs require human merge; never bypass that workflow by editing local business-skill source."
+description: "Release AI-Shifu skills using the maintained release.py workflow: open version-bump PRs, build and verify channel packages, preview complete PR changelogs grouped by type, run preflight checks, publish to ClawHub and SkillHub, prepare and record manual WorkBuddy/Doubao uploads, and track channel publication results. Use for skill version upgrades, packaging, release notes, release checks, or publication. Source PRs require human merge; never bypass that workflow by editing local business-skill source."
 ---
 
 ## Execution Environment
@@ -23,7 +23,7 @@ Building and publishing do not modify skill source. Version changes go through `
 - Before `publish ... --execute`, show the release ID, source commit, skill and plugin versions, artifact hashes, selected targets, and preflight results. Obtain explicit authorization for that candidate and those channels.
 - Packaging, checking, preparation, or inspection requests do not authorize publication.
 - Never request or print platform tokens. If authentication is missing, provide the login command and wait for the user to authenticate locally.
-- Do not commit or push the current checkout without an explicit user request. `bump` and `activate-manifest` require an explicit request for those operations and only push dedicated branches and open PRs. Never merge their PRs or push directly to `main`.
+- Do not commit or push the current checkout without an explicit user request. `bump` requires an explicit request for that operation and only pushes a dedicated branch and opens a PR. Never merge its PR or push directly to `main`.
 - If GitHub `main` has advanced, do not delete existing artifacts. Rebuild and use the new output directory.
 - Only accept `release.json` schema 6. Rebuild older candidates.
 - Do not record a manual channel as `verified` without a platform URL and confirmation of independent validation.
@@ -36,16 +36,15 @@ Building and publishing do not modify skill source. Version changes go through `
 | Preview a future version before its PR is merged | Run **Release Skills** with `preview_type=draft` on the version branch and its matching expected version | Report the test Draft Release and six verified attachments; leave the draft unpublished and wait for administrator merge |
 | Upgrade a version | `bump` | Return the source PR and wait for human merge |
 | Build or package | `build`, then `verify` | Report artifacts |
-| Preview release notes or a changelog | Verify the specified candidate, then `notes` | Return the JSON facts and Markdown preview; no Release or manifest is created |
+| Preview release notes or a changelog | Verify the specified candidate, then `notes` | Return the JSON facts and Markdown preview; no Release is created |
 | Check or dry-run | Build if needed, then `verify` and `check` | Report channel readiness |
 | Publish automated channels | Build if needed, verify, check, obtain authorization, publish | Report channel results |
 | Prepare manual channels | Build if needed, then `verify` and `manual-plan` | Return exact upload paths and hashes |
 | Record manual results | Verify the specified release, then `record-manual` | Report the updated ledger |
 | Import Actions channel results | Verify the matching release, download each channel result artifact, then `record-channel` | Report the updated ledger |
-| Activate the website manifest | After channel gates pass, `activate-manifest` | Return the website PR and wait for human merge and deployment |
 | Complete a full release | Follow applicable stages in order | Stop at each human gate |
 
-Automated targets are `clawhub` and `skillhub`. Manual targets are `workbuddy` and `doubao`. Doubao does not block website manifest activation.
+Automated targets are `clawhub` and `skillhub`. Manual targets are `workbuddy` and `doubao`.
 
 ## Upgrade the Skill Version
 
@@ -100,7 +99,7 @@ python3 scripts/release.py notes "$RELEASE_DIR" --output release-notes
 
 Use `--preview` when the source commit contains unmerged branch changes. Report the pinned base and head, collection status, PR count, and the generated `release-notes.json` and `release-notes.md` paths. Read the Markdown to confirm that the requested changes are present. The [README release-note contract](README.md#release-notes-and-changelog) owns the range rules, fixed type order, tie breaking, explicit base and local-repository options, Draft refresh behavior, and output details. A collection error must be resolved before formal publication.
 
-For `github-release --prepare-only`, review the notes under the output directory's `notes/` subdirectory alongside the six package attachments. For Draft or formal publication, pass `--notes-output <directory>` to retain the same JSON and Markdown. Actions keeps these files in a separate artifact and displays the Markdown in its summary. A release-note preview does not authorize publication or website activation.
+For `github-release --prepare-only`, review the notes under the output directory's `notes/` subdirectory alongside the six package attachments. For Draft or formal publication, pass `--notes-output <directory>` to retain the same JSON and Markdown. Actions keeps these files in a separate artifact and displays the Markdown in its summary. A release-note preview does not authorize publication.
 
 ## Check the ClawHub Registry Version
 
@@ -147,7 +146,7 @@ After partial failure, keep the same immutable release directory. Diagnose the f
 
 ## Import Actions Channel Results
 
-Before activating a manifest after Actions submission, use the verified `RELEASE_DIR` matching the published tag and source commit. Download each channel's `platform-result-<tag>-<channel>` Actions artifact into its own receipt directory using the [README commands](README.md#channel-submission-from-the-release), then import both results:
+To record Actions channel results, use the verified `RELEASE_DIR` matching the published tag and source commit. Download each channel's `platform-result-<tag>-<channel>` Actions artifact into its own receipt directory using the [README commands](README.md#channel-submission-from-the-release), then import both results:
 
 ```bash
 python3 scripts/release.py record-channel "$RELEASE_DIR" \
@@ -156,7 +155,7 @@ python3 scripts/release.py record-channel "$RELEASE_DIR" \
   --result "$RELEASE_DIR/receipts/skillhub/platform-result.json"
 ```
 
-Read the updated `release-report.json` and report the actual channel states. The [README](README.md#channel-submission-from-the-release) explains receipt validation and status meanings. Recording a receipt does not submit packages or establish fresh-install verification. Complete the manual WorkBuddy gate, then use `activate-manifest` below.
+Read the updated `release-report.json` and report the actual channel states. The [README](README.md#channel-submission-from-the-release) explains receipt validation and status meanings. Recording a receipt does not submit packages or establish fresh-install verification.
 
 ## Prepare and Record Manual Publication
 
@@ -178,35 +177,8 @@ python3 scripts/release.py record-manual "$RELEASE_DIR" \
 
 Both `submitted` and `verified` require `--url`. Only `failed`, when no platform page exists, may omit it. Doubao also requires testing its three recommended instructions in the platform's authoring tool and uploading the test report; retain separate coverage of the embedded learning-report capability.
 
-## Activate the Website Manifest
-
-The gate requires ClawHub and SkillHub to be `published` or `verified`, and WorkBuddy to be `submitted` or `verified`. Doubao is recorded independently.
-
-```bash
-python3 scripts/release.py activate-manifest "$RELEASE_DIR" \
-  [--notes <text>] [--auto-notes] [--draft] [--no-pr]
-```
-
-`--notes` and `--auto-notes` are mutually exclusive:
-
-1. `--auto-notes` collects the primary skill's PR changes from the previous manifest version to the pinned release source commit, excludes mechanical version updates, and generates a summary within 500 characters using the shared type order. The output `changes` field retains the complete list. See the [README release-note contract](README.md#release-notes-and-changelog) for collection and summary rules.
-2. Prefer a reviewed, concise Chinese summary for the Chinese website, supplied with `--notes`. If using `--auto-notes` to obtain the list, remember that the command still creates or updates a branch/PR: it is not a read-only preview and requires authorization for manifest activation.
-3. With neither option, notes default to `Release <version>`.
-
-The command opens a `codex/` branch PR in `ai-shifu-website`, updating `zh/skill-manifests/<skill_name>.json`. It validates SemVer, `min_supported <= latest`, and an HTTPS `update_url`. **Never merge the PR.** If channel readiness is insufficient, it refuses and reports the missing channels.
-
-Only when the user explicitly chooses to handle a manual channel offline may `--allow-pending workbuddy` waive that channel's gate. The waiver is recorded in command output and the PR description.
-
-After the user merges the PR, the website image must still be rebuilt and deployed. Once deployment is complete:
-
-```bash
-python3 scripts/release.py activate-manifest "$RELEASE_DIR" --check-online
-```
-
-Edge caching can take about five minutes. If `active` is false, check again later without claiming activation.
-
 ## Completion Report
 
 Read `release-report.json` and summarize the release ID and source commit, automated channel outcomes, manual outcomes and evidence URLs, blocked or failed actions, and work that remains outside the tool.
 
-State the limits accurately: manual channels require upload and platform validation; automated uploads do not include fresh-install verification; bump and manifest commands create PRs but never merge them; website activation still requires production deployment and online readback. Stop at the human gates rather than treating success at one stage as permission for the next.
+State the limits accurately: manual channels require upload and platform validation; automated uploads do not include fresh-install verification; `bump` creates a PR but never merges it. Stop at the human gates rather than treating success at one stage as permission for the next.

@@ -27,11 +27,11 @@ Local operators may use a non-empty `CLAWHUB_OWNER` environment value to overrid
 | Dependency | Purpose | Resolution |
 | --- | --- | --- |
 | Python 3.11+ | All scripts, using the standard library | `python3` |
-| Git | Fetch source; push branches for bump and manifest PRs | PATH |
+| Git | Fetch source; push branches for bump PRs | PATH |
 | Configured Node version and npx (default: Node 22) | ClawHub CLI | `CLAWHUB_NPX` or `--clawhub-npx`, then PATH, then nvm for the configured Node version |
 | SkillHub CLI | SkillHub publication | PATH, overridden by `SKILLHUB_CLI` or `--skillhub-cli`; see the [installation guide](https://skillhub.cn/install/skillhub.md) |
-| GitHub CLI (`gh`) | Open bump and manifest PRs | PATH; if missing, the branch is still pushed and the PR must be created manually |
-| SSH write access | Push branches to `ai-shifu/skills` and `ai-shifu-website` | Local SSH configuration |
+| GitHub CLI (`gh`) | Open bump PRs | PATH; if missing, the branch is still pushed and the PR must be created manually |
+| SSH write access | Push branches to `ai-shifu/skills` | Local SSH configuration |
 
 Authentication stays in each CLI's own local session:
 
@@ -57,8 +57,7 @@ The [release skill](../SKILL.md) owns the workflow and its authorization checks.
 1. Human review and merge of the source version-bump PR.
 2. Explicit authorization before `publish --execute` for the reviewed candidate and selected channels.
 3. Manual WorkBuddy and Doubao uploads and platform validation; record evidence with `record-manual`.
-4. Human review and merge of the website manifest PR, followed by image rebuild and production deployment; use `--check-online` afterward to confirm activation.
 
-Doubao is recorded separately and does not participate in the website manifest gate. Neither a successful dry run nor a merged manifest PR proves that a release is live.
+Record the actual state and evidence for each channel in `release-report.json`. A successful dry run does not prove that a channel submission is live.
 
 For the GitHub Actions path, configure `CLAWHUB_TOKEN` and `SKILLHUB_TOKEN` as repository Secrets; both are publishing API tokens. The ClawHub publisher handle comes from `[channels.clawhub].owner` in the release source's `release.toml`; no `CLAWHUB_OWNER` repository Variable is required. There are no separate platform approval Variables: pushing a formal version tag starts both platform jobs, and configured publisher credentials allow each job to submit. Missing credentials fail the corresponding job. ClawHub follows the existing listing's MIT-0 publication method; report this choice to the administrator during release review. Confirm SkillHub's publisher identity and publication terms before configuring its token. The workflow reads the SkillHub CLI version, archive URL, and digest from the same pinned source configuration and verifies the archive before installing it. The channel workflow reads and verifies published GitHub Release attachments and submits ClawHub and SkillHub independently. WorkBuddy and Doubao use the verified Release ZIPs for manual submission. See the tool [README](../README.md#channel-submission-from-the-release) for retry and result handling.

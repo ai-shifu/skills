@@ -13,7 +13,6 @@ from . import (
     channel_results,
     channel_submission,
     github_releases,
-    website_manifest,
     publishing,
     release_notes,
     version_bump,
@@ -145,38 +144,8 @@ def create_parser() -> argparse.ArgumentParser:
     record_channel.add_argument("release_dir")
     record_channel.add_argument("--result", type=Path, action="append", required=True)
 
-    activate = commands.add_parser(
-        "activate-manifest", help="Open a website PR that bumps the skill manifest"
-    )
-    activate.add_argument("release_dir")
-    activate.add_argument(
-        "--notes", default="", help="Manifest notes text (default: Release <version>)"
-    )
-    activate.add_argument(
-        "--auto-notes",
-        action="store_true",
-        help="Compose notes from the skill's PR titles since the previous manifest version",
-    )
-    activate.add_argument("--draft", action="store_true", help="Open the PR as a draft")
-    activate.add_argument(
-        "--no-pr", action="store_true", help="Push the branch but skip gh pr create"
-    )
-    activate.add_argument(
-        "--check-online",
-        action="store_true",
-        help="Only fetch the live manifest and compare",
-    )
-    activate.add_argument(
-        "--allow-pending",
-        action="append",
-        default=[],
-        choices=website_manifest.MANIFEST_REQUIRED_MANUAL_TARGETS,
-        help="Waive the readiness gate for a manual channel the release owner handles offline",
-    )
-    activate.add_argument("--repo-url", default=website_manifest.WEBSITE_REPOSITORY)
-
     notes = commands.add_parser(
-        "notes", help="Generate release notes without publishing or changing a manifest"
+        "notes", help="Generate release notes without publishing"
     )
     notes.add_argument("release_dir", type=Path)
     notes.add_argument("--output", type=Path, required=True)
@@ -313,8 +282,6 @@ def main(argv: list[str] | None = None) -> None:
         print(build.build(args))
     elif args.command == "bump":
         print(json.dumps(version_bump.bump(args), ensure_ascii=False, indent=2))
-    elif args.command == "activate-manifest":
-        print(json.dumps(website_manifest.activate(args), ensure_ascii=False, indent=2))
     elif args.command == "github-release":
         run_github_release(args, parser)
     elif args.command == "notes":
