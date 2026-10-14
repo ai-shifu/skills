@@ -2,7 +2,7 @@
 name: ai-shifu-course-creator
 description: Create, edit, review, publish, manage, or analyze AI-Shifu (AI师傅) courses and their Teaching Prompts and Course Prompts in MarkdownFlow (MDF). Use for course materials, lesson design, interactions, variables, images, deployment, platform administration, learner progress, orders, revenue, and credit-consumption questions.
 metadata:
-  version: 1.2.12
+  version: 2.0.0
   version_management: standalone
 ---
 
