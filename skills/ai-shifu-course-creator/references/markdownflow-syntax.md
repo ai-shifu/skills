@@ -68,10 +68,9 @@ Runtime variable substitution still applies where supported; the expected conten
 
 ## Images
 
-MarkdownFlow has no image-specific control-flow primitive. Standard Markdown image syntax, deterministic image syntax, and natural-language image instructions have these results:
+MarkdownFlow has no image-specific control-flow primitive. Standard Markdown image syntax and natural-language image instructions have these results:
 
 - `![alt](url)` is ordinary prompt content and may be transformed by the Teaching Agent.
-- `===![alt](url)===` on its own line applies standalone preservation to the image. Its execution follows the runtime-specific behavior in [Deterministic Blocks](#deterministic-blocks).
 - A natural-language request for the Teaching Agent to emit an HTML image remains ordinary prompt content. URL lines, descriptions, captions, layout wording, and wording that requests exact preservation have no dedicated parser semantics.
 
 ## Preservation
@@ -80,6 +79,5 @@ Preservation combines preprocessing with the selected form and runtime:
 
 - Fenced code blocks are hidden from MarkdownFlow syntax parsing and restored before downstream processing.
 - Standalone, multi-line, and inline forms follow [Deterministic Blocks](#deterministic-blocks); their execution guarantees differ between MarkdownFlow 1.0 and 2.0.
-- A Markdown image wrapped in the single-line preservation form follows the same runtime contract as other standalone content.
 - An HTML-view image instruction remains ordinary Teaching Agent input.
 - Content outside these mechanisms may be paraphrased, reorganized, or omitted by the Teaching Agent.

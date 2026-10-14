@@ -93,7 +93,7 @@ Encode the chosen teaching design without changing author requirements or exact 
 
 ### Layout Encoding
 
-Ordinary instructions may use lists, paragraphs, or another suitable source layout. Keep syntax-owned and exact structures intact: do not prefix or newly indent standalone `?[]` controls, `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, tables, or fixed-display image lines merely to fit a layout. Preserve source-required list markers and indentation as content.
+Ordinary instructions may use lists, paragraphs, or another suitable source layout. Keep syntax-owned and exact structures intact: do not prefix or newly indent standalone `?[]` controls, `===...===` lines, complete `!===...!===` fences, fenced code, Markdown images, or tables merely to fit a layout. Preserve source-required list markers and indentation as content.
 
 ### Interaction Encoding
 
