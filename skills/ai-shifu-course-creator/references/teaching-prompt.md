@@ -34,7 +34,7 @@ Every newly generated or explicitly rewritten Teaching Prompt must have source-o
 - Put a concise standalone `<!-- ... -->` comment before each meaningful teaching block. Explain the block's teaching purpose or the change in understanding, judgment, capability, or readiness it should produce.
 - Choose useful editing units from the actual lesson; a block need not correspond to a slide, a visual-text pair, or a fixed lesson phase.
 - Use naturally worded labels that distinguish neighboring blocks. Prefixes, numbering, punctuation, and sentence form are optional.
-- Comments are removed before runtime. Keep all facts, teaching instructions, variables, options, URLs, exact spans, feedback, and branch rules outside comments. Essential content must remain after comments are stripped.
+- Keep all facts, teaching instructions, variables, options, URLs, exact spans, feedback, and branch rules outside comments, consistent with the [runtime comment semantics](markdownflow-syntax.md#html-comments). Essential content must remain complete when comments are ignored.
 - Keep the interaction question, unchanged standalone control, and immediate feedback in one editing unit rather than inserting navigation comments inside that sequence.
 - Do not put the literal delimiters `<!--` or `-->` inside a comment body.
 
@@ -134,7 +134,7 @@ Check the observable result within the requested scope:
 
 - The Prompt contains executable learner-time instructions with enough content and explanation to fulfill its goal, within the shared Prompt responsibility boundary.
 - Explicit source, audience, delivery, interaction, personalization, and approved design constraints are honored.
-- Newly written or explicitly rewritten Prompts have useful explanatory comments before meaningful blocks. Essential teaching content survives comment removal, and the chosen layout preserves runtime controls and exact spans.
+- Newly written or explicitly rewritten Prompts have useful explanatory comments before meaningful blocks. Essential teaching content remains complete outside comments, and the chosen layout preserves runtime controls and exact spans.
 - Questions, controls, feedback, named-variable collections and consumers, natural-language branches, and handling of unavailable information are coherent and use valid MarkdownFlow.
 - Source material selected for exact preservation matches its authoritative source. Do not claim source coverage when the source is unavailable.
 - Image-specific checks apply when actual image assets are used.

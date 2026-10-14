@@ -6,7 +6,9 @@ MarkdownFlow is a prompt-processing format used by Teaching Prompts and Course P
 
 CommonMark fenced code is protected before MarkdownFlow syntax is recognized. Its complete fence, language tag, and body are restored before downstream generation or deterministic output. MarkdownFlow-looking text inside the fence remains code content rather than an active variable, interaction, or deterministic marker.
 
-HTML comments are removed before content is sent to the Teaching Agent. Variable and interaction markers inside those comments do not participate in runtime recognition or substitution.
+## HTML Comments
+
+The Teaching Agent ignores HTML comments (`<!-- ... -->`) in Prompt content.
 
 ## Variables
 
