@@ -1,8 +1,8 @@
 # Analytics Table and Field Reference
 
-The 10 tables you can query, the fields each carries, the code/enum tables to translate raw values, the ID translation rules, and the data traps to be aware of.
+The supported tables for these analytics capabilities, the fields each carries, the code/enum tables to translate raw values, the ID translation rules, and the data traps to be aware of.
 
-## 10 Tables at a Glance
+## Supported Tables at a Glance
 
 | Table | Answers | Key fields |
 | --- | --- | --- |
@@ -10,14 +10,13 @@ The 10 tables you can query, the fields each carries, the code/enum tables to tr
 | `learn_generated_blocks` | Content interaction count / likes / type popularity / **interactions per learner** / **follow-up Q&A replay** | `user_bid`, `progress_record_bid`, `outline_item_bid`, `type` (see code table), `role` (1 teacher/Teaching Agent · 2 learner · 3 UI, **integer**), `status` (1 active / 0 history — **API auto-filters to 1**), `position` (block ordering within a `progress_record_bid`), `liked` (-1/0/1), `generated_content` (raw text, restricted — see `query-language.md`) |
 | `learn_lesson_feedbacks` | Lesson ratings / Read Mode vs Listen Mode preference / **avg rating per learner** | `user_bid`, `progress_record_bid`, `mode` (read/listen), `score` (1-5) |
 | `order_orders` | Enrolments / revenue / channel distribution / refund rate / **total spend per learner** | `user_bid`, `status` (501-505, see code table; **paid** = `502`), `payment_channel` (pingxx/stripe/alipay/wechatpay/…), `paid_price` |
-| `var_variable_values` | Learner profile distribution (goals / level / preferences) | `user_bid`, `variable_bid`, `value` (aggregate only — **do not select raw value**; see `privacy-and-presentation.md`) |
 | `shifu_user_archives` | Active learner count / archive rate | `user_bid`, `archived` (0 active / 1 archived) |
 | `bill_daily_usage_metrics` ⚠️ EMPTY | Was designed to hold pre-aggregated daily credit totals. **Currently 0 rows in production** — the `billing.aggregate_daily_usage_metrics` Celery beat job is not yet registered, so nothing populates this table. **Do not query for credit data via this DSL table; use `shifu-cli.py credit-detail` instead** (server-side bill_usage × credit_ledger_entries join). When the cron is eventually enabled, the previous DSL recipes will work again — until then they always return empty. | `stat_date`, `creator_bid`, `usage_scene` (1201 debug / 1202 preview / 1203 production), `usage_type` (1101 Teaching Agent / 1102 TTS), `provider`, `model`, `billing_metric` (7451 Teaching Agent input / 7452 Teaching Agent cache / 7453 Teaching Agent output), `consumed_credits`, `record_count` |
 | `user_users` ⚠️ | **Look up nickname by known `user_bid`** / **reverse-look up `user_bid` by phone or email** | `user_bid`, `nickname` (auto PII-redacted), `user_identify` (masked, e.g. `138*****000`); restricted-access rules in `privacy-and-presentation.md` |
 | `shifu_published_shifus` 🆕 | **Current published title for one of my courses** / does the same `shifu_bid` have rename history? | `title`, `created_user_bid`, `created_at`, `updated_at`. **Row-lookup only** — aggregate / group_by are rejected; `title` accepts `op=like` with trailing-% (anti-enumeration: ≥ 2 non-wildcard chars); `limit ≤ 50`; owner-only (auto-filtered to `created_user_bid = <you>`) |
 | `shifu_draft_shifus` 🆕 | **Current draft (editor) title** — useful when the draft has been renamed but not yet re-published, so the published title still lags | Same fields and restrictions as `shifu_published_shifus` |
 
-The 9 shifu-scoped tables (everything except `user_users`) are automatically constrained to the CLI-supplied `shifu_bid`; all tables except `shifu_user_archives` automatically filter `deleted = 0`. The two `shifu_*_shifus` metadata tables additionally auto-filter `created_user_bid = <caller>` so the row's author must be the caller. `learn_generated_blocks` additionally auto-filters `status = 1` so rerolled history rows do not skew follow-up counts. Do **not** add any of these to your DSL — they are injected.
+The course-scoped tables listed above (everything except `user_users`) are automatically constrained to the CLI-supplied `shifu_bid`; all tables except `shifu_user_archives` automatically filter `deleted = 0`. The two `shifu_*_shifus` metadata tables additionally auto-filter `created_user_bid = <caller>` so the row's author must be the caller. `learn_generated_blocks` additionally auto-filters `status = 1` so rerolled history rows do not skew follow-up counts. Do **not** add any of these to your DSL — they are injected.
 
 `user_users` is a **global** user table (no `shifu_bid` column). Its access restrictions are documented in `privacy-and-presentation.md`.
 
@@ -184,7 +183,6 @@ All `*_bid` values are 36-char pseudo-IDs. Never display them raw. Translate as 
 | `outline_item_bid` | Use the `shifu-cli.py show <shifu_bid>` cache: recurse the outline tree to map `bid → name`; render as "Lesson X.Y: \<title\>" |
 | `progress_record_bid` | Two-step: ① DSL query `learn_progress_records` with `where progress_record_bid in […]` + `select progress_record_bid, outline_item_bid` to get the mapping; ② translate `outline_item_bid` via the outline cache |
 | `user_bid` | **Never show raw**. Use ordinal labels ("Learner A / B / C" or "Top 1 / Top 2"). If the user wants to know who, batch the user_bids (deduped, ≤ 50) into a `user_users` query per `privacy-and-presentation.md` and append the nickname: `Learner A (Python 学徒)` |
-| `variable_bid` | No name-lookup API exists; `group_by variable_bid count_distinct user_bid` to show the distribution, then tell the user the values — **do not display the raw variable_bid** |
 | `order_bid` / `lesson_feedback_bid` / `generated_block_bid` / `daily_usage_metric_bid` | Row-level primary keys — **never display**; used internally for deduplication / counting only |
 
 **Absolute rule**: never paste a `bid` string verbatim in user-facing output (unless the user explicitly requests raw IDs for debugging).
@@ -219,7 +217,7 @@ The `credit-detail` endpoint returns the absolute credit amount (`ABS(credit_led
 
 ## Tables That Do NOT Exist (common wrong guesses)
 
-When in doubt, do not guess — only the 10 tables above are valid. These table names do **not** exist and will trigger `11003` (table not in whitelist):
+When in doubt, do not guess — use only the supported tables documented above. These table names do **not** exist and will trigger `11003` (table not in whitelist):
 
 | Wrong guess | Why it fails | Use instead |
 | --- | --- | --- |
@@ -230,4 +228,4 @@ When in doubt, do not guess — only the 10 tables above are valid. These table 
 | `users` | Wrong name (it's `user_users`) | `user_users` |
 | `lessons` / `courses` | Does not exist | `shifu_published_shifus` / `shifu_draft_shifus` for metadata, `learn_progress_records` for learner data |
 
-**Rule**: if a table name is not in the "10 Tables at a Glance" table above, it does not exist. Do not try it — you will get `11003`.
+**Rule**: use only the documented "Supported Tables at a Glance" for these capabilities. Do not invent a table or endpoint; access to an undocumented source is not established here.

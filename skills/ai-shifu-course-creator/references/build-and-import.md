@@ -14,7 +14,7 @@ Build a local import payload, create a new platform draft from it, or verify an 
 
 **Input:** a course directory conforming to `cli/course-directory-spec.md`, with the lesson files and course artifacts needed for the requested result. A complete authored course includes a completed `course-prompt.md` and learner-facing description under [authoring-contracts.md#artifact-invariants](authoring-contracts.md#artifact-invariants). For a standalone or narrower build/import request, a missing description retains the CLI's empty-description fallback unless the author requested non-empty listing copy.
 
-Run `build --course-dir <dir>` to generate `<dir>/shifu-import.json`. Inspect the effective title, description, Course Prompt, structure, lesson bodies, variables, and interaction syntax in that payload against the source artifacts. Apply `language-policy.md#language-audit` to both the source files and generated payload. A failing payload must be repaired before import.
+Run `build --course-dir <dir>` to generate `<dir>/shifu-import.json`. Inspect the effective title, description, Course Prompt, structure, lesson bodies, and interaction syntax in that payload against the source artifacts. Apply `language-policy.md#language-audit` to both the source files and generated payload. A failing payload must be repaired before import.
 
 Keep the inspected payload as the input to import. The completed-content approval in `../SKILL.md` must cover its effective content and selected attributes. If source edits, configuration, build overrides, or another build change that content, inspect the resulting payload and obtain renewed approval under that policy before creating the course.
 
@@ -37,7 +37,7 @@ Keep the inspected payload as the input to import. The completed-content approva
 
 - Run `show <shifu_bid>` and compare the platform title, description, chapter structure, lesson count, and lesson titles with the local artifacts.
 - Run `export <shifu_bid>` and compare the exported Course Prompt with `course-prompt.md`.
-- For each lesson, use its returned `outline_bid` with `show <shifu_bid> <outline_bid>` to compare the deployed Teaching Prompt, variables, and interaction syntax with the local file.
+- For each lesson, use its returned `outline_bid` with `show <shifu_bid> <outline_bid>` to compare the deployed Teaching Prompt and interaction syntax with the local file.
 
 **Output:** verified matches, discrepancies, and any checks that could not run. These checks verify the platform draft; use the publication capability for public learner access.
 

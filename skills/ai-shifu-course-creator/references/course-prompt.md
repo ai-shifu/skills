@@ -11,7 +11,7 @@ The template's `# Slides` section is the single runtime owner for presentation r
 The course author's intended audience and course constraints remain hard boundaries. The platform may supply learner context at delivery time; the Course Prompt tells the Teaching Agent how to use that context within the authored boundaries without serializing platform-owned learner-profile fields into the course artifact.
 
 - Apply shared Prompt semantics and the Course Prompt versus Teaching Prompt authority boundary from [prompt-semantics.md](prompt-semantics.md).
-- Resolve any variable references in the completed artifact against [markdownflow-syntax.md#variables](markdownflow-syntax.md#variables).
+- Ground instructions that use earlier learner input in the [memory contract](markdownflow-syntax.md#memory).
 
 ## Materialization
 
@@ -41,6 +41,7 @@ Preserve all six sections in order and every non-placeholder instruction. Render
 
 - Treat the current user message as authoritative for the lesson's teaching method, explanation path, content sequence, pacing, examples, practice, interactions, feedback, and close.
 - Follow those instructions faithfully. Do not replace, reorder, omit, or supplement them.
+- Use relevant memory when following the lesson's instructions. Base references to earlier learner input on the learner's actual answers.
 - XXX
 - Do not quote, summarize, or mention the learner profile. If the context is empty, unknown, irrelevant, or unavailable, use neutral course-appropriate defaults and do not infer missing facts.
 
@@ -93,6 +94,6 @@ Use these inputs as context constraints while wording the applicable fill values
 - Every non-placeholder template instruction remains represented with the same behavior.
 - The fill values satisfy the available audience, topic-scope, and delivery context constraints above.
 - The learner-context instructions enable exactly the resolved directions under `prompt-semantics.md#personalization-directions`; `[]` produces the uniform course baseline. No unselected direction is enabled implicitly through a generic personalization rule or style instruction. Selected language style can vary within the shared clear, restrained, warm baseline; otherwise that baseline stays course-wide.
-- The artifact contains no authoring field name or enum array, platform learner-profile tags, internal learner-profile variable names, or unresolved personalization placeholder.
+- The artifact contains no authoring field name or enum array, platform learner-profile tags, internal learner-profile field names, or unresolved personalization placeholder.
 - Every presentation requirement that applies uniformly to every slide remains in the `# Slides` section. The section does not special-case a cover or any other slide position or teaching purpose, and it does not change lesson-specific slide structure or pedagogy supplied by the current user message.
-- The completed artifact follows [prompt-semantics.md](prompt-semantics.md), and any variable references have the runtime behavior defined in [markdownflow-syntax.md#variables](markdownflow-syntax.md#variables), without copying those rules into this file.
+- The completed artifact follows [prompt-semantics.md](prompt-semantics.md), and its instructions for using earlier learner input follow [markdownflow-syntax.md#memory](markdownflow-syntax.md#memory), without copying the runtime contract into this file.

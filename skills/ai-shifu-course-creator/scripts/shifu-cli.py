@@ -75,7 +75,7 @@ def ensure_env_file():
 
 
 def load_env():
-    """Ensure and load environment variables from the skill's .env file."""
+    """Ensure and load environment settings from the skill's .env file."""
     ensure_env_file()
     load_dotenv(dotenv_path=ENV_FILE, override=False)
 

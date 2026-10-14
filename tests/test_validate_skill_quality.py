@@ -411,10 +411,8 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                 "teaching_prompt": (
                     "Ask the learner to choose a path.\n"
                     "?[A | B]\n"
-                    "Use {{learner_goal}} in the explanation.\n"
                     "After the learner answers, branch to the matching example."
                 ),
-                "used_variables": ["learner_goal"],
             }
         ]
 
@@ -424,7 +422,7 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             issues,
         )
 
-        self.assertEqual(len(issues.errors), 5)
+        self.assertEqual(len(issues.errors), 3)
         self.assertTrue(
             any("interaction syntax" in error for error in issues.errors)
         )
@@ -440,7 +438,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
         lessons = [
             {
                 "teaching_prompt": "请学习者选择一个答案，然后按答案继续。",
-                "used_variables": [],
             }
         ]
 
@@ -470,7 +467,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     [
                         {
                             "teaching_prompt": teaching_prompt,
-                            "used_variables": [],
                         }
                     ],
                     Path("example.md"),
@@ -497,7 +493,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     [
                         {
                             "teaching_prompt": teaching_prompt,
-                            "used_variables": [],
                         }
                     ],
                     Path("example.md"),
@@ -518,7 +513,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             [
                 {
                     "teaching_prompt": "Ask the learner: Which option fits best?",
-                    "used_variables": [],
                 }
             ],
             Path("example.md"),
@@ -543,7 +537,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     [
                         {
                             "teaching_prompt": teaching_prompt,
-                            "used_variables": [],
                         }
                     ],
                     Path("example.md"),
@@ -570,7 +563,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     [
                         {
                             "teaching_prompt": teaching_prompt,
-                            "used_variables": [],
                         }
                     ],
                     Path("example.md"),
@@ -592,7 +584,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     "Explain the mechanism, then show a worked decision and "
                     "close with a reusable rule."
                 ),
-                "used_variables": [],
             }
         ]
 
@@ -603,6 +594,24 @@ class InteractionPolicyValidationTests(unittest.TestCase):
         )
 
         self.assertEqual(issues.errors, [])
+
+    def test_disabled_policy_accepts_existing_memory_without_new_input(self):
+        issues = validate_skill_quality.IssueBag()
+        prompt = (
+            "Read relevant memory already available from earlier lessons to "
+            "choose a worked example. If relevant context is unavailable, "
+            "use a neutral course-appropriate example. Explain the mechanism "
+            "and demonstrate its application."
+        )
+
+        validate_skill_quality.validate_disabled_lesson_examples(
+            [{"teaching_prompt": prompt}], Path("example.md"), issues
+        )
+        validate_skill_quality.validate_disabled_course_prompt_example(
+            prompt, Path("example.md"), issues
+        )
+
+        self.assertEqual([], issues.errors)
 
     def test_disabled_policy_carries_across_example_json_blocks(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -623,7 +632,7 @@ class InteractionPolicyValidationTests(unittest.TestCase):
 ```
 
 ```json
-{"lesson_teaching_prompts":[{"teaching_prompt":"?[A | B]","used_variables":[]}]}
+{"lesson_teaching_prompts":[{"teaching_prompt":"?[A | B]"}]}
 ```
 """,
                 encoding="utf-8",
@@ -655,7 +664,7 @@ class InteractionPolicyValidationTests(unittest.TestCase):
 ```
 
 ```json
-{"lesson_id":"L01","teaching_prompt":"?[A | B]","used_variables":[]}
+{"lesson_id":"L01","teaching_prompt":"?[A | B]"}
 ```
 """,
                 encoding="utf-8",
@@ -732,38 +741,6 @@ Ask the learner to choose a path.
                 )
             )
 
-    def test_disabled_policy_rejects_global_variable_table(self):
-        issues = validate_skill_quality.IssueBag()
-
-        validate_skill_quality.validate_disabled_global_variable_table_example(
-            [
-                {
-                    "name": "learner_goal",
-                    "collected_in": "L01",
-                    "used_in": ["L02"],
-                    "effect_scope": "cross_lesson",
-                }
-            ],
-            Path("example.md"),
-            issues,
-        )
-
-        self.assertEqual(len(issues.errors), 1)
-        self.assertIn("empty global_variable_table", issues.errors[0])
-
-    def test_disabled_policy_rejects_course_prompt_variables(self):
-        issues = validate_skill_quality.IssueBag()
-
-        validate_skill_quality.validate_disabled_course_prompt_example(
-            "The learner goal is {{learner_goal}}.",
-            Path("example.md"),
-            issues,
-        )
-
-        self.assertEqual(len(issues.errors), 1)
-        self.assertIn("course_prompt", issues.errors[0])
-        self.assertIn("learner-answer variables", issues.errors[0])
-
     def test_disabled_policy_rejects_course_prompt_interactions(self):
         issues = validate_skill_quality.IssueBag()
 
@@ -788,7 +765,7 @@ Ask the learner to choose a path.
             any("branch on a learner response" in error for error in issues.errors)
         )
 
-    def test_disabled_policy_rejects_course_prompt_artifact_variables(self):
+    def test_disabled_policy_rejects_course_prompt_artifact_interactions(self):
         with tempfile.TemporaryDirectory() as tmp:
             skill_dir = Path(tmp) / "ai-shifu-course-creator"
             examples_dir = skill_dir / "examples"
@@ -810,7 +787,6 @@ Ask the learner to choose a path.
 
 ```markdown
 # Role
-Use {{learner_goal}} to personalize the course.
 Ask the learner to choose a path.
 ?[A | B]
 After the learner answers, branch to the matching guidance.
@@ -822,13 +798,6 @@ After the learner answers, branch to the matching guidance.
 
             validate_skill_quality.validate_example_contracts(skill_dir, issues)
 
-            self.assertTrue(
-                any(
-                    "course_prompt" in error
-                    and "learner-answer variables" in error
-                    for error in issues.errors
-                )
-            )
             self.assertTrue(
                 any(
                     "course_prompt" in error and "interaction syntax" in error
@@ -883,8 +852,6 @@ class CourseCreatorContractTests(unittest.TestCase):
             "?[Option A | Option B]",
             "?[Option A || Option B]",
             "?[...Input hint]",
-            "?[%{{name}} Option A | Option B]",
-            "?[%{{name}} ...Input hint]",
             "===...===",
             "\n!===\n",
         ):
@@ -949,10 +916,25 @@ class CourseCreatorContractTests(unittest.TestCase):
             with self.subTest(concept=concept, case_ids=case_ids):
                 self.assertIn(concept.casefold(), criteria)
 
-    def test_evals_preserve_runtime_source_and_variable_regressions(self):
+    def test_evals_preserve_runtime_source_and_memory_regressions(self):
         self.assert_eval_family(
             (8, 9, 15, 16, 17, 33, 51, 52),
-            ("unavailable", "deterministic", "exact", "feedback", "named variable"),
+            ("unavailable", "deterministic", "exact", "feedback", "memory"),
+        )
+
+    def test_evals_cover_automatic_memory_and_real_answers(self):
+        self.assert_eval_family(
+            (9, 107, 108, 110),
+            (
+                "memory",
+                "automatically",
+                "throughout the course",
+                "ordinary chat",
+                "correction",
+                "actual answer",
+                "explicit save",
+                "placeholder",
+            ),
         )
 
     def test_evals_preserve_selected_and_empty_personalization(self):

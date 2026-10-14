@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import re
+import sys
 import unittest
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = REPO_ROOT / "skills" / "ai-shifu-course-creator"
+sys.path.insert(0, str(REPO_ROOT / "tools" / "ai-shifu-skill-release" / "scripts"))
+
+from ai_shifu_release.artifacts import is_excluded
 
 
 class CourseCreatorCapabilityTests(unittest.TestCase):
@@ -77,6 +81,34 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
                 )
             with self.subTest(path=path.relative_to(SKILL_ROOT)):
                 self.assertNotRegex(content, r"\bMDF\b")
+
+    def test_package_retires_the_named_learner_state_contract(self):
+        retired_contract = re.compile(
+            r"variable|变量|\{\{|%\{\{|"
+            r"collected_in|effect_scope|#variables|#pre-collection-references",
+            re.IGNORECASE,
+        )
+        for path in sorted(SKILL_ROOT.rglob("*")):
+            if path.is_symlink() or not path.is_file():
+                continue
+            relative = PurePosixPath(path.relative_to(SKILL_ROOT).as_posix())
+            # Evals are maintained source even though release archives omit them.
+            release_path = (
+                PurePosixPath(*relative.parts[1:])
+                if relative.parts[0] == "evals"
+                else relative
+            )
+            if is_excluded(release_path):
+                continue
+            try:
+                content = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            match = retired_contract.search(content)
+            if match:
+                self.fail(
+                    f"Retired learner-state contract in {relative}: {match.group(0)!r}"
+                )
 
 
 if __name__ == "__main__":

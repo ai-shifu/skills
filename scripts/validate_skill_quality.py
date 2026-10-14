@@ -537,49 +537,6 @@ def validate_segment_example(
             )
 
 
-def validate_global_variable_example(
-    variable: dict[str, object], md_file: Path, issues: IssueBag
-) -> None:
-    required = {"name", "collected_in", "used_in", "effect_scope"}
-    missing = sorted(required - variable.keys())
-    if missing:
-        issues.add_error(
-            f"{md_file}: global variable example {variable.get('name')} "
-            f"is missing required fields: {', '.join(missing)}"
-        )
-        return
-
-    variable_name = variable["name"]
-    if not isinstance(variable_name, str) or not re.fullmatch(
-        r"\w+", variable_name
-    ):
-        issues.add_error(
-            f"{md_file}: global variable example name must contain only "
-            "letters, numbers, and underscores"
-        )
-    if (
-        not isinstance(variable["collected_in"], str)
-        or not variable["collected_in"].strip()
-    ):
-        issues.add_error(
-            f"{md_file}: global variable example collected_in must be a "
-            "non-empty string"
-        )
-    used_in = variable["used_in"]
-    if not isinstance(used_in, list) or any(
-        not isinstance(item, str) or not item.strip() for item in used_in
-    ):
-        issues.add_error(
-            f"{md_file}: global variable example used_in must be an array "
-            "of non-empty strings"
-        )
-    if variable["effect_scope"] != "cross_lesson":
-        issues.add_error(
-            f"{md_file}: global variable examples must use "
-            "effect_scope 'cross_lesson'"
-        )
-
-
 def validate_interaction_policy_example(
     policy: object, md_file: Path, issues: IssueBag
 ) -> str | None:
@@ -656,10 +613,6 @@ def validate_disabled_prompt_text(
         issues.add_error(
             f"{md_file}: {owner} must not contain interaction syntax"
         )
-    if "{{" in prompt:
-        issues.add_error(
-            f"{md_file}: {owner} must not reference learner-answer variables"
-        )
     if RE_LEARNER_RESPONSE_DIRECTIVE.search(prompt):
         issues.add_error(
             f"{md_file}: {owner} must not solicit a learner response"
@@ -697,22 +650,6 @@ def validate_disabled_lesson_examples(
                 md_file,
                 issues,
             )
-
-        used_variables = lesson.get("used_variables")
-        if used_variables != []:
-            issues.add_error(
-                f"{md_file}: {owner} used_variables must be an empty array"
-            )
-
-
-def validate_disabled_global_variable_table_example(
-    variables: object, md_file: Path, issues: IssueBag
-) -> None:
-    if variables != []:
-        issues.add_error(
-            f"{md_file}: disabled interaction_policy requires an empty "
-            "global_variable_table"
-        )
 
 
 def validate_disabled_course_prompt_example(
@@ -898,7 +835,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             if (
                 interaction_mode == "disabled"
                 and isinstance(payload, dict)
-                and {"lesson_id", "teaching_prompt", "used_variables"}
+                and {"lesson_id", "teaching_prompt"}
                 <= payload.keys()
             ):
                 validate_disabled_lesson_examples(
@@ -917,13 +854,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                         value["lesson_teaching_prompts"],
                         md_file,
                         issues,
-                    )
-                if (
-                    interaction_mode == "disabled"
-                    and "global_variable_table" in value
-                ):
-                    validate_disabled_global_variable_table_example(
-                        value["global_variable_table"], md_file, issues
                     )
                 if (
                     interaction_mode == "disabled"
@@ -981,23 +911,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                                 md_file,
                                 issues,
                             )
-                if "global_variable_table" in value:
-                    variables = value["global_variable_table"]
-                    if not isinstance(variables, list):
-                        issues.add_error(
-                            f"{md_file}: global_variable_table must be an array"
-                        )
-                    else:
-                        for variable_index, variable in enumerate(variables):
-                            if not isinstance(variable, dict):
-                                issues.add_error(
-                                    f"{md_file}: global_variable_table"
-                                    f"[{variable_index}] must be an object"
-                                )
-                                continue
-                            validate_global_variable_example(
-                                variable, md_file, issues
-                            )
                 if "course_prompt" in value:
                     course_prompt = value["course_prompt"]
                     if isinstance(course_prompt, str):
@@ -1034,7 +947,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                     [
                         {
                             "teaching_prompt": match.group("body"),
-                            "used_variables": [],
                         }
                     ],
                     md_file,
