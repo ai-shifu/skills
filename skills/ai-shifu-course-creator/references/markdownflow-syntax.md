@@ -20,7 +20,7 @@ In that runtime, substitution always produces a value. A variable reference does
 
 Inside an explicit `?[]` control, `%{{name}}` is an assignment prefix rather than a substitution reference. The interaction result is written to `name`; ordinary `{{name}}` references read the resulting value in later processing.
 
-AI-Shifu's MarkdownFlow 2.0 agent runtime also recognizes `%{{name}}` as a collection marker in ordinary instructions outside `?[]`. It preserves the marker rather than substituting an existing value. When a natural-language interaction needs a persisted answer, include that marker in its instruction, for example `发起单选互动，并将学习者的选择保存为 %{{selected_action}}。`. The Teaching Agent names the requested answer `selected_action`, and the runtime saves the actual submitted answer under that name.
+AI-Shifu's MarkdownFlow 2.0 agent runtime also recognizes `%{{name}}` as a collection marker in ordinary instructions outside `?[]`. It preserves the marker rather than substituting an existing value. When a natural-language interaction needs a persisted answer, include that marker in its instruction, for example `Initiate a single-select interaction and save the learner's choice as %{{selected_action}}`. The Teaching Agent names the requested answer `selected_action`, and the runtime saves the actual submitted answer under that name.
 
 This agent runtime substitutes known existing values when preparing the lesson, but leaves collection markers, references to names this lesson collects, and unknown references for the Teaching Agent to interpret. It excludes older values for collected names from the initial learner context, so later `{{selected_action}}` references use this lesson's actual answer. A remaining reference is not a parser-level boolean or readiness test. The 1.0 substitution rules above do not define this agent behavior. Lesson-local answers need no name.
 
@@ -59,9 +59,9 @@ This is ordinary Prompt content interpreted by the Teaching Agent, not additiona
 For example:
 
 ```markdown
-结合刚才讨论的沟通情境，发起一次单选互动，让学习者选择下一步最想练习的沟通动作。根据当前对话动态生成三个具体、互不重复的行动选项，并允许学习者自行输入其他行动。
+Using the communication situation just discussed, initiate a single-select interaction asking the learner which communication action they most want to practice next. Dynamically generate three specific, distinct action options from the current conversation, and allow the learner to enter another action.
 
-等待学习者实际作答后，针对所选或补充的行动给出一条可执行的练习建议。
+Wait for the learner's actual answer, then provide one actionable practice suggestion for the selected or custom action.
 ```
 
 Explicit controls and natural-language interactions may coexist in one lesson. An author-fixed question, option list, order, or answer mode remains fixed unless the author permits adaptation. Dynamic generation does not create parser-level branches or guarantee a particular generated wording.
