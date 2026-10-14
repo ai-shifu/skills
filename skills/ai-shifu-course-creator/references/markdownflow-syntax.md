@@ -17,7 +17,7 @@ Variable substitution depends on the active engine path:
 - In MarkdownFlow 1.0 (`markdown-flow` 0.3.4), references are replaced before generation or interaction rendering. Lists are comma-separated; a missing value, `None`, an empty string, or an empty list becomes `UNKNOWN`. Values sent to the Teaching Agent are quoted for prompt isolation; deterministic output inserts values directly and can therefore display `UNKNOWN` literally.
 - In AI-Shifu's 2.0 initial-prompt rendering, missing values, `None`, and empty strings in ordinary prompt text become internal `<unavailable_learner_value name="name" />` metadata; an empty list becomes an empty string. Variables collected by the current script retain their markers for later processing; missing variables in protected literal spans retain their literal notation.
 
-These internal representations do not prescribe a Teaching Agent reply. Generated learner-visible wording depends on the Prompt and the Teaching Agent. Authoring behavior for missing information belongs to [prompt-semantics.md](prompt-semantics.md#prompt-semantics); do not assume a universal `UNKNOWN` substitution or fixed reply across engine versions.
+These internal representations do not prescribe a Teaching Agent reply. Generated learner-visible wording depends on the Prompt and the Teaching Agent. Authoring behavior for missing information belongs to [prompt-semantics.md](prompt-semantics.md#prompt-semantics); do not assume a universal `UNKNOWN` substitution or fixed reply across engine versions. Variable-dependent deterministic content must satisfy the [preservation-encoding availability requirement](teaching-prompt.md#preservation-encoding).
 
 A variable reference does not create parser-level conditionals or a separate readiness flag.
 

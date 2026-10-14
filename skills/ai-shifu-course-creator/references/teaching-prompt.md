@@ -121,6 +121,7 @@ Use [source-preservation.md](source-preservation.md) to identify the selected ex
 - Use paired standalone `!===` delimiter lines for multi-line deterministic output, including the original code fence and language tag when required.
 - Inline `===...===` preserves a position-sensitive span within generated content.
 - Keep adaptive content outside deterministic markers and preserve each selected span at its intended runtime position.
+- Put active runtime-variable references inside deterministic spans only when usable values are available at that delivery point; a collection declaration alone does not establish availability. Otherwise keep value-dependent content outside deterministic markers for [natural missing-information handling](prompt-semantics.md#prompt-semantics). Preserve protected literal examples and required exact source spans; if exact output depends on unavailable data, report that dependency rather than weaken preservation.
 
 ## Outputs
 
