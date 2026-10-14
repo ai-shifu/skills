@@ -1311,6 +1311,18 @@
         "C may remain a standalone explicit rename using update-meta course-c --name with the requested title; because this independent request neither edits course-content artifacts nor has an established sync directory, it need not pull or create a directory merely to rename. D remains a local-only audit with no authentication, course lookup, pull, update-meta, or other CLI operation and no forced rewrite.",
         "All four answers remain simulated: no command, file mutation, platform access, or successful write is claimed. The response does not add new-course creation approval, publication, a questionnaire, or a universal authoring sequence to these scoped requests."
       ]
+    },
+    {
+      "id": 106,
+      "prompt": "只写一个本地、纯文字的授课提示词片段，不连接平台。材料是：小商店当月合同规定的月租不随当天销量变化。先用一句话说明材料，再用一次单选互动问“在这个合同范围内，月租会随当天销量变化吗？”，选项依次为“会”和“不会”。在互动之后的提示词中，根据回答给出不同响应：选择“不会”就解释为什么正确并继续；选择“会”就指出合同中月租不随当天销量变化，要求学习者重新互动。再次回答后仍根据回答给出响应。给出完整 Markdown 片段，含中文教学块注释，不预设学习者的回答，不增加重试次数、计数变量或兜底流程。",
+      "expected_output": "Writes a prompt after the interaction that responds differently to the learner’s answer and can ask the learner to interact again.",
+      "files": [],
+      "expectations": [
+        "The fragment preserves the contract boundary and states that the monthly rent does not change with daily sales within that contract.",
+        "The complete question is followed by the standalone control ?[会 | 不会] in the specified option order.",
+        "The prompt after the control confirms and explains 不会 before continuing, while 会 receives a correction and a request to interact again.",
+        "The renewed interaction waits for the learner’s actual answer before responding again; it does not invent the learner’s reply or add retry counts, named state variables, or fallback procedures."
+      ]
     }
   ]
 }
