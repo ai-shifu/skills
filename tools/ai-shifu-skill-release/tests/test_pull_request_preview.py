@@ -100,7 +100,7 @@ class PullRequestPreviewTest(unittest.TestCase):
         self.assertIn("Preview the proposed authoring flow", markdown)
         self.assertIn("Keep the learner continuation", markdown)
 
-    def test_draft_preview_rejects_unmerged_source(self) -> None:
+    def test_draft_modes_reject_unmerged_source_before_publication(self) -> None:
         release_dir = self.fixture.build(source_ref=self.merge_commit)
 
         def github_json(endpoint: str, *, paginate: bool = False):
@@ -115,24 +115,28 @@ class PullRequestPreviewTest(unittest.TestCase):
             patch.dict(os.environ, {"GITHUB_REPOSITORY": "example/skills"}),
             patch.object(github_releases, "publish") as publish,
         ):
-            with self.assertRaisesRegex(ValueError, "Source commit is not on"):
-                cli.main(
-                    [
-                        "github-release",
-                        str(release_dir),
-                        "--tag",
-                        "v1.2.3",
-                        "--commit",
-                        self.merge_commit,
-                        "--github-repo",
-                        "example/skills",
-                        "--draft-preview-tag",
-                        f"preview-v1.2.3-{self.merge_commit}-123-1",
-                    ]
-                )
+            for mode in (
+                ["--draft-only"],
+                ["--draft-preview-tag", f"preview-v1.2.3-{self.merge_commit}-123-1"],
+            ):
+                with self.subTest(mode=mode):
+                    with self.assertRaisesRegex(ValueError, "Source commit is not on"):
+                        cli.main(
+                            [
+                                "github-release",
+                                str(release_dir),
+                                "--tag",
+                                "v1.2.3",
+                                "--commit",
+                                self.merge_commit,
+                                "--github-repo",
+                                "example/skills",
+                                *mode,
+                            ]
+                        )
         publish.assert_not_called()
 
-    def test_draft_preview_accepts_merged_source_and_collects_merged_notes(
+    def test_formal_draft_accepts_merged_source_and_collects_merged_notes(
         self,
     ) -> None:
         self.fixture.git("update-ref", "refs/remotes/origin/main", self.merge_commit)
@@ -172,7 +176,6 @@ class PullRequestPreviewTest(unittest.TestCase):
                 self.merge_commit,
                 output,
                 github_repository="example/skills",
-                draft_preview=True,
             )
 
         snapshot = json.loads((output / "notes/release-notes.json").read_text())
@@ -180,13 +183,13 @@ class PullRequestPreviewTest(unittest.TestCase):
         self.assertEqual(snapshot["head_sha"], self.merge_commit)
         self.assertEqual(snapshot["collection_status"], "complete")
         self.assertTrue(snapshot["pr_metadata_verified"])
-        self.assertTrue(snapshot["draft_preview"])
+        self.assertFalse(snapshot["draft_preview"])
         self.assertFalse(snapshot["preview"])
         self.assertEqual(snapshot["pr_count"], 1)
         self.assertEqual(len(snapshot["changes"]), 2)
         self.assertIn("#77", markdown)
         self.assertIn("Improve course authoring and continuation", markdown)
-        self.assertIn("TEST DRAFT ONLY", markdown)
+        self.assertNotIn("TEST DRAFT ONLY", markdown)
         self.assertNotIn("Unmerged preview changes", markdown)
 
     def test_formal_notes_keep_one_first_parent_pr_after_the_merge(self) -> None:

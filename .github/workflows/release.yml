@@ -4,14 +4,16 @@ on:
   push:
     tags:
       - "v*"
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       expected_version:
-        description: "Skill version to preview (X.Y.Z)"
+        description: "Skill version to preview or prepare as a draft (X.Y.Z)"
         required: true
         type: string
       preview_type:
-        description: "Save an Actions artifact, or create a test Draft Release after the version PR is merged"
+        description: "Save an Actions artifact, or prepare the formal Release draft after the version PR is merged"
         required: true
         default: artifact
         type: choice
@@ -24,7 +26,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: skill-release-${{ github.ref_name }}
+  group: skill-release-${{ github.event.release.tag_name || (github.event_name == 'workflow_dispatch' && format('v{0}', inputs.expected_version)) || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -84,14 +86,15 @@ jobs:
           path: preview-assets/notes/
           retention-days: 7
 
-  preview-draft:
-    if: github.event_name == 'workflow_dispatch' && inputs.preview_type == 'draft'
+  draft:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.preview_type == 'draft')
     permissions:
       contents: write
       pull-requests: read
     runs-on: ubuntu-24.04
     steps:
       - name: Require main after the version PR is merged
+        if: github.event_name == 'workflow_dispatch'
         run: |
           test "$GITHUB_REF_TYPE" = branch
           test "$GITHUB_REF_NAME" = main
@@ -123,106 +126,69 @@ jobs:
 
       - name: Build and verify selected commit
         env:
-          PREVIEW_VERSION: ${{ inputs.expected_version }}
+          EXPECTED_VERSION: ${{ inputs.expected_version }}
         run: |
-          python3 tools/ai-shifu-skill-release/scripts/release.py build \
-            --source-ref "$GITHUB_SHA" --expected-version "$PREVIEW_VERSION" --output dist
-          release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
-          test -n "$release_dir"
-          python3 tools/ai-shifu-skill-release/scripts/release.py verify "$release_dir"
-
-      - name: Create and verify test Draft Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PREVIEW_VERSION: ${{ inputs.expected_version }}
-        run: |
-          release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
-          preview_tag="preview-v${PREVIEW_VERSION}-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          python3 tools/ai-shifu-skill-release/scripts/release.py github-release "$release_dir" \
-            --tag "v$PREVIEW_VERSION" --commit "$GITHUB_SHA" \
-            --draft-preview-tag "$preview_tag" --notes-output release-notes
-          echo "Test Draft Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${preview_tag}" >> "$GITHUB_STEP_SUMMARY"
-          cat release-notes/release-notes.md >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Save Draft Release notes
-        uses: actions/upload-artifact@v4
-        with:
-          name: skill-release-notes-draft-${{ github.sha }}
-          path: release-notes/
-          retention-days: 7
-
-  publish:
-    if: github.event_name == 'push'
-    permissions:
-      contents: write
-      pull-requests: read
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout tagged source
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Ensure tagged commit is on main
-        run: |
-          git fetch origin main
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install test dependencies
-        run: python3 -m pip install "requests>=2.28" "python-dotenv>=1.0"
-
-      - name: Validate skills and run tests
-        run: |
-          python3 scripts/validate_skill_quality.py
-          python3 -m unittest discover -s tests -p "test_*.py"
-          cd tools/ai-shifu-skill-release
-          PYTHONPATH=scripts python3 -m unittest discover -s tests -p "test_*.py"
-
-      - name: Build and verify tagged commit
-        run: |
-          version="${GITHUB_REF_NAME#v}"
+          if test "$GITHUB_EVENT_NAME" = push; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$EXPECTED_VERSION"
+          fi
           python3 tools/ai-shifu-skill-release/scripts/release.py build \
             --source-ref "$GITHUB_SHA" --expected-version "$version" --output dist
           release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
           test -n "$release_dir"
           python3 tools/ai-shifu-skill-release/scripts/release.py verify "$release_dir"
 
-      - name: Publish complete GitHub Release
+      - name: Pin the formal version tag to the verified source
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || format('v{0}', inputs.expected_version) }}
+        run: |
+          git check-ref-format "refs/tags/$RELEASE_TAG"
+          if git ls-remote --exit-code --refs origin "refs/tags/$RELEASE_TAG" >/dev/null; then
+            git fetch --no-tags origin "refs/tags/$RELEASE_TAG"
+            test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "$GITHUB_SHA"
+          else
+            status=$?
+            if test "$status" -ne 2; then
+              exit "$status"
+            fi
+            git push origin "$GITHUB_SHA:refs/tags/$RELEASE_TAG"
+          fi
+
+      - name: Create and verify formal Release draft
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || format('v{0}', inputs.expected_version) }}
         run: |
           release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
           python3 tools/ai-shifu-skill-release/scripts/release.py github-release "$release_dir" \
-            --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --notes-output release-notes
+            --tag "$RELEASE_TAG" --commit "$GITHUB_SHA" --draft-only --notes-output release-notes \
+            | tee release-draft-url.txt
+          echo "Release draft: $(cat release-draft-url.txt)" >> "$GITHUB_STEP_SUMMARY"
           cat release-notes/release-notes.md >> "$GITHUB_STEP_SUMMARY"
+          echo "Review the six attachments, then publish this draft in GitHub to start ClawHub and SkillHub submission." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Save published release notes
+      - name: Save Release draft notes
         uses: actions/upload-artifact@v4
         with:
-          name: skill-release-notes-${{ github.ref_name }}
+          name: skill-release-notes-draft-${{ github.sha }}
           path: release-notes/
+          retention-days: 7
 
   publish-clawhub:
-    needs: publish
-    if: github.event_name == 'push'
+    if: github.event_name == 'release' && !github.event.release.draft && !github.event.release.prerelease && startsWith(github.event.release.tag_name, 'v')
     uses: ./.github/workflows/platform-publish.yml
     with:
-      tag: ${{ github.ref_name }}
+      tag: ${{ github.event.release.tag_name }}
       target: clawhub
     secrets:
       CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
 
   publish-skillhub:
-    needs: publish
-    if: github.event_name == 'push'
+    if: github.event_name == 'release' && !github.event.release.draft && !github.event.release.prerelease && startsWith(github.event.release.tag_name, 'v')
     uses: ./.github/workflows/platform-publish.yml
     with:
-      tag: ${{ github.ref_name }}
+      tag: ${{ github.event.release.tag_name }}
       target: skillhub
     secrets:
       SKILLHUB_TOKEN: ${{ secrets.SKILLHUB_TOKEN }}

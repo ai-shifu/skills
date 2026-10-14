@@ -116,10 +116,13 @@ def publish(
     assets: list[Path],
     notes: str,
     *,
+    draft_only: bool = False,
     draft_preview: bool = False,
     version_tag: str | None = None,
     refresh_notes: bool = False,
 ) -> str:
+    if draft_only and draft_preview:
+        raise ValueError("Formal draft and test draft modes cannot be combined")
     if draft_preview:
         match = PREVIEW_TAG_PATTERN.fullmatch(tag)
         if (
@@ -142,6 +145,12 @@ def publish(
     repository = os.environ.get("GITHUB_REPOSITORY", "")
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         raise ValueError("GITHUB_REPOSITORY is required")
+    if draft_only:
+        tagged_commit = json.loads(
+            gh("api", f"repos/{repository}/commits/{tag}").stdout
+        )
+        if tagged_commit.get("sha") != commit:
+            raise ValueError("Formal Release tag does not point to the source commit")
     existing = gh(
         "release",
         "view",
@@ -185,6 +194,8 @@ def publish(
     release = json.loads(existing.stdout)
     if draft_preview and not release["isDraft"]:
         raise ValueError("Preview Release is already public; refusing to change it")
+    if draft_only and not release["isDraft"]:
+        raise ValueError("Release is already public; refusing to change it")
     remote_assets = {asset["name"] for asset in release["assets"]}
     expected_assets = {asset.name for asset in assets}
     if remote_assets - expected_assets:
@@ -237,6 +248,8 @@ def publish(
         raise ValueError("Release asset set is incomplete")
     if final.get("body", "").strip() != expected_body.strip():
         raise ValueError("Draft release notes readback differs from the expected body")
+    if (draft_only or draft_preview) and not final["isDraft"]:
+        raise ValueError("Release is already public; refusing to change it")
     with tempfile.TemporaryDirectory() as temporary:
         for asset in assets:
             gh(
@@ -254,7 +267,7 @@ def publish(
                 raise ValueError(
                     f"Published asset has different content: {asset.name}; use a new version"
                 )
-    if final["isDraft"] and not draft_preview:
+    if final["isDraft"] and not (draft_only or draft_preview):
         gh("release", "edit", tag, "--repo", repository, "--draft=false")
         final = json.loads(
             gh("release", "view", tag, "--repo", repository, "--json", "url").stdout
