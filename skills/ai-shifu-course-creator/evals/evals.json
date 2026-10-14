@@ -102,7 +102,7 @@
       "expectations": [
         "The lesson-local A/B interaction uses no-variable ?[...] syntax and creates no global_variable_table entry.",
         "The learning goal uses one named variable whose global_variable_table entry is collected_in L01, has cross_lesson scope, and lists the later lesson and course_prompt in used_in.",
-        "Any pre-collection reference follows the active runtime's variable handling rather than testing whether a template marker exists; internal missing-value representations, including the 1.0 UNKNOWN fallback, do not require a branch or a fixed learner-visible reply. With no goal yet, teaching continues from the course baseline unless that goal is needed, in which case the gap is handled naturally in context without inventing a goal."
+        "Any pre-collection reference follows the active runtime's variable handling rather than testing whether a template marker exists; internal missing-value representations, including the 1.0 UNKNOWN fallback, are recognized as unavailable information rather than learner facts and do not require a branch or a fixed learner-visible reply. With no goal yet, teaching continues from the course baseline unless that goal is needed, in which case the gap is handled naturally in context without inventing a goal."
       ]
     },
     {
