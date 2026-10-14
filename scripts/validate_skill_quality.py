@@ -70,13 +70,13 @@ RE_INTERACTION_CREATION_DIRECTIVE = re.compile(
     + INTERACTION_SURFACE_PATTERN
     + r"|"
     + INTERACTION_CREATION_PATTERN
-    + r"(?=\s+(?:"
+    + r"(?=(?:[ \t]*(?:[.!?;\r\n]|$)|\s+(?:"
     r"for\s+(?:(?:the\s+)?(?:learner|learners|student|students)\s+to\s+"
     r"(?:choose|select|enter|answer|respond|write|describe)\b|"
     r"(?:choosing|selecting|entering|answering|responding|writing|describing)\b)"
     r"|in\s+which\s+(?:the\s+)?(?:learner|learners|student|students)\s+"
     r"(?:chooses?|selects?|enters?|answers?|responds?|writes?|describes?)\b"
-    r"))",
+    r")))",
     re.IGNORECASE,
 )
 RE_NEGATED_LEARNER_RESPONSE_PREFIX = re.compile(

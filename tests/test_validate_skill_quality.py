@@ -531,6 +531,10 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Initiate a single-select interaction in which the learner selects an action.",
             "Present a text-input response surface for the learner to enter a goal.",
             "Create a real response surface for choosing the next action.",
+            "Generate a single-select interaction.",
+            "Create a multi-select interaction",
+            "Present a text-input response surface.",
+            "Offer a free-text interaction.\nThen continue after the actual answer.",
             "Do not ask about background. Initiate a single-select interaction "
             "asking the learner which action to take.",
             "Do not ask the learner to choose a goal. Ask the learner to choose an action.",
@@ -560,6 +564,8 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Do not initiate a text-input interaction asking the learner to describe a goal.",
             "Do not present a text-input response surface for the learner to enter a goal.",
             "Do not create a real response surface asking the learner to choose an action.",
+            "Do not generate a single-select interaction.",
+            "Never offer a free-text interaction.",
             "Do not ask the learner to choose an action.",
             "Never prompt students for an answer.",
             "Avoid asking the learner to describe a goal.",
@@ -569,6 +575,8 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Explain why single-select interactions help learners compare options.",
             "Present an example of a single-select interaction from a previous lesson.",
             "Create an interaction diagram showing how the components communicate.",
+            "Generate a single-select interaction diagram showing the earlier choices.",
+            "Present a text-input response surface as a static image.",
             "Present a single-select interaction as a static worked example from an earlier "
             "lesson. Read the actual earlier selection from memory without requesting new input.",
         )
