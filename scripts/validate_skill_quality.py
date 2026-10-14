@@ -40,7 +40,7 @@ RE_COURSE_PROMPT_ARTIFACT = re.compile(
 )
 RE_LEARNER_RESPONSE_DIRECTIVE = re.compile(
     r"(?:"
-    r"\b(?:ask|have|prompt|invite)\s+(?:the\s+)?"
+    r"\b(?:ask(?:ing)?|have|prompt|invite)\s+(?:the\s+)?"
     r"(?:learner|learners|student|students)(?:"
     r"\s+(?:(?:to\s+)?(?:answer|choose|select|respond|enter|write|name|describe|"
     r"share|identify|decide|rank|reflect|recall|consider)|"
@@ -53,6 +53,12 @@ RE_LEARNER_RESPONSE_DIRECTIVE = re.compile(
     r"|(?:demandez|invitez).{0,24}(?:apprenant|élève).{0,32}"
     r"(?:répondre|choisir|sélectionner|saisir|écrire|décrire)"
     r")",
+    re.IGNORECASE,
+)
+RE_NEGATED_LEARNER_RESPONSE_PREFIX = re.compile(
+    r"\b(?:not|don['’]t|never|without|avoid|instead\s+of|rather\s+than)\s+"
+    r"(?:(?:initiate|start)\s+(?:an?\s+)?"
+    r"(?:(?:(?:single|multi)[ -]select|text[ -]input)\s+)?interaction\s+)?$",
     re.IGNORECASE,
 )
 RE_ANSWER_DEPENDENT_BRANCH = re.compile(
@@ -613,7 +619,11 @@ def validate_disabled_prompt_text(
         issues.add_error(
             f"{md_file}: {owner} must not contain interaction syntax"
         )
-    if RE_LEARNER_RESPONSE_DIRECTIVE.search(prompt):
+    # Exclude only a request's immediate prohibition, not earlier instructions.
+    if any(
+        not RE_NEGATED_LEARNER_RESPONSE_PREFIX.search(prompt[:match.start()])
+        for match in RE_LEARNER_RESPONSE_DIRECTIVE.finditer(prompt)
+    ):
         issues.add_error(
             f"{md_file}: {owner} must not solicit a learner response"
         )

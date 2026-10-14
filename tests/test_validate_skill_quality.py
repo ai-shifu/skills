@@ -523,6 +523,56 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             any("solicit a learner response" in error for error in issues.errors)
         )
 
+    def test_disabled_policy_rejects_natural_language_interaction_requests(self):
+        prompts = (
+            "Initiate a single-select interaction asking the learner which action to take.",
+            "Initiate a multi-select interaction asking students which actions to take.",
+            "Initiate a text-input interaction asking the learner to describe a goal.",
+            "Do not ask about background. Initiate a single-select interaction "
+            "asking the learner which action to take.",
+            "Do not ask the learner to choose a goal. Ask the learner to choose an action.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual(len(issues.errors), 1)
+                    self.assertIn("solicit a learner response", issues.errors[0])
+
+    def test_disabled_policy_accepts_prohibitions_and_memory_without_recollection(self):
+        prompts = (
+            "Do not initiate a single-select interaction asking the learner which action to take.",
+            "Do not initiate a multi-select interaction asking students which actions to take.",
+            "Do not initiate a text-input interaction asking the learner to describe a goal.",
+            "Do not ask the learner to choose an action.",
+            "Never prompt students for an answer.",
+            "Avoid asking the learner to describe a goal.",
+            "Use the earlier answer already in memory without asking the learner "
+            "which action they chose.",
+            "Use relevant memory instead of asking the learner to describe the situation again.",
+            "Explain why single-select interactions help learners compare options.",
+        )
+        for prompt in prompts:
+            with self.subTest(prompt=prompt):
+                issues = validate_skill_quality.IssueBag()
+                validate_skill_quality.validate_disabled_lesson_examples(
+                    [{"teaching_prompt": prompt}], Path("example.md"), issues
+                )
+                validate_skill_quality.validate_disabled_course_prompt_example(
+                    prompt, Path("example.md"), issues
+                )
+
+                self.assertEqual([], issues.errors)
+
     def test_disabled_policy_rejects_conditional_response_branches(self):
         prompts = [
             "If the learner chooses A, show the matching explanation.",
