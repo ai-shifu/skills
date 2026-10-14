@@ -46,8 +46,8 @@ MarkdownFlow has no parser-level conditionals, loops, boolean expressions, `if` 
 
 MarkdownFlow recognizes two preservation forms:
 
-- Single-line or inline marker: `===fixed text===`
-- Multi-line fence:
+- Single-line or inline marker: `===...===`, for example `===fixed text===`.
+- Multi-line fence: `!===...!===`.
 
 ```markdown
 !===
@@ -59,10 +59,9 @@ Paragraph 2
 !===
 ```
 
-Execution depends on the lesson's actual runtime:
+The Teaching Agent receives the script, including standalone, multi-line, and inline preservation forms. All marked content must appear verbatim, character for character, without rewording or translation. These forms are instructions executed by the Teaching Agent.
 
-- **MarkdownFlow 1.0:** A standalone `===...===` line and a complete `!===...!===` fence produce deterministic output without additional boundary syntax. The runtime removes the markers, substitutes variables without quoting wrappers, restores protected code, and emits the result without invoking the Teaching Agent. An inline `===...===` span becomes a preservation instruction within generated content; an output-language transformation may translate that span while retaining its position and formatting.
-- **MarkdownFlow 2.0:** The Teaching Agent receives the whole script, including standalone, multi-line, and inline preservation forms. All marked content is instructed to appear verbatim, character for character, without rewording or translation. These forms do not bypass the Teaching Agent. The host removes preservation markers outside code fences from delivered text; it does not compare the content with its source or restore text changed by the Teaching Agent. Marker presence therefore does not prove exact output.
+The host removes preservation markers outside code fences from delivered text; it does not compare the content with its source or restore text changed by the Teaching Agent. Marker presence therefore does not prove exact output.
 
 Runtime variable substitution still applies where supported; the expected content is the selected source with the intended values substituted. Use [source-preservation.md#verification](source-preservation.md#verification) to distinguish source checks from observed runtime fidelity.
 
@@ -75,9 +74,9 @@ MarkdownFlow has no image-specific control-flow primitive. Standard Markdown ima
 
 ## Preservation
 
-Preservation combines preprocessing with the selected form and runtime:
+Preservation combines preprocessing with the selected form:
 
 - Fenced code blocks are hidden from MarkdownFlow syntax parsing and restored before downstream processing.
-- Standalone, multi-line, and inline forms follow [Deterministic Blocks](#deterministic-blocks); their execution guarantees differ between MarkdownFlow 1.0 and 2.0.
+- Standalone, multi-line, and inline forms follow [Deterministic Blocks](#deterministic-blocks).
 - An HTML-view image instruction remains ordinary Teaching Agent input.
 - Content outside these mechanisms may be paraphrased, reorganized, or omitted by the Teaching Agent.

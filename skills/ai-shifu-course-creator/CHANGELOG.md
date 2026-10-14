@@ -5,7 +5,7 @@
 ## Unreleased
 
 - Use ordinary Markdown for direct image display without adding preservation markers by default.
-- Distinguish MarkdownFlow 1.0 deterministic output from 2.0 model-mediated verbatim content, retain exact author requirements for text and images, and report source fidelity separately from observed runtime fidelity.
+- Describe MarkdownFlow preserved content as verbatim instructions executed by the Teaching Agent, retain exact author requirements, and report source fidelity separately from observed runtime fidelity.
 - Read the latest published stable version, release notes, and update link from GitHub Releases instead of the website manifest; ignore old website caches and preserve plugin-managed and development checks.
 - Omit model temperature settings from local course snapshots and generated import files.
 - Allow ChatGPT prompt-based installation with supported Skill metadata, explicit-request-only version checks, and no automatic independent usage reporting or login attribution. Keep course authoring, platform login, import, publication, and learner analytics available.
