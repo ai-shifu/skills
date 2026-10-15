@@ -1,8 +1,8 @@
 # Analytics Table and Field Reference
 
-The 10 tables you can query, the fields each carries, the code/enum tables to translate raw values, the ID translation rules, and the data traps to be aware of.
+The supported tables for these analytics capabilities, the fields each carries, the code/enum tables to translate raw values, the ID translation rules, and the data traps to be aware of.
 
-## 10 Tables at a Glance
+## Supported Tables at a Glance
 
 | Table | Answers | Key fields |
 | --- | --- | --- |
@@ -17,7 +17,7 @@ The 10 tables you can query, the fields each carries, the code/enum tables to tr
 | `shifu_published_shifus` 🆕 | **Current published title for one of my courses** / does the same `shifu_bid` have rename history? | `title`, `created_user_bid`, `created_at`, `updated_at`. **Row-lookup only** — aggregate / group_by are rejected; `title` accepts `op=like` with trailing-% (anti-enumeration: ≥ 2 non-wildcard chars); `limit ≤ 50`; owner-only (auto-filtered to `created_user_bid = <you>`) |
 | `shifu_draft_shifus` 🆕 | **Current draft (editor) title** — useful when the draft has been renamed but not yet re-published, so the published title still lags | Same fields and restrictions as `shifu_published_shifus` |
 
-The 9 shifu-scoped tables (everything except `user_users`) are automatically constrained to the CLI-supplied `shifu_bid`; all tables except `shifu_user_archives` automatically filter `deleted = 0`. The two `shifu_*_shifus` metadata tables additionally auto-filter `created_user_bid = <caller>` so the row's author must be the caller. `learn_generated_blocks` additionally auto-filters `status = 1` so rerolled history rows do not skew follow-up counts. Do **not** add any of these to your DSL — they are injected.
+The course-scoped tables listed above (everything except `user_users`) are automatically constrained to the CLI-supplied `shifu_bid`; all tables except `shifu_user_archives` automatically filter `deleted = 0`. The two `shifu_*_shifus` metadata tables additionally auto-filter `created_user_bid = <caller>` so the row's author must be the caller. `learn_generated_blocks` additionally auto-filters `status = 1` so rerolled history rows do not skew follow-up counts. Do **not** add any of these to your DSL — they are injected.
 
 `user_users` is a **global** user table (no `shifu_bid` column). Its access restrictions are documented in `privacy-and-presentation.md`.
 
@@ -184,7 +184,7 @@ All `*_bid` values are 36-char pseudo-IDs. Never display them raw. Translate as 
 | `outline_item_bid` | Use the `shifu-cli.py show <shifu_bid>` cache: recurse the outline tree to map `bid → name`; render as "Lesson X.Y: \<title\>" |
 | `progress_record_bid` | Two-step: ① DSL query `learn_progress_records` with `where progress_record_bid in […]` + `select progress_record_bid, outline_item_bid` to get the mapping; ② translate `outline_item_bid` via the outline cache |
 | `user_bid` | **Never show raw**. Use ordinal labels ("Learner A / B / C" or "Top 1 / Top 2"). If the user wants to know who, batch the user_bids (deduped, ≤ 50) into a `user_users` query per `privacy-and-presentation.md` and append the nickname: `Learner A (Python 学徒)` |
-| `variable_bid` | No name-lookup API exists; `group_by variable_bid count_distinct user_bid` to show the distribution, then tell the user the values — **do not display the raw variable_bid** |
+| `variable_bid` | The documented analytics/CLI interface has no variable-name lookup. Discover available IDs internally with `group_by variable_bid count_distinct user_bid` (Recipe 15). A question label alone does not resolve an ID: use a verified mapping or confirm the relevant aggregate candidate distribution before selecting an ID. Never guess the mapping or display the raw `variable_bid`. |
 | `order_bid` / `lesson_feedback_bid` / `generated_block_bid` / `daily_usage_metric_bid` | Row-level primary keys — **never display**; used internally for deduplication / counting only |
 
 **Absolute rule**: never paste a `bid` string verbatim in user-facing output (unless the user explicitly requests raw IDs for debugging).
@@ -219,7 +219,7 @@ The `credit-detail` endpoint returns the absolute credit amount (`ABS(credit_led
 
 ## Tables That Do NOT Exist (common wrong guesses)
 
-When in doubt, do not guess — only the 10 tables above are valid. These table names do **not** exist and will trigger `11003` (table not in whitelist):
+When in doubt, do not guess — use only the supported tables documented above. These table names do **not** exist and will trigger `11003` (table not in whitelist):
 
 | Wrong guess | Why it fails | Use instead |
 | --- | --- | --- |
@@ -230,4 +230,4 @@ When in doubt, do not guess — only the 10 tables above are valid. These table 
 | `users` | Wrong name (it's `user_users`) | `user_users` |
 | `lessons` / `courses` | Does not exist | `shifu_published_shifus` / `shifu_draft_shifus` for metadata, `learn_progress_records` for learner data |
 
-**Rule**: if a table name is not in the "10 Tables at a Glance" table above, it does not exist. Do not try it — you will get `11003`.
+**Rule**: use only the documented "Supported Tables at a Glance" for these capabilities. Do not invent a table or endpoint; access to an undocumented source is not established here.

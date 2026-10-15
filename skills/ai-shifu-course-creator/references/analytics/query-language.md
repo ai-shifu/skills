@@ -6,7 +6,7 @@ All examples are CLI invocations. Analytics task orientation is documented in `g
 
 ```json
 {
-  "table": "<one of the 10 tables>",
+  "table": "<a supported table from tables.md>",
   "select":    ["<field>", "..."],
   "where":     [{ "field": "<f>", "op": "<op>", "value": <value> }],
   "group_by":  ["<field>", "..."],
@@ -51,7 +51,7 @@ Every aggregate must carry an `alias` — the output column is named after it.
 
 ## Per-Learner (`user_bid`) Dimension
 
-6 of the 10 tables support per-learner grouping. Excluded: `user_users` (has its own rules in `privacy-and-presentation.md`), `bill_daily_usage_metrics` (no `user_bid` column — it is a daily summary), and the two `shifu_*_shifus` metadata tables (course-level, not learner-level — they describe the course itself).
+Per-learner grouping is supported on `learn_progress_records`, `learn_generated_blocks`, `learn_lesson_feedbacks`, `order_orders`, `var_variable_values`, and `shifu_user_archives`. Excluded: `user_users` (has its own rules in `privacy-and-presentation.md`), `bill_daily_usage_metrics` (no `user_bid` column — it is a daily summary), and the two `shifu_*_shifus` metadata tables (course-level, not learner-level — they describe the course itself).
 
 **Guard rail**: when `user_bid` appears in `select`, it **must** also appear in `group_by`.
 
@@ -87,7 +87,7 @@ The remaining `type` values (`303` input, `309` phone, `310` checkcode, etc.) co
 
 The endpoint automatically applies these filters — do **not** add them to your DSL:
 
-- All 9 non-`user_users` tables are scoped to the CLI-supplied `shifu_bid`.
+- All documented non-`user_users` tables are scoped to the CLI-supplied `shifu_bid`.
 - All tables except `shifu_user_archives` automatically filter `deleted = 0` (`shifu_user_archives` has no `deleted` column).
 - `learn_generated_blocks` auto-filters `status = 1`. Rerolled history rows (`status = 0`) never appear in your results — your follow-up counts reflect the live learner experience.
 - The two `shifu_*_shifus` metadata tables auto-filter `created_user_bid = <caller>` — you can only see metadata for courses you authored, not for courses a co-author shared with you (those still come through analytics, but the title/rename history stays owner-only).

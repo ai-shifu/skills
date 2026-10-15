@@ -90,7 +90,7 @@ When the user names a course by title and asks for data, follow the Course Metad
 
 ## `var_variable_values.value` — Aggregate-Only
 
-Learners may enter free-text personal information into course variables. Aggregate only (`group_by value count`); never paste the raw value list to the user. Recipe 15 shows the canonical safe pattern.
+Persisted learner answers in this table may contain free-text personal information. Aggregate only (`group_by value count`); never paste the raw value list to the user. Recipe 15 in `query-recipes.md` shows the safe query pattern. This existing analytics permission is independent of course-authoring syntax.
 
 ## Refusals
 
