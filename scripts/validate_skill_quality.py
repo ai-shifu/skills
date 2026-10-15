@@ -22,7 +22,8 @@ RE_MD_ANCHOR_REF = re.compile(
     r"#(?P<anchor>[A-Za-z0-9][A-Za-z0-9-]*)"
 )
 RE_HEADING = re.compile(r"^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
-RE_COMMONMARK_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+# Backtick-fence info strings cannot contain backticks.
+RE_COMMONMARK_FENCE = re.compile(r"^ {0,3}(`{3,}(?![^\r\n]*`)|~{3,})")
 RE_SLUG_STRIP = re.compile(r"[^\w\- ]")
 RE_SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 RE_JSON_FENCE = re.compile(

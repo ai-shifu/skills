@@ -247,6 +247,18 @@ class AnchorValidationTests(unittest.TestCase):
 
             self.assertEqual({"visible-after-matching-fence"}, slugs)
 
+    def test_backtick_in_fence_info_does_not_hide_headings(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            markdown_file = Path(tmpdir) / "headings.md"
+            markdown_file.write_text(
+                "```bad`info\n# Visible after invalid fence\n```\n",
+                encoding="utf-8",
+            )
+
+            slugs = validate_skill_quality.github_heading_slugs(markdown_file)
+
+            self.assertEqual({"visible-after-invalid-fence"}, slugs)
+
     def test_anchor_scan_does_not_close_on_a_fence_with_an_info_string(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = Path(tmpdir)
@@ -730,6 +742,29 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     self.assertTrue(
                         any("branch on a learner response" in error for error in issues.errors)
                     )
+
+    def test_disabled_policy_checks_backticks_in_fence_info(self):
+        for opener, closer, error_count in (
+            ("```bad`info", "```", 1),
+            ("```markdown", "```", 0),
+            ("~~~bad`info", "~~~", 0),
+        ):
+            prompt = f"{opener}\nCreate a single-select interaction.\n{closer}\n"
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(opener=opener, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual(error_count, len(issues.errors))
+                    if error_count:
+                        self.assertIn("solicit a learner response", issues.errors[0])
 
     def test_disabled_policy_ignored_prohibitions_do_not_hide_active_requests(self):
         prompts = (
