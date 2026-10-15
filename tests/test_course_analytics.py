@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import sqlite3
 import unittest
 from pathlib import Path
 
@@ -51,6 +52,64 @@ class CourseAnalyticsTests(unittest.TestCase):
         policy = privacy.split("## `var_variable_values.value`", 1)[1].split("\n## ", 1)[0]
         self.assertIn("Aggregate only", policy)
         self.assertIn("never paste the raw value list", policy)
+
+    def test_audience_distribution_paging_retains_all_tied_answer_groups(self):
+        recipes = (
+            SKILL_ROOT / "references" / "analytics" / "query-recipes.md"
+        ).read_text(encoding="utf-8")
+        recipe = recipes.split("### Recipe 15 —", 1)[1].split("\n## ", 1)[0]
+        _, query = [
+            json.loads(body)
+            for body in re.findall(r"--dsl '(\{.*?\})'", recipe, re.DOTALL)
+        ]
+        limit = query["limit"]
+        self.assertGreater(limit, 0)
+        self.assertLessEqual(limit, 1000)
+
+        # Materialized aggregate results isolate the recipe's ordering contract.
+        # A database may return tied groups in either source order between pages.
+        grouped_rows = (
+            [("Most common answer", 8)]
+            + [(f"Answer {index:04}", 3) for index in range(2 * limit + 5)]
+            + [("Rare answer", 1)]
+        )
+        sources = []
+        for source_rows in (grouped_rows, list(reversed(grouped_rows))):
+            source = sqlite3.connect(":memory:")
+            self.addCleanup(source.close)
+            source.execute("CREATE TABLE grouped_answers (value TEXT, n INTEGER)")
+            source.executemany(
+                "INSERT INTO grouped_answers (value, n) VALUES (?, ?)", source_rows
+            )
+            sources.append(source)
+
+        order_by = ", ".join(
+            f'"{term["field"]}" {term["dir"].upper()}'
+            for term in query["order_by"]
+        )
+        page_sql = (
+            f"SELECT value, n FROM grouped_answers ORDER BY {order_by} "
+            "LIMIT ? OFFSET ?"
+        )
+        offset = query.get("offset", 0)
+        paged_rows = []
+        page_index = 0
+        while True:
+            page = sources[page_index % len(sources)].execute(
+                page_sql, (limit, offset)
+            ).fetchall()
+            paged_rows.extend(page)
+            if len(page) < limit:
+                break
+            offset += limit
+            page_index += 1
+
+        self.assertEqual(
+            len({value for value, _ in paged_rows}),
+            len(grouped_rows),
+            "Offset pages must not repeat or skip answer groups when counts tie",
+        )
+        self.assertEqual(paged_rows, grouped_rows)
 
 
 

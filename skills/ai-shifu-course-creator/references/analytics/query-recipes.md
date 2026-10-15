@@ -339,7 +339,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-Resolve the requested question under `tables.md` → ID Field Translation Rules. If no verified mapping is available, use the distribution query below for candidate IDs, present aggregate summaries as readable candidates such as "Distribution A / B", and ask which matches the requested question. Keep the ID mapping internal; a familiar-looking answer or the largest count does not establish the question's identity. Page results under `query-language.md` before claiming a complete list or distribution.
+Resolve the requested question under `tables.md` → ID Field Translation Rules. If no verified mapping is available, use the distribution query below for candidate IDs, present aggregate summaries as readable candidates such as "Distribution A / B", and ask which matches the requested question. Keep the ID mapping internal; a familiar-looking answer or the largest count does not establish the question's identity.
 
 Once the relevant ID is established, query its answer distribution:
 
@@ -350,10 +350,13 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "select":["value"],
  "group_by":["value"],
  "aggregate":[{"fn":"count_distinct","field":"user_bid","alias":"n"}],
- "order_by":[{"field":"n","dir":"desc"}],
- "limit":20
+ "order_by":[{"field":"n","dir":"desc"},{"field":"value","dir":"asc"}],
+ "limit":20,
+ "offset":0
 }'
 ```
+
+Page each field-discovery query or candidate distribution using the `limit` and `offset` fields in `query-language.md`. Start at `offset: 0` and keep all fields except `offset` unchanged. If a successful page returns exactly `limit` rows, increase `offset` by `limit` and request the next page. Stop after a successful page returns fewer rows, including an empty page. A failed request does not establish the end of results; report partial results rather than claiming a complete list or distribution.
 
 > Apply the aggregate-only access rule in `privacy-and-presentation.md` → `var_variable_values.value` before querying or presenting this distribution.
 
