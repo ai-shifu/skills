@@ -51,7 +51,7 @@ Every aggregate must carry an `alias` — the output column is named after it.
 
 ## Per-Learner (`user_bid`) Dimension
 
-Per-learner grouping is supported on `learn_progress_records`, `learn_generated_blocks`, `learn_lesson_feedbacks`, `order_orders`, and `shifu_user_archives`. Excluded: `user_users` (has its own rules in `privacy-and-presentation.md`), `bill_daily_usage_metrics` (no `user_bid` column — it is a daily summary), and the two `shifu_*_shifus` metadata tables (course-level, not learner-level — they describe the course itself).
+Per-learner grouping is supported on `learn_progress_records`, `learn_generated_blocks`, `learn_lesson_feedbacks`, `order_orders`, `var_variable_values`, and `shifu_user_archives`. Excluded: `user_users` (has its own rules in `privacy-and-presentation.md`), `bill_daily_usage_metrics` (no `user_bid` column — it is a daily summary), and the two `shifu_*_shifus` metadata tables (course-level, not learner-level — they describe the course itself).
 
 **Guard rail**: when `user_bid` appears in `select`, it **must** also appear in `group_by`.
 

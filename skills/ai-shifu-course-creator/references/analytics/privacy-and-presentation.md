@@ -88,6 +88,10 @@ The remaining `type` values — `303` input, `309` phone, `310` checkcode and si
 
 When the user names a course by title and asks for data, follow the Course Metadata path in `query-recipes.md` to resolve the **current** `shifu_bid → title` mapping before issuing any downstream query. Present the result under the published-versus-draft semantics and phrasing in `tables.md` → "Course title is 'current published', not 'history'".
 
+## `var_variable_values.value` — Aggregate-Only
+
+Persisted learner answers in this table may contain free-text personal information. Aggregate only (`group_by value count`); never paste the raw value list to the user. Recipe 15 in `query-recipes.md` shows the safe query pattern. This existing analytics permission is independent of course-authoring syntax.
+
 ## Course Memory Access Boundary
 
 Learner inputs may contain personal information. Their availability through course memory does not grant analytics access or permission to export raw learner input. Use only the documented analytics fields and allowed content types; do not invent a memory table or endpoint. Keep the access restrictions, masking, and refusals in this reference when handling any learner information.

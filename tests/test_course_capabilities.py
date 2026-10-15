@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import sys
 import tempfile
@@ -87,7 +88,7 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
         retired_contract = re.compile(
             r"%\{\{[^{}]*\}\}|"
             r"\b(?:global_variable_table|used_variables|collected_in|"
-            r"effect_scope|var_variable_values|variable_bid)\b|"
+            r"effect_scope)\b|"
             r"markdownflow-syntax\.md#(?:variables|pre-collection-references)\b|"
             r"authoring-contracts\.md#variable-table\b|"
             r"teaching-design\.md#variable-strategy\b",
@@ -124,6 +125,35 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
     def test_package_retires_the_named_learner_state_contract(self):
         self.assert_retired_contract_absent(SKILL_ROOT)
 
+    def test_audience_distribution_remains_queryable_with_aggregate_privacy(self):
+        analytics_root = SKILL_ROOT / "references" / "analytics"
+        recipes = (analytics_root / "query-recipes.md").read_text(encoding="utf-8")
+        recipe = recipes.split("### Recipe 15 —", 1)[1].split("\n## ", 1)[0]
+        match = re.search(r"--dsl '(\{.*?\})'", recipe, re.DOTALL)
+        self.assertIsNotNone(match, "Audience distribution needs an executable DSL recipe")
+        query = json.loads(match.group(1))
+
+        self.assertEqual(query["table"], "var_variable_values")
+        self.assertEqual(
+            query["where"],
+            [{"field": "variable_bid", "op": "=", "value": "<variable_bid>"}],
+        )
+        self.assertEqual(query["select"], ["value"])
+        self.assertEqual(query["group_by"], ["value"])
+        self.assertEqual(
+            query["aggregate"],
+            [{"fn": "count_distinct", "field": "user_bid", "alias": "n"}],
+        )
+        self.assertIn("privacy-and-presentation.md", recipe)
+        guide = (analytics_root / "guide.md").read_text(encoding="utf-8")
+        self.assertRegex(guide, r"Audience profile distribution[^\n]*var_variable_values")
+        privacy = (analytics_root / "privacy-and-presentation.md").read_text(
+            encoding="utf-8"
+        )
+        policy = privacy.split("## `var_variable_values.value`", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("Aggregate only", policy)
+        self.assertIn("never paste the raw value list", policy)
+
     def test_contract_scan_allows_other_domains_and_skips_runtime_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             skill_root = Path(tmp)
@@ -137,6 +167,11 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
                     "Jekyll 使用模板变量 {{ site.title }}。\n"
                 ),
                 "evals/other-template.json": '{"query": "Render {{ page.title }}"}',
+                "references/analytics/tables.md": "var_variable_values: variable_bid, value",
+                "references/analytics/query-recipes.md": (
+                    '"table":"var_variable_values", "group_by":["value"]'
+                ),
+                "evals/analytics.json": '{"query": "group_by variable_bid"}',
             }
             for name, content in sources.items():
                 path = skill_root / name
@@ -149,7 +184,7 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
         cases = (
             ("evals/case.json", '{"used_variables": []}'),
             ("references/lesson.md", "?[%{{learner_goal}} ...Goal]"),
-            ("references/analytics/tables.md", "var_variable_values"),
+            ("references/analytics/tables.md", "var_variable_values %{{learner_goal}}"),
             ("references/markdownflow-syntax.md", "Read {{learner_goal}}."),
             ("references/consumer.md", "markdownflow-syntax.md#variables"),
         )

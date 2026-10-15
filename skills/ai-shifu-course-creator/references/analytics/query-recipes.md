@@ -15,6 +15,7 @@ For DSL recipes, the bodies omit `shifu_bid` — the CLI injects it from the pos
 - [Ratings](#ratings)
 - [Credit Consumption](#credit-consumption-use-shifu-clipy-credit-detail)
 - [Active Learners](#active-learners)
+- [Audience Profile](#audience-profile)
 - [Per-Learner Top-N](#per-learner-top-n)
 - [Follow-up Q&A](#follow-up-qa)
 
@@ -319,6 +320,24 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "limit":1
 }'
 ```
+
+## Audience Profile
+
+### Recipe 15 — Single-variable distribution
+
+```bash
+python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+ "table":"var_variable_values",
+ "where":[{"field":"variable_bid","op":"=","value":"<variable_bid>"}],
+ "select":["value"],
+ "group_by":["value"],
+ "aggregate":[{"fn":"count_distinct","field":"user_bid","alias":"n"}],
+ "order_by":[{"field":"n","dir":"desc"}],
+ "limit":20
+}'
+```
+
+> Apply the aggregate-only access rule in `privacy-and-presentation.md` → `var_variable_values.value` before querying or presenting this distribution.
 
 ## Per-Learner Top-N
 
