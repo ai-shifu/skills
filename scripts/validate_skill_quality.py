@@ -455,45 +455,50 @@ def github_heading_slugs(md_file: Path) -> set[str]:
 
 
 def markdown_without_fenced_code_or_html_comments(content: str) -> str:
-    """Return Markdown content that can contain navigable anchor references."""
-    visible_lines: list[str] = []
+    """Return Markdown prose outside fenced code and closed HTML comments."""
+    content = content.replace("\r\n", "\n").replace("\r", "\n")
+    visible: list[str] = []
     in_fence = False
     fence_character = ""
     fence_length = 0
+    cursor = 0
 
-    for line in content.splitlines(keepends=True):
-        fence = RE_COMMONMARK_FENCE.match(line)
+    while cursor < len(content):
+        newline = content.find("\n", cursor)
+        line_end = len(content) if newline == -1 else newline + 1
+        line = content[cursor:line_end]
+        at_line_start = cursor == 0 or content[cursor - 1] == "\n"
+        fence = RE_COMMONMARK_FENCE.match(line) if at_line_start else None
+        if in_fence:
+            if fence:
+                marker = fence.group(1)
+                if (
+                    marker[0] == fence_character
+                    and len(marker) >= fence_length
+                    and not line[fence.end() :].strip()
+                ):
+                    in_fence = False
+            cursor = line_end
+            continue
         if fence:
             marker = fence.group(1)
-            if not in_fence:
-                in_fence = True
-                fence_character = marker[0]
-                fence_length = len(marker)
-            elif (
-                marker[0] == fence_character
-                and len(marker) >= fence_length
-                and not line[fence.end() :].strip()
-            ):
-                in_fence = False
+            in_fence = True
+            fence_character = marker[0]
+            fence_length = len(marker)
+            cursor = line_end
             continue
-        if not in_fence:
-            visible_lines.append(line)
 
-    visible = "".join(visible_lines)
-    uncommented: list[str] = []
-    cursor = 0
-    while True:
-        comment_start = visible.find("<!--", cursor)
-        if comment_start == -1:
-            uncommented.append(visible[cursor:])
-            break
-        uncommented.append(visible[cursor:comment_start])
-        comment_end = visible.find("-->", comment_start + 4)
-        if comment_end == -1:
-            uncommented.append(visible[comment_start:])
-            break
-        cursor = comment_end + 3
-    return "".join(uncommented)
+        comment_start = line.find("<!--")
+        if comment_start != -1:
+            comment_end = content.find("-->", cursor + comment_start + 4)
+            if comment_end != -1:
+                visible.append(line[:comment_start])
+                cursor = comment_end + 3
+                continue
+        # Keep unclosed comments visible so they cannot hide later validation.
+        visible.append(line)
+        cursor = line_end
+    return "".join(visible)
 
 
 def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
@@ -743,6 +748,8 @@ def validate_disabled_prompt_text(
         issues.add_error(
             f"{md_file}: {owner} must not contain interaction syntax"
         )
+    # Comments and fenced examples cannot issue natural-language directives.
+    prompt = markdown_without_fenced_code_or_html_comments(prompt)
     # These are explicit request heuristics, not a general language parser.
     # Exclude only a request's immediate prohibition, not earlier instructions.
     if any(

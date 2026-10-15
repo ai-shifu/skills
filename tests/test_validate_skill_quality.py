@@ -654,6 +654,106 @@ class InteractionPolicyValidationTests(unittest.TestCase):
 
                 self.assertEqual([], issues.errors)
 
+    def test_disabled_policy_ignores_comment_and_fenced_interaction_examples(self):
+        prompts = (
+            "<!-- The learner can create a single-select interaction after this lesson. -->\n"
+            "Explain the mechanism with a worked example.",
+            "```markdown\n"
+            "Create a single-select interaction.\n"
+            "After the learner answers, show matching feedback.\n"
+            "```\n"
+            "Explain the mechanism with a worked example.",
+            "````markdown\n"
+            "```\n"
+            "Create a single-select interaction.\n"
+            "~~~~\n"
+            "After the learner answers, show matching feedback.\n"
+            "````\n"
+            "Explain the mechanism with a worked example.",
+            "<!--\n```\n"
+            "The learner can create a single-select interaction.\n"
+            "-->\n"
+            "Explain the mechanism with a worked example.",
+            "```text\n<!--\n"
+            "Create a single-select interaction.\n"
+            "After the learner answers, show matching feedback.\n"
+            "```\n<!-- benign -->\n"
+            "Explain the mechanism with a worked example.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual([], issues.errors)
+
+    def test_disabled_policy_keeps_active_requests_after_ignored_sections(self):
+        ignored_sections = (
+            "<!-- Navigation to the next lesson. -->\n",
+            "```markdown\nA static example.\n```\n",
+            "```markdown\rA static example.\r```\r",
+            "````markdown\n```\nA static example.\n~~~~\n````\n",
+            "<!--\n```\n"
+            "The learner can create a single-select interaction.\n-->\n",
+            "```text\n<!--\nA static example.\n```\n<!-- benign -->\n",
+        )
+        for ignored_section in ignored_sections:
+            prompt = (
+                ignored_section
+                + "Create a single-select interaction.\n"
+                + "After the learner answers, show matching feedback."
+            )
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual(2, len(issues.errors))
+                    self.assertTrue(
+                        any("solicit a learner response" in error for error in issues.errors)
+                    )
+                    self.assertTrue(
+                        any("branch on a learner response" in error for error in issues.errors)
+                    )
+
+    def test_disabled_policy_ignored_prohibitions_do_not_hide_active_requests(self):
+        prompts = (
+            "<!-- Do not create a single-select interaction. -->\n"
+            "Create a single-select interaction.",
+            "```markdown\nDo not create a single-select interaction.\n```\n"
+            "Create a single-select interaction.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual(1, len(issues.errors))
+                    self.assertIn("solicit a learner response", issues.errors[0])
+
     def test_disabled_policy_rejects_conditional_response_branches(self):
         prompts = [
             "If the learner chooses A, show the matching explanation.",
