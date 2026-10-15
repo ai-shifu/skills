@@ -184,7 +184,7 @@ All `*_bid` values are 36-char pseudo-IDs. Never display them raw. Translate as 
 | `outline_item_bid` | Use the `shifu-cli.py show <shifu_bid>` cache: recurse the outline tree to map `bid → name`; render as "Lesson X.Y: \<title\>" |
 | `progress_record_bid` | Two-step: ① DSL query `learn_progress_records` with `where progress_record_bid in […]` + `select progress_record_bid, outline_item_bid` to get the mapping; ② translate `outline_item_bid` via the outline cache |
 | `user_bid` | **Never show raw**. Use ordinal labels ("Learner A / B / C" or "Top 1 / Top 2"). If the user wants to know who, batch the user_bids (deduped, ≤ 50) into a `user_users` query per `privacy-and-presentation.md` and append the nickname: `Learner A (Python 学徒)` |
-| `variable_bid` | No name-lookup API exists. Use the question label supplied in the request when available; otherwise use a readable distribution label. Never guess a name or display the raw `variable_bid`. |
+| `variable_bid` | The documented analytics/CLI interface has no variable-name lookup. Discover available IDs internally with `group_by variable_bid count_distinct user_bid` (Recipe 15). A question label alone does not resolve an ID: use a verified mapping or confirm the relevant aggregate candidate distribution before selecting an ID. Never guess the mapping or display the raw `variable_bid`. |
 | `order_bid` / `lesson_feedback_bid` / `generated_block_bid` / `daily_usage_metric_bid` | Row-level primary keys — **never display**; used internally for deduplication / counting only |
 
 **Absolute rule**: never paste a `bid` string verbatim in user-facing output (unless the user explicitly requests raw IDs for debugging).

@@ -129,9 +129,22 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
         analytics_root = SKILL_ROOT / "references" / "analytics"
         recipes = (analytics_root / "query-recipes.md").read_text(encoding="utf-8")
         recipe = recipes.split("### Recipe 15 —", 1)[1].split("\n## ", 1)[0]
-        match = re.search(r"--dsl '(\{.*?\})'", recipe, re.DOTALL)
-        self.assertIsNotNone(match, "Audience distribution needs an executable DSL recipe")
-        query = json.loads(match.group(1))
+        queries = [
+            json.loads(body)
+            for body in re.findall(r"--dsl '(\{.*?\})'", recipe, re.DOTALL)
+        ]
+        self.assertEqual(len(queries), 2, "Discover IDs before querying one distribution")
+        discovery, query = queries
+        self.assertEqual(discovery["table"], "var_variable_values")
+        self.assertEqual(discovery["select"], ["variable_bid"])
+        self.assertEqual(discovery["group_by"], ["variable_bid"])
+        self.assertNotIn("where", discovery)
+        self.assertEqual(
+            discovery["aggregate"],
+            [{"fn": "count_distinct", "field": "user_bid", "alias": "n"}],
+        )
+        self.assertEqual(discovery["order_by"], [{"field": "variable_bid", "dir": "asc"}])
+        self.assertEqual(discovery["offset"], 0)
 
         self.assertEqual(query["table"], "var_variable_values")
         self.assertEqual(
