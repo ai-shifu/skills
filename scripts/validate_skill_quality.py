@@ -200,23 +200,24 @@ RE_ANSWER_DEPENDENT_BRANCH = re.compile(
     r")",
     re.IGNORECASE,
 )
-RE_PRIOR_CONTEXT_BOUNDARY = re.compile(r"[ \t]*(?:[,，;；.!?。！？\r\n]|$)")
+PRIOR_CONTEXT_SEPARATOR = r"[,，;；.!?。！？\r\n]"
+RE_PRIOR_CONTEXT_BOUNDARY = re.compile(rf"[ \t]*(?:{PRIOR_CONTEXT_SEPARATOR}|$)")
 RE_PRIOR_LEARNER_CONTEXT_SUFFIX = re.compile(
     r"[ \t]+(?:"
     r"from[ \t]+(?:(?:an?|the)[ \t]+)?(?:previous|earlier)[ \t]+lessons?\b|"
     r"(?:already|previously)[ \t]+(?:recorded|stored|available)[ \t]+"
     r"in[ \t]+(?:course[ \t]+)?memory\b)"
-    r"(?=[ \t]*(?:[,;.!?\r\n]|$))",
+    rf"(?=[ \t]*(?:{PRIOR_CONTEXT_SEPARATOR}|$))",
     re.IGNORECASE,
 )
 RE_NEW_ANSWER_CONTEXT_CONTINUATION = re.compile(
-    r"[ \t]*[,，][ \t]*(?:"
+    rf"[ \t]*(?:{PRIOR_CONTEXT_SEPARATOR}[ \t]*)+(?:"
     r"(?:(?:and|or|plus|along[ \t]+with)[ \t]+)?"
     r"(?:on[ \t]+)?"
     r"(?:(?:the|an?)[ \t]+)?"
     r"(?:(?:learner's|learners'|student's|students'|their)[ \t]+)?"
     r"(?:current|new|latest)[ \t]+(?:answer|response|choice|input)\b"
-    r"|(?:以及|还有|和|及|或)?[ \t]*(?:学习者|学员|学生)?(?:的)?"
+    r"|(?:以及|还有|并(?:结合)?|和|及|或)?[ \t]*(?:学习者|学员|学生)?(?:的)?"
     r"(?:本次|当前|新的?)(?:回答|答案|选择|输入)"
     r"|(?:(?:et|ou|ainsi[ \t]+que)[ \t]+)?(?:la|le)[ \t]+(?:"
     r"(?:réponse|saisie|choix)[ \t]+(?:actuelle?|nouvelle?|nouveau)\b"

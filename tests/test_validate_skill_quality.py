@@ -990,6 +990,47 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     self.assertEqual(1, len(issues.errors))
                     self.assertIn("branch on a learner response", issues.errors[0])
 
+    def test_disabled_policy_checks_new_answers_after_prior_context_boundaries(self):
+        cases = (
+            (
+                "Based on the learner's answer from an earlier lesson",
+                (";", ".", "!", "?", "\r", "\n", ";\n"),
+                " and the current response, choose an example.",
+                " continue teaching the current lesson.",
+            ),
+            (
+                "根据学生先前课程中的选择",
+                ("，", "；", "。", "！", "？"),
+                "并结合本次回答调整解释。",
+                "继续解释本次课程的机制。",
+            ),
+            (
+                "Après la réponse du cours précédent",
+                (";",),
+                " et la réponse actuelle, adapter l'exemple.",
+                " continuer l'explication du cours actuel.",
+            ),
+        )
+        for context, boundaries, new_answer, teaching_action in cases:
+            for boundary in boundaries:
+                for continuation, error_count in ((new_answer, 1), (teaching_action, 0)):
+                    prompt = context + boundary + continuation
+                    for artifact in ("lesson", "course_prompt"):
+                        with self.subTest(prompt=prompt, artifact=artifact):
+                            issues = validate_skill_quality.IssueBag()
+                            if artifact == "lesson":
+                                validate_skill_quality.validate_disabled_lesson_examples(
+                                    [{"teaching_prompt": prompt}], Path("example.md"), issues
+                                )
+                            else:
+                                validate_skill_quality.validate_disabled_course_prompt_example(
+                                    prompt, Path("example.md"), issues
+                                )
+
+                            self.assertEqual(error_count, len(issues.errors))
+                            if error_count:
+                                self.assertIn("branch on a learner response", issues.errors[0])
+
     def test_disabled_policy_carries_across_example_json_blocks(self):
         with tempfile.TemporaryDirectory() as tmp:
             skill_dir = Path(tmp) / "ai-shifu-course-creator"
