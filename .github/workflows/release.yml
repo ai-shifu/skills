@@ -2,6 +2,8 @@ name: Release Skills
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
   release:
@@ -26,10 +28,90 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: skill-release-${{ github.event.release.tag_name || (github.event_name == 'workflow_dispatch' && format('v{0}', inputs.expected_version)) || github.ref_name }}
+  group: skill-release-${{ (github.event_name == 'push' && github.ref_type == 'branch' && github.sha) || github.event.release.tag_name || (github.event_name == 'workflow_dispatch' && format('v{0}', inputs.expected_version)) || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
+  release_source:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.preview_type == 'draft')
+    runs-on: ubuntu-24.04
+    outputs:
+      create_draft: ${{ steps.source.outputs.create_draft }}
+      version: ${{ steps.source.outputs.version }}
+      tag: ${{ steps.source.outputs.tag }}
+      commit: ${{ steps.source.outputs.commit }}
+    steps:
+      - name: Checkout selected commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect a version increase on main
+        id: source
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+          EXPECTED_VERSION: ${{ inputs.expected_version }}
+          PYTHONPATH: tools/ai-shifu-skill-release/scripts
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+          from ai_shifu_release.github_releases import TAG_PATTERN
+          from ai_shifu_release.skill_metadata import parse_frontmatter, split_skill_document
+
+          commit = os.environ['GITHUB_SHA']
+          if not re.fullmatch(r'[0-9a-f]{40}', commit):
+              raise ValueError('A full source commit is required')
+
+          def version_at(revision):
+              text = subprocess.run(
+                  ['git', 'show', f'{revision}:skills/ai-shifu-course-creator/SKILL.md'],
+                  check=True, capture_output=True, text=True,
+              ).stdout
+              frontmatter, _ = split_skill_document(text, revision)
+              version = parse_frontmatter(frontmatter).get('version', '')
+              if not TAG_PATTERN.fullmatch('v' + version):
+                  raise ValueError(f'Invalid formal release version: {version!r}')
+              return version
+
+          event = os.environ['GITHUB_EVENT_NAME']
+          ref_type = os.environ['GITHUB_REF_TYPE']
+          ref_name = os.environ['GITHUB_REF_NAME']
+          version = version_at(commit)
+          create_draft = True
+          if event == 'push' and ref_type == 'branch':
+              if ref_name != 'main':
+                  raise ValueError('Automatic drafts require main')
+              before = os.environ['PUSH_BEFORE']
+              if before == '0' * 40:
+                  create_draft = False
+                  print('Initial main push has no prior version; skipping automatic draft')
+              else:
+                  if not re.fullmatch(r'[0-9a-f]{40}', before):
+                      raise ValueError('A previous main commit is required')
+                  subprocess.run(['git', 'merge-base', '--is-ancestor', before, commit], check=True)
+                  previous = version_at(before)
+                  if version == previous:
+                      create_draft = False
+                      print('Skill version is unchanged; skipping automatic draft')
+                  elif tuple(map(int, version.split('.'))) <= tuple(map(int, previous.split('.'))):
+                      raise ValueError('The release version must increase')
+          elif event == 'push' and ref_type == 'tag':
+              if ref_name != 'v' + version:
+                  raise ValueError('Tag and source version differ')
+          elif event == 'workflow_dispatch':
+              if os.environ['EXPECTED_VERSION'] != version:
+                  raise ValueError('Expected version and source version differ')
+          else:
+              raise ValueError('Unsupported draft source event')
+
+          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
+              output.write(f'create_draft={str(create_draft).lower()}\n')
+              output.write(f'version={version}\ntag=v{version}\ncommit={commit}\n')
+          PY
+
   preview:
     if: github.event_name == 'workflow_dispatch' && inputs.preview_type == 'artifact'
     runs-on: ubuntu-24.04
@@ -87,11 +169,15 @@ jobs:
           retention-days: 7
 
   draft:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.preview_type == 'draft')
+    needs: release_source
+    if: needs.release_source.outputs.create_draft == 'true'
     permissions:
       contents: write
       pull-requests: read
     runs-on: ubuntu-24.04
+    concurrency:
+      group: skill-release-draft-${{ needs.release_source.outputs.tag }}
+      cancel-in-progress: false
     steps:
       - name: Require main after the version PR is merged
         if: github.event_name == 'workflow_dispatch'
@@ -102,6 +188,7 @@ jobs:
       - name: Checkout selected commit
         uses: actions/checkout@v4
         with:
+          ref: ${{ needs.release_source.outputs.commit }}
           fetch-depth: 0
 
       - name: Ensure Draft Release source is on main
@@ -126,22 +213,17 @@ jobs:
 
       - name: Build and verify selected commit
         env:
-          EXPECTED_VERSION: ${{ inputs.expected_version }}
+          RELEASE_VERSION: ${{ needs.release_source.outputs.version }}
         run: |
-          if test "$GITHUB_EVENT_NAME" = push; then
-            version="${GITHUB_REF_NAME#v}"
-          else
-            version="$EXPECTED_VERSION"
-          fi
           python3 tools/ai-shifu-skill-release/scripts/release.py build \
-            --source-ref "$GITHUB_SHA" --expected-version "$version" --output dist
+            --source-ref "$GITHUB_SHA" --expected-version "$RELEASE_VERSION" --output dist
           release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
           test -n "$release_dir"
           python3 tools/ai-shifu-skill-release/scripts/release.py verify "$release_dir"
 
       - name: Pin the formal version tag to the verified source
         env:
-          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || format('v{0}', inputs.expected_version) }}
+          RELEASE_TAG: ${{ needs.release_source.outputs.tag }}
         run: |
           git check-ref-format "refs/tags/$RELEASE_TAG"
           if git ls-remote --exit-code --refs origin "refs/tags/$RELEASE_TAG" >/dev/null; then
@@ -158,7 +240,7 @@ jobs:
       - name: Create and verify formal Release draft
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || format('v{0}', inputs.expected_version) }}
+          RELEASE_TAG: ${{ needs.release_source.outputs.tag }}
         run: |
           release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
           python3 tools/ai-shifu-skill-release/scripts/release.py github-release "$release_dir" \
