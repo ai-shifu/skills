@@ -181,6 +181,13 @@ RE_ANSWER_DEPENDENT_BRANCH = re.compile(
     r"|(?P<context_reference>\bbased on (?:the )?"
     r"(?:learner's|learners'|student's|students'|learner|learners|student|students) "
     r"(?:answer|response|choice|input)\b)"
+    r"|(?P<localized_prior_context>"
+    r"(?:按|根据)[ \t]*(?:学习者|学员|学生)(?:在)?(?:先前|之前|此前)"
+    r"(?:的)?(?:课(?:程|节)(?:中)?)?(?:的)?(?:回答|答案|选择|输入)"
+    r"|après[ \t]+(?:la[ \t]+(?:réponse|saisie)|le[ \t]+choix)[ \t]+"
+    r"(?:du[ \t]+cours[ \t]+précédent|"
+    r"de[ \t]+la[ \t]+leçon[ \t]+précédente)"
+    r")"
     r"|(?:学习者|学员|学生).{0,16}(?:回答|选择|输入|填写|作答|决定)后"
     r"|如果.{0,8}(?:学习者|学员|学生).{0,16}"
     r"(?:回答|选择|输入|填写|作答|决定)"
@@ -193,6 +200,7 @@ RE_ANSWER_DEPENDENT_BRANCH = re.compile(
     r")",
     re.IGNORECASE,
 )
+RE_PRIOR_CONTEXT_BOUNDARY = re.compile(r"[ \t]*(?:[,，;；.!?。！？\r\n]|$)")
 RE_PRIOR_LEARNER_CONTEXT_SUFFIX = re.compile(
     r"[ \t]+(?:"
     r"from[ \t]+(?:(?:an?|the)[ \t]+)?(?:previous|earlier)[ \t]+lessons?\b|"
@@ -757,8 +765,14 @@ def validate_disabled_prompt_text(
     # A prior-input qualifier applies only to its attached context reference.
     if any(
         not (
-            match.group("context_reference") is not None
-            and RE_PRIOR_LEARNER_CONTEXT_SUFFIX.match(prompt, match.end())
+            (
+                match.group("localized_prior_context") is not None
+                and RE_PRIOR_CONTEXT_BOUNDARY.match(prompt, match.end())
+            )
+            or (
+                match.group("context_reference") is not None
+                and RE_PRIOR_LEARNER_CONTEXT_SUFFIX.match(prompt, match.end())
+            )
         )
         for match in RE_ANSWER_DEPENDENT_BRANCH.finditer(prompt)
     ):

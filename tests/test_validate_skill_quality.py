@@ -765,6 +765,58 @@ class InteractionPolicyValidationTests(unittest.TestCase):
 
                 self.assertEqual([], issues.errors)
 
+    def test_disabled_policy_accepts_localized_prior_answer_context(self):
+        prompts = (
+            "根据学生先前课程中的选择，调整解释。",
+            "Après la réponse du cours précédent, adapter l'exemple.",
+            "根据学习者此前课程中的答案，展示解释。",
+            "Après le choix de la leçon précédente, adapter l'exemple.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual([], issues.errors)
+
+    def test_disabled_policy_rejects_localized_new_answer_dependencies(self):
+        prompts = (
+            "根据学生本次课程中的选择，调整解释。",
+            "Après la réponse du cours actuel, adapter l'exemple.",
+            "根据学生先前课程中的选择以及本次回答，调整解释。",
+            "Après la réponse du cours précédent et la réponse actuelle, adapter l'exemple.",
+            "根据学生的选择，调整先前课程中的解释。",
+            "Après la réponse, adapter l'exemple du cours précédent.",
+            "根据学生先前课程中的选择，调整解释。"
+            "再根据学生本次课程中的选择，展示反馈。",
+            "Après la réponse du cours précédent, adapter l'exemple. "
+            "Après la réponse du cours actuel, adapter l'explication.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertTrue(
+                        any("branch on a learner response" in error for error in issues.errors)
+                    )
+
     def test_disabled_policy_keeps_new_answer_dependencies_alongside_memory(self):
         prompts = (
             "Read relevant memory. Based on the learner's answer, show matching feedback.",
