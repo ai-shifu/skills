@@ -213,6 +213,129 @@ class GitHubReleaseTest(unittest.TestCase):
             self.assertEqual(calls.count("download"), len(assets))
             self.assertNotIn("edit", calls)
 
+    def test_formal_draft_resumes_uploads_and_verifies_without_publishing(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets, notes = github_releases.prepare_assets(
+                self.release_dir, "v1.2.3", self.commit, Path(temporary)
+            )
+            remote = {}
+            calls = []
+            created = False
+            interrupt = True
+            draft_url = "https://github.com/ai-shifu/skills/releases/untagged-fixture"
+
+            def fake_gh(*args, check=True):
+                nonlocal created
+                calls.append(args)
+                if args[0] == "api":
+                    self.assertEqual(args[1], "repos/ai-shifu/skills/commits/v1.2.3")
+                    return type(
+                        "Response",
+                        (),
+                        {"returncode": 0, "stdout": json.dumps({"sha": self.commit})},
+                    )()
+                action = args[1]
+                if action == "view":
+                    if not created:
+                        return type("Response", (), {"returncode": 1, "stdout": ""})()
+                    payload = {
+                        "isDraft": True,
+                        "body": notes,
+                        "assets": [{"name": name} for name in remote],
+                        "url": draft_url,
+                    }
+                    return type(
+                        "Response", (), {"returncode": 0, "stdout": json.dumps(payload)}
+                    )()
+                if action == "create":
+                    self.assertIn("--draft", args)
+                    self.assertIn("--verify-tag", args)
+                    self.assertEqual(args[2], "v1.2.3")
+                    self.assertEqual(args[args.index("--target") + 1], self.commit)
+                    saved_notes = Path(args[args.index("--notes-file") + 1]).read_text()
+                    self.assertEqual(saved_notes, notes)
+                    self.assertNotIn("TEST DRAFT ONLY", saved_notes)
+                    created = True
+                elif action == "upload":
+                    if interrupt and len(remote) == 2:
+                        raise RuntimeError("upload interrupted")
+                    asset = Path(args[3])
+                    remote[asset.name] = asset.read_bytes()
+                elif action == "download":
+                    name = args[args.index("--pattern") + 1]
+                    directory = Path(args[args.index("--dir") + 1])
+                    (directory / name).write_bytes(remote[name])
+                elif action == "edit":
+                    self.fail("Formal draft preparation must not publish the Release")
+                return type("Response", (), {"returncode": 0, "stdout": ""})()
+
+            with (
+                patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                patch.object(github_releases, "gh", side_effect=fake_gh),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "upload interrupted"):
+                    github_releases.publish(
+                        "v1.2.3", self.commit, assets, notes, draft_only=True
+                    )
+                self.assertEqual(len(remote), 2)
+                interrupt = False
+                url = github_releases.publish(
+                    "v1.2.3", self.commit, assets, notes, draft_only=True
+                )
+                upload_count = sum(call[:2] == ("release", "upload") for call in calls)
+                repeated_url = github_releases.publish(
+                    "v1.2.3", self.commit, assets, notes, draft_only=True
+                )
+                self.assertEqual(
+                    sum(call[:2] == ("release", "upload") for call in calls),
+                    upload_count,
+                )
+            self.assertEqual(url, draft_url)
+            self.assertEqual(repeated_url, draft_url)
+            self.assertEqual(set(remote), {asset.name for asset in assets})
+            self.assertEqual(sum(call[:2] == ("release", "create") for call in calls), 1)
+            self.assertEqual(
+                sum(call[:2] == ("release", "download") for call in calls),
+                2 * len(assets),
+            )
+
+    def test_formal_draft_rejects_a_tag_pinned_to_another_commit(self) -> None:
+        response = type(
+            "Response", (), {"returncode": 0, "stdout": json.dumps({"sha": "a" * 40})}
+        )()
+        with (
+            patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+            patch.object(github_releases, "gh", return_value=response) as remote,
+        ):
+            with self.assertRaisesRegex(ValueError, "tag does not point"):
+                github_releases.publish(
+                    "v1.2.3", self.commit, [], "Release notes", draft_only=True
+                )
+        remote.assert_called_once_with("api", "repos/ai-shifu/skills/commits/v1.2.3")
+
+    def test_formal_draft_never_edits_an_existing_public_release(self) -> None:
+        responses = [
+            type(
+                "Response", (), {"returncode": 0, "stdout": json.dumps(payload)}
+            )()
+            for payload in ({"sha": self.commit}, {"isDraft": False})
+        ]
+        with (
+            patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+            patch.object(github_releases, "gh", side_effect=responses) as remote,
+        ):
+            with self.assertRaisesRegex(ValueError, "already public"):
+                github_releases.publish(
+                    "v1.2.3", self.commit, [], "Release notes", draft_only=True
+                )
+        self.assertEqual(remote.call_count, 2)
+        self.assertTrue(
+            all(
+                call.args[0] == "api" or call.args[1] == "view"
+                for call in remote.call_args_list
+            )
+        )
+
     def test_branch_preview_rejects_wrong_identity_or_public_release(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             assets, notes = github_releases.prepare_assets(

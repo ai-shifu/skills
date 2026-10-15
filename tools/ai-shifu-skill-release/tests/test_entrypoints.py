@@ -262,6 +262,86 @@ class ReleaseEntrypointTest(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("--preview requires", result.stderr)
 
+    def test_unmerged_preview_cannot_create_a_draft_release(self) -> None:
+        result = self.invoke(
+            TOOL_ROOT,
+            "github-release",
+            str(self.release_dir),
+            "--tag",
+            "v1.2.3",
+            "--commit",
+            self.commit,
+            "--draft-preview-tag",
+            f"preview-v1.2.3-{self.commit}-123-1",
+            "--preview",
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--preview requires --prepare-only", result.stderr)
+
+    def test_formal_draft_mode_rejects_other_preparation_modes(self) -> None:
+        for incompatible in (
+            ["--prepare-only"],
+            ["--draft-preview-tag", f"preview-v1.2.3-{self.commit}-123-1"],
+        ):
+            with self.subTest(incompatible=incompatible):
+                result = self.invoke(
+                    TOOL_ROOT,
+                    "github-release",
+                    str(self.release_dir),
+                    "--tag",
+                    "v1.2.3",
+                    "--commit",
+                    self.commit,
+                    "--draft-only",
+                    *incompatible,
+                )
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("--draft-only cannot be combined", result.stderr)
+
+    def test_formal_draft_mode_uses_merged_notes_and_returns_actual_draft_url(
+        self,
+    ) -> None:
+        assets = [self.release_dir / "release.json"]
+        notes = "Formal release notes"
+        draft_url = "https://github.com/example/skills/releases/untagged-fixture"
+        output = io.StringIO()
+        with (
+            patch.dict(os.environ, {"GITHUB_REPOSITORY": "example/skills"}),
+            patch.object(
+                cli.github_releases, "prepare_assets", return_value=(assets, notes)
+            ) as prepare,
+            patch.object(
+                cli.github_releases, "publish", return_value=draft_url
+            ) as publish,
+            redirect_stdout(output),
+        ):
+            cli.main(
+                [
+                    "github-release",
+                    str(self.release_dir),
+                    "--tag",
+                    "v1.2.3",
+                    "--commit",
+                    self.commit,
+                    "--github-repo",
+                    "example/skills",
+                    "--draft-only",
+                ]
+            )
+        self.assertFalse(prepare.call_args.kwargs["preview"])
+        self.assertFalse(prepare.call_args.kwargs["draft_preview"])
+        publish.assert_called_once_with(
+            "v1.2.3",
+            self.commit,
+            assets,
+            notes,
+            draft_only=True,
+            draft_preview=False,
+            version_tag="v1.2.3",
+            refresh_notes=False,
+        )
+        self.assertEqual(output.getvalue().strip(), draft_url)
+
     def test_formal_publication_requires_verified_github_identity(self) -> None:
         result = self.invoke(
             TOOL_ROOT,
