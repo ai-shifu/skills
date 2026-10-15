@@ -47,11 +47,11 @@ These are alternatives, not a required sequence or an exhaustive list. The agent
 Useful when one teaching action has several constraints or feedback cases. Nesting expresses ownership; it does not impose a teaching pattern.
 
 ```markdown
-<!-- The learner can distinguish fixed costs and sales-dependent costs -->
+<!-- The learner can distinguish fixed and variable costs -->
 
-- Explain fixed costs and sales-dependent costs to the learner.
-  - Use rent as the fixed-cost example and a fee charged for each sale as the sales-dependent-cost example.
-  - Explain that the distinction concerns how total cost changes with sales over the stated period.
+- Explain fixed and variable costs to the learner.
+  - Use rent as the fixed-cost example and raw materials as the variable-cost example.
+  - Explain that the distinction concerns how total cost changes with activity over the stated period.
   - Ask the learner to consider which assumptions make those examples valid.
 ```
 
@@ -62,7 +62,7 @@ Useful for compact lessons or tightly connected reasoning. Each paragraph remain
 ```markdown
 <!-- A break-even calculation becomes usable -->
 
-Explain to the learner that break-even units equal fixed costs divided by contribution per unit. Use fixed costs of 1000 and contribution of 20 per unit to demonstrate the result of 50 units. Explain that the calculation assumes the stated selling price and cost per unit sold remain constant within the relevant range.
+Explain to the learner that break-even units equal fixed costs divided by contribution per unit. Use fixed costs of 1000 and contribution of 20 per unit to demonstrate the result of 50 units. Explain that the calculation assumes the stated price and variable cost remain constant within the relevant range.
 
 <!-- The calculation is checked against its assumptions -->
 
@@ -80,11 +80,11 @@ Useful for a requested slide deck. Slide count, purpose, order, and the choice t
 ```markdown
 <!-- Two cost behaviors are visible side by side -->
 
-Create a classroom slide comparing fixed costs and sales-dependent costs. Show total cost against sales for each behavior and label the assumptions. Keep the two diagrams aligned for comparison.
+Create a classroom slide comparing fixed and variable costs. Show total cost against activity for each behavior and label the assumptions. Keep the two diagrams aligned for comparison.
 
 <!-- The comparison can be applied to a concrete case -->
 
-Create a slide with the rent and per-sale-fee cases. Show the relevant time period and sales measure so the instructor can explain why each classification applies. Do not add Teaching Agent narration to this classroom-only deck.
+Create a slide with the rent and raw-materials cases. Show the relevant time period and activity measure so the instructor can explain why each classification applies. Do not add Teaching Agent narration to this classroom-only deck.
 ```
 
 ## Source Encoding
