@@ -1,6 +1,6 @@
 ---
 name: ai-shifu-course-creator
-description: Create, edit, review, publish, manage, or analyze AI-Shifu (AI师傅) courses and their Teaching Prompts and Course Prompts in MarkdownFlow (MDF). Use for course materials, lesson design, interactions, course memory, images, deployment, platform administration, learner progress, audience profile distributions, orders, revenue, and credit-consumption questions.
+description: Create, edit, review, publish, manage, or analyze AI-Shifu (AI师傅) courses and their Teaching Prompts and Course Prompts in MarkdownFlow (MDF). Use for course materials, lesson design, interactions, course memory, images, deployment, platform administration, learner progress, orders, revenue, and credit-consumption questions.
 metadata:
   version: 2.0.0
   version_management: standalone
@@ -62,7 +62,7 @@ Use deterministic commands for local course files, platform access and changes, 
 | Synchronize existing content | Existing course and local edits/directory | Pull, divergence inspection, version-protected writes, and conflict convergence. [Course sync](references/course-sync.md) |
 | Build or import a new course | Authored course directory or import payload | Built payload, new draft, and verified imported content. [Build and import](references/build-and-import.md) |
 | Manage and publish a course | Resolved course and requested operation | Metadata, structure, access, avatar, Listen Mode, publication, preview, or archive changes. [Course management](references/course-management.md) |
-| Analyze course data | Course/question, dimensions, and time range | Queries and readable, privacy-respecting findings, including audience profile distributions. [Analytics](references/analytics/guide.md) |
+| Analyze course data | Course/question, dimensions, and time range | Queries and readable, privacy-respecting findings. [Analytics](references/analytics/guide.md) |
 
 Shared references support the relevant category: [authoring-contracts.md](references/authoring-contracts.md) defines optional author controls and artifact consistency; [source-preservation.md](references/source-preservation.md) defines exact-source decisions. An image's teaching purpose, MarkdownFlow representation, and CLI upload are separate actions even when they share a reference. Review likewise applies the criteria for the requested design, expression, or platform result.
 

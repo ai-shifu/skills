@@ -325,24 +325,6 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 ### Recipe 15 — Single-variable distribution
 
-If `variable_bid` is unknown, discover the course's available IDs and learner counts internally first:
-
-```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
- "table":"var_variable_values",
- "select":["variable_bid"],
- "group_by":["variable_bid"],
- "aggregate":[{"fn":"count_distinct","field":"user_bid","alias":"n"}],
- "order_by":[{"field":"variable_bid","dir":"asc"}],
- "limit":1000,
- "offset":0
-}'
-```
-
-Resolve the requested question under `tables.md` → ID Field Translation Rules. If no verified mapping is available, use the distribution query below for candidate IDs, present aggregate summaries as readable candidates such as "Distribution A / B", and ask which matches the requested question. Keep the ID mapping internal; a familiar-looking answer or the largest count does not establish the question's identity. Page results under `query-language.md` before claiming a complete list or distribution.
-
-Once the relevant ID is established, query its answer distribution:
-
 ```bash
 python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
  "table":"var_variable_values",
@@ -355,7 +337,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-> Apply the aggregate-only access rule in `privacy-and-presentation.md` → `var_variable_values.value` before querying or presenting this distribution.
+> `value` may contain free-text PII — always aggregate, never `select` raw values without `group_by`. See `privacy-and-presentation.md`.
 
 ## Per-Learner Top-N
 
