@@ -15,7 +15,7 @@ For DSL recipes, the bodies omit `shifu_bid` — the CLI injects it from the pos
 - [Ratings](#ratings)
 - [Credit Consumption](#credit-consumption-use-shifu-clipy-credit-detail)
 - [Active Learners](#active-learners)
-- [Audience Profile](#audience-profile)
+- [Learner Profile](#learner-profile)
 - [Per-Learner Top-N](#per-learner-top-n)
 - [Follow-up Q&A](#follow-up-qa)
 
@@ -321,7 +321,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-## Audience Profile
+## Learner Profile
 
 ### Recipe 15 — Single-variable distribution
 

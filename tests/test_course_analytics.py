@@ -11,7 +11,7 @@ SKILL_ROOT = Path(__file__).resolve().parents[1] / "skills" / "ai-shifu-course-c
 
 
 class CourseAnalyticsTests(unittest.TestCase):
-    def test_audience_distribution_remains_queryable_with_aggregate_privacy(self):
+    def test_learner_distribution_remains_queryable_with_aggregate_privacy(self):
         analytics_root = SKILL_ROOT / "references" / "analytics"
         recipes = (analytics_root / "query-recipes.md").read_text(encoding="utf-8")
         recipe = recipes.split("### Recipe 15 —", 1)[1].split("\n## ", 1)[0]
@@ -45,7 +45,7 @@ class CourseAnalyticsTests(unittest.TestCase):
         )
         self.assertIn("privacy-and-presentation.md", recipe)
         guide = (analytics_root / "guide.md").read_text(encoding="utf-8")
-        self.assertRegex(guide, r"Audience profile distribution[^\n]*var_variable_values")
+        self.assertRegex(guide, r"Learner profile distribution[^\n]*var_variable_values")
         privacy = (analytics_root / "privacy-and-presentation.md").read_text(
             encoding="utf-8"
         )
@@ -53,7 +53,7 @@ class CourseAnalyticsTests(unittest.TestCase):
         self.assertIn("Aggregate only", policy)
         self.assertIn("never paste the raw value list", policy)
 
-    def test_audience_distribution_paging_retains_all_tied_answer_groups(self):
+    def test_learner_distribution_paging_retains_all_tied_answer_groups(self):
         recipes = (
             SKILL_ROOT / "references" / "analytics" / "query-recipes.md"
         ).read_text(encoding="utf-8")

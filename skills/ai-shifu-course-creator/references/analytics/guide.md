@@ -20,7 +20,7 @@ These capabilities answer course-author or admin questions about:
 - follow-up Q&A volume by lesson
 - credit consumption (per-charge detail / by day / by model / by scene / by usage type) — use `shifu-cli.py credit-detail`
 - which wallet absorbed the deduction for a given course
-- audience profile distribution (goals, level, preferences)
+- learner profile distribution (goals, level, preferences)
 - individual learner tracking — with the privacy rules in `privacy-and-presentation.md`
 - **course title resolution** — "what is my course `<title>` currently called", "did I rename it", "is the draft title diverging from the published title" (follow the Course Metadata path in `query-recipes.md`)
 
@@ -76,7 +76,7 @@ Before constructing any DSL, identify the correct table. Use this map:
 | Teaching Agent answers to follow-ups | `learn_generated_blocks` | `type = 322` | `generated_content`, `position` |
 | Lesson ratings / read vs listen | `learn_lesson_feedbacks` | — | `score`, `mode` |
 | Orders / revenue / payment channel | `order_orders` | `status = 502` (paid) | `paid_price`, `payment_channel` |
-| Audience profile distribution | `var_variable_values` | see **Recipe 15** | `variable_bid`, `value` (aggregate only!) |
+| Learner profile distribution | `var_variable_values` | see **Recipe 15** | `variable_bid`, `value` (aggregate only!) |
 | Active learner count / archive rate | `shifu_user_archives` | `archived = 0` | `user_bid` |
 | Credit consumption (by day/model/scene) | `bill_daily_usage_metrics` ⚠️ currently empty — use `credit-detail` | `usage_scene = 1203` (learner production) | `consumed_credits`, `stat_date` |
 | **Credit consumption (raw detail)** | **`shifu-cli.py credit-detail`** | `--scene 1203` | CLI command, NOT a DSL query |
