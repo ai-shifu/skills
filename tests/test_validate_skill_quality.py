@@ -852,6 +852,14 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Based on the learner's choice from earlier lessons, choose a worked example.",
             "Based on the learner's answer already recorded in memory, choose a worked example.",
             "Based on the learner's input previously stored in course memory, choose a worked example.",
+            "Based on the learner's answer already recorded in memory, continue teaching "
+            "the current lesson.",
+            "Based on the learner's choice previously stored in memory, introduce a new "
+            "worked example.",
+            "Based on the learner's answer from an earlier lesson, and the current lesson "
+            "objectives, choose a worked example.",
+            "Based on the learner's answer from an earlier lesson, and the latest answer "
+            "already recorded in memory, choose a worked example.",
         )
         for prompt in prompts:
             with self.subTest(prompt=prompt):
@@ -871,6 +879,9 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             "Après la réponse du cours précédent, adapter l'exemple.",
             "根据学习者此前课程中的答案，展示解释。",
             "Après le choix de la leçon précédente, adapter l'exemple.",
+            "根据学生先前课程中的选择，以及本次课程目标，调整解释。",
+            "Après la réponse du cours précédent, et les objectifs du cours actuel, "
+            "adapter l'exemple.",
         )
         for prompt in prompts:
             for artifact in ("lesson", "course_prompt"):
@@ -945,6 +956,39 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     self.assertTrue(
                         any("branch on a learner response" in error for error in issues.errors)
                     )
+
+    def test_disabled_policy_rejects_new_answer_continuations_after_prior_context(self):
+        prompts = (
+            "Based on the learner's answer from an earlier lesson, and the current response, "
+            "choose an example.",
+            "Based on the learner's choice from the previous lesson, or a new answer, "
+            "choose an example.",
+            "Based on the learner's input already recorded in memory, and the learner's "
+            "current choice, choose an example.",
+            "Based on the learner's answer from an earlier lesson, and their current "
+            "response, choose an example.",
+            "Based on the learner's answer from an earlier lesson, and on the current "
+            "response, choose an example.",
+            "Based on the learner's answer from an earlier lesson, and the latest answer "
+            "already recorded in memory, and the current response, choose an example.",
+            "根据学生先前课程中的选择，以及本次回答，调整解释。",
+            "Après la réponse du cours précédent, et la réponse actuelle, adapter l'exemple.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual(1, len(issues.errors))
+                    self.assertIn("branch on a learner response", issues.errors[0])
 
     def test_disabled_policy_carries_across_example_json_blocks(self):
         with tempfile.TemporaryDirectory() as tmp:

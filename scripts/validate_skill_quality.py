@@ -209,6 +209,21 @@ RE_PRIOR_LEARNER_CONTEXT_SUFFIX = re.compile(
     r"(?=[ \t]*(?:[,;.!?\r\n]|$))",
     re.IGNORECASE,
 )
+RE_NEW_ANSWER_CONTEXT_CONTINUATION = re.compile(
+    r"[ \t]*[,，][ \t]*(?:"
+    r"(?:(?:and|or|plus|along[ \t]+with)[ \t]+)?"
+    r"(?:on[ \t]+)?"
+    r"(?:(?:the|an?)[ \t]+)?"
+    r"(?:(?:learner's|learners'|student's|students'|their)[ \t]+)?"
+    r"(?:current|new|latest)[ \t]+(?:answer|response|choice|input)\b"
+    r"|(?:以及|还有|和|及|或)?[ \t]*(?:学习者|学员|学生)?(?:的)?"
+    r"(?:本次|当前|新的?)(?:回答|答案|选择|输入)"
+    r"|(?:(?:et|ou|ainsi[ \t]+que)[ \t]+)?(?:la|le)[ \t]+(?:"
+    r"(?:réponse|saisie|choix)[ \t]+(?:actuelle?|nouvelle?|nouveau)\b"
+    r"|(?:nouvelle?|nouveau)[ \t]+(?:réponse|saisie|choix)\b)"
+    r")",
+    re.IGNORECASE,
+)
 FORBIDDEN_WORDS = {"claude", "anthropic"}
 
 # Doc surface scanned for cross-file anchor links. Local-only dirs
@@ -769,23 +784,28 @@ def validate_disabled_prompt_text(
         issues.add_error(
             f"{md_file}: {owner} must not solicit a learner response"
         )
-    # A prior-input qualifier applies only to its attached context reference.
-    if any(
-        not (
-            (
-                match.group("localized_prior_context") is not None
-                and RE_PRIOR_CONTEXT_BOUNDARY.match(prompt, match.end())
-            )
-            or (
-                match.group("context_reference") is not None
-                and RE_PRIOR_LEARNER_CONTEXT_SUFFIX.match(prompt, match.end())
-            )
-        )
-        for match in RE_ANSWER_DEPENDENT_BRANCH.finditer(prompt)
-    ):
+    # A prior-input qualifier cannot exempt a coordinated new answer.
+    for match in RE_ANSWER_DEPENDENT_BRANCH.finditer(prompt):
+        prior_context_end = None
+        if match.group("localized_prior_context") is not None:
+            if RE_PRIOR_CONTEXT_BOUNDARY.match(prompt, match.end()):
+                prior_context_end = match.end()
+        elif match.group("context_reference") is not None:
+            qualifier = RE_PRIOR_LEARNER_CONTEXT_SUFFIX.match(prompt, match.end())
+            if qualifier:
+                prior_context_end = qualifier.end()
+        while prior_context_end is not None:
+            continuation = RE_NEW_ANSWER_CONTEXT_CONTINUATION.match(prompt, prior_context_end)
+            if continuation is None:
+                break
+            qualifier = RE_PRIOR_LEARNER_CONTEXT_SUFFIX.match(prompt, continuation.end())
+            prior_context_end = qualifier.end() if qualifier else None
+        if prior_context_end is not None:
+            continue
         issues.add_error(
             f"{md_file}: {owner} must not branch on a learner response"
         )
+        break
 
 
 def validate_disabled_lesson_examples(
