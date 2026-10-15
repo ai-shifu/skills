@@ -80,6 +80,10 @@
     "should_trigger": true
   },
   {
+    "query": "分析 AI 师傅《团队沟通》课程里某个变量的回答人数分布，只要聚合统计，不导出个人原始回答。",
+    "should_trigger": true
+  },
+  {
     "query": "我在 Coursera 上用 Course Builder 做课，想设计一些带条件分支的互动测验，Coursera 支持这种功能吗？怎么配置？",
     "should_trigger": false,
     "distance": "very_close",
