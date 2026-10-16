@@ -181,6 +181,8 @@ class DownloadReleaseTest(unittest.TestCase):
             report["source_committed_at"] = self.original_report["source_committed_at"]
             for record in report["artifacts"]["doubao"]["embedded_skills"].values():
                 record["source_commit"] = self.commit
+            for record in report["artifacts"]["workbuddy"]["companion_skills"].values():
+                record["source_commit"] = self.commit
             self._write_forged_manifest(forged, report)
             self._assert_self_consistent_forgery_rejected(root, forged, changed_zips=4)
 

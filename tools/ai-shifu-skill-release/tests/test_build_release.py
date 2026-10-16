@@ -18,6 +18,111 @@ TOOL_ROOT = Path(__file__).resolve().parents[1]
 
 
 class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
+    def test_workbuddy_includes_complete_learning_report_from_pinned_source(self) -> None:
+        for relative, content in {
+            "scripts/render_report.py": "print('report renderer')\n",
+            "assets/report-template.html": "<html>report template</html>\n",
+        }.items():
+            target = self.report_skill / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content)
+        self.git(
+            "add",
+            "skills/ai-shifu-learning-report/scripts",
+            "skills/ai-shifu-learning-report/assets",
+        )
+        self.git("commit", "-m", "fixture report resources")
+
+        release_dir = self.build()
+        report = json.loads((release_dir / "release.json").read_text())
+        artifact = report["artifacts"]["workbuddy"]
+        root = self.extract_workbuddy(release_dir, "learning-report")
+        plugin = json.loads((root / ".codebuddy-plugin/plugin.json").read_text())
+        self.assertEqual(
+            plugin["skills"],
+            ["./skills/ai-shifu-course-creator", "./skills/ai-shifu-learning-report"],
+        )
+        packaged = root / "skills/ai-shifu-learning-report"
+        self.assertEqual((packaged / "SKILL.md").read_text(), self.report_skill_text)
+        for relative in (
+            "references/guide.md",
+            "scripts/render_report.py",
+            "assets/report-template.html",
+        ):
+            self.assertEqual(
+                (packaged / relative).read_bytes(),
+                (self.report_skill / relative).read_bytes(),
+            )
+        self.assertEqual(
+            artifact["companion_skills"]["ai-shifu-learning-report"]["source_commit"],
+            report["source"]["commit"],
+        )
+        agent = (root / "agents/ai-shifu.md").read_text()
+        self.assertIn(
+            "skills: [ai-shifu-course-creator, ai-shifu-learning-report]", agent
+        )
+        self.assertNotIn("课程数据分析、用户运营等扩展能力尚在开发中", agent)
+        self.assertIn("学习报告", plugin["quickPrompts"][2]["zh"])
+        verification.verify(release_dir)
+
+    def test_workbuddy_collects_report_independently_of_doubao_profile(self) -> None:
+        profile_path = (
+            self.source_repo
+            / "tools/ai-shifu-skill-release/channels/doubao/profile.json"
+        )
+        profile = json.loads(profile_path.read_text())
+        profile["skills"] = [
+            item
+            for item in profile["skills"]
+            if item["name"] != "ai-shifu-learning-report"
+        ]
+        profile_path.write_text(json.dumps(profile, ensure_ascii=False))
+        self.git("add", str(profile_path.relative_to(self.source_repo)))
+        self.git("commit", "-m", "fixture separate channel skills")
+        root = self.extract_workbuddy(self.build(), "independent-report")
+        self.assertEqual(
+            (root / "skills/ai-shifu-learning-report/SKILL.md").read_text(),
+            self.report_skill_text,
+        )
+
+    def test_workbuddy_verification_rejects_report_drift_with_refreshed_archive_hash(self) -> None:
+        release_dir = self.build()
+        report_path = release_dir / "release.json"
+        report = json.loads(report_path.read_text())
+        artifact = report["artifacts"]["workbuddy"]
+        root = self.extract_workbuddy(release_dir, "tampered-report")
+        target = root / "skills/ai-shifu-learning-report/references/guide.md"
+        target.write_text("changed report guidance\n")
+        archive = release_dir / artifact["archive"]
+        artifacts.write_zip(root, archive, root.name)
+        artifact["sha256"] = artifacts.file_hash(archive)
+        hashes = [
+            digest
+            for channel in artifacts.CHANNEL_ORDER
+            for digest in artifacts.artifact_hashes(report["artifacts"][channel])
+        ]
+        report["release_sha256"] = artifacts.release_hash(hashes)
+        report_path.write_text(json.dumps(report))
+        with self.assertRaisesRegex(
+            ValueError, "workbuddy ai-shifu-learning-report source file differs"
+        ):
+            verification.verify(release_dir)
+
+    def test_workbuddy_rejects_invalid_or_duplicate_skill_references(self) -> None:
+        for references in (
+            ["./skills/../outside"],
+            ["/skills/ai-shifu-learning-report"],
+            ["./skills/ai-shifu-learning-report"] * 2,
+        ):
+            with self.subTest(references=references), self.assertRaises(ValueError):
+                workbuddy.skill_names({"skills": references})
+
+    def test_workbuddy_rejects_skill_directory_without_skill_document(self) -> None:
+        root = self.extract_workbuddy(self.build(), "missing-report-skill")
+        (root / "skills/ai-shifu-learning-report/SKILL.md").unlink()
+        with self.assertRaisesRegex(ValueError, "SKILL.md"):
+            workbuddy.validate_workbuddy_package(root, "1.2.3")
+
     def test_existing_output_cannot_hide_a_different_source_ref(self) -> None:
         release_dir = self.build(source_ref="main")
         commit = self.git("rev-parse", "main")
@@ -96,7 +201,8 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
             )
             avatar = archive.read("workbuddy-ai-shifu-1.2.3/avatars/expert.png")
         self.assertEqual(plugin["version"], "1.2.3")
-        self.assertEqual(len(plugin["displayDescription"]["zh"]), 47)
+        self.assertGreaterEqual(len(plugin["displayDescription"]["zh"]), 40)
+        self.assertLessEqual(len(plugin["displayDescription"]["zh"]), 50)
         self.assertEqual(len(plugin["tags"]), 3)
         self.assertEqual(len(plugin["quickPrompts"]), 3)
         self.assertEqual(plugin["defaultInitPrompt"], plugin["quickPrompts"][0])

@@ -21,7 +21,10 @@ from ai_shifu_release.artifacts import (
     zip_subtree_contents,
 )
 from ai_shifu_release.channels.doubao import verify_doubao_artifact
-from ai_shifu_release.channels.workbuddy import validate_workbuddy_package_contents
+from ai_shifu_release.channels.workbuddy import (
+    skill_names,
+    validate_workbuddy_package_contents,
+)
 from ai_shifu_release.skill_metadata import (
     channel_frontmatter_overrides,
     parse_frontmatter,
@@ -59,6 +62,7 @@ def verify_channel_artifact(
     release_dir: Path,
     skill: dict,
     canonical: dict[str, bytes],
+    source_commit: str,
 ) -> list[str]:
     expected_overrides = channel_frontmatter_overrides(
         channel, skill["name"], skill["display_name"]
@@ -101,6 +105,28 @@ def verify_channel_artifact(
             raise ValueError("workbuddy archive root mismatch")
         package_contents = zip_subtree_contents(archive, package_root)
         validate_workbuddy_package_contents(package_contents, skill["version"])
+        plugin = json.loads(package_contents[".codebuddy-plugin/plugin.json"])
+        names = skill_names(plugin)
+        companions = artifact.get("companion_skills", {})
+        if skill["name"] not in names or set(companions) != set(names) - {skill["name"]}:
+            raise ValueError("workbuddy companion skill records mismatch")
+        for name, record in companions.items():
+            root = f"{package_root}/skills/{name}"
+            if record.get("root") != root:
+                raise ValueError(f"workbuddy {name} root mismatch")
+            if record.get("source_commit") != source_commit:
+                raise ValueError(f"workbuddy {name} source commit mismatch")
+            prefix = f"skills/{name}/"
+            actual_files = {
+                path[len(prefix) :]: content_hash(content)
+                for path, content in package_contents.items()
+                if path.startswith(prefix)
+            }
+            source_files = record.get("source_files")
+            if not isinstance(source_files, dict) or "SKILL.md" not in source_files:
+                raise ValueError(f"workbuddy {name} source file manifest is missing")
+            if actual_files != source_files:
+                raise ValueError(f"workbuddy {name} source file differs from GitHub source")
         skill_prefix = embedded_root[len(package_root) + 1 :] + "/"
         archive_contents = {
             name[len(skill_prefix) :]: content
@@ -142,7 +168,12 @@ def verify(release_dir: Path) -> None:
         else:
             hashes.extend(
                 verify_channel_artifact(
-                    channel, artifacts[channel], release_dir, skill, canonical
+                    channel,
+                    artifacts[channel],
+                    release_dir,
+                    skill,
+                    canonical,
+                    report["source"]["commit"],
                 )
             )
     expected_release_sha = release_hash(hashes)
