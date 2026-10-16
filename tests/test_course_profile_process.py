@@ -40,6 +40,7 @@ class CourseProfileProcessTests(unittest.TestCase):
         self.env_file = self.skill / ".env"
         self.cli = self.skill / "scripts" / "shifu-cli.py"
         self.requests = []
+        self.request_headers = []
         self.allowed_tokens = {
             "one": {"issued-one-secret", "saved-token", "file-token", "temporary-one-secret"},
             "two": {"issued-two-secret", "exported-token", "temporary-two-secret"},
@@ -62,6 +63,7 @@ class CourseProfileProcessTests(unittest.TestCase):
                 size = int(self.headers.get("Content-Length", 0))
                 body = json.loads(self.rfile.read(size) or b"{}")
                 owner.requests.append(("POST", self.path, self.headers.get("Cookie"), body))
+                owner.request_headers.append(dict(self.headers))
                 prefix = self.path.split("/")[1]
                 if prefix not in owner.allowed_tokens:
                     self.respond(404, {"code": 404})
@@ -81,6 +83,7 @@ class CourseProfileProcessTests(unittest.TestCase):
 
             def do_GET(self):
                 owner.requests.append(("GET", self.path, self.headers.get("Cookie"), None))
+                owner.request_headers.append(dict(self.headers))
                 prefix = self.path.split("/")[1]
                 cookie = self.headers.get("Cookie", "")
                 token = cookie.removeprefix("token=")
@@ -132,6 +135,41 @@ class CourseProfileProcessTests(unittest.TestCase):
     def save_json(self, path, data):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data), encoding="utf-8")
+
+    def test_usage_metadata_reads_host_hints_before_dotenv_and_resets_per_process(self):
+        # Remove inherited developer-tool hints so this subprocess test is
+        # deterministic even when the test runner itself runs inside an Agent.
+        clean_hints = dict.fromkeys((
+            "CODEX_THREAD_ID", "CODEX_SESSION_ID", "CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION",
+            "CURSOR_AGENT", "HERMES_AGENT", "HERMES_SESSION_ID", "OPENCLAW_SHELL",
+            "WORKBUDDY_CONFIG_DIR", "QODERWORK_IS_CN", "QODERWORK_SOURCE_CHAT_ID", "SAND_AGENT",
+        ))
+        self.run_cli("profile", "set", "one", "--base-url", self.origin + "/one", env=clean_hints)
+        self.save_json(self.profile_dir("one") / "credentials.json", {
+            "base_url": self.origin + "/one", "token": "saved-token",
+        })
+        self.env_file.write_text("CODEX_THREAD_ID=dotenv-private-session\n", encoding="utf-8")
+        self.run_cli("list", env=clean_hints)
+        headers = self.request_headers[-1]
+        self.assertEqual(headers["X-AI-Shifu-Skill"], "ai-shifu-course-creator")
+        self.assertEqual(headers["X-AI-Shifu-Skill-Version"], "1.0.0")
+        self.assertEqual(headers["X-AI-Shifu-Caller-Agent"], "unknown")
+        self.assertNotIn("dotenv-private-session", headers.values())
+
+        self.run_cli("list", env={**clean_hints, "CURSOR_AGENT": ""})
+        self.assertEqual(self.request_headers[-1]["X-AI-Shifu-Caller-Agent"], "cursor")
+        self.run_cli("list", env=clean_hints)
+        self.assertEqual(self.request_headers[-1]["X-AI-Shifu-Caller-Agent"], "unknown")
+
+        self.env_file.write_text("SHIFU_DISABLE_ANALYTICS=1\n", encoding="utf-8")
+        self.run_cli("list", env={**clean_hints, "CODEX_THREAD_ID": "private-session"})
+        self.assertFalse(any(key.startswith("X-AI-Shifu-") for key in self.request_headers[-1]))
+        # Explicit process configuration retains precedence over the opt-out in
+        # .env, just like the other CLI configuration fields.
+        self.run_cli("list", env={**clean_hints, "SHIFU_DISABLE_ANALYTICS": "0"})
+        self.assertEqual(self.request_headers[-1]["X-AI-Shifu-Caller-Agent"], "unknown")
+        self.run_cli("verify", env=clean_hints)
+        self.assertFalse(any(key.startswith("X-AI-Shifu-") for key in self.request_headers[-1]))
 
     def test_independent_authorization_prefixes_default_and_logout(self):
         self.run_cli("profile", "set", "日常 工作", "--base-url", self.origin + "/one/")

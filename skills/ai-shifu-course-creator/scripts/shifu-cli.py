@@ -9,6 +9,7 @@ import json
 import math
 import os
 import platform
+import re
 import shlex
 import shutil
 import socket
@@ -61,6 +62,65 @@ _TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
 # first-page default.
 COURSE_LIST_PAGE_SIZE = 50
 MAX_COURSE_PAGES = 10
+
+# Internal runtime hints are only attribution signals, never authentication.
+# Inspect presence before dotenv/profile loading; never read their values.
+_CALLER_AGENT_ENV_KEYS = {
+    "codex": ("CODEX_THREAD_ID", "CODEX_SESSION_ID"),
+    "claude_code": ("CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION"),
+    "cursor": ("CURSOR_AGENT",),
+    "hermes": ("HERMES_AGENT", "HERMES_SESSION_ID"),
+    "openclaw": ("OPENCLAW_SHELL",),
+    "workbuddy": ("WORKBUDDY_CONFIG_DIR",),
+    "qoderwork": ("QODERWORK_IS_CN", "QODERWORK_SOURCE_CHAT_ID"),
+    "grok_bot": ("SAND_AGENT",),
+}
+_USAGE_METADATA_HEADERS = {}
+
+
+def _detect_caller_agent(environ):
+    """Return one allowlisted family using environment-key existence only."""
+    matches = {
+        agent for agent, keys in _CALLER_AGENT_ENV_KEYS.items()
+        if any(key in environ for key in keys)
+    }
+    # Grok Bot's local executor injects its own hint plus the shared Cursor hint.
+    if "grok_bot" in matches:
+        matches.discard("cursor")
+    return next(iter(matches)) if len(matches) == 1 else "unknown"
+
+
+def _skill_usage_metadata(caller_agent):
+    """Build optional metadata without changing the business request on failure."""
+    try:
+        if caller_agent is None or os.environ.get("SHIFU_DISABLE_ANALYTICS") == "1":
+            return {}
+        version = _client_version()
+        # Only a bounded stable release version may leave this process. The
+        # backend retains its major version for low-cardinality usage reports.
+        if not isinstance(version, str) or not re.fullmatch(r"[0-9]{1,6}\.[0-9]{1,6}\.[0-9]{1,6}", version):
+            return {}
+        return {
+            "X-AI-Shifu-Skill": "ai-shifu-course-creator",
+            "X-AI-Shifu-Skill-Version": version,
+            "X-AI-Shifu-Caller-Agent": caller_agent,
+        }
+    except Exception:  # noqa: BLE001 - optional usage metadata must fail open
+        return {}
+
+
+def _request_headers(token, *, json_content=True, creator_analytics=False):
+    """Preserve each transport's authentication and add invocation metadata."""
+    if creator_analytics:
+        headers = {"Authorization": f"Bearer {token}", "Token": token}
+    else:
+        headers = {"Cookie": f"token={token}"}
+    if json_content:
+        headers["Content-Type"] = "application/json"
+    headers.update(_USAGE_METADATA_HEADERS)
+    return headers
+
+
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
 def ensure_env_file():
     """Create the runtime .env from .env.example when it does not exist."""
@@ -205,7 +265,7 @@ def resolve_auth(args):
 def api(base_url, token, method, path, **kwargs):
     """Make an API call, exit on error."""
     url = f"{base_url}/api/shifu{path}"
-    headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
+    headers = _request_headers(token)
     kwargs.setdefault("timeout", 30)
     resp = getattr(requests, method)(url, headers=headers, **kwargs)
     if not resp.ok:
@@ -228,7 +288,7 @@ def api_safe(base_url, token, method, path, session=None, **kwargs):
     per-lesson draft-meta), mirroring the pooling in ``_post_creator_analytics``.
     """
     url = f"{base_url}/api/shifu{path}"
-    headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
+    headers = _request_headers(token)
     kwargs.setdefault("timeout", 30)
     http = session if session is not None else requests
     try:
@@ -260,7 +320,7 @@ def api_conflict_aware(base_url, token, method, path, **kwargs):
     resp.ok is True in that case — we branch on the business code, not status.
     """
     url = f"{base_url}/api/shifu{path}"
-    headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
+    headers = _request_headers(token)
     kwargs.setdefault("timeout", 30)
     resp = getattr(requests, method)(url, headers=headers, **kwargs)
     if not resp.ok:
@@ -286,7 +346,7 @@ def api_upload(base_url, token, filename, file_bytes, mime, resource_id=None):
     Content-Type (with boundary) itself — api() pins application/json.
     """
     url = f"{base_url}/api/shifu/upfile"
-    headers = {"Cookie": f"token={token}"}
+    headers = _request_headers(token, json_content=False)
     files = {"file": (filename, file_bytes, mime)}
     data = {"resource_id": resource_id} if resource_id else None
     try:
@@ -327,11 +387,7 @@ def _post_creator_analytics(base_url, token, path, body, session=None):
     # otherwise produce "/api/creator-analyticsquery". Flagged on PR #49
     # review.
     url = f"{base_url}/api/creator-analytics/{path.lstrip('/')}"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Token": token,
-        "Content-Type": "application/json",
-    }
+    headers = _request_headers(token, creator_analytics=True)
     http = session if session is not None else requests
     try:
         resp = http.post(url, headers=headers, json=body, timeout=30)
@@ -1012,7 +1068,7 @@ def cmd_export(args):
 
     # Backend export API returns a file download (not standard JSON envelope)
     url = f"{base_url}/api/shifu/shifus/{shifu_bid}/export"
-    headers = {"Cookie": f"token={token}"}
+    headers = _request_headers(token, json_content=False)
     resp = requests.get(url, headers=headers, timeout=60)
 
     if resp.status_code != 200:
@@ -3481,6 +3537,12 @@ class UniqueProfileAction(argparse.Action):
 
 
 def main():
+    global _USAGE_METADATA_HEADERS
+    _USAGE_METADATA_HEADERS = {}
+    try:
+        caller_agent = _detect_caller_agent(os.environ)
+    except Exception:  # noqa: BLE001 - attribution cannot prevent a CLI command
+        caller_agent = None
     parser = build_parser()
     args = parser.parse_args()
     if args.global_profile is not None:
@@ -3545,6 +3607,8 @@ def main():
             if args.command not in {"site", "profile", "check-update", "build"}:
                 context = resolve_context(args, named_only=args.command in {"login", "logout"})
                 validate_course_binding(args, context.base_url)
+            if args.command not in {"site", "profile", "check-update", "build", "login", "logout", "verify"}:
+                _USAGE_METADATA_HEADERS = _skill_usage_metadata(caller_agent)
             # Resolve identity from this invocation, never again from a global
             # token that explicit --profile deliberately ignored.
             handler(args)
@@ -3557,6 +3621,8 @@ def main():
         except OSError as exc:
             print(f"Local configuration or file operation failed: {exc}", file=sys.stderr)
             sys.exit(1)
+        finally:
+            _USAGE_METADATA_HEADERS = {}
     else:
         parser.print_help()
         sys.exit(1)

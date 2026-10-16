@@ -54,6 +54,8 @@ Make the intended teaching behavior executable in Teaching Prompts and Course Pr
 
 Use deterministic commands for local course files, platform access and changes, and observed course data. Existing Prompts and directories can be used directly without redoing teaching design or Prompt authoring. The [CLI reference](references/cli/cli-reference.md) owns command mechanics; the [course-directory specification](references/cli/course-directory-spec.md) owns recognized files, build precedence, and import format.
 
+Authenticated business requests carry optional Skill usage metadata. The [usage-analytics disclosure and opt-out](references/cli/cli-reference.md#skill-usage-analytics) define collected fields, caller-detection limits, and `SHIFU_DISABLE_ANALYTICS=1`.
+
 | Capability | Useful inputs | Result and guidance |
 | --- | --- | --- |
 | Establish platform access | Selected service/profile and existing authorization | Verified access and recoverable browser authorization when needed. [Authentication](references/authentication.md) |

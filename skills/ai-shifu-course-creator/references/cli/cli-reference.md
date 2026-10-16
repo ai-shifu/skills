@@ -13,6 +13,7 @@ python3 {skillDir}/scripts/shifu-cli.py <command> [--profile <name>]
 ```dotenv
 SHIFU_BASE_URL=
 SHIFU_TOKEN=
+SHIFU_DISABLE_ANALYTICS=
 ```
 
 Process environment variables take precedence over the corresponding `.env` values. An empty value does not activate temporary configuration. Before every command, the CLI initializes a missing `.env` from `.env.example` with owner-only permissions; an existing file is never replaced. Browser-issued credentials live in the user's configuration directory rather than `.env`.
@@ -20,6 +21,7 @@ Process environment variables take precedence over the corresponding `.env` valu
 ## Contents
 
 - [Update Check](#update-check)
+- [Skill Usage Analytics](#skill-usage-analytics)
 - [Profiles](#profiles)
 - [Site Selection](#site-selection)
 - [Authentication](#authentication)
@@ -42,6 +44,32 @@ check-update [--force] [--dev-manifest-url <loopback-url>]
 ```
 
 `check-update` reads the latest published stable GitHub Release and prints a compact JSON result. Version-source validation and result handling are defined in [session controls](../session-controls.md#version-check). `--force` bypasses the local TTL. `--dev-manifest-url` accepts only a localhost or loopback URL serving the development manifest format and exists for end-to-end development checks.
+
+## Skill Usage Analytics
+
+Authenticated course operations, sync, import/export, image upload, and course-data queries include three headers on their existing AI-Shifu API requests: `X-AI-Shifu-Skill` (`ai-shifu-course-creator`), `X-AI-Shifu-Skill-Version` (the installed stable release version), and `X-AI-Shifu-Caller-Agent` (one family below or `unknown`). The CLI sends no separate analytics request. Login, authorization polling, token verification, profile/configuration changes, update checks, and local builds do not carry these headers. One API request is one possible usage event; a command may make several requests, so event counts do not measure completed authoring tasks.
+
+The AI-Shifu backend can combine these headers with the account ID established by its existing authentication, using the same identity as browser product analytics. Its usage event contains only the Skill, Skill major version, Agent family, allowlisted operation and outcome, and request duration. These account-linked usage records support adoption and return-usage analysis; they are not anonymous. They exclude environment values or variable names, model identifiers, conversation/session IDs, file paths, prompts, course content, titles, query bodies, and raw errors. Ordinary business requests still carry the data required to perform their requested operation; this contract limits the additional usage event.
+
+Set `SHIFU_DISABLE_ANALYTICS=1` in the process environment or the skill's `.env` to omit all three headers. Process values take precedence over `.env`. Opting out does not change authentication, permissions, command results, or the requested course operation. Metadata construction is best-effort: if detection or version validation fails, the business request proceeds without usage metadata. Server-side analytics enablement, access, retention, deletion, and deployment-region policy belong to the selected AI-Shifu service.
+
+The CLI detects the caller once, before loading `.env` or profile configuration, by checking only whether fixed environment-variable names exist. It does not inspect their values. Empty or false-looking values still count as present. Do not add these identity hints to `.env`: they are internal runtime hints supplied by the host, not user configuration or a guaranteed public interface. Nothing is persisted between CLI processes. The CLI accepts no caller-identity flag, uses no model inference, and does not scan files, parent processes, hooks, or host APIs to identify the Agent.
+
+| Reported family | Presence-only runtime hints | Interpretation and limits |
+| --- | --- | --- |
+| `codex` | `CODEX_THREAD_ID`, `CODEX_SESSION_ID` | Codex family; does not identify the model or interface. |
+| `claude_code` | `CLAUDECODE`, `CLAUDE_CODE_CHILD_SESSION` | Claude Code family; does not identify a particular subagent. |
+| `cursor` | `CURSOR_AGENT` | Cursor family unless Grok Bot's more specific hint is also present. |
+| `hermes` | `HERMES_AGENT`, `HERMES_SESSION_ID` | Hermes family. |
+| `openclaw` | `OPENCLAW_SHELL` | OpenClaw family. |
+| `workbuddy` | `WORKBUDDY_CONFIG_DIR` | WorkBuddy host configuration forwarded to its shell. |
+| `qoderwork` | `QODERWORK_IS_CN`, `QODERWORK_SOURCE_CHAT_ID` | QoderWork / Qwen Work family. Existence cannot distinguish region or branding. |
+| `grok_bot` | `SAND_AGENT` | Grok Bot local Bash/Zsh executor. Cloud execution is not verified. |
+| `unknown` | No matches or conflicting independent families | Also used for unverified Doubao Work, Muse, Manus, and Cue environments. |
+
+Several hints for the same family count once. Grok Bot's executor supplies both `SAND_AGENT` and `CURSOR_AGENT`, so its specific hint suppresses only the shared Cursor match. Any remaining independent family conflict produces `unknown`. Nested Agents, stripped/inherited variables, shell configuration, host updates, and user-defined variables can affect attribution. These hints are not trusted identity and must never control billing, permissions, or auditing.
+
+Implementation evidence for the additional desktop families was checked against installed macOS packages: WorkBuddy 5.8.2 forwards `WORKBUDDY_CONFIG_DIR` through `buildBashHostConfigEnv` into its shell execution options; Qwen Work CN 1.2.5 (build 26092902) supplies the QoderWork hints through its execution environment; Grok Bot 0.71.2's `dist/local-exec-daemon/main.cjs` supplies both hints to Bash/Zsh initialization and command execution. This is static propagation evidence, not a cross-platform or cloud-runtime guarantee. [Grok Bot's official architecture](https://cursor.com/docs/grok-bot/teams) describes separate cloud and optional local execution; [Muse's official architecture](https://research.meta.ai/blog/security-and-safety-for-ai-agents-our-approach-with-muse) likewise places its Agent runtime in a cloud VM. These sources do not promise stable environment-variable names. Manus/Cue helper-only variables are excluded because propagation into Skill processes was not established.
 
 ## Profiles
 
