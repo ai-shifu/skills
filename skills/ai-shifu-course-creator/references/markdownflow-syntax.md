@@ -4,47 +4,62 @@ MarkdownFlow is a prompt-processing format used by Teaching Prompts and Course P
 
 ## Preprocessing
 
-CommonMark fenced code is protected before MarkdownFlow syntax is recognized. Its complete fence, language tag, and body are restored before downstream generation or deterministic output. MarkdownFlow-looking text inside the fence remains code content rather than an active variable, interaction, or deterministic marker.
+CommonMark fenced code is protected before MarkdownFlow syntax is recognized. Its complete fence, language tag, and body are restored before downstream generation or deterministic output. MarkdownFlow-looking text inside the fence remains code content rather than an active interaction or deterministic marker.
 
 ## HTML Comments
 
 The Teaching Agent ignores HTML comments (`<!-- ... -->`) in Prompt content.
 
-## Variables
+## Memory
 
-A variable reference has the form `{{name}}`. The parser captures the non-empty text between the braces exactly, including any whitespace, and uses that exact text as the lookup key. It does not enforce an identifier-character policy.
+Every learner input within a course is automatically recorded in that learner's course memory, including choices, text answers, follow-up questions, and corrections. The Teaching Agent can use this memory anywhere in the course, across lessons and in the Course Prompt.
 
-Before content is generated or an interaction is rendered, each `{{name}}` reference is replaced with the corresponding runtime value. List values are joined into a comma-separated string. Values sent to the Teaching Agent are quoted for prompt isolation; values in deterministic output are inserted directly.
+Describe memory use in ordinary language, for example `Use the communication difficulty the learner described earlier in the course to tailor the next practice task`. Memory is recorded automatically; authors describe what earlier input is relevant and how it affects teaching.
 
-Substitution always produces a value. A variable reference does not create a separate present/absent, ready/not-ready, or boolean state.
-
-Inside an interaction, `%{{name}}` is an assignment prefix rather than a substitution reference. The interaction result is written to `name`; ordinary `{{name}}` references read the resulting value in later processing.
+Use the learner's actual inputs and account for later corrections. If relevant information is unavailable, follow the authored fallback rather than inventing it. When a lesson asks a new question, wait for the actual new answer before giving its feedback; existing memory does not answer a pending interaction on the learner's behalf.
 
 ## Interactions
 
-An unescaped control matching `?[...]` is rendered as an interaction. The runtime pauses document progression and resumes after an answer is submitted. The answer then enters the current document context.
+An interaction can be authored as an explicit `?[...]` control or as a natural-language instruction to the Teaching Agent. A supported interaction pauses document progression and resumes after the learner submits an answer.
+
+### Explicit Controls
+
+An unescaped control matching `?[...]` specifies the response surface directly.
 
 The interaction body is interpreted as follows:
 
-- `?[Continue]`: single action button; the action remains in the current document context.
-- `?[Option A | Option B]`: single-select; the answer remains in the current document context.
-- `?[Option A || Option B]`: multi-select; the answers remain in the current document context.
-- `?[...Input hint]`: text input; the answer remains in the current document context.
-- `?[Option A | ...Other]`: single-select plus text input; the answer remains in the current document context.
-- `?[Option A || ...Other]`: multi-select plus text input; the answers remain in the current document context.
-- `?[%{{name}} Option A | Option B]`: named single-select; the answer also writes `name`.
-- `?[%{{name}} Option A || Option B]`: named multi-select; the answers also write `name`.
-- `?[%{{name}} ...Input hint]`: named text input; the answer also writes `name`.
-- `?[%{{name}} Option A | ...Other]`: named single-select plus text input; the answer also writes `name`.
-- `?[%{{name}} Option A || ...Other]`: named multi-select plus text input; the answers also write `name`.
+- `?[Continue]`: single action button.
+- `?[Option A | Option B]`: single-select.
+- `?[Option A || Option B]`: multi-select.
+- `?[...Input hint]`: text input.
+- `?[Option A | ...Other]`: single-select plus text input.
+- `?[Option A || ...Other]`: multi-select plus text input.
 
 The first separator determines selection mode: `|` represents one selected value and `||` represents multiple selected values. The token `...` marks a free-text entry field, and the text immediately after it is the rendered input hint.
+
+### Natural-Language Interactions
+
+These instructions require a Teaching Agent that can create a real response surface and wait for the learner's answer before continuing. Rendering explicit controls alone does not execute natural-language interaction instructions.
+
+A Teaching Prompt can directly describe what the Teaching Agent should ask the learner to do, without a `?[]` control or a fixed option list. The Teaching Agent generates the question and response surface at learner time using the lesson context and relevant course memory. Selection mode, option constraints, and whether a custom text answer is allowed can be stated in words.
+
+This is ordinary Prompt content interpreted by the Teaching Agent, not additional parser syntax. Put the instruction outside `?[]`: `?[Generate suitable options]` specifies a button with that text rather than requesting dynamic options. Generated choices still require a real interaction and an actual learner answer before subsequent feedback or teaching proceeds.
+
+For example:
+
+```markdown
+Using the communication situation the learner described earlier in the course, initiate a single-select interaction asking the learner which communication action they most want to practice next. Dynamically generate three specific, distinct action options for that situation, and allow the learner to enter another action.
+
+Wait for the learner's actual answer, then provide one actionable practice suggestion for the selected or custom action.
+```
+
+Explicit controls and natural-language interactions may coexist in one lesson. An author-fixed question, option list, order, or answer mode remains fixed unless the author permits adaptation. Dynamic generation does not create parser-level branches or guarantee a particular generated wording.
 
 ## Branching on User Input
 
 The prompt after an interaction can tell the Teaching Agent to give different responses based on the learner's answer, including asking the learner to interact again. Express these instructions in natural language.
 
-MarkdownFlow has no parser-level conditionals, loops, boolean expressions, `if` blocks, `switch` blocks, or ternary expressions. Natural-language statements that describe different responses for different answers remain ordinary prompt content. The Teaching Agent interprets those statements using the current document context and substituted variable values; the MarkdownFlow parser does not create or evaluate a branch graph.
+MarkdownFlow has no parser-level conditionals, loops, boolean expressions, `if` blocks, `switch` blocks, or ternary expressions. Natural-language statements that describe different responses for different answers remain ordinary prompt content. The Teaching Agent interprets those statements using the lesson context and course memory; the MarkdownFlow parser does not create or evaluate a branch graph.
 
 ## Deterministic Blocks
 
@@ -79,7 +94,7 @@ MarkdownFlow has no image-specific control-flow primitive. Standard Markdown ima
 Runtime preservation is the combined result of preprocessing and deterministic forms:
 
 - Fenced code blocks are hidden from MarkdownFlow syntax parsing and restored before downstream processing.
-- Standalone single-line and complete multi-line forms produce deterministic output after variable substitution.
+- Standalone single-line and complete multi-line forms produce deterministic output.
 - An inline `===...===` marker preserves its content within generated content.
 - An HTML-view image instruction remains ordinary Teaching Agent input.
 - Content outside these mechanisms may be paraphrased, reorganized, or omitted by the Teaching Agent.

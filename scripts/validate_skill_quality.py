@@ -22,7 +22,8 @@ RE_MD_ANCHOR_REF = re.compile(
     r"#(?P<anchor>[A-Za-z0-9][A-Za-z0-9-]*)"
 )
 RE_HEADING = re.compile(r"^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
-RE_COMMONMARK_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+# Backtick-fence info strings cannot contain backticks.
+RE_COMMONMARK_FENCE = re.compile(r"^ {0,3}(`{3,}(?![^\r\n]*`)|~{3,})")
 RE_SLUG_STRIP = re.compile(r"[^\w\- ]")
 RE_SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 RE_JSON_FENCE = re.compile(
@@ -55,6 +56,120 @@ RE_LEARNER_RESPONSE_DIRECTIVE = re.compile(
     r")",
     re.IGNORECASE,
 )
+INTERACTION_CREATION_VERB_PATTERN = (
+    r"\b(?:initiate|start|launch|create|generate|present|render|offer|open)\s+"
+)
+INTERACTION_ARTICLE_PATTERN = r"(?:(?:an?|the)[ \t]+)?"
+INTERACTION_MODIFIERS_PATTERN = (
+    # Accept modifiers without crossing a clause or consuming the surface head.
+    r"(?:(?!(?:a|an|the|of|about|on|in|for|with|without|as|to|from|"
+    r"that|which|who|where|when|why|how|and|or|but|then|instead|"
+    r"showing|explaining|illustrating|covering|depicting|discussing|"
+    r"interaction|response|surface)\b)"
+    r"[A-Za-z0-9][\w-]*[ \t]+)*"
+)
+INTERACTION_SURFACE_PATTERN = (
+    INTERACTION_ARTICLE_PATTERN
+    + INTERACTION_MODIFIERS_PATTERN
+    + r"(?:interaction|response[ -]surface)\b"
+)
+DIRECT_INTERACTION_SURFACE_PATTERN = (
+    INTERACTION_ARTICLE_PATTERN
+    + r"(?:"
+    + INTERACTION_MODIFIERS_PATTERN
+    + r"response[ -]surface\b|"
+    + r"(?="
+    + INTERACTION_MODIFIERS_PATTERN
+    + r"(?:(?:single|multi)[ -]select|text[ -]input|free[ -]text|"
+    r"natural[ -]language)[ \t]+)"
+    + INTERACTION_MODIFIERS_PATTERN
+    + r"interaction\b|interaction\b)"
+)
+INTERACTION_CREATION_PATTERN = (
+    INTERACTION_CREATION_VERB_PATTERN + INTERACTION_SURFACE_PATTERN
+)
+INTERACTION_RESPONSE_PURPOSE_PATTERN = (
+    r"(?=\s+(?:"
+    r"for\s+(?:(?:the\s+)?(?:learner|learners|student|students)\s+to\s+"
+    r"(?:choose|select|enter|answer|respond|write|describe)\b|"
+    r"(?:choosing|selecting|entering|answering|responding|writing|describing)\b)"
+    r"|in\s+which\s+(?:the\s+)?(?:learner|learners|student|students)\s+"
+    r"(?:chooses?|selects?|enters?|answers?|responds?|writes?|describes?)\b"
+    r"|asking\s+(?:the\s+)?(?:learner|learners|student|students)\s+"
+    r"(?:(?:to\s+)?(?:choose|select|enter|answer|respond|write|describe)\b|"
+    r"(?:where|what|which|how|why|whether)\b)"
+    r"))"
+)
+INTERACTION_STATIC_SUFFIX_PATTERN = (
+    r"(?![ \t]+(?:"
+    r"(?:diagram|image|picture|illustration|description|example|screenshot)\b|"
+    r"as[ \t]+(?:an?[ \t]+)?(?:(?:static|worked)[ \t]+)*"
+    r"(?:diagram|image|picture|illustration|description|example|screenshot)\b))"
+)
+RE_INTERACTION_CREATION_DIRECTIVE = re.compile(
+    # A lookahead checks each verb position without consuming a later directive.
+    r"(?="
+    + INTERACTION_CREATION_VERB_PATTERN
+    + r"(?:"
+    + DIRECT_INTERACTION_SURFACE_PATTERN
+    + r"|"
+    + INTERACTION_SURFACE_PATTERN
+    + INTERACTION_RESPONSE_PURPOSE_PATTERN
+    + r")"
+    + INTERACTION_STATIC_SUFFIX_PATTERN
+    + r")",
+    re.IGNORECASE,
+)
+RE_OPTION_RESPONSE_DIRECTIVE = re.compile(
+    r"(?=\b(?:offer|present|provide)\s+"
+    + INTERACTION_ARTICLE_PATTERN
+    + INTERACTION_MODIFIERS_PATTERN
+    + r"(?:options|choices)\b"
+    + INTERACTION_RESPONSE_PURPOSE_PATTERN
+    + r")",
+    re.IGNORECASE,
+)
+CHINESE_INTERACTION_CREATION_PATTERN = (
+    r"(?:发起|启动|创建|生成)[ \t]*(?:一(?:次|个|项|轮)[ \t]*)?"
+    r"(?:(?:单选|多选|文本输入|自由文本)[ \t]*)?"
+    r"(?:互动|响应界面)"
+)
+FRENCH_INTERACTION_CREATION_PATTERN = (
+    r"\b(?:lancez|initiez|démarrez|créez)[ \t]+"
+    r"(?:(?:une?|la|le)[ \t]+)?"
+    r"(?:interaction(?:[ \t]+à[ \t]+choix[ \t]+(?:unique|multiples?))?"
+    r"(?![ \t]+à[ \t]+choix\b)|"
+    r"(?:interface|surface)[ \t]+de[ \t]+réponse"
+    r"(?:[ \t]+(?:textuelle|libre))?(?![ \t]+(?:textuelle|libre)\b))\b"
+)
+RE_LOCALIZED_INTERACTION_CREATION_DIRECTIVE = re.compile(
+    # Keep localized creation checks to common, explicit interface phrases.
+    rf"(?={CHINESE_INTERACTION_CREATION_PATTERN}"
+    r"(?![ \t]*(?:(?:流程|示意)?图(?:示|片)?|示例|说明|描述|"
+    r"作为(?:一个)?(?:静态|历史|演示)*(?:示例|图片|图示))))|"
+    rf"(?={FRENCH_INTERACTION_CREATION_PATTERN}"
+    r"(?![ \t]+(?:comme[ \t]+(?:un[ \t]+)?(?:exemple|image)|"
+    r"sous[ \t]+forme[ \t]+d['’](?:image|exemple))))",
+    re.IGNORECASE,
+)
+NEGATED_COORDINATED_VERBS_PATTERN = (
+    # Only bare verbs joined within the same phrase share a prohibition.
+    r"(?:(?:ask|have|prompt|invite|initiate|start|launch|create|generate|"
+    r"present|render|offer|provide|open)\s+(?:or|and)\s+)*"
+)
+RE_NEGATED_LEARNER_RESPONSE_PREFIX = re.compile(
+    r"(?:\b(?:not|don['’]t|never|without|avoid|instead\s+of|rather\s+than)\s+"
+    + NEGATED_COORDINATED_VERBS_PATTERN
+    + rf"(?:{INTERACTION_CREATION_PATTERN}\s+)?|"
+    r"(?:不要|不得|禁止|避免|无需|无须|不必)[ \t]*"
+    rf"(?:{CHINESE_INTERACTION_CREATION_PATTERN}[ \t]*)?|"
+    r"\bne[ \t]+|n['’])$",
+    re.IGNORECASE,
+)
+RE_EXPLANATORY_CREATION_PREFIX = re.compile(
+    r"(?:\b(?:how|when|why|whether)\s+to\s+|如何|何时|为什么|是否)$",
+    re.IGNORECASE,
+)
 RE_ANSWER_DEPENDENT_BRANCH = re.compile(
     r"(?:"
     r"\b(?:after|when|once)\s+(?:the\s+)?"
@@ -64,9 +179,16 @@ RE_ANSWER_DEPENDENT_BRANCH = re.compile(
     r"|\bif\s+(?:the\s+)?(?:learner|learners|student|students)\s+"
     r"(?:answers?|responds?|chooses?|selects?|decides?|enters?|writes?|names?|"
     r"describes?|shares?|identif(?:y|ies))\b"
-    r"|\bbased on (?:the )?"
+    r"|(?P<context_reference>\bbased on (?:the )?"
     r"(?:learner's|learners'|student's|students'|learner|learners|student|students) "
-    r"(?:answer|response|choice|input)\b"
+    r"(?:answer|response|choice|input)\b)"
+    r"|(?P<localized_prior_context>"
+    r"(?:按|根据)[ \t]*(?:学习者|学员|学生)(?:在)?(?:先前|之前|此前)"
+    r"(?:的)?(?:课(?:程|节)(?:中)?)?(?:的)?(?:回答|答案|选择|输入)"
+    r"|après[ \t]+(?:la[ \t]+(?:réponse|saisie)|le[ \t]+choix)[ \t]+"
+    r"(?:du[ \t]+cours[ \t]+précédent|"
+    r"de[ \t]+la[ \t]+leçon[ \t]+précédente)"
+    r")"
     r"|(?:学习者|学员|学生).{0,16}(?:回答|选择|输入|填写|作答|决定)后"
     r"|如果.{0,8}(?:学习者|学员|学生).{0,16}"
     r"(?:回答|选择|输入|填写|作答|决定)"
@@ -76,6 +198,31 @@ RE_ANSWER_DEPENDENT_BRANCH = re.compile(
     r"(?:branche|adapter|continuer)"
     r"|\bsi\s+(?:l['’])?(?:apprenant|élève).{0,24}"
     r"(?:répond|choisit|sélectionne|saisit|écrit)\b"
+    r")",
+    re.IGNORECASE,
+)
+PRIOR_CONTEXT_SEPARATOR = r"[,，;；.!?。！？\r\n]"
+RE_PRIOR_CONTEXT_BOUNDARY = re.compile(rf"[ \t]*(?:{PRIOR_CONTEXT_SEPARATOR}|$)")
+RE_PRIOR_LEARNER_CONTEXT_SUFFIX = re.compile(
+    r"[ \t]+(?:"
+    r"from[ \t]+(?:(?:an?|the)[ \t]+)?(?:previous|earlier)[ \t]+lessons?\b|"
+    r"(?:already|previously)[ \t]+(?:recorded|stored|available)[ \t]+"
+    r"in[ \t]+(?:course[ \t]+)?memory\b)"
+    rf"(?=[ \t]*(?:{PRIOR_CONTEXT_SEPARATOR}|$))",
+    re.IGNORECASE,
+)
+RE_NEW_ANSWER_CONTEXT_CONTINUATION = re.compile(
+    rf"[ \t]*(?:{PRIOR_CONTEXT_SEPARATOR}[ \t]*)+(?:"
+    r"(?:(?:and|or|plus|along[ \t]+with)[ \t]+)?"
+    r"(?:on[ \t]+)?"
+    r"(?:(?:the|an?)[ \t]+)?"
+    r"(?:(?:learner's|learners'|student's|students'|their)[ \t]+)?"
+    r"(?:current|new|latest)[ \t]+(?:answer|response|choice|input)\b"
+    r"|(?:以及|还有|并(?:结合)?|和|及|或)?[ \t]*(?:学习者|学员|学生)?(?:的)?"
+    r"(?:本次|当前|新的?)(?:回答|答案|选择|输入)"
+    r"|(?:(?:et|ou|ainsi[ \t]+que)[ \t]+)?(?:la|le)[ \t]+(?:"
+    r"(?:réponse|saisie|choix)[ \t]+(?:actuelle?|nouvelle?|nouveau)\b"
+    r"|(?:nouvelle?|nouveau)[ \t]+(?:réponse|saisie|choix)\b)"
     r")",
     re.IGNORECASE,
 )
@@ -325,45 +472,50 @@ def github_heading_slugs(md_file: Path) -> set[str]:
 
 
 def markdown_without_fenced_code_or_html_comments(content: str) -> str:
-    """Return Markdown content that can contain navigable anchor references."""
-    visible_lines: list[str] = []
+    """Return Markdown prose outside fenced code and closed HTML comments."""
+    content = content.replace("\r\n", "\n").replace("\r", "\n")
+    visible: list[str] = []
     in_fence = False
     fence_character = ""
     fence_length = 0
+    cursor = 0
 
-    for line in content.splitlines(keepends=True):
-        fence = RE_COMMONMARK_FENCE.match(line)
+    while cursor < len(content):
+        newline = content.find("\n", cursor)
+        line_end = len(content) if newline == -1 else newline + 1
+        line = content[cursor:line_end]
+        at_line_start = cursor == 0 or content[cursor - 1] == "\n"
+        fence = RE_COMMONMARK_FENCE.match(line) if at_line_start else None
+        if in_fence:
+            if fence:
+                marker = fence.group(1)
+                if (
+                    marker[0] == fence_character
+                    and len(marker) >= fence_length
+                    and not line[fence.end() :].strip()
+                ):
+                    in_fence = False
+            cursor = line_end
+            continue
         if fence:
             marker = fence.group(1)
-            if not in_fence:
-                in_fence = True
-                fence_character = marker[0]
-                fence_length = len(marker)
-            elif (
-                marker[0] == fence_character
-                and len(marker) >= fence_length
-                and not line[fence.end() :].strip()
-            ):
-                in_fence = False
+            in_fence = True
+            fence_character = marker[0]
+            fence_length = len(marker)
+            cursor = line_end
             continue
-        if not in_fence:
-            visible_lines.append(line)
 
-    visible = "".join(visible_lines)
-    uncommented: list[str] = []
-    cursor = 0
-    while True:
-        comment_start = visible.find("<!--", cursor)
-        if comment_start == -1:
-            uncommented.append(visible[cursor:])
-            break
-        uncommented.append(visible[cursor:comment_start])
-        comment_end = visible.find("-->", comment_start + 4)
-        if comment_end == -1:
-            uncommented.append(visible[comment_start:])
-            break
-        cursor = comment_end + 3
-    return "".join(uncommented)
+        comment_start = line.find("<!--")
+        if comment_start != -1:
+            comment_end = content.find("-->", cursor + comment_start + 4)
+            if comment_end != -1:
+                visible.append(line[:comment_start])
+                cursor = comment_end + 3
+                continue
+        # Keep unclosed comments visible so they cannot hide later validation.
+        visible.append(line)
+        cursor = line_end
+    return "".join(visible)
 
 
 def validate_anchors(skill_dir: Path, issues: IssueBag) -> None:
@@ -537,49 +689,6 @@ def validate_segment_example(
             )
 
 
-def validate_global_variable_example(
-    variable: dict[str, object], md_file: Path, issues: IssueBag
-) -> None:
-    required = {"name", "collected_in", "used_in", "effect_scope"}
-    missing = sorted(required - variable.keys())
-    if missing:
-        issues.add_error(
-            f"{md_file}: global variable example {variable.get('name')} "
-            f"is missing required fields: {', '.join(missing)}"
-        )
-        return
-
-    variable_name = variable["name"]
-    if not isinstance(variable_name, str) or not re.fullmatch(
-        r"\w+", variable_name
-    ):
-        issues.add_error(
-            f"{md_file}: global variable example name must contain only "
-            "letters, numbers, and underscores"
-        )
-    if (
-        not isinstance(variable["collected_in"], str)
-        or not variable["collected_in"].strip()
-    ):
-        issues.add_error(
-            f"{md_file}: global variable example collected_in must be a "
-            "non-empty string"
-        )
-    used_in = variable["used_in"]
-    if not isinstance(used_in, list) or any(
-        not isinstance(item, str) or not item.strip() for item in used_in
-    ):
-        issues.add_error(
-            f"{md_file}: global variable example used_in must be an array "
-            "of non-empty strings"
-        )
-    if variable["effect_scope"] != "cross_lesson":
-        issues.add_error(
-            f"{md_file}: global variable examples must use "
-            "effect_scope 'cross_lesson'"
-        )
-
-
 def validate_interaction_policy_example(
     policy: object, md_file: Path, issues: IssueBag
 ) -> str | None:
@@ -656,18 +765,49 @@ def validate_disabled_prompt_text(
         issues.add_error(
             f"{md_file}: {owner} must not contain interaction syntax"
         )
-    if "{{" in prompt:
-        issues.add_error(
-            f"{md_file}: {owner} must not reference learner-answer variables"
+    # Comments and fenced examples cannot issue natural-language directives.
+    prompt = markdown_without_fenced_code_or_html_comments(prompt)
+    # These are explicit request heuristics, not a general language parser.
+    # Exclude only a request's immediate prohibition, not earlier instructions.
+    if any(
+        not RE_NEGATED_LEARNER_RESPONSE_PREFIX.search(prompt[:match.start()])
+        and not (
+            directive is not RE_LEARNER_RESPONSE_DIRECTIVE
+            and RE_EXPLANATORY_CREATION_PREFIX.search(prompt[:match.start()])
         )
-    if RE_LEARNER_RESPONSE_DIRECTIVE.search(prompt):
+        for directive in (
+            RE_LEARNER_RESPONSE_DIRECTIVE,
+            RE_INTERACTION_CREATION_DIRECTIVE,
+            RE_OPTION_RESPONSE_DIRECTIVE,
+            RE_LOCALIZED_INTERACTION_CREATION_DIRECTIVE,
+        )
+        for match in directive.finditer(prompt)
+    ):
         issues.add_error(
             f"{md_file}: {owner} must not solicit a learner response"
         )
-    if RE_ANSWER_DEPENDENT_BRANCH.search(prompt):
+    # A prior-input qualifier cannot exempt a coordinated new answer.
+    for match in RE_ANSWER_DEPENDENT_BRANCH.finditer(prompt):
+        prior_context_end = None
+        if match.group("localized_prior_context") is not None:
+            if RE_PRIOR_CONTEXT_BOUNDARY.match(prompt, match.end()):
+                prior_context_end = match.end()
+        elif match.group("context_reference") is not None:
+            qualifier = RE_PRIOR_LEARNER_CONTEXT_SUFFIX.match(prompt, match.end())
+            if qualifier:
+                prior_context_end = qualifier.end()
+        while prior_context_end is not None:
+            continuation = RE_NEW_ANSWER_CONTEXT_CONTINUATION.match(prompt, prior_context_end)
+            if continuation is None:
+                break
+            qualifier = RE_PRIOR_LEARNER_CONTEXT_SUFFIX.match(prompt, continuation.end())
+            prior_context_end = qualifier.end() if qualifier else None
+        if prior_context_end is not None:
+            continue
         issues.add_error(
             f"{md_file}: {owner} must not branch on a learner response"
         )
+        break
 
 
 def validate_disabled_lesson_examples(
@@ -697,22 +837,6 @@ def validate_disabled_lesson_examples(
                 md_file,
                 issues,
             )
-
-        used_variables = lesson.get("used_variables")
-        if used_variables != []:
-            issues.add_error(
-                f"{md_file}: {owner} used_variables must be an empty array"
-            )
-
-
-def validate_disabled_global_variable_table_example(
-    variables: object, md_file: Path, issues: IssueBag
-) -> None:
-    if variables != []:
-        issues.add_error(
-            f"{md_file}: disabled interaction_policy requires an empty "
-            "global_variable_table"
-        )
 
 
 def validate_disabled_course_prompt_example(
@@ -898,7 +1022,7 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
             if (
                 interaction_mode == "disabled"
                 and isinstance(payload, dict)
-                and {"lesson_id", "teaching_prompt", "used_variables"}
+                and {"lesson_id", "teaching_prompt"}
                 <= payload.keys()
             ):
                 validate_disabled_lesson_examples(
@@ -917,13 +1041,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                         value["lesson_teaching_prompts"],
                         md_file,
                         issues,
-                    )
-                if (
-                    interaction_mode == "disabled"
-                    and "global_variable_table" in value
-                ):
-                    validate_disabled_global_variable_table_example(
-                        value["global_variable_table"], md_file, issues
                     )
                 if (
                     interaction_mode == "disabled"
@@ -981,23 +1098,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                                 md_file,
                                 issues,
                             )
-                if "global_variable_table" in value:
-                    variables = value["global_variable_table"]
-                    if not isinstance(variables, list):
-                        issues.add_error(
-                            f"{md_file}: global_variable_table must be an array"
-                        )
-                    else:
-                        for variable_index, variable in enumerate(variables):
-                            if not isinstance(variable, dict):
-                                issues.add_error(
-                                    f"{md_file}: global_variable_table"
-                                    f"[{variable_index}] must be an object"
-                                )
-                                continue
-                            validate_global_variable_example(
-                                variable, md_file, issues
-                            )
                 if "course_prompt" in value:
                     course_prompt = value["course_prompt"]
                     if isinstance(course_prompt, str):
@@ -1034,7 +1134,6 @@ def validate_example_contracts(skill_dir: Path, issues: IssueBag) -> None:
                     [
                         {
                             "teaching_prompt": match.group("body"),
-                            "used_variables": [],
                         }
                     ],
                     md_file,

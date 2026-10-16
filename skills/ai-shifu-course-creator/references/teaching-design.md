@@ -11,7 +11,7 @@ Explicit author choices constrain teaching design. The optional structured polic
 | Mode | Effect |
 | --- | --- |
 | `enabled` | Use the selected purposes within the author's requested scope. Do not infer permission for an unselected purpose from the selection alone. |
-| `disabled` | Solicit no learner answer, collect no learner-answer variables, and create no answer-dependent branch. Use explanations, demonstrations, worked applications, or consolidation as appropriate. |
+| `disabled` | Solicit no learner answer and create no branch that requires a newly collected answer. Explanations, demonstrations, worked applications, or consolidation may still adapt to relevant [course memory](markdownflow-syntax.md#memory). |
 | `unspecified` | Let the authoring agent decide whether and where interactions improve the requested lesson; there is no default per-lesson interaction requirement. |
 
 The supported purpose names describe learner-context collection for later teaching, pre-content thinking that an explanation can refine, and lesson-end self-check for consolidation. The authoring agent chooses suitable placements and scope unless the author has specified them. Selecting self-check does not imply a check in every lesson unless that scope was requested.
@@ -65,17 +65,18 @@ For a selected interaction, make the question concrete and answerable and give t
 
 - Single-select suits mutually exclusive choices; multi-select suits non-exclusive interests, goals, blockers, or other "which apply?" questions.
 - Free text suits information that predefined categories cannot capture well. A specific question and a concise input hint usually work better than an open-ended invitation with no purpose.
+- Context-dependent choices can be generated at learner time when useful alternatives depend on the current case, discussion, or prior answers. Define what the learner should decide and how the answer will be used; preserve any author-fixed choices. This is an alternative to prewriting options, not a requirement for every interaction.
 - Multi-select can use combined feedback or prioritization; it does not require an exhaustive branch for every combination.
 - If a choice is intended to drive distinct next steps, provide the corresponding response behavior. Honor an explicit answer-specific branching requirement.
 - Choose the number and placement of interactions for their teaching value. There is no universal count limit or required interaction slide.
 
 Questions, controls, feedback, and branches must remain executable together. [teaching-prompt.md](teaching-prompt.md) owns their source encoding; [markdownflow-syntax.md#interactions](markdownflow-syntax.md#interactions) owns control syntax.
 
-## Variable Strategy
+## Using Memory
 
-Persist an answer only when it must leave the current lesson, such as a later lesson or Course Prompt using it. Lesson-local answers use unnamed interactions, including local branching and feedback. Reuse existing values and avoid semantic duplicates. Intentional staged comparison can justify recollection; accidental recollection is not useful personalization.
+Use relevant earlier learner input to connect explanations, feedback, examples, and reflection to what the learner actually said. The runtime memory contract belongs to [markdownflow-syntax.md#memory](markdownflow-syntax.md#memory); express the teaching use naturally, such as revisiting the learner's stated goal or comparing an earlier attempt with the current answer.
 
-Explicitly disabled interactions collect no learner-answer variables. Each named value needs valid collection, meaningful consumers, and appropriate unavailable-value behavior under [authoring-contracts.md#variable-table](authoring-contracts.md#variable-table) and [markdownflow-syntax.md#variables](markdownflow-syntax.md#variables). No table or JSON envelope is required to check those relationships.
+Avoid asking for information already available in memory unless a deliberate update or staged comparison serves the lesson. Handle missing or irrelevant context without inventing an answer. Apply [interaction policy precedence](#interaction-policy-precedence) and the personalization boundaries in [prompt-semantics.md](prompt-semantics.md) when using memory.
 
 ## Visual-Text Coordination
 

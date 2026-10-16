@@ -247,6 +247,18 @@ class AnchorValidationTests(unittest.TestCase):
 
             self.assertEqual({"visible-after-matching-fence"}, slugs)
 
+    def test_backtick_in_fence_info_does_not_hide_headings(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            markdown_file = Path(tmpdir) / "headings.md"
+            markdown_file.write_text(
+                "```bad`info\n# Visible after invalid fence\n```\n",
+                encoding="utf-8",
+            )
+
+            slugs = validate_skill_quality.github_heading_slugs(markdown_file)
+
+            self.assertEqual({"visible-after-invalid-fence"}, slugs)
+
     def test_anchor_scan_does_not_close_on_a_fence_with_an_info_string(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = Path(tmpdir)
@@ -411,10 +423,8 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                 "teaching_prompt": (
                     "Ask the learner to choose a path.\n"
                     "?[A | B]\n"
-                    "Use {{learner_goal}} in the explanation.\n"
                     "After the learner answers, branch to the matching example."
                 ),
-                "used_variables": ["learner_goal"],
             }
         ]
 
@@ -424,7 +434,7 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             issues,
         )
 
-        self.assertEqual(len(issues.errors), 5)
+        self.assertEqual(len(issues.errors), 3)
         self.assertTrue(
             any("interaction syntax" in error for error in issues.errors)
         )
@@ -440,7 +450,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
         lessons = [
             {
                 "teaching_prompt": "请学习者选择一个答案，然后按答案继续。",
-                "used_variables": [],
             }
         ]
 
@@ -470,7 +479,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     [
                         {
                             "teaching_prompt": teaching_prompt,
-                            "used_variables": [],
                         }
                     ],
                     Path("example.md"),
@@ -497,7 +505,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     [
                         {
                             "teaching_prompt": teaching_prompt,
-                            "used_variables": [],
                         }
                     ],
                     Path("example.md"),
@@ -518,7 +525,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
             [
                 {
                     "teaching_prompt": "Ask the learner: Which option fits best?",
-                    "used_variables": [],
                 }
             ],
             Path("example.md"),
@@ -528,6 +534,260 @@ class InteractionPolicyValidationTests(unittest.TestCase):
         self.assertTrue(
             any("solicit a learner response" in error for error in issues.errors)
         )
+
+    def test_disabled_policy_rejects_natural_language_interaction_requests(self):
+        prompts = (
+            "Initiate a single-select interaction asking the learner which action to take.",
+            "Initiate a multi-select interaction asking students which actions to take.",
+            "Initiate a text-input interaction asking the learner to describe a goal.",
+            "Initiate a single-select interaction in which the learner selects an action.",
+            "Present a text-input response surface for the learner to enter a goal.",
+            "Create a real response surface for choosing the next action.",
+            "Offer two options for the learner to choose from and wait for their response.",
+            "Present three choices for the learner to select an action.",
+            "Do not offer two options for the learner to choose from. "
+            "Provide two choices for the learner to choose an action.",
+            "Generate a single-select interaction.",
+            "Create a multi-select interaction",
+            "Present a text-input response surface.",
+            "Offer a free-text interaction.\nThen continue after the actual answer.",
+            "Create a two-option single-select interaction.",
+            "Generate a context-aware multi-select interaction.",
+            "Generate a multi-select interaction with three options.",
+            "Present a personalized reflection interaction for the learner to describe a goal.",
+            "Do not ask about background. Initiate a single-select interaction "
+            "asking the learner which action to take.",
+            "Do not ask the learner to choose a goal. Ask the learner to choose an action.",
+            "Do not initiate a single-select interaction. "
+            "Present a text-input response surface for the learner to enter a goal.",
+            "Do not create static slides but generate context-aware multi-select interaction.",
+            "Do not create static slides but generate context-aware interaction "
+            "asking the learner which action to take.",
+            "发起一次单选互动。",
+            "创建一个文本输入响应界面。",
+            "生成一次多选互动，提供三个选项。",
+            "不要发起一次单选互动。创建一个文本输入响应界面。",
+            "Lancez une interaction à choix unique.",
+            "Créez une interface de réponse textuelle.",
+            "Ne lancez pas d’interaction à choix unique. "
+            "Créez une surface de réponse textuelle.",
+            "Ask or prompt the learner to answer.",
+            "Do not ask or prompt the learner to answer, but ask the learner to choose an action.",
+            "Never generate or present a response surface; create a text-input interaction.",
+            "Do not ask or prompt the learner to answer. Prompt the learner for a goal.",
+            "Explain how to create a single-select interaction. "
+            "Then create a multi-select interaction.",
+            "Ask the learner how to create a single-select interaction.",
+            "解释如何创建单选互动。发起一次单选互动。",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual(len(issues.errors), 1)
+                    self.assertIn("solicit a learner response", issues.errors[0])
+
+    def test_disabled_policy_accepts_prohibitions_and_memory_without_recollection(self):
+        prompts = (
+            "Do not initiate a single-select interaction asking the learner which action to take.",
+            "Do not initiate a multi-select interaction asking students which actions to take.",
+            "Do not initiate a text-input interaction asking the learner to describe a goal.",
+            "Do not present a text-input response surface for the learner to enter a goal.",
+            "Do not create a real response surface asking the learner to choose an action.",
+            "Do not generate a single-select interaction.",
+            "Do not offer two options for the learner to choose from.",
+            "Never offer a free-text interaction.",
+            "Do not generate a context-aware multi-select interaction asking "
+            "the learner which actions to take.",
+            "Do not ask the learner to choose an action.",
+            "Never prompt students for an answer.",
+            "Do not ask or prompt the learner to answer.",
+            "Never generate or present a response surface.",
+            "Never generate or\npresent a response surface.",
+            "Do not ask and invite the learner to share a goal.",
+            "Do not provide or offer two choices for the learner to choose an action.",
+            "Do not initiate or generate a multi-select interaction.",
+            "Avoid asking the learner to describe a goal.",
+            "Use the earlier answer already in memory without asking the learner "
+            "which action they chose.",
+            "Use relevant memory instead of asking the learner to describe the situation again.",
+            "Explain why single-select interactions help learners compare options.",
+            "Explain why asking the learner to share a password is inappropriate.",
+            "Explain how to create a single-select interaction.",
+            "Describe when to generate a multi-select interaction.",
+            "Explain how to offer two options for the learner to choose from.",
+            "解释如何创建单选互动。",
+            "说明如何发起一次单选互动。",
+            "Explain the phrase 'asking the learner to describe a goal' as a teaching example.",
+            "Present an example of a single-select interaction from a previous lesson.",
+            "Offer two options as a static worked example from memory.",
+            "Create an interaction diagram showing how the components communicate.",
+            "Generate a single-select interaction diagram showing the earlier choices.",
+            "Present a text-input response surface as a static image.",
+            "Present an explanation of interaction.",
+            "Create a visual explanation about a single-select interaction.",
+            "Create a picture showing an interaction.",
+            "Create training material covering interaction.",
+            "Create training material covering a context-aware multi-select interaction.",
+            "Create training material covering context-aware multi-select interaction.",
+            "Present a single-select interaction as a static worked example from an earlier "
+            "lesson. Read the actual earlier selection from memory without requesting new input.",
+            "不要发起一次单选互动。",
+            "避免创建一个文本输入响应界面。",
+            "不要创建一个单选互动要求学习者选择行动。",
+            "创建一个单选互动图示。",
+            "生成一个单选互动示意图。",
+            "创建一个文本输入响应界面作为静态图片。",
+            "从 memory 读取先前实际回答，无需创建一个文本输入响应界面。",
+            "Ne lancez pas d’interaction à choix unique.",
+            "Ne créez pas d’interface de réponse textuelle.",
+            "Créez un exemple statique d’interface de réponse textuelle.",
+            "Créez une interface de réponse textuelle comme un exemple statique.",
+            "Utilisez la réponse précédente en mémoire sans créer une nouvelle interaction.",
+        )
+        for prompt in prompts:
+            with self.subTest(prompt=prompt):
+                issues = validate_skill_quality.IssueBag()
+                validate_skill_quality.validate_disabled_lesson_examples(
+                    [{"teaching_prompt": prompt}], Path("example.md"), issues
+                )
+                validate_skill_quality.validate_disabled_course_prompt_example(
+                    prompt, Path("example.md"), issues
+                )
+
+                self.assertEqual([], issues.errors)
+
+    def test_disabled_policy_ignores_comment_and_fenced_interaction_examples(self):
+        prompts = (
+            "<!-- The learner can create a single-select interaction after this lesson. -->\n"
+            "Explain the mechanism with a worked example.",
+            "```markdown\n"
+            "Create a single-select interaction.\n"
+            "After the learner answers, show matching feedback.\n"
+            "```\n"
+            "Explain the mechanism with a worked example.",
+            "````markdown\n"
+            "```\n"
+            "Create a single-select interaction.\n"
+            "~~~~\n"
+            "After the learner answers, show matching feedback.\n"
+            "````\n"
+            "Explain the mechanism with a worked example.",
+            "<!--\n```\n"
+            "The learner can create a single-select interaction.\n"
+            "-->\n"
+            "Explain the mechanism with a worked example.",
+            "```text\n<!--\n"
+            "Create a single-select interaction.\n"
+            "After the learner answers, show matching feedback.\n"
+            "```\n<!-- benign -->\n"
+            "Explain the mechanism with a worked example.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual([], issues.errors)
+
+    def test_disabled_policy_keeps_active_requests_after_ignored_sections(self):
+        ignored_sections = (
+            "<!-- Navigation to the next lesson. -->\n",
+            "```markdown\nA static example.\n```\n",
+            "```markdown\rA static example.\r```\r",
+            "````markdown\n```\nA static example.\n~~~~\n````\n",
+            "<!--\n```\n"
+            "The learner can create a single-select interaction.\n-->\n",
+            "```text\n<!--\nA static example.\n```\n<!-- benign -->\n",
+        )
+        for ignored_section in ignored_sections:
+            prompt = (
+                ignored_section
+                + "Create a single-select interaction.\n"
+                + "After the learner answers, show matching feedback."
+            )
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual(2, len(issues.errors))
+                    self.assertTrue(
+                        any("solicit a learner response" in error for error in issues.errors)
+                    )
+                    self.assertTrue(
+                        any("branch on a learner response" in error for error in issues.errors)
+                    )
+
+    def test_disabled_policy_checks_backticks_in_fence_info(self):
+        for opener, closer, error_count in (
+            ("```bad`info", "```", 1),
+            ("```markdown", "```", 0),
+            ("~~~bad`info", "~~~", 0),
+        ):
+            prompt = f"{opener}\nCreate a single-select interaction.\n{closer}\n"
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(opener=opener, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual(error_count, len(issues.errors))
+                    if error_count:
+                        self.assertIn("solicit a learner response", issues.errors[0])
+
+    def test_disabled_policy_ignored_prohibitions_do_not_hide_active_requests(self):
+        prompts = (
+            "<!-- Do not create a single-select interaction. -->\n"
+            "Create a single-select interaction.",
+            "```markdown\nDo not create a single-select interaction.\n```\n"
+            "Create a single-select interaction.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual(1, len(issues.errors))
+                    self.assertIn("solicit a learner response", issues.errors[0])
 
     def test_disabled_policy_rejects_conditional_response_branches(self):
         prompts = [
@@ -543,7 +803,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     [
                         {
                             "teaching_prompt": teaching_prompt,
-                            "used_variables": [],
                         }
                     ],
                     Path("example.md"),
@@ -570,7 +829,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     [
                         {
                             "teaching_prompt": teaching_prompt,
-                            "used_variables": [],
                         }
                     ],
                     Path("example.md"),
@@ -592,7 +850,6 @@ class InteractionPolicyValidationTests(unittest.TestCase):
                     "Explain the mechanism, then show a worked decision and "
                     "close with a reusable rule."
                 ),
-                "used_variables": [],
             }
         ]
 
@@ -603,6 +860,211 @@ class InteractionPolicyValidationTests(unittest.TestCase):
         )
 
         self.assertEqual(issues.errors, [])
+
+    def test_disabled_policy_accepts_existing_memory_without_new_input(self):
+        issues = validate_skill_quality.IssueBag()
+        prompt = (
+            "Read relevant memory already available from earlier lessons to "
+            "choose a worked example. If relevant context is unavailable, "
+            "use a neutral course-appropriate example. Explain the mechanism "
+            "and demonstrate its application."
+        )
+
+        validate_skill_quality.validate_disabled_lesson_examples(
+            [{"teaching_prompt": prompt}], Path("example.md"), issues
+        )
+        validate_skill_quality.validate_disabled_course_prompt_example(
+            prompt, Path("example.md"), issues
+        )
+
+        self.assertEqual([], issues.errors)
+
+    def test_disabled_policy_accepts_attached_prior_answer_context(self):
+        prompts = (
+            "Based on the learner's answer from the previous lesson, choose a worked example.",
+            "Based on the learner's answer from an earlier lesson, choose a worked example.",
+            "Based on the learner's answer from a previous lesson, choose a worked example.",
+            "Based on the learner's choice from earlier lessons, choose a worked example.",
+            "Based on the learner's answer already recorded in memory, choose a worked example.",
+            "Based on the learner's input previously stored in course memory, choose a worked example.",
+            "Based on the learner's answer already recorded in memory, continue teaching "
+            "the current lesson.",
+            "Based on the learner's choice previously stored in memory, introduce a new "
+            "worked example.",
+            "Based on the learner's answer from an earlier lesson, and the current lesson "
+            "objectives, choose a worked example.",
+            "Based on the learner's answer from an earlier lesson, and the latest answer "
+            "already recorded in memory, choose a worked example.",
+        )
+        for prompt in prompts:
+            with self.subTest(prompt=prompt):
+                issues = validate_skill_quality.IssueBag()
+                validate_skill_quality.validate_disabled_lesson_examples(
+                    [{"teaching_prompt": prompt}], Path("example.md"), issues
+                )
+                validate_skill_quality.validate_disabled_course_prompt_example(
+                    prompt, Path("example.md"), issues
+                )
+
+                self.assertEqual([], issues.errors)
+
+    def test_disabled_policy_accepts_localized_prior_answer_context(self):
+        prompts = (
+            "根据学生先前课程中的选择，调整解释。",
+            "Après la réponse du cours précédent, adapter l'exemple.",
+            "根据学习者此前课程中的答案，展示解释。",
+            "Après le choix de la leçon précédente, adapter l'exemple.",
+            "根据学生先前课程中的选择，以及本次课程目标，调整解释。",
+            "Après la réponse du cours précédent, et les objectifs du cours actuel, "
+            "adapter l'exemple.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual([], issues.errors)
+
+    def test_disabled_policy_rejects_localized_new_answer_dependencies(self):
+        prompts = (
+            "根据学生本次课程中的选择，调整解释。",
+            "Après la réponse du cours actuel, adapter l'exemple.",
+            "根据学生先前课程中的选择以及本次回答，调整解释。",
+            "Après la réponse du cours précédent et la réponse actuelle, adapter l'exemple.",
+            "根据学生的选择，调整先前课程中的解释。",
+            "Après la réponse, adapter l'exemple du cours précédent.",
+            "根据学生先前课程中的选择，调整解释。"
+            "再根据学生本次课程中的选择，展示反馈。",
+            "Après la réponse du cours précédent, adapter l'exemple. "
+            "Après la réponse du cours actuel, adapter l'explication.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertTrue(
+                        any("branch on a learner response" in error for error in issues.errors)
+                    )
+
+    def test_disabled_policy_keeps_new_answer_dependencies_alongside_memory(self):
+        prompts = (
+            "Read relevant memory. Based on the learner's answer, show matching feedback.",
+            "Based on the learner's answer, choose a worked example from the previous lesson.",
+            "Based on the learner's answer from the previous lesson and the current response, "
+            "choose a worked example.",
+            "Based on the learner's answer from the previous lesson, choose a worked example. "
+            "After the learner answers, show matching feedback.",
+            "Based on the learner's answer already recorded in memory, choose a worked example. "
+            "Based on the learner's response, adjust the next example.",
+            "After the learner answers from the previous lesson, show matching feedback.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertTrue(
+                        any("branch on a learner response" in error for error in issues.errors)
+                    )
+
+    def test_disabled_policy_rejects_new_answer_continuations_after_prior_context(self):
+        prompts = (
+            "Based on the learner's answer from an earlier lesson, and the current response, "
+            "choose an example.",
+            "Based on the learner's choice from the previous lesson, or a new answer, "
+            "choose an example.",
+            "Based on the learner's input already recorded in memory, and the learner's "
+            "current choice, choose an example.",
+            "Based on the learner's answer from an earlier lesson, and their current "
+            "response, choose an example.",
+            "Based on the learner's answer from an earlier lesson, and on the current "
+            "response, choose an example.",
+            "Based on the learner's answer from an earlier lesson, and the latest answer "
+            "already recorded in memory, and the current response, choose an example.",
+            "根据学生先前课程中的选择，以及本次回答，调整解释。",
+            "Après la réponse du cours précédent, et la réponse actuelle, adapter l'exemple.",
+        )
+        for prompt in prompts:
+            for artifact in ("lesson", "course_prompt"):
+                with self.subTest(prompt=prompt, artifact=artifact):
+                    issues = validate_skill_quality.IssueBag()
+                    if artifact == "lesson":
+                        validate_skill_quality.validate_disabled_lesson_examples(
+                            [{"teaching_prompt": prompt}], Path("example.md"), issues
+                        )
+                    else:
+                        validate_skill_quality.validate_disabled_course_prompt_example(
+                            prompt, Path("example.md"), issues
+                        )
+
+                    self.assertEqual(1, len(issues.errors))
+                    self.assertIn("branch on a learner response", issues.errors[0])
+
+    def test_disabled_policy_checks_new_answers_after_prior_context_boundaries(self):
+        cases = (
+            (
+                "Based on the learner's answer from an earlier lesson",
+                (";", ".", "!", "?", "\r", "\n", ";\n"),
+                " and the current response, choose an example.",
+                " continue teaching the current lesson.",
+            ),
+            (
+                "根据学生先前课程中的选择",
+                ("，", "；", "。", "！", "？"),
+                "并结合本次回答调整解释。",
+                "继续解释本次课程的机制。",
+            ),
+            (
+                "Après la réponse du cours précédent",
+                (";",),
+                " et la réponse actuelle, adapter l'exemple.",
+                " continuer l'explication du cours actuel.",
+            ),
+        )
+        for context, boundaries, new_answer, teaching_action in cases:
+            for boundary in boundaries:
+                for continuation, error_count in ((new_answer, 1), (teaching_action, 0)):
+                    prompt = context + boundary + continuation
+                    for artifact in ("lesson", "course_prompt"):
+                        with self.subTest(prompt=prompt, artifact=artifact):
+                            issues = validate_skill_quality.IssueBag()
+                            if artifact == "lesson":
+                                validate_skill_quality.validate_disabled_lesson_examples(
+                                    [{"teaching_prompt": prompt}], Path("example.md"), issues
+                                )
+                            else:
+                                validate_skill_quality.validate_disabled_course_prompt_example(
+                                    prompt, Path("example.md"), issues
+                                )
+
+                            self.assertEqual(error_count, len(issues.errors))
+                            if error_count:
+                                self.assertIn("branch on a learner response", issues.errors[0])
 
     def test_disabled_policy_carries_across_example_json_blocks(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -623,7 +1085,7 @@ class InteractionPolicyValidationTests(unittest.TestCase):
 ```
 
 ```json
-{"lesson_teaching_prompts":[{"teaching_prompt":"?[A | B]","used_variables":[]}]}
+{"lesson_teaching_prompts":[{"teaching_prompt":"?[A | B]"}]}
 ```
 """,
                 encoding="utf-8",
@@ -655,7 +1117,7 @@ class InteractionPolicyValidationTests(unittest.TestCase):
 ```
 
 ```json
-{"lesson_id":"L01","teaching_prompt":"?[A | B]","used_variables":[]}
+{"lesson_id":"L01","teaching_prompt":"?[A | B]"}
 ```
 """,
                 encoding="utf-8",
@@ -732,38 +1194,6 @@ Ask the learner to choose a path.
                 )
             )
 
-    def test_disabled_policy_rejects_global_variable_table(self):
-        issues = validate_skill_quality.IssueBag()
-
-        validate_skill_quality.validate_disabled_global_variable_table_example(
-            [
-                {
-                    "name": "learner_goal",
-                    "collected_in": "L01",
-                    "used_in": ["L02"],
-                    "effect_scope": "cross_lesson",
-                }
-            ],
-            Path("example.md"),
-            issues,
-        )
-
-        self.assertEqual(len(issues.errors), 1)
-        self.assertIn("empty global_variable_table", issues.errors[0])
-
-    def test_disabled_policy_rejects_course_prompt_variables(self):
-        issues = validate_skill_quality.IssueBag()
-
-        validate_skill_quality.validate_disabled_course_prompt_example(
-            "The learner goal is {{learner_goal}}.",
-            Path("example.md"),
-            issues,
-        )
-
-        self.assertEqual(len(issues.errors), 1)
-        self.assertIn("course_prompt", issues.errors[0])
-        self.assertIn("learner-answer variables", issues.errors[0])
-
     def test_disabled_policy_rejects_course_prompt_interactions(self):
         issues = validate_skill_quality.IssueBag()
 
@@ -788,7 +1218,7 @@ Ask the learner to choose a path.
             any("branch on a learner response" in error for error in issues.errors)
         )
 
-    def test_disabled_policy_rejects_course_prompt_artifact_variables(self):
+    def test_disabled_policy_rejects_course_prompt_artifact_interactions(self):
         with tempfile.TemporaryDirectory() as tmp:
             skill_dir = Path(tmp) / "ai-shifu-course-creator"
             examples_dir = skill_dir / "examples"
@@ -810,7 +1240,6 @@ Ask the learner to choose a path.
 
 ```markdown
 # Role
-Use {{learner_goal}} to personalize the course.
 Ask the learner to choose a path.
 ?[A | B]
 After the learner answers, branch to the matching guidance.
@@ -822,13 +1251,6 @@ After the learner answers, branch to the matching guidance.
 
             validate_skill_quality.validate_example_contracts(skill_dir, issues)
 
-            self.assertTrue(
-                any(
-                    "course_prompt" in error
-                    and "learner-answer variables" in error
-                    for error in issues.errors
-                )
-            )
             self.assertTrue(
                 any(
                     "course_prompt" in error and "interaction syntax" in error
@@ -883,8 +1305,6 @@ class CourseCreatorContractTests(unittest.TestCase):
             "?[Option A | Option B]",
             "?[Option A || Option B]",
             "?[...Input hint]",
-            "?[%{{name}} Option A | Option B]",
-            "?[%{{name}} ...Input hint]",
             "===...===",
             "\n!===\n",
         ):
@@ -949,10 +1369,25 @@ class CourseCreatorContractTests(unittest.TestCase):
             with self.subTest(concept=concept, case_ids=case_ids):
                 self.assertIn(concept.casefold(), criteria)
 
-    def test_evals_preserve_runtime_source_and_variable_regressions(self):
+    def test_evals_preserve_runtime_source_and_memory_regressions(self):
         self.assert_eval_family(
             (8, 9, 15, 16, 17, 33, 51, 52),
-            ("unavailable", "deterministic", "exact", "feedback", "named variable"),
+            ("unavailable", "deterministic", "exact", "feedback", "memory"),
+        )
+
+    def test_evals_cover_automatic_memory_and_real_answers(self):
+        self.assert_eval_family(
+            (9, 107, 108, 110),
+            (
+                "memory",
+                "automatically",
+                "throughout the course",
+                "ordinary chat",
+                "correction",
+                "actual answer",
+                "explicit save",
+                "placeholder",
+            ),
         )
 
     def test_evals_preserve_selected_and_empty_personalization(self):

@@ -17,7 +17,7 @@ Use [review-checklist.md](review-checklist.md) for observable criteria relevant 
 - Teaching patterns, lesson sequences, visual cadence, interaction quotas, and optional source layouts are design choices; do not classify the absence of a preferred option as a defect.
 - Audit-only work does not add navigation comments or normalize an existing Teaching Prompt's layout. A new or explicitly rewritten Prompt uses the mandatory source-only comments and an appropriate layout under [teaching-prompt.md](teaching-prompt.md).
 - Do not introduce silent factual changes or omit required evidence. Explain consequential structural or content changes when repairing them.
-- Recheck the behavior actually affected by an interaction, variable, branch, image, or deterministic-span change. Check available consumers when a shared value or course-wide instruction changes.
+- Recheck the behavior actually affected by an interaction, memory-use instruction, branch, image, or deterministic-span change. Check affected artifacts when a reference to earlier learner input or course-wide instruction changes.
 
 ## Results
 

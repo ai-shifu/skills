@@ -40,7 +40,7 @@ For direct user-facing text that has no conversation context, such as a CLI labe
 
 Write every newly authored or edited human-readable value in `resolved_target_language`. This includes:
 
-- Course structure and content: course, chapter, and lesson titles; learning questions and design notes; Teaching Prompt instructions and learner-facing text; Course Prompt headings, fill values, and instructions; the learner-facing course description; and newly authored variable names and image descriptions, alt text, captions, or layout wording.
+- Course structure and content: course, chapter, and lesson titles; learning questions and design notes; Teaching Prompt instructions and learner-facing text; Course Prompt headings, fill values, and instructions; the learner-facing course description; and newly authored image descriptions, alt text, captions, or layout wording.
 - Capability results: assumptions, issue and change descriptions, review findings, report headings and labels, validation explanations, suggestions, next actions, and handoff notes.
 - Operational conversation: contact and version notices, authentication guidance, course-target choices, design questions and options, progress updates, errors, refusals, analytics explanations, and drill-down offers.
 - Values sent through direct management commands and effective values selected by course-directory or build precedence.
@@ -50,7 +50,6 @@ Localize natural-language values embedded inside MarkdownFlow controls while pre
 ## Localization Exclusions
 
 - Do not translate JSON keys, ids or BIDs, file names and paths, CLI commands and flags, API or DSL fields, code symbols, contract enum values, MarkdownFlow syntax, URLs, code samples, or fixed numeric values.
-- Preserve existing variable names when changing them would break references. For new variable names, apply [variable naming and consistency](authoring-contracts.md#variable-table) while localizing natural-language names. Runtime parser behavior remains defined in `markdownflow-syntax.md#variables`.
 - Preserve exact source quotations, regulated wording, source-selected immutable image text, tables, and every other span selected by `source-preservation.md`. Localize only newly authored surrounding text.
 
 ## Language Audit
@@ -62,7 +61,7 @@ Resolve `resolved_target_language`, then inspect every applicable surface below 
 - Inspect structure titles, teaching questions, source-analysis notes, and any planning representation actually produced.
 - Inspect complete Teaching Prompts: instructions, questions, option labels, input hints, feedback, branches, explanations, summaries, comments, and newly authored image text.
 - Inspect complete Course Prompts, including their six headings, fill values, and instructions, and complete course descriptions.
-- Inspect newly authored variable names and all human-readable findings, assumptions, changes, and validation results. No particular intermediate schema or report is required for this audit.
+- Inspect all human-readable findings, assumptions, changes, and validation results. No particular intermediate schema or report is required for this audit.
 
 ### Course Directory and Effective Build Values
 

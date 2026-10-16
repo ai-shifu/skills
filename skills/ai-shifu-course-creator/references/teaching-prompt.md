@@ -12,7 +12,7 @@ Shared Prompt meaning and artifact boundaries are in [prompt-semantics.md](promp
 - Make needed explanations concrete: identify the facts or steps, relationships, relevant limits, and understanding or application to reach. An empty instruction such as "explain the concept" or "add an example" is insufficient when it leaves those matters unresolved.
 - When a delivery mode is specified, honor it. Classroom slides need usable projected content and instructor pacing; text-only requests exclude visuals. Choose whether and where visuals help when the user has left that choice open.
 - Give each included visual its necessary content and teaching purpose. Position-specific slide treatment belongs in this lesson; presentation rules shared by every slide belong in the Course Prompt. A cover, greeting, summary, or visual-and-explanation rhythm may be useful without being mandatory.
-- For an instructional interaction, keep the complete question, runtime control, and intended feedback or visible instructional effect together. Honor author-requested branching and disabled interactions. A question slide is optional unless requested; the real control remains the response surface.
+- For an instructional interaction, keep its question or generation instructions, response requirements, and intended feedback or visible instructional effect together. Honor author-requested branching and disabled interactions. A question slide is optional unless requested; the real interaction remains the response surface.
 - Keep reusable learner context out of reusable course artifacts except through the authorized runtime mechanisms. A lesson can stand alone without a Course Prompt; include the concise runtime guidance it needs and identify any genuine unresolved cross-artifact conflict.
 
 ## Personalization Directions
@@ -21,7 +21,7 @@ Apply the shared effects and boundaries in [prompt-semantics.md#personalization-
 
 For an enabled example or analogy direction, give the Teaching Agent enough selection criteria, essential reasoning or correspondence, limits, and intended takeaway to adapt the expression using relevant known learner context. Keep an author-fixed example or analogy and adapt only what that author permits. Use a neutral course-appropriate fallback when relevant context is unavailable.
 
-Express practical value at a useful teaching position and language style at the appropriate artifact scope. Do not add collection questions, named variables, branches, or teaching actions merely because personalization is enabled. Runtime personalization changes permitted expression within the authored design; it does not authorize the Teaching Agent to change required facts, explicit teaching decisions, exact material, or interaction behavior.
+Express practical value at a useful teaching position and language style at the appropriate artifact scope. Do not add collection questions, branches, or teaching actions merely because personalization is enabled. Runtime personalization changes permitted expression within the authored design; it does not authorize the Teaching Agent to change required facts, explicit teaching decisions, exact material, or interaction behavior.
 
 Check an available Course Prompt for genuine conflicts with the lesson. Report an unavailable or out-of-scope companion check as not assessed; it does not block writing or reviewing the supplied lesson. Keep selection field names, enum arrays, planning rationale, and comparisons between variants out of runtime Prompt prose.
 
@@ -34,8 +34,8 @@ Every newly generated or explicitly rewritten Teaching Prompt must have source-o
 - Put a concise standalone `<!-- ... -->` comment before each meaningful teaching block. Explain the block's teaching purpose or the change in understanding, judgment, capability, or readiness it should produce.
 - Choose useful editing units from the actual lesson; a block need not correspond to a slide, a visual-text pair, or a fixed lesson phase.
 - Use naturally worded labels that distinguish neighboring blocks. Prefixes, numbering, punctuation, and sentence form are optional.
-- Keep all facts, teaching instructions, variables, options, URLs, exact spans, feedback, and branch rules outside comments, consistent with the [runtime comment semantics](markdownflow-syntax.md#html-comments). Essential content must remain complete when comments are ignored.
-- Keep the interaction question, unchanged standalone control, and immediate feedback in one editing unit rather than inserting navigation comments inside that sequence.
+- Keep all facts, teaching instructions, memory-use instructions, options, URLs, exact spans, feedback, and branch rules outside comments, consistent with the [runtime comment semantics](markdownflow-syntax.md#html-comments). Essential content must remain complete when comments are ignored.
+- Keep the interaction question and unchanged standalone control, or its natural-language generation instructions, together with immediate feedback in one editing unit rather than inserting navigation comments inside that sequence.
 - Do not put the literal delimiters `<!--` or `-->` inside a comment body.
 
 ### Optional Layout Templates
@@ -97,10 +97,12 @@ Ordinary instructions may use lists, paragraphs, or another suitable source layo
 
 ### Interaction Encoding
 
-- Put a complete learner-facing question immediately before its standalone `?[]` control. Keep option wording and order in the actual control; avoid competing simulated controls.
-- Use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label, according to the required answer semantics.
-- For input, use a specific preceding question and a short hint. For select-plus-input, put `...` at the start of the custom-answer option.
-- Use `%{{name}}` when a persisted answer is needed; lesson-local answers use the no-variable form. A blank name is invalid.
+- Choose an [explicit control or natural-language interaction](markdownflow-syntax.md#interactions) according to the intended behavior. Preserve author-fixed questions and choices; when dynamic generation is requested, keep that generation instruction executable at learner time rather than replacing it with an author-time option list.
+- Use target capabilities already established by the user or available course context. Natural-language interactions need the [response-surface and waiting capabilities](markdownflow-syntax.md#natural-language-interactions). An explicit-control fallback is suitable only when it preserves the author's requirements. If dynamic choices remain required and support is unavailable or unknown, retain that requirement and identify the runtime dependency. Local authoring can still produce the Prompt with that dependency stated; it does not require platform access.
+- For an explicit control, put a complete learner-facing question immediately before its standalone `?[]` control. Keep option wording and order in the actual control; avoid competing simulated controls.
+- In explicit controls, use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label, according to the required answer semantics. For input, use a specific preceding question and a short hint. For select-plus-input, put `...` at the start of the custom-answer option.
+- For a natural-language interaction, describe the intended learner decision or task, the context used to generate the question or options, and any required answer mode or option constraints. Keep these instructions outside `?[]`, comments, and deterministic blocks. Specify how the actual answer affects the next teaching action; do not invent the learner's answer or continue before it arrives.
+- When teaching uses an earlier answer, describe the relevant input and its instructional effect naturally under [Memory and Branch Encoding](#memory-and-branch-encoding).
 - An action-only control such as `?[Continue]` advances the preceding content and does not require an invented question or slide.
 - The prompt immediately after an interaction can describe how to respond to different answers and, when needed, ask the learner to interact again, using the [runtime follow-up behavior](markdownflow-syntax.md#branching-on-user-input).
 
@@ -119,14 +121,12 @@ Respond based on the learner's answer:
 - If a detail is missing, identify it and give a hint. Initiate another interaction and ask the learner to complete the plan. Wait for the learner's actual response, then respond to the new answer using the same criteria.
 ```
 
-### Variable and Branch Encoding
+### Memory and Branch Encoding
 
 - Use natural-language branch instructions; MarkdownFlow has no programmatic conditional syntax.
-- Refer to lesson-local answers naturally without inventing a global variable.
-- For a named learner answer, ensure a real collection and each intended consumer are consistent. A variable table is optional bookkeeping, not a required output.
-- Bind a substituted value naturally, for example `The learner goal is {{learning_goal}}.`, before explaining behavior that depends on it.
-- Where reading before collection is possible, handle unavailable information rather than testing whether a marker exists.
-- New variable names follow [language-policy.md](language-policy.md); preserve existing names where renaming would break references.
+- Refer to the learner's actual answers naturally, using relevant memory under [markdownflow-syntax.md#memory](markdownflow-syntax.md#memory).
+- Describe how the earlier input affects teaching, for example, "Use the learner's stated goal from memory to explain why this exercise matters."
+- If the needed information is unavailable or irrelevant, use the course-appropriate fallback rather than inventing an answer.
 - Prompt prose carries the teaching response, not an explanation of the machine-facing encoding decision.
 
 ### Preservation Encoding
@@ -140,7 +140,7 @@ Use [source-preservation.md](source-preservation.md) to identify the selected ex
 
 ## Outputs
 
-Return the requested Teaching Prompt or write the appropriate lesson file when a course directory is in scope. The directory format is owned by [cli/course-directory-spec.md](cli/course-directory-spec.md). There is no required lesson-schema envelope, generation report, execution mode, or global variable table.
+Return the requested Teaching Prompt or write the appropriate lesson file when a course directory is in scope. The directory format is owned by [cli/course-directory-spec.md](cli/course-directory-spec.md). There is no required lesson-schema envelope, generation report, or execution mode.
 
 Briefly identify completed work, material assumptions, unresolved dependencies, and checks that affect usability. Do not represent unverified work as validated or require companion artifacts unrelated to the requested deliverable.
 
@@ -151,7 +151,7 @@ Check the observable result within the requested scope:
 - The Prompt contains executable learner-time instructions with enough content and explanation to fulfill its goal, within the shared Prompt responsibility boundary.
 - Explicit source, audience, delivery, interaction, personalization, and approved design constraints are honored.
 - Newly written or explicitly rewritten Prompts have useful explanatory comments before meaningful blocks. Essential teaching content remains complete outside comments, and the chosen layout preserves runtime controls and exact spans.
-- Questions, controls, feedback, named-variable collections and consumers, natural-language branches, and handling of unavailable information are coherent and use valid MarkdownFlow.
+- Questions, controls, feedback, use of relevant memory, natural-language branches, and handling of unavailable information are coherent and use valid MarkdownFlow.
 - Source material selected for exact preservation matches its authoritative source. Do not claim source coverage when the source is unavailable.
 - Image-specific checks apply when actual image assets are used.
 - Available companion artifacts are consistent; unavailable or out-of-scope checks are not assessed. A recommended pattern, visual cadence, interaction quota, or optional layout is never a pass/fail criterion.

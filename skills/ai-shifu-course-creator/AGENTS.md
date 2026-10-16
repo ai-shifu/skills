@@ -33,8 +33,8 @@
 | `references/authoring-contracts.md` | Own optional design-control shapes and semantic artifact consistency. CLI payloads and course-directory formats remain in the CLI specifications; internal planning and bookkeeping have no mandatory schema. |
 | `references/source-preservation.md` | Own selection of immutable source spans and exactness verification after transformations. Teaching Prompt encoding of those decisions belongs to `teaching-prompt.md#source-encoding`. |
 | `references/prompt-semantics.md` | Own semantics shared by Course Prompts and Teaching Prompts, including personalization-direction effects and the responsibility boundary between the two artifact types. It is the integration owner, not the owner of syntax, pedagogy, schemas, or materialization. |
-| `references/teaching-design.md` | Own teaching recommendations, pattern examples, interaction-purpose guidance, variable-persistence advice, and visual-text tradeoffs. The using agent selects pedagogy within explicit author constraints. |
-| `references/markdownflow-syntax.md` | Own the runtime-recognized MarkdownFlow syntax and its observable preprocessing, variable, interaction, branching, deterministic-block, image, and preservation behavior. |
+| `references/teaching-design.md` | Own teaching recommendations, pattern examples, interaction-purpose guidance, memory-use advice, and visual-text tradeoffs. The using agent selects pedagogy within explicit author constraints. |
+| `references/markdownflow-syntax.md` | Own the runtime-recognized MarkdownFlow syntax and its observable preprocessing, course memory, interaction, branching, deterministic-block, image, and preservation behavior. |
 | `references/image-authoring.md` | Own intake, understanding, upload, composition, embedding, and output validation for lesson image assets. Teaching purpose, MarkdownFlow representation, and CLI upload remain separate actions within the entrypoint's categories. Teacher avatars remain platform metadata under `course-management.md`. |
 
 ## Authoring and Artifact Reference Responsibilities
@@ -42,7 +42,7 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `references/course-structure.md` | Own source analysis, optional traceable segmentation, chapter grouping, and lesson-structure planning from available inputs. It does not require generation or a fixed segment schema. |
-| `references/teaching-prompt.md` | Own writing or revising one runnable Teaching Prompt from available inputs, required source-only block comments, optional layout templates, and interaction, variable, branch, preservation, and image integration. Runtime syntax remains in `markdownflow-syntax.md`; no phase envelope or fixed planning run is required. |
+| `references/teaching-prompt.md` | Own writing or revising one runnable Teaching Prompt from available inputs, required source-only block comments, optional layout templates, and interaction, memory, branch, preservation, and image integration. Runtime syntax remains in `markdownflow-syntax.md`; no phase envelope or fixed planning run is required. |
 | `references/course-prompt.md` | Own materialization of the six-section course-wide Course Prompt, including fill sources and uniform presentation requirements. Lesson pedagogy, sequence, interactions, and position-specific slide decisions remain Teaching Prompt concerns. |
 | `references/course-description.md` | Own the learner-facing course listing and SEO description artifact, its supported source claims, output form, and validation. |
 | `references/course-review.md` | Own scoped review and requested minimal repairs of available artifacts, findings, uncertainty, and truthful validation results. It applies teaching-design or MarkdownFlow-expression criteria from the checklist without orchestrating other capabilities; platform readback remains with the relevant CLI capability. |

@@ -4,7 +4,7 @@
     "should_trigger": true
   },
   {
-    "query": "我在写 AI师傅 MarkdownFlow 脚本，第一节课收集了学员的姓名和公司名，帮我写第三节课的脚本片段，用变量引用这两个信息来个性化开场白",
+    "query": "我在写 AI师傅 MarkdownFlow 脚本，第一节课学员填写了姓名和公司名，帮我写第三节课的脚本片段，从 memory 读取这两个实际输入来个性化开场白",
     "should_trigger": true
   },
   {
@@ -60,7 +60,7 @@
     "should_trigger": true
   },
   {
-    "query": "我在写 MarkdownFlow 脚本，现在想做一个个性化开场：先让学员填写他们的岗位和入职年限，然后后面的内容根据这两个变量来调整讲解的深度。帮我把这段逻辑写成 MarkdownFlow 脚本",
+    "query": "我在写 MarkdownFlow 脚本，现在想做一个个性化开场：先让学员填写岗位和入职年限，这些输入自动进入 memory，后面的内容根据实际回答调整讲解的深度。帮我把这段逻辑写成 MarkdownFlow 脚本",
     "should_trigger": true
   },
   {
@@ -120,10 +120,10 @@
     "trap": "Markdown 格式+交互式内容，但是幻灯片工具不是做课"
   },
   {
-    "query": "I want to write a Markdown template with conditional sections — show different content blocks based on a YAML front-matter variable. Is this possible with Jekyll?",
+    "query": "我想用 Jekyll 写 Markdown 博客模板，按照 YAML 页眉中的文章分类显示不同内容区块，应该怎么做？",
     "should_trigger": false,
     "distance": "close",
-    "trap": "Markdown+变量+条件分支，但是 Jekyll 模板不是 MarkdownFlow"
+    "trap": "Markdown 加条件内容，但 Jekyll 博客模板不是 MarkdownFlow 课程"
   },
   {
     "query": "我在用 mdBook 写技术文档，想给某些章节加上交互式代码练习，读者可以在页面上直接运行代码，怎么配置？",
@@ -198,10 +198,10 @@
     "trap": "覆盖率审计，但是 API 测试不是课程内容"
   },
   {
-    "query": "帮我做一个环境变量管理工具，支持 dev/staging/prod 多环境继承和覆盖，类似 dotenv-vault 的功能",
+    "query": "帮我做一个服务配置管理工具，支持 dev/staging/prod 多环境继承和覆盖，并检查配置缺失项",
     "should_trigger": false,
     "distance": "far",
-    "trap": "变量管理，但是环境变量不是课程变量"
+    "trap": "多环境配置管理，与课程创作和 memory 无关"
   },
   {
     "query": "只帮我写 AI 师傅课程简介，课节以后再做，不连接平台。",
