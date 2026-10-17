@@ -16,7 +16,7 @@
 | `AGENTS.md` | Define this skill's maintenance-time ownership map and cross-file editing rules. It guides contributors and does not define learner-time or authoring behavior. |
 | `SKILL.md` | Define skill discovery metadata, shared conventions, user-facing Markdown links, the teaching design / MarkdownFlow expression / CLI operation categories, and full-course default publication with the completed-content confirmation boundary. It leaves invocation order to the using agent and capability mechanics to references. |
 | `agents/openai.yaml` | Define ChatGPT's display label, short description, and starter prompt for this skill. Discovery behavior remains in `SKILL.md`. |
-| `.env.example` | Document supported service-selection and token environment variables with safe empty defaults and credential-storage guidance. |
+| `.env.example` | Document supported service-selection, token, and usage-analytics opt-out variables with safe empty defaults, credential-storage guidance, and the user-facing account-linked usage notice. |
 | `evals/evals.json` | Hold end-to-end behavioral scenarios, optional input fixtures, and expected outcomes for capability use, authoring, platform, analytics, and boundary regressions. Canonical guidance remains the source of behavior. |
 | `evals/trigger_eval.json` | Test whether representative requests should or should not discover this skill. Keep capability and trigger wording canonical in `SKILL.md` frontmatter. |
 
@@ -72,7 +72,8 @@
 
 | File | Canonical responsibility |
 | --- | --- |
-| `scripts/shifu-cli.py` | Implement the unified deterministic interface for site configuration, authentication, course queries and writes, sync, import and build, image upload, analytics, state, and structured command results. Reference files own capability guidance and relevant constraints. |
+| `scripts/shifu-cli.py` | Implement the unified deterministic interface for site configuration, authentication, course queries and writes, sync, import and build, image upload, analytics, state, and structured command results. Attach optional usage metadata to business requests. Reference files own capability guidance and relevant constraints. |
+| `scripts/agent_detection.py` | Identify the Agent environment and own its canonical IDs, display names, and evidence. The CLI decides reporting eligibility. |
 | `scripts/profile_store.py` | Implement named profile configuration, default selection, execution-context resolution, isolated authorization-file storage, URL validation, and recoverable migration from legacy configuration. The CLI consumes one resolved context; references own access guidance. |
 | `scripts/image_preparation.py` | Implement local image decoding, orientation correction, resizing, recompression, output-format selection, and content-hash naming for upload preparation. |
 | `scripts/skill_update_check.py` | Implement fail-open GitHub Release discovery, update availability checks, release and development manifest validation, and source-bound local update state used by session controls and the CLI. |

@@ -68,6 +68,8 @@ Return the artifacts needed for the request. Segmentation records, a course inde
 
 Full-course creation follows the [default publication and completed-content confirmation policy](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome). Explicit local-only or unpublished-draft requests determine that narrower result. For existing artifacts, use the relevant [build and import](skills/ai-shifu-course-creator/references/build-and-import.md), [synchronization](skills/ai-shifu-course-creator/references/course-sync.md), or [management](skills/ai-shifu-course-creator/references/course-management.md) guidance directly.
 
+Course Creator CLI usage metadata may be linked to your account. Set `SHIFU_DISABLE_ANALYTICS=1` to opt out; see the [configuration](skills/ai-shifu-course-creator/.env.example).
+
 ## Validate Metadata
 
 ```bash

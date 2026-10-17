@@ -68,6 +68,8 @@ skill 以 `SKILL.md` 作为行为定义。按照 [Agent Skills](https://agentski
 
 完整建课遵循[默认发布及完成稿确认规则](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome)。用户明确要求本地交付或不发布的草稿时，按该范围完成。已有成果可以直接使用对应的[构建与导入](skills/ai-shifu-course-creator/references/build-and-import.md)、[同步](skills/ai-shifu-course-creator/references/course-sync.md)或[管理](skills/ai-shifu-course-creator/references/course-management.md)能力。
 
+课程创作器 CLI 的使用统计可能关联当前账号。设置 `SHIFU_DISABLE_ANALYTICS=1` 可关闭；详见[配置说明](skills/ai-shifu-course-creator/.env.example)。
+
 ## 元数据校验
 
 ```bash
