@@ -47,9 +47,9 @@ check-update [--force] [--dev-manifest-url <loopback-url>]
 
 ## Skill Usage Analytics
 
-Authenticated course operations, sync, import/export, image upload, and course-data queries include three headers on their existing AI-Shifu API requests: `X-AI-Shifu-Skill` (`ai-shifu-course-creator`), `X-AI-Shifu-Skill-Version` (the installed stable release version), and `X-AI-Shifu-Caller-Agent` (one family below or `unknown`). The CLI sends no separate analytics request. Login, authorization polling, token verification, profile/configuration changes, update checks, and local builds do not carry these headers.
+Authenticated course operations, sync, import/export, image upload, and course-data queries include four headers on their existing AI-Shifu API requests: `X-AI-Shifu-Skill` (`ai-shifu-course-creator`), `X-AI-Shifu-Skill-Version` (the installed release version of the bundled CLI), `X-AI-Shifu-Caller-Agent` (one family below or `unknown`), and `X-AI-Shifu-Caller-Agent-Name` (the CLI-generated fixed display name below). The bundled CLI uses the Skill package version; it has no independent version source. The CLI sends no separate analytics request and does not set an analytics User-Agent. Login, authorization polling, token verification, profile/configuration changes, update checks, and local builds do not carry these headers.
 
-On a compatible Umami 3.4 deployment, the backend records each eligible authenticated API response as one virtual pageview tagged `skill_api_request_v2`, replacing that request's older `skill_api_request_v1` custom event. It uses the same Umami website as browser product analytics, with Browser `AI-Shifu CLI`, OS set to the Agent display name below, and the fixed synthetic device category `desktop`. The page path is the allowlisted matched API route template, with dynamic values replaced by parameter names such as `/api/shifu/shifus/:shifu_bid/detail`. No safe template means no pageview. A selected service may still use the older contract until its compatible deployment is verified; CLI metadata alone does not prove collection or storage.
+On a compatible Umami 3.4 deployment, the backend records each eligible authenticated CLI API response as one virtual pageview tagged `skill_api_request_v2`, replacing that request's older `skill_api_request_v1` custom event. It validates all four headers, uses the CLI-generated display name as OS, and generates its collector User-Agent from the validated bundled CLI version and Agent classification: `Mozilla/5.0 AI-Shifu-CLI/<installed-release-version> (<Agent-UA-name>)`. Agent UA names replace display-name spaces with hyphens, except `Grok Bot` uses `Grok` to avoid bot filtering and `Unknown Agent` uses `Unknown`. The backend does not forward the request's raw User-Agent. It uses the same Umami website as browser product analytics, with Browser `AI-Shifu CLI` and the fixed synthetic device category `desktop`. The page path is the allowlisted matched API route template, with dynamic values replaced by parameter names such as `/api/shifu/shifus/:shifu_bid/detail`. No safe template means no pageview. A selected service may still use the older contract until its compatible deployment is verified; CLI metadata alone does not prove collection or storage.
 
 The backend uses only the account ID established by its existing authentication, as the same distinct identity used by browser product analytics. It attempts identity association before the pageview, without letting a tracking failure affect the business request. These account-linked records are not anonymous. They allow cross-channel account deduplication, but do not guarantee that browser and CLI activity share one session or that every native funnel joins activity across sessions.
 
@@ -57,25 +57,54 @@ The pageview's event data contains only `skill_id`, `skill_version_major`, `call
 
 Both successful and failed eligible requests count as pageviews; HTTP 200 with a nonzero business code is a failure. Retries are independent requests. A download success means its response was prepared, not that the file was received. One command may call several APIs, so pageviews measure interface requests, not CLI commands, completed authoring tasks, human visits, sessions, or distinct accounts. Successful requests support Skill activity and return-usage metrics. Historical v1 requests and new tagged pageviews are combined without adding old course-stage events. Browser/OS card counts are client classifications, not distinct account counts. Web-only reporting keeps its existing hostname filter; the shared website's total pageviews increase when CLI pageviews are collected.
 
-Set `SHIFU_DISABLE_ANALYTICS=1` in the process environment or the skill's `.env` to omit all three headers and prevent this new CLI pageview reporting. Process values take precedence over `.env`. Opting out does not change authentication, permissions, command results, or the requested course operation. Metadata construction is best-effort: if detection or version validation fails, the business request proceeds without usage metadata. Server-side analytics enablement, access, retention, deletion, and deployment-region policy belong to the selected AI-Shifu service.
+Set `SHIFU_DISABLE_ANALYTICS=1` in the process environment or the skill's `.env` to omit all four headers and prevent this new CLI pageview reporting. Process values take precedence over `.env`. Opting out does not change authentication, permissions, command results, or the requested course operation. Metadata construction is best-effort: if detection or version validation fails, the business request proceeds without usage metadata. Server-side analytics enablement, access, retention, deletion, and deployment-region policy belong to the selected AI-Shifu service.
 
-The CLI detects the caller once, before loading `.env` or profile configuration, by checking only whether fixed environment-variable names exist. It does not inspect their values. Empty or false-looking values still count as present. Do not add these identity hints to `.env`: they are internal runtime hints supplied by the host, not user configuration or a guaranteed public interface. Nothing is persisted between CLI processes. The CLI accepts no caller-identity flag, uses no model inference, and does not scan files, parent processes, hooks, or host APIs to identify the Agent.
+The CLI evaluates the process environment once per invocation, before loading `.env` or profile configuration, through a local Python implementation of [detect_agent 0.1.5](https://github.com/ai-shifu/detect_agent/blob/9eee13ebdd8dcee22bd90b03125fa9f509a80be1/detect_agent.md), pinned to commit `9eee13ebdd8dcee22bd90b03125fa9f509a80be1`. No SDK or network dependency is required at runtime. The implementation retains the specification's rich `{agent_id, evidence}` result locally. Analytics uses an ID only for `declared` or `runtime-marker` evidence; context-only hints, no evidence, and unrecognized declarations report `unknown`. Evidence and raw marker/declaration values are never transmitted.
 
-| Reported family | Umami OS display | Presence-only runtime hints | Interpretation and limits |
-| --- | --- | --- | --- |
-| `codex` | Codex | `CODEX_THREAD_ID`, `CODEX_SESSION_ID` | Codex family; does not identify the model or interface. |
-| `claude_code` | Claude Code | `CLAUDECODE`, `CLAUDE_CODE_CHILD_SESSION` | Claude Code family; does not identify a particular subagent. |
-| `cursor` | Cursor | `CURSOR_AGENT` | Cursor family unless Grok Bot's more specific hint is also present. |
-| `hermes` | Hermes | `HERMES_AGENT`, `HERMES_SESSION_ID` | Hermes family. |
-| `openclaw` | OpenClaw | `OPENCLAW_SHELL` | OpenClaw family. |
-| `workbuddy` | WorkBuddy | `WORKBUDDY_CONFIG_DIR` | WorkBuddy host configuration forwarded to its shell. |
-| `qoderwork` | QoderWork | `QODERWORK_IS_CN`, `QODERWORK_SOURCE_CHAT_ID` | QoderWork / Qwen Work family. Existence cannot distinguish region or branding. |
-| `grok_bot` | Grok Bot | `SAND_AGENT` | Grok Bot local Bash/Zsh executor. Cloud execution is not verified. |
-| `unknown` | Unknown Agent | No matches or conflicting independent families | Also used for unverified Doubao Work, Muse, Manus, and Cue environments. |
+Declarations `AI_AGENT` then `AGENT` have priority. Only declarations are ASCII-trimmed and ASCII-lowercased, with the specification's five compatibility aliases; an unrecognized non-empty declaration blocks inherited runtime markers. Runtime rules use the specification's exact order and conjunctions: the first complete rule wins, rather than treating simultaneous markers as an unknown conflict. Ordinary markers require non-empty strings: missing and empty fail, while `0`, `false`, and whitespace pass. Only `GROK_AGENT=1` and `CURSOR_EXTENSION_HOST_ROLE=agent-exec` use exact runtime comparisons. These rules replace the earlier presence-only detector and its underscore family IDs.
 
-Several hints for the same family count once. Grok Bot's executor supplies both `SAND_AGENT` and `CURSOR_AGENT`, so its specific hint suppresses only the shared Cursor match. Any remaining independent family conflict produces `unknown`. Nested Agents, stripped/inherited variables, shell configuration, host updates, and user-defined variables can affect attribution. These hints are not trusted identity and must never control billing, permissions, or auditing.
+Only fixed specified names are looked up, preserving the supplied environment provider's name semantics. The detector does not enumerate or copy the environment. Its optional filesystem/TTY capabilities are tested with synthetic inputs; the CLI does not supply them, so detection does not probe files, terminal state, parent processes, hooks, or host APIs. Other context hints, such as PATH, editor/workspace variables, a Copilot token, or Goose provider configuration, remain `unknown` for analytics unless a canonical product is explicitly declared. There is no lifetime detection cache and no caller/model parameter to pass to the CLI. Do not add Agent hints to `.env`.
 
-Implementation evidence for the additional desktop families was checked against installed macOS packages: WorkBuddy 5.8.2 forwards `WORKBUDDY_CONFIG_DIR` through `buildBashHostConfigEnv` into its shell execution options; Qwen Work CN 1.2.5 (build 26092902) supplies the QoderWork hints through its execution environment; Grok Bot 0.71.2's `dist/local-exec-daemon/main.cjs` supplies both hints to Bash/Zsh initialization and command execution. This is static propagation evidence, not a cross-platform or cloud-runtime guarantee. [Grok Bot's official architecture](https://cursor.com/docs/grok-bot/teams) describes separate cloud and optional local execution; [Muse's official architecture](https://research.meta.ai/blog/security-and-safety-for-ai-agents-our-approach-with-muse) likewise places its Agent runtime in a cloud VM. These sources do not promise stable environment-variable names. Manus/Cue helper-only variables are excluded because propagation into Skill processes was not established.
+| Canonical ID       | CLI display name / Umami OS |
+| ------------------ | --------------------------- |
+| `crush`            | Crush                       |
+| `hermes-agent`     | Hermes Agent                |
+| `kilo-code`        | Kilo Code                   |
+| `trae`             | TRAE                        |
+| `vtcode`           | VT Code                     |
+| `workbuddy`        | WorkBuddy                   |
+| `grok-bot`         | Grok Bot                    |
+| `qwenwork`         | QwenWork                    |
+| `cue`              | Cue                         |
+| `muse`             | Muse                        |
+| `manus`            | Manus                       |
+| `doubao-work`      | Doubao Work                 |
+| `kimi`             | Kimi Code                   |
+| `grok-build`       | Grok Build                  |
+| `gemini-cli`       | Gemini CLI                  |
+| `cline`            | Cline                       |
+| `codex`            | Codex                       |
+| `antigravity`      | Antigravity                 |
+| `augment-cli`      | Augment CLI                 |
+| `opencode`         | opencode                    |
+| `goose`            | Goose                       |
+| `junie`            | Junie                       |
+| `pi`               | Pi                          |
+| `cowork`           | Claude Cowork               |
+| `claude-code`      | Claude Code                 |
+| `cursor-cli`       | Cursor CLI                  |
+| `kiro`             | Kiro                        |
+| `openclaw`         | OpenClaw                    |
+| `github-copilot`   | GitHub Copilot              |
+| `replit`           | Replit                      |
+| `devin`            | Devin                       |
+| `cursor`           | Cursor                      |
+| `zed`              | Zed                         |
+| `hi`               | hi                          |
+| `sandbase-harness` | SandBase Harness            |
+| `unknown`          | Unknown Agent               |
+
+The pinned specification owns marker evidence, runtime/context boundaries, priority and coverage limits; its 170 synthetic conformance cases are included in repository tests with MIT attribution. `hi` and `sandbase-harness` are declaration-only. Context-only products can also be explicitly declared. User-defined, stripped or inherited markers and nested Agents can affect results: these are community compatibility heuristics, not trusted immediate-caller identity, official vendor guarantees, or a basis for billing, permissions or auditing. The detector never identifies the model, account, region, subscription or human operator.
 
 ## Profiles
 

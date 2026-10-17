@@ -23,6 +23,7 @@ import requests
 from dotenv import load_dotenv
 
 import profile_store as profiles
+from agent_detection import AGENT_DISPLAY_NAMES, detect_agent
 
 from skill_update_check import DEV_CACHE_FILE, check_for_update
 
@@ -63,37 +64,24 @@ _TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
 COURSE_LIST_PAGE_SIZE = 50
 MAX_COURSE_PAGES = 10
 
-# Internal runtime hints are only attribution signals, never authentication.
-# Inspect presence before dotenv/profile loading; never read their values.
-_CALLER_AGENT_ENV_KEYS = {
-    "codex": ("CODEX_THREAD_ID", "CODEX_SESSION_ID"),
-    "claude_code": ("CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION"),
-    "cursor": ("CURSOR_AGENT",),
-    "hermes": ("HERMES_AGENT", "HERMES_SESSION_ID"),
-    "openclaw": ("OPENCLAW_SHELL",),
-    "workbuddy": ("WORKBUDDY_CONFIG_DIR",),
-    "qoderwork": ("QODERWORK_IS_CN", "QODERWORK_SOURCE_CHAT_ID"),
-    "grok_bot": ("SAND_AGENT",),
-}
+# Detection is a local compatibility hint, never authentication. Capture it
+# before dotenv/profile loading; only the bounded ID and name leave the CLI.
+_CALLER_AGENT_NAMES = {**AGENT_DISPLAY_NAMES, "unknown": "Unknown Agent"}
 _USAGE_METADATA_HEADERS = {}
 
 
 def _detect_caller_agent(environ):
-    """Return one allowlisted family using environment-key existence only."""
-    matches = {
-        agent for agent, keys in _CALLER_AGENT_ENV_KEYS.items()
-        if any(key in environ for key in keys)
-    }
-    # Grok Bot's local executor injects its own hint plus the shared Cursor hint.
-    if "grok_bot" in matches:
-        matches.discard("cursor")
-    return next(iter(matches)) if len(matches) == 1 else "unknown"
+    """Report only declared/runtime identities; context-only evidence is unknown."""
+    result = detect_agent(environ)
+    if result["evidence"] in {"declared", "runtime-marker"} and result["agent_id"] is not None:
+        return result["agent_id"]
+    return "unknown"
 
 
 def _skill_usage_metadata(caller_agent):
     """Build optional metadata without changing the business request on failure."""
     try:
-        if caller_agent is None or os.environ.get("SHIFU_DISABLE_ANALYTICS") == "1":
+        if caller_agent not in _CALLER_AGENT_NAMES or os.environ.get("SHIFU_DISABLE_ANALYTICS") == "1":
             return {}
         version = _client_version()
         # Only a bounded stable release version may leave this process. The
@@ -104,6 +92,7 @@ def _skill_usage_metadata(caller_agent):
             "X-AI-Shifu-Skill": "ai-shifu-course-creator",
             "X-AI-Shifu-Skill-Version": version,
             "X-AI-Shifu-Caller-Agent": caller_agent,
+            "X-AI-Shifu-Caller-Agent-Name": _CALLER_AGENT_NAMES[caller_agent],
         }
     except Exception:  # noqa: BLE001 - optional usage metadata must fail open
         return {}

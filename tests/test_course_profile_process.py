@@ -140,10 +140,17 @@ class CourseProfileProcessTests(unittest.TestCase):
         # Remove inherited developer-tool hints so this subprocess test is
         # deterministic even when the test runner itself runs inside an Agent.
         clean_hints = dict.fromkeys((
-            "CODEX_THREAD_ID", "CODEX_SESSION_ID", "CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION",
-            "CURSOR_AGENT", "HERMES_AGENT", "HERMES_SESSION_ID", "OPENCLAW_SHELL",
-            "WORKBUDDY_CONFIG_DIR", "QODERWORK_IS_CN", "QODERWORK_SOURCE_CHAT_ID", "SAND_AGENT",
-        ))
+            "AI_AGENT AGENT CRUSH HERMES_SESSION_ID HERMES_AGENT KILOCODE_FEATURE TRAE_AI_SHELL_ID "
+            "VTCODE WORKBUDDY_APPLICATION_NAME WORKBUDDY_APP_NAME SAND_AGENT CURSOR_AGENT "
+            "SAND_MANIFEST_V2 SAND_SUPERVISOR_ENABLED QODER_WORK_INTEGRATION_PRODUCT "
+            "MANUS_LONG_DESKTOP_WORKER JARVIS_IS_ASSIGNED JARVIS_TOOL_CALL_ID "
+            "MANUS_ADDON_RUNTIME_SPEC_PATH MANUS_ADDON_RUNTIME_SPECS_REVISION DOUBAO_OFFICE_AGENT_NAME "
+            "KIMI_PLUGIN_ROOT GROK_AGENT GROK_PLUGIN_ROOT GROK_PLUGIN_DATA GEMINI_CLI CLINE_ACTIVE "
+            "CODEX_SANDBOX CODEX_CI CODEX_THREAD_ID CODEX_SANDBOX_NETWORK_DISABLED "
+            "ANTIGRAVITY_AGENT ANTIGRAVITY_CLI_ALIAS AUGMENT_AGENT OPENCODE_CLIENT OPENCODE "
+            "GOOSE_TERMINAL JUNIE_SHIM_PATH PI_CODING_AGENT CLAUDE_CODE_IS_COWORK CLAUDECODE "
+            "CLAUDE_CODE CURSOR_EXTENSION_HOST_ROLE AGENT_CONTEXT_OUT OPENCLAW_SHELL"
+        ).split())
         self.run_cli("profile", "set", "one", "--base-url", self.origin + "/one", env=clean_hints)
         self.save_json(self.profile_dir("one") / "credentials.json", {
             "base_url": self.origin + "/one", "token": "saved-token",
@@ -154,12 +161,15 @@ class CourseProfileProcessTests(unittest.TestCase):
         self.assertEqual(headers["X-AI-Shifu-Skill"], "ai-shifu-course-creator")
         self.assertEqual(headers["X-AI-Shifu-Skill-Version"], "1.0.0")
         self.assertEqual(headers["X-AI-Shifu-Caller-Agent"], "unknown")
+        self.assertEqual(headers["X-AI-Shifu-Caller-Agent-Name"], "Unknown Agent")
         self.assertNotIn("dotenv-private-session", headers.values())
 
-        self.run_cli("list", env={**clean_hints, "CURSOR_AGENT": ""})
-        self.assertEqual(self.request_headers[-1]["X-AI-Shifu-Caller-Agent"], "cursor")
+        self.run_cli("list", env={**clean_hints, "CURSOR_AGENT": "1"})
+        self.assertEqual(self.request_headers[-1]["X-AI-Shifu-Caller-Agent"], "cursor-cli")
+        self.assertEqual(self.request_headers[-1]["X-AI-Shifu-Caller-Agent-Name"], "Cursor CLI")
         self.run_cli("list", env=clean_hints)
         self.assertEqual(self.request_headers[-1]["X-AI-Shifu-Caller-Agent"], "unknown")
+        self.assertEqual(self.request_headers[-1]["X-AI-Shifu-Caller-Agent-Name"], "Unknown Agent")
 
         self.env_file.write_text("SHIFU_DISABLE_ANALYTICS=1\n", encoding="utf-8")
         self.run_cli("list", env={**clean_hints, "CODEX_THREAD_ID": "private-session"})

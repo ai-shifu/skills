@@ -29,65 +29,87 @@ EXPECTED_METADATA = {
     "X-AI-Shifu-Skill": "ai-shifu-course-creator",
     "X-AI-Shifu-Skill-Version": "2.0.0",
     "X-AI-Shifu-Caller-Agent": "codex",
+    "X-AI-Shifu-Caller-Agent-Name": "Codex",
 }
 
 
-class PresenceOnlyEnvironment:
-    """Any access beyond checking fixed names fails the regression test."""
-
-    def __init__(self, keys):
-        self.keys = set(keys)
-
-    def __contains__(self, key):
-        return key in self.keys
-
-    def __getitem__(self, _key):
-        raise AssertionError("Agent detection must not read environment values")
-
-    def get(self, *_args):
-        raise AssertionError("Agent detection must not read environment values")
-
-    def __iter__(self):
-        raise AssertionError("Agent detection must not scan environment names")
-
-
 class CallerDetectionTests(unittest.TestCase):
-    def test_each_allowlisted_hint_requires_presence_only(self):
-        cases = {
-            "codex": ("CODEX_THREAD_ID", "CODEX_SESSION_ID"),
-            "claude_code": ("CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION"),
-            "cursor": ("CURSOR_AGENT",),
-            "hermes": ("HERMES_AGENT", "HERMES_SESSION_ID"),
-            "openclaw": ("OPENCLAW_SHELL",),
-            "workbuddy": ("WORKBUDDY_CONFIG_DIR",),
-            "qoderwork": ("QODERWORK_IS_CN", "QODERWORK_SOURCE_CHAT_ID"),
-            "grok_bot": ("SAND_AGENT",),
+    def test_cli_generates_every_fixed_display_name_with_the_bundled_version(self):
+        names = {
+            "codex": "Codex",
+            "crush": "Crush",
+            "hermes-agent": "Hermes Agent",
+            "kilo-code": "Kilo Code",
+            "trae": "TRAE",
+            "vtcode": "VT Code",
+            "claude-code": "Claude Code",
+            "cursor-cli": "Cursor CLI",
+            "cursor": "Cursor",
+            "openclaw": "OpenClaw",
+            "workbuddy": "WorkBuddy",
+            "qwenwork": "QwenWork",
+            "grok-bot": "Grok Bot",
+            "cue": "Cue",
+            "muse": "Muse",
+            "manus": "Manus",
+            "doubao-work": "Doubao Work",
+            "kimi": "Kimi Code",
+            "grok-build": "Grok Build",
+            "gemini-cli": "Gemini CLI",
+            "cline": "Cline",
+            "antigravity": "Antigravity",
+            "augment-cli": "Augment CLI",
+            "opencode": "opencode",
+            "goose": "Goose",
+            "junie": "Junie",
+            "pi": "Pi",
+            "cowork": "Claude Cowork",
+            "kiro": "Kiro",
+            "github-copilot": "GitHub Copilot",
+            "replit": "Replit",
+            "devin": "Devin",
+            "zed": "Zed",
+            "hi": "hi",
+            "sandbase-harness": "SandBase Harness",
+            "unknown": "Unknown Agent",
         }
-        for expected, keys in cases.items():
-            for key in keys:
-                with self.subTest(key=key):
-                    self.assertEqual(cli._detect_caller_agent(PresenceOnlyEnvironment([key])), expected)
-            self.assertEqual(cli._detect_caller_agent(PresenceOnlyEnvironment(keys)), expected)
+        with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(cli, "_client_version", return_value="3.12.45"):
+            for family, name in names.items():
+                with self.subTest(family=family):
+                    self.assertEqual(cli._skill_usage_metadata(family), {
+                        "X-AI-Shifu-Skill": "ai-shifu-course-creator",
+                        "X-AI-Shifu-Skill-Version": "3.12.45",
+                        "X-AI-Shifu-Caller-Agent": family,
+                        "X-AI-Shifu-Caller-Agent-Name": name,
+                    })
+            self.assertEqual(cli._skill_usage_metadata("unverified-agent"), {})
 
-    def test_values_cannot_change_identity_and_unverified_names_are_ignored(self):
-        for value in ("", "0", "false", "sensitive-session-secret"):
-            self.assertEqual(cli._detect_caller_agent({"CODEX_THREAD_ID": value}), "codex")
-        self.assertEqual(cli._detect_caller_agent(PresenceOnlyEnvironment([
-            "MANUS_OPERATOR_PLATFORM", "MANUS_OPERATOR_WORKSPACE_NAMESPACE",
-            "MUSE_AGENT", "DOUBAO_AGENT", "CUA_PACK_DIR", "OPENAI_MODEL",
-        ])), "unknown")
-        self.assertEqual(cli._detect_caller_agent(PresenceOnlyEnvironment([])), "unknown")
-
-    def test_independent_conflicts_are_unknown_with_specific_grok_exception(self):
-        for keys in (
-            ["CODEX_THREAD_ID", "CLAUDECODE"],
-            ["WORKBUDDY_CONFIG_DIR", "QODERWORK_SOURCE_CHAT_ID"],
-            ["SAND_AGENT", "CURSOR_AGENT", "HERMES_SESSION_ID"],
+    def test_cli_accepts_only_declared_or_runtime_evidence(self):
+        for agent_id in cli.AGENT_DISPLAY_NAMES:
+            self.assertEqual(cli._detect_caller_agent({"AI_AGENT": agent_id}), agent_id)
+        for env in (
+            {}, {"AI_AGENT": "unregistered", "CODEX_THREAD_ID": "1"},
+            {"GOOSE_PROVIDER": "synthetic-provider"}, {"CURSOR_TRACE_ID": "synthetic"},
+            {"COPILOT_GITHUB_TOKEN": "synthetic-secret"}, {"PATH": "/opt/.pi/agent/bin"},
         ):
-            self.assertEqual(cli._detect_caller_agent(PresenceOnlyEnvironment(keys)), "unknown")
-        self.assertEqual(cli._detect_caller_agent(PresenceOnlyEnvironment([
-            "SAND_AGENT", "CURSOR_AGENT",
-        ])), "grok_bot")
+            self.assertEqual(cli._detect_caller_agent(env), "unknown")
+        self.assertEqual(cli._detect_caller_agent({"AI_AGENT": " CLAUDE_CODE "}), "claude-code")
+
+    def test_nonempty_runtime_policy_and_removed_hints_replace_presence_only(self):
+        self.assertEqual(cli._detect_caller_agent({"CODEX_THREAD_ID": ""}), "unknown")
+        for value in ("0", "false", " ", "sensitive-session-secret"):
+            self.assertEqual(cli._detect_caller_agent({"CODEX_THREAD_ID": value}), "codex")
+        self.assertEqual(cli._detect_caller_agent(dict.fromkeys((
+            "CODEX_SESSION_ID", "CLAUDE_CODE_CHILD_SESSION", "WORKBUDDY_CONFIG_DIR",
+            "QODERWORK_IS_CN", "QODERWORK_SOURCE_CHAT_ID", "MUSE_AGENT", "DOUBAO_AGENT",
+        ), "synthetic")), "unknown")
+
+    def test_ordered_runtime_matches_replace_independent_conflict_fallback(self):
+        self.assertEqual(cli._detect_caller_agent({"CODEX_THREAD_ID": "1", "CLAUDECODE": "1"}), "codex")
+        self.assertEqual(cli._detect_caller_agent({"SAND_AGENT": "1", "CURSOR_AGENT": "1"}), "grok-bot")
+        self.assertEqual(cli._detect_caller_agent({
+            "SAND_AGENT": "1", "CURSOR_AGENT": "1", "HERMES_SESSION_ID": "1",
+        }), "hermes-agent")
 
 
 class UsageTransportTests(unittest.TestCase):
@@ -139,6 +161,7 @@ class UsageTransportTests(unittest.TestCase):
             headers = call.kwargs["headers"]
             metadata = {key: value for key, value in headers.items() if key.startswith("X-AI-Shifu-")}
             self.assertEqual(metadata, expected)
+            self.assertNotIn("User-Agent", headers)
             self.assertNotIn("private-session", headers.values())
             if "/creator-analytics/" in call.args[0]:
                 self.assertEqual(headers["Authorization"], "Bearer auth-token")
@@ -156,6 +179,41 @@ class UsageTransportTests(unittest.TestCase):
         self.assert_usage_headers(EXPECTED_METADATA)
         self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
 
+    def test_display_names_follow_ordered_detection_on_all_business_transports(self):
+        cases = (
+            ({"CODEX_THREAD_ID": "1", "CODEX_CI": "1"}, "codex", "Codex"),
+            ({"CLAUDECODE": "1", "CLAUDE_CODE": "1"}, "claude-code", "Claude Code"),
+            ({"CURSOR_AGENT": "1"}, "cursor-cli", "Cursor CLI"),
+            ({"HERMES_AGENT": "1"}, "hermes-agent", "Hermes Agent"),
+            ({"OPENCLAW_SHELL": "1"}, "openclaw", "OpenClaw"),
+            ({"WORKBUDDY_APPLICATION_NAME": "arbitrary"}, "workbuddy", "WorkBuddy"),
+            ({"QODER_WORK_INTEGRATION_PRODUCT": "arbitrary"}, "qwenwork", "QwenWork"),
+            ({"SAND_AGENT": "0", "CURSOR_AGENT": "1"}, "grok-bot", "Grok Bot"),
+            ({}, "unknown", "Unknown Agent"),
+            ({"CODEX_THREAD_ID": "1", "CLAUDECODE": "1"}, "codex", "Codex"),
+            ({"SAND_AGENT": "1", "CURSOR_AGENT": "1", "HERMES_AGENT": "1"}, "hermes-agent", "Hermes Agent"),
+            ({"AI_AGENT": "unknown-declaration", "CODEX_THREAD_ID": "1"}, "unknown", "Unknown Agent"),
+            ({"COPILOT_MODEL": "synthetic-model"}, "unknown", "Unknown Agent"),
+            ({"AI_AGENT": " GITHUB-COPILOT "}, "github-copilot", "GitHub Copilot"),
+            ({"CODEX_THREAD_ID": ""}, "unknown", "Unknown Agent"),
+            ({"VTCODE": "0"}, "vtcode", "VT Code"),
+            ({"MANUS_LONG_DESKTOP_WORKER": "false"}, "cue", "Cue"),
+        )
+        for environment, family, name in cases:
+            with self.subTest(family=family, name=name):
+                os.environ.clear()
+                os.environ.update(environment)
+                self.get.reset_mock()
+                self.post.reset_mock()
+                with mock.patch.object(cli, "cmd_list", side_effect=self.all_business_transports):
+                    self.run_cli("list")
+                self.assert_usage_headers({
+                    **EXPECTED_METADATA,
+                    "X-AI-Shifu-Caller-Agent": family,
+                    "X-AI-Shifu-Caller-Agent-Name": name,
+                })
+                self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
+
     def test_dotenv_cannot_forge_caller_and_detection_runs_once(self):
         os.environ.clear()
         cli.load_env.side_effect = lambda: os.environ.update({"CODEX_THREAD_ID": "forged", "SAND_AGENT": "forged"})
@@ -165,7 +223,11 @@ class UsageTransportTests(unittest.TestCase):
         ):
             self.run_cli("list")
         self.assertEqual(detect.call_count, 1)
-        self.assert_usage_headers({**EXPECTED_METADATA, "X-AI-Shifu-Caller-Agent": "unknown"})
+        self.assert_usage_headers({
+            **EXPECTED_METADATA,
+            "X-AI-Shifu-Caller-Agent": "unknown",
+            "X-AI-Shifu-Caller-Agent-Name": "Unknown Agent",
+        })
 
     def test_optout_from_export_or_dotenv_omits_all_metadata_on_every_transport(self):
         for source in ("process", "dotenv"):
@@ -211,17 +273,18 @@ class UsageTransportTests(unittest.TestCase):
 
         def request(_args):
             cli.api(self.context.base_url, "auth-token", "get", "/shifus")
-            observed.append(self.get.call_args.kwargs["headers"]["X-AI-Shifu-Caller-Agent"])
+            headers = self.get.call_args.kwargs["headers"]
+            observed.append((headers["X-AI-Shifu-Caller-Agent"], headers["X-AI-Shifu-Caller-Agent-Name"]))
 
         with mock.patch.object(cli, "cmd_list", side_effect=request):
             self.run_cli("list")
             os.environ.clear()
-            os.environ["SAND_AGENT"] = ""
-            os.environ["CURSOR_AGENT"] = ""
+            os.environ["SAND_AGENT"] = "1"
+            os.environ["CURSOR_AGENT"] = "1"
             self.run_cli("list")
             os.environ.clear()
             self.run_cli("list")
-        self.assertEqual(observed, ["codex", "grok_bot", "unknown"])
+        self.assertEqual(observed, [("codex", "Codex"), ("grok-bot", "Grok Bot"), ("unknown", "Unknown Agent")])
         with mock.patch.object(cli, "cmd_list", side_effect=SystemExit(1)), self.assertRaises(SystemExit):
             self.run_cli("list")
         self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
