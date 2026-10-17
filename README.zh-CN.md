@@ -68,7 +68,7 @@ skill 以 `SKILL.md` 作为行为定义。按照 [Agent Skills](https://agentski
 
 完整建课遵循[默认发布及完成稿确认规则](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome)。用户明确要求本地交付或不发布的草稿时，按该范围完成。已有成果可以直接使用对应的[构建与导入](skills/ai-shifu-course-creator/references/build-and-import.md)、[同步](skills/ai-shifu-course-creator/references/course-sync.md)或[管理](skills/ai-shifu-course-creator/references/course-management.md)能力。
 
-课程创作器 CLI 的业务 API 请求会附带可关闭、关联当前账号的使用统计元数据，其中的 Agent 类型按 detect_agent 0.1.5 规范在本地尽力识别。设置 `SHIFU_DISABLE_ANALYTICS=1` 可关闭这项元数据。详见[采集字段及识别限制](skills/ai-shifu-course-creator/references/cli/cli-reference.md#skill-usage-analytics)。
+课程创作器 CLI 的业务 API 请求会附带可关闭、关联当前账号的使用统计元数据，其中的 Agent 类型按 detect_agent 0.1.5 规范在本地尽力识别。设置 `SHIFU_DISABLE_ANALYTICS=1` 可关闭这项元数据。详见[使用统计配置](skills/ai-shifu-course-creator/.env.example)。
 
 ## 元数据校验
 
