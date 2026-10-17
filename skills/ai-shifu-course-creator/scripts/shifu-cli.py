@@ -84,8 +84,7 @@ def _skill_usage_metadata(caller_agent):
         if caller_agent not in _CALLER_AGENT_NAMES or os.environ.get("SHIFU_DISABLE_ANALYTICS") == "1":
             return {}
         version = _client_version()
-        # Only a bounded stable release version may leave this process. The
-        # backend retains its major version for low-cardinality usage reports.
+        # Only bounded numeric release versions may leave this process.
         if not isinstance(version, str) or not re.fullmatch(r"[0-9]{1,6}\.[0-9]{1,6}\.[0-9]{1,6}", version):
             return {}
         return {

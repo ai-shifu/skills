@@ -1,10 +1,5 @@
 """Local implementation of ai-shifu/detect_agent 0.1.5 (MIT).
 
-Specification and conformance source: commit
-9eee13ebdd8dcee22bd90b03125fa9f509a80be1. Detection describes the associated
-process environment, never an authenticated caller or model. Runtime use has no
-network or SDK dependency. See tests/fixtures/detect_agent/ for attribution.
-
 Specification attribution (MIT License):
 Copyright (c) 2026 ai-shifu
 
