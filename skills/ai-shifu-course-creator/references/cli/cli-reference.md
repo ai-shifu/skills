@@ -47,25 +47,31 @@ check-update [--force] [--dev-manifest-url <loopback-url>]
 
 ## Skill Usage Analytics
 
-Authenticated course operations, sync, import/export, image upload, and course-data queries include three headers on their existing AI-Shifu API requests: `X-AI-Shifu-Skill` (`ai-shifu-course-creator`), `X-AI-Shifu-Skill-Version` (the installed stable release version), and `X-AI-Shifu-Caller-Agent` (one family below or `unknown`). The CLI sends no separate analytics request. Login, authorization polling, token verification, profile/configuration changes, update checks, and local builds do not carry these headers. One API request is one possible usage event; a command may make several requests, so event counts do not measure completed authoring tasks.
+Authenticated course operations, sync, import/export, image upload, and course-data queries include three headers on their existing AI-Shifu API requests: `X-AI-Shifu-Skill` (`ai-shifu-course-creator`), `X-AI-Shifu-Skill-Version` (the installed stable release version), and `X-AI-Shifu-Caller-Agent` (one family below or `unknown`). The CLI sends no separate analytics request. Login, authorization polling, token verification, profile/configuration changes, update checks, and local builds do not carry these headers.
 
-The AI-Shifu backend can combine these headers with the account ID established by its existing authentication, using the same identity as browser product analytics. Its usage event contains only the Skill, Skill major version, Agent family, allowlisted operation and outcome, and request duration. These account-linked usage records support adoption and return-usage analysis; they are not anonymous. They exclude environment values or variable names, model identifiers, conversation/session IDs, file paths, prompts, course content, titles, query bodies, and raw errors. Ordinary business requests still carry the data required to perform their requested operation; this contract limits the additional usage event.
+On a compatible Umami 3.4 deployment, the backend records each eligible authenticated API response as one virtual pageview tagged `skill_api_request_v2`, replacing that request's older `skill_api_request_v1` custom event. It uses the same Umami website as browser product analytics, with Browser `AI-Shifu CLI`, OS set to the Agent display name below, and the fixed synthetic device category `desktop`. The page path is the allowlisted matched API route template, with dynamic values replaced by parameter names such as `/api/shifu/shifus/:shifu_bid/detail`. No safe template means no pageview. A selected service may still use the older contract until its compatible deployment is verified; CLI metadata alone does not prove collection or storage.
 
-Set `SHIFU_DISABLE_ANALYTICS=1` in the process environment or the skill's `.env` to omit all three headers. Process values take precedence over `.env`. Opting out does not change authentication, permissions, command results, or the requested course operation. Metadata construction is best-effort: if detection or version validation fails, the business request proceeds without usage metadata. Server-side analytics enablement, access, retention, deletion, and deployment-region policy belong to the selected AI-Shifu service.
+The backend uses only the account ID established by its existing authentication, as the same distinct identity used by browser product analytics. It attempts identity association before the pageview, without letting a tracking failure affect the business request. These account-linked records are not anonymous. They allow cross-channel account deduplication, but do not guarantee that browser and CLI activity share one session or that every native funnel joins activity across sessions.
+
+The pageview's event data contains only `skill_id`, `skill_version_major`, `caller_agent`, `operation`, `method`, `outcome`, and `duration_ms`. The account ID belongs only to distinct identity, not event data. Additional usage reporting excludes environment values or variable names, model identifiers, Agent versions, conversation/session IDs, local file paths, real resource IDs, full URLs or query strings, credentials, request or response bodies, prompts, course content, titles, model output, and raw errors. The sanitized route template is the only tracked path. Ordinary business requests still carry the data required to perform their requested operation; this contract limits the additional usage reporting.
+
+Both successful and failed eligible requests count as pageviews; HTTP 200 with a nonzero business code is a failure. Retries are independent requests. A download success means its response was prepared, not that the file was received. One command may call several APIs, so pageviews measure interface requests, not CLI commands, completed authoring tasks, human visits, sessions, or distinct accounts. Successful requests support Skill activity and return-usage metrics. Historical v1 requests and new tagged pageviews are combined without adding old course-stage events. Browser/OS card counts are client classifications, not distinct account counts. Web-only reporting keeps its existing hostname filter; the shared website's total pageviews increase when CLI pageviews are collected.
+
+Set `SHIFU_DISABLE_ANALYTICS=1` in the process environment or the skill's `.env` to omit all three headers and prevent this new CLI pageview reporting. Process values take precedence over `.env`. Opting out does not change authentication, permissions, command results, or the requested course operation. Metadata construction is best-effort: if detection or version validation fails, the business request proceeds without usage metadata. Server-side analytics enablement, access, retention, deletion, and deployment-region policy belong to the selected AI-Shifu service.
 
 The CLI detects the caller once, before loading `.env` or profile configuration, by checking only whether fixed environment-variable names exist. It does not inspect their values. Empty or false-looking values still count as present. Do not add these identity hints to `.env`: they are internal runtime hints supplied by the host, not user configuration or a guaranteed public interface. Nothing is persisted between CLI processes. The CLI accepts no caller-identity flag, uses no model inference, and does not scan files, parent processes, hooks, or host APIs to identify the Agent.
 
-| Reported family | Presence-only runtime hints | Interpretation and limits |
-| --- | --- | --- |
-| `codex` | `CODEX_THREAD_ID`, `CODEX_SESSION_ID` | Codex family; does not identify the model or interface. |
-| `claude_code` | `CLAUDECODE`, `CLAUDE_CODE_CHILD_SESSION` | Claude Code family; does not identify a particular subagent. |
-| `cursor` | `CURSOR_AGENT` | Cursor family unless Grok Bot's more specific hint is also present. |
-| `hermes` | `HERMES_AGENT`, `HERMES_SESSION_ID` | Hermes family. |
-| `openclaw` | `OPENCLAW_SHELL` | OpenClaw family. |
-| `workbuddy` | `WORKBUDDY_CONFIG_DIR` | WorkBuddy host configuration forwarded to its shell. |
-| `qoderwork` | `QODERWORK_IS_CN`, `QODERWORK_SOURCE_CHAT_ID` | QoderWork / Qwen Work family. Existence cannot distinguish region or branding. |
-| `grok_bot` | `SAND_AGENT` | Grok Bot local Bash/Zsh executor. Cloud execution is not verified. |
-| `unknown` | No matches or conflicting independent families | Also used for unverified Doubao Work, Muse, Manus, and Cue environments. |
+| Reported family | Umami OS display | Presence-only runtime hints | Interpretation and limits |
+| --- | --- | --- | --- |
+| `codex` | Codex | `CODEX_THREAD_ID`, `CODEX_SESSION_ID` | Codex family; does not identify the model or interface. |
+| `claude_code` | Claude Code | `CLAUDECODE`, `CLAUDE_CODE_CHILD_SESSION` | Claude Code family; does not identify a particular subagent. |
+| `cursor` | Cursor | `CURSOR_AGENT` | Cursor family unless Grok Bot's more specific hint is also present. |
+| `hermes` | Hermes | `HERMES_AGENT`, `HERMES_SESSION_ID` | Hermes family. |
+| `openclaw` | OpenClaw | `OPENCLAW_SHELL` | OpenClaw family. |
+| `workbuddy` | WorkBuddy | `WORKBUDDY_CONFIG_DIR` | WorkBuddy host configuration forwarded to its shell. |
+| `qoderwork` | QoderWork | `QODERWORK_IS_CN`, `QODERWORK_SOURCE_CHAT_ID` | QoderWork / Qwen Work family. Existence cannot distinguish region or branding. |
+| `grok_bot` | Grok Bot | `SAND_AGENT` | Grok Bot local Bash/Zsh executor. Cloud execution is not verified. |
+| `unknown` | Unknown Agent | No matches or conflicting independent families | Also used for unverified Doubao Work, Muse, Manus, and Cue environments. |
 
 Several hints for the same family count once. Grok Bot's executor supplies both `SAND_AGENT` and `CURSOR_AGENT`, so its specific hint suppresses only the shared Cursor match. Any remaining independent family conflict produces `unknown`. Nested Agents, stripped/inherited variables, shell configuration, host updates, and user-defined variables can affect attribution. These hints are not trusted identity and must never control billing, permissions, or auditing.
 
