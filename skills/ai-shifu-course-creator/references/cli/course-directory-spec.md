@@ -264,6 +264,15 @@ Legacy entries without `base_url` have unknown provenance. Preserve them as-is; 
 
 Every top-level chapter has an empty `parent_bid` and empty `content`. Every lesson has its chapter BID as `parent_bid`, its file contents in `content`, and the resolved Course Prompt in its `course_prompt` field. Generated BIDs contain UUID characters without hyphens. Positions are zero-based strings.
 
+### Import input validation
+
+Before any platform request, including an existing course's revision lookup, `import` reads and validates the complete JSON payload. Execution uses that same in-memory payload rather than reopening the file after validation. Unreadable or invalid JSON and invalid fields produce a field-specific error on stderr and exit `1` without any platform calls.
+
+- The payload must be an object with a `shifu` object and an `outline_items` array. Course and outline `title` values must be non-empty strings. Optional `shifu.description` and outline `content` values must be strings when supplied; omission defaults to an empty string. All consumed text must be valid UTF-8 Unicode, including the selected Course Prompt. Text is preserved without trimming.
+- An outline's `outline_item_bid` may be omitted, empty, or `null` when no child references it. Non-empty IDs must be unique strings; they need not use the builder's UUID format.
+- An omitted, empty, or `null` `parent_bid` identifies a top-level outline. Each non-empty parent must be a string identifying a different top-level outline in this payload. Missing parents, self-references, cycles, and nesting beyond two levels are rejected before the old course is modified.
+- Both builder and platform-export payloads are accepted. Unused metadata is ignored, top-level outline content remains supported, and an empty `outline_items` array remains a valid request to remove the existing outline tree.
+
 ### Course Prompt import compatibility
 
 `import` accepts both the builder's `shifu.course_prompt` and the platform export's `shifu.llm_system_prompt`. When both keys are present, `course_prompt` takes precedence, including an explicit empty string. The selected value must be a string; `null` and other types are rejected before creating or updating a course. Prompt text is sent unchanged, including whitespace.

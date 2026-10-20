@@ -2371,22 +2371,93 @@ def _outline_create_payload(item, parent_bid=None):
     return payload
 
 
-def _import_flat(base_url, token, json_file, shifu_bid):
-    """Import from flat JSON file (original shifu-api-import.py logic)."""
-    with open(json_file, "r", encoding="utf-8") as f:
-        import_data = json.load(f)
+def _load_import_data(json_file):
+    """Read the import once so validation and execution use the same content."""
+    try:
+        with open(json_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        print(f"Error: cannot read import JSON: {error}", file=sys.stderr)
+        sys.exit(1)
 
-    shifu_info = import_data["shifu"]
-    outline_items = import_data["outline_items"]
 
-    # Build and platform export use different names for the same content.
-    # Resolve and validate before any write; absence must not clear a prompt.
+def _validate_import_data(import_data):
+    """Reject malformed content and unresolvable outlines before platform calls."""
+    def invalid(field, reason):
+        print(f"Error: {field} {reason}", file=sys.stderr)
+        sys.exit(1)
+
+    def require_text(value, field, *, title=False, prompt=False):
+        if not isinstance(value, str):
+            reason = "must be a non-empty string" if title else "must be a string"
+            if prompt:
+                reason += "; use an empty string to clear the Course Prompt."
+            invalid(field, reason)
+        if title and not value.strip():
+            invalid(field, "must be a non-empty string")
+        try:
+            value.encode("utf-8")
+        except UnicodeEncodeError:
+            invalid(field, "must contain valid Unicode text")
+
+    if not isinstance(import_data, dict):
+        invalid("import JSON", "must be an object")
+    shifu_info = import_data.get("shifu")
+    if not isinstance(shifu_info, dict):
+        invalid("shifu", "must be an object")
+    require_text(shifu_info.get("title"), "shifu.title", title=True)
+    if "description" in shifu_info:
+        require_text(shifu_info["description"], "shifu.description")
+
+    # Only the selected prompt is consumed; preserve build/export precedence.
     prompt_key = next((key for key in ("course_prompt", "llm_system_prompt")
                        if key in shifu_info), None)
-    if prompt_key is not None and not isinstance(shifu_info[prompt_key], str):
-        print(f"Error: shifu.{prompt_key} must be a string; "
-              "use an empty string to clear the Course Prompt.", file=sys.stderr)
-        sys.exit(1)
+    if prompt_key is not None:
+        require_text(shifu_info[prompt_key], f"shifu.{prompt_key}", prompt=True)
+
+    outline_items = import_data.get("outline_items")
+    if not isinstance(outline_items, list):
+        invalid("outline_items", "must be an array")
+    outlines_by_bid = {}
+    for index, item in enumerate(outline_items):
+        field = f"outline_items[{index}]"
+        if not isinstance(item, dict):
+            invalid(field, "must be an object")
+        require_text(item.get("title"), f"{field}.title", title=True)
+        if "content" in item:
+            require_text(item["content"], f"{field}.content")
+        item_bid = item.get("outline_item_bid")
+        if item_bid is not None and not isinstance(item_bid, str):
+            invalid(f"{field}.outline_item_bid", "must be a string or null")
+        if item_bid:
+            if not item_bid.strip():
+                invalid(f"{field}.outline_item_bid", "must not be blank")
+            if item_bid in outlines_by_bid:
+                invalid(f"{field}.outline_item_bid", "duplicates another outline ID")
+            outlines_by_bid[item_bid] = item
+        parent_bid = item.get("parent_bid")
+        if parent_bid is not None and not isinstance(parent_bid, str):
+            invalid(f"{field}.parent_bid", "must be a string or null")
+
+    # The importer creates roots first, then their children. An old platform
+    # BID or a nested parent cannot be resolved after the old tree is deleted.
+    for index, item in enumerate(outline_items):
+        parent_bid = item.get("parent_bid")
+        if parent_bid:
+            parent = outlines_by_bid.get(parent_bid)
+            if parent is None or parent is item or parent.get("parent_bid"):
+                invalid(f"outline_items[{index}].parent_bid",
+                        "must reference a different top-level outline in this import")
+    return prompt_key
+
+
+def _import_flat(base_url, token, json_file, shifu_bid, *, import_data=None):
+    """Import validated content from a flat JSON file or its loaded snapshot."""
+    if import_data is None:
+        import_data = _load_import_data(json_file)
+    prompt_key = _validate_import_data(import_data)
+    shifu_info = import_data["shifu"]
+    outline_items = import_data["outline_items"]
 
     # Create or reuse shifu
     if shifu_bid:
@@ -2484,7 +2555,7 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         title = item["title"]
         content = item.get("content", "")
         old_parent = item["parent_bid"]
-        new_parent = bid_map.get(old_parent, old_parent)
+        new_parent = bid_map[old_parent]
 
         result = api(base_url, token, "put", f"/shifus/{shifu_bid}/outlines",
                      json=_outline_create_payload(item, parent_bid=new_parent))
@@ -2516,6 +2587,24 @@ def cmd_import(args):
         print("Error: provide <shifu_bid> or use --new")
         sys.exit(1)
 
+    # Validate the complete payload before even a revision lookup can trigger
+    # conflict recovery. Retain this snapshot rather than reopening the file.
+    if args.course_dir:
+        json_file = _build_import_json(
+            course_dir=args.course_dir,
+            title=getattr(args, "title", None),
+            description=getattr(args, "description", None),
+            keywords=getattr(args, "keywords", None),
+            chapter_name=getattr(args, "chapter_name", None),
+        )
+    elif args.json_file:
+        json_file = args.json_file
+    else:
+        print("Error: provide --json-file or --course-dir")
+        sys.exit(1)
+    import_data = _load_import_data(json_file)
+    _validate_import_data(import_data)
+
     base_url, token = resolve_auth(args)
     shifu_bid = None if args.new else args.shifu_bid
 
@@ -2536,22 +2625,8 @@ def cmd_import(args):
                                      profile_name=_profile_name(args))
                 sys.exit(EXIT_CONFLICT)
 
-    result_bid = None
-    if args.course_dir:
-        # Build JSON first, then import
-        json_file = _build_import_json(
-            course_dir=args.course_dir,
-            title=getattr(args, "title", None),
-            description=getattr(args, "description", None),
-            keywords=getattr(args, "keywords", None),
-            chapter_name=getattr(args, "chapter_name", None),
-        )
-        result_bid = _import_flat(base_url, token, json_file, shifu_bid)
-    elif args.json_file:
-        result_bid = _import_flat(base_url, token, args.json_file, shifu_bid)
-    else:
-        print("Error: provide --json-file or --course-dir")
-        sys.exit(1)
+    result_bid = _import_flat(base_url, token, json_file, shifu_bid,
+                              import_data=import_data)
 
     # Re-seed the sync manifest from the freshly imported cloud state so future
     # edits are version-tracked. Phase 1 import is destructive (all outline bids
