@@ -641,13 +641,85 @@ class ReleaseNotesTest(unittest.TestCase):
         repeated = release_notes.generate_notes(str(self.repo), head, "1.1.0")
         self.assertEqual(snapshot, repeated)
         paths = release_notes.write_notes(snapshot, self.root / "notes")
-        self.assertEqual(json.loads(paths[0].read_text()), snapshot)
-        self.assertEqual(paths[1].read_text(), release_notes.render_notes(snapshot))
+        saved = json.loads(paths[0].read_text())
+        self.assertEqual(saved, snapshot)
+        markdown = paths[1].read_text()
+        self.assertEqual(markdown, release_notes.render_notes(snapshot))
+        self.assertIn("! Updated publishing workflow", markdown)
         self.assertIn(
-            "Publication to each channel is tracked separately", paths[1].read_text()
+            "Offline Git history preview: PR metadata has not been verified with GitHub.",
+            markdown,
         )
-        self.assertIn("! Updated publishing workflow", paths[1].read_text())
-        self.assertEqual(snapshot["fingerprint"], snapshot["facts_sha256"])
+        for diagnostic in ("Source commit:", "Collection status:", "Pull requests:", "Base:", "Packages:"):
+            self.assertNotIn(diagnostic, markdown)
+        self.assertEqual(saved["head_sha"], head)
+        self.assertEqual(saved["base_ref"], "v1.0.0")
+        self.assertEqual(saved["base_sha"], self.base)
+        self.assertEqual(saved["collection_status"], "complete")
+        self.assertEqual(saved["status"], "complete")
+        self.assertEqual(saved["pr_count"], 1)
+        self.assertFalse(saved["initial_release"])
+        self.assertEqual(saved["fingerprint"], saved["facts_sha256"])
+
+    def test_published_release_notes_match_the_edited_v2_1_1_body(self) -> None:
+        base = "720abe0e4c0a2582ee871a88c46817c82404a860"
+        head = "713ed58e41f042c7c912d116d26b9c87d0bde9d4"
+        snapshot = {
+            "version": "2.1.1",
+            "repository": "ai-shifu/skills",
+            "head_sha": head,
+            "base_ref": "v2.1.0",
+            "base_sha": base,
+            "collection_status": "complete",
+            "status": "complete",
+            "pr_count": 2,
+            "initial_release": False,
+            "preview": False,
+            "draft_preview": False,
+            "pr_metadata_verified": True,
+            "changes": [
+                {
+                    "number": 196,
+                    "title": "chore: flow version to v2.1.1",
+                    "author": "sunner",
+                    "author_is_login": True,
+                    "url": "https://github.com/ai-shifu/skills/pull/196",
+                    "merged_at": "2026-10-20T08:25:29Z",
+                    "commit": head,
+                    "kind": "pr",
+                },
+                {
+                    "number": 195,
+                    "title": "fix: reject invalid course imports before changing content",
+                    "author": "sunner",
+                    "author_is_login": True,
+                    "url": "https://github.com/ai-shifu/skills/pull/195",
+                    "merged_at": "2026-10-20T08:21:48Z",
+                    "commit": "fee88956c007e34a301bfd1c897db2c09c3652a4",
+                    "kind": "pr",
+                },
+            ],
+        }
+        expected = (
+            "AI-Shifu Skills Release v2.1.1\n\n"
+            "## Changelog\n\n"
+            "### Bug Fixes\n\n"
+            "- reject invalid course imports before changing content "
+            "([#195](https://github.com/ai-shifu/skills/pull/195)) by @sunner\n\n"
+            "### Maintenance\n\n"
+            "- flow version to v2.1.1 "
+            "([#196](https://github.com/ai-shifu/skills/pull/196)) by @sunner\n\n"
+            "[Full comparison](https://github.com/ai-shifu/skills/compare/"
+            "720abe0e4c0a2582ee871a88c46817c82404a860..."
+            "713ed58e41f042c7c912d116d26b9c87d0bde9d4)\n"
+        )
+        self.assertEqual(release_notes.render_notes(snapshot), expected)
+        json_path, markdown_path = release_notes.write_notes(snapshot, self.root / "published-notes")
+        self.assertEqual(markdown_path.read_text(), expected)
+        saved = json.loads(json_path.read_text())
+        for key in ("head_sha", "base_ref", "base_sha", "collection_status", "status", "pr_count", "initial_release"):
+            self.assertEqual(saved[key], snapshot[key])
+        self.assertEqual(saved["fingerprint"], saved["facts_sha256"])
 
     def test_preview_labels_counts_and_final_snapshot_fingerprint(self) -> None:
         head = self.commit("feat: Preview improvement (#1)")
@@ -656,10 +728,9 @@ class ReleaseNotesTest(unittest.TestCase):
         )
         previous_hash = snapshot["facts_sha256"]
         self.assertIn("PREVIEW ONLY", release_notes.render_notes(snapshot))
-        self.assertIn(
-            "Collection status: complete. Pull requests: 1.",
-            release_notes.render_notes(snapshot),
-        )
+        self.assertEqual(snapshot["collection_status"], "complete")
+        self.assertEqual(snapshot["status"], "complete")
+        self.assertEqual(snapshot["pr_count"], 1)
         snapshot["draft_preview"] = True
         _, markdown = release_notes.write_notes(snapshot, self.root / "draft-notes")
         self.assertIn("TEST DRAFT ONLY", markdown.read_text())
