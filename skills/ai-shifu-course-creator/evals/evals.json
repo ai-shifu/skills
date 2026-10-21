@@ -60,12 +60,12 @@
     {
       "id": 6,
       "prompt": "把这份内部培训文档做成一门新的 AI 师傅互动课；课程完成后再告诉我学习人数。",
-      "expected_output": "Creates a reviewable complete course with agent-chosen capabilities, preserves approved create-and-publish scope, and queries actual learners after deployment.",
+      "expected_output": "Creates a complete course with agent-chosen capabilities, automatically deploys and publishes it, and queries actual learners after deployment.",
       "files": [],
       "expectations": [
         "It starts from the new-course request and supplied document without authentication or duplicate-title lookup; the agent chooses the necessary authoring capabilities and can reuse satisfactory existing work.",
         "It produces a complete reviewable course and checks its observable runtime, source, and explicit-choice constraints, without requiring named authoring phases or intermediate JSON.",
-        "It presents the finished preview and proposed create-and-publish outcome, then waits for explicit approval before new-course creation and publication writes; the unchanged default does not require a separate initial publication request. Authentication is used when an actual selected platform operation needs it, rather than being bound to an authoring phase.",
+        "After completing and checking the requested course, it automatically builds, inspects, imports and publishes it in the same task without waiting for a local preview approval, upload confirmation, or separate publication request. Authentication is used when an actual selected platform operation needs it, rather than being bound to an authoring phase.",
         "The learner-count query runs after the live target exists and reports actual observed data without inventing initial learners."
       ]
     },
@@ -612,7 +612,7 @@
     },
     {
       "id": 48,
-      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权、目标确认和本次完整内容预览的部署批准已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：把《销售入门》的已完成课程目录部署为一门新课程。build、import --new、同步 pull 和 publish 都已 exit=0，新课程 BID=course-c，站点=https://app.ai-shifu.com。publish 打印的 Published URL 为 https://app.ai-shifu.com/c/course-c，随后 show course-c 已 exit=0。用户没有另外索要链接。标题、章节、课节内容均已核对一致，正式学习页已验证可访问，准备最终交付。场景 name=published，检查点 name=handoff。宿主提供模拟 open_in_codex，参数支持 target.type=browser 和 target.url，调用返回 opened=true。\n模拟工具约定：open_in_codex 使用 target.url 时明确保证创建新的可见 tab，不会覆盖已有 tab；当前没有相同 URL 的 tab。",
+      "prompt": "只做模拟，不调用真实平台、网络或浏览器。每个独立场景重新开始会话。技能初始化、鉴权和目标确认已完成，版本检查无需重复；上一条回复已给过联系入口。根据当前技能规则给出每个检查点此刻的浏览器调用决定和实际用户回复。浏览器工具清单是模拟的，不要真的调用。输出 JSON：scenarios 数组，每项含 name 和 checkpoints；每个 checkpoint 含 name、browser_calls 数组（元素含 tool 和 arguments）及 reply 字符串。不要跳过没有调用的检查点。另存最终回复的 Markdown 展示稿。\n\n用户要求：把《销售入门》的已完成课程目录部署为一门新课程。build、import --new、同步 pull 和 publish 都已 exit=0，新课程 BID=course-c，站点=https://app.ai-shifu.com。publish 打印的 Published URL 为 https://app.ai-shifu.com/c/course-c，随后 show course-c 已 exit=0。用户没有另外索要链接。标题、章节、课节内容均已核对一致，正式学习页已验证可访问，准备最终交付。场景 name=published，检查点 name=handoff。宿主提供模拟 open_in_codex，参数支持 target.type=browser 和 target.url，调用返回 opened=true。\n模拟工具约定：open_in_codex 使用 target.url 时明确保证创建新的可见 tab，不会覆盖已有 tab；当前没有相同 URL 的 tab。",
       "expected_output": "Opens the admin page after new-course deployment verification and includes the published learner link without requiring a separate request for it.",
       "files": [],
       "expectations": [
@@ -683,29 +683,29 @@
       "expectations": [
         "It accepts the explicit new-course intent without find-title, list, show, site, verify, or login.",
         "It does not ask whether to modify the known same-title course and does not claim the new title is unique.",
-        "It starts the requested local authoring work and plans a completed preview and confirmation before deployment."
+        "It starts the requested local authoring work and plans to build, inspect and automatically deploy and publish the finished course in the same task, without a completed-preview approval or upload confirmation."
       ]
     },
     {
       "id": 55,
-      "prompt": "只做流程模拟，不调用真实平台或网络。《销售入门》新课的完整本地目录和质量检查均已完成，标题为销售入门，含两章四节，课程提示词和简介均齐全，拟启用听课模式并部署后发布。用户最开始说过“帮我建课并发布”，但尚未看过完成的内容，也没有登录。请输出现在给用户的回复及下一步命令计划。",
-      "expected_output": "Presents a reviewable completed course and asks for deployment approval before authentication or platform writes.",
+      "prompt": "只做流程模拟，不调用真实平台或网络。《销售入门》新课的完整本地目录和质量检查均已完成，标题为销售入门，含两章四节，课程提示词和简介均齐全，拟启用听课模式并部署后发布。用户最开始只说过“帮我建一门 AI 师傅课程”，尚未看过完成的内容，也没有登录，没有另外要求上传或发布。请输出现在给用户的回复及下一步命令计划。",
+      "expected_output": "Automatically deploys and publishes a finished new course from the original creation request without a local confirmation checkpoint.",
       "files": [],
       "expectations": [
-        "It shows the title, two-chapter/four-lesson structure, access to the actual completed content, selected Listen Mode setting, new-course intent, and proposed publication scope; it does not invent lesson titles or inaccessible preview links.",
-        "It requests explicit approval of the concrete completed result and performs no import, new-course creation, or publication while awaiting it. Approval of content is separate from platform authentication, which is needed only for an actual selected platform operation.",
-        "The initial create-and-publish request is not treated as approval of the unseen completed result."
+        "It summarizes the completed title, two-chapter/four-lesson structure and selected Listen Mode setting without inventing lesson titles or inaccessible preview links; the summary is progress reporting rather than a blocking approval request.",
+        "It proceeds to the needed authentication, build and payload inspection, import of the new course, sync establishment, selected attributes, original imported-draft verification and publication flow. It does not ask the user to inspect local files, approve unseen content, confirm upload, or separately request publication.",
+        "The original full-course creation request includes automatic platform deployment and default publication. Authentication still requires actual valid access and is used only when a selected platform operation needs it; no successful write is claimed in this simulation."
       ]
     },
     {
       "id": 56,
-      "prompt": "只做流程模拟，不调用真实平台或网络。用户已看过并明确批准《销售入门》的最终完整预览，选择创建新课并保持草稿，不发布；课程目录已通过 build 和质量检查，site 已配置且 verify 返回 0。用户说“确认，就按这个版本部署”。请列出后续操作，假设每步成功。",
-      "expected_output": "Deploys the approved new draft without duplicate lookup, redundant approval, login, or publication.",
+      "prompt": "只做流程模拟，不调用真实平台或网络。用户要求创建《销售入门》新课并保持草稿，不发布；课程目录已通过 build 和质量检查，生成的导入 JSON 已检查，site 已配置且 verify 返回 0。用户尚未看过本地内容，没有另行确认上传。请列出后续操作，假设每步成功。",
+      "expected_output": "Automatically deploys a finished new draft while preserving the explicit no-publication scope.",
       "files": [],
       "expectations": [
-        "It reuses the exact preview approval and valid authentication without another approval question or login session.",
+        "It reuses valid authentication and imports the checked new-course payload without a preview-approval question, upload confirmation or redundant login session.",
         "It does not run find-title or another duplicate-course lookup.",
-        "It imports a new course, establishes sync state, applies only approved attributes, verifies draft content, and does not run publish or claim public learner access."
+        "It creates the course once, establishes sync state, applies only the selected attributes, verifies draft content, and does not run publish or claim public learner access."
       ]
     },
     {
@@ -737,31 +737,31 @@
       "files": [],
       "expectations": [
         "It reads the fresh baseline, reapplies only the intended changes, and retries with the same version-aware command and course-dir without forcing stale local content.",
-        "It does not introduce a new preview approval or synchronization confirmation before every retry; the new-course deployment confirmation does not apply to existing-course editing.",
+        "It does not introduce a new preview approval or synchronization confirmation before every retry; routine new-course creation and existing-course editing both proceed without that checkpoint.",
         "It preserves the draft-only scope and original conflict counter. Only after the third consecutive exit-2 conflict does it stop automatic retries and require explicit user confirmation before another write attempt."
       ]
     },
     {
       "id": 60,
       "prompt": "只做流程模拟，不调用真实平台或网络。新课程创作到第二节时，需要上传一张本地配图；用户允许使用平台存储图片，没有任何平台授权，课程没有 BID，尚未完成全课内容。请列出应该执行的顺序。另说明如果用户说“暂时不授权”应如何继续。",
-      "expected_output": "Authenticates at the image upload boundary without course lookup, course creation, or deployment approval inference.",
+      "expected_output": "Authenticates at the image upload boundary without course lookup or premature course creation.",
       "files": [],
       "expectations": [
         "It authenticates immediately before upload-image, then uploads with course-dir and informative alt and resumes authoring using the returned URL.",
         "It does not search duplicate titles, require a course BID, or create a platform course just to upload the image.",
         "If authorization is deferred it retains local work and continues only independent content, leaving the image-dependent lesson blocked; it does not invent a remote URL or claim the course complete.",
-        "Image-upload authorization does not approve later course deployment."
+        "It resumes the requested course authoring after image upload and automatically deploys the completed course under the original creation scope; an image upload alone is not a reason to create an unfinished empty course or add a later deployment-confirmation checkpoint."
       ]
     },
     {
       "id": 61,
-      "prompt": "只做流程模拟，不调用真实平台或网络。以下是两个独立场景，平台凭据都有效。A：用户已批准新课完整预览并部署发布，随后在实际写入前说“把第三节删掉再部署”。B：已有课程的新 Course Prompt 与简介均在本地改完并验证，用户还没有看过修改后的内容。请分别给出下一步动作和实际回复。",
-      "expected_output": "Reconfirms changed new-course artifacts while retaining the original existing-course metadata update flow.",
+      "prompt": "只做流程模拟，不调用真实平台或网络。以下是两个独立场景，平台凭据都有效。A：用户要求新建并发布课程，完整本地目录和导入 JSON 已检查，但尚未上传；用户随后说“把第三节删掉再部署”。B：已有课程的新 Course Prompt 与简介均在本地改完并验证，用户还没有看过修改后的内容。请分别给出下一步动作和实际回复。",
+      "expected_output": "Automatically applies requested revisions to new and existing courses without renewed content approval.",
       "files": [],
       "expectations": [
-        "A revises locally, validates, shows the new structure/content preview, and obtains renewed explicit approval before any course write.",
+        "A removes the third lesson locally, validates the current artifacts, rebuilds and inspects the effective payload, then automatically imports and publishes the revised new course without asking for renewed preview or upload approval. It does not import the stale JSON that still contains the third lesson.",
         "B uses the requested update-meta operation with the pulled course-dir and version protection after validation, without adding a routine pre-sync confirmation; it verifies only the requested Course Prompt and description changes and does not publish.",
-        "The new-course preview approval step applies to A, while B preserves the existing-course editing and conflict-handling workflow."
+        "Both continue the requested work in the same task without requiring the user to review local files or separately authorize synchronization. They preserve their respective publication scope and existing conflict-handling behavior."
       ]
     },
     {
@@ -795,36 +795,36 @@
       "files": [],
       "expectations": [
         "It starts useful local design or authoring preparation from the title, asking only consequential missing questions and choosing the relevant capabilities without a compulsory intake sequence.",
-        "It retains the draft-only publication choice for the eventual completed preview and confirmation.",
+        "It retains the draft-only publication choice and automatically uploads the completed course without requesting a preview approval or deployment confirmation.",
         "The word draft and lack of content do not authorize create or imply an empty platform shell."
       ]
     },
     {
       "id": 65,
-      "prompt": "只做流程模拟，不调用真实平台或网络。用户最初说“给我创建一门 AI 师傅的课程，如何让小学生学 AI”，随后确定给小学生学、同时支持自学和课堂、个性化方向选举例、类比、语言风格和价值阐述、互动选开课了解孩子和课前判断、关闭听课模式、一章一节、不设老师姓名和头像。用户没有提过不发布、先留草稿或稍后发布。现在完整课程目录和本地检查均完成，拟定标题是《AI 小侦探：认识会帮忙、也会出错的 AI》。请给出此刻的部署确认回复，不执行平台操作。",
-      "expected_output": "Preserves the default create-and-publish outcome in the new-course confirmation instead of proposing an unpublished draft.",
+      "prompt": "只做流程模拟，不调用真实平台或网络。用户最初说“给我创建一门 AI 师傅的课程，如何让小学生学 AI”，随后确定给小学生学、同时支持自学和课堂、个性化方向选举例、类比、语言风格和价值阐述、互动选开课了解孩子和课前判断、关闭听课模式、一章一节、不设老师姓名和头像。用户没有提过不发布、先留草稿或稍后发布。现在完整课程目录和本地检查均完成，拟定标题是《AI 小侦探：认识会帮忙、也会出错的 AI》。用户没有看过最终内容或另行确认上传。请给出此刻直到任务完成的操作与回复方式，不执行平台操作。",
+      "expected_output": "Automatically creates and publishes the completed course under the default full-course outcome without asking for confirmation.",
       "files": [],
       "expectations": [
-        "It presents the completed content and selected attributes and asks to create AND publish the course.",
+        "It proceeds from the completed artifacts and selected attributes to build, inspect, authenticate when needed, import, establish sync state, apply selected settings and publish the course in the same task.",
         "It does not propose an unpublished draft, make publication a new optional decision, or ask the user to request publication separately.",
-        "It waits for this single content-and-scope confirmation before new-course creation and publication writes. It does not treat browser authorization as approval of course content or impose authentication as a numbered authoring stage."
+        "It does not wait for a content-preview approval or deployment confirmation before creation and publication. It preserves actual authentication requirements and the original verification and handoff behavior without claiming simulated operations were executed."
       ]
     },
     {
       "id": 66,
-      "prompt": "只做流程模拟，不调用真实平台或网络。前一条你已展示《AI 小侦探》的完整预览，并问“是否按此稿创建并发布课程？”。用户回复“可以创建”。用户从未要求不发布。site 已配置，verify 返回 0；以下模拟命令均成功。import --new 返回 BID=course-new，import 和 publish 返回的地址为 Admin console=https://app.ai-shifu.com/shifu/course-new、Preview URL=https://app.ai-shifu.com/c/course-new?preview=true、Published URL=https://app.ai-shifu.com/c/course-new。请列出完整后续操作和最终交付回复；课件、课程提示词及平台属性核对均可假定通过。",
-      "expected_output": "Treats approval of the disclosed creation-and-publication sequence as sufficient and finishes publication with all three links.",
+      "prompt": "只做流程模拟，不调用真实平台或网络。用户要求创建《AI 小侦探》课程，课程目录和本地检查均已完成，从未看过完整预览或另行确认上传，也从未要求不发布。site 已配置，verify 返回 0；以下模拟命令均成功。import --new 返回 BID=course-new，import 和 publish 返回的地址为 Admin console=https://app.ai-shifu.com/shifu/course-new、Preview URL=https://app.ai-shifu.com/c/course-new?preview=true、Published URL=https://app.ai-shifu.com/c/course-new。请列出完整后续操作和最终交付回复；课件、课程提示词及平台属性核对均可假定通过。",
+      "expected_output": "Automatically finishes new-course deployment and default publication with all three delivery links.",
       "files": [],
       "expectations": [
-        "It reuses the approval and valid login, creates the course once, establishes the sync baseline, applies only the agreed attributes, and runs publish without asking again.",
-        "It does not interpret the short reply 可以创建 as withdrawal of publication or stop after import as though draft deployment completed the task.",
+        "It reuses valid login, creates the course once from the checked payload, establishes the sync baseline, applies only the selected attributes, and runs publish without asking for content or upload approval.",
+        "It does not stop after import as though draft deployment completed the task or require publication to be separately requested.",
         "It verifies the published result and final reply includes three distinct clickable links labeled course preview, published learner page, and course editor using the exact supplied URLs.",
         "An opened editor browser tab or local preview file is not substituted for any required platform link."
       ]
     },
     {
       "id": 67,
-      "prompt": "只做流程模拟，不调用真实平台或网络。用户明确说“这次只创建未发布草稿，不要发布”，随后看过完整内容并确认。创建、同步及核验均成功，BID=course-draft。CLI 返回 Admin console=https://app.ai-shifu.com/shifu/course-draft、Preview URL=https://app.ai-shifu.com/c/course-draft?preview=true；show 还打印了 https://app.ai-shifu.com/c/course-draft，但从未执行 publish。请给出后续动作和最终回复。",
+      "prompt": "只做流程模拟，不调用真实平台或网络。用户明确说“这次只创建未发布草稿，不要发布”，完整目录完成后已自动上传。创建、同步及核验均成功，BID=course-draft。CLI 返回 Admin console=https://app.ai-shifu.com/shifu/course-draft、Preview URL=https://app.ai-shifu.com/c/course-draft?preview=true；show 还打印了 https://app.ai-shifu.com/c/course-draft，但从未执行 publish。请给出后续动作和最终回复。",
       "expected_output": "Honors an explicit draft-only request while delivering preview and editor links without claiming a published page.",
       "files": [],
       "expectations": [
@@ -840,8 +840,8 @@
       "files": [],
       "expectations": [
         "The agent accepts the explicitly authorized change to new-course intent and chooses useful local design or authoring work from the supplied material without repeating title lookup.",
-        "It does not call course-target again, repeat find-title, create an empty platform draft, or treat the transition approval as approval of unfinished deployment content.",
-        "Completed-content confirmation remains required before eventual create-and-publish deployment."
+        "It does not call course-target again, repeat find-title, create an empty platform draft, or treat unfinished content as ready for import.",
+        "Once the requested course is complete and checked, it automatically deploys and publishes it without requiring completed-content confirmation or a separate upload request."
       ]
     },
     {
@@ -1287,16 +1287,16 @@
     },
     {
       "id": 104,
-      "prompt": "只做本地规则模拟，不执行命令、不连接平台。用户已看过并批准 /tmp/import-demo/shifu-import.json 的完整内容，范围是创建未发布草稿：标题‘预算入门’，简介‘认识固定支出’，一个课节‘固定支出’，正文讲固定支出在短期内通常不随用量变化。审核后目录发生了变化：README.md 第一行现在是 # 目录新标题；course-description.md 是‘文件版新简介’；course-config.json 写着标题‘配置标题’和简介‘配置简介’；structure.json 的非空 chapters 中只列出一个课节，其 file 字段是 current.md（相对 lessons/ 目录），课节标题为‘可变支出’，该正文讲可变支出常随用量或选择变化；另有未列入结构的 lessons/lesson-02.md。Course Prompt 保持不变。有人建议现在直接运行 import --new --course-dir /tmp/import-demo --title ‘覆盖标题’ --description ‘覆盖简介’，认为路径还是原目录且已有批准，可以省掉再检查。这次确实要导入当前目录和上述覆盖参数产生的新版。请指出最终有效内容、已有批准是否足够，并给出从当前状态到可导入状态的处理建议及条件满足后的命令草案；不要真的创建课程或宣称用户已经重新批准。",
-      "expected_output": "Detects that build precedence and changed sources invalidate the earlier payload approval, then binds a simulated draft import to the same JSON file actually inspected and approved.",
+      "prompt": "只做本地规则模拟，不执行命令、不连接平台。用户要求新建《预算入门》课程，明确保持未发布草稿。/tmp/import-demo/shifu-import.json 是旧构建产物，标题为预算入门、简介为认识固定支出，一个课节固定支出，正文讲固定支出在短期内通常不随用量变化。之后用户继续修改目录：README.md 第一行现在是 # 目录新标题；course-description.md 是“文件版新简介”；course-config.json 写着标题“配置标题”和简介“配置简介”；structure.json 的非空 chapters 中只列出一个课节，其 file 字段是 current.md（相对 lessons/ 目录），课节标题为“可变支出”，该正文讲可变支出常随用量或选择变化；另有未列入结构的 lessons/lesson-02.md。Course Prompt 保持不变。用户明确要求导入当前目录，并指定标题“覆盖标题”和简介“覆盖简介”，没有要求本地确认。请指出最终有效内容，并给出从当前状态到完成上传的操作与命令草案；不要真的创建课程或宣称命令已经成功。",
+      "expected_output": "Rebuilds and inspects the current effective payload, then automatically imports the requested changed version without an approval checkpoint.",
       "files": [],
       "expectations": [
         "It resolves the effective title and description to the explicit overrides 覆盖标题 and 覆盖简介, not README, description-file, or ignored course-config values. The non-empty structure supplies only the 可变支出 lesson from current.md, with its changed body; the unlisted lesson-02.md is not silently imported.",
-        "It identifies the title, description, lesson title, and lesson content as materially different from the completed result previously approved. An unchanged directory or JSON pathname does not authorize the changed result, and the existing draft-only approval does not authorize publication.",
-        "It explains that import --new --course-dir rebuilds the payload and immediately writes the platform, so this shortcut cannot provide the required opportunity to inspect and approve its effective contents. It does not propose running that write to discover what would be imported.",
-        "For the requested changed version, it proposes a local build with the intended overrides, inspects the resulting effective payload and applicable content/language checks, then shows the changed concrete result for renewed approval before any course creation. It does not restart a general questionnaire or require a fixed authoring pipeline.",
-        "The conditional import command uses import --new --json-file with the same JSON file whose unchanged contents passed inspection and received renewed approval. It does not rebuild through --course-dir or silently overwrite that file between approval and import; a further user-visible content change requires renewed inspection and approval.",
-        "It stays within simulation, makes no platform or authentication calls, claims no renewed approval, created BID, synchronized revision, or successful verification, and does not publish the explicitly requested draft. Any pull or platform readback is described only as later conditional work."
+        "It identifies the old JSON as stale because title, description, lesson title and lesson content changed. An unchanged pathname does not make old build inspection applicable to the new effective payload, so it does not import the stale file.",
+        "It builds the current directory with the intended title and description overrides and inspects the resulting effective payload and applicable content/language checks before platform writes. It does not run import --new --course-dir merely to discover what would be written.",
+        "After the current payload passes checks, it automatically continues to import --new --json-file using the same JSON file whose current contents passed inspection and the needed authentication. No preview approval, renewed content approval, upload confirmation, general questionnaire or fixed authoring pipeline is inserted.",
+        "If source artifacts change again before import, it rebuilds and inspects the changed payload and continues automatically under the same request. It creates only one course, establishes sync state and follows the original imported-draft verification without publishing the explicitly requested draft.",
+        "It stays within simulation, makes no platform or authentication calls, and claims no created BID, synchronized revision or successful verification. Its command plan and later conditional readback are not reported as executed work."
       ]
     },
     {
@@ -1396,10 +1396,23 @@
       "expected_output": "Honors explicit local-only and audit-only scopes and does not invent a platform target for an unassociated Prompt.",
       "files": [],
       "expectations": [
-        "A delivers the requested local edit and reports that it has not been synchronized, without authentication, pull, write, or publication. The automatic existing-course update default does not override the explicit local-only instruction.",
+        "A delivers the requested local edit and reports that it has not been synchronized, without authentication, pull, write, or publication. The automatic platform-update default does not override the explicit local-only instruction.",
         "B returns the scoped findings without repairing the artifact or writing to the platform merely because a defect was found.",
         "C delivers the revised pasted Prompt without requiring platform setup, course lookup, creation, or synchronization for a Prompt that has no existing-platform target.",
         "None introduces a local approval checkpoint, invents a successful platform update, or expands the request into course publication."
+      ]
+    },
+    {
+      "id": 113,
+      "prompt": "只做流程模拟，不执行命令、不访问真实平台。用户请求创建《团队交接》新课，第一版已在本次任务中成功 import --new，返回 BID=course-created，随后已 pull 到 /tmp/team-handoff，第二节 BID=lesson-two。现在用户继续说“把第二节的案例换成跨部门交接，再把简介改得更清楚”。当前同步基线有效，这两处本地修订和检查刚完成；用户没有看过修订结果，没有另行要求上传，也没有要求本地保存或重新建课。尚未执行原计划的发布。请说明接下来直到完成的操作与回复方式。",
+      "expected_output": "Resumes the course already created in this task by its existing BID and automatically applies subsequent local edits before finishing the original publication outcome.",
+      "files": [],
+      "expectations": [
+        "It reuses course-created and the valid pulled baseline in /tmp/team-handoff, rather than running another import --new, duplicate-title lookup, or creating a replacement course.",
+        "It updates lesson-two with update-lesson course-created lesson-two --teaching-prompt-file <edited-lesson-file> --course-dir /tmp/team-handoff and updates only the requested description through the scoped update-meta operation with the same course-dir. The lesson BID, unrelated course content and selected settings are preserved.",
+        "It continues both writes automatically in the same task without asking for local-file review, revised-preview approval, upload confirmation or a separate synchronization request, and uses existing conflict convergence if needed.",
+        "After applying the revisions it finishes the original full-course default publication and handoff. It does not reinterpret ordinary editing after creation as a new draft-only policy or add a new post-sync content-verification requirement.",
+        "All operations remain simulated; it does not claim an executed write, actual publication, live verification or opened browser."
       ]
     }
   ]
