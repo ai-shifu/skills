@@ -157,6 +157,114 @@ class SkillUpdateTests(unittest.TestCase):
                 with self.assertRaises(skill_update_check.ManifestError):
                     skill_update_check.validate_github_release(dict(self.release, **change))
 
+    def test_default_fetch_reads_each_version_from_network_without_cache(self):
+        for allow_loopback in (False, True):
+            for force_args in ({}, {"force": True}):
+                with self.subTest(allow_loopback=allow_loopback, **force_args):
+                    manifest_url = (
+                        "http://127.0.0.1:8088/skill-manifests/test.json"
+                        if allow_loopback else skill_update_check.MANIFEST_URL
+                    )
+                    responses = []
+                    for version in ("1.10.0", "1.11.0"):
+                        payload = (
+                            dict(self.manifest, latest=version)
+                            if allow_loopback else dict(
+                                self.release,
+                                tag_name=f"v{version}",
+                                html_url=f"https://github.com/ai-shifu/skills/releases/tag/v{version}",
+                            )
+                        )
+                        responses.append(FakeResponse(
+                            status_code=200,
+                            body=json.dumps(payload).encode("utf-8"),
+                            headers={"ETag": f'"v{version}"'},
+                            url=manifest_url,
+                        ))
+                    get = mock.Mock(side_effect=responses)
+                    with (
+                        mock.patch.object(skill_update_check, "_read_cache", return_value=None) as read_cache,
+                        mock.patch.object(skill_update_check, "_try_write_cache") as write_cache,
+                    ):
+                        results = [
+                            skill_update_check.fetch_manifest(
+                                manifest_url=manifest_url,
+                                allow_loopback=allow_loopback,
+                                http_get=get,
+                                now=self.now,
+                                **force_args,
+                            )
+                            for _ in range(2)
+                        ]
+                    self.assertEqual(
+                        [(manifest["latest"], source) for manifest, source in results],
+                        [("1.10.0", "network"), ("1.11.0", "network")],
+                    )
+                    self.assertEqual(get.call_count, 2)
+                    for call in get.call_args_list:
+                        self.assertEqual(call.args, (manifest_url,))
+                        self.assertNotIn("If-None-Match", call.kwargs["headers"])
+                    read_cache.assert_not_called()
+                    write_cache.assert_not_called()
+
+    def test_default_check_observes_new_releases_without_cache(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skill_md = Path(tmp) / "SKILL.md"
+            skill_md.write_text(
+                "---\nname: ai-shifu-course-creator\nversion: 1.10.0\n---\n",
+                encoding="utf-8",
+            )
+            for allow_loopback in (False, True):
+                for force_args in ({}, {"force": True}):
+                    with self.subTest(allow_loopback=allow_loopback, **force_args):
+                        manifest_url = (
+                            "http://127.0.0.1:8088/skill-manifests/test.json"
+                            if allow_loopback else skill_update_check.MANIFEST_URL
+                        )
+                        responses = []
+                        for version in ("1.10.0", "1.11.0"):
+                            payload = (
+                                dict(self.manifest, latest=version)
+                                if allow_loopback else dict(
+                                    self.release,
+                                    tag_name=f"v{version}",
+                                    html_url=f"https://github.com/ai-shifu/skills/releases/tag/v{version}",
+                                )
+                            )
+                            responses.append(FakeResponse(
+                                status_code=200,
+                                body=json.dumps(payload).encode("utf-8"),
+                                headers={"ETag": f'"v{version}"'},
+                                url=manifest_url,
+                            ))
+                        get = mock.Mock(side_effect=responses)
+                        with (
+                            mock.patch.object(skill_update_check, "_read_cache", return_value=None) as read_cache,
+                            mock.patch.object(skill_update_check, "_try_write_cache") as write_cache,
+                        ):
+                            results = [
+                                skill_update_check.check_for_update(
+                                    skill_md=skill_md,
+                                    manifest_url=manifest_url,
+                                    allow_loopback=allow_loopback,
+                                    http_get=get,
+                                    now=self.now,
+                                    **force_args,
+                                )
+                                for _ in range(2)
+                            ]
+                        self.assertEqual(
+                            [(result["status"], result["latest"], result["source"]) for result in results],
+                            [("latest", "1.10.0", "network"), ("update_recommended", "1.11.0", "network")],
+                        )
+                        self.assertEqual(get.call_count, 2)
+                        for call in get.call_args_list:
+                            self.assertEqual(call.args, (manifest_url,))
+                            self.assertNotIn("If-None-Match", call.kwargs["headers"])
+                        read_cache.assert_not_called()
+                        write_cache.assert_not_called()
+                        self.assertEqual(list(Path(tmp).iterdir()), [skill_md])
+
     def test_network_result_is_cached_and_reused(self):
         body = json.dumps(self.release).encode("utf-8")
         calls: list[dict[str, object]] = []

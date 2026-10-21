@@ -176,6 +176,25 @@ class CourseCreatorSiteTests(unittest.TestCase):
         update.assert_called_once()
         self.assertFalse((self.root / "settings.json").exists())
 
+    def test_update_check_commands_do_not_opt_into_disk_cache(self):
+        dev_url = "http://127.0.0.1:8088/skill-manifests/test.json"
+        result = {"status": "latest", "source": "network"}
+        for arguments, expected in (
+            (("check-update",), {"force": False}),
+            (("check-update", "--force"), {"force": True}),
+            (("check-update", "--dev-manifest-url", dev_url), {
+                "force": True, "manifest_url": dev_url, "allow_loopback": True,
+            }),
+        ):
+            with self.subTest(arguments=arguments), mock.patch.object(
+                course_creator_cli, "check_for_update", return_value=result,
+            ) as check:
+                self.assertEqual(json.loads(self.run_cli(*arguments)), result)
+                check.assert_called_once_with(**expected)
+        self.assertEqual(list(self.root.iterdir()), [])
+        self.get.assert_not_called()
+        self.post.assert_not_called()
+
     def test_existing_unbound_credentials_are_not_sent_to_new_site(self):
         legacy = self.root / "credentials.json"
         legacy.write_text(json.dumps({"token": "test-token"}))
