@@ -3332,7 +3332,7 @@ def build_parser():
     p.add_argument(
         "--force",
         action="store_true",
-        help="Accepted for compatibility; every check contacts GitHub Releases",
+        help="Accepted for compatibility; release lookups do not use a local cache",
     )
     p.add_argument(
         "--dev-manifest-url",
