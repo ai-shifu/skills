@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 import profile_store as profiles
 from agent_detection import AGENT_DISPLAY_NAMES, detect_agent
 
-from skill_update_check import DEV_CACHE_FILE, check_for_update
+from skill_update_check import check_for_update
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
@@ -3283,7 +3283,6 @@ def cmd_check_update(args):
     if dev_manifest_url:
         result = check_for_update(
             force=True,
-            cache_file=DEV_CACHE_FILE,
             manifest_url=dev_manifest_url,
             allow_loopback=True,
         )
@@ -3333,7 +3332,7 @@ def build_parser():
     p.add_argument(
         "--force",
         action="store_true",
-        help="Revalidate GitHub Releases even when the local TTL is fresh",
+        help="Accepted for compatibility; every check contacts GitHub Releases",
     )
     p.add_argument(
         "--dev-manifest-url",

@@ -41,7 +41,7 @@ Process environment variables take precedence over the corresponding `.env` valu
 check-update [--force] [--dev-manifest-url <loopback-url>]
 ```
 
-`check-update` reads the latest published stable GitHub Release and prints a compact JSON result. Version-source validation and result handling are defined in [session controls](../session-controls.md#version-check). `--force` bypasses the local TTL. `--dev-manifest-url` accepts only a localhost or loopback URL serving the development manifest format and exists for end-to-end development checks.
+`check-update` reads the latest published stable GitHub Release and prints a compact JSON result. Version-source validation and result handling are defined in [session controls](../session-controls.md#version-check). The check is memory-only: it neither reads nor writes a local cache file, so a stale stored version can never be reported as current. `--force` is accepted for compatibility; every check already contacts GitHub Releases. `--dev-manifest-url` accepts only a localhost or loopback URL serving the development manifest format and exists for end-to-end development checks.
 
 ## Profiles
 

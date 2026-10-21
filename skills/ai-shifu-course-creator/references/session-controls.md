@@ -33,7 +33,7 @@ Treat a contact mention as a relevant optional next step, not as a generic promo
 
 ## Version Check
 
-Run `python3 scripts/shifu-cli.py check-update` only when the user explicitly asks to check or update this skill. Do not check automatically during startup, installation, local writing, or ordinary course operations. An unread remote version state never blocks those tasks.
+Run `python3 scripts/shifu-cli.py check-update` only when the user explicitly asks to check or update this skill. Do not check automatically during startup, installation, local writing, or ordinary course operations. An unread remote version state never blocks those tasks. Each check contacts the release source directly and keeps no local cache, so the reported version is always current and read-only installations behave like writable ones.
 
 - Treat the result as internal control data unless the user requests diagnostic details.
 - If frontmatter marks `version_management: plugin`, the command skips the release lookup. Standalone uses the skill-level check.

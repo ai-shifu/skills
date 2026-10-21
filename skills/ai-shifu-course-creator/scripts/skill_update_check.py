@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Fail-open Skill update checks backed by published GitHub Releases."""
+"""Fail-open Skill update checks backed by published GitHub Releases.
+
+Checks are memory-only by default: nothing is written to the installed Skill
+directory. A stale local manifest can therefore never be reported as the current
+version, and read-only installations behave the same as writable ones. Callers
+that genuinely need persistence must opt in by passing an explicit
+``cache_file``; the published version check never does.
+"""
 
 from __future__ import annotations
 
@@ -16,8 +23,6 @@ import requests
 SKILL_NAME = "ai-shifu-course-creator"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 SKILL_MD = SKILL_ROOT / "SKILL.md"
-CACHE_FILE = SKILL_ROOT / ".update-check.json"
-DEV_CACHE_FILE = SKILL_ROOT / ".update-check.dev.json"
 GITHUB_RELEASES_URL = "https://github.com/ai-shifu/skills/releases"
 MANIFEST_URL = "https://api.github.com/repos/ai-shifu/skills/releases/latest"
 
@@ -218,7 +223,9 @@ def determine_update(
     }
 
 
-def _read_cache(cache_file: Path, source_url: str) -> dict[str, Any] | None:
+def _read_cache(cache_file: Path | None, source_url: str) -> dict[str, Any] | None:
+    if cache_file is None:
+        return None
     try:
         raw = json.loads(cache_file.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -331,17 +338,20 @@ def _close_response(response: Any) -> None:
 
 def fetch_manifest(
     *,
-    cache_file: Path = CACHE_FILE,
+    cache_file: Path | None = None,
     force: bool = False,
     manifest_url: str = MANIFEST_URL,
     allow_loopback: bool = False,
     http_get: Callable[..., Any] = requests.get,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], str]:
-    """Read release metadata, or an explicit loopback development manifest."""
+    """Read release metadata from its source, or an explicit loopback dev manifest.
+
+    No cache file is read or written unless the caller passes ``cache_file``.
+    """
     _validate_manifest_source_url(manifest_url, allow_loopback=allow_loopback)
     current_time = (now or _utc_now()).astimezone(timezone.utc)
-    cache = _read_cache(cache_file, manifest_url)
+    cache = _read_cache(cache_file, manifest_url) if cache_file is not None else None
     if cache is not None and not force and _cache_is_fresh(cache, current_time):
         return cache["manifest"], "cache"
 
@@ -367,7 +377,7 @@ def fetch_manifest(
 
     if response.status_code == 304:
         _close_response(response)
-        if cache is None:
+        if cache is None or cache_file is None:
             raise ManifestError("received 304 without a valid cache")
         _try_write_cache(
             cache_file,
@@ -392,13 +402,14 @@ def fetch_manifest(
         raise ManifestError("manifest is not valid UTF-8 JSON") from exc
     manifest = validate_manifest(raw) if allow_loopback else validate_github_release(raw)
     etag = _response_header(response, "ETag")
-    _try_write_cache(
-        cache_file,
-        manifest=manifest,
-        etag=etag,
-        checked_at=current_time,
-        source_url=manifest_url,
-    )
+    if cache_file is not None:
+        _try_write_cache(
+            cache_file,
+            manifest=manifest,
+            etag=etag,
+            checked_at=current_time,
+            source_url=manifest_url,
+        )
     return manifest, "network"
 
 
@@ -406,7 +417,7 @@ def check_for_update(
     *,
     force: bool = False,
     skill_md: Path = SKILL_MD,
-    cache_file: Path = CACHE_FILE,
+    cache_file: Path | None = None,
     manifest_url: str = MANIFEST_URL,
     allow_loopback: bool = False,
     http_get: Callable[..., Any] = requests.get,
