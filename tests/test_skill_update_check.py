@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import sys
 import tempfile
+import time
 import unittest
+from datetime import datetime, timedelta, timezone
+from email.utils import format_datetime
 from pathlib import Path
 from unittest import mock
 
@@ -414,6 +419,324 @@ class SkillUpdateTests(unittest.TestCase):
                 result,
                 {"status": "check_skipped", "source": "invalid_version_management"},
             )
+
+
+class AutomaticUpdateTests(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.skill_md = self.root / "SKILL.md"
+        self.skill_md.write_text(
+            "---\nname: ai-shifu-course-creator\nversion: 1.0.0\n---\n", encoding="utf-8",
+        )
+        self.state_dir = self.root / "user-state"
+        self.now = datetime(2026, 10, 21, tzinfo=timezone.utc)
+        self.check = mock.Mock(return_value=self.result())
+
+    def result(self, latest="1.1.0", local="1.0.0"):
+        manifest = skill_update_check.validate_github_release({
+            "tag_name": f"v{latest}", "draft": False, "prerelease": False,
+            "body": "A new release", "published_at": "2026-10-20T00:00:00Z",
+            "html_url": f"https://github.com/ai-shifu/skills/releases/tag/v{latest}",
+        })
+        return skill_update_check.determine_update(local, manifest, source="network")
+
+    def call(self, seconds=0, **kwargs):
+        return skill_update_check.automatic_check_for_update(
+            self.state_dir, skill_md=self.skill_md,
+            now=self.now + timedelta(seconds=seconds), run_check=self.check, **kwargs,
+        )
+
+    def state_path(self):
+        paths = list((self.state_dir / "update-check").glob("*.json"))
+        self.assertEqual(len(paths), 1)
+        return paths[0]
+
+    def state(self):
+        return json.loads(self.state_path().read_text(encoding="utf-8"))
+
+    def test_success_throttles_at_24_hour_boundary_and_notifies_each_version_once(self):
+        self.assertEqual(self.call(), self.result())
+        self.assertIsNone(self.call(86399))
+        self.check.assert_called_once_with(skill_md=self.skill_md)
+        self.assertIsNone(self.call(86400))
+        self.assertEqual(self.check.call_count, 2)
+        self.check.return_value = self.result("1.2.0")
+        self.assertEqual(self.call(172800), self.result("1.2.0"))
+        self.check.return_value = self.result("1.1.0")
+        self.assertIsNone(self.call(259200))
+        self.assertEqual(self.state()["notified_versions"], ["1.1.0", "1.2.0"])
+
+    def test_latest_result_also_throttles_without_suppressing_later_update(self):
+        self.check.return_value = self.result("1.0.0")
+        self.assertIsNone(self.call())
+        self.assertIsNone(self.call(86399))
+        self.check.assert_called_once()
+        self.check.return_value = self.result()
+        self.assertEqual(self.call(86400), self.result())
+        self.assertEqual(self.check.call_count, 2)
+
+    def test_installed_versions_have_independent_schedules_and_reminders(self):
+        self.check.return_value = self.result("1.2.0")
+        self.assertEqual(self.call(), self.result("1.2.0"))
+        self.skill_md.write_text(
+            "---\nname: ai-shifu-course-creator\nversion: 1.1.0\n---\n", encoding="utf-8",
+        )
+        self.check.return_value = self.result("1.2.0", local="1.1.0")
+        self.assertEqual(self.call(1), self.result("1.2.0", local="1.1.0"))
+        self.assertEqual(len(list((self.state_dir / "update-check").glob("*.json"))), 2)
+        self.assertEqual(self.check.call_count, 2)
+        self.skill_md.write_text(
+            "---\nname: ai-shifu-course-creator\nversion: 1.0.0\n---\n", encoding="utf-8",
+        )
+        self.assertIsNone(self.call(2))
+        self.assertEqual(self.check.call_count, 2)
+
+    def test_plugin_or_invalid_metadata_never_creates_state_or_requests_network(self):
+        for contents in (
+            "---\nname: ai-shifu-course-creator\nversion: 1.0.0\nversion_management: plugin\n---\n",
+            "---\nname: ai-shifu-course-creator\nmetadata:\n  version: 1.0.0\n  version_management: plugin\n---\n",
+            "---\nname: ai-shifu-course-creator\nversion: broken\n---\n",
+            "---\nname: other\nversion: 1.0.0\n---\n",
+            "not frontmatter",
+        ):
+            with self.subTest(contents=contents):
+                self.skill_md.write_text(contents, encoding="utf-8")
+                self.assertIsNone(self.call())
+                self.assertFalse(self.state_dir.exists())
+                self.check.assert_not_called()
+
+    def test_failure_retries_after_five_minutes_without_recording_success(self):
+        self.check.return_value = {"status": "check_skipped", "source": "none"}
+        self.assertIsNone(self.call())
+        self.assertEqual(self.state()["last_success_at"], 0)
+        self.assertEqual(self.state()["notified_versions"], [])
+        self.assertIsNone(self.call(299))
+        self.check.assert_called_once()
+        self.check.return_value = self.result()
+        self.assertEqual(self.call(300), self.result())
+        self.assertEqual(self.check.call_count, 2)
+
+    def test_server_wait_is_never_shortened_to_local_failure_delay(self):
+        self.check.return_value = {
+            "result": {"status": "check_skipped", "source": "none"},
+            "retry_after_seconds": 900,
+        }
+        self.assertIsNone(self.call())
+        self.assertIsNone(self.call(899))
+        self.check.assert_called_once()
+        self.check.return_value = self.result()
+        self.assertEqual(self.call(900), self.result())
+
+    def test_rate_limit_headers_stay_internal_and_preserve_server_wait(self):
+        for status, headers, expected in (
+            (429, {"Retry-After": "900"}, 900),
+            (403, {"Retry-After": format_datetime(self.now + timedelta(seconds=900), usegmt=True)}, 900),
+            (403, {"X-RateLimit-Reset": str(self.now.timestamp() + 1200)}, 1200),
+            (429, {"Retry-After": "invalid"}, 0),
+        ):
+            with self.subTest(status=status, headers=headers):
+                response = FakeResponse(status_code=status, headers=headers)
+                with (
+                    mock.patch.object(skill_update_check.requests, "get", return_value=response),
+                    mock.patch.object(skill_update_check, "datetime", wraps=datetime) as clock,
+                ):
+                    clock.now.return_value = self.now
+                    outcome = skill_update_check._automatic_check_worker(self.skill_md)
+                self.assertEqual(outcome["result"], {"status": "check_skipped", "source": "none"})
+                self.assertEqual(outcome["retry_after_seconds"], expected)
+                self.assertTrue(response.closed)
+
+    def test_corrupt_identity_and_future_timestamps_recover(self):
+        self.call()
+        state_path = self.state_path()
+        original = self.state()
+        self.check.return_value = self.result("1.2.0")
+        corrupt = (
+            "broken JSON", "[]",
+            json.dumps(dict(original, source="https://other.example")),
+            json.dumps(dict(original, schema_version=True)),
+            json.dumps(dict(original, last_success_at=self.now.timestamp() + 1000)),
+            json.dumps(dict(original, last_attempt_at=self.now.timestamp() + 1000)),
+            json.dumps(dict(original, retry_after_seconds=float("nan"))),
+            json.dumps(dict(original, last_attempt_at=10 ** 1000)),
+        )
+        for contents in corrupt:
+            with self.subTest(contents=contents[:100]):
+                state_path.write_text(contents, encoding="utf-8")
+                self.assertEqual(self.call(1), self.result("1.2.0"))
+                self.assertEqual(self.state()["source"], skill_update_check.MANIFEST_URL)
+
+    def test_future_times_recover_schedule_without_repeating_a_seen_version(self):
+        self.call()
+        state = self.state()
+        state["last_attempt_at"] = state["last_success_at"] = self.now.timestamp() + 1000
+        self.state_path().write_text(json.dumps(state), encoding="utf-8")
+        self.assertIsNone(self.call(1))
+        self.assertEqual(self.check.call_count, 2)
+        self.assertEqual(self.state()["notified_versions"], ["1.1.0"])
+        self.assertEqual(self.state()["last_success_at"], self.now.timestamp() + 1)
+
+    def test_untrusted_redirect_cannot_set_server_retry_delay(self):
+        response = FakeResponse(
+            status_code=403, headers={"Retry-After": "999999"},
+            url="https://attacker.example/manifest.json",
+        )
+        with mock.patch.object(skill_update_check.requests, "get", return_value=response):
+            outcome = skill_update_check._automatic_check_worker(self.skill_md)
+        self.assertEqual(outcome, {
+            "result": {"status": "check_skipped", "source": "none"}, "retry_after_seconds": 0,
+        })
+        self.assertTrue(response.closed)
+
+    def test_invalid_worker_results_do_not_suppress_a_later_valid_check(self):
+        for index, change in enumerate((
+            {"local_version": "9.0.0"}, {"skill_name": "other"}, {"source": "cache"},
+            {"latest": "invalid"}, {"status": "latest"}, {"update_url": "https://attacker.example"},
+            {"min_supported": "9.0.0"},
+        )):
+            with self.subTest(change=change):
+                directory = self.state_dir / str(index)
+                check = mock.Mock(return_value=dict(self.result(), **change))
+                self.assertIsNone(skill_update_check.automatic_check_for_update(
+                    directory, skill_md=self.skill_md, now=self.now, run_check=check,
+                ))
+                check.return_value = self.result()
+                self.assertEqual(skill_update_check.automatic_check_for_update(
+                    directory, skill_md=self.skill_md, now=self.now + timedelta(seconds=300), run_check=check,
+                ), self.result())
+
+    def test_write_failure_skips_network_or_notification_and_preserves_short_backoff(self):
+        with mock.patch.object(skill_update_check.os, "replace", side_effect=PermissionError("read-only")):
+            self.assertIsNone(self.call())
+        self.check.assert_not_called()
+        self.assertEqual({path.suffix for path in (self.state_dir / "update-check").iterdir()}, {".lock"})
+        write = skill_update_check._write_automatic_state
+        writes = 0
+
+        def fail_final_write(path, state):
+            nonlocal writes
+            writes += 1
+            if writes == 2:
+                raise PermissionError("disk unavailable")
+            return write(path, state)
+
+        with mock.patch.object(skill_update_check, "_write_automatic_state", side_effect=fail_final_write):
+            self.assertIsNone(self.call())
+        self.check.assert_called_once()
+        self.assertEqual(self.state()["last_success_at"], 0)
+        self.assertIsNone(self.call(1))
+        self.check.assert_called_once()
+
+    def test_state_is_private_atomic_and_does_not_change_the_installation(self):
+        self.assertEqual(self.call(), self.result())
+        self.assertEqual(set(self.root.iterdir()), {self.skill_md, self.state_dir})
+        directory = self.state_dir / "update-check"
+        self.assertEqual({path.suffix for path in directory.iterdir()}, {".json", ".lock"})
+        if os.name != "nt":
+            self.assertEqual(directory.stat().st_mode & 0o777, 0o700)
+            for path in directory.iterdir():
+                self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(set(self.state()), {
+            "schema_version", "source", "local_version", "last_attempt_at", "last_success_at",
+            "retry_after_seconds", "notified_versions",
+        })
+
+    def test_production_lookup_timeout_is_captured_and_releases_lock_for_retry(self):
+        with mock.patch.object(
+            skill_update_check.subprocess, "run", side_effect=subprocess.TimeoutExpired("worker", 2),
+        ) as run:
+            self.assertIsNone(skill_update_check.automatic_check_for_update(
+                self.state_dir, skill_md=self.skill_md, now=self.now,
+            ))
+            self.assertEqual(run.call_args.kwargs["timeout"], 2)
+            self.assertTrue(run.call_args.kwargs["capture_output"])
+            self.assertIn("-B", run.call_args.args[0])
+            self.assertIsNone(self.call(299))
+            self.check.assert_not_called()
+        self.assertEqual(self.call(300), self.result())
+
+    def test_worker_output_is_parsed_without_reaching_parent_stdout(self):
+        outcome = {"result": self.result(), "retry_after_seconds": 0}
+        with mock.patch.object(skill_update_check.subprocess, "run", return_value=subprocess.CompletedProcess(
+            [], 0, stdout=json.dumps(outcome), stderr="private diagnostics",
+        )):
+            self.assertEqual(skill_update_check._run_automatic_check(skill_md=self.skill_md), outcome)
+
+    def test_real_subprocess_timeout_finishes_without_waiting_for_slow_worker(self):
+        worker = self.root / "slow-worker.py"
+        worker.write_text("import time\ntime.sleep(10)\n", encoding="utf-8")
+        popen = subprocess.Popen
+        processes = []
+
+        def start(*args, **kwargs):
+            process = popen(*args, **kwargs)
+            processes.append(process)
+            return process
+
+        started = time.monotonic()
+        with (
+            mock.patch.object(skill_update_check, "__file__", str(worker)),
+            mock.patch.object(skill_update_check, "AUTOMATIC_LOOKUP_TIMEOUT_SECONDS", 0.2),
+            mock.patch.object(skill_update_check.subprocess, "Popen", side_effect=start),
+        ):
+            self.assertIsNone(skill_update_check.automatic_check_for_update(
+                self.state_dir, skill_md=self.skill_md, now=self.now,
+            ))
+        self.assertLess(time.monotonic() - started, 5)
+        self.assertEqual(len(processes), 1)
+        self.assertIsNotNone(processes[0].poll(), "timed-out worker must be terminated")
+        self.assertEqual(self.state()["last_success_at"], 0)
+        self.assertEqual(self.call(300), self.result())
+
+    def test_concurrent_processes_do_not_duplicate_lookup_or_reminder(self):
+        worker = r'''
+import json, sys, time
+from datetime import datetime
+from pathlib import Path
+import skill_update_check as updates
+root, label, result = Path(sys.argv[1]), sys.argv[2], json.loads(sys.argv[3])
+def check(**kwargs):
+    (root / (label + '-checked')).touch()
+    if label == 'owner':
+        deadline = time.monotonic() + 15
+        while not (root / 'release').exists():
+            if time.monotonic() > deadline:
+                raise RuntimeError('test gate timed out')
+            time.sleep(0.01)
+    return result
+print(json.dumps(updates.automatic_check_for_update(
+    root / 'user-state', skill_md=root / 'SKILL.md',
+    now=datetime.fromisoformat('2026-10-21T00:00:00+00:00'), run_check=check,
+)))
+'''
+        command = [sys.executable, "-B", "-c", worker, str(self.root)]
+        env = {**os.environ, "PYTHONPATH": str(SCRIPT_DIR)}
+        owner = subprocess.Popen(
+            [*command, "owner", json.dumps(self.result())], env=env,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        try:
+            deadline = time.monotonic() + 8
+            while not (self.root / "owner-checked").exists():
+                if time.monotonic() > deadline:
+                    self.fail("automatic check owner did not acquire the lock")
+                time.sleep(0.01)
+            competitor = subprocess.run(
+                [*command, "competitor", json.dumps(self.result())], env=env,
+                capture_output=True, text=True, timeout=8, check=True,
+            )
+            self.assertIsNone(json.loads(competitor.stdout))
+            self.assertFalse((self.root / "competitor-checked").exists())
+            (self.root / "release").touch()
+            stdout, stderr = owner.communicate(timeout=8)
+            self.assertEqual(owner.returncode, 0, stderr)
+            self.assertEqual(json.loads(stdout), self.result())
+            self.assertIsNone(self.call(1))
+            self.check.assert_not_called()
+        finally:
+            if owner.poll() is None:
+                owner.kill()
+                owner.communicate(timeout=8)
 
 
 if __name__ == "__main__":

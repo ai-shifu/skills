@@ -45,6 +45,7 @@ class CourseProfileSyncTests(unittest.TestCase):
         self.api = self.enterContext(mock.patch.object(cli, "api"))
         self.api_safe = self.enterContext(mock.patch.object(cli, "api_safe"))
         self.upload = self.enterContext(mock.patch.object(cli, "api_upload"))
+        self.enterContext(mock.patch.object(cli, "_maybe_check_for_updates"))
 
     def bind(self, base_url=CN, bid="same-course", **extra):
         manifest = {

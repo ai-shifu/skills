@@ -43,6 +43,10 @@ check-update [--dev-manifest-url <loopback-url>]
 
 `check-update` prints a compact JSON result for a release lookup or skipped check. Version-source validation and result handling are defined in [session controls](../session-controls.md#version-check). `--dev-manifest-url` accepts only a localhost or loopback URL serving the development manifest format and exists for end-to-end development checks.
 
+Before dispatching any other valid CLI command, the CLI automatically checks whether a release lookup is due. Successful automatic checks are spaced 24 hours apart, and each available version is announced once on stderr. Normal stdout and command exit codes are preserved. Network errors are silent and retry after a short delay; rate-limit retry delays are respected. Automatic lookups have a two-second network budget and skip plugin-managed installations. Help and invalid command lines do not start a check.
+
+Automatic-check state is kept under `update-check/` in the user configuration directory resolved from the process environment, independently of platform `.env` loading, service selection, profiles, and credentials. It is separated by release source and installed version. If the state directory is unavailable or another process is checking, the command continues normally. Explicit `check-update` always queries immediately and does not use or modify the automatic-check schedule; development lookups do not change production state.
+
 ## Profiles
 
 ```bash

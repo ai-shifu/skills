@@ -76,7 +76,7 @@
 | `scripts/agent_detection.py` | Identify the Agent environment and own its canonical IDs, display names, and evidence. The CLI decides reporting eligibility. |
 | `scripts/profile_store.py` | Implement named profile configuration, default selection, execution-context resolution, isolated authorization-file storage, URL validation, and recoverable migration from legacy configuration. The CLI consumes one resolved context; references own access guidance. |
 | `scripts/image_preparation.py` | Implement local image decoding, orientation correction, resizing, recompression, output-format selection, and content-hash naming for upload preparation. |
-| `scripts/skill_update_check.py` | Implement fail-open GitHub Release discovery, update availability checks, and release and development manifest validation. |
+| `scripts/skill_update_check.py` | Implement fail-open GitHub Release discovery, update availability checks, release and development manifest validation, and bounded automatic CLI checks with user-state scheduling and notice deduplication. The CLI owns invocation timing and notice output. |
 | `scripts/requirements.txt` | Declare Python runtime dependencies used by the course-creator scripts. |
 
 ## Change Placement Guide

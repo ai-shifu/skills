@@ -5,8 +5,10 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import json
 import os
 import sys
+import tempfile
 import types
 import unittest
 from pathlib import Path
@@ -24,6 +26,7 @@ if "dotenv" not in sys.modules:
 spec = importlib.util.spec_from_file_location("course_usage_cli", SCRIPT_DIR / "shifu-cli.py")
 cli = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cli)
+import skill_update_check as update_checks
 
 EXPECTED_METADATA = {
     "X-AI-Shifu-Skill": "ai-shifu-course-creator",
@@ -112,10 +115,87 @@ class CallerDetectionTests(unittest.TestCase):
         }), "hermes-agent")
 
 
+class AutomaticUpdateMetadataTests(unittest.TestCase):
+    def test_update_worker_excludes_business_authentication_and_usage_headers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            skill_md = root / "SKILL.md"
+            skill_md.write_text(
+                "---\nname: ai-shifu-course-creator\nversion: 1.0.0\n---\n",
+                encoding="utf-8",
+            )
+            release = {
+                "tag_name": "v9.0.0", "draft": False, "prerelease": False,
+                "body": "Update notes", "published_at": "2026-10-21T00:00:00Z",
+                "html_url": "https://github.com/ai-shifu/skills/releases/tag/v9.0.0",
+            }
+            update_response = types.SimpleNamespace(
+                status_code=200, url=update_checks.MANIFEST_URL, headers={},
+                iter_content=lambda **_kwargs: iter([json.dumps(release).encode("utf-8")]),
+                close=mock.Mock(),
+            )
+            business_response = mock.Mock(ok=True)
+            business_response.json.return_value = {"code": 0, "data": {"value": 7}}
+            requests = []
+
+            def get(url, **kwargs):
+                requests.append((url, kwargs["headers"]))
+                return update_response if url == update_checks.MANIFEST_URL else business_response
+
+            # Run the real worker and scheduler in-process so every outgoing
+            # request is intercepted; worker timeout behavior has separate tests.
+            automatic = cli.automatic_check_for_update
+
+            def lookup(directory):
+                return automatic(
+                    directory, skill_md=skill_md, run_check=update_checks._automatic_check_worker,
+                )
+
+            def business(_args):
+                result = cli.api("https://platform.example", "business-token", "get", "/shifus")
+                print(json.dumps(result))
+
+            with (
+                mock.patch.dict(os.environ, {
+                    "AI_SHIFU_CONFIG_DIR": str(root / "configuration"),
+                    "CODEX_THREAD_ID": "private-session", "SHIFU_TOKEN": "private-env-token",
+                }, clear=True),
+                mock.patch.object(cli, "automatic_check_for_update", side_effect=lookup),
+                mock.patch.object(update_checks.requests, "get", side_effect=get),
+                mock.patch.object(cli, "load_env"),
+                mock.patch.object(cli, "profile_store"),
+                mock.patch.object(cli, "resolve_context", return_value=types.SimpleNamespace(
+                    base_url="https://platform.example", name="saved",
+                )),
+                mock.patch.object(cli, "_client_version", return_value="2.0.0"),
+                mock.patch.object(cli, "_USAGE_METADATA_HEADERS", {"stale-header": "old"}),
+                mock.patch.object(cli, "cmd_list", side_effect=business),
+                mock.patch.object(sys, "argv", ["shifu-cli.py", "list"]),
+                contextlib.redirect_stdout(io.StringIO()) as output,
+                contextlib.redirect_stderr(io.StringIO()) as errors,
+            ):
+                cli.main()
+            self.assertEqual(json.loads(output.getvalue()), {"value": 7})
+            self.assertIn(release["html_url"], errors.getvalue())
+            self.assertEqual(len(requests), 2)
+            self.assertEqual(requests[0], (
+                update_checks.MANIFEST_URL, {"Accept": "application/vnd.github+json"},
+            ))
+            business_headers = requests[1][1]
+            self.assertEqual(business_headers["Cookie"], "token=business-token")
+            self.assertEqual({
+                key: value for key, value in business_headers.items()
+                if key.startswith("X-AI-Shifu-")
+            }, EXPECTED_METADATA)
+            self.assertNotIn("stale-header", business_headers)
+            update_response.close.assert_called_once()
+
+
 class UsageTransportTests(unittest.TestCase):
     def setUp(self):
         self.enterContext(mock.patch.dict(os.environ, {"CODEX_THREAD_ID": "private-session"}, clear=True))
         self.enterContext(mock.patch.object(cli, "load_env"))
+        self.enterContext(mock.patch.object(cli, "_maybe_check_for_updates"))
         self.enterContext(mock.patch.object(cli, "profile_store", return_value=mock.Mock()))
         self.context = types.SimpleNamespace(base_url="https://service.example", name="saved")
         self.enterContext(mock.patch.object(cli, "resolve_context", return_value=self.context))
