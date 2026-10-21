@@ -38,10 +38,10 @@ Process environment variables take precedence over the corresponding `.env` valu
 ## Update Check
 
 ```bash
-check-update [--force] [--dev-manifest-url <loopback-url>]
+check-update [--dev-manifest-url <loopback-url>]
 ```
 
-`check-update` prints a compact JSON result for a release lookup or skipped check. Version-source validation and result handling are defined in [session controls](../session-controls.md#version-check). Release lookups are memory-only: they neither read nor write a local cache file. `--force` is accepted for compatibility; eligible lookups already contact their selected source directly. `--dev-manifest-url` accepts only a localhost or loopback URL serving the development manifest format and exists for end-to-end development checks.
+`check-update` prints a compact JSON result for a release lookup or skipped check. Version-source validation and result handling are defined in [session controls](../session-controls.md#version-check). `--dev-manifest-url` accepts only a localhost or loopback URL serving the development manifest format and exists for end-to-end development checks.
 
 ## Profiles
 

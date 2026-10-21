@@ -59,10 +59,9 @@ class UpdateCheckEnvironmentTests(unittest.TestCase):
     def assert_update_commands_ignore_platform_environment(self):
         dev_url = "http://127.0.0.1:8088/skill-manifests/test.json"
         for arguments, expected in (
-            (("check-update",), {"force": False}),
-            (("check-update", "--force"), {"force": True}),
+            (("check-update",), {}),
             (("check-update", "--dev-manifest-url", dev_url), {
-                "force": True, "manifest_url": dev_url, "allow_loopback": True,
+                "manifest_url": dev_url, "allow_loopback": True,
             }),
         ):
             with (
@@ -246,14 +245,13 @@ class CourseCreatorSiteTests(unittest.TestCase):
         update.assert_called_once()
         self.assertFalse((self.root / "settings.json").exists())
 
-    def test_update_check_commands_do_not_opt_into_disk_cache(self):
+    def test_update_check_commands_use_selected_release_source(self):
         dev_url = "http://127.0.0.1:8088/skill-manifests/test.json"
         result = {"status": "latest", "source": "network"}
         for arguments, expected in (
-            (("check-update",), {"force": False}),
-            (("check-update", "--force"), {"force": True}),
+            (("check-update",), {}),
             (("check-update", "--dev-manifest-url", dev_url), {
-                "force": True, "manifest_url": dev_url, "allow_loopback": True,
+                "manifest_url": dev_url, "allow_loopback": True,
             }),
         ):
             with self.subTest(arguments=arguments), mock.patch.object(
@@ -264,6 +262,21 @@ class CourseCreatorSiteTests(unittest.TestCase):
         self.assertEqual(list(self.root.iterdir()), [])
         self.get.assert_not_called()
         self.post.assert_not_called()
+
+    def test_update_check_rejects_removed_force_flag(self):
+        with (
+            self.assertRaises(SystemExit) as error,
+            contextlib.redirect_stderr(io.StringIO()) as stderr,
+            mock.patch.object(course_creator_cli, "check_for_update") as check,
+        ):
+            self.run_cli("check-update", "--force")
+        self.assertEqual(error.exception.code, 2)
+        self.assertIn("unrecognized arguments: --force", stderr.getvalue())
+        check.assert_not_called()
+        pull = course_creator_cli.build_parser().parse_args([
+            "pull", "course", "--course-dir", str(self.root), "--force",
+        ])
+        self.assertTrue(pull.force)
 
     def test_existing_unbound_credentials_are_not_sent_to_new_site(self):
         legacy = self.root / "credentials.json"

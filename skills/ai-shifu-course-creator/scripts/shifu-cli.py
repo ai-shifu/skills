@@ -3282,12 +3282,11 @@ def cmd_check_update(args):
     dev_manifest_url = args.dev_manifest_url
     if dev_manifest_url:
         result = check_for_update(
-            force=True,
             manifest_url=dev_manifest_url,
             allow_loopback=True,
         )
     else:
-        result = check_for_update(force=args.force)
+        result = check_for_update()
     print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
 
 
@@ -3328,11 +3327,6 @@ def build_parser():
     p = sub.add_parser(
         "check-update",
         help="Check GitHub Releases for a newer Skill version",
-    )
-    p.add_argument(
-        "--force",
-        action="store_true",
-        help="Accepted for compatibility; release lookups do not use a local cache",
     )
     p.add_argument(
         "--dev-manifest-url",

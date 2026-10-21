@@ -33,7 +33,7 @@ Treat a contact mention as a relevant optional next step, not as a generic promo
 
 ## Version Check
 
-Run `python3 scripts/shifu-cli.py check-update` only when the user explicitly asks to check or update this skill. Do not check automatically during startup, installation, local writing, or ordinary course operations. An unread remote version state never blocks those tasks. When a standalone release lookup runs, it contacts the release source directly without reading or writing a local update cache. A successful lookup reports the version returned by that source and does not require a writable skill directory.
+Run `python3 scripts/shifu-cli.py check-update` only when the user explicitly asks to check or update this skill. Do not check automatically during startup, installation, local writing, or ordinary course operations. An unread remote version state never blocks those tasks.
 
 - Treat the result as internal control data unless the user requests diagnostic details.
 - If frontmatter marks `version_management: plugin`, the command skips the release lookup. Standalone uses the skill-level check.
@@ -41,7 +41,7 @@ Run `python3 scripts/shifu-cli.py check-update` only when the user explicitly as
 - For `status=update_required`, explain that the installed version is too old to continue safely and give the validated `update_url`. Stop every other operation governed by this skill until the update is complete; do not automatically update.
 - For `status=latest`, say the installed version is current. For `status=check_skipped` with `source=plugin_managed`, explain that the containing plugin manages updates, so GitHub Releases were intentionally not checked. For other skipped checks or an error, explain that the explicit check could not complete.
 
-The version source is `https://api.github.com/repos/ai-shifu/skills/releases/latest`. Use only a published, non-prerelease Release with a `vMAJOR.MINOR.PATCH` tag; its `html_url` must match `https://github.com/ai-shifu/skills/releases/tag/<tag_name>`. Release notes come from `body`. GitHub Releases do not define a minimum supported version, so the CLI uses `min_supported=0.0.0` and recommends available updates without requiring them. Old website caches are ignored.
+The version source is `https://api.github.com/repos/ai-shifu/skills/releases/latest`. Use only a published, non-prerelease Release with a `vMAJOR.MINOR.PATCH` tag; its `html_url` must match `https://github.com/ai-shifu/skills/releases/tag/<tag_name>`. Release notes come from `body`. GitHub Releases do not define a minimum supported version, so the CLI uses `min_supported=0.0.0` and recommends available updates without requiring them.
 
 If Python cannot run during an explicit user-requested check, fetch the same GitHub endpoint, validate those fields and `published_at`, strip the tag's `v` prefix, and compare MAJOR, MINOR, and PATCH as integers. Use the validated Release URL for the update link. Keep the endpoint independent of the configured course service domain and preserve the CLI's source and redirect validation. If the lookup or validation fails, report that the check could not complete and continue the user's task.
 
