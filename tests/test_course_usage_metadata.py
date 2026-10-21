@@ -307,7 +307,7 @@ class UsageTransportTests(unittest.TestCase):
             self.assertEqual(call.kwargs["headers"], {"Content-Type": "application/json"})
         with mock.patch.object(cli, "check_for_update", return_value={}) as update:
             self.run_cli("check-update")
-        update.assert_called_once_with(force=False)
+        update.assert_called_once_with()
         self.version.assert_not_called()
 
 

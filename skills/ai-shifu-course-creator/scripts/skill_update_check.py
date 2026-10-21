@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
-"""Fail-open Skill update checks backed by published GitHub Releases.
-
-Checks are memory-only by default: nothing is written to the installed Skill
-directory. A stale local manifest can therefore never be reported as the current
-version, and read-only installations behave the same as writable ones. Callers
-that genuinely need persistence must opt in by passing an explicit
-``cache_file``; the published version check never does.
-"""
+"""Fail-open Skill update checks backed by published GitHub Releases."""
 
 from __future__ import annotations
 
 import json
-import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,14 +23,13 @@ SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
 LOOPBACK_MANIFEST_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 MAX_MANIFEST_BYTES = 64 * 1024
 MAX_NOTES_CHARS = 500
-CHECK_INTERVAL_HOURS = 24
 RELEASE_TAG_PATTERN = re.compile(r"^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 VERSION_MANAGEMENT_STANDALONE = "standalone"
 VERSION_MANAGEMENT_PLUGIN = "plugin"
 
 
 class ManifestError(ValueError):
-    """The remote or cached manifest is not safe to consume."""
+    """The remote manifest is not safe to consume."""
 
 
 def _validate_manifest_source_url(url: str, *, allow_loopback: bool) -> None:
@@ -55,14 +46,6 @@ def _validate_manifest_source_url(url: str, *, allow_loopback: bool) -> None:
         return
     if url != MANIFEST_URL:
         raise ManifestError("version source must use the official GitHub Releases endpoint")
-
-
-def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def _format_utc(value: datetime) -> str:
-    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _parse_utc(value: object) -> datetime | None:
@@ -139,12 +122,6 @@ def validate_manifest(
     if not isinstance(notes, str) or len(notes) > MAX_NOTES_CHARS:
         raise ManifestError("invalid notes")
 
-    interval = raw.get("check_interval_hours")
-    if isinstance(interval, bool) or not isinstance(interval, int):
-        raise ManifestError("check_interval_hours must be an integer")
-    if not 1 <= interval <= 168:
-        raise ManifestError("check_interval_hours outside 1..168")
-
     if _parse_utc(raw.get("published_at")) is None:
         raise ManifestError("invalid published_at")
 
@@ -182,7 +159,6 @@ def validate_github_release(raw: object) -> dict[str, Any]:
         # Releases do not declare an unsupported-version policy.
         "min_supported": "0.0.0",
         "notes": notes[:MAX_NOTES_CHARS],
-        "check_interval_hours": CHECK_INTERVAL_HOURS,
         "published_at": raw.get("published_at"),
         "update_url": update_url,
     })
@@ -223,86 +199,6 @@ def determine_update(
     }
 
 
-def _read_cache(cache_file: Path | None, source_url: str) -> dict[str, Any] | None:
-    if cache_file is None:
-        return None
-    try:
-        raw = json.loads(cache_file.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-    if not isinstance(raw, dict):
-        return None
-    if raw.get("source_url") != source_url:
-        return None
-    checked_at = _parse_utc(raw.get("checked_at"))
-    if checked_at is None:
-        return None
-    try:
-        manifest = validate_manifest(raw.get("manifest"))
-    except ManifestError:
-        return None
-    etag = raw.get("etag", "")
-    if not isinstance(etag, str):
-        return None
-    return {"checked_at": checked_at, "etag": etag, "manifest": manifest}
-
-
-def _write_cache(
-    cache_file: Path,
-    *,
-    manifest: dict[str, Any],
-    etag: str,
-    checked_at: datetime,
-    source_url: str,
-) -> None:
-    payload = {
-        "source_url": source_url,
-        "checked_at": _format_utc(checked_at),
-        "etag": etag,
-        "manifest": manifest,
-    }
-    cache_file.parent.mkdir(parents=True, exist_ok=True)
-    tmp_file = cache_file.with_name(f".{cache_file.name}.{os.getpid()}.tmp")
-    try:
-        tmp_file.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
-        os.replace(tmp_file, cache_file)
-    finally:
-        try:
-            tmp_file.unlink()
-        except FileNotFoundError:
-            pass
-
-
-def _try_write_cache(
-    cache_file: Path,
-    *,
-    manifest: dict[str, Any],
-    etag: str,
-    checked_at: datetime,
-    source_url: str,
-) -> None:
-    """Cache persistence is an optimization and must never break a valid check."""
-    try:
-        _write_cache(
-            cache_file,
-            manifest=manifest,
-            etag=etag,
-            checked_at=checked_at,
-            source_url=source_url,
-        )
-    except OSError:
-        pass
-
-
-def _cache_is_fresh(cache: dict[str, Any], now: datetime) -> bool:
-    interval = cache["manifest"]["check_interval_hours"]
-    age_seconds = (now - cache["checked_at"]).total_seconds()
-    return 0 <= age_seconds < interval * 3600
-
-
 def _response_header(response: Any, name: str) -> str:
     headers = getattr(response, "headers", {})
     value = headers.get(name, "") if hasattr(headers, "get") else ""
@@ -338,28 +234,16 @@ def _close_response(response: Any) -> None:
 
 def fetch_manifest(
     *,
-    cache_file: Path | None = None,
-    force: bool = False,
     manifest_url: str = MANIFEST_URL,
     allow_loopback: bool = False,
     http_get: Callable[..., Any] = requests.get,
-    now: datetime | None = None,
 ) -> tuple[dict[str, Any], str]:
-    """Read release metadata from its source, or an explicit loopback dev manifest.
-
-    No cache file is read or written unless the caller passes ``cache_file``.
-    """
+    """Fetch release metadata, or an explicit loopback development manifest."""
     _validate_manifest_source_url(manifest_url, allow_loopback=allow_loopback)
-    current_time = (now or _utc_now()).astimezone(timezone.utc)
-    cache = _read_cache(cache_file, manifest_url) if cache_file is not None else None
-    if cache is not None and not force and _cache_is_fresh(cache, current_time):
-        return cache["manifest"], "cache"
 
     headers = {"Accept": "application/vnd.github+json"}
     if allow_loopback:
         headers["Accept"] = "application/json"
-    if cache is not None and cache["etag"]:
-        headers["If-None-Match"] = cache["etag"]
 
     response = http_get(
         manifest_url,
@@ -375,19 +259,6 @@ def fetch_manifest(
         _close_response(response)
         raise
 
-    if response.status_code == 304:
-        _close_response(response)
-        if cache is None or cache_file is None:
-            raise ManifestError("received 304 without a valid cache")
-        _try_write_cache(
-            cache_file,
-            manifest=cache["manifest"],
-            etag=cache["etag"],
-            checked_at=current_time,
-            source_url=manifest_url,
-        )
-        return cache["manifest"], "revalidated"
-
     if response.status_code != 200:
         _close_response(response)
         raise ManifestError(f"unexpected HTTP status {response.status_code}")
@@ -401,27 +272,15 @@ def fetch_manifest(
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ManifestError("manifest is not valid UTF-8 JSON") from exc
     manifest = validate_manifest(raw) if allow_loopback else validate_github_release(raw)
-    etag = _response_header(response, "ETag")
-    if cache_file is not None:
-        _try_write_cache(
-            cache_file,
-            manifest=manifest,
-            etag=etag,
-            checked_at=current_time,
-            source_url=manifest_url,
-        )
     return manifest, "network"
 
 
 def check_for_update(
     *,
-    force: bool = False,
     skill_md: Path = SKILL_MD,
-    cache_file: Path | None = None,
     manifest_url: str = MANIFEST_URL,
     allow_loopback: bool = False,
     http_get: Callable[..., Any] = requests.get,
-    now: datetime | None = None,
 ) -> dict[str, Any]:
     """Run the complete fail-open check and always return a public result."""
     try:
@@ -442,12 +301,9 @@ def check_for_update(
         if parse_semver(local_version) is None:
             raise ManifestError("invalid local version")
         manifest, source = fetch_manifest(
-            cache_file=cache_file,
-            force=force,
             manifest_url=manifest_url,
             allow_loopback=allow_loopback,
             http_get=http_get,
-            now=now,
         )
         return determine_update(
             local_version,

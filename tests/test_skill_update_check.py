@@ -4,7 +4,6 @@ import json
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -30,6 +29,10 @@ class FakeResponse:
         self.body = body
         self.headers = headers or {}
         self.url = url
+        self.closed = False
+
+    def close(self):
+        self.closed = True
 
     def iter_content(self, chunk_size: int):
         for start in range(0, len(self.body), chunk_size):
@@ -44,7 +47,6 @@ class SkillUpdateTests(unittest.TestCase):
             "latest": "1.10.0",
             "min_supported": "1.0.0",
             "notes": "A safe update note",
-            "check_interval_hours": 2,
             "published_at": "2026-07-12T00:00:00Z",
             "update_url": "https://github.com/ai-shifu/skills",
         }
@@ -56,7 +58,6 @@ class SkillUpdateTests(unittest.TestCase):
             "published_at": "2026-07-12T00:00:00Z",
             "html_url": "https://github.com/ai-shifu/skills/releases/tag/v1.10.0",
         }
-        self.now = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc)
 
     def test_parse_semver_compares_integer_segments(self):
         self.assertGreater(
@@ -66,11 +67,16 @@ class SkillUpdateTests(unittest.TestCase):
         self.assertIsNone(skill_update_check.parse_semver("v1.0.0"))
         self.assertIsNone(skill_update_check.parse_semver("1.0"))
 
-    def test_manifest_rejects_impossible_forced_update(self):
+    def test_manifest_rejects_impossible_required_update(self):
         broken = json.loads(json.dumps(self.manifest))
         broken["min_supported"] = "1.11.0"
         with self.assertRaises(skill_update_check.ManifestError):
             skill_update_check.validate_manifest(broken)
+
+    def test_development_manifest_accepts_old_optional_fields(self):
+        self.assertEqual(skill_update_check.validate_manifest(self.manifest), self.manifest)
+        legacy = dict(self.manifest, check_interval_hours=2)
+        self.assertEqual(skill_update_check.validate_manifest(legacy), legacy)
 
     def test_update_decision_uses_global_latest(self):
         manifest = skill_update_check.validate_manifest(self.manifest)
@@ -98,7 +104,6 @@ class SkillUpdateTests(unittest.TestCase):
         self.assertEqual(manifest["notes"], self.release["body"])
         self.assertEqual(manifest["published_at"], self.release["published_at"])
         self.assertEqual(manifest["update_url"], self.release["html_url"])
-        self.assertEqual(manifest["check_interval_hours"], 24)
         result = skill_update_check.determine_update("0.9.9", manifest, source="network")
         self.assertEqual(result["status"], "update_recommended")
 
@@ -157,334 +162,177 @@ class SkillUpdateTests(unittest.TestCase):
                 with self.assertRaises(skill_update_check.ManifestError):
                     skill_update_check.validate_github_release(dict(self.release, **change))
 
-    def test_default_fetch_reads_each_version_from_network_without_cache(self):
-        for allow_loopback in (False, True):
-            for force_args in ({}, {"force": True}):
-                with self.subTest(allow_loopback=allow_loopback, **force_args):
-                    manifest_url = (
-                        "http://127.0.0.1:8088/skill-manifests/test.json"
-                        if allow_loopback else skill_update_check.MANIFEST_URL
-                    )
-                    responses = []
-                    for version in ("1.10.0", "1.11.0"):
-                        payload = (
-                            dict(self.manifest, latest=version)
-                            if allow_loopback else dict(
-                                self.release,
-                                tag_name=f"v{version}",
-                                html_url=f"https://github.com/ai-shifu/skills/releases/tag/v{version}",
-                            )
-                        )
-                        responses.append(FakeResponse(
-                            status_code=200,
-                            body=json.dumps(payload).encode("utf-8"),
-                            headers={"ETag": f'"v{version}"'},
-                            url=manifest_url,
-                        ))
-                    get = mock.Mock(side_effect=responses)
-                    with (
-                        mock.patch.object(skill_update_check, "_read_cache", return_value=None) as read_cache,
-                        mock.patch.object(skill_update_check, "_try_write_cache") as write_cache,
-                    ):
-                        results = [
-                            skill_update_check.fetch_manifest(
-                                manifest_url=manifest_url,
-                                allow_loopback=allow_loopback,
-                                http_get=get,
-                                now=self.now,
-                                **force_args,
-                            )
-                            for _ in range(2)
-                        ]
-                    self.assertEqual(
-                        [(manifest["latest"], source) for manifest, source in results],
-                        [("1.10.0", "network"), ("1.11.0", "network")],
-                    )
-                    self.assertEqual(get.call_count, 2)
-                    for call in get.call_args_list:
-                        self.assertEqual(call.args, (manifest_url,))
-                        self.assertNotIn("If-None-Match", call.kwargs["headers"])
-                    read_cache.assert_not_called()
-                    write_cache.assert_not_called()
+    def changing_responses(self, *, allow_loopback):
+        manifest_url = (
+            "http://127.0.0.1:8088/skill-manifests/test.json"
+            if allow_loopback else skill_update_check.MANIFEST_URL
+        )
+        responses = []
+        for version in ("1.10.0", "1.11.0"):
+            payload = (
+                dict(self.manifest, latest=version)
+                if allow_loopback else dict(
+                    self.release,
+                    tag_name=f"v{version}",
+                    html_url=f"https://github.com/ai-shifu/skills/releases/tag/v{version}",
+                )
+            )
+            responses.append(FakeResponse(
+                status_code=200,
+                body=json.dumps(payload).encode("utf-8"),
+                headers={"ETag": f'"v{version}"'},
+                url=manifest_url,
+            ))
+        return manifest_url, responses
 
-    def test_default_check_observes_new_releases_without_cache(self):
+    def test_each_fetch_reads_current_remote_version_without_disk_access(self):
+        for allow_loopback in (False, True):
+            with self.subTest(allow_loopback=allow_loopback):
+                manifest_url, responses = self.changing_responses(allow_loopback=allow_loopback)
+                get = mock.Mock(side_effect=responses)
+                with mock.patch.object(
+                    Path, "open", side_effect=AssertionError("fetch must not read or write files"),
+                ) as opened:
+                    results = [
+                        skill_update_check.fetch_manifest(
+                            manifest_url=manifest_url,
+                            allow_loopback=allow_loopback,
+                            http_get=get,
+                        )
+                        for _ in range(2)
+                    ]
+                self.assertEqual(
+                    [(manifest["latest"], source) for manifest, source in results],
+                    [("1.10.0", "network"), ("1.11.0", "network")],
+                )
+                self.assertEqual(get.call_count, 2)
+                for call in get.call_args_list:
+                    self.assertEqual(call.args, (manifest_url,))
+                    self.assertEqual(call.kwargs["headers"], {
+                        "Accept": "application/json" if allow_loopback else "application/vnd.github+json",
+                    })
+                self.assertTrue(all(response.closed for response in responses))
+                opened.assert_not_called()
+
+    def test_check_reads_only_skill_metadata_in_read_only_installation(self):
         with tempfile.TemporaryDirectory() as tmp:
             skill_md = Path(tmp) / "SKILL.md"
             skill_md.write_text(
                 "---\nname: ai-shifu-course-creator\nversion: 1.10.0\n---\n",
                 encoding="utf-8",
             )
+            old_files = [Path(tmp) / name for name in (".update-check.json", ".update-check.dev.json")]
+            for old_file in old_files:
+                old_file.write_text('{"latest":"9.0.0","etag":"old"}', encoding="utf-8")
+            original_open = Path.open
+
+            def read_skill_only(path, mode="r", *args, **kwargs):
+                self.assertEqual(path, skill_md, "only installed Skill metadata may be read")
+                if mode != "r":
+                    raise PermissionError("read-only installation")
+                return original_open(path, mode, *args, **kwargs)
+
             for allow_loopback in (False, True):
-                for force_args in ({}, {"force": True}):
-                    with self.subTest(allow_loopback=allow_loopback, **force_args):
-                        manifest_url = (
-                            "http://127.0.0.1:8088/skill-manifests/test.json"
-                            if allow_loopback else skill_update_check.MANIFEST_URL
-                        )
-                        responses = []
-                        for version in ("1.10.0", "1.11.0"):
-                            payload = (
-                                dict(self.manifest, latest=version)
-                                if allow_loopback else dict(
-                                    self.release,
-                                    tag_name=f"v{version}",
-                                    html_url=f"https://github.com/ai-shifu/skills/releases/tag/v{version}",
-                                )
+                with self.subTest(allow_loopback=allow_loopback):
+                    manifest_url, responses = self.changing_responses(allow_loopback=allow_loopback)
+                    get = mock.Mock(side_effect=responses)
+                    with (
+                        mock.patch.object(Path, "open", autospec=True, side_effect=read_skill_only) as opened,
+                        mock.patch.object(Path, "write_text", side_effect=PermissionError("read-only")) as written,
+                        mock.patch.object(Path, "mkdir", side_effect=PermissionError("read-only")) as mkdir,
+                    ):
+                        results = [
+                            skill_update_check.check_for_update(
+                                skill_md=skill_md,
+                                manifest_url=manifest_url,
+                                allow_loopback=allow_loopback,
+                                http_get=get,
                             )
-                            responses.append(FakeResponse(
-                                status_code=200,
-                                body=json.dumps(payload).encode("utf-8"),
-                                headers={"ETag": f'"v{version}"'},
-                                url=manifest_url,
-                            ))
-                        get = mock.Mock(side_effect=responses)
-                        with (
-                            mock.patch.object(skill_update_check, "_read_cache", return_value=None) as read_cache,
-                            mock.patch.object(skill_update_check, "_try_write_cache") as write_cache,
-                        ):
-                            results = [
-                                skill_update_check.check_for_update(
-                                    skill_md=skill_md,
-                                    manifest_url=manifest_url,
-                                    allow_loopback=allow_loopback,
-                                    http_get=get,
-                                    now=self.now,
-                                    **force_args,
-                                )
-                                for _ in range(2)
-                            ]
-                        self.assertEqual(
-                            [(result["status"], result["latest"], result["source"]) for result in results],
-                            [("latest", "1.10.0", "network"), ("update_recommended", "1.11.0", "network")],
-                        )
-                        self.assertEqual(get.call_count, 2)
-                        for call in get.call_args_list:
-                            self.assertEqual(call.args, (manifest_url,))
-                            self.assertNotIn("If-None-Match", call.kwargs["headers"])
-                        read_cache.assert_not_called()
-                        write_cache.assert_not_called()
-                        self.assertEqual(list(Path(tmp).iterdir()), [skill_md])
-
-    def test_network_result_is_cached_and_reused(self):
-        body = json.dumps(self.release).encode("utf-8")
-        calls: list[dict[str, object]] = []
-
-        def fake_get(_url, **kwargs):
-            calls.append(kwargs)
-            return FakeResponse(
-                status_code=200,
-                body=body,
-                headers={"ETag": '"manifest-v1"'},
-            )
-
-        with tempfile.TemporaryDirectory() as tmp:
-            cache = Path(tmp) / ".update-check.json"
-            manifest, source = skill_update_check.fetch_manifest(
-                cache_file=cache,
-                http_get=fake_get,
-                now=self.now,
-            )
-            self.assertEqual(source, "network")
-            self.assertEqual(manifest["latest"], "1.10.0")
-            self.assertTrue(cache.is_file())
-            self.assertEqual(
-                json.loads(cache.read_text(encoding="utf-8"))["source_url"],
-                "https://api.github.com/repos/ai-shifu/skills/releases/latest",
-            )
-
-            def unexpected_get(*_args, **_kwargs):
-                raise AssertionError("fresh cache should avoid the network")
-
-            cached, cached_source = skill_update_check.fetch_manifest(
-                cache_file=cache,
-                http_get=unexpected_get,
-                now=self.now + timedelta(hours=1),
-            )
-            self.assertEqual(cached_source, "cache")
-            self.assertEqual(cached, manifest)
-            self.assertEqual(len(calls), 1)
-
-    def test_force_revalidates_with_etag(self):
-        body = json.dumps(self.release).encode("utf-8")
-        seen_headers: list[dict[str, str]] = []
-
-        def initial_get(_url, **_kwargs):
-            return FakeResponse(
-                status_code=200,
-                body=body,
-                headers={"ETag": '"manifest-v1"'},
-            )
-
-        def revalidate_get(_url, **kwargs):
-            seen_headers.append(kwargs["headers"])
-            return FakeResponse(status_code=304)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            cache = Path(tmp) / ".update-check.json"
-            skill_update_check.fetch_manifest(
-                cache_file=cache, http_get=initial_get, now=self.now
-            )
-            _manifest, source = skill_update_check.fetch_manifest(
-                cache_file=cache,
-                force=True,
-                http_get=revalidate_get,
-                now=self.now + timedelta(minutes=1),
-            )
-            self.assertEqual(source, "revalidated")
-            self.assertEqual(seen_headers[0]["If-None-Match"], '"manifest-v1"')
-
-    def test_cache_expires_after_manifest_interval(self):
-        body = json.dumps(self.release).encode("utf-8")
-        calls = 0
-
-        def fake_get(_url, **_kwargs):
-            nonlocal calls
-            calls += 1
-            return FakeResponse(status_code=200, body=body)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            cache = Path(tmp) / ".update-check.json"
-            skill_update_check.fetch_manifest(
-                cache_file=cache,
-                http_get=fake_get,
-                now=self.now,
-            )
-            _manifest, source = skill_update_check.fetch_manifest(
-                cache_file=cache,
-                http_get=fake_get,
-                now=self.now + timedelta(hours=24, seconds=1),
-            )
-            self.assertEqual(source, "network")
-            self.assertEqual(calls, 2)
-
-    def test_legacy_and_other_source_caches_do_not_hide_github_release(self):
-        for previous_source in (
-            None,
-            "https://ai-shifu.cn/skill-manifests/ai-shifu-course-creator.json",
-            "http://127.0.0.1:8088/skill-manifests/test.json",
-        ):
-            with self.subTest(previous_source=previous_source):
-                calls = []
-
-                def fake_get(url, **kwargs):
-                    calls.append((url, kwargs["headers"]))
-                    return FakeResponse(
-                        status_code=200,
-                        body=json.dumps(self.release).encode("utf-8"),
-                        headers={"ETag": '"github-release"'},
-                    )
-
-                with tempfile.TemporaryDirectory() as tmp:
-                    cache = Path(tmp) / ".update-check.json"
-                    cached = {
-                        "checked_at": self.now.isoformat(),
-                        "etag": '"old-website-manifest"',
-                        "manifest": dict(self.manifest, latest="9.0.0"),
-                    }
-                    if previous_source is not None:
-                        cached["source_url"] = previous_source
-                    cache.write_text(json.dumps(cached), encoding="utf-8")
-                    manifest, source = skill_update_check.fetch_manifest(
-                        cache_file=cache,
-                        http_get=fake_get,
-                        now=self.now + timedelta(minutes=1),
-                    )
-                    self.assertEqual(source, "network")
-                    self.assertEqual(manifest["latest"], "1.10.0")
-                    self.assertEqual(len(calls), 1)
+                            for _ in range(2)
+                        ]
                     self.assertEqual(
-                        calls[0][0],
-                        "https://api.github.com/repos/ai-shifu/skills/releases/latest",
+                        [(result["status"], result["latest"], result["source"]) for result in results],
+                        [("latest", "1.10.0", "network"), ("update_recommended", "1.11.0", "network")],
                     )
-                    self.assertNotIn("If-None-Match", calls[0][1])
+                    self.assertEqual(get.call_count, 2)
+                    self.assertEqual(opened.call_count, 2)
+                    written.assert_not_called()
+                    mkdir.assert_not_called()
+                    self.assertTrue(all(response.closed for response in responses))
+            self.assertEqual(set(Path(tmp).iterdir()), {skill_md, *old_files})
+            for old_file in old_files:
+                self.assertEqual(old_file.read_text(encoding="utf-8"), '{"latest":"9.0.0","etag":"old"}')
 
-    def test_cache_write_failure_does_not_discard_network_result(self):
-        body = json.dumps(self.release).encode("utf-8")
+    def test_non_200_responses_are_rejected_without_reading_body_and_closed(self):
+        for status in (304, 404, 429, 500):
+            with self.subTest(status=status):
+                response = FakeResponse(status_code=status)
+                response.iter_content = mock.Mock(side_effect=AssertionError("do not read failed response"))
+                with self.assertRaises(skill_update_check.ManifestError):
+                    skill_update_check.fetch_manifest(http_get=mock.Mock(return_value=response))
+                response.iter_content.assert_not_called()
+                self.assertTrue(response.closed)
 
-        def fake_get(_url, **_kwargs):
-            return FakeResponse(status_code=200, body=body)
+    def test_untrusted_redirect_is_rejected_and_closed(self):
+        for allow_loopback in (False, True):
+            with self.subTest(allow_loopback=allow_loopback):
+                manifest_url, responses = self.changing_responses(allow_loopback=allow_loopback)
+                response = responses[0]
+                response.url = "https://attacker.example/manifest.json"
+                with self.assertRaises(skill_update_check.ManifestError):
+                    skill_update_check.fetch_manifest(
+                        manifest_url=manifest_url,
+                        allow_loopback=allow_loopback,
+                        http_get=mock.Mock(return_value=response),
+                    )
+                self.assertTrue(response.closed)
 
-        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(
-            skill_update_check, "_write_cache", side_effect=OSError("read-only install")
+    def test_untrusted_sources_are_rejected_before_network_access(self):
+        for manifest_url, allow_loopback in (
+            ("https://attacker.example/manifest.json", False),
+            ("http://api.github.com/repos/ai-shifu/skills/releases/latest", False),
+            ("http://127.0.0.1:8088/manifest.json", False),
+            ("https://attacker.example/manifest.json", True),
+            ("http://user:secret@127.0.0.1/manifest.json", True),
+            ("file://localhost/manifest.json", True),
         ):
-            manifest, source = skill_update_check.fetch_manifest(
-                cache_file=Path(tmp) / "cache.json",
-                http_get=fake_get,
-                now=self.now,
-            )
-            self.assertEqual(source, "network")
-            self.assertEqual(manifest["latest"], "1.10.0")
+            with self.subTest(manifest_url=manifest_url, allow_loopback=allow_loopback):
+                get = mock.Mock(side_effect=AssertionError("untrusted source must not be requested"))
+                with self.assertRaises(skill_update_check.ManifestError):
+                    skill_update_check.fetch_manifest(
+                        manifest_url=manifest_url, allow_loopback=allow_loopback, http_get=get,
+                    )
+                get.assert_not_called()
 
-    def test_untrusted_redirect_is_rejected(self):
-        body = json.dumps(self.release).encode("utf-8")
+    def test_oversized_or_invalid_response_is_rejected_and_closed(self):
+        valid_body = json.dumps(self.release).encode("utf-8")
+        for body, headers in (
+            (valid_body, {"Content-Length": str(skill_update_check.MAX_MANIFEST_BYTES + 1)}),
+            (valid_body, {"Content-Length": "invalid"}),
+            (b"x" * (skill_update_check.MAX_MANIFEST_BYTES + 1), {}),
+            (b"\xff", {}),
+            (b"{", {}),
+        ):
+            with self.subTest(body_size=len(body), headers=headers):
+                response = FakeResponse(status_code=200, body=body, headers=headers)
+                with self.assertRaises(skill_update_check.ManifestError):
+                    skill_update_check.fetch_manifest(http_get=mock.Mock(return_value=response))
+                self.assertTrue(response.closed)
 
-        def fake_get(_url, **_kwargs):
-            return FakeResponse(
-                status_code=200,
-                body=body,
-                url="https://attacker.example/manifest.json",
-            )
-
-        with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaises(skill_update_check.ManifestError):
-                skill_update_check.fetch_manifest(
-                    cache_file=Path(tmp) / "cache.json",
-                    http_get=fake_get,
-                    now=self.now,
-                )
-
-    def test_loopback_manifest_is_allowed_for_explicit_development(self):
-        body = json.dumps(self.manifest).encode("utf-8")
-        local_url = "http://127.0.0.1:8088/skill-manifests/test.json"
-        requested_urls: list[str] = []
-
-        def fake_get(url, **_kwargs):
-            requested_urls.append(url)
-            return FakeResponse(status_code=200, body=body, url=local_url)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            manifest, source = skill_update_check.fetch_manifest(
-                cache_file=Path(tmp) / "cache.json",
-                manifest_url=local_url,
-                allow_loopback=True,
-                http_get=fake_get,
-                now=self.now,
-            )
-            self.assertEqual(source, "network")
-            self.assertEqual(manifest["latest"], "1.10.0")
-            self.assertEqual(requested_urls, [local_url])
-
-    def test_development_manifest_rejects_remote_hosts(self):
-        def unexpected_get(*_args, **_kwargs):
-            raise AssertionError("invalid development URL must not be requested")
-
-        with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaises(skill_update_check.ManifestError):
-                skill_update_check.fetch_manifest(
-                    cache_file=Path(tmp) / "cache.json",
-                    manifest_url="https://attacker.example/manifest.json",
-                    allow_loopback=True,
-                    http_get=unexpected_get,
-                    now=self.now,
-                )
-
-    def test_check_is_fail_open_on_network_error(self):
-        def failing_get(*_args, **_kwargs):
-            raise RuntimeError("offline")
-
+    def test_check_is_fail_open_on_network_error_or_rejected_response(self):
         with tempfile.TemporaryDirectory() as tmp:
             skill_md = Path(tmp) / "SKILL.md"
-            skill_md.write_text(
-                "---\nname: Test\nversion: 1.0.0\n---\n",
-                encoding="utf-8",
-            )
-            result = skill_update_check.check_for_update(
-                skill_md=skill_md,
-                cache_file=Path(tmp) / "cache.json",
-                http_get=failing_get,
-                now=self.now,
-            )
-            self.assertEqual(result, {"status": "check_skipped", "source": "none"})
+            skill_md.write_text("---\nname: Test\nversion: 1.0.0\n---\n", encoding="utf-8")
+            not_modified = FakeResponse(status_code=304)
+            for get in (
+                mock.Mock(side_effect=RuntimeError("offline")),
+                mock.Mock(return_value=not_modified),
+            ):
+                with self.subTest(get=get):
+                    result = skill_update_check.check_for_update(skill_md=skill_md, http_get=get)
+                    self.assertEqual(result, {"status": "check_skipped", "source": "none"})
+                    get.assert_called_once()
+            self.assertTrue(not_modified.closed)
 
     def test_installed_skill_reads_supported_nested_version_metadata(self):
         skill_md = REPO_ROOT / "skills" / "ai-shifu-course-creator" / "SKILL.md"
@@ -510,9 +358,7 @@ class SkillUpdateTests(unittest.TestCase):
             )
             result = skill_update_check.check_for_update(
                 skill_md=skill_md,
-                cache_file=Path(tmp) / "cache.json",
                 http_get=unexpected_get,
-                now=self.now,
             )
             self.assertEqual(
                 result,
@@ -537,9 +383,7 @@ class SkillUpdateTests(unittest.TestCase):
             )
             result = skill_update_check.check_for_update(
                 skill_md=skill_md,
-                cache_file=Path(tmp) / "cache.json",
                 http_get=unexpected_get,
-                now=self.now,
             )
             self.assertEqual(
                 result,
@@ -564,9 +408,7 @@ class SkillUpdateTests(unittest.TestCase):
             )
             result = skill_update_check.check_for_update(
                 skill_md=skill_md,
-                cache_file=Path(tmp) / "cache.json",
                 http_get=unexpected_get,
-                now=self.now,
             )
             self.assertEqual(
                 result,
