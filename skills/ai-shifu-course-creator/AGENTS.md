@@ -52,7 +52,7 @@
 
 | File | Canonical responsibility |
 | --- | --- |
-| `references/course-sync.md` | Own existing-course cloud-to-local pulls, required baselines for lesson, Course Prompt, and description edits, divergence status, content pushes and readback, version checks, and conflict convergence. It does not author content or manage publication metadata. |
+| `references/course-sync.md` | Own existing-course cloud-to-local pulls, required baselines for lesson, Course Prompt, and description edits, divergence status, content pushes, version checks, and conflict convergence. It does not author content or manage publication metadata. |
 | `references/build-and-import.md` | Own building and inspecting an import payload, importing a new draft, and verifying imported content. `SKILL.md` owns the default outcome and content-confirmation policy; management owns publication and public-access verification. |
 | `references/course-management.md` | Own non-authoring platform operations: list, preview, publish, archive or restore, reorder, course metadata, teacher avatar, access, visibility, and Listen Mode. Publication includes published-state and public-access verification. User-request completion handoffs remain owned by `session-controls.md`. |
 | `references/cli/cli-reference.md` | Own the public `shifu-cli.py` command surface: invocation, flags, command groups, authentication inputs, output conventions, state behavior, and exit codes. The using agent decides when commands run; capability references explain their use. |

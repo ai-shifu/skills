@@ -74,8 +74,6 @@ A request to modify an existing AI-Shifu course includes automatically updating 
 
 Resolve the intended course and platform access as needed. Before preparing lesson, Course Prompt, or description edits, apply the [versioned editing baseline](references/course-sync.md#pull-before-editing). Use [course sync](references/course-sync.md) for lesson and structural changes and [course management](references/course-management.md#operations) for course-wide artifacts and attributes. Preserve their version protection, conflict handling, and result checks. Publication remains a selected operation under the user's requested scope.
 
-Complete the platform readback required by the relevant capability before reporting the edit as finished, then apply the [course admin handoff](references/session-controls.md#course-admin-handoff). If synchronization or readback fails, preserve the intended edits and report the actual incomplete step; local files alone do not establish that the platform course was updated.
-
 ## Full-Course Creation Outcome
 
 A request to create a complete AI-Shifu course includes deployment and publication by default. An explicit local-only, unpublished-draft, or narrower deliverable request determines that narrower outcome. A title-only creation request is still course authoring; it does not mean creating an empty platform draft. This outcome does not prescribe the order of authoring capabilities.

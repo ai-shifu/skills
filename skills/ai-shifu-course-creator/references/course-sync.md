@@ -38,12 +38,6 @@ The four structural commands do not accept `--course-dir` and do not refresh `.s
 
 Course name, description, Course Prompt, publication, and other platform attribute writes are outside these capabilities.
 
-## Verify Updated Draft
-
-Keep the intended edits available for comparison. After a successful lesson-content write, run `show <shifu_bid> <outline_bid>` and compare the returned Teaching Prompt with the intended content. For structural changes, compare `show <shifu_bid>` with the requested outline changes, using the BIDs from the fresh pull. After a whole-course import, apply [imported-draft verification](build-and-import.md#verify-imported-draft).
-
-Report matches, discrepancies, and checks that could not run. A successful write or refreshed local baseline alone does not establish that the requested content matches the platform draft.
-
 ## Conflict Convergence
 
 All version-aware content and management writes use this exit-code loop:
