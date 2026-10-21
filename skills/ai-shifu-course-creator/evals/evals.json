@@ -716,7 +716,7 @@
       "expectations": [
         "It recognizes an existing-platform edit and authenticates before querying the title.",
         "It asks the user to choose among the matching courses and waits without pulling or modifying an arbitrary course.",
-        "After a unique choice, the workflow pulls the latest content, edits and validates it, then uses the original version-aware sync workflow without adding a routine synchronization approval step."
+        "After a unique choice, the workflow pulls the latest content, edits and validates it, then automatically completes the version-aware sync and platform readback in the same task, even though the user only requested an edit. It does not stop at a local preview or add a routine synchronization approval step."
       ]
     },
     {
@@ -1375,6 +1375,44 @@
         "Memory is available throughout the course without a name, placeholder, collection marker, explicit save action, manual summary, state table, or new platform operation.",
         "It preserves the one approved action of rewriting the handoff record with action, owner, and deadline. Unknown owner and date remain to-be-confirmed facts rather than invented details; it adds no background question or new teaching action.",
         "The executable memory-reading and teaching instructions remain outside HTML comments and deterministic blocks; comments describe immediate learning results. The response makes no claim that live memory retrieval or learner-time behavior has been tested."
+      ]
+    },
+    {
+      "id": 111,
+      "prompt": "只做流程模拟，不执行命令、不访问真实平台。以下场景独立，平台授权有效，课程均已唯一定位并 pull 到对应目录，本地修改和内容检查刚完成，用户尚未看过本地结果。A：用户只说‘把 course-a 第二节的案例改得更贴近新人’，目标课节 lesson-a，目录 /tmp/course-a；已只改该课节 Teaching Prompt。B：用户只说‘修好 course-b 的课程提示词与简介中的表述问题’，目录 /tmp/course-b；这两份工件已修复。两个请求都没有提上传、同步或发布。请给出接下来直到任务完成的操作与回复方式。",
+      "expected_output": "Automatically finishes existing-course edits on the platform draft without a local confirmation checkpoint, using scoped writes and readback.",
+      "files": [],
+      "expectations": [
+        "A proceeds directly to update-lesson course-a lesson-a with the edited Teaching Prompt file and --course-dir /tmp/course-a. It does not use a destructive whole-course import for a one-lesson edit.",
+        "B proceeds directly to update-meta course-b --course-prompt-file /tmp/course-b/course-prompt.md --course-dir /tmp/course-b for the intended Course Prompt and description changes, retaining the pulled revision baseline and unrelated content.",
+        "Both continue in the same task without asking the user to inspect local files, approve a preview, confirm synchronization, or separately request uploading. The original edit or repair request includes updating the existing platform draft.",
+        "A compares show course-a lesson-a with the intended Teaching Prompt. B verifies the description with show and the Course Prompt with export. Successful command output alone is not the completion check.",
+        "Both preserve unrelated settings and publication state, use the existing conflict-convergence policy if needed, and apply the course admin handoff only after the requested updates and verification complete.",
+        "The response remains a simulation and claims no executed write, completed readback, opened browser, or live platform change."
+      ]
+    },
+    {
+      "id": 112,
+      "prompt": "只做流程模拟，不执行命令、不访问平台。三个场景独立：A：已知线上课程 course-a，用户说‘第二节先只改本地文件，暂时别同步’，本地修订已完成。B：用户给了线上课程 course-b 的授课提示词，说‘只审阅，列问题，不修改’，审阅发现一个事实错误。C：用户贴了一段没有关联线上课程的授课提示词，说‘帮我改得更容易懂’，修订已完成。请分别说明交付动作和是否需要平台操作。",
+      "expected_output": "Honors explicit local-only and audit-only scopes and does not invent a platform target for an unassociated Prompt.",
+      "files": [],
+      "expectations": [
+        "A delivers the requested local edit and reports that it has not been synchronized, without authentication, pull, write, or publication. The automatic existing-course update default does not override the explicit local-only instruction.",
+        "B returns the scoped findings without repairing the artifact or writing to the platform merely because a defect was found.",
+        "C delivers the revised pasted Prompt without requiring platform setup, course lookup, creation, or synchronization for a Prompt that has no existing-platform target.",
+        "None introduces a local approval checkpoint, invents a successful platform update, or expands the request into course publication."
+      ]
+    },
+    {
+      "id": 113,
+      "prompt": "只做流程模拟，不执行命令、不访问真实平台。用户说‘修正 course-a 第二节的概念错误’，课程已定位、pull、修订并检查完成。以下场景独立：A：自动 update-lesson 返回 exit 1。B：update-lesson 返回 exit 0，但随后 show 的授课提示词仍是旧内容，与修订不符。C：update-lesson 返回 exit 0，随后 show 因服务故障读取失败。请给出各自的完成状态和面向用户的回复，不编造后续工具结果。",
+      "expected_output": "Reports failed synchronization and incomplete or mismatching readback truthfully without treating local work or write success as completed editing.",
+      "files": [],
+      "expectations": [
+        "A preserves the intended local revision, stops on the hard error under the existing sync policy, and reports that the platform update failed without asking for routine local confirmation.",
+        "B reports the observed readback discrepancy and leaves the task incomplete; it does not claim the platform content is correct solely because the write returned success or force a stale copy over the cloud.",
+        "C distinguishes a successful write response from unavailable verification and reports that readback remains incomplete rather than claiming either a verified update or a proven write failure.",
+        "All three retain the original course target and edits without creating a replacement course, publishing, inventing successful verification, or giving a completed-task handoff."
       ]
     }
   ]

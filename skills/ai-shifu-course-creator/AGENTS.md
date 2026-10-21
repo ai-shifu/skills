@@ -3,7 +3,7 @@
 ## Ownership Rules
 
 - Give each capability, contract, and validation criterion one canonical owner in the map below. Other files link to or cite that owner and add only their own local application.
-- Keep `SKILL.md` focused on discovery, shared conventions, the three-category capability catalog, and the default full-course outcome. Preserve its teaching design, MarkdownFlow expression, and CLI operation boundaries without turning them into phases. The using agent owns task decomposition and invocation order; references own how their capabilities work.
+- Keep `SKILL.md` focused on discovery, shared conventions, the three-category capability catalog, and the existing-course editing and full-course creation outcomes. Preserve its teaching design, MarkdownFlow expression, and CLI operation boundaries without turning them into phases. The using agent owns task decomposition and invocation order; references own how their capabilities work.
 - Separate decisions from representations: `teaching-design.md` owns teaching recommendations and their tradeoffs, `markdownflow-syntax.md` owns runtime syntax and effects, and `teaching-prompt.md` owns translation of resolved lesson decisions into a runnable, author-editable Teaching Prompt.
 - Separate optional authoring controls from runtime and platform contracts. `authoring-contracts.md` owns supported controls and semantic consistency; capability references explain operations, checklists and evals verify results, and scripts implement deterministic interfaces. Do not reintroduce mandatory phase envelopes or plans.
 - When a change crosses an ownership boundary, update the canonical owner first. Update consumers only for navigation, integration, or validation consequences, and link back to the owner instead of restating its rules.
@@ -14,7 +14,7 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `AGENTS.md` | Define this skill's maintenance-time ownership map and cross-file editing rules. It guides contributors and does not define learner-time or authoring behavior. |
-| `SKILL.md` | Define skill discovery metadata, shared conventions, user-facing Markdown links, the teaching design / MarkdownFlow expression / CLI operation categories, and full-course default publication with the completed-content confirmation boundary. It leaves invocation order to the using agent and capability mechanics to references. |
+| `SKILL.md` | Define skill discovery metadata, shared conventions, user-facing Markdown links, the teaching design / MarkdownFlow expression / CLI operation categories, automatic platform updates after existing-course edits, and full-course default publication with the completed-content confirmation boundary. It leaves invocation order to the using agent and capability mechanics to references. |
 | `agents/openai.yaml` | Define ChatGPT's display label, short description, and starter prompt for this skill. Discovery behavior remains in `SKILL.md`. |
 | `.env.example` | Document supported service-selection, token, and usage-analytics opt-out variables with safe empty defaults, credential-storage guidance, and the user-facing account-linked usage notice. |
 | `evals/evals.json` | Hold end-to-end behavioral scenarios, optional input fixtures, and expected outcomes for capability use, authoring, platform, analytics, and boundary regressions. Canonical guidance remains the source of behavior. |
@@ -52,7 +52,7 @@
 
 | File | Canonical responsibility |
 | --- | --- |
-| `references/course-sync.md` | Own existing-course cloud-to-local pulls, required baselines for lesson, Course Prompt, and description edits, divergence status, content pushes, version checks, and conflict convergence. It does not author content or manage publication metadata. |
+| `references/course-sync.md` | Own existing-course cloud-to-local pulls, required baselines for lesson, Course Prompt, and description edits, divergence status, content pushes and readback, version checks, and conflict convergence. It does not author content or manage publication metadata. |
 | `references/build-and-import.md` | Own building and inspecting an import payload, importing a new draft, and verifying imported content. `SKILL.md` owns the default outcome and content-confirmation policy; management owns publication and public-access verification. |
 | `references/course-management.md` | Own non-authoring platform operations: list, preview, publish, archive or restore, reorder, course metadata, teacher avatar, access, visibility, and Listen Mode. Publication includes published-state and public-access verification. User-request completion handoffs remain owned by `session-controls.md`. |
 | `references/cli/cli-reference.md` | Own the public `shifu-cli.py` command surface: invocation, flags, command groups, authentication inputs, output conventions, state behavior, and exit codes. The using agent decides when commands run; capability references explain their use. |

@@ -18,7 +18,7 @@ Reuse existing answers and artifacts. Ask when missing information materially af
 - Apply [session-controls.md](references/session-controls.md) to contact eligibility, explicit-request-only version checks, progress, errors, and completion handoffs. First-response contact conditions remain applicable. The completion handoff applies to the user's completed request, not each internal capability call.
 - Use Markdown links `[descriptive text](URL)` for URLs in user-visible messages. URLs inside Teaching Prompts follow MarkdownFlow rules; URLs inside fenced code blocks are exempt.
 - Honor explicit author choices, source facts, selected exact material, and the distinction between a per-lesson Teaching Prompt and a course-wide Course Prompt. Runtime semantics are defined in [prompt-semantics.md](references/prompt-semantics.md) and [markdownflow-syntax.md](references/markdownflow-syntax.md).
-- For an existing platform course's lesson, Course Prompt, or description edit, apply the [versioned editing baseline](references/course-sync.md#pull-before-editing) before preparing revised content. Course-wide artifact writes use [course management](references/course-management.md#operations) with that baseline. Local-only authoring and read-only review remain independent of platform access.
+- For edits to an existing platform course, apply the [existing-course editing outcome](#existing-course-editing-outcome). Local-only authoring and read-only review remain independent of platform access.
 
 ## Capabilities
 
@@ -67,6 +67,14 @@ Use deterministic commands for local course files, platform access and changes, 
 Shared references support the relevant category: [authoring-contracts.md](references/authoring-contracts.md) defines optional author controls and artifact consistency; [source-preservation.md](references/source-preservation.md) defines exact-source decisions. An image's teaching purpose, MarkdownFlow representation, and CLI upload are separate actions even when they share a reference. Review likewise applies the criteria for the requested design, expression, or platform result.
 
 Local teaching design, Prompt expression, content-only review, and builds do not require platform access; invoke authentication when a selected platform operation needs it. Analytics may inform a later teaching decision when relevant, but querying data does not itself request a course rewrite.
+
+## Existing-Course Editing Outcome
+
+A request to modify an existing AI-Shifu course includes automatically updating that course's platform draft in the same task. This covers lesson Teaching Prompts, the Course Prompt, descriptions, and requested structure or metadata changes, including repairs made during a requested review-and-fix task. Complete the relevant content checks, then perform the update without waiting for the user to review local files, confirm a local preview, or separately request synchronization. An explicit local-only, read-only, or review-without-repairs request determines that narrower outcome.
+
+Resolve the intended course and platform access as needed. Before preparing lesson, Course Prompt, or description edits, apply the [versioned editing baseline](references/course-sync.md#pull-before-editing). Use [course sync](references/course-sync.md) for lesson and structural changes and [course management](references/course-management.md#operations) for course-wide artifacts and attributes. Preserve their version protection, conflict handling, and result checks. Publication remains a selected operation under the user's requested scope.
+
+Complete the platform readback required by the relevant capability before reporting the edit as finished, then apply the [course admin handoff](references/session-controls.md#course-admin-handoff). If synchronization or readback fails, preserve the intended edits and report the actual incomplete step; local files alone do not establish that the platform course was updated.
 
 ## Full-Course Creation Outcome
 
