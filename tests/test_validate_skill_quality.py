@@ -1396,10 +1396,10 @@ class CourseCreatorContractTests(unittest.TestCase):
             ("unselected", "empty selection", "fallback", "not-assessed", "source"),
         )
 
-    def test_evals_preserve_new_course_approval_publication_and_truthful_handoff(self):
+    def test_evals_preserve_automatic_creation_publication_and_truthful_handoff(self):
         self.assert_eval_family(
             (54, 55, 56, 61, 63, 64, 65, 66, 67, 70, 104),
-            ("approval", "publish", "preview", "draft", "verified", "effective", "same JSON file"),
+            ("automatically", "publish", "preview", "draft", "verified", "effective", "same JSON file"),
         )
 
     def test_evals_preserve_existing_course_sync_and_conflict_boundaries(self):
