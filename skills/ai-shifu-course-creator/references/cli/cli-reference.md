@@ -8,7 +8,7 @@ All commands use:
 python3 {skillDir}/scripts/shifu-cli.py <command> [--profile <name>]
 ```
 
-`--profile <name>` selects one named profile for this invocation and may appear before or after the command. Supply it at most once. Authenticated commands also accept `--token <jwt>` as a non-persistent override for this invocation. Selection is resolved once before platform access; requests, uploads, and returned course links use that same context. See [Profiles](#profiles) for selection and credential precedence. Use `{skillDir}/.env.example` as the reference when creating or editing `{skillDir}/.env`:
+`--profile <name>` selects one named profile for this invocation and may appear before or after the command. Supply it at most once. Authenticated commands also accept `--token <jwt>` as a non-persistent override for this invocation. Selection is resolved once before platform access; platform requests, uploads, and returned course links use that same context. See [Profiles](#profiles) for selection and credential precedence. Use `{skillDir}/.env.example` as the reference when creating or editing `{skillDir}/.env`:
 
 ```dotenv
 SHIFU_BASE_URL=
@@ -43,7 +43,7 @@ check-update [--dev-manifest-url <loopback-url>]
 
 `check-update` prints a compact JSON result for a release lookup or skipped check. Version-source validation and result handling are defined in [session controls](../session-controls.md#version-check). `--dev-manifest-url` accepts only a localhost or loopback URL serving the development manifest format and exists for end-to-end development checks.
 
-Before dispatching any other valid CLI command, the CLI automatically checks whether a release lookup is due. Successful automatic checks are spaced 24 hours apart, and each available version is announced once on stderr. Normal stdout and command exit codes are preserved. Network errors are silent and retry after a short delay; rate-limit retry delays are respected. Automatic lookups have a two-second network budget and skip plugin-managed installations. Help and invalid command lines do not start a check.
+Before dispatching any other valid CLI command, the CLI automatically checks whether a release lookup is due. Successful automatic checks are spaced 24 hours apart, and each available version is announced once on stderr. Normal stdout and command exit codes are preserved. Network errors are silent and retry after a short delay; rate-limit retry delays are respected. Automatic lookups have a two-second network budget and skip plugin-managed installations. Help and invalid command lines do not start a check. This internal CLI behavior runs independently of the Agent's decision to invoke explicit `check-update`, whose invocation rules remain in [session controls](../session-controls.md#version-check).
 
 Automatic-check state is kept under `update-check/` in the user configuration directory resolved from the process environment, independently of platform `.env` loading, service selection, profiles, and credentials. It is separated by release source and installed version. If the state directory is unavailable or another process is checking, the command continues normally. Explicit `check-update` always queries immediately and does not use or modify the automatic-check schedule; development lookups do not change production state.
 
@@ -109,7 +109,7 @@ site --set com
 site --url https://your-service.example
 ```
 
-`site` is the compatibility entrypoint for inspecting the effective context or configuring the selected/default profile. It prints JSON with `status=configured`, the effective `base_url`, `profile`, and official `contact_url`, or `status=selection_required` with no configured service. `profile` is null for temporary or unconfigured contexts. Contact links depend on the service address: the domestic official service uses the Chinese contact page; the international official service and custom deployments use the international contact page. Profile names do not affect this mapping. It makes no network requests.
+`site` is the compatibility entrypoint for inspecting the effective context or configuring the selected/default profile. It prints JSON with `status=configured`, the effective `base_url`, `profile`, and official `contact_url`, or `status=selection_required` with no configured service. `profile` is null for temporary or unconfigured contexts. Contact links depend on the service address: the domestic official service uses the Chinese contact page; the international official service and custom deployments use the international contact page. Profile names do not affect this mapping. Profile inspection and configuration make no platform requests; the shared CLI [automatic update check](#update-check) can query GitHub before dispatch.
 
 `site --set cn/com` and `site --url <URL>` update the selected/default profile using the same URL and authorization rules as `profile set`. With no configured profile, initial setup creates an ordinary profile named `default`. Use explicit `--profile` to configure a named profile when temporary environment configuration is active.
 
@@ -193,7 +193,7 @@ status --course-dir ./course-a/ [--exit-code]
 
 Without `--exit-code`, divergence is reported while the command exits normally. With `--exit-code`, any divergence or unknown revision exits `1`. A missing sync manifest also exits `1`.
 
-`.shifu-sync.json` is auto-maintained by the CLI. Its schema and the source-service/course identity checks applied before all network commands with a course directory are defined in `course-directory-spec.md#shifu-syncjson`. `--force` affects local backups only; it never bypasses identity checks.
+`.shifu-sync.json` is auto-maintained by the CLI. Its schema and the source-service/course identity checks applied before platform requests with a course directory are defined in `course-directory-spec.md#shifu-syncjson`. `--force` affects local backups only; it never bypasses identity checks.
 
 ## Create Commands
 
@@ -257,7 +257,7 @@ After upload, the command sends only the returned resource URL as `avatar`, read
 
 `--order` must list every outline BID under one parent exactly once, in the desired order. Use all top-level BIDs to reorder chapters, or all BIDs within one chapter to reorder its lessons. The command sends only that group's ordered BIDs as `order` to `PATCH /shifus/<shifu_bid>/outlines/reorder`. The server applies the order to its current tree under the course lock, preserving other sibling groups and parent-child relationships. It does not move outlines between parents.
 
-Empty or duplicate BIDs exit `1` before any request. The server rejects unknown, cross-parent, or incomplete groups without changing the course, and the CLI exits `1` on that error.
+Empty or duplicate BIDs exit `1` before any platform request. The server rejects unknown, cross-parent, or incomplete groups without changing the course, and the CLI exits `1` on that error.
 
 The platform must support the atomic `order` request. Older servers that require an `outlines` tree reject it, and the CLI exits `1`; it never retries with a full tree, which could overwrite another group's concurrent edits. Deploy the backend supporting this contract before using this command.
 
@@ -282,12 +282,12 @@ import <shifu_bid> --course-dir ./course-a/ \
 import --new --course-dir ./course-a/ \
   [--title "..."] [--description "..."] [--keywords "..."] [--chapter-name "..."]
 
-# Offline build only
+# Build import JSON locally
 build --course-dir ./course-a/ [-o shifu-import.json] \
   [--title "..."] [--description "..."] [--keywords "..."] [--chapter-name "..."]
 ```
 
-`build` performs no network calls and writes the import JSON to `-o` or `<course-dir>/shifu-import.json`. File discovery, field precedence, directory schemas, and the generated import schema are defined in `course-directory-spec.md`.
+`build` compiles the course locally and writes the import JSON to `-o` or `<course-dir>/shifu-import.json`. The shared CLI [automatic update check](#update-check) can query GitHub before compilation; compilation itself needs no platform connection. File discovery, field precedence, directory schemas, and the generated import schema are defined in `course-directory-spec.md`.
 
 `import --new` creates a new course. `import <shifu_bid>` targets an existing course. Both forms send content fields. Existing-course import leaves omitted platform attributes unchanged; new-course import uses platform defaults for omitted attributes.
 
