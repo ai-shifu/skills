@@ -15,7 +15,7 @@ SHIFU_BASE_URL=
 SHIFU_TOKEN=
 ```
 
-Process environment variables take precedence over the corresponding `.env` values. An empty value does not activate temporary configuration. Before every command, the CLI initializes a missing `.env` from `.env.example` with owner-only permissions; an existing file is never replaced. Browser-issued credentials live in the user's configuration directory rather than `.env`.
+Process environment variables take precedence over the corresponding `.env` values. An empty value does not activate temporary configuration. Before commands other than `check-update`, the CLI initializes a missing `.env` from `.env.example` with owner-only permissions; an existing file is never replaced. `check-update` skips `.env` loading and initialization. Browser-issued credentials live in the user's configuration directory rather than `.env`.
 
 ## Contents
 

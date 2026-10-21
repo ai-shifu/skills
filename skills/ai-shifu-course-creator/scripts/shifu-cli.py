@@ -3655,7 +3655,8 @@ def main():
     if handler:
         try:
             process_env = dict(os.environ)
-            load_env()
+            if args.command != "check-update":
+                load_env()
             if args.command not in {"check-update", "build"}:
                 profile_store().migrate_legacy(process_env)
                 # Resolve the config root from dotenv before migration, then

@@ -33,6 +33,76 @@ course_creator_cli = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(course_creator_cli)
 
 
+class UpdateCheckEnvironmentTests(unittest.TestCase):
+    def setUp(self):
+        tmp = self.enterContext(tempfile.TemporaryDirectory())
+        self.root = Path(tmp)
+        self.env_file = self.root / ".env"
+        self.template = self.root / ".env.example"
+        self.enterContext(mock.patch.dict(course_creator_cli.os.environ, {}, clear=True))
+        self.enterContext(mock.patch.object(course_creator_cli, "ENV_FILE", self.env_file))
+        self.enterContext(mock.patch.object(course_creator_cli, "ENV_EXAMPLE_FILE", self.template))
+        self.load_env = self.enterContext(mock.patch.object(
+            course_creator_cli, "load_env", wraps=course_creator_cli.load_env,
+        ))
+        self.ensure_env_file = self.enterContext(mock.patch.object(
+            course_creator_cli, "ensure_env_file", wraps=course_creator_cli.ensure_env_file,
+        ))
+        self.load_dotenv = self.enterContext(mock.patch.object(course_creator_cli, "load_dotenv"))
+        self.profile_store = self.enterContext(mock.patch.object(course_creator_cli, "profile_store"))
+        self.resolve_context = self.enterContext(mock.patch.object(course_creator_cli, "resolve_context"))
+        self.result = {"status": "latest", "source": "network"}
+        self.check = self.enterContext(mock.patch.object(
+            course_creator_cli, "check_for_update", return_value=self.result,
+        ))
+
+    def assert_update_commands_ignore_platform_environment(self):
+        dev_url = "http://127.0.0.1:8088/skill-manifests/test.json"
+        for arguments, expected in (
+            (("check-update",), {"force": False}),
+            (("check-update", "--force"), {"force": True}),
+            (("check-update", "--dev-manifest-url", dev_url), {
+                "force": True, "manifest_url": dev_url, "allow_loopback": True,
+            }),
+        ):
+            with (
+                self.subTest(arguments=arguments),
+                mock.patch.object(sys, "argv", ["shifu-cli.py", *arguments]),
+                contextlib.redirect_stdout(io.StringIO()) as output,
+                contextlib.redirect_stderr(io.StringIO()) as error,
+            ):
+                self.check.reset_mock()
+                course_creator_cli.main()
+                self.assertEqual(json.loads(output.getvalue()), self.result)
+                self.assertEqual(error.getvalue(), "")
+                self.check.assert_called_once_with(**expected)
+                self.load_env.assert_not_called()
+                self.ensure_env_file.assert_not_called()
+                self.load_dotenv.assert_not_called()
+                self.profile_store.assert_not_called()
+                self.resolve_context.assert_not_called()
+                self.assertEqual(dict(course_creator_cli.os.environ), {})
+
+    def test_update_check_works_without_env_in_read_only_installation(self):
+        self.template.write_text("SHIFU_BASE_URL=cn\n", encoding="utf-8")
+        with mock.patch.object(
+            course_creator_cli.shutil, "copyfile", side_effect=PermissionError("read-only installation"),
+        ) as copyfile:
+            self.assert_update_commands_ignore_platform_environment()
+        copyfile.assert_not_called()
+        self.assertFalse(self.env_file.exists())
+        self.assertEqual(list(self.root.iterdir()), [self.template])
+
+    def test_update_check_does_not_load_existing_invalid_platform_environment(self):
+        invalid_env = "SHIFU_BASE_URL=http://invalid.example\nSHIFU_TOKEN=unused-token\n"
+        self.env_file.write_text(invalid_env, encoding="utf-8")
+        self.load_dotenv.side_effect = ValueError("invalid platform environment")
+        self.profile_store.side_effect = course_creator_cli.profiles.ProfileError("invalid profile")
+        self.assert_update_commands_ignore_platform_environment()
+        self.assertEqual(self.env_file.read_text(encoding="utf-8"), invalid_env)
+        self.assertEqual(list(self.root.iterdir()), [self.env_file])
+
+
 class CourseCreatorSiteTests(unittest.TestCase):
     def setUp(self):
         tmp = self.enterContext(tempfile.TemporaryDirectory())
