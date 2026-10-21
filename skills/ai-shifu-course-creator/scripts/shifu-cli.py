@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 import profile_store as profiles
 from agent_detection import AGENT_DISPLAY_NAMES, detect_agent
 
-from skill_update_check import DEV_CACHE_FILE, check_for_update
+from skill_update_check import automatic_check_for_update, check_for_update
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
@@ -3277,18 +3277,29 @@ def cmd_upload_image(args):
 
 
 # ── CLI Entry Point ────────────────────────────────────────────────────────────
+def _maybe_check_for_updates():
+    """Show an optional update notice without changing command output or errors."""
+    try:
+        result = automatic_check_for_update(config_dir())
+        if result and result.get("status") in {"update_recommended", "update_required"}:
+            print(
+                f"AI-Shifu skill update available: {result['latest']}. {result['update_url']}",
+                file=sys.stderr,
+            )
+    except Exception:  # noqa: BLE001 - optional checks never prevent a CLI operation
+        pass
+
+
 def cmd_check_update(args):
     """Print one machine-readable update result and never fail the caller."""
     dev_manifest_url = args.dev_manifest_url
     if dev_manifest_url:
         result = check_for_update(
-            force=True,
-            cache_file=DEV_CACHE_FILE,
             manifest_url=dev_manifest_url,
             allow_loopback=True,
         )
     else:
-        result = check_for_update(force=args.force)
+        result = check_for_update()
     print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
 
 
@@ -3311,7 +3322,7 @@ def build_parser():
     sub = parser.add_subparsers(dest="command", help="Available commands")
 
     p = sub.add_parser("site", parents=[parent_parser],
-                       help="Show or configure the selected profile (no network)")
+                       help="Show or configure the selected profile")
     selection = p.add_mutually_exclusive_group()
     selection.add_argument("--set", choices=tuple(SITE_URLS), help="Select cn or com")
     selection.add_argument("--url", help="Select a custom service URL")
@@ -3329,11 +3340,6 @@ def build_parser():
     p = sub.add_parser(
         "check-update",
         help="Check GitHub Releases for a newer Skill version",
-    )
-    p.add_argument(
-        "--force",
-        action="store_true",
-        help="Revalidate GitHub Releases even when the local TTL is fresh",
     )
     p.add_argument(
         "--dev-manifest-url",
@@ -3655,8 +3661,11 @@ def main():
     handler = commands.get(args.command)
     if handler:
         try:
+            if args.command != "check-update":
+                _maybe_check_for_updates()
             process_env = dict(os.environ)
-            load_env()
+            if args.command != "check-update":
+                load_env()
             if args.command not in {"check-update", "build"}:
                 profile_store().migrate_legacy(process_env)
                 # Resolve the config root from dotenv before migration, then

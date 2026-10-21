@@ -91,3 +91,6 @@ jobs:
 
       - name: Test Windows login guidance
         run: python -m unittest discover -s tests -p "test_profile_login_hints.py"
+
+      - name: Test native Windows update checks
+        run: python -m unittest discover -s tests -p "test_skill_update_check.py"

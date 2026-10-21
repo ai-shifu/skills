@@ -35,7 +35,12 @@ class CourseProfileProcessTests(unittest.TestCase):
         # Never copy the installed skill's real .env or any user configuration.
         shutil.copytree(SKILL_ROOT / "scripts", self.skill / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
         shutil.copyfile(SKILL_ROOT / ".env.example", self.skill / ".env.example")
-        (self.skill / "SKILL.md").write_text("---\nname: profile-test\nversion: 1.0.0\n---\n", encoding="utf-8")
+        # These profile-process tests exercise platform requests only. A plugin
+        # owns updates for this copied fixture, keeping subprocesses offline.
+        (self.skill / "SKILL.md").write_text(
+            "---\nname: profile-test\nversion: 1.0.0\nversion_management: plugin\n---\n",
+            encoding="utf-8",
+        )
         self.config = self.root / "configuration"
         self.env_file = self.skill / ".env"
         self.cli = self.skill / "scripts" / "shifu-cli.py"
