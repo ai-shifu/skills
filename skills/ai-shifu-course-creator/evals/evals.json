@@ -1432,12 +1432,12 @@
     {
       "id": 115,
       "prompt": "只在本地改写一个授课提示词片段，不访问平台；目标环境已支持自然语言发起真实互动。先完整保留原问题“想先练哪项核验能力？”和原控件 ?[核验来源 | 核对计算]，包括措辞、字符、顺序和单选模式。之后根据这次真实回答和当时讨论的案例，用自然语言要求授课智能体在运行时生成一个具体问题和二至四个练习任务选项，允许多选但不允许自填；现在不要预写第二题或它的选项。等待这次真实回答后逐项给出第一步建议。两次回答自动进入课内 memory，后续课节均可使用。不要添加教学环节、另起程序变量名、读取替换占位符、单独保存步骤或平台操作；每块前加中文 HTML 学习结果导航注释。",
-      "expected_output": "Preserves an author-fixed control and keeps the later question and options dynamic while requiring its actual generated question as the runtime control prefix.",
+      "expected_output": "Preserves an author-fixed control and keeps the later question and options dynamic, with feedback grounded in the actual new answer.",
       "files": [],
       "expectations": [
         "The original question 想先练哪项核验能力？ and standalone control ?[核验来源 | 核对计算] remain byte-for-byte unchanged, including wording, option order, and single-select mode. The new-generation convention does not silently rewrite an author-fixed control.",
         "The second interaction stays an ordinary natural-language instruction outside ?[] and comments. It asks the Teaching Agent to use the first actual answer and the case at learner time to generate the concrete question and two to four suitable practice-task options, with multiple selections and no custom input.",
-        "The dynamic instruction explicitly requires the Teaching Agent, when it actually creates the second interaction control, to put the complete question it generated at that time inside the %{{...}} prefix immediately after ?[. It does not supply a fixed second question or option list now, put the generation instruction inside ?[], or introduce a new parser construct.",
+        "It does not supply a fixed second question or option list now, put the generation instruction inside ?[], or introduce a new parser construct.",
         "The Teaching Agent waits for the current real answer before giving each selected task its first-step suggestion, rather than using an earlier choice to answer the pending interaction. Both actual responses remain available through automatic course memory without programmatic answer keys, substitution reads, a variable table, or a explicit save operation.",
         "The fragment preserves both interaction purposes and the requested scope, adds no background collection or teaching stage, and does not claim a live runtime interaction or memory retrieval was verified."
       ]
