@@ -85,7 +85,6 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
 
     def assert_retired_contract_absent(self, skill_root: Path):
         retired_contract = re.compile(
-            r"%\{\{[^{}]*\}\}|"
             r"\b(?:global_variable_table|used_variables|collected_in|"
             r"effect_scope)\b|"
             r"markdownflow-syntax\.md#(?:variables|pre-collection-references)\b|"
@@ -94,7 +93,7 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
             re.IGNORECASE,
         )
         runtime_references = re.compile(
-            r"\{\{[^{}\n]*\}\}|^#{1,6}[ \t]+Variables?[ \t]*$",
+            r"(?<!%)\{\{[^{}\n]*\}\}|^#{1,6}[ \t]+Variables?[ \t]*$",
             re.IGNORECASE | re.MULTILINE,
         )
         for path in sorted(skill_root.rglob("*")):
@@ -142,6 +141,13 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
                     '"table":"var_variable_values", "group_by":["value"]'
                 ),
                 "evals/analytics.json": '{"query": "group_by variable_bid"}',
+                "references/markdownflow-syntax.md": (
+                    "?[%{{你想先练哪项能力？}} 核验来源 | 核对计算]\n"
+                    "?[%{{描述一次沟通困难}} ...请输入]\n"
+                ),
+                "evals/question-prefix.json": (
+                    '{"prompt": "?[%{{本周想改善什么？}} ...请输入]"}'
+                ),
             }
             for name, content in sources.items():
                 path = skill_root / name
@@ -153,9 +159,14 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
     def test_contract_scan_rejects_retired_source_with_short_errors(self):
         cases = (
             ("evals/case.json", '{"used_variables": []}'),
-            ("references/lesson.md", "?[%{{learner_goal}} ...Goal]"),
-            ("references/analytics/tables.md", "var_variable_values %{{learner_goal}}"),
+            ("references/lesson.md", '{"global_variable_table": []}'),
+            ("references/analytics/tables.md", "var_variable_values effect_scope"),
             ("references/markdownflow-syntax.md", "Read {{learner_goal}}."),
+            (
+                "references/markdownflow-syntax.md",
+                "?[%{{你想先练哪项能力？}} 核验来源 | 核对计算]\n"
+                "Read {{learner_goal}}.",
+            ),
             ("references/consumer.md", "markdownflow-syntax.md#variables"),
         )
         for name, content in cases:
