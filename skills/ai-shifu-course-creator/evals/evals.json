@@ -1425,7 +1425,7 @@
         "C retains the full question and uses exactly ?[%{{最近一次核验遇到了什么困难？}} ...请描述实际困难]. The prefix carries the complete question rather than the input hint, an abbreviated label, or a programmatic key.",
         "D retains the full question and uses exactly ?[%{{你最常核验什么来源？}} 同事消息 | 外部网页 | ...其他来源]. E retains the full question and uses exactly ?[%{{你常核验哪些来源？}} 同事消息 || 外部网页 || ...其他来源]. Custom input remains available in both, with single-select and multi-select modes respectively.",
         "F uses ?[Continue] without inventing a question, question prefix, background collection, or answer field for an action-only navigation control.",
-        "The five question prefixes immediately follow ?[ and precede options or the input hint. They do not replace the learner-facing questions, add bare substitution reads, create a variable table, or require a explicit save step; all actual course inputs remain automatically available through memory.",
+        "The five question prefixes immediately follow ?[ and precede options or the input hint. Each complete question in its prefix is sufficient; no separate question text before the control is required. The controls add no bare substitution reads, variable table, or explicit save step; all actual course inputs remain automatically available through memory.",
         "Every question waits for its actual answer before its one brief feedback instruction. The result remains local, executable outside comments and deterministic blocks, and makes no claim of a verified live interaction."
       ]
     },
@@ -1440,6 +1440,17 @@
         "The dynamic instruction explicitly requires the Teaching Agent, when it actually creates the second interaction control, to put the complete question it generated at that time inside the %{{...}} prefix immediately after ?[. It does not supply a fixed second question or option list now, put the generation instruction inside ?[], or introduce a new parser construct.",
         "The Teaching Agent waits for the current real answer before giving each selected task its first-step suggestion, rather than using an earlier choice to answer the pending interaction. Both actual responses remain available through automatic course memory without programmatic answer keys, substitution reads, a variable table, or a explicit save operation.",
         "The fragment preserves both interaction purposes and the requested scope, adds no background collection or teaching stage, and does not claim a live runtime interaction or memory retrieval was verified."
+      ]
+    },
+    {
+      "id": 116,
+      "prompt": "只审阅下面这段本地授课提示词的互动编码，列出确实存在的问题；不要改写、补写或访问平台。作者没有要求在控件外单独写问题。\n\n<!-- 学员能选择收到可疑消息后的优先动作 -->\n?[%{{收到可疑消息时，你先做什么？}} 核验来源 | 直接转发]\n等待学员本次真实选择后，针对所选动作给一句反馈，再继续。\n\n<!-- 学员能描述实际遇到的核验困难 -->\n?[%{{最近一次核验遇到了什么困难？}} ...请描述实际困难]\n等待学员本次真实输入后，围绕实际困难给一句反馈，不虚构学员经历。",
+      "expected_output": "Accepts standalone response controls whose full questions appear in their prefixes, without requiring duplicate preceding question text.",
+      "files": [],
+      "expectations": [
+        "The review accepts both complete question prefixes as sufficient question text for the single-select and text-input controls. It does not report a missing preceding question, require duplication before the control, or propose adding a separate question line merely because the prefix carries the question.",
+        "It checks the actual interaction modes, input hint, waiting for the current answer, and feedback against the supplied fragment without inventing another defect.",
+        "It honors audit-only local scope, returns findings rather than a rewritten Prompt, preserves any explicitly supplied content, and makes no claim that live learner-time interaction was tested."
       ]
     }
   ]
