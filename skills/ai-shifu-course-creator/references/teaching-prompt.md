@@ -100,8 +100,10 @@ Ordinary instructions may use lists, paragraphs, or another suitable source layo
 - Choose an [explicit control or natural-language interaction](markdownflow-syntax.md#interactions) according to the intended behavior. Preserve author-fixed questions and choices; when dynamic generation is requested, keep that generation instruction executable at learner time rather than replacing it with an author-time option list.
 - Use target capabilities already established by the user or available course context. Natural-language interactions need the [response-surface and waiting capabilities](markdownflow-syntax.md#natural-language-interactions). An explicit-control fallback is suitable only when it preserves the author's requirements. If dynamic choices remain required and support is unavailable or unknown, retain that requirement and identify the runtime dependency. Local authoring can still produce the Prompt with that dependency stated; it does not require platform access.
 - For an explicit control, put a complete learner-facing question immediately before its standalone `?[]` control. Keep option wording and order in the actual control; avoid competing simulated controls.
+- When generating a new question-based explicit control, fill the [question prefix](markdownflow-syntax.md#question-prefix) with the complete question or response task, matching the immediately preceding text. Use the actual question, including its punctuation, rather than a programmatic key, topic label, answer, or unfilled placeholder. This keeps the response associated with what the learner was asked. For example, after `Which action will you take first?`, write `?[%{{Which action will you take first?}} Verify the source | Check the calculation]`. Preserve an author-supplied exact control unless the requested change includes revising it.
 - In explicit controls, use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label, according to the required answer semantics. For input, use a specific preceding question and a short hint. For select-plus-input, put `...` at the start of the custom-answer option.
 - For a natural-language interaction, describe the intended learner decision or task, the context used to generate the question or options, and any required answer mode or option constraints. Keep these instructions outside `?[]`, comments, and deterministic blocks. Specify how the actual answer affects the next teaching action; do not invent the learner's answer or continue before it arrives.
+- When the Teaching Agent generates that interaction's response control at learner time, instruct it to fill the `%{{...}}` prefix immediately after `?[` with the complete question it actually asks then. State that syntax and placement in the authored Prompt so the Teaching Agent can apply it without access to this authoring guide. Keep dynamic questions and options dynamic; do not invent a fixed question or option list during authoring just to fill a prefix.
 - When teaching uses an earlier answer, describe the relevant input and its instructional effect naturally under [Memory and Branch Encoding](#memory-and-branch-encoding).
 - An action-only control such as `?[Continue]` advances the preceding content and does not require an invented question or slide.
 - The prompt immediately after an interaction can describe how to respond to different answers and, when needed, ask the learner to interact again, using the [runtime follow-up behavior](markdownflow-syntax.md#branching-on-user-input).
@@ -113,7 +115,7 @@ For example:
 
 Rewrite "Organize customer feedback" as a plan with a specific action, an owner, and a deadline.
 
-?[...State who will do what and by when]
+?[%{{Rewrite "Organize customer feedback" as a plan with a specific action, an owner, and a deadline.}} ...State who will do what and by when]
 
 Respond based on the learner's answer:
 

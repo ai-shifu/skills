@@ -96,12 +96,12 @@
     },
     {
       "id": 9,
-      "prompt": "设计两节课：第一节先让学员选 A 或 B，并立刻给出对应解释，这个答案后面不再用于教学；另问一个学习目标，第二节和课程提示词都要用到，而且课程提示词可能在目标填写前先运行。所有课程输入会自动进入 memory，整门课任何地方均可使用。请展示两种交互写法、第二节如何从 memory 读取学习目标，以及目标尚未填写时的处理；不要要求命名、占位符、显式保存或额外中间表。",
+      "prompt": "设计两节课：第一节先让学员选 A 或 B，并立刻给出对应解释，这个答案后面不再用于教学；另问一个学习目标，第二节和课程提示词都要用到，而且课程提示词可能在目标填写前先运行。所有课程输入会自动进入 memory，整门课任何地方均可使用。请展示两种交互写法、第二节如何从 memory 读取学习目标，以及目标尚未填写时的处理；不要要求另起程序变量名、读取替换占位符、单独保存或额外中间表。",
       "expected_output": "Uses automatic course-wide memory for both immediate feedback and cross-lesson reuse, with a grounded fallback before the learning goal is available.",
       "files": [],
       "expectations": [
         "The A/B interaction uses valid ?[...] syntax and waits for the actual answer before its immediate feedback; the fact that no later teaching action uses the answer does not exclude it from automatic memory.",
-        "The learning-goal input automatically enters memory and is available to the later lesson and Course Prompt. Their ordinary instructions read the relevant actual goal without requiring a name, placeholder, explicit save action, collection marker, or state table.",
+        "The learning-goal input automatically enters memory and is available to the later lesson and Course Prompt. Their ordinary instructions read the relevant actual goal without requiring a separate programmatic key, substitution placeholder, explicit save action, or state table.",
         "When the learning goal is unavailable before collection, the Course Prompt uses neutral course-appropriate defaults, without inventing a goal or asking an extra question outside the approved design.",
         "It preserves both distinct teaching purposes and their order, without replacing automatic memory with a manually maintained list of permitted inputs or destinations."
       ]
@@ -183,7 +183,7 @@
         "The Teaching Prompt preserves the distinction between risk signals and a fraud conclusion and teaches identity verification before evidence retention before the handling decision.",
         "The exact standalone deterministic lines `===两个及以上风险信号同时出现时，必须在 15 分钟内上报。===` and `===先验证，再处置；先留证，再定责。===` each occur exactly once.",
         "The exact question and `?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]` control each occur exactly once, preserve option order, and lead to immediate answer-specific feedback.",
-        "The Teaching Prompt waits for the actual response before feedback and relies on automatic memory without requesting a name, placeholder, collection marker, or explicit save action.",
+        "The Teaching Prompt waits for the actual response before feedback and relies on automatic memory without requesting a separate programmatic key, substitution placeholder, or explicit save action.",
         "With navigation comments ignored by the Teaching Agent, the body directly carries the chosen teaching sequence, required content, interaction placement, feedback, and close, including any visuals actually chosen; it does not substitute an authoring explanation of design or preservation categories.",
         "The agent chooses a coherent teaching sequence and any useful visuals while preserving all supplied facts, operational order, exact material, question, option order, immediate feedback, and close; no universal brief-text-first or slide/text alternation is required.",
         "The selected directions produce executable local teaching requirements within the fixed lesson; ordinary wording remains an instruction rather than a mandatory transcript, and the result adds no concrete typography, color, coordinates, animation, or uniform point quota.",
@@ -344,7 +344,7 @@
       "expected_output": "Repairs premature answer disclosure and feedback placement while preserving the author-approved visual-first and pooled-explanation rhythm.",
       "files": [],
       "expectations": [
-        "It honors the requested JSON output with one runnable L26 Teaching Prompt and no named learner-answer state.",
+        "It honors the requested JSON output with one runnable L26 Teaching Prompt and no programmatic learner-answer keys or state table.",
         "It preserves exactly the three supplied substantive visual pages in their original order and keeps the explicitly approved visual-first presentation and pooled explanation of the first two pages; it adds no required brief-text-first lead-in, interleaved explanations, cover, or filler page.",
         "The explanation preserves why the two observations are signals rather than fraud proof and the independent-verification, record-retention, dual-review, and payment-decision order with enough reasoning to understand them.",
         "The exact standalone deterministic line ===付款信息变更未经原登记联系人独立核验，不得发起付款。=== occurs exactly once, with all required facts and exact content unchanged.",
@@ -1334,7 +1334,7 @@
         "The Teaching Prompt instructs the Teaching Agent in ordinary natural language to initiate a real single-select interaction using the learner's actual earlier description in this lesson, generate three concrete distinct action options at learner time, and allow a custom text answer.",
         "It retains the dynamic generation request rather than enumerating a fixed option list, wrapping generation instructions inside ?[], or requiring a prewritten question and control. It does not introduce a new parser token or conditional syntax.",
         "It explicitly waits for the learner's actual selection or custom answer before giving one actionable practice suggestion related to that answer. It does not fabricate the prior description, the options the learner will see, or the answer.",
-        "The actual prior description and new answer are available through automatic memory; no name, placeholder, collection marker, explicit save step, or state table is required. The requested generation and feedback instructions remain executable outside explanatory comments and deterministic blocks.",
+        "The actual prior description and new answer are available through automatic memory; no separate programmatic key, substitution placeholder, explicit save step, or state table is required. The requested generation and feedback instructions remain executable outside explanatory comments and deterministic blocks.",
         "It preserves the local-only scope, adds none of the prohibited teaching actions or platform calls, and does not claim that a live interaction, generated options, or pause/resume behavior has been verified."
       ]
     },
@@ -1346,7 +1346,7 @@
       "expectations": [
         "The first question and standalone control ?[核验来源 | 核对计算] remain unchanged in wording, order, and single-select mode; later lessons can read the actual selection from memory without altering the control.",
         "The second interaction is an ordinary natural-language instruction to generate two to four suitable practice tasks at learner time from the first actual answer and the current case, allow multiple selections, and disallow custom input. It does not precompute the choices or rewrite the first control as dynamic.",
-        "Both actual responses automatically enter course-wide memory and remain usable later. The second interaction requires no name, placeholder, collection marker, explicit save step, or state table, and its feedback reads the current selection rather than a previous task choice.",
+        "Both actual responses automatically enter course-wide memory and remain usable later. The second interaction requires no separate programmatic key, substitution placeholder, explicit save step, or state table, and its feedback reads the current selection rather than a previous task choice.",
         "The Teaching Agent waits for the real second answer before giving a first-step suggestion for each selected task, without inventing answers, using stale answers, or adding another collection to obtain the response again.",
         "The output keeps both interactions and their intended response behavior executable outside comments and deterministic markers, adds no authoring schema or prohibited teaching or platform action, and makes no live-runtime verification claim."
       ]
@@ -1366,13 +1366,13 @@
     },
     {
       "id": 110,
-      "prompt": "只写本地、纯文字的第三节授课提示词片段，不连接平台。前两节里学员已经通过普通聊天描述了跨部门交接延误，单选时选了“先核对接收人”，又在自填补充中说明“消息已发出但无人确认”，随后主动更正为“接收人已确认，但遗漏了截止时间”。所有课程输入自动进入 memory。第三节目标是把先前交接问题改写为包含行动、负责人和截止时间的一条记录。请从 memory 读取相关输入，使用最后更正后的实际情况展开这一个教学动作；不要再次采集背景，不要把输入限定为控件回答，不要要求命名、占位符、显式保存、手工摘要或中间表。不能编造学员未提供的负责人和日期；需要这些具体事实时保留待确认项，不新增互动或其它教学动作。每块前添加中文 HTML 学习结果导航注释。",
+      "prompt": "只写本地、纯文字的第三节授课提示词片段，不连接平台。前两节里学员已经通过普通聊天描述了跨部门交接延误，单选时选了“先核对接收人”，又在自填补充中说明“消息已发出但无人确认”，随后主动更正为“接收人已确认，但遗漏了截止时间”。所有课程输入自动进入 memory。第三节目标是把先前交接问题改写为包含行动、负责人和截止时间的一条记录。请从 memory 读取相关输入，使用最后更正后的实际情况展开这一个教学动作；不要再次采集背景，不要把输入限定为控件回答，不要要求另起程序变量名、读取替换占位符、单独保存、手工摘要或中间表。不能编造学员未提供的负责人和日期；需要这些具体事实时保留待确认项，不新增互动或其它教学动作。每块前添加中文 HTML 学习结果导航注释。",
       "expected_output": "Uses all kinds of actual course input from automatic memory across lessons while honoring corrections, missing facts, and the approved teaching scope.",
       "files": [],
       "expectations": [
         "The Teaching Prompt reads relevant memory from ordinary chat, the fixed single-select response, custom input, and the later unsolicited correction. All course inputs are automatically remembered; access is not restricted to approved fields, control answers, selected lessons, or manually saved summaries.",
         "The later lesson uses the latest actual correction: the recipient confirmed but the deadline was omitted. It does not revive the older unconfirmed-message account or fabricate an extra learner response.",
-        "Memory is available throughout the course without a name, placeholder, collection marker, explicit save action, manual summary, state table, or new platform operation.",
+        "Memory is available throughout the course without a separate programmatic key, substitution placeholder, explicit save action, manual summary, state table, or new platform operation.",
         "It preserves the one approved action of rewriting the handoff record with action, owner, and deadline. Unknown owner and date remain to-be-confirmed facts rather than invented details; it adds no background question or new teaching action.",
         "The executable memory-reading and teaching instructions remain outside HTML comments and deterministic blocks; comments describe immediate learning results. The response makes no claim that live memory retrieval or learner-time behavior has been tested."
       ]
@@ -1413,6 +1413,33 @@
         "It continues both writes automatically in the same task without asking for local-file review, revised-preview approval, upload confirmation or a separate synchronization request, and uses existing conflict convergence if needed.",
         "After applying the revisions it finishes the original full-course default publication and handoff. It does not reinterpret ordinary editing after creation as a new draft-only policy or add a new post-sync content-verification requirement.",
         "All operations remain simulated; it does not claim an executed write, actual publication, live verification or opened browser."
+      ]
+    },
+    {
+      "id": 114,
+      "prompt": "只在本地写六个独立授课提示词片段，不连接平台；每块前加中文 HTML 学习结果导航注释。前五块按以下问题和模式新生成显式互动控件，问题措辞不能改：A 单选“你想先练哪项核验能力？”，选项依次为“核验来源”“核对计算”；B 多选“你想练哪些核验能力？”，选项同 A；C 自填“最近一次核验遇到了什么困难？”，提示“请描述实际困难”；D 单选并允许自填“你最常核验什么来源？”，选项依次为“同事消息”“外部网页”，自填提示“其他来源”；E 多选并允许自填“你常核验哪些来源？”，选项和提示同 D。各题等待真实回答后给一句简短反馈，不增加教学动作。F 只生成一个显示“Continue”的继续按钮，不是问题，不收集背景。答案自动进入课内 memory，不另建变量表或保存步骤。",
+      "expected_output": "Uses each complete authored question as the prefix of every newly generated response control while keeping an action-only navigation button simple.",
+      "files": [],
+      "expectations": [
+        "A retains the full question and uses exactly ?[%{{你想先练哪项核验能力？}} 核验来源 | 核对计算]. B retains the full question and uses exactly ?[%{{你想练哪些核验能力？}} 核验来源 || 核对计算]. Both prefixes include the complete question and its Chinese question mark, preserving option order and answer mode.",
+        "C retains the full question and uses exactly ?[%{{最近一次核验遇到了什么困难？}} ...请描述实际困难]. The prefix carries the complete question rather than the input hint, an abbreviated label, or a programmatic key.",
+        "D retains the full question and uses exactly ?[%{{你最常核验什么来源？}} 同事消息 | 外部网页 | ...其他来源]. E retains the full question and uses exactly ?[%{{你常核验哪些来源？}} 同事消息 || 外部网页 || ...其他来源]. Custom input remains available in both, with single-select and multi-select modes respectively.",
+        "F uses ?[Continue] without inventing a question, question prefix, background collection, or answer field for an action-only navigation control.",
+        "The five question prefixes immediately follow ?[ and precede options or the input hint. They do not replace the learner-facing questions, add bare substitution reads, create a variable table, or require a explicit save step; all actual course inputs remain automatically available through memory.",
+        "Every question waits for its actual answer before its one brief feedback instruction. The result remains local, executable outside comments and deterministic blocks, and makes no claim of a verified live interaction."
+      ]
+    },
+    {
+      "id": 115,
+      "prompt": "只在本地改写一个授课提示词片段，不访问平台；目标环境已支持自然语言发起真实互动。先完整保留原问题“想先练哪项核验能力？”和原控件 ?[核验来源 | 核对计算]，包括措辞、字符、顺序和单选模式。之后根据这次真实回答和当时讨论的案例，用自然语言要求授课智能体在运行时生成一个具体问题和二至四个练习任务选项，允许多选但不允许自填；现在不要预写第二题或它的选项。等待这次真实回答后逐项给出第一步建议。两次回答自动进入课内 memory，后续课节均可使用。不要添加教学环节、另起程序变量名、读取替换占位符、单独保存步骤或平台操作；每块前加中文 HTML 学习结果导航注释。",
+      "expected_output": "Preserves an author-fixed control and keeps the later question and options dynamic while requiring its actual generated question as the runtime control prefix.",
+      "files": [],
+      "expectations": [
+        "The original question 想先练哪项核验能力？ and standalone control ?[核验来源 | 核对计算] remain byte-for-byte unchanged, including wording, option order, and single-select mode. The new-generation convention does not silently rewrite an author-fixed control.",
+        "The second interaction stays an ordinary natural-language instruction outside ?[] and comments. It asks the Teaching Agent to use the first actual answer and the case at learner time to generate the concrete question and two to four suitable practice-task options, with multiple selections and no custom input.",
+        "The dynamic instruction explicitly requires the Teaching Agent, when it actually creates the second interaction control, to put the complete question it generated at that time inside the %{{...}} prefix immediately after ?[. It does not supply a fixed second question or option list now, put the generation instruction inside ?[], or introduce a new parser construct.",
+        "The Teaching Agent waits for the current real answer before giving each selected task its first-step suggestion, rather than using an earlier choice to answer the pending interaction. Both actual responses remain available through automatic course memory without programmatic answer keys, substitution reads, a variable table, or a explicit save operation.",
+        "The fragment preserves both interaction purposes and the requested scope, adds no background collection or teaching stage, and does not claim a live runtime interaction or memory retrieval was verified."
       ]
     }
   ]

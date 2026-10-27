@@ -37,6 +37,18 @@ The interaction body is interpreted as follows:
 
 The first separator determines selection mode: `|` represents one selected value and `||` represents multiple selected values. The token `...` marks a free-text entry field, and the text immediately after it is the rendered input hint.
 
+### Question Prefix
+
+An explicit control can carry its question text in a `%{{...}}` prefix immediately after `?[`, before the options or input hint:
+
+- `?[%{{Which action will you take first?}} Verify the source | Check the calculation]`: single-select.
+- `?[%{{Which checks will you perform?}} Verify the source || Check the calculation]`: multi-select.
+- `?[%{{What is your learning goal?}} ...Describe your goal]`: text input.
+- `?[%{{Which action will you practice?}} Verify the source | ...Another action]`: single-select plus text input.
+- `?[%{{Which actions will you practice?}} Verify the source || ...Other actions]`: multi-select plus text input.
+
+The prefix associates the answer with the question text; the response controls retain their existing selection and input semantics. Automatic [course memory](#memory) still records all learner input, including input without this prefix. Authoring requirements for filling the question text belong to [Interaction Encoding](teaching-prompt.md#interaction-encoding).
+
 ### Natural-Language Interactions
 
 These instructions require a Teaching Agent that can create a real response surface and wait for the learner's answer before continuing. Rendering explicit controls alone does not execute natural-language interaction instructions.
