@@ -9,6 +9,7 @@ import json
 import math
 import os
 import platform
+import re
 import shlex
 import shutil
 import socket
@@ -22,8 +23,9 @@ import requests
 from dotenv import load_dotenv
 
 import profile_store as profiles
+from agent_detection import AGENT_DISPLAY_NAMES, detect_agent
 
-from skill_update_check import DEV_CACHE_FILE, check_for_update
+from skill_update_check import automatic_check_for_update, check_for_update
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
@@ -61,6 +63,52 @@ _TOKEN_ERROR_CODES = frozenset({1001, 1004, 1005})
 # first-page default.
 COURSE_LIST_PAGE_SIZE = 50
 MAX_COURSE_PAGES = 10
+
+# Detection is a local compatibility hint, never authentication. Capture it
+# before dotenv/profile loading; only the bounded ID and name leave the CLI.
+_CALLER_AGENT_NAMES = {**AGENT_DISPLAY_NAMES, "unknown": "Unknown Agent"}
+_USAGE_METADATA_HEADERS = {}
+
+
+def _detect_caller_agent(environ):
+    """Report only declared/runtime identities; context-only evidence is unknown."""
+    result = detect_agent(environ)
+    if result["evidence"] in {"declared", "runtime-marker"} and result["agent_id"] is not None:
+        return result["agent_id"]
+    return "unknown"
+
+
+def _skill_usage_metadata(caller_agent):
+    """Build optional metadata without changing the business request on failure."""
+    try:
+        if caller_agent not in _CALLER_AGENT_NAMES or os.environ.get("SHIFU_DISABLE_ANALYTICS") == "1":
+            return {}
+        version = _client_version()
+        # Only bounded numeric release versions may leave this process.
+        if not isinstance(version, str) or not re.fullmatch(r"[0-9]{1,6}\.[0-9]{1,6}\.[0-9]{1,6}", version):
+            return {}
+        return {
+            "X-AI-Shifu-Skill": "ai-shifu-course-creator",
+            "X-AI-Shifu-Skill-Version": version,
+            "X-AI-Shifu-Caller-Agent": caller_agent,
+            "X-AI-Shifu-Caller-Agent-Name": _CALLER_AGENT_NAMES[caller_agent],
+        }
+    except Exception:  # noqa: BLE001 - optional usage metadata must fail open
+        return {}
+
+
+def _request_headers(token, *, json_content=True, creator_analytics=False):
+    """Preserve each transport's authentication and add invocation metadata."""
+    if creator_analytics:
+        headers = {"Authorization": f"Bearer {token}", "Token": token}
+    else:
+        headers = {"Cookie": f"token={token}"}
+    if json_content:
+        headers["Content-Type"] = "application/json"
+    headers.update(_USAGE_METADATA_HEADERS)
+    return headers
+
+
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
 def ensure_env_file():
     """Create the runtime .env from .env.example when it does not exist."""
@@ -205,7 +253,7 @@ def resolve_auth(args):
 def api(base_url, token, method, path, **kwargs):
     """Make an API call, exit on error."""
     url = f"{base_url}/api/shifu{path}"
-    headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
+    headers = _request_headers(token)
     kwargs.setdefault("timeout", 30)
     resp = getattr(requests, method)(url, headers=headers, **kwargs)
     if not resp.ok:
@@ -228,7 +276,7 @@ def api_safe(base_url, token, method, path, session=None, **kwargs):
     per-lesson draft-meta), mirroring the pooling in ``_post_creator_analytics``.
     """
     url = f"{base_url}/api/shifu{path}"
-    headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
+    headers = _request_headers(token)
     kwargs.setdefault("timeout", 30)
     http = session if session is not None else requests
     try:
@@ -260,7 +308,7 @@ def api_conflict_aware(base_url, token, method, path, **kwargs):
     resp.ok is True in that case — we branch on the business code, not status.
     """
     url = f"{base_url}/api/shifu{path}"
-    headers = {"Cookie": f"token={token}", "Content-Type": "application/json"}
+    headers = _request_headers(token)
     kwargs.setdefault("timeout", 30)
     resp = getattr(requests, method)(url, headers=headers, **kwargs)
     if not resp.ok:
@@ -286,7 +334,7 @@ def api_upload(base_url, token, filename, file_bytes, mime, resource_id=None):
     Content-Type (with boundary) itself — api() pins application/json.
     """
     url = f"{base_url}/api/shifu/upfile"
-    headers = {"Cookie": f"token={token}"}
+    headers = _request_headers(token, json_content=False)
     files = {"file": (filename, file_bytes, mime)}
     data = {"resource_id": resource_id} if resource_id else None
     try:
@@ -327,11 +375,7 @@ def _post_creator_analytics(base_url, token, path, body, session=None):
     # otherwise produce "/api/creator-analyticsquery". Flagged on PR #49
     # review.
     url = f"{base_url}/api/creator-analytics/{path.lstrip('/')}"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Token": token,
-        "Content-Type": "application/json",
-    }
+    headers = _request_headers(token, creator_analytics=True)
     http = session if session is not None else requests
     try:
         resp = http.post(url, headers=headers, json=body, timeout=30)
@@ -1012,7 +1056,7 @@ def cmd_export(args):
 
     # Backend export API returns a file download (not standard JSON envelope)
     url = f"{base_url}/api/shifu/shifus/{shifu_bid}/export"
-    headers = {"Cookie": f"token={token}"}
+    headers = _request_headers(token, json_content=False)
     resp = requests.get(url, headers=headers, timeout=60)
 
     if resp.status_code != 200:
@@ -2327,22 +2371,93 @@ def _outline_create_payload(item, parent_bid=None):
     return payload
 
 
-def _import_flat(base_url, token, json_file, shifu_bid):
-    """Import from flat JSON file (original shifu-api-import.py logic)."""
-    with open(json_file, "r", encoding="utf-8") as f:
-        import_data = json.load(f)
+def _load_import_data(json_file):
+    """Read the import once so validation and execution use the same content."""
+    try:
+        with open(json_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        print(f"Error: cannot read import JSON: {error}", file=sys.stderr)
+        sys.exit(1)
 
-    shifu_info = import_data["shifu"]
-    outline_items = import_data["outline_items"]
 
-    # Build and platform export use different names for the same content.
-    # Resolve and validate before any write; absence must not clear a prompt.
+def _validate_import_data(import_data):
+    """Reject malformed content and unresolvable outlines before platform calls."""
+    def invalid(field, reason):
+        print(f"Error: {field} {reason}", file=sys.stderr)
+        sys.exit(1)
+
+    def require_text(value, field, *, title=False, prompt=False):
+        if not isinstance(value, str):
+            reason = "must be a non-empty string" if title else "must be a string"
+            if prompt:
+                reason += "; use an empty string to clear the Course Prompt."
+            invalid(field, reason)
+        if title and not value.strip():
+            invalid(field, "must be a non-empty string")
+        try:
+            value.encode("utf-8")
+        except UnicodeEncodeError:
+            invalid(field, "must contain valid Unicode text")
+
+    if not isinstance(import_data, dict):
+        invalid("import JSON", "must be an object")
+    shifu_info = import_data.get("shifu")
+    if not isinstance(shifu_info, dict):
+        invalid("shifu", "must be an object")
+    require_text(shifu_info.get("title"), "shifu.title", title=True)
+    if "description" in shifu_info:
+        require_text(shifu_info["description"], "shifu.description")
+
+    # Only the selected prompt is consumed; preserve build/export precedence.
     prompt_key = next((key for key in ("course_prompt", "llm_system_prompt")
                        if key in shifu_info), None)
-    if prompt_key is not None and not isinstance(shifu_info[prompt_key], str):
-        print(f"Error: shifu.{prompt_key} must be a string; "
-              "use an empty string to clear the Course Prompt.", file=sys.stderr)
-        sys.exit(1)
+    if prompt_key is not None:
+        require_text(shifu_info[prompt_key], f"shifu.{prompt_key}", prompt=True)
+
+    outline_items = import_data.get("outline_items")
+    if not isinstance(outline_items, list):
+        invalid("outline_items", "must be an array")
+    outlines_by_bid = {}
+    for index, item in enumerate(outline_items):
+        field = f"outline_items[{index}]"
+        if not isinstance(item, dict):
+            invalid(field, "must be an object")
+        require_text(item.get("title"), f"{field}.title", title=True)
+        if "content" in item:
+            require_text(item["content"], f"{field}.content")
+        item_bid = item.get("outline_item_bid")
+        if item_bid is not None and not isinstance(item_bid, str):
+            invalid(f"{field}.outline_item_bid", "must be a string or null")
+        if item_bid:
+            if not item_bid.strip():
+                invalid(f"{field}.outline_item_bid", "must not be blank")
+            if item_bid in outlines_by_bid:
+                invalid(f"{field}.outline_item_bid", "duplicates another outline ID")
+            outlines_by_bid[item_bid] = item
+        parent_bid = item.get("parent_bid")
+        if parent_bid is not None and not isinstance(parent_bid, str):
+            invalid(f"{field}.parent_bid", "must be a string or null")
+
+    # The importer creates roots first, then their children. An old platform
+    # BID or a nested parent cannot be resolved after the old tree is deleted.
+    for index, item in enumerate(outline_items):
+        parent_bid = item.get("parent_bid")
+        if parent_bid:
+            parent = outlines_by_bid.get(parent_bid)
+            if parent is None or parent is item or parent.get("parent_bid"):
+                invalid(f"outline_items[{index}].parent_bid",
+                        "must reference a different top-level outline in this import")
+    return prompt_key
+
+
+def _import_flat(base_url, token, json_file, shifu_bid, *, import_data=None):
+    """Import validated content from a flat JSON file or its loaded snapshot."""
+    if import_data is None:
+        import_data = _load_import_data(json_file)
+    prompt_key = _validate_import_data(import_data)
+    shifu_info = import_data["shifu"]
+    outline_items = import_data["outline_items"]
 
     # Create or reuse shifu
     if shifu_bid:
@@ -2440,7 +2555,7 @@ def _import_flat(base_url, token, json_file, shifu_bid):
         title = item["title"]
         content = item.get("content", "")
         old_parent = item["parent_bid"]
-        new_parent = bid_map.get(old_parent, old_parent)
+        new_parent = bid_map[old_parent]
 
         result = api(base_url, token, "put", f"/shifus/{shifu_bid}/outlines",
                      json=_outline_create_payload(item, parent_bid=new_parent))
@@ -2472,6 +2587,24 @@ def cmd_import(args):
         print("Error: provide <shifu_bid> or use --new")
         sys.exit(1)
 
+    # Validate the complete payload before even a revision lookup can trigger
+    # conflict recovery. Retain this snapshot rather than reopening the file.
+    if args.course_dir:
+        json_file = _build_import_json(
+            course_dir=args.course_dir,
+            title=getattr(args, "title", None),
+            description=getattr(args, "description", None),
+            keywords=getattr(args, "keywords", None),
+            chapter_name=getattr(args, "chapter_name", None),
+        )
+    elif args.json_file:
+        json_file = args.json_file
+    else:
+        print("Error: provide --json-file or --course-dir")
+        sys.exit(1)
+    import_data = _load_import_data(json_file)
+    _validate_import_data(import_data)
+
     base_url, token = resolve_auth(args)
     shifu_bid = None if args.new else args.shifu_bid
 
@@ -2492,22 +2625,8 @@ def cmd_import(args):
                                      profile_name=_profile_name(args))
                 sys.exit(EXIT_CONFLICT)
 
-    result_bid = None
-    if args.course_dir:
-        # Build JSON first, then import
-        json_file = _build_import_json(
-            course_dir=args.course_dir,
-            title=getattr(args, "title", None),
-            description=getattr(args, "description", None),
-            keywords=getattr(args, "keywords", None),
-            chapter_name=getattr(args, "chapter_name", None),
-        )
-        result_bid = _import_flat(base_url, token, json_file, shifu_bid)
-    elif args.json_file:
-        result_bid = _import_flat(base_url, token, args.json_file, shifu_bid)
-    else:
-        print("Error: provide --json-file or --course-dir")
-        sys.exit(1)
+    result_bid = _import_flat(base_url, token, json_file, shifu_bid,
+                              import_data=import_data)
 
     # Re-seed the sync manifest from the freshly imported cloud state so future
     # edits are version-tracked. Phase 1 import is destructive (all outline bids
@@ -3158,18 +3277,29 @@ def cmd_upload_image(args):
 
 
 # ── CLI Entry Point ────────────────────────────────────────────────────────────
+def _maybe_check_for_updates():
+    """Show an optional update notice without changing command output or errors."""
+    try:
+        result = automatic_check_for_update(config_dir())
+        if result and result.get("status") in {"update_recommended", "update_required"}:
+            print(
+                f"AI-Shifu skill update available: {result['latest']}. {result['update_url']}",
+                file=sys.stderr,
+            )
+    except Exception:  # noqa: BLE001 - optional checks never prevent a CLI operation
+        pass
+
+
 def cmd_check_update(args):
     """Print one machine-readable update result and never fail the caller."""
     dev_manifest_url = args.dev_manifest_url
     if dev_manifest_url:
         result = check_for_update(
-            force=True,
-            cache_file=DEV_CACHE_FILE,
             manifest_url=dev_manifest_url,
             allow_loopback=True,
         )
     else:
-        result = check_for_update(force=args.force)
+        result = check_for_update()
     print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
 
 
@@ -3192,7 +3322,7 @@ def build_parser():
     sub = parser.add_subparsers(dest="command", help="Available commands")
 
     p = sub.add_parser("site", parents=[parent_parser],
-                       help="Show or configure the selected profile (no network)")
+                       help="Show or configure the selected profile")
     selection = p.add_mutually_exclusive_group()
     selection.add_argument("--set", choices=tuple(SITE_URLS), help="Select cn or com")
     selection.add_argument("--url", help="Select a custom service URL")
@@ -3210,11 +3340,6 @@ def build_parser():
     p = sub.add_parser(
         "check-update",
         help="Check GitHub Releases for a newer Skill version",
-    )
-    p.add_argument(
-        "--force",
-        action="store_true",
-        help="Revalidate GitHub Releases even when the local TTL is fresh",
     )
     p.add_argument(
         "--dev-manifest-url",
@@ -3481,6 +3606,12 @@ class UniqueProfileAction(argparse.Action):
 
 
 def main():
+    global _USAGE_METADATA_HEADERS
+    _USAGE_METADATA_HEADERS = {}
+    try:
+        caller_agent = _detect_caller_agent(os.environ)
+    except Exception:  # noqa: BLE001 - attribution cannot prevent a CLI command
+        caller_agent = None
     parser = build_parser()
     args = parser.parse_args()
     if args.global_profile is not None:
@@ -3530,8 +3661,11 @@ def main():
     handler = commands.get(args.command)
     if handler:
         try:
+            if args.command != "check-update":
+                _maybe_check_for_updates()
             process_env = dict(os.environ)
-            load_env()
+            if args.command != "check-update":
+                load_env()
             if args.command not in {"check-update", "build"}:
                 profile_store().migrate_legacy(process_env)
                 # Resolve the config root from dotenv before migration, then
@@ -3545,6 +3679,8 @@ def main():
             if args.command not in {"site", "profile", "check-update", "build"}:
                 context = resolve_context(args, named_only=args.command in {"login", "logout"})
                 validate_course_binding(args, context.base_url)
+            if args.command not in {"site", "profile", "check-update", "build", "login", "logout", "verify"}:
+                _USAGE_METADATA_HEADERS = _skill_usage_metadata(caller_agent)
             # Resolve identity from this invocation, never again from a global
             # token that explicit --profile deliberately ignored.
             handler(args)
@@ -3557,6 +3693,8 @@ def main():
         except OSError as exc:
             print(f"Local configuration or file operation failed: {exc}", file=sys.stderr)
             sys.exit(1)
+        finally:
+            _USAGE_METADATA_HEADERS = {}
     else:
         parser.print_help()
         sys.exit(1)

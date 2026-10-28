@@ -1,8 +1,8 @@
 ---
 name: ai-shifu-course-creator
-description: Create, edit, review, publish, manage, or analyze AI-Shifu (AI师傅) courses and their Teaching Prompts and Course Prompts in MarkdownFlow (MDF). Use for course materials, lesson design, interactions, variables, images, deployment, platform administration, learner progress, learner profile distributions, orders, revenue, and credit-consumption questions.
+description: Create, edit, review, publish, manage, or analyze AI-Shifu (AI师傅) courses and their Teaching Prompts and Course Prompts in MarkdownFlow (MDF). Use for course materials, lesson design, interactions, course memory, images, deployment, platform administration, learner progress, learner profile distributions, orders, revenue, and credit-consumption questions.
 metadata:
-  version: 2.0.0
+  version: 2.1.3
   version_management: standalone
 ---
 
@@ -18,7 +18,7 @@ Reuse existing answers and artifacts. Ask when missing information materially af
 - Apply [session-controls.md](references/session-controls.md) to contact eligibility, explicit-request-only version checks, progress, errors, and completion handoffs. First-response contact conditions remain applicable. The completion handoff applies to the user's completed request, not each internal capability call.
 - Use Markdown links `[descriptive text](URL)` for URLs in user-visible messages. URLs inside Teaching Prompts follow MarkdownFlow rules; URLs inside fenced code blocks are exempt.
 - Honor explicit author choices, source facts, selected exact material, and the distinction between a per-lesson Teaching Prompt and a course-wide Course Prompt. Runtime semantics are defined in [prompt-semantics.md](references/prompt-semantics.md) and [markdownflow-syntax.md](references/markdownflow-syntax.md).
-- For an existing platform course's lesson, Course Prompt, or description edit, apply the [versioned editing baseline](references/course-sync.md#pull-before-editing) before preparing revised content. Course-wide artifact writes use [course management](references/course-management.md#operations) with that baseline. Local-only authoring and read-only review remain independent of platform access.
+- Apply [automatic platform updates](#automatic-platform-updates) to new courses and changes to existing courses.
 
 ## Capabilities
 
@@ -46,9 +46,9 @@ Make the intended teaching behavior executable in Teaching Prompts and Course Pr
 | --- | --- | --- |
 | Write or revise a lesson | Topic, source, existing Prompt, or supplied design | Runnable Teaching Prompt with required source-only explanatory comments and a suitable layout. A separate design run is not required. [Teaching Prompt](references/teaching-prompt.md) |
 | Write or revise a Course Prompt | Course title, topic, goals, audience, and design context | Course-wide Prompt using the existing six-section template. [Course Prompt](references/course-prompt.md) |
-| Encode interactions, variables, and exact content | Intended response behavior, variable uses, selected exact material | Valid runtime controls, references, branches, and deterministic output. [MarkdownFlow](references/markdownflow-syntax.md), [Prompt semantics](references/prompt-semantics.md) |
+| Encode interactions, memory use, and exact content | Intended response behavior, relevant prior answers, selected exact material | Explicit controls or natural-language interactions with context-generated options, course memory use, branches, and deterministic output. [MarkdownFlow](references/markdownflow-syntax.md), [Prompt semantics](references/prompt-semantics.md) |
 | Express lesson images | Teaching intent, authoritative asset URLs and metadata | Correct image embedding or HTML-view instructions. [Image authoring](references/image-authoring.md) |
-| Review Prompt expression | One Prompt or selected artifacts | Scoped findings and repairs for runtime syntax, variables, comments, layout, and artifact contracts. [Review](references/course-review.md), [checks](references/review-checklist.md) |
+| Review Prompt expression | One Prompt or selected artifacts | Scoped findings and repairs for runtime syntax, memory use, comments, layout, and artifact contracts. [Review](references/course-review.md), [checks](references/review-checklist.md) |
 
 ### Operate the CLI
 
@@ -66,12 +66,16 @@ Use deterministic commands for local course files, platform access and changes, 
 
 Shared references support the relevant category: [authoring-contracts.md](references/authoring-contracts.md) defines optional author controls and artifact consistency; [source-preservation.md](references/source-preservation.md) defines exact-source decisions. An image's teaching purpose, MarkdownFlow representation, and CLI upload are separate actions even when they share a reference. Review likewise applies the criteria for the requested design, expression, or platform result.
 
-Local teaching design, Prompt expression, content-only review, and builds do not require platform access; invoke authentication when a selected platform operation needs it. Analytics may inform a later teaching decision when relevant, but querying data does not itself request a course rewrite.
+Design-only work, explicit local-only authoring, read-only content review, and standalone builds do not require platform access; invoke authentication when a selected platform operation needs it. Analytics may inform a later teaching decision when relevant, but querying data does not itself request a course rewrite.
+
+## Automatic Platform Updates
+
+New courses and changes to existing courses take effect on AI-Shifu automatically. After creating or modifying deployable course artifacts, apply the local changes to the intended platform course as part of that work. This covers lesson Teaching Prompts, the Course Prompt, descriptions, requested structure or metadata changes, and repairs made during a requested review-and-fix task. Complete the relevant content checks, then create or update the platform draft without waiting for the user to review local files, confirm a preview or completed result, or separately request upload or synchronization. Explicit local-only, read-only, or design-only requests retain that scope. A standalone Prompt snippet without new-course or existing-course intent remains an artifact deliverable. A draft-only request still uploads the course but does not publish it.
+
+Resolve the intended course and platform access as needed. Use [build and import](references/build-and-import.md) for a new course. Before preparing lesson, Course Prompt, or description edits to an existing platform course, apply the [versioned editing baseline](references/course-sync.md#pull-before-editing). Use [course sync](references/course-sync.md) for existing lesson and structural changes and [course management](references/course-management.md#operations) for course-wide artifacts and attributes. Preserve their version protection, conflict handling, and result checks. Existing-course publication remains a selected operation under the user's requested scope.
 
 ## Full-Course Creation Outcome
 
 A request to create a complete AI-Shifu course includes deployment and publication by default. An explicit local-only, unpublished-draft, or narrower deliverable request determines that narrower outcome. A title-only creation request is still course authoring; it does not mean creating an empty platform draft. This outcome does not prescribe the order of authoring capabilities.
-
-Before creating a new platform course, show the completed title, structure, content preview, and selected platform attributes, and obtain confirmation to create and publish that concrete result. Use draft-only wording when the user requested an unpublished draft. Reuse approval of the same completed result and scope; revise and obtain approval again if the approved result changes. Keep local work when confirmation is deferred. Browser login approval is separate from this content confirmation. This checkpoint applies to new-course creation and does not add a confirmation step to existing-course synchronization or independent management requests.
 
 Keep new-course intent distinct from an existing-course edit. A no-match lookup does not authorize creating a replacement course. Reuse the BID of an already-created course when resuming incomplete work. Report the operations and verification that actually completed; an imported draft or a printed public URL alone does not establish successful publication.

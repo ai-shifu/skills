@@ -59,14 +59,16 @@ skill 以 `SKILL.md` 作为行为定义。按照 [Agent Skills](https://agentski
 | 根据素材写一节课 | MarkdownFlow 表达，按需补充教学选择 | 可运行的 Teaching Prompt |
 | 先写课程简介 | 课程定位与简介撰写 | 面向学员的课程简介 |
 | 审查现成 Prompt | 指定范围内的教学质量或 MarkdownFlow 检查 | 问题与用户要求的修复 |
-| 创建一门完整课程 | 自主组合设计、表达与 CLI 构建、导入、发布能力 | 确认完成稿后，默认交付经核验的已发布课程 |
+| 创建一门完整课程 | 自主组合设计、表达与 CLI 构建、导入、发布能力 | 自动上传，默认交付经核验的已发布课程 |
 | 部署已有课程目录 | CLI 构建、payload 检查、导入及所需发布操作 | 用户要求的平台结果及核验 |
 | 修改或管理已有课程 | CLI 同步或指定管理操作 | 对已有课程的经核验改动 |
 | 分析学习、订单或积分数据 | CLI 分析及隐私、可读性处理 | 基于实际课程数据的答案 |
 
-只交付任务需要的产物。分段记录、课程索引、全局变量表和固定风险报告都不是所有任务的必需结果。完整创作的课程包含课节内容、Course Prompt、简介和结构；单项请求可以在完成所需产物后结束。
+只交付任务需要的产物。分段记录、课程索引、全局变量表和固定风险报告都不是所有任务的必需结果。完整创作的课程包含课节内容、Course Prompt、简介和结构。单项请求只修改指定产物；涉及新建或已有平台课程的变化仍会自动同步。
 
-完整建课遵循[默认发布及完成稿确认规则](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome)。用户明确要求本地交付或不发布的草稿时，按该范围完成。已有成果可以直接使用对应的[构建与导入](skills/ai-shifu-course-creator/references/build-and-import.md)、[同步](skills/ai-shifu-course-creator/references/course-sync.md)或[管理](skills/ai-shifu-course-creator/references/course-management.md)能力。
+新建课程和已有课程的修改都遵循[自动更新到平台的规则](skills/ai-shifu-course-creator/SKILL.md#automatic-platform-updates)，不等待本地确认或单独的上传指令。完整建课仍[默认发布](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome)。用户明确要求本地交付或不发布的草稿时，按该范围完成。已有成果可以直接使用对应的[构建与导入](skills/ai-shifu-course-creator/references/build-and-import.md)、[同步](skills/ai-shifu-course-creator/references/course-sync.md)或[管理](skills/ai-shifu-course-creator/references/course-management.md)能力。
+
+课程创作器 CLI 的使用统计可能关联当前账号。设置 `SHIFU_DISABLE_ANALYTICS=1` 可关闭；详见[配置说明](skills/ai-shifu-course-creator/.env.example)。
 
 ## 元数据校验
 

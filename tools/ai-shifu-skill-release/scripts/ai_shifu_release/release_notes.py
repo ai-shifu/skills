@@ -772,32 +772,16 @@ def render_changelog(snapshot: dict) -> str:
 
 
 def render_notes(snapshot: dict) -> str:
-    """Render the existing package boundary with a complete typed changelog."""
-    lines = [
-        f"AI-Shifu Skills {snapshot.get('version', '')}".rstrip(),
-        "",
-        f"Source commit: {snapshot['head_sha']}",
-        "",
-    ]
+    """Render reader-facing notes; collection diagnostics stay in the snapshot."""
+    version = snapshot.get("version", "")
+    title = "AI-Shifu Skills Release" + (f" v{version}" if version else "")
+    lines = [title, ""]
     if snapshot.get("draft_preview"):
         lines += ["**TEST DRAFT ONLY — do not publish this Release.**", ""]
     elif snapshot.get("preview"):
         lines += ["**PREVIEW ONLY — includes changes that may not be merged.**", ""]
-    status = snapshot.get("collection_status", "unknown")
-    count = sum(change.get("kind") == "pr" for change in snapshot["changes"])
-    lines += [f"Collection status: {status}. Pull requests: {count}.", ""]
     if snapshot.get("initial_release") or not snapshot.get("base_sha"):
         lines += ["Initial release", ""]
-    else:
-        lines += [f"Base: {snapshot['base_ref']} ({snapshot['base_sha']})", ""]
-    lines += [
-        (
-            "Packages: ClawHub and SkillHub standalone skills; WorkBuddy expert plugin; "
-            "Doubao Work partner package. These are downloadable installation packages. "
-            "Publication to each channel is tracked separately."
-        ),
-        "",
-    ]
     if not snapshot.get("pr_metadata_verified"):
         lines += [
             "Offline Git history preview: PR metadata has not been verified with GitHub.",

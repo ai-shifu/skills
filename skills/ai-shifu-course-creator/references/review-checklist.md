@@ -12,7 +12,7 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 
 - Each artifact serves its responsibility under [prompt-semantics.md#artifact-responsibilities](prompt-semantics.md#artifact-responsibilities).
 - Teaching Prompts provide executable local teaching directions, required content and relationships, and any chosen feedback or branch behavior. A Course Prompt is not relied on to invent missing lesson pedagogy.
-- Outside the [author-facing comments](teaching-prompt.md#required-comments), every part of a Teaching Prompt serves runtime delivery. No executable requirement, variable, option, URL, command, or exact span exists only in a comment.
+- Outside the [author-facing comments](teaching-prompt.md#required-comments), every part of a Teaching Prompt serves runtime delivery. No executable requirement, memory-use instruction, option, URL, command, or exact span exists only in a comment.
 - Authoring controls, selection interfaces, pipeline notes, and learner-profile data do not leak into runtime instructions. Second-person forms obey [prompt-semantics.md#prompt-semantics](prompt-semantics.md#prompt-semantics).
 
 ## Teaching Design and Layout
@@ -32,14 +32,16 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 - Selected adaptations are executable where needed. A generic course-wide claim does not replace a required local example or analogy instruction.
 - Runtime personalization preserves the authored objectives, required facts and boundaries, needed explanation depth, sequence, visual structure, and selected interaction or feedback effects. It does not authorize new context collection or branches.
 - With no supplied selection, assess observable behavior without inferring an enum array from the Prompt. Selection alignment or absent companion alignment may be `not-assessed`; no missing intermediate plan or schema is manufactured.
-- Reusable artifacts contain no specific learner profile, platform learner-profile tags, internal profile variable names, or authoring selection interface.
+- Reusable artifacts contain no specific learner profile, platform learner-profile tags, internal profile field names, or authoring selection interface.
 
 ## Interaction and Runtime Safety
 
-- Questions and options are clear and answerable, and selected instructional interactions have a meaningful feedback or teaching effect under [teaching-design.md#interaction-design](teaching-design.md#interaction-design).
-- Every control, assignment, reference, and branch follows [markdownflow-syntax.md](markdownflow-syntax.md) and [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding). Controls stay recognizable and distinct from simulated visual controls.
-- Named answers have valid collection and meaningful cross-lesson or Course Prompt consumers; local answers remain unnamed. Check actual artifacts under [authoring-contracts.md#variable-table](authoring-contracts.md#variable-table); no variable-table JSON is required.
-- Branches use natural language and account for unavailable named values where applicable. No learner-visible authoring placeholders remain.
+- Questions and options, or the instructions for generating them at learner time, are clear and answerable, and selected instructional interactions have a meaningful feedback or teaching effect under [teaching-design.md#interaction-design](teaching-design.md#interaction-design).
+- Every control, memory-use instruction, and branch follows [markdownflow-syntax.md](markdownflow-syntax.md) and [teaching-prompt.md#source-encoding](teaching-prompt.md#source-encoding). Controls stay recognizable and distinct from simulated visual controls.
+- Newly authored explicit controls for a question or response task carry the complete learner-facing question or response task under [Interaction Encoding](teaching-prompt.md#interaction-encoding). Do not fail a prefixed control solely because that text is not repeated before it. Preserve supplied exact controls and action-only controls within the requested repair scope; do not require backfilling them during an audit-only request.
+- Natural-language interactions retain the requested context, answer mode, option constraints, use of the actual answer, and target-capability boundary under [teaching-prompt.md#interaction-encoding](teaching-prompt.md#interaction-encoding), with runtime behavior defined by [markdownflow-syntax.md#natural-language-interactions](markdownflow-syntax.md#natural-language-interactions). A prewritten question or option list is not required for this form; dynamic generation instructions are not frozen into fixed controls. Author-fixed controls retain their wording and order. Without a learner-time run, generated options and pause/resume behavior are `not-assessed`.
+- Instructions that use earlier learner input refer naturally to relevant memory under [markdownflow-syntax.md#memory](markdownflow-syntax.md#memory) and use the learner's actual answers. They handle unavailable or irrelevant information without inventing it.
+- Branches use natural language and account for unavailable information where applicable. No learner-visible authoring placeholders remain.
 - Deterministic blocks, code fences, required source spans, and image records survive preprocessing as required. Images use [image-authoring.md#image-output-validation](image-authoring.md#image-output-validation) when present; absent images do not require image work.
 
 ## Course Prompt and Description

@@ -40,7 +40,11 @@ class GitHubReleaseTest(unittest.TestCase):
             self.assertEqual(
                 len([asset for asset in assets if asset.suffix == ".zip"]), 4
             )
-            self.assertIn(self.commit, notes)
+            self.assertIn("AI-Shifu Skills Release v1.2.3\n", notes)
+            self.assertIn("## Changelog\n", notes)
+            self.assertTrue(notes.startswith(github_releases.NOTES_START + "\n"))
+            self.assertTrue(notes.endswith(github_releases.NOTES_END + "\n"))
+            self.assertNotIn("Source commit:", notes)
             self.assertIn("clawhub-", assets[0].name)
             checksums = assets[-1].read_text(encoding="utf-8")
             for asset in assets[:-1]:

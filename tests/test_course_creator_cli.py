@@ -33,6 +33,246 @@ course_creator_cli = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(course_creator_cli)
 
 
+class UpdateCheckEnvironmentTests(unittest.TestCase):
+    def setUp(self):
+        tmp = self.enterContext(tempfile.TemporaryDirectory())
+        self.root = Path(tmp)
+        self.env_file = self.root / ".env"
+        self.template = self.root / ".env.example"
+        self.enterContext(mock.patch.dict(course_creator_cli.os.environ, {}, clear=True))
+        self.enterContext(mock.patch.object(course_creator_cli, "ENV_FILE", self.env_file))
+        self.enterContext(mock.patch.object(course_creator_cli, "ENV_EXAMPLE_FILE", self.template))
+        self.load_env = self.enterContext(mock.patch.object(
+            course_creator_cli, "load_env", wraps=course_creator_cli.load_env,
+        ))
+        self.ensure_env_file = self.enterContext(mock.patch.object(
+            course_creator_cli, "ensure_env_file", wraps=course_creator_cli.ensure_env_file,
+        ))
+        self.load_dotenv = self.enterContext(mock.patch.object(course_creator_cli, "load_dotenv"))
+        self.profile_store = self.enterContext(mock.patch.object(course_creator_cli, "profile_store"))
+        self.resolve_context = self.enterContext(mock.patch.object(course_creator_cli, "resolve_context"))
+        self.result = {"status": "latest", "source": "network"}
+        self.check = self.enterContext(mock.patch.object(
+            course_creator_cli, "check_for_update", return_value=self.result,
+        ))
+        self.automatic = self.enterContext(mock.patch.object(
+            course_creator_cli, "_maybe_check_for_updates",
+        ))
+
+    def assert_update_commands_ignore_platform_environment(self):
+        dev_url = "http://127.0.0.1:8088/skill-manifests/test.json"
+        for arguments, expected in (
+            (("check-update",), {}),
+            (("check-update", "--dev-manifest-url", dev_url), {
+                "manifest_url": dev_url, "allow_loopback": True,
+            }),
+        ):
+            with (
+                self.subTest(arguments=arguments),
+                mock.patch.object(sys, "argv", ["shifu-cli.py", *arguments]),
+                contextlib.redirect_stdout(io.StringIO()) as output,
+                contextlib.redirect_stderr(io.StringIO()) as error,
+            ):
+                self.check.reset_mock()
+                course_creator_cli.main()
+                self.assertEqual(json.loads(output.getvalue()), self.result)
+                self.assertEqual(error.getvalue(), "")
+                self.check.assert_called_once_with(**expected)
+                self.load_env.assert_not_called()
+                self.ensure_env_file.assert_not_called()
+                self.load_dotenv.assert_not_called()
+                self.profile_store.assert_not_called()
+                self.resolve_context.assert_not_called()
+                self.automatic.assert_not_called()
+                self.assertEqual(dict(course_creator_cli.os.environ), {})
+
+    def test_update_check_works_without_env_in_read_only_installation(self):
+        self.template.write_text("SHIFU_BASE_URL=cn\n", encoding="utf-8")
+        with mock.patch.object(
+            course_creator_cli.shutil, "copyfile", side_effect=PermissionError("read-only installation"),
+        ) as copyfile:
+            self.assert_update_commands_ignore_platform_environment()
+        copyfile.assert_not_called()
+        self.assertFalse(self.env_file.exists())
+        self.assertEqual(list(self.root.iterdir()), [self.template])
+
+    def test_update_check_does_not_load_existing_invalid_platform_environment(self):
+        invalid_env = "SHIFU_BASE_URL=http://invalid.example\nSHIFU_TOKEN=unused-token\n"
+        self.env_file.write_text(invalid_env, encoding="utf-8")
+        self.load_dotenv.side_effect = ValueError("invalid platform environment")
+        self.profile_store.side_effect = course_creator_cli.profiles.ProfileError("invalid profile")
+        self.assert_update_commands_ignore_platform_environment()
+        self.assertEqual(self.env_file.read_text(encoding="utf-8"), invalid_env)
+        self.assertEqual(list(self.root.iterdir()), [self.env_file])
+
+
+class AutomaticUpdateCommandTests(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.config = self.root / "process-config"
+        self.enterContext(mock.patch.dict(
+            course_creator_cli.os.environ, {"AI_SHIFU_CONFIG_DIR": str(self.config)}, clear=True,
+        ))
+        self.load_env = self.enterContext(mock.patch.object(course_creator_cli, "load_env"))
+        self.store = self.enterContext(mock.patch.object(course_creator_cli, "profile_store"))
+        self.context = self.enterContext(mock.patch.object(
+            course_creator_cli, "resolve_context",
+            return_value=types.SimpleNamespace(base_url="https://platform.example", name="saved"),
+        ))
+        self.automatic = self.enterContext(mock.patch.object(
+            course_creator_cli, "automatic_check_for_update", return_value=None,
+        ))
+        self.notice = {
+            "status": "update_recommended", "latest": "9.0.0",
+            "update_url": "https://github.com/ai-shifu/skills/releases/tag/v9.0.0",
+        }
+
+    def run_cli(self, *arguments):
+        with (
+            mock.patch.object(sys, "argv", ["shifu-cli.py", *arguments]),
+            contextlib.redirect_stdout(io.StringIO()) as output,
+            contextlib.redirect_stderr(io.StringIO()) as errors,
+        ):
+            course_creator_cli.main()
+        return output.getvalue(), errors.getvalue()
+
+    def test_valid_commands_check_before_environment_loading_and_preserve_stdout(self):
+        # Keep main and its notice wrapper real; command handlers stand in for
+        # existing business operations whose stdout must remain untouched.
+        for arguments, handler in (
+            (("site",), "cmd_site"),
+            (("profile", "list"), "cmd_profile"),
+            (("build", "--course-dir", str(self.root)), "cmd_build"),
+            (("list",), "cmd_list"),
+            (("verify",), "cmd_verify"),
+        ):
+            for _ in range(2):
+                with self.subTest(arguments=arguments):
+                    events = []
+                    payload = {"command": arguments[0], "value": "business result"}
+
+                    def lookup(directory):
+                        events.append("update")
+                        self.assertEqual(directory, self.config)
+                        return self.notice
+
+                    def dispatch(_args):
+                        events.append("handler")
+                        print(json.dumps(payload))
+
+                    self.automatic.reset_mock()
+                    self.automatic.side_effect = lookup
+                    self.load_env.side_effect = lambda: events.append("environment")
+                    with mock.patch.object(course_creator_cli, handler, side_effect=dispatch):
+                        output, errors = self.run_cli(*arguments)
+                    self.assertEqual(json.loads(output), payload)
+                    self.assertEqual(events[0], "update")
+                    self.assertEqual(events[-1], "handler")
+                    self.assertIn("environment", events)
+                    self.automatic.assert_called_once_with(self.config)
+                    self.assertEqual(len(errors.splitlines()), 1)
+                    self.assertIn(self.notice["latest"], errors)
+                    self.assertIn(self.notice["update_url"], errors)
+
+    def test_automatic_failures_do_not_change_business_results_or_exit_codes(self):
+        for failure in (RuntimeError("offline"), OSError("read-only user directory")):
+            with self.subTest(failure=failure):
+                self.automatic.side_effect = failure
+                with mock.patch.object(
+                    course_creator_cli, "cmd_site", side_effect=lambda _args: print('{"value":7}'),
+                ):
+                    output, errors = self.run_cli("site")
+                self.assertEqual(json.loads(output), {"value": 7})
+                self.assertEqual(errors, "")
+                with (
+                    mock.patch.object(course_creator_cli, "cmd_site", side_effect=SystemExit(4)),
+                    mock.patch.object(sys, "argv", ["shifu-cli.py", "site"]),
+                    contextlib.redirect_stdout(io.StringIO()) as output,
+                    contextlib.redirect_stderr(io.StringIO()) as errors,
+                    self.assertRaises(SystemExit) as exit_result,
+                ):
+                    course_creator_cli.main()
+                self.assertEqual(exit_result.exception.code, 4)
+                self.assertEqual(output.getvalue(), "")
+                self.assertEqual(errors.getvalue(), "")
+
+    def test_no_notice_for_unchanged_or_skipped_automatic_results(self):
+        for result in (None, {"status": "latest"}, {"status": "check_skipped"}):
+            with self.subTest(result=result), mock.patch.object(
+                course_creator_cli, "cmd_site", side_effect=lambda _args: print('{"value":7}'),
+            ):
+                self.automatic.return_value = result
+                output, errors = self.run_cli("site")
+                self.assertEqual(json.loads(output), {"value": 7})
+                self.assertEqual(errors, "")
+
+    def test_explicit_checks_bypass_automatic_schedule_and_query_each_time(self):
+        dev_url = "http://127.0.0.1:8088/skill-manifests/test.json"
+        for arguments, expected in (
+            (("check-update",), {}),
+            (("check-update", "--dev-manifest-url", dev_url), {
+                "manifest_url": dev_url, "allow_loopback": True,
+            }),
+        ):
+            with self.subTest(arguments=arguments), mock.patch.object(
+                course_creator_cli, "check_for_update",
+                side_effect=[{"latest": "1.0.0"}, {"latest": "9.0.0"}],
+            ) as explicit:
+                results = [self.run_cli(*arguments) for _ in range(2)]
+                self.assertEqual([json.loads(output) for output, _ in results], [
+                    {"latest": "1.0.0"}, {"latest": "9.0.0"},
+                ])
+                self.assertEqual([errors for _, errors in results], ["", ""])
+                self.assertEqual(explicit.call_args_list, [mock.call(**expected), mock.call(**expected)])
+                self.automatic.assert_not_called()
+                self.load_env.assert_not_called()
+                self.store.assert_not_called()
+
+    def test_help_and_invalid_arguments_do_not_start_automatic_checks(self):
+        for arguments, code in (
+            ((), 1), (("--help",), 0), (("site", "--help"), 0),
+            (("unknown-command",), 2), (("check-update", "--force"), 2),
+        ):
+            with self.subTest(arguments=arguments), self.assertRaises(SystemExit) as result:
+                self.run_cli(*arguments)
+            self.assertEqual(result.exception.code, code)
+        self.automatic.assert_not_called()
+        self.load_env.assert_not_called()
+        self.store.assert_not_called()
+
+    def test_automatic_state_uses_process_configuration_before_dotenv_or_profiles(self):
+        dotenv_root = self.root / "dotenv-config"
+        for environment, expected in (
+            ({"AI_SHIFU_CONFIG_DIR": str(self.config)}, self.config),
+            ({"XDG_CONFIG_HOME": str(self.config)}, self.config / "ai-shifu"),
+        ):
+            with self.subTest(environment=environment), mock.patch.dict(
+                course_creator_cli.os.environ, environment, clear=True,
+            ):
+                self.load_env.reset_mock()
+                self.store.reset_mock()
+                self.context.reset_mock()
+                self.automatic.reset_mock()
+
+                def lookup(directory):
+                    self.assertEqual(directory, expected)
+                    self.load_env.assert_not_called()
+                    self.store.assert_not_called()
+                    self.context.assert_not_called()
+
+                self.automatic.side_effect = lookup
+                self.load_env.side_effect = lambda: course_creator_cli.os.environ.setdefault(
+                    "AI_SHIFU_CONFIG_DIR", str(dotenv_root),
+                )
+                with mock.patch.object(
+                    course_creator_cli, "cmd_site", side_effect=lambda _args: print('{"value":7}'),
+                ):
+                    output, errors = self.run_cli("site")
+                self.assertEqual(json.loads(output), {"value": 7})
+                self.assertEqual(errors, "")
+                self.automatic.assert_called_once_with(expected)
+
+
 class CourseCreatorSiteTests(unittest.TestCase):
     def setUp(self):
         tmp = self.enterContext(tempfile.TemporaryDirectory())
@@ -42,6 +282,7 @@ class CourseCreatorSiteTests(unittest.TestCase):
             {"AI_SHIFU_CONFIG_DIR": tmp}, clear=True,
         ))
         self.enterContext(mock.patch.object(course_creator_cli, "load_env"))
+        self.enterContext(mock.patch.object(course_creator_cli, "_maybe_check_for_updates"))
         self.enterContext(mock.patch.object(course_creator_cli, "ENV_FILE", self.root / "skill.env"))
         self.get = self.enterContext(mock.patch.object(course_creator_cli.requests, "get"))
         self.post = self.enterContext(mock.patch.object(course_creator_cli.requests, "post"))
@@ -175,6 +416,39 @@ class CourseCreatorSiteTests(unittest.TestCase):
         build.assert_called_once()
         update.assert_called_once()
         self.assertFalse((self.root / "settings.json").exists())
+
+    def test_update_check_commands_use_selected_release_source(self):
+        dev_url = "http://127.0.0.1:8088/skill-manifests/test.json"
+        result = {"status": "latest", "source": "network"}
+        for arguments, expected in (
+            (("check-update",), {}),
+            (("check-update", "--dev-manifest-url", dev_url), {
+                "manifest_url": dev_url, "allow_loopback": True,
+            }),
+        ):
+            with self.subTest(arguments=arguments), mock.patch.object(
+                course_creator_cli, "check_for_update", return_value=result,
+            ) as check:
+                self.assertEqual(json.loads(self.run_cli(*arguments)), result)
+                check.assert_called_once_with(**expected)
+        self.assertEqual(list(self.root.iterdir()), [])
+        self.get.assert_not_called()
+        self.post.assert_not_called()
+
+    def test_update_check_rejects_removed_force_flag(self):
+        with (
+            self.assertRaises(SystemExit) as error,
+            contextlib.redirect_stderr(io.StringIO()) as stderr,
+            mock.patch.object(course_creator_cli, "check_for_update") as check,
+        ):
+            self.run_cli("check-update", "--force")
+        self.assertEqual(error.exception.code, 2)
+        self.assertIn("unrecognized arguments: --force", stderr.getvalue())
+        check.assert_not_called()
+        pull = course_creator_cli.build_parser().parse_args([
+            "pull", "course", "--course-dir", str(self.root), "--force",
+        ])
+        self.assertTrue(pull.force)
 
     def test_existing_unbound_credentials_are_not_sent_to_new_site(self):
         legacy = self.root / "credentials.json"

@@ -54,19 +54,8 @@ This optional representation does not make those three purposes exhaustive for u
 ## Artifact Invariants
 
 - Teaching Prompts contain executable lesson instructions in MarkdownFlow; Course Prompts contain shared course instructions; descriptions contain learner-facing listing prose. [prompt-semantics.md#artifact-responsibilities](prompt-semantics.md#artifact-responsibilities) defines the boundary.
-- Produce the artifacts required by the task. A single lesson or a pasted Prompt body does not require a full-course envelope, `course_index`, segment list, variable-table JSON, or uncertainty extensions.
+- Produce the artifacts required by the task. A single lesson or a pasted Prompt body does not require a full-course envelope, `course_index`, segment list, or uncertainty extensions.
 - A complete authored course includes its lesson content, Course Prompt, learner-facing description, and suitable course/chapter structure. Use the recognized directory files when materializing it; do not invent additional manifest files to preserve authoring state.
 - Course hierarchy and platform lesson titles belong in structure metadata. Source-only navigation and explanatory comments are defined in [teaching-prompt.md](teaching-prompt.md); runtime content must not exist only in a comment.
 - Keep authoring assumptions and incomplete work separate from claims that an artifact is ready. Uncertainty may be explained directly without a fixed fallback schema.
-
-## Variable Table
-
-Named learner-answer variables need consistent collection and use, whether checked directly in the artifacts or recorded in optional bookkeeping:
-
-- Names use letters, numbers, and underscores. Preserve existing names when renaming would break consumers.
-- A named answer has a valid `%{{name}}` collection and a real use outside its collection lesson, including a Course Prompt reference. Lesson-local answers use unnamed interactions.
-- Every `{{name}}` reference has an identified collection and meaningful consumer. Reuse an existing value instead of collecting a semantic duplicate; repeated collection needs an intentional staged-comparison purpose.
-- If a table is helpful, record the name, collection lesson, and every consuming lesson or Course Prompt. No `global_variable_table` or `used_variables` envelope is required.
-- Handle unavailable values without inventing them or testing whether the template marker exists.
-
-Variable-persistence decisions belong to [teaching-design.md#variable-strategy](teaching-design.md#variable-strategy); MarkdownFlow owns collection and substitution syntax.
+- Instructions that use earlier learner input refer to relevant memory under [markdownflow-syntax.md#memory](markdownflow-syntax.md#memory). Teaching applications belong to [teaching-design.md#using-memory](teaching-design.md#using-memory).

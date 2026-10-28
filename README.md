@@ -59,14 +59,16 @@ The [Course Creator](skills/ai-shifu-course-creator/SKILL.md#capabilities) group
 | Write one lesson from supplied material | MarkdownFlow expression, with teaching choices resolved as needed | A runnable Teaching Prompt |
 | Write the course description first | Course positioning and listing copy | A learner-facing description |
 | Review an existing Prompt | Teaching-quality or MarkdownFlow checks in the requested scope | Findings and requested repairs |
-| Create a complete course | Agent-selected design and expression capabilities, plus CLI build, import, and publication | A verified published course by default, after completed-content confirmation |
+| Create a complete course | Agent-selected design and expression capabilities, plus CLI build, import, and publication | A verified published course by default, uploaded automatically |
 | Deploy an existing course directory | CLI build, payload inspection, import, and requested publication | The requested verified platform result |
 | Modify or manage an existing course | CLI synchronization or the selected management operation | Verified changes to the existing course |
 | Analyze learning, orders, or credits | CLI analytics and privacy-aware interpretation | Answers grounded in observed course data |
 
-Return the artifacts needed for the request. Segmentation records, a course index, a global variable table, and a fixed risk report are not universal deliverables. A complete authored course contains its lesson content, Course Prompt, description, and structure; a focused request can end with only its requested artifact.
+Return the artifacts needed for the request. Segmentation records, a course index, a global variable table, and a fixed risk report are not universal deliverables. A complete authored course contains its lesson content, Course Prompt, description, and structure. Focused requests stay within their requested artifacts; changes to a new or existing platform course still synchronize automatically.
 
-Full-course creation follows the [default publication and completed-content confirmation policy](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome). Explicit local-only or unpublished-draft requests determine that narrower result. For existing artifacts, use the relevant [build and import](skills/ai-shifu-course-creator/references/build-and-import.md), [synchronization](skills/ai-shifu-course-creator/references/course-sync.md), or [management](skills/ai-shifu-course-creator/references/course-management.md) guidance directly.
+New courses and changes to existing courses follow [automatic platform updates](skills/ai-shifu-course-creator/SKILL.md#automatic-platform-updates), without local confirmation or a separate upload request. Full-course creation retains [default publication](skills/ai-shifu-course-creator/SKILL.md#full-course-creation-outcome). Explicit local-only or unpublished-draft requests determine that narrower result. For existing artifacts, use the relevant [build and import](skills/ai-shifu-course-creator/references/build-and-import.md), [synchronization](skills/ai-shifu-course-creator/references/course-sync.md), or [management](skills/ai-shifu-course-creator/references/course-management.md) guidance directly.
+
+Course Creator CLI usage metadata may be linked to your account. Set `SHIFU_DISABLE_ANALYTICS=1` to opt out; see the [configuration](skills/ai-shifu-course-creator/.env.example).
 
 ## Validate Metadata
 
