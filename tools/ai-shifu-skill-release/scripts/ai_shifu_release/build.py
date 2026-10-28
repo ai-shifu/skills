@@ -16,7 +16,7 @@ from ai_shifu_release.artifacts import (
     content_hash,
     release_hash,
 )
-from ai_shifu_release.channels import BuildContext, doubao
+from ai_shifu_release.channels import BuildContext, doubao, workbuddy
 from ai_shifu_release.channels.clawhub_skillhub import (
     build_clawhub_skillhub_artifact,
 )
@@ -76,8 +76,13 @@ def build(args: BuildOptions) -> Path:
                 f"Doubao profile supports {profile['primary_skill']}, not {args.skill_name}"
             )
         source_skills = {args.skill_name: source_skill}
-        for skill in profile["skills"]:
-            name = skill["name"]
+        workbuddy_template = channel_path(channels, config.workbuddy.template_dir)
+        workbuddy_plugin = json.loads(
+            (workbuddy_template / ".codebuddy-plugin/plugin.json").read_text(encoding="utf-8")
+        )
+        required_skills = [item["name"] for item in profile["skills"]]
+        required_skills.extend(workbuddy.skill_names(workbuddy_plugin))
+        for name in required_skills:
             if name in source_skills:
                 continue
             companion = temporary_root / "source-skills" / name

@@ -6,6 +6,7 @@ import json
 from pathlib import Path, PurePosixPath
 
 from ai_shifu_release.artifacts import (
+    content_hash,
     copy_tree,
     directory_contents,
     file_hash,
@@ -73,6 +74,29 @@ def _workbuddy_agent_localized(frontmatter: str, field: str) -> dict[str, str]:
                 f"WorkBuddy agent {field}.{language} must be a non-empty string"
             )
     return localized
+
+
+def skill_names(plugin: dict) -> list[str]:
+    """Resolve the WorkBuddy template's embedded skills inside skills/."""
+    references = plugin.get("skills")
+    if not isinstance(references, list) or not references:
+        raise ValueError("WorkBuddy skills must be a non-empty path list")
+    names = []
+    for reference in references:
+        if not isinstance(reference, str) or not reference.strip():
+            raise ValueError("WorkBuddy skill reference must be a non-empty path")
+        relative = PurePosixPath(reference.removeprefix("./"))
+        if (
+            relative.is_absolute()
+            or len(relative.parts) != 2
+            or relative.parts[0] != "skills"
+            or relative.name == ".."
+        ):
+            raise ValueError("WorkBuddy skill references must use skills/<name>")
+        if relative.name in names:
+            raise ValueError(f"WorkBuddy skill is declared more than once: {relative.name}")
+        names.append(relative.name)
+    return names
 
 
 def validate_workbuddy_package_contents(
@@ -165,18 +189,15 @@ def validate_workbuddy_package_contents(
     if primary_agent not in agent_paths:
         raise ValueError("WorkBuddy agentName must match an agents path")
 
-    skills = plugin.get("skills", [])
-    if not isinstance(skills, list):
-        raise ValueError("WorkBuddy skills must be a path list")
-    for index, reference in enumerate(skills):
-        if not isinstance(reference, str) or not reference.strip():
-            raise ValueError(f"WorkBuddy skills[{index}] must be a non-empty path")
-        relative = PurePosixPath(reference.removeprefix("./"))
-        if relative.is_absolute() or ".." in relative.parts:
-            raise ValueError(f"WorkBuddy skills[{index}] must stay inside the package")
-        prefix = f"{relative.as_posix().rstrip('/')}/"
-        if not any(path.startswith(prefix) for path in contents):
-            raise ValueError(f"WorkBuddy skills[{index}] does not exist: {relative}")
+    for name in skill_names(plugin):
+        skill_path = f"skills/{name}/SKILL.md"
+        if skill_path not in contents:
+            raise ValueError(f"WorkBuddy skill document is missing: {skill_path}")
+        frontmatter, _ = split_skill_document(
+            contents[skill_path].decode("utf-8"), skill_path
+        )
+        if parse_frontmatter(frontmatter).get("name") != name:
+            raise ValueError(f"WorkBuddy skill name does not match its directory: {name}")
 
     avatar_path = _workbuddy_reference(contents, plugin["avatar"], "avatar")
     avatar = contents[avatar_path]
@@ -228,6 +249,9 @@ def build_workbuddy_artifact(channel: str, context: BuildContext) -> dict:
     copy_tree(context.channels / "avatars", stage_dir / "avatars")
     stage_plugin_path = stage_dir / ".codebuddy-plugin/plugin.json"
     stage_plugin = json.loads(stage_plugin_path.read_text(encoding="utf-8"))
+    names = skill_names(stage_plugin)
+    if context.skill_name not in names:
+        raise ValueError("WorkBuddy primary skill must be declared in skills")
     stage_plugin["version"] = context.version
     stage_plugin["author"] = context.publisher
     stage_plugin_path.write_text(
@@ -236,6 +260,20 @@ def build_workbuddy_artifact(channel: str, context: BuildContext) -> dict:
     build_skill_variant(
         context.source_skill, stage_dir / "skills" / context.skill_name, overrides
     )
+    companions = {}
+    for name in names:
+        if name == context.skill_name:
+            continue
+        source = context.source_skills[name]
+        copy_tree(source, stage_dir / "skills" / name)
+        companions[name] = {
+            "root": f"{root_name}/skills/{name}",
+            "source_commit": context.source_commit,
+            "source_files": {
+                relative: content_hash(content)
+                for relative, content in directory_contents(source).items()
+            },
+        }
     validate_workbuddy_package(stage_dir, context.version)
     scan_tree(stage_dir)
     archive = context.artifacts / channel / f"{root_name}.zip"
@@ -246,4 +284,5 @@ def build_workbuddy_artifact(channel: str, context: BuildContext) -> dict:
         "version": context.version,
         "embedded_skill_root": f"{root_name}/skills/{context.skill_name}",
         "frontmatter_overrides": overrides,
+        "companion_skills": companions,
     }

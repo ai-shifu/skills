@@ -7,7 +7,7 @@
     "email": "__PUBLISHER_EMAIL__"
   },
   "agents": ["./agents/ai-shifu.md"],
-  "skills": ["./skills/ai-shifu-course-creator"],
+  "skills": ["./skills/ai-shifu-course-creator", "./skills/ai-shifu-learning-report"],
 
   "expertType": "agent",
   "agentName": "ai-shifu",
@@ -34,11 +34,11 @@
   "tags": [
     { "en": "AI Course", "zh": "AI课程" },
     { "en": "Course Production", "zh": "课程制作" },
-    { "en": "Instructional Design", "zh": "教学设计" }
+    { "en": "Learning Analytics", "zh": "学习分析" }
   ],
   "quickPrompts": [
     { "en": "Build an AI-Shifu course on the topic of \"Why should I learn AI\". Keep it within 4 sections, and personalize the teaching for users from different backgrounds. The teaching should combine PPT slides with text. Once it's ready, deploy it directly to the AI-Shifu platform.", "zh": "以「为什么要学习AI」为主题做一个AI师傅课程。整体不超过4个小节，需要针对不同背景的用户来进行个性化授课。希望通过PPT结合文字的方式进行授课，制作完成后直接部署到AI师傅平台" },
     { "en": "Help me turn this uploaded material into an AI-Shifu course. The teaching should combine PPT slides with text. Once the conversion is done, deploy it directly to the AI-Shifu platform.", "zh": "帮我把这份上传的素材转成AI师傅课程。希望通过PPT结合文字的方式进行授课，转换完成后直接部署到AI师傅平台" },
-    { "en": "Help me check my courses on the AI-Shifu platform.", "zh": "查看我在 AI 师傅平台上有哪些课程." }
+    { "en": "Analyze learning in one of my AI-Shifu courses and generate a learning report with teaching conclusions and improvement recommendations.", "zh": "帮我分析一门 AI 师傅课程的学习情况，生成包含教学结论和改进建议的学习报告。" }
   ]
 }
