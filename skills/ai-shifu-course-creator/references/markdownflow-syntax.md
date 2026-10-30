@@ -48,8 +48,6 @@ An explicit control can carry its complete learner-facing question or response t
 - `?[{{Which action will you practice?}} Verify the source | ...Another action]`: single-select plus text input.
 - `?[{{Which actions will you practice?}} Verify the source || ...Other actions]`: multi-select plus text input.
 
-The legacy `%{{...}}` prefix remains supported for compatibility; use the forms above for new controls.
-
 The prefix associates the answer with that question or response task; the response controls retain their existing selection and input semantics. Automatic [course memory](#memory) still records all learner input, including input without this prefix. Authoring requirements for filling the question or response task belong to [Interaction Encoding](teaching-prompt.md#interaction-encoding).
 
 ### Natural-Language Interactions

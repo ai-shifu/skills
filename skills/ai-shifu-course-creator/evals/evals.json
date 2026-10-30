@@ -1465,18 +1465,6 @@
         "The final navigation control is ?[继续] without an invented question or response-task prefix. Automatic course memory remains available without substitution reads, variable tables, or a separate save step.",
         "The fragment remains local, with executable controls and instructions outside HTML comments and deterministic blocks, and makes no claim of learner-time runtime verification."
       ]
-    },
-    {
-      "id": 118,
-      "prompt": "只审阅下面这段本地授课提示词的互动编码，列出确实存在的问题；不要改写、补写或访问平台。作者要求保留现有控件的全部字符，没有要求在控件外单独写问题。\n\n<!-- 学员能选择核验动作 -->\n?[%{{收到可疑消息时，你先做什么？}} 核验来源 | 直接转发]\n等待学员本次真实选择后，针对所选动作给一句反馈，再继续。\n\n<!-- 学员能描述核验困难 -->\n?[%{{最近一次核验遇到了什么困难？}} ...请描述实际困难]\n等待学员本次真实输入后，围绕实际困难给一句反馈，不虚构学员经历。",
-      "expected_output": "Accepts compatible legacy interaction prefixes during an audit and preserves author-fixed controls.",
-      "files": [],
-      "expectations": [
-        "The review accepts both legacy prefixes as compatible. It does not report invalid syntax solely because the existing controls include a percent sign or require migrating them during an audit.",
-        "Both complete question prefixes are sufficient question text. The review does not require a separate preceding question or duplicate the question outside the control.",
-        "It checks the actual response modes, input hint, waiting for the current answer, and feedback without inventing another defect.",
-        "It honors the local audit-only scope and exact-preservation requirement, returns findings rather than rewritten controls, performs no platform operation, and claims no live runtime verification."
-      ]
     }
   ]
 }

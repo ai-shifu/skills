@@ -147,8 +147,6 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
                     "?[{{你想先练哪项能力？}} 核验来源 | 核对计算]\n"
                     "?[ \t{{你想练哪些能力？}} 核验来源 || 核对计算]\n"
                     "?[{{描述一次沟通困难}} ...请输入]\n"
-                    "?[%{{你想先练哪项能力？}} 核验来源 | 核对计算]\n"
-                    "?[%{{描述一次沟通困难}} ...请输入]\n"
                 ),
                 "evals/question-prefix.json": (
                     '{"prompt": "?[{{本周想改善什么？}} ...请输入]"}'
@@ -167,11 +165,6 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
             ("references/lesson.md", '{"global_variable_table": []}'),
             ("references/analytics/tables.md", "var_variable_values effect_scope"),
             ("references/markdownflow-syntax.md", "Read {{learner_goal}}."),
-            (
-                "references/markdownflow-syntax.md",
-                "?[%{{你想先练哪项能力？}} 核验来源 | 核对计算]\n"
-                "Read {{learner_goal}}.",
-            ),
             (
                 "references/markdownflow-syntax.md",
                 "?[{{你想先练哪项能力？}} 核验来源 | 核对计算]\n"
