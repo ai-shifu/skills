@@ -606,7 +606,14 @@ class AutomaticUpdateTests(unittest.TestCase):
                 ), self.result())
 
     def test_write_failure_skips_network_or_notification_and_preserves_short_backoff(self):
-        with mock.patch.object(skill_update_check.os, "replace", side_effect=PermissionError("read-only")):
+        open_file = os.open
+
+        def deny_state_write(path, *args, **kwargs):
+            if Path(path).suffix == ".json":
+                raise PermissionError("read-only")
+            return open_file(path, *args, **kwargs)
+
+        with mock.patch.object(skill_update_check.os, "open", side_effect=deny_state_write):
             self.assertIsNone(self.call())
         self.check.assert_not_called()
         self.assertEqual({path.suffix for path in (self.state_dir / "update-check").iterdir()}, {".lock"})
@@ -627,9 +634,15 @@ class AutomaticUpdateTests(unittest.TestCase):
         self.assertIsNone(self.call(1))
         self.check.assert_called_once()
 
-    def test_state_is_private_atomic_and_does_not_change_the_installation(self):
-        with mock.patch.object(skill_update_check.os, "unlink", wraps=os.unlink) as unlink:
+    def test_state_is_private_and_written_without_temporary_files(self):
+        with (
+            mock.patch.object(tempfile, "mkstemp") as create_temporary,
+            mock.patch.object(skill_update_check.os, "replace") as replace,
+            mock.patch.object(skill_update_check.os, "unlink") as unlink,
+        ):
             self.assertEqual(self.call(), self.result())
+            create_temporary.assert_not_called()
+            replace.assert_not_called()
             unlink.assert_not_called()
         self.assertEqual(set(self.root.iterdir()), {self.skill_md, self.state_dir})
         directory = self.state_dir / "update-check"
@@ -642,6 +655,34 @@ class AutomaticUpdateTests(unittest.TestCase):
             "schema_version", "source", "local_version", "last_attempt_at", "last_success_at",
             "retry_after_seconds", "notified_versions",
         })
+
+    def test_incomplete_state_write_recovers_without_temporary_files_or_cleanup(self):
+        for length in (0, 1):
+            with self.subTest(length=length):
+                self.state_dir = self.root / f"incomplete-{length}"
+                self.check.reset_mock()
+
+                def interrupt_write(fd):
+                    os.ftruncate(fd, length)
+                    raise OSError("write interrupted")
+
+                with (
+                    mock.patch.object(skill_update_check.os, "fsync", side_effect=interrupt_write),
+                    mock.patch.object(tempfile, "mkstemp") as create_temporary,
+                    mock.patch.object(skill_update_check.os, "replace") as replace,
+                    mock.patch.object(skill_update_check.os, "unlink") as unlink,
+                ):
+                    self.assertIsNone(self.call())
+                    create_temporary.assert_not_called()
+                    replace.assert_not_called()
+                    unlink.assert_not_called()
+                self.check.assert_not_called()
+                self.assertEqual(self.state_path().read_text(), "{"[:length])
+                self.assertEqual(self.call(1), self.result())
+                self.check.assert_called_once_with(skill_md=self.skill_md)
+                self.assertEqual(self.state()["last_success_at"], self.now.timestamp() + 1)
+                directory = self.state_dir / "update-check"
+                self.assertEqual({path.suffix for path in directory.iterdir()}, {".json", ".lock"})
 
     def test_production_lookup_timeout_is_captured_and_releases_lock_for_retry(self):
         with mock.patch.object(
