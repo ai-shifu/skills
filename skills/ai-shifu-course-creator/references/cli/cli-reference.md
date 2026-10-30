@@ -47,6 +47,8 @@ Before dispatching any other valid CLI command, the CLI automatically checks whe
 
 Automatic-check state is kept under `update-check/` in the user configuration directory resolved from the process environment, independently of platform `.env` loading, service selection, profiles, and credentials. It is separated by release source and installed version. If the state directory is unavailable or another process is checking, the command continues normally. Explicit `check-update` always queries immediately and does not use or modify the automatic-check schedule; development lookups do not change production state.
 
+Automatic-check state is written directly under the check lock, without temporary files, renames, or cleanup deletions. If an interrupted write leaves empty or incomplete JSON, the next check resets the state; this can cause an earlier lookup or a repeated update notice.
+
 ## Profiles
 
 ```bash

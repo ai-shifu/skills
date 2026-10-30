@@ -11,7 +11,6 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -352,17 +351,14 @@ def _automatic_check_lock(path: Path):
 
 
 def _write_automatic_state(path: Path, state: dict[str, Any]) -> None:
-    fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=".update-")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            os.chmod(temporary, 0o600)
-            json.dump(state, handle, separators=(",", ":"))
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-    finally:
-        with contextlib.suppress(FileNotFoundError):
-            os.unlink(temporary)
+    """Write under the check lock; incomplete state is reset by the next reader."""
+    payload = json.dumps(state, separators=(",", ":"))
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        os.chmod(path, 0o600)
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
 
 
 def _read_automatic_state(path: Path, local_version: str, current_time: float) -> dict[str, Any]:
