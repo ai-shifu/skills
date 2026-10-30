@@ -360,9 +360,11 @@ def _write_automatic_state(path: Path, state: dict[str, Any]) -> None:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
-    finally:
+    except BaseException:
+        # A successful replace consumes the temporary file; only failures need cleanup.
         with contextlib.suppress(FileNotFoundError):
             os.unlink(temporary)
+        raise
 
 
 def _read_automatic_state(path: Path, local_version: str, current_time: float) -> dict[str, Any]:

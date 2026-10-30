@@ -628,7 +628,9 @@ class AutomaticUpdateTests(unittest.TestCase):
         self.check.assert_called_once()
 
     def test_state_is_private_atomic_and_does_not_change_the_installation(self):
-        self.assertEqual(self.call(), self.result())
+        with mock.patch.object(skill_update_check.os, "unlink", wraps=os.unlink) as unlink:
+            self.assertEqual(self.call(), self.result())
+            unlink.assert_not_called()
         self.assertEqual(set(self.root.iterdir()), {self.skill_md, self.state_dir})
         directory = self.state_dir / "update-check"
         self.assertEqual({path.suffix for path in directory.iterdir()}, {".json", ".lock"})
