@@ -96,6 +96,7 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
             r"(?<!%)\{\{[^{}\n]*\}\}|^#{1,6}[ \t]+Variables?[ \t]*$",
             re.IGNORECASE | re.MULTILINE,
         )
+        interaction_prefix = re.compile(r"\?\[\s*\{\{[^{}\n]*\}\}")
         for path in sorted(skill_root.rglob("*")):
             if path.is_symlink() or not path.is_file():
                 continue
@@ -114,7 +115,8 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
                 continue
             match = retired_contract.search(content)
             if not match and relative.as_posix() == "references/markdownflow-syntax.md":
-                match = runtime_references.search(content)
+                # Leading bindings are current interaction syntax, not retired reads.
+                match = runtime_references.search(interaction_prefix.sub("?[", content))
             if match:
                 self.fail(
                     f"Retired learner-state contract in {relative}: {match.group(0)!r}"
@@ -142,11 +144,12 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
                 ),
                 "evals/analytics.json": '{"query": "group_by variable_bid"}',
                 "references/markdownflow-syntax.md": (
-                    "?[%{{你想先练哪项能力？}} 核验来源 | 核对计算]\n"
-                    "?[%{{描述一次沟通困难}} ...请输入]\n"
+                    "?[{{你想先练哪项能力？}} 核验来源 | 核对计算]\n"
+                    "?[ \t{{你想练哪些能力？}} 核验来源 || 核对计算]\n"
+                    "?[{{描述一次沟通困难}} ...请输入]\n"
                 ),
                 "evals/question-prefix.json": (
-                    '{"prompt": "?[%{{本周想改善什么？}} ...请输入]"}'
+                    '{"prompt": "?[{{本周想改善什么？}} ...请输入]"}'
                 ),
             }
             for name, content in sources.items():
@@ -164,8 +167,12 @@ class CourseCreatorCapabilityTests(unittest.TestCase):
             ("references/markdownflow-syntax.md", "Read {{learner_goal}}."),
             (
                 "references/markdownflow-syntax.md",
-                "?[%{{你想先练哪项能力？}} 核验来源 | 核对计算]\n"
+                "?[{{你想先练哪项能力？}} 核验来源 | 核对计算]\n"
                 "Read {{learner_goal}}.",
+            ),
+            (
+                "references/markdownflow-syntax.md",
+                "?[核验 {{learner_goal}} | 继续]",
             ),
             ("references/consumer.md", "markdownflow-syntax.md#variables"),
         )
