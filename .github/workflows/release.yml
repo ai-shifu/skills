@@ -11,17 +11,22 @@ on:
   workflow_dispatch:
     inputs:
       expected_version:
-        description: "Skill version to preview or prepare as a draft (X.Y.Z)"
+        description: "Skill version to preview, prepare, or retry publishing (X.Y.Z)"
         required: true
         type: string
       preview_type:
-        description: "Save an Actions artifact, or prepare the formal Release draft after the version PR is merged"
+        description: "Preview artifacts, prepare a draft, or retry publishing the original merged commit"
         required: true
         default: artifact
         type: choice
         options:
           - artifact
           - draft
+          - publish
+      source_commit:
+        description: "For publish recovery: full original merged source SHA (required for publish)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -33,10 +38,11 @@ concurrency:
 
 jobs:
   release_source:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.preview_type == 'draft')
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.preview_type != 'artifact')
     runs-on: ubuntu-24.04
     outputs:
       create_draft: ${{ steps.source.outputs.create_draft }}
+      publish_release: ${{ steps.source.outputs.publish_release }}
       version: ${{ steps.source.outputs.version }}
       tag: ${{ steps.source.outputs.tag }}
       commit: ${{ steps.source.outputs.commit }}
@@ -52,6 +58,8 @@ jobs:
         env:
           PUSH_BEFORE: ${{ github.event.before }}
           EXPECTED_VERSION: ${{ inputs.expected_version }}
+          PREVIEW_TYPE: ${{ inputs.preview_type }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
           PYTHONPATH: tools/ai-shifu-skill-release/scripts
         run: |
           python3 - <<'PY'
@@ -62,7 +70,16 @@ jobs:
           from ai_shifu_release.github_releases import TAG_PATTERN
           from ai_shifu_release.skill_metadata import parse_frontmatter, split_skill_document
 
+          event = os.environ['GITHUB_EVENT_NAME']
+          ref_type = os.environ['GITHUB_REF_TYPE']
+          ref_name = os.environ['GITHUB_REF_NAME']
+          mode = os.environ['PREVIEW_TYPE']
           commit = os.environ['GITHUB_SHA']
+          if event == 'workflow_dispatch':
+              if ref_type != 'branch' or ref_name != 'main':
+                  raise ValueError('Formal Release recovery requires the main branch')
+              if mode == 'publish':
+                  commit = os.environ['SOURCE_COMMIT']
           if not re.fullmatch(r'[0-9a-f]{40}', commit):
               raise ValueError('A full source commit is required')
 
@@ -77,18 +94,16 @@ jobs:
                   raise ValueError(f'Invalid formal release version: {version!r}')
               return version
 
-          event = os.environ['GITHUB_EVENT_NAME']
-          ref_type = os.environ['GITHUB_REF_TYPE']
-          ref_name = os.environ['GITHUB_REF_NAME']
           version = version_at(commit)
           create_draft = True
+          publish_release = False
           if event == 'push' and ref_type == 'branch':
               if ref_name != 'main':
-                  raise ValueError('Automatic drafts require main')
+                  raise ValueError('Automatic releases require main')
               before = os.environ['PUSH_BEFORE']
               if before == '0' * 40:
                   create_draft = False
-                  print('Initial main push has no prior version; skipping automatic draft')
+                  print('Initial main push has no prior version; skipping automatic release')
               else:
                   if not re.fullmatch(r'[0-9a-f]{40}', before):
                       raise ValueError('A previous main commit is required')
@@ -96,20 +111,25 @@ jobs:
                   previous = version_at(before)
                   if version == previous:
                       create_draft = False
-                      print('Skill version is unchanged; skipping automatic draft')
+                      print('Skill version is unchanged; skipping automatic release')
                   elif tuple(map(int, version.split('.'))) <= tuple(map(int, previous.split('.'))):
                       raise ValueError('The release version must increase')
+              publish_release = create_draft
           elif event == 'push' and ref_type == 'tag':
               if ref_name != 'v' + version:
                   raise ValueError('Tag and source version differ')
           elif event == 'workflow_dispatch':
+              if mode not in ('draft', 'publish'):
+                  raise ValueError('Unsupported formal Release mode')
               if os.environ['EXPECTED_VERSION'] != version:
                   raise ValueError('Expected version and source version differ')
+              publish_release = mode == 'publish'
           else:
               raise ValueError('Unsupported draft source event')
 
           with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
               output.write(f'create_draft={str(create_draft).lower()}\n')
+              output.write(f'publish_release={str(publish_release).lower()}\n')
               output.write(f'version={version}\ntag=v{version}\ncommit={commit}\n')
           PY
 
@@ -170,12 +190,16 @@ jobs:
           retention-days: 7
 
   draft:
+    name: Build, verify and prepare or publish Release
     needs: release_source
     if: needs.release_source.outputs.create_draft == 'true'
     permissions:
       contents: write
       pull-requests: read
     runs-on: ubuntu-24.04
+    outputs:
+      published: ${{ steps.publication.outputs.published }}
+      tag: ${{ needs.release_source.outputs.tag }}
     concurrency:
       group: skill-release-draft-${{ needs.release_source.outputs.tag }}
       cancel-in-progress: false
@@ -193,9 +217,11 @@ jobs:
           fetch-depth: 0
 
       - name: Ensure Draft Release source is on main
+        env:
+          RELEASE_COMMIT: ${{ needs.release_source.outputs.commit }}
         run: |
           git fetch origin main
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -215,9 +241,10 @@ jobs:
       - name: Build and verify selected commit
         env:
           RELEASE_VERSION: ${{ needs.release_source.outputs.version }}
+          RELEASE_COMMIT: ${{ needs.release_source.outputs.commit }}
         run: |
           python3 tools/ai-shifu-skill-release/scripts/release.py build \
-            --source-ref "$GITHUB_SHA" --expected-version "$RELEASE_VERSION" --output dist
+            --source-ref "$RELEASE_COMMIT" --expected-version "$RELEASE_VERSION" --output dist
           release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
           test -n "$release_dir"
           python3 tools/ai-shifu-skill-release/scripts/release.py verify "$release_dir"
@@ -225,53 +252,93 @@ jobs:
       - name: Pin the formal version tag to the verified source
         env:
           RELEASE_TAG: ${{ needs.release_source.outputs.tag }}
+          RELEASE_COMMIT: ${{ needs.release_source.outputs.commit }}
         run: |
           git check-ref-format "refs/tags/$RELEASE_TAG"
           if git ls-remote --exit-code --refs origin "refs/tags/$RELEASE_TAG" >/dev/null; then
             git fetch --no-tags origin "refs/tags/$RELEASE_TAG"
-            test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "$GITHUB_SHA"
+            test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "$RELEASE_COMMIT"
           else
             status=$?
             if test "$status" -ne 2; then
               exit "$status"
             fi
-            git push origin "$GITHUB_SHA:refs/tags/$RELEASE_TAG"
+            git push origin "$RELEASE_COMMIT:refs/tags/$RELEASE_TAG"
           fi
 
-      - name: Create and verify formal Release draft
+      - name: Upload, verify and publish the formal Release
+        id: publication
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.release_source.outputs.tag }}
+          RELEASE_COMMIT: ${{ needs.release_source.outputs.commit }}
+          PUBLISH_RELEASE: ${{ needs.release_source.outputs.publish_release }}
         run: |
           release_dir="$(find dist -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          options=()
+          if test "$PUBLISH_RELEASE" != true; then
+            options+=(--draft-only)
+          fi
           python3 tools/ai-shifu-skill-release/scripts/release.py github-release "$release_dir" \
-            --tag "$RELEASE_TAG" --commit "$GITHUB_SHA" --draft-only --notes-output release-notes \
-            | tee release-draft-url.txt
-          echo "Release draft: $(cat release-draft-url.txt)" >> "$GITHUB_STEP_SUMMARY"
+            --tag "$RELEASE_TAG" --commit "$RELEASE_COMMIT" "${options[@]}" --notes-output release-notes \
+            | tee release-url.txt
+          echo "published=$PUBLISH_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "Release: $(cat release-url.txt)" >> "$GITHUB_STEP_SUMMARY"
           cat release-notes/release-notes.md >> "$GITHUB_STEP_SUMMARY"
-          echo "Review the six attachments, then publish this draft in GitHub to start ClawHub and SkillHub submission." >> "$GITHUB_STEP_SUMMARY"
+          if test "$PUBLISH_RELEASE" = true; then
+            echo 'The formal Release and all six attachments have been verified.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Draft-only mode: this Release is still unpublished.' >> "$GITHUB_STEP_SUMMARY"
+          fi
 
-      - name: Save Release draft notes
+      - name: Save Release notes
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: skill-release-notes-draft-${{ github.sha }}
+          name: skill-release-notes-${{ needs.release_source.outputs.commit }}-${{ github.run_attempt }}
           path: release-notes/
           retention-days: 7
+          if-no-files-found: ignore
 
+      - name: Report Release recovery steps
+        if: failure()
+        env:
+          RELEASE_COMMIT: ${{ needs.release_source.outputs.commit }}
+          RELEASE_VERSION: ${{ needs.release_source.outputs.version }}
+        run: |
+          echo "::error::Release failed for $RELEASE_COMMIT. Re-run the failed jobs to retry the same source."
+          {
+            echo "Release recovery source: $RELEASE_COMMIT (version $RELEASE_VERSION)."
+            echo 'Re-run the failed jobs, or run Release Skills on main with preview_type=publish, the same expected_version, and source_commit set to this SHA.'
+            echo 'Existing attachments must match; published Releases are verified without changes.'
+            echo 'After GitHub Release recovery, inspect channel state and retry channels separately through Publish Skill Channel.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # GITHUB_TOKEN publication does not trigger release.published workflows.
+  # Run initial submissions here; recover channels through Publish Skill Channel.
   publish-clawhub:
-    if: github.event_name == 'release' && !github.event.release.draft && !github.event.release.prerelease && startsWith(github.event.release.tag_name, 'v')
+    needs: draft
+    if: >-
+      !cancelled() &&
+      ((github.event_name == 'push' && github.ref_type == 'branch' && github.run_attempt == 1 && needs.draft.result == 'success' && needs.draft.outputs.published == 'true') ||
+       (github.event_name == 'release' && !github.event.release.draft && !github.event.release.prerelease && startsWith(github.event.release.tag_name, 'v')))
     uses: ./.github/workflows/platform-publish.yml
     with:
-      tag: ${{ github.event.release.tag_name }}
+      tag: ${{ needs.draft.outputs.tag || github.event.release.tag_name }}
       target: clawhub
     secrets:
       CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
 
   publish-skillhub:
-    if: github.event_name == 'release' && !github.event.release.draft && !github.event.release.prerelease && startsWith(github.event.release.tag_name, 'v')
+    needs: draft
+    if: >-
+      !cancelled() &&
+      ((github.event_name == 'push' && github.ref_type == 'branch' && github.run_attempt == 1 && needs.draft.result == 'success' && needs.draft.outputs.published == 'true') ||
+       (github.event_name == 'release' && !github.event.release.draft && !github.event.release.prerelease && startsWith(github.event.release.tag_name, 'v')))
     uses: ./.github/workflows/platform-publish.yml
     with:
-      tag: ${{ github.event.release.tag_name }}
+      tag: ${{ needs.draft.outputs.tag || github.event.release.tag_name }}
       target: skillhub
     secrets:
       SKILLHUB_TOKEN: ${{ secrets.SKILLHUB_TOKEN }}
