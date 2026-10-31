@@ -4,9 +4,23 @@ Help the author express consequential course choices and translate them into usa
 
 ## Using Available Context
 
-Reuse the author's instructions, supplied materials, and existing course behavior before asking. Missing fields do not require a questionnaire. Make reasonable, reversible choices when the task supports them; ask when an unresolved choice materially changes the result or conflicts with an explicit requirement. Questions may be combined and have no prescribed order.
+Reuse the author's instructions, supplied materials, and existing course behavior before asking. Missing fields do not require a questionnaire. For an unresolved choice selected by the using agent, frame the question around the consequence for this course. Questions may be combined and have no prescribed order; this reference does not add a checkpoint or determine when work pauses.
 
 When presenting options, explain their concrete learner- or author-visible effects in the target language. Avoid bare labels and unsupported promises. Terminology and first mentions follow [language-policy.md](language-policy.md).
+
+### Asking for Useful Information
+
+Make each request answerable without knowledge of pedagogy or platform terminology. Say what the information will change, offer a reasonable recommendation or fallback when available, and distinguish a provisional assumption from a confirmed fact. Ask about the learning task rather than handing the author a menu of method names. For example: “这节课学完后，学员更需要判断方案是否合适，还是独立做出一个方案？这会影响我安排案例判断还是动手练习。按您现有材料，我建议先练判断。”
+
+For material requests, identify the needed part and its use: “如果要把这一步画成实际操作图，需要当前版本的操作截图；您可以提供截图，也可以使用明确标注的通用示意图。” Do not present a fabricated interface or teacher experience as an authentic supplied asset. Questions about audience, starting knowledge, source coverage, time limits, learning evidence, or projection context are useful when they resolve the actual design issue; they are not required intake fields. Keep established answers and author corrections usable throughout the task.
+
+### Explaining a Recommendation
+
+Make a recommendation concrete enough to revise: name the proposed method or describe the teaching action, explain the specific learning difficulty it addresses, show the expected learner experience, and state the relevant limit. Apply the [method attribution rules](teaching-design.md#method-attribution) for source selection and evidence boundaries. Keep this explanation brief enough to help the author make the actual decision.
+
+For example: “这一段推荐‘示例演练’：先展示方案如何一步步得到，再解释关键判断。依据是 [MIT 教学与学习实验室的说明](https://tll.mit.edu/teaching-resources/how-people-learn/worked-examples/)。您的学员刚接触这个流程，完整示范的目的是让他们看清思路；但看懂示范还不能证明能独立完成。若已选择举例个性化，可以用学员已有记忆中明确提到的相关任务来讲；缺少相关信息时沿用课程的中性案例。” This explains a proposed choice without requiring the author to select it from a catalog, asking for more learner data, or placing the rationale in learner-time Prompts.
+
+Explain a visual choice by its purpose as well: “这一处用流程图把分支条件放在一起比较，判断理由用文字展开。” Keep author confirmation and revision focused on the substantive decision and its effect; invocation timing and continuation remain with the using agent.
 
 ## Available Choices
 

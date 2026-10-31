@@ -14,10 +14,13 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 - Teaching Prompts provide executable local teaching directions, required content and relationships, and any chosen feedback or branch behavior. A Course Prompt is not relied on to invent missing lesson pedagogy.
 - Outside the [author-facing comments](teaching-prompt.md#required-comments), every part of a Teaching Prompt serves runtime delivery. No executable requirement, memory-use instruction, option, URL, command, or exact span exists only in a comment.
 - Authoring controls, selection interfaces, pipeline notes, and learner-profile data do not leak into runtime instructions. Second-person forms obey [prompt-semantics.md#prompt-semantics](prompt-semantics.md#prompt-semantics).
+- Teacher-material requests, sample-confirmation instructions, and teaching-method selection rationale or provenance remain in teacher-facing communication, unless the author explicitly requests the method itself as lesson content. Necessary learner-facing source content is retained.
 
 ## Teaching Design and Layout
 
 - The lesson's chosen approach makes its intended learning result achievable with supported facts, sufficient reasoning, and useful evidence. Do not fail an artifact for omitting a recommended pattern, fixed loop, single-question structure, visual, cover, cadence, deliverable, or interaction count.
+- Available confirmed goals, representative-sample decisions, and teacher corrections are reflected in every affected artifact. Learning tasks, when included, demonstrate the intended capability with executable success criteria and response-based feedback under [teaching-design.md](teaching-design.md); recall alone does not establish application. No task or test is required in every lesson, and disabled interactions remain respected.
+- Teacher-facing explanations of a teaching method accurately identify the source used and distinguish its supported principle from the agent's local design choice. Claims about research or suitability stay within the evidence and its limits under [teaching-design.md](teaching-design.md); a named method or citation alone does not establish that the lesson implements it.
 - Examples and analogies, when used, have meaningful conditions or correspondences, explanatory value, and necessary limits under [teaching-design.md#examples-and-analogies](teaching-design.md#examples-and-analogies). Avoid misleading comparisons and unsupported assumptions of familiarity.
 - Explicit author decisions about order, delivery experience, interaction restrictions, and other constraints are respected. The agent may choose or revise unspecified design elements within the task.
 - New or explicitly rewritten Teaching Prompts have concise source-only navigation comments for useful teaching blocks under [teaching-prompt.md](teaching-prompt.md). Optional layouts and agent-created layouts are valid when readable and runtime-safe.
@@ -30,6 +33,7 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 - Resolved directions implement exactly the effects in [prompt-semantics.md#personalization-directions](prompt-semantics.md#personalization-directions), including a neutral fallback for missing relevant context. Do not enable an unselected direction through a generic instruction.
 - Unselected directions and an explicit empty selection retain the source-, author-, and audience-based baseline without deleting needed examples, analogies, practical value, or explanation.
 - Selected adaptations are executable where needed. A generic course-wide claim does not replace a required local example or analogy instruction.
+- Selected directions have concrete effects on permitted expression using relevant, actually available learner input. Renaming a person or occupation without connecting teaching to the stated task, constraint, preference, or goal is insufficient. Missing or irrelevant context uses a neutral course-appropriate fallback without inventing learner facts or adding collection questions.
 - Runtime personalization preserves the authored objectives, required facts and boundaries, needed explanation depth, sequence, visual structure, and selected interaction or feedback effects. It does not authorize new context collection or branches.
 - With no supplied selection, assess observable behavior without inferring an enum array from the Prompt. Selection alignment or absent companion alignment may be `not-assessed`; no missing intermediate plan or schema is manufactured.
 - Reusable artifacts contain no specific learner profile, platform learner-profile tags, internal profile field names, or authoring selection interface.
@@ -55,3 +59,9 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 - Human-readable content passes [language-policy.md#language-audit](language-policy.md#language-audit), including effective build values when they are in scope.
 - Repairs respect the requested scope and retain executable requirements in their owning artifact. Consequential changes have a clear reason.
 - Unresolved correctness, source, or runtime risks and unavailable checks are visible rather than hidden by cosmetic rewriting or a claimed full pass.
+
+## Validation Evidence
+
+- State which validation actually occurred and what it establishes, following [teaching-design.md](teaching-design.md). Static artifact inspection can establish content alignment, source support, and executable instructions; it cannot establish actual learner understanding or runtime behavior that was not exercised.
+- Label simulated learner walkthroughs as simulations, with the supplied context and observed response behavior. They can reveal design or execution problems but do not establish learning gains in real learners.
+- Claims about actual learner performance or learning outcomes require corresponding real learner evidence, with the observed task, criteria, and relevant limits. An opened preview, successful import, teacher approval, or plausible simulated answer is not that evidence. Report unavailable validation as `not-assessed` rather than claiming the course has proved effective.
