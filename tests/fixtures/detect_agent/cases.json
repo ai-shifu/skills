@@ -1,5 +1,5 @@
 {
-  "spec_version": "0.1.5",
+  "spec_version": "0.1.7",
   "cases": [
     {
       "name": "empty environment",
@@ -278,6 +278,37 @@
       }
     },
     {
+      "name": "cue operator platform marker",
+      "env": {
+        "MANUS_OPERATOR_PLATFORM": "synthetic-platform"
+      },
+      "expected": {
+        "agent_id": "cue",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cue operator platform marker false counts as non-empty",
+      "env": {
+        "MANUS_OPERATOR_PLATFORM": "false"
+      },
+      "expected": {
+        "agent_id": "cue",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cue operator platform marker precedes manus descriptor",
+      "env": {
+        "MANUS_OPERATOR_PLATFORM": "synthetic-platform",
+        "MANUS_ADDON_RUNTIME_SPECS_REVISION": "synthetic-revision"
+      },
+      "expected": {
+        "agent_id": "cue",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
       "name": "cue false string is non-empty",
       "env": {
         "MANUS_LONG_DESKTOP_WORKER": "false"
@@ -465,6 +496,148 @@
       "expected": {
         "agent_id": "devin",
         "evidence": "context-hint"
+      }
+    },
+    {
+      "name": "devin dir marker",
+      "env": {
+        "DEVIN_DIR": "synthetic-dir"
+      },
+      "expected": {
+        "agent_id": "devin",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "devin histexpand marker",
+      "env": {
+        "DEVIN_DISABLE_HISTEXPAND": "1"
+      },
+      "expected": {
+        "agent_id": "devin",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "devin dir zero value is non-empty",
+      "env": {
+        "DEVIN_DIR": "0"
+      },
+      "expected": {
+        "agent_id": "devin",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "devin histexpand false string is non-empty",
+      "env": {
+        "DEVIN_DISABLE_HISTEXPAND": "false"
+      },
+      "expected": {
+        "agent_id": "devin",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "devin dir whitespace-only marker is non-empty",
+      "env": {
+        "DEVIN_DIR": " "
+      },
+      "expected": {
+        "agent_id": "devin",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "devin empty alternatives fail",
+      "env": {
+        "DEVIN_DIR": "",
+        "DEVIN_DISABLE_HISTEXPAND": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "devin prefixed configuration name does not match",
+      "env": {
+        "DEVIN_CHROME_PATH": "synthetic-path"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "devin empty markers fall back to file hint",
+      "env": {
+        "DEVIN_DIR": "",
+        "DEVIN_DISABLE_HISTEXPAND": ""
+      },
+      "files": [
+        "/opt/.devin"
+      ],
+      "expected": {
+        "agent_id": "devin",
+        "evidence": "context-hint"
+      }
+    },
+    {
+      "name": "devin runtime marker wins file hint",
+      "env": {
+        "DEVIN_DIR": "synthetic-dir"
+      },
+      "files": [
+        "/opt/.devin"
+      ],
+      "expected": {
+        "agent_id": "devin",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "devin runtime marker wins editor hint",
+      "env": {
+        "DEVIN_DISABLE_HISTEXPAND": "1",
+        "ZED_TERM": "1"
+      },
+      "expected": {
+        "agent_id": "devin",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "nested claude code marker precedes devin",
+      "env": {
+        "DEVIN_DIR": "synthetic-dir",
+        "CLAUDECODE": "1"
+      },
+      "expected": {
+        "agent_id": "claude-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "nested codex marker precedes devin",
+      "env": {
+        "DEVIN_DISABLE_HISTEXPAND": "1",
+        "CODEX_THREAD_ID": "synthetic-thread"
+      },
+      "expected": {
+        "agent_id": "codex",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "unknown declaration blocks devin marker",
+      "env": {
+        "AI_AGENT": "unregistered-example",
+        "DEVIN_DIR": "synthetic-dir"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
       }
     },
     {
@@ -1248,6 +1421,16 @@
       }
     },
     {
+      "name": "cue operator platform empty marker fails",
+      "env": {
+        "MANUS_OPERATOR_PLATFORM": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
       "name": "muse empty alternatives fail",
       "env": {
         "JARVIS_IS_ASSIGNED": "",
@@ -1638,6 +1821,26 @@
       "name": "cue marker with whitespace-only value is non-empty",
       "env": {
         "MANUS_LONG_DESKTOP_WORKER": " "
+      },
+      "expected": {
+        "agent_id": "cue",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cue operator platform marker with zero value is non-empty",
+      "env": {
+        "MANUS_OPERATOR_PLATFORM": "0"
+      },
+      "expected": {
+        "agent_id": "cue",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cue operator platform marker with whitespace-only value is non-empty",
+      "env": {
+        "MANUS_OPERATOR_PLATFORM": " "
       },
       "expected": {
         "agent_id": "cue",
