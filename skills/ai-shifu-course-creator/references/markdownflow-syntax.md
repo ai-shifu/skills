@@ -39,7 +39,7 @@ The first separator determines selection mode: `|` represents one selected value
 
 ### Question Prefix
 
-An explicit control can carry its complete learner-facing question or response task in a prefix at the start of the control body, before the options or input hint:
+An explicit control can carry its complete learner-facing question or response task in a prefix immediately after `?[`, before the options or input hint:
 
 - `?[ {{Which action will you take first?}} Verify the source | Check the calculation]`: single-select.
 - `?[ {{Which checks will you perform?}} Verify the source || Check the calculation]`: multi-select.
