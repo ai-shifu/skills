@@ -1,4 +1,4 @@
-"""Local implementation of ai-shifu/detect-agent 0.1.8 (MIT).
+"""Local implementation of ai-shifu/detect-agent 0.1.9 (MIT).
 
 Specification attribution (MIT License):
 Copyright (c) 2026 ai-shifu
@@ -28,8 +28,8 @@ import os
 from collections.abc import Callable, Mapping
 
 
-SPEC_VERSION = "0.1.8"
-SPEC_COMMIT = "601c270555a4f249959b2bf6c6a591a9e115448f"
+SPEC_VERSION = "0.1.9"
+SPEC_COMMIT = "1da565572418fd88da8b782ebbda53f2a321d310"
 
 # Product spelling is also the bounded CLI display-name contract. Context-only
 # products are reportable only when explicitly declared, not from a context hint.
@@ -66,6 +66,7 @@ AGENT_DISPLAY_NAMES = {
     "replit": "Replit",
     "devin": "Devin",
     "instinct": "Instinct",
+    "lingguang": "Lingguang",
     "cursor": "Cursor",
     "zed": "Zed",
     "hi": "hi",
@@ -123,13 +124,14 @@ _RUNTIME_RULES = (
     ("cursor-cli", ((("CURSOR_AGENT", None),), (("CURSOR_EXTENSION_HOST_ROLE", "agent-exec"),))),
     ("kiro", ((("AGENT_CONTEXT_OUT", None),),)),
     ("openclaw", ((("OPENCLAW_SHELL", None),),)),
-    # Nested agent CLI markers take precedence over inherited Devin/Instinct markers.
+    # Nested agent CLI markers take precedence over inherited command environments.
     ("devin", ((("DEVIN_DIR", None),), (("DEVIN_DISABLE_HISTEXPAND", None),))),
     ("instinct", (
         (("INSTINCT_OUTER_TOOL_USE_ID", None),),
         (("INSTINCT_OUTER_TOOL_USE_STARTED_AT", None),),
         (("INSTINCT_OUTER_TOOL_USE_TIMEOUT_SECONDS", None),),
     )),
+    ("lingguang", ((("EXEC_FROM", None),),)),
 )
 
 
