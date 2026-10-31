@@ -33,6 +33,7 @@ These independent directions describe what learner background may change. The op
 - Unselected directions use source material, author requirements, and intended audience defaults. An empty selection does not remove examples, analogies, practical value, or explanations needed for understanding.
 - Personalization affects permitted expression within the authored lesson. It does not independently authorize changes to objectives, required content, source boundaries, explanation depth, teaching sequence, slide structure, interactions, branches, or feedback effects.
 - Learner context may become available only at delivery. Keep selected adaptations executable with that context and give a neutral fallback. Do not embed a specific learner's profile in reusable course artifacts.
+- A fallback still obeys explicit author constraints. If analogies are permitted only from the learner's explicitly known experience, missing relevant experience calls for a literal explanation or source-based example, not a newly invented analogy. Selecting a direction does not require using it when its author-defined conditions are unmet.
 - Both Prompt artifacts implement consistent resolved effects within their own responsibilities. Do not serialize the authoring selection's field name, enum array, or interface into runtime prose. Alignment is checked against available artifacts; an isolated lesson does not require generating an absent companion.
 
 ## Artifact Responsibilities

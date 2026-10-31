@@ -1533,6 +1533,17 @@
         "It allows explicitly labeled hypothetical teaching amounts and does not claim they are actual learner finances.",
         "It connects the calculation to the relevant already-known gift-order task, offers a neutral fallback, and adds no learner question, other personalization direction, course workflow or platform operation."
       ]
+    },
+    {
+      "id": 122,
+      "prompt": "只给一段授课提示词及一小段明确标为模拟的试讲，不做整课、不部署。讲解同一批请求依次登记、审核、通知，三个环节连续工作且无返工、需求充足，每小时能力分别 12、4、10 件，持续吞吐量不超过每小时 4 件。选中举例与类比个性化，但老师限定类比只能来自学员明确说过的熟悉经历；不得再提问收集信息。本次试讲没有任何已有学员经历可用。保留来源事实，纯文字。",
+      "expected_output": "Respects the author condition when learner experience is absent: gives literal source-based teaching rather than inventing a neutral analogy just because analogies were selected.",
+      "files": [],
+      "expectations": [
+        "The reusable Prompt permits an analogy only when relevant explicitly known experience satisfies the author condition, and otherwise uses literal explanation or the source example.",
+        "The simulated delivery contains no new analogy, assumed familiar experience or learner-background question.",
+        "The 12, 4, 10 capacities, throughput bound and simplifying assumptions remain intact; simulated delivery is not claimed as actual learner validation."
+      ]
     }
   ]
 }
