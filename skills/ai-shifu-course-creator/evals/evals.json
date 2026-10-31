@@ -1522,6 +1522,17 @@
       ],
       "id": 120,
       "files": []
+    },
+    {
+      "id": 121,
+      "prompt": "只写一段可复用的授课提示词，讲清总成本 = 固定成本 + 单件变动成本 × 件数。只启用举例个性化；学员可能已经明确说过自己在为展会准备礼品订单，但没有提供金额，禁止额外提问。允许用明确标注的假设教学数字做计算。作者固定的中性示例为固定成本 100 元、单件变动成本 5 元、20 件，总成本 200 元；必须保留这些数字和公式。已有相关任务时用它解释这些费用与件数的对应，没有相关记忆时用中性示例。只要提示词，不做整课、不部署。",
+      "expected_output": "Uses explicitly labeled hypothetical figures to explain a known learner task without fabricating actual learner data or requesting unnecessary background, while preserving the author-fixed calculation.",
+      "files": [],
+      "expectations": [
+        "The Prompt preserves the exact formula and the author-fixed 100, 5, 20 and 200 calculation.",
+        "It allows explicitly labeled hypothetical teaching amounts and does not claim they are actual learner finances.",
+        "It connects the calculation to the relevant already-known gift-order task, offers a neutral fallback, and adds no learner question, other personalization direction, course workflow or platform operation."
+      ]
     }
   ]
 }
