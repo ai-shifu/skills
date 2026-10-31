@@ -41,12 +41,12 @@ The first separator determines selection mode: `|` represents one selected value
 
 An explicit control can carry its complete learner-facing question or response task in a prefix immediately after `?[`, before the options or input hint:
 
-- `?[{{Which action will you take first?}} Verify the source | Check the calculation]`: single-select.
-- `?[{{Which checks will you perform?}} Verify the source || Check the calculation]`: multi-select.
-- `?[{{What is your learning goal?}} ...Describe your goal]`: text input.
-- `?[{{Rewrite the plan with an action, an owner, and a deadline.}} ...Write the revised plan]`: text input for an imperative response task.
-- `?[{{Which action will you practice?}} Verify the source | ...Another action]`: single-select plus text input.
-- `?[{{Which actions will you practice?}} Verify the source || ...Other actions]`: multi-select plus text input.
+- `?[ {{Which action will you take first?}} Verify the source | Check the calculation]`: single-select.
+- `?[ {{Which checks will you perform?}} Verify the source || Check the calculation]`: multi-select.
+- `?[ {{What is your learning goal?}} ...Describe your goal]`: text input.
+- `?[ {{Rewrite the plan with an action, an owner, and a deadline.}} ...Write the revised plan]`: text input for an imperative response task.
+- `?[ {{Which action will you practice?}} Verify the source | ...Another action]`: single-select plus text input.
+- `?[ {{Which actions will you practice?}} Verify the source || ...Other actions]`: multi-select plus text input.
 
 The prefix associates the answer with that question or response task; the response controls retain their existing selection and input semantics. Automatic [course memory](#memory) still records all learner input, including input without this prefix. Authoring requirements for filling the question or response task belong to [Interaction Encoding](teaching-prompt.md#interaction-encoding).
 
