@@ -89,7 +89,9 @@ class GitHubReleaseTest(unittest.TestCase):
                 (),
                 {
                     "returncode": 0,
-                    "stdout": json.dumps({"isDraft": False, "assets": []}),
+                    "stdout": json.dumps(
+                        {"isDraft": False, "isPrerelease": False, "assets": []}
+                    ),
                 },
             )()
             with (
@@ -100,6 +102,75 @@ class GitHubReleaseTest(unittest.TestCase):
             ):
                 with self.assertRaisesRegex(ValueError, "missing"):
                     github_releases.publish("v1.2.3", self.commit, assets, notes)
+
+    def test_formal_modes_never_modify_an_existing_prerelease(self) -> None:
+        for draft in (False, True):
+            for draft_only in (False, True):
+                calls = []
+
+                def fake_gh(*args, check=True):
+                    calls.append(args)
+                    if args[0] == "api":
+                        return self.tag_response()
+                    self.assertEqual(args[:2], ("release", "view"))
+                    self.assertIn(
+                        "isPrerelease", args[args.index("--json") + 1].split(",")
+                    )
+                    return SimpleNamespace(
+                        returncode=0,
+                        stdout=json.dumps({"isDraft": draft, "isPrerelease": True}),
+                    )
+
+                with (
+                    self.subTest(draft=draft, draft_only=draft_only),
+                    patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                    patch.object(github_releases, "gh", side_effect=fake_gh),
+                    self.assertRaisesRegex(ValueError, "must not be a prerelease"),
+                ):
+                    github_releases.publish(
+                        "v1.2.3", self.commit, [], "Release notes", draft_only=draft_only
+                    )
+                self.assertEqual(len(calls), 2)
+
+    def test_prerelease_readback_blocks_formal_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets, notes = github_releases.prepare_assets(
+                self.release_dir, "v1.2.3", self.commit, Path(temporary)
+            )
+            for draft_only in (False, True):
+                views = 0
+
+                def fake_gh(*args, check=True):
+                    nonlocal views
+                    if args[0] == "api":
+                        return self.tag_response()
+                    self.assertEqual(args[:2], ("release", "view"))
+                    self.assertIn(
+                        "isPrerelease", args[args.index("--json") + 1].split(",")
+                    )
+                    views += 1
+                    return SimpleNamespace(
+                        returncode=0,
+                        stdout=json.dumps({
+                            "isDraft": True,
+                            "isPrerelease": views > 1,
+                            "body": notes,
+                            "assets": [{"name": asset.name} for asset in assets],
+                            "tagName": "v1.2.3",
+                            "url": "https://example.test/release",
+                        }),
+                    )
+
+                with (
+                    self.subTest(draft_only=draft_only),
+                    patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                    patch.object(github_releases, "gh", side_effect=fake_gh),
+                    self.assertRaisesRegex(ValueError, "must not be a prerelease"),
+                ):
+                    github_releases.publish(
+                        "v1.2.3", self.commit, assets, notes, draft_only=draft_only
+                    )
+                self.assertEqual(views, 2)
 
     def test_new_release_stays_draft_until_every_asset_is_uploaded(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -121,6 +192,7 @@ class GitHubReleaseTest(unittest.TestCase):
                     if not created:
                         return type("Response", (), {"returncode": 1, "stdout": ""})()
                     payload = {
+                        "isPrerelease": False,
                         "isDraft": not published,
                         "tagName": "v1.2.3",
                         "body": notes,
@@ -163,7 +235,7 @@ class GitHubReleaseTest(unittest.TestCase):
                 url, "https://github.com/ai-shifu/skills/releases/tag/v1.2.3"
             )
 
-    def test_branch_preview_uploads_and_verifies_without_publishing(self) -> None:
+    def test_branch_preview_prerelease_uploads_and_verifies_without_publishing(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             assets, notes = github_releases.prepare_assets(
                 self.release_dir, "v1.2.3", self.commit, Path(temporary)
@@ -182,6 +254,7 @@ class GitHubReleaseTest(unittest.TestCase):
                     if not created:
                         return type("Response", (), {"returncode": 1, "stdout": ""})()
                     payload = {
+                        "isPrerelease": True,
                         "isDraft": True,
                         "tagName": preview_tag,
                         "body": body,
@@ -236,6 +309,7 @@ class GitHubReleaseTest(unittest.TestCase):
             )
             cases = (
                 ({"isDraft": True}, "publication did not take effect"),
+                ({"isPrerelease": True}, "must not be a prerelease"),
                 ({"tagName": "v1.2.4"}, "tag differs"),
                 ({"assets": []}, "asset set differs"),
                 ({"body": "Changed after publication"}, "notes differ"),
@@ -252,6 +326,7 @@ class GitHubReleaseTest(unittest.TestCase):
                         action = args[1]
                         if action == "view":
                             payload = {
+                                "isPrerelease": False,
                                 "isDraft": not publish_requested,
                                 "tagName": "v1.2.3",
                                 "body": notes,
@@ -309,6 +384,7 @@ class GitHubReleaseTest(unittest.TestCase):
                     return SimpleNamespace(
                         returncode=0,
                         stdout=json.dumps({
+                            "isPrerelease": False,
                             "isDraft": not published,
                             "tagName": "v1.2.3",
                             "body": notes,
@@ -370,6 +446,7 @@ class GitHubReleaseTest(unittest.TestCase):
                     if not created:
                         return type("Response", (), {"returncode": 1, "stdout": ""})()
                     payload = {
+                        "isPrerelease": False,
                         "isDraft": True,
                         "tagName": "v1.2.3",
                         "body": notes,
@@ -454,7 +531,10 @@ class GitHubReleaseTest(unittest.TestCase):
             type(
                 "Response", (), {"returncode": 0, "stdout": json.dumps(payload)}
             )()
-            for payload in ({"sha": self.commit}, {"isDraft": False})
+            for payload in (
+                {"sha": self.commit},
+                {"isDraft": False, "isPrerelease": False},
+            )
         ]
         with (
             patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
@@ -501,7 +581,9 @@ class GitHubReleaseTest(unittest.TestCase):
                 (),
                 {
                     "returncode": 0,
-                    "stdout": json.dumps({"isDraft": False, "assets": []}),
+                    "stdout": json.dumps(
+                        {"isDraft": False, "isPrerelease": False, "assets": []}
+                    ),
                 },
             )()
             with (
@@ -535,6 +617,7 @@ class GitHubReleaseTest(unittest.TestCase):
                 action = args[1]
                 if action == "view":
                     payload = {
+                        "isPrerelease": False,
                         "isDraft": not published,
                         "tagName": "v1.2.3",
                         "body": notes,
@@ -605,6 +688,7 @@ class GitHubReleaseTest(unittest.TestCase):
                     return self.tag_response()
                 if args[1] == "view":
                     result = {
+                        "isPrerelease": False,
                         "isDraft": not published,
                         "tagName": "v1.2.3",
                         "body": body,
@@ -648,6 +732,7 @@ class GitHubReleaseTest(unittest.TestCase):
                 self.release_dir, "v1.2.3", self.commit, Path(temporary)
             )
             result = {
+                "isPrerelease": False,
                 "isDraft": False,
                 "body": "Existing published notes",
                 "assets": [{"name": asset.name} for asset in assets],
@@ -682,6 +767,7 @@ class GitHubReleaseTest(unittest.TestCase):
                         "returncode": 0,
                         "stdout": json.dumps(
                             {
+                                "isPrerelease": False,
                                 "isDraft": True,
                                 "body": body,
                                 "assets": [{"name": asset.name} for asset in assets],

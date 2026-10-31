@@ -158,7 +158,7 @@ def publish(
         "--repo",
         repository,
         "--json",
-        "isDraft,assets,body",
+        "isDraft,isPrerelease,assets,body",
         check=False,
     )
     if existing.returncode:
@@ -189,9 +189,11 @@ def publish(
             "--repo",
             repository,
             "--json",
-            "isDraft,assets,body",
+            "isDraft,isPrerelease,assets,body",
         )
     release = json.loads(existing.stdout)
+    if not draft_preview and release["isPrerelease"]:
+        raise ValueError("Formal Release must not be a prerelease")
     if draft_preview and not release["isDraft"]:
         raise ValueError("Preview Release is already public; refusing to change it")
     if draft_only and not release["isDraft"]:
@@ -241,9 +243,11 @@ def publish(
             "--repo",
             repository,
             "--json",
-            "isDraft,assets,url,body,tagName",
+            "isDraft,isPrerelease,assets,url,body,tagName",
         ).stdout
     )
+    if not draft_preview and final["isPrerelease"]:
+        raise ValueError("Formal Release must not be a prerelease")
     if {item["name"] for item in final["assets"]} != expected_assets:
         raise ValueError("Release asset set is incomplete")
     if final.get("body", "").strip() != expected_body.strip():
@@ -279,9 +283,11 @@ def publish(
                 "--repo",
                 repository,
                 "--json",
-                "isDraft,assets,url,body,tagName",
+                "isDraft,isPrerelease,assets,url,body,tagName",
             ).stdout
         )
+        if final["isPrerelease"]:
+            raise ValueError("Formal Release must not be a prerelease")
         if final["isDraft"]:
             raise ValueError(
                 "Release publication did not take effect; retry the same version"
