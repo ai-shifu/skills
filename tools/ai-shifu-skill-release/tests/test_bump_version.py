@@ -91,7 +91,7 @@ class BumpVersionTest(unittest.TestCase):
         )
         self.assertEqual(
             git("log", "-1", "--format=%s", cwd=check),
-            "chore: flow version to v1.2.0",
+            "chore: bump version to v1.2.0",
         )
         self.assertEqual(
             git("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD", cwd=check),
