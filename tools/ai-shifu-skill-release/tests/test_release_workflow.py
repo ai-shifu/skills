@@ -99,7 +99,8 @@ def evaluate(expression: str, context: dict[str, object]) -> object:
         if isinstance(node, ast.Attribute) and node.attr.startswith("_"):
             raise ValueError("Private attributes are not workflow context")
         if isinstance(node, ast.Call) and (
-            not isinstance(node.func, ast.Name) or node.func.id != "startsWith"
+            not isinstance(node.func, ast.Name)
+            or node.func.id not in ("startsWith", "cancelled")
         ):
             raise ValueError("Unexpected workflow expression function")
     return eval(  # noqa: S307 - AST and execution context are explicitly restricted.
@@ -109,6 +110,7 @@ def evaluate(expression: str, context: dict[str, object]) -> object:
             **context,
             "true": True,
             "false": False,
+            "cancelled": lambda: context.get("cancelled", False),
             "startsWith": lambda value, prefix: str(value).casefold().startswith(
                 str(prefix).casefold()
             ),
@@ -125,11 +127,20 @@ def event_context(
     draft: bool = False,
     prerelease: bool = False,
     create_draft: str = "true",
+    ref_type: str = "branch",
+    attempt: int = 1,
+    release_result: str | None = None,
+    published: str | None = None,
+    cancelled: bool = False,
 ) -> dict[str, object]:
+    automatic = event == "push" and ref_type == "branch" and create_draft == "true"
     return {
+        "cancelled": cancelled,
         "github": SimpleNamespace(
             event_name=event,
-            ref_name="main" if event == "workflow_dispatch" else tag,
+            ref_name="main" if ref_type == "branch" else tag,
+            ref_type=ref_type,
+            run_attempt=attempt,
             event=SimpleNamespace(
                 action=action,
                 release=SimpleNamespace(
@@ -141,7 +152,14 @@ def event_context(
         "needs": SimpleNamespace(
             release_source=SimpleNamespace(
                 outputs=SimpleNamespace(create_draft=create_draft)
-            )
+            ),
+            draft=SimpleNamespace(
+                result=release_result or ("success" if automatic else "skipped"),
+                outputs=SimpleNamespace(
+                    published=published if published is not None else str(automatic).lower(),
+                    tag=tag if automatic else "",
+                ),
+            ),
         ),
     }
 
@@ -163,7 +181,9 @@ class ReleaseWorkflowTest(unittest.TestCase):
         if condition and not evaluate(condition, context):
             return False
         needs = scalar(block, "needs", 4)
-        if needs:
+        # A status function overrides Actions' implicit success() requirement.
+        # Legacy release events intentionally run even though draft was skipped.
+        if needs and not re.search(r"\b(?:cancelled|always|failure|success)\(", condition):
             for dependency in needs.strip("[]").split(","):
                 if not self.eligible(dependency.strip(), context):
                     return False
@@ -177,12 +197,21 @@ class ReleaseWorkflowTest(unittest.TestCase):
             if self.eligible(name, context)
         }
 
-    def test_platforms_wait_for_published_formal_release(self) -> None:
+    def test_platforms_start_after_automatic_or_human_publication(self) -> None:
         cases = (
-            ({"event": "push"}, set()),
+            ({"event": "push"}, {"clawhub", "skillhub"}),
+            ({"event": "push", "ref_type": "tag"}, set()),
+            ({"event": "push", "create_draft": "false"}, set()),
+            ({"event": "push", "release_result": "failure"}, set()),
+            ({"event": "push", "release_result": "skipped"}, set()),
+            ({"event": "push", "published": "false"}, set()),
+            ({"event": "push", "attempt": 2}, set()),
+            ({"event": "push", "cancelled": True}, set()),
             ({"event": "workflow_dispatch", "preview": "artifact"}, set()),
             ({"event": "workflow_dispatch", "preview": "draft"}, set()),
+            ({"event": "workflow_dispatch", "preview": "publish", "published": "true", "release_result": "success"}, set()),
             ({"event": "release"}, {"clawhub", "skillhub"}),
+            ({"event": "release", "cancelled": True}, set()),
             ({"event": "release", "draft": True}, set()),
             ({"event": "release", "prerelease": True}, set()),
             ({"event": "release", "tag": "preview-v1.2.3-abc"}, set()),
@@ -217,14 +246,23 @@ class ReleaseWorkflowTest(unittest.TestCase):
                 self.assertTrue(self.eligible(name, context))
                 self.assertEqual(evaluate(scalar(block, "tag", 6), context), "v1.2.3")
 
-    def test_draft_and_artifact_events_never_start_platform_jobs(self) -> None:
+    def test_automatic_platforms_use_the_verified_release_tag(self) -> None:
+        context = event_context("push", tag="v1.2.4")
+        context["github"].event.release.tag_name = ""
+        for target, (name, block) in self.channels.items():
+            with self.subTest(target=target):
+                self.assertTrue(self.eligible(name, context))
+                self.assertEqual(evaluate(scalar(block, "tag", 6), context), "v1.2.4")
+
+    def test_preparation_runs_only_for_release_sources(self) -> None:
         draft_jobs = [
             name for name, block in self.jobs.items() if "--draft-only" in block
         ]
-        self.assertTrue(draft_jobs, "Formal draft creation must keep the release private")
+        self.assertTrue(draft_jobs, "Optional draft preparation must remain available")
         for event, preview, expected in (
             ("push", "artifact", True),
             ("workflow_dispatch", "draft", True),
+            ("workflow_dispatch", "publish", True),
             ("workflow_dispatch", "artifact", False),
             ("release", "artifact", False),
         ):
@@ -234,7 +272,7 @@ class ReleaseWorkflowTest(unittest.TestCase):
                     any(self.eligible(name, context) for name in draft_jobs), expected
                 )
 
-    def test_main_version_detector_controls_draft_but_never_platforms(self) -> None:
+    def test_main_version_detector_controls_preparation_and_publication(self) -> None:
         for create_draft in ("false", "true"):
             with self.subTest(create_draft=create_draft):
                 context = event_context("push", create_draft=create_draft)
@@ -243,7 +281,7 @@ class ReleaseWorkflowTest(unittest.TestCase):
                     self.eligible("draft", context), create_draft == "true"
                 )
                 for name, _ in self.channels.values():
-                    self.assertFalse(self.eligible(name, context))
+                    self.assertEqual(self.eligible(name, context), create_draft == "true")
 
     def test_manual_draft_requires_the_main_branch(self) -> None:
         script = step_script(
@@ -314,7 +352,8 @@ class ReleaseWorkflowTest(unittest.TestCase):
                         "-c", script,
                     ],
                     cwd=source, capture_output=True, text=True,
-                    env={**os.environ, "GITHUB_SHA": commit, "RELEASE_TAG": tag},
+                    env={**os.environ, "GITHUB_SHA": unmerged,
+                         "RELEASE_COMMIT": commit, "RELEASE_TAG": tag},
                 )
 
             ancestry = step_script(
@@ -327,7 +366,7 @@ class ReleaseWorkflowTest(unittest.TestCase):
                 self.jobs["draft"], "Pin the formal version tag to the verified source"
             )
             # Checkout deliberately remains on the newer, unmerged commit.
-            # The remote tag must still select GITHUB_SHA, never checkout HEAD.
+            # Recovery must select RELEASE_COMMIT, never GITHUB_SHA or checkout HEAD.
             for attempt in range(2):
                 with self.subTest(attempt=attempt):
                     result = run(pin, verified)
@@ -349,6 +388,65 @@ class ReleaseWorkflowTest(unittest.TestCase):
             git("push", "--quiet", "origin", "refs/tags/v1.2.5")
             result = run(pin, verified, "v1.2.5")
             self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_publication_mode_and_failure_propagation(self) -> None:
+        step = next(
+            step for step in re.split(r"^      - name: ", self.jobs["draft"], flags=re.MULTILINE)[1:]
+            if step.splitlines()[0] == "Upload, verify and publish the formal Release"
+        )
+        self.assertEqual(scalar(step, "shell", 8), "bash")
+        script = step_script(self.jobs["draft"], "Upload, verify and publish the formal Release")
+        for publish, exit_code in (("true", 0), ("false", 0), ("true", 23)):
+            with self.subTest(publish=publish, exit_code=exit_code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                (root / "dist/candidate").mkdir(parents=True)
+                executable = root / "bin/python3"
+                executable.parent.mkdir()
+                executable.write_text(
+                    '#!/bin/sh\n'
+                    'printf "%s\\n" "$@" > "$ARGUMENTS_FILE"\n'
+                    'mkdir -p release-notes\n'
+                    'printf "%s\\n" "Release notes" > release-notes/release-notes.md\n'
+                    'printf "%s\\n" "https://github.com/example/skills/releases/tag/v1.2.3"\n'
+                    'exit "$PUBLICATION_EXIT_CODE"\n'
+                )
+                executable.chmod(0o755)
+                output = root / "github-output"
+                output.touch()
+                result = subprocess.run(
+                    ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", script],
+                    cwd=root, capture_output=True, text=True,
+                    env={
+                        **os.environ,
+                        "PATH": str(executable.parent) + os.pathsep + os.environ["PATH"],
+                        "ARGUMENTS_FILE": str(root / "arguments"),
+                        "PUBLICATION_EXIT_CODE": str(exit_code),
+                        "RELEASE_COMMIT": "a" * 40,
+                        "GITHUB_SHA": "b" * 40,
+                        "RELEASE_TAG": "v1.2.3",
+                        "PUBLISH_RELEASE": publish,
+                        "GITHUB_OUTPUT": str(output),
+                        "GITHUB_STEP_SUMMARY": str(root / "summary"),
+                    },
+                )
+                arguments = (root / "arguments").read_text().splitlines()
+                self.assertEqual(arguments[arguments.index("--commit") + 1], "a" * 40)
+                self.assertEqual("--draft-only" in arguments, publish == "false")
+                if exit_code:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertEqual(output.read_text(), "")
+                else:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(output.read_text(), f"published={publish}\n")
+
+    def test_release_notes_artifact_keeps_retry_attempts_separate(self) -> None:
+        step = next(
+            step for step in re.split(r"^      - name: ", self.jobs["draft"], flags=re.MULTILINE)[1:]
+            if step.splitlines()[0] == "Save Release notes"
+        )
+        name = scalar(step, "name", 10)
+        self.assertIn("needs.release_source.outputs.commit", name)
+        self.assertIn("github.run_attempt", name)
 
 
 class ReleaseSourceDetectorTest(unittest.TestCase):
@@ -396,6 +494,7 @@ class ReleaseSourceDetectorTest(unittest.TestCase):
         self, head: str, *, before: str | None = None,
         event: str = "push", ref_type: str = "branch", ref_name: str = "main",
         expected_version: str = "1.2.3",
+        preview: str = "draft", source_commit: str = "",
     ) -> tuple[subprocess.CompletedProcess[str], dict[str, str]]:
         output = self.root / "github-output"
         output.write_text("")
@@ -413,6 +512,8 @@ class ReleaseSourceDetectorTest(unittest.TestCase):
                 "GITHUB_SHA": head,
                 "PUSH_BEFORE": self.before if before is None else before,
                 "EXPECTED_VERSION": expected_version,
+                "PREVIEW_TYPE": preview,
+                "SOURCE_COMMIT": source_commit,
                 "GITHUB_OUTPUT": str(output),
                 "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "scripts"),
             },
@@ -422,14 +523,14 @@ class ReleaseSourceDetectorTest(unittest.TestCase):
         )
         return result, outputs
 
-    def test_version_change_alone_prepares_a_draft_from_event_commit(self) -> None:
+    def test_version_increase_publishes_from_the_exact_merge_commit(self) -> None:
         verified = self.commit_skill("1.2.4")
         self.commit_skill("9.9.9", "Unrelated later checkout changes")
         result, outputs = self.detect(verified)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(
             outputs,
-            {"create_draft": "true", "version": "1.2.4", "tag": "v1.2.4", "commit": verified},
+            {"create_draft": "true", "publish_release": "true", "version": "1.2.4", "tag": "v1.2.4", "commit": verified},
         )
 
     def test_body_change_with_the_same_version_does_not_prepare_a_draft(self) -> None:
@@ -437,6 +538,7 @@ class ReleaseSourceDetectorTest(unittest.TestCase):
         result, outputs = self.detect(head)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(outputs.get("create_draft"), "false")
+        self.assertEqual(outputs.get("publish_release"), "false")
 
     def test_ordinary_main_commit_does_not_prepare_a_draft(self) -> None:
         (self.repo / "README.md").write_text("An ordinary repository change\n")
@@ -445,11 +547,13 @@ class ReleaseSourceDetectorTest(unittest.TestCase):
         result, outputs = self.detect(self.git("rev-parse", "HEAD"))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(outputs.get("create_draft"), "false")
+        self.assertEqual(outputs.get("publish_release"), "false")
 
     def test_initial_main_push_does_not_create_a_release_without_a_baseline(self) -> None:
         result, outputs = self.detect(self.before, before="0" * 40)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(outputs.get("create_draft"), "false")
+        self.assertEqual(outputs.get("publish_release"), "false")
 
     def test_missing_baseline_fails_before_preparing_a_draft(self) -> None:
         head = self.commit_skill("1.2.4")
@@ -482,9 +586,52 @@ class ReleaseSourceDetectorTest(unittest.TestCase):
                 )
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(outputs.get("create_draft"), "true")
+                self.assertEqual(outputs.get("publish_release"), "false")
                 self.assertEqual(outputs.get("version"), "1.2.3")
                 self.assertEqual(outputs.get("tag"), "v1.2.3")
                 self.assertEqual(outputs.get("commit"), self.before)
+
+    def test_manual_publish_recovers_original_commit_after_main_advances(self) -> None:
+        merged = self.commit_skill("1.2.4")
+        latest = self.commit_skill("1.2.5", "A later release")
+        result, outputs = self.detect(
+            latest, event="workflow_dispatch", preview="publish",
+            source_commit=merged, expected_version="1.2.4",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(outputs.get("commit"), merged)
+        self.assertEqual(outputs.get("version"), "1.2.4")
+        self.assertEqual(outputs.get("publish_release"), "true")
+
+    def test_manual_publish_rejects_missing_non_sha_and_mismatched_source(self) -> None:
+        for source_commit, expected_version in (
+            ("", "1.2.3"),
+            ("main", "1.2.3"),
+            (self.before[:7], "1.2.3"),
+            ("1" * 40, "1.2.3"),
+            (self.before, "1.2.4"),
+        ):
+            with self.subTest(source_commit=source_commit, expected_version=expected_version):
+                result, outputs = self.detect(
+                    self.before, event="workflow_dispatch", preview="publish",
+                    source_commit=source_commit, expected_version=expected_version,
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotEqual(outputs.get("publish_release"), "true")
+
+    def test_manual_publish_requires_main_and_artifact_mode_has_no_publication(self) -> None:
+        for preview, ref_type, ref_name in (
+            ("publish", "branch", "feature/version"),
+            ("publish", "tag", "v1.2.3"),
+            ("artifact", "branch", "main"),
+        ):
+            with self.subTest(preview=preview, ref_type=ref_type, ref_name=ref_name):
+                result, outputs = self.detect(
+                    self.before, event="workflow_dispatch", preview=preview,
+                    source_commit=self.before, ref_type=ref_type, ref_name=ref_name,
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotEqual(outputs.get("publish_release"), "true")
 
 
 if __name__ == "__main__":
