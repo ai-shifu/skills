@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI-Shifu WorkBuddy Publisher"
+  short_description: "Download and submit AI-Shifu WorkBuddy expert updates"
+  default_prompt: "Use $ai-shifu-workbuddy-publisher to download the latest stable AI-Shifu Skills WorkBuddy package, upload it to the open platform, and verify its review submission."

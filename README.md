@@ -19,6 +19,7 @@ skills/
   course-direction-advisor/
 tools/
   ai-shifu-skill-release/
+  ai-shifu-workbuddy-publisher/
 ```
 
 ## Build and Release Tools
@@ -34,6 +35,8 @@ python3 scripts/release.py verify dist/<release-id>
 ```
 
 Use the exact release directory printed by `build`. Building and verifying do not upload packages. See the tool README for `release.toml` configuration, channel-specific dependencies, and publication commands. Maintainer agents can read the tool's [release skill](tools/ai-shifu-skill-release/SKILL.md); it is separate from the three business skills above.
+
+The [WorkBuddy Publisher skill](tools/ai-shifu-workbuddy-publisher/SKILL.md) downloads and checks a published WorkBuddy package, updates the existing AI-Shifu expert through an authenticated browser, and verifies submission for review. It defaults to the latest stable Release and skips duplicate submissions when that version is already published or under review.
 
 ## Learning Report Path
 

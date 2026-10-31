@@ -19,6 +19,7 @@ skills/
   course-direction-advisor/
 tools/
   ai-shifu-skill-release/
+  ai-shifu-workbuddy-publisher/
 ```
 
 ## 构建与发布工具
@@ -34,6 +35,8 @@ python3 scripts/release.py verify dist/<release-id>
 ```
 
 校验时使用 `build` 实际输出的发布目录。构建与校验不会上传；`release.toml` 发布配置、各渠道依赖和发布命令见工具目录的英文 README。维护者可读取[发布 Skill](tools/ai-shifu-skill-release/SKILL.md)，它与上方三个业务 Skill 分开维护。工程说明使用英文，渠道包内的中文提示词与展示文案保持原样。
+
+[WorkBuddy 上传 Skill](tools/ai-shifu-workbuddy-publisher/SKILL.md) 用于下载并校验已发布的 WorkBuddy 安装包，通过已登录的浏览器更新现有 AI师傅专家，并核实提交审核的结果。默认获取最新正式 Release；同版本已发布或正在审核时，跳过重复提交。
 
 ## 学习报告路径
 
