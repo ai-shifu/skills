@@ -1,5 +1,5 @@
 {
-  "spec_version": "0.1.8",
+  "spec_version": "0.1.9",
   "cases": [
     {
       "name": "empty environment",
@@ -2101,6 +2101,99 @@
       "expected": {
         "agent_id": null,
         "evidence": "declared"
+      }
+    },
+    {
+      "name": "lingguang exec origin marker",
+      "env": {
+        "EXEC_FROM": "synthetic-origin"
+      },
+      "expected": {
+        "agent_id": "lingguang",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "lingguang zero value is non-empty",
+      "env": {
+        "EXEC_FROM": "0"
+      },
+      "expected": {
+        "agent_id": "lingguang",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "lingguang false string is non-empty",
+      "env": {
+        "EXEC_FROM": "false"
+      },
+      "expected": {
+        "agent_id": "lingguang",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "lingguang whitespace-only marker is non-empty",
+      "env": {
+        "EXEC_FROM": " "
+      },
+      "expected": {
+        "agent_id": "lingguang",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "lingguang empty marker fails",
+      "env": {
+        "EXEC_FROM": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "lingguang prefixed configuration name does not match",
+      "env": {
+        "EXEC_FROM_CONTEXT": "synthetic-context"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "lingguang runtime marker wins editor hint",
+      "env": {
+        "EXEC_FROM": "synthetic-origin",
+        "ZED_TERM": "1"
+      },
+      "expected": {
+        "agent_id": "lingguang",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "instinct runtime marker wins over lingguang inherited marker",
+      "env": {
+        "INSTINCT_OUTER_TOOL_USE_ID": "synthetic-tool-use",
+        "EXEC_FROM": "synthetic-origin"
+      },
+      "expected": {
+        "agent_id": "instinct",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "devin runtime marker wins over lingguang inherited marker",
+      "env": {
+        "DEVIN_DISABLE_HISTEXPAND": "1",
+        "EXEC_FROM": "synthetic-origin"
+      },
+      "expected": {
+        "agent_id": "devin",
+        "evidence": "runtime-marker"
       }
     }
   ]

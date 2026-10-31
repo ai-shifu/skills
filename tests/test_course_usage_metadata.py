@@ -77,6 +77,7 @@ class CallerDetectionTests(unittest.TestCase):
             "replit": "Replit",
             "devin": "Devin",
             "instinct": "Instinct",
+            "lingguang": "Lingguang",
             "zed": "Zed",
             "hi": "hi",
             "sandbase-harness": "SandBase Harness",
@@ -100,6 +101,7 @@ class CallerDetectionTests(unittest.TestCase):
             {}, {"AI_AGENT": "unregistered", "CODEX_THREAD_ID": "1"},
             {"GOOSE_PROVIDER": "synthetic-provider"}, {"CURSOR_TRACE_ID": "synthetic"},
             {"COPILOT_GITHUB_TOKEN": "synthetic-secret"}, {"PATH": "/opt/.pi/agent/bin"},
+            {"EXEC_FROM_CONTEXT": "synthetic-context"},
         ):
             self.assertEqual(cli._detect_caller_agent(env), "unknown")
         self.assertEqual(cli._detect_caller_agent({"AI_AGENT": " CLAUDE_CODE "}), "claude-code")
@@ -120,11 +122,12 @@ class CallerDetectionTests(unittest.TestCase):
             "SAND_AGENT": "1", "CURSOR_AGENT": "1", "HERMES_SESSION_ID": "1",
         }), "hermes-agent")
 
-    def test_cue_and_devin_runtime_markers_use_nonempty_values(self):
+    def test_cue_devin_and_lingguang_runtime_markers_use_nonempty_values(self):
         for marker, family in (
             ("MANUS_OPERATOR_PLATFORM", "cue"),
             ("DEVIN_DIR", "devin"),
             ("DEVIN_DISABLE_HISTEXPAND", "devin"),
+            ("EXEC_FROM", "lingguang"),
         ):
             with self.subTest(marker=marker):
                 self.assertEqual(cli._detect_caller_agent({marker: ""}), "unknown")
@@ -173,6 +176,23 @@ class CallerDetectionTests(unittest.TestCase):
         self.assertEqual(cli._detect_caller_agent({
             "INSTINCT_OUTER_TOOL_USE_ATTEMPT": "synthetic-attempt",
         }), "unknown")
+
+    def test_lingguang_preserves_declaration_and_runtime_priority(self):
+        cases = (
+            ({"AI_AGENT": "codex"}, "codex"),
+            ({"AI_AGENT": "unregistered"}, "unknown"),
+            ({"AGENT": "claude_code"}, "claude-code"),
+            ({"AGENT": "unregistered"}, "unknown"),
+            ({"AI_AGENT": " LINGGUANG ", "CODEX_THREAD_ID": "1"}, "lingguang"),
+            ({"CODEX_THREAD_ID": "1"}, "codex"),
+            ({"CLAUDECODE": "1"}, "claude-code"),
+            ({"OPENCLAW_SHELL": "1"}, "openclaw"),
+            ({"DEVIN_DIR": "/synthetic/devin"}, "devin"),
+            *(({marker: "1"}, "instinct") for marker in INSTINCT_RUNTIME_MARKERS),
+        )
+        for environment, expected in cases:
+            with self.subTest(environment=environment):
+                self.assertEqual(cli._detect_caller_agent({"EXEC_FROM": "1", **environment}), expected)
 
 
 class AutomaticUpdateMetadataTests(unittest.TestCase):
@@ -341,6 +361,9 @@ class UsageTransportTests(unittest.TestCase):
             ({"MANUS_OPERATOR_PLATFORM": "/synthetic/private-session/cue"}, "cue", "Cue"),
             ({"DEVIN_DIR": "/synthetic/private-session/devin"}, "devin", "Devin"),
             ({"DEVIN_DISABLE_HISTEXPAND": "false"}, "devin", "Devin"),
+            ({"EXEC_FROM": "private-lingguang-source\r\nInjected: value"}, "lingguang", "Lingguang"),
+            ({"EXEC_FROM": ""}, "unknown", "Unknown Agent"),
+            ({"EXEC_FROM_CONTEXT": "private-lingguang-context"}, "unknown", "Unknown Agent"),
         )
         for environment, family, name in cases:
             with self.subTest(family=family, name=name):
@@ -355,6 +378,9 @@ class UsageTransportTests(unittest.TestCase):
                     "X-AI-Shifu-Caller-Agent": family,
                     "X-AI-Shifu-Caller-Agent-Name": name,
                 })
+                captured = repr(self.captured_requests())
+                self.assertNotIn("private-lingguang", captured)
+                self.assertNotIn("EXEC_FROM", captured)
                 self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
 
     def test_instinct_attribution_is_bounded_on_all_business_transports(self):
