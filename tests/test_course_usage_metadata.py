@@ -114,6 +114,39 @@ class CallerDetectionTests(unittest.TestCase):
             "SAND_AGENT": "1", "CURSOR_AGENT": "1", "HERMES_SESSION_ID": "1",
         }), "hermes-agent")
 
+    def test_cue_and_devin_runtime_markers_use_nonempty_values(self):
+        for marker, family in (
+            ("MANUS_OPERATOR_PLATFORM", "cue"),
+            ("DEVIN_DIR", "devin"),
+            ("DEVIN_DISABLE_HISTEXPAND", "devin"),
+        ):
+            with self.subTest(marker=marker):
+                self.assertEqual(cli._detect_caller_agent({marker: ""}), "unknown")
+                for value in ("0", "false", " ", "/synthetic/private-session/agent-data"):
+                    with self.subTest(value=value):
+                        self.assertEqual(cli._detect_caller_agent({marker: value}), family)
+                        self.assertEqual(cli._detect_caller_agent({
+                            "AI_AGENT": "unregistered", marker: value,
+                        }), "unknown")
+
+    def test_cue_and_devin_preserve_declaration_and_runtime_priority(self):
+        cases = (
+            ({"AI_AGENT": "codex", "MANUS_OPERATOR_PLATFORM": "1"}, "codex"),
+            ({"MANUS_OPERATOR_PLATFORM": "1", "MANUS_ADDON_RUNTIME_SPEC_PATH": "1"}, "cue"),
+            ({"MANUS_OPERATOR_PLATFORM": "1", "CODEX_THREAD_ID": "1"}, "cue"),
+            ({"HERMES_AGENT": "1", "MANUS_OPERATOR_PLATFORM": "1"}, "hermes-agent"),
+        )
+        for marker in ("DEVIN_DIR", "DEVIN_DISABLE_HISTEXPAND"):
+            cases += (
+                ({marker: "1", "CODEX_THREAD_ID": "1"}, "codex"),
+                ({marker: "1", "OPENCLAW_SHELL": "1"}, "openclaw"),
+                ({marker: "1", "PATH": "/opt/.pi/agent/bin", "COPILOT_MODEL": "synthetic",
+                  "CURSOR_TRACE_ID": "synthetic"}, "devin"),
+            )
+        for environment, expected in cases:
+            with self.subTest(environment=environment):
+                self.assertEqual(cli._detect_caller_agent(environment), expected)
+
 
 class AutomaticUpdateMetadataTests(unittest.TestCase):
     def test_update_worker_excludes_business_authentication_and_usage_headers(self):
@@ -242,7 +275,7 @@ class UsageTransportTests(unittest.TestCase):
             metadata = {key: value for key, value in headers.items() if key.startswith("X-AI-Shifu-")}
             self.assertEqual(metadata, expected)
             self.assertNotIn("User-Agent", headers)
-            self.assertNotIn("private-session", headers.values())
+            self.assertNotIn("private-session", json.dumps(headers))
             if "/creator-analytics/" in call.args[0]:
                 self.assertEqual(headers["Authorization"], "Bearer auth-token")
                 self.assertEqual(headers["Token"], "auth-token")
@@ -278,6 +311,9 @@ class UsageTransportTests(unittest.TestCase):
             ({"CODEX_THREAD_ID": ""}, "unknown", "Unknown Agent"),
             ({"VTCODE": "0"}, "vtcode", "VT Code"),
             ({"MANUS_LONG_DESKTOP_WORKER": "false"}, "cue", "Cue"),
+            ({"MANUS_OPERATOR_PLATFORM": "/synthetic/private-session/cue"}, "cue", "Cue"),
+            ({"DEVIN_DIR": "/synthetic/private-session/devin"}, "devin", "Devin"),
+            ({"DEVIN_DISABLE_HISTEXPAND": "false"}, "devin", "Devin"),
         )
         for environment, family, name in cases:
             with self.subTest(family=family, name=name):

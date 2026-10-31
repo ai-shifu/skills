@@ -1,4 +1,4 @@
-"""Local implementation of ai-shifu/detect_agent 0.1.5 (MIT).
+"""Local implementation of ai-shifu/detect-agent 0.1.7 (MIT).
 
 Specification attribution (MIT License):
 Copyright (c) 2026 ai-shifu
@@ -28,8 +28,8 @@ import os
 from collections.abc import Callable, Mapping
 
 
-SPEC_VERSION = "0.1.5"
-SPEC_COMMIT = "9eee13ebdd8dcee22bd90b03125fa9f509a80be1"
+SPEC_VERSION = "0.1.7"
+SPEC_COMMIT = "6f3c1fdc49873b08bf65c2fde86b3efa0b6beb9a"
 
 # Product spelling is also the bounded CLI display-name contract. Context-only
 # products are reportable only when explicitly declared, not from a context hint.
@@ -96,7 +96,7 @@ _RUNTIME_RULES = (
         (("CURSOR_AGENT", None), ("SAND_MANIFEST_V2", None), ("SAND_SUPERVISOR_ENABLED", None)),
     )),
     ("qwenwork", ((("QODER_WORK_INTEGRATION_PRODUCT", None),),)),
-    ("cue", ((("MANUS_LONG_DESKTOP_WORKER", None),),)),
+    ("cue", ((("MANUS_LONG_DESKTOP_WORKER", None),), (("MANUS_OPERATOR_PLATFORM", None),))),
     ("muse", ((("JARVIS_IS_ASSIGNED", None),), (("JARVIS_TOOL_CALL_ID", None),))),
     ("manus", ((("MANUS_ADDON_RUNTIME_SPEC_PATH", None),), (("MANUS_ADDON_RUNTIME_SPECS_REVISION", None),))),
     ("doubao-work", ((("DOUBAO_OFFICE_AGENT_NAME", None),),)),
@@ -122,6 +122,8 @@ _RUNTIME_RULES = (
     ("cursor-cli", ((("CURSOR_AGENT", None),), (("CURSOR_EXTENSION_HOST_ROLE", "agent-exec"),))),
     ("kiro", ((("AGENT_CONTEXT_OUT", None),),)),
     ("openclaw", ((("OPENCLAW_SHELL", None),),)),
+    # Nested agent CLI markers take precedence over inherited Devin markers.
+    ("devin", ((("DEVIN_DIR", None),), (("DEVIN_DISABLE_HISTEXPAND", None),))),
 )
 
 
