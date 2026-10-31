@@ -1356,6 +1356,12 @@ class CourseCreatorContractTests(unittest.TestCase):
                 self.assertIsInstance(case["files"], list)
                 self.assertGreaterEqual(len(case["expectations"]), 2)
                 self.assertTrue(all(value.strip() for value in case["expectations"]))
+                followup_turns = case.get("followup_turns", [])
+                self.assertIsInstance(followup_turns, list)
+                for turn_index, message in enumerate(followup_turns, start=2):
+                    with self.subTest(turn=turn_index):
+                        self.assertIsInstance(message, str)
+                        self.assertTrue(message.strip())
 
     def assert_eval_family(self, case_ids: tuple[int, ...], concepts: tuple[str, ...]):
         for case_id in case_ids:

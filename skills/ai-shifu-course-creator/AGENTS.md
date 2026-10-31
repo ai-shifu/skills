@@ -17,6 +17,7 @@
 | `SKILL.md` | Define skill discovery metadata, shared conventions, user-facing Markdown links, conditional teacher collaboration and confirmation timing, the teaching design / MarkdownFlow expression / CLI operation categories, automatic platform updates for new and existing courses, and full-course default publication. It leaves flexible invocation order to the using agent and capability mechanics to references. |
 | `agents/openai.yaml` | Define ChatGPT's display label, short description, and starter prompt for this skill. Discovery behavior remains in `SKILL.md`. |
 | `.env.example` | Document supported service-selection, token, and usage-analytics opt-out variables with safe empty defaults, credential-storage guidance, and the user-facing account-linked usage notice. |
+| `evals/README.md` | Own the maintainer evaluation protocol, including separate-turn execution, evidence capture, revision comparisons, and the limits of static checks. It does not define course-authoring behavior. |
 | `evals/evals.json` | Hold end-to-end behavioral scenarios, optional input fixtures, and expected outcomes for capability use, authoring, platform, analytics, and boundary regressions. Canonical guidance remains the source of behavior. |
 | `evals/trigger_eval.json` | Test whether representative requests should or should not discover this skill. Keep capability and trigger wording canonical in `SKILL.md` frontmatter. |
 
