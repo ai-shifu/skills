@@ -34,6 +34,11 @@ EXPECTED_METADATA = {
     "X-AI-Shifu-Caller-Agent": "codex",
     "X-AI-Shifu-Caller-Agent-Name": "Codex",
 }
+INSTINCT_RUNTIME_MARKERS = (
+    "INSTINCT_OUTER_TOOL_USE_ID",
+    "INSTINCT_OUTER_TOOL_USE_STARTED_AT",
+    "INSTINCT_OUTER_TOOL_USE_TIMEOUT_SECONDS",
+)
 
 
 class CallerDetectionTests(unittest.TestCase):
@@ -71,6 +76,7 @@ class CallerDetectionTests(unittest.TestCase):
             "github-copilot": "GitHub Copilot",
             "replit": "Replit",
             "devin": "Devin",
+            "instinct": "Instinct",
             "zed": "Zed",
             "hi": "hi",
             "sandbase-harness": "SandBase Harness",
@@ -146,6 +152,27 @@ class CallerDetectionTests(unittest.TestCase):
         for environment, expected in cases:
             with self.subTest(environment=environment):
                 self.assertEqual(cli._detect_caller_agent(environment), expected)
+
+    def test_instinct_markers_preserve_nonempty_values_and_nested_agent_priority(self):
+        for marker in INSTINCT_RUNTIME_MARKERS:
+            with self.subTest(marker=marker):
+                self.assertEqual(cli._detect_caller_agent({marker: ""}), "unknown")
+                for value in ("0", "false", " ", "private-instinct-call"):
+                    with self.subTest(value=value):
+                        self.assertEqual(cli._detect_caller_agent({marker: value}), "instinct")
+                for nested, expected in (
+                    ({"AI_AGENT": "codex"}, "codex"),
+                    ({"AI_AGENT": "unregistered"}, "unknown"),
+                    ({"CODEX_THREAD_ID": "private-session"}, "codex"),
+                    ({"CLAUDECODE": "1"}, "claude-code"),
+                    ({"OPENCLAW_SHELL": "1"}, "openclaw"),
+                    ({"DEVIN_DIR": "/synthetic/devin"}, "devin"),
+                ):
+                    with self.subTest(nested=nested):
+                        self.assertEqual(cli._detect_caller_agent({marker: "1", **nested}), expected)
+        self.assertEqual(cli._detect_caller_agent({
+            "INSTINCT_OUTER_TOOL_USE_ATTEMPT": "synthetic-attempt",
+        }), "unknown")
 
 
 class AutomaticUpdateMetadataTests(unittest.TestCase):
@@ -328,6 +355,35 @@ class UsageTransportTests(unittest.TestCase):
                     "X-AI-Shifu-Caller-Agent": family,
                     "X-AI-Shifu-Caller-Agent-Name": name,
                 })
+                self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
+
+    def test_instinct_attribution_is_bounded_on_all_business_transports(self):
+        cases = [
+            ({marker: f"private-instinct-{marker}\r\nInjected: value"}, "instinct", "Instinct")
+            for marker in INSTINCT_RUNTIME_MARKERS
+        ]
+        cases.extend((
+            (dict.fromkeys(INSTINCT_RUNTIME_MARKERS, ""), "unknown", "Unknown Agent"),
+            ({"INSTINCT_OUTER_TOOL_USE_ATTEMPT": "private-instinct-attempt"}, "unknown", "Unknown Agent"),
+            ({"INSTINCT_OUTER_TOOL_USE_ID": "private-instinct-call", "CODEX_THREAD_ID": "private-session"}, "codex", "Codex"),
+        ))
+        for environment, family, name in cases:
+            with self.subTest(environment=environment):
+                os.environ.clear()
+                os.environ.update(environment)
+                self.get.reset_mock()
+                self.post.reset_mock()
+                with mock.patch.object(cli, "cmd_list", side_effect=self.all_business_transports):
+                    self.run_cli("list")
+                self.assert_usage_headers({
+                    **EXPECTED_METADATA,
+                    "X-AI-Shifu-Caller-Agent": family,
+                    "X-AI-Shifu-Caller-Agent-Name": name,
+                })
+                captured = repr(self.captured_requests())
+                self.assertNotIn("private-instinct", captured)
+                for marker in environment:
+                    self.assertNotIn(marker, captured)
                 self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
 
     def test_dotenv_cannot_forge_caller_and_detection_runs_once(self):
