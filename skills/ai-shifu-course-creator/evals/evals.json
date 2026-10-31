@@ -1421,11 +1421,11 @@
       "expected_output": "Uses each complete authored question as the prefix of every newly generated response control while keeping an action-only navigation button simple.",
       "files": [],
       "expectations": [
-        "A retains the full question and uses exactly ?[{{你想先练哪项核验能力？}} 核验来源 | 核对计算]. B retains the full question and uses exactly ?[{{你想练哪些核验能力？}} 核验来源 || 核对计算]. Both prefixes include the complete question and its Chinese question mark, preserving option order and answer mode.",
-        "C retains the full question and uses exactly ?[{{最近一次核验遇到了什么困难？}} ...请描述实际困难]. The prefix carries the complete question rather than the input hint, an abbreviated label, or a programmatic key.",
-        "D retains the full question and uses exactly ?[{{你最常核验什么来源？}} 同事消息 | 外部网页 | ...其他来源]. E retains the full question and uses exactly ?[{{你常核验哪些来源？}} 同事消息 || 外部网页 || ...其他来源]. Custom input remains available in both, with single-select and multi-select modes respectively.",
+        "A retains the full question and uses a control such as ?[ {{你想先练哪项核验能力？}} 核验来源 | 核对计算]. B retains the full question and uses a control such as ?[ {{你想练哪些核验能力？}} 核验来源 || 核对计算]. Both prefixes include the complete question and its Chinese question mark, preserving option order and answer mode.",
+        "C retains the full question and uses a control such as ?[ {{最近一次核验遇到了什么困难？}} ...请描述实际困难]. The prefix carries the complete question rather than the input hint, an abbreviated label, or a programmatic key.",
+        "D retains the full question and uses a control such as ?[ {{你最常核验什么来源？}} 同事消息 | 外部网页 | ...其他来源]. E retains the full question and uses a control such as ?[ {{你常核验哪些来源？}} 同事消息 || 外部网页 || ...其他来源]. Custom input remains available in both, with single-select and multi-select modes respectively.",
         "F uses ?[Continue] without inventing a question, question prefix, background collection, or answer field for an action-only navigation control.",
-        "The five question prefixes immediately follow ?[ and precede options or the input hint. Each complete question in its prefix is sufficient; no separate question text before the control is required. The controls add no bare substitution reads, variable table, or explicit save step; all actual course inputs remain automatically available through memory.",
+        "The five question prefixes appear at the start of the control body, before options or the input hint. Each complete question in its prefix is sufficient; no separate question text before the control is required. The controls add no bare substitution reads, variable table, or explicit save step; all actual course inputs remain automatically available through memory.",
         "Every question waits for its actual answer before its one brief feedback instruction. The result remains local, executable outside comments and deterministic blocks, and makes no claim of a verified live interaction."
       ]
     },
@@ -1444,7 +1444,7 @@
     },
     {
       "id": 116,
-      "prompt": "只审阅下面这段本地授课提示词的互动编码，列出确实存在的问题；不要改写、补写或访问平台。作者没有要求在控件外单独写问题。\n\n<!-- 学员能选择收到可疑消息后的优先动作 -->\n?[{{收到可疑消息时，你先做什么？}} 核验来源 | 直接转发]\n等待学员本次真实选择后，针对所选动作给一句反馈，再继续。\n\n<!-- 学员能描述实际遇到的核验困难 -->\n?[{{最近一次核验遇到了什么困难？}} ...请描述实际困难]\n等待学员本次真实输入后，围绕实际困难给一句反馈，不虚构学员经历。",
+      "prompt": "只审阅下面这段本地授课提示词的互动编码，列出确实存在的问题；不要改写、补写或访问平台。作者没有要求在控件外单独写问题。\n\n<!-- 学员能选择收到可疑消息后的优先动作 -->\n?[ {{收到可疑消息时，你先做什么？}} 核验来源 | 直接转发]\n等待学员本次真实选择后，针对所选动作给一句反馈，再继续。\n\n<!-- 学员能描述实际遇到的核验困难 -->\n?[ {{最近一次核验遇到了什么困难？}} ...请描述实际困难]\n等待学员本次真实输入后，围绕实际困难给一句反馈，不虚构学员经历。",
       "expected_output": "Accepts standalone response controls whose full questions appear in their prefixes, without requiring duplicate preceding question text.",
       "files": [],
       "expectations": [
@@ -1459,7 +1459,7 @@
       "expected_output": "Includes a complete imperative response task in its control prefix, with the same coverage as a question and without turning a navigation action into another task.",
       "files": [],
       "expectations": [
-        "The text-input control is ?[{{把“整理客户反馈”改写为包含行动、负责人和截止时间的一条计划。}} ...写下修改后的计划], preserving the full imperative task and punctuation rather than replacing it with a question, topic label, answer, or programmatic key.",
+        "The text-input control includes the complete task, for example ?[ {{把“整理客户反馈”改写为包含行动、负责人和截止时间的一条计划。}} ...写下修改后的计划], preserving the full imperative task and punctuation rather than replacing it with a question, topic label, answer, or programmatic key.",
         "The complete task appears once inside the prefix and is not repeated before the control. Imperative response tasks receive the same complete-prefix treatment as questions; an ending question mark is not a prerequisite.",
         "The Prompt waits for the current actual input, then gives one brief feedback instruction checking action, owner, and deadline. It does not invent an answer or add another collection question.",
         "The final navigation control is ?[继续] without an invented question or response-task prefix. Automatic course memory remains available without substitution reads, variable tables, or a separate save step.",
