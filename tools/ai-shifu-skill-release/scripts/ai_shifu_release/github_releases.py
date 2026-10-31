@@ -145,7 +145,7 @@ def publish(
     repository = os.environ.get("GITHUB_REPOSITORY", "")
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         raise ValueError("GITHUB_REPOSITORY is required")
-    if draft_only:
+    if not draft_preview:
         tagged_commit = json.loads(
             gh("api", f"repos/{repository}/commits/{tag}").stdout
         )
@@ -158,7 +158,7 @@ def publish(
         "--repo",
         repository,
         "--json",
-        "isDraft,assets,body",
+        "isDraft,isPrerelease,assets,body",
         check=False,
     )
     if existing.returncode:
@@ -189,9 +189,11 @@ def publish(
             "--repo",
             repository,
             "--json",
-            "isDraft,assets,body",
+            "isDraft,isPrerelease,assets,body",
         )
     release = json.loads(existing.stdout)
+    if not draft_preview and release["isPrerelease"]:
+        raise ValueError("Formal Release must not be a prerelease")
     if draft_preview and not release["isDraft"]:
         raise ValueError("Preview Release is already public; refusing to change it")
     if draft_only and not release["isDraft"]:
@@ -241,13 +243,17 @@ def publish(
             "--repo",
             repository,
             "--json",
-            "isDraft,assets,url,body",
+            "isDraft,isPrerelease,assets,url,body,tagName",
         ).stdout
     )
+    if not draft_preview and final["isPrerelease"]:
+        raise ValueError("Formal Release must not be a prerelease")
     if {item["name"] for item in final["assets"]} != expected_assets:
         raise ValueError("Release asset set is incomplete")
     if final.get("body", "").strip() != expected_body.strip():
         raise ValueError("Draft release notes readback differs from the expected body")
+    if final["tagName"] != tag:
+        raise ValueError("Release tag differs from the requested version")
     if (draft_only or draft_preview) and not final["isDraft"]:
         raise ValueError("Release is already public; refusing to change it")
     with tempfile.TemporaryDirectory() as temporary:
@@ -270,8 +276,28 @@ def publish(
     if final["isDraft"] and not (draft_only or draft_preview):
         gh("release", "edit", tag, "--repo", repository, "--draft=false")
         final = json.loads(
-            gh("release", "view", tag, "--repo", repository, "--json", "url").stdout
+            gh(
+                "release",
+                "view",
+                tag,
+                "--repo",
+                repository,
+                "--json",
+                "isDraft,isPrerelease,assets,url,body,tagName",
+            ).stdout
         )
+        if final["isPrerelease"]:
+            raise ValueError("Formal Release must not be a prerelease")
+        if final["isDraft"]:
+            raise ValueError(
+                "Release publication did not take effect; retry the same version"
+            )
+        if final["tagName"] != tag:
+            raise ValueError("Published Release tag differs from the requested version")
+        if {item["name"] for item in final["assets"]} != expected_assets:
+            raise ValueError("Published Release asset set differs from the verified draft")
+        if final.get("body", "").strip() != expected_body.strip():
+            raise ValueError("Published Release notes differ from the verified draft")
     return final["url"]
 
 

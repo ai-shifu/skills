@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from ai_shifu_release import github_releases
@@ -14,6 +15,11 @@ from support import ReleaseFixture
 
 
 class GitHubReleaseTest(unittest.TestCase):
+    def tag_response(self) -> SimpleNamespace:
+        return SimpleNamespace(
+            returncode=0, stdout=json.dumps({"sha": self.commit})
+        )
+
     def test_reversed_note_markers_are_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "invalid generated"):
             github_releases.refresh_body(
@@ -83,15 +89,88 @@ class GitHubReleaseTest(unittest.TestCase):
                 (),
                 {
                     "returncode": 0,
-                    "stdout": json.dumps({"isDraft": False, "assets": []}),
+                    "stdout": json.dumps(
+                        {"isDraft": False, "isPrerelease": False, "assets": []}
+                    ),
                 },
             )()
             with (
                 patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
-                patch.object(github_releases, "gh", return_value=response),
+                patch.object(
+                    github_releases, "gh", side_effect=[self.tag_response(), response]
+                ),
             ):
                 with self.assertRaisesRegex(ValueError, "missing"):
                     github_releases.publish("v1.2.3", self.commit, assets, notes)
+
+    def test_formal_modes_never_modify_an_existing_prerelease(self) -> None:
+        for draft in (False, True):
+            for draft_only in (False, True):
+                calls = []
+
+                def fake_gh(*args, check=True):
+                    calls.append(args)
+                    if args[0] == "api":
+                        return self.tag_response()
+                    self.assertEqual(args[:2], ("release", "view"))
+                    self.assertIn(
+                        "isPrerelease", args[args.index("--json") + 1].split(",")
+                    )
+                    return SimpleNamespace(
+                        returncode=0,
+                        stdout=json.dumps({"isDraft": draft, "isPrerelease": True}),
+                    )
+
+                with (
+                    self.subTest(draft=draft, draft_only=draft_only),
+                    patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                    patch.object(github_releases, "gh", side_effect=fake_gh),
+                    self.assertRaisesRegex(ValueError, "must not be a prerelease"),
+                ):
+                    github_releases.publish(
+                        "v1.2.3", self.commit, [], "Release notes", draft_only=draft_only
+                    )
+                self.assertEqual(len(calls), 2)
+
+    def test_prerelease_readback_blocks_formal_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets, notes = github_releases.prepare_assets(
+                self.release_dir, "v1.2.3", self.commit, Path(temporary)
+            )
+            for draft_only in (False, True):
+                views = 0
+
+                def fake_gh(*args, check=True):
+                    nonlocal views
+                    if args[0] == "api":
+                        return self.tag_response()
+                    self.assertEqual(args[:2], ("release", "view"))
+                    self.assertIn(
+                        "isPrerelease", args[args.index("--json") + 1].split(",")
+                    )
+                    views += 1
+                    return SimpleNamespace(
+                        returncode=0,
+                        stdout=json.dumps({
+                            "isDraft": True,
+                            "isPrerelease": views > 1,
+                            "body": notes,
+                            "assets": [{"name": asset.name} for asset in assets],
+                            "tagName": "v1.2.3",
+                            "url": "https://example.test/release",
+                        }),
+                    )
+
+                with (
+                    self.subTest(draft_only=draft_only),
+                    patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                    patch.object(github_releases, "gh", side_effect=fake_gh),
+                    self.assertRaisesRegex(ValueError, "must not be a prerelease"),
+                ):
+                    github_releases.publish(
+                        "v1.2.3", self.commit, assets, notes, draft_only=draft_only
+                    )
+                self.assertEqual(views, 2)
 
     def test_new_release_stays_draft_until_every_asset_is_uploaded(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -105,13 +184,17 @@ class GitHubReleaseTest(unittest.TestCase):
 
             def fake_gh(*args, check=True):
                 nonlocal created, published
+                if args[0] == "api":
+                    return self.tag_response()
                 action = args[1]
                 calls.append(action)
                 if action == "view":
                     if not created:
                         return type("Response", (), {"returncode": 1, "stdout": ""})()
                     payload = {
+                        "isPrerelease": False,
                         "isDraft": not published,
+                        "tagName": "v1.2.3",
                         "body": notes,
                         "assets": [{"name": name} for name in remote],
                         "url": "https://github.com/ai-shifu/skills/releases/tag/v1.2.3"
@@ -152,7 +235,7 @@ class GitHubReleaseTest(unittest.TestCase):
                 url, "https://github.com/ai-shifu/skills/releases/tag/v1.2.3"
             )
 
-    def test_branch_preview_uploads_and_verifies_without_publishing(self) -> None:
+    def test_branch_preview_prerelease_uploads_and_verifies_without_publishing(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             assets, notes = github_releases.prepare_assets(
                 self.release_dir, "v1.2.3", self.commit, Path(temporary)
@@ -171,7 +254,9 @@ class GitHubReleaseTest(unittest.TestCase):
                     if not created:
                         return type("Response", (), {"returncode": 1, "stdout": ""})()
                     payload = {
+                        "isPrerelease": True,
                         "isDraft": True,
+                        "tagName": preview_tag,
                         "body": body,
                         "assets": [{"name": name} for name in remote],
                         "url": f"https://github.com/ai-shifu/skills/releases/tag/{preview_tag}",
@@ -217,6 +302,124 @@ class GitHubReleaseTest(unittest.TestCase):
             self.assertEqual(calls.count("download"), len(assets))
             self.assertNotIn("edit", calls)
 
+    def test_publication_must_read_back_the_verified_release(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets, notes = github_releases.prepare_assets(
+                self.release_dir, "v1.2.3", self.commit, Path(temporary)
+            )
+            cases = (
+                ({"isDraft": True}, "publication did not take effect"),
+                ({"isPrerelease": True}, "must not be a prerelease"),
+                ({"tagName": "v1.2.4"}, "tag differs"),
+                ({"assets": []}, "asset set differs"),
+                ({"body": "Changed after publication"}, "notes differ"),
+            )
+            for changed, message in cases:
+                with self.subTest(changed=changed):
+                    publish_requested = False
+                    downloads = 0
+
+                    def fake_gh(*args, check=True):
+                        nonlocal publish_requested, downloads
+                        if args[0] == "api":
+                            return self.tag_response()
+                        action = args[1]
+                        if action == "view":
+                            payload = {
+                                "isPrerelease": False,
+                                "isDraft": not publish_requested,
+                                "tagName": "v1.2.3",
+                                "body": notes,
+                                "assets": [{"name": asset.name} for asset in assets],
+                                "url": "https://example.test/release",
+                            }
+                            if publish_requested:
+                                payload.update(changed)
+                            return SimpleNamespace(
+                                returncode=0, stdout=json.dumps(payload)
+                            )
+                        if action == "download":
+                            downloads += 1
+                            name = args[args.index("--pattern") + 1]
+                            destination = Path(args[args.index("--dir") + 1])
+                            source = next(asset for asset in assets if asset.name == name)
+                            (destination / name).write_bytes(source.read_bytes())
+                        elif action == "edit":
+                            self.assertIn("--draft=false", args)
+                            self.assertEqual(downloads, len(assets))
+                            publish_requested = True
+                        else:
+                            self.fail(f"Unexpected Release mutation: {args}")
+                        return SimpleNamespace(returncode=0, stdout="")
+
+                    with (
+                        patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                        patch.object(github_releases, "gh", side_effect=fake_gh),
+                        self.assertRaisesRegex(ValueError, message),
+                    ):
+                        github_releases.publish("v1.2.3", self.commit, assets, notes)
+                    self.assertTrue(publish_requested)
+                    self.assertEqual(downloads, len(assets))
+
+    def test_retry_after_publication_readback_failure_only_verifies_existing_release(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets, notes = github_releases.prepare_assets(
+                self.release_dir, "v1.2.3", self.commit, Path(temporary)
+            )
+            published = False
+            fail_readback = True
+            mutations = []
+            downloads = 0
+            url = "https://github.com/ai-shifu/skills/releases/tag/v1.2.3"
+
+            def fake_gh(*args, check=True):
+                nonlocal published, fail_readback, downloads
+                if args[0] == "api":
+                    return self.tag_response()
+                action = args[1]
+                if action == "view":
+                    if published and fail_readback:
+                        fail_readback = False
+                        raise RuntimeError("Publication readback interrupted")
+                    return SimpleNamespace(
+                        returncode=0,
+                        stdout=json.dumps({
+                            "isPrerelease": False,
+                            "isDraft": not published,
+                            "tagName": "v1.2.3",
+                            "body": notes,
+                            "assets": [{"name": asset.name} for asset in assets],
+                            "url": url,
+                        }),
+                    )
+                if action == "download":
+                    downloads += 1
+                    name = args[args.index("--pattern") + 1]
+                    destination = Path(args[args.index("--dir") + 1])
+                    source = next(asset for asset in assets if asset.name == name)
+                    (destination / name).write_bytes(source.read_bytes())
+                elif action == "edit":
+                    self.assertFalse(published)
+                    self.assertIn("--draft=false", args)
+                    mutations.append(args)
+                    published = True
+                else:
+                    self.fail(f"Unexpected Release mutation: {args}")
+                return SimpleNamespace(returncode=0, stdout="")
+
+            with (
+                patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                patch.object(github_releases, "gh", side_effect=fake_gh),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "readback interrupted"):
+                    github_releases.publish("v1.2.3", self.commit, assets, notes)
+                self.assertTrue(published)
+                self.assertEqual(
+                    github_releases.publish("v1.2.3", self.commit, assets, notes), url
+                )
+            self.assertEqual(len(mutations), 1)
+            self.assertEqual(downloads, 2 * len(assets))
+
     def test_formal_draft_resumes_uploads_and_verifies_without_publishing(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             assets, notes = github_releases.prepare_assets(
@@ -243,7 +446,9 @@ class GitHubReleaseTest(unittest.TestCase):
                     if not created:
                         return type("Response", (), {"returncode": 1, "stdout": ""})()
                     payload = {
+                        "isPrerelease": False,
                         "isDraft": True,
+                        "tagName": "v1.2.3",
                         "body": notes,
                         "assets": [{"name": name} for name in remote],
                         "url": draft_url,
@@ -303,26 +508,33 @@ class GitHubReleaseTest(unittest.TestCase):
                 2 * len(assets),
             )
 
-    def test_formal_draft_rejects_a_tag_pinned_to_another_commit(self) -> None:
+    def test_formal_release_rejects_a_tag_pinned_to_another_commit(self) -> None:
         response = type(
             "Response", (), {"returncode": 0, "stdout": json.dumps({"sha": "a" * 40})}
         )()
-        with (
-            patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
-            patch.object(github_releases, "gh", return_value=response) as remote,
-        ):
-            with self.assertRaisesRegex(ValueError, "tag does not point"):
-                github_releases.publish(
-                    "v1.2.3", self.commit, [], "Release notes", draft_only=True
+        for draft_only in (False, True):
+            with (
+                self.subTest(draft_only=draft_only),
+                patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
+                patch.object(github_releases, "gh", return_value=response) as remote,
+            ):
+                with self.assertRaisesRegex(ValueError, "tag does not point"):
+                    github_releases.publish(
+                        "v1.2.3", self.commit, [], "Release notes", draft_only=draft_only
+                    )
+                remote.assert_called_once_with(
+                    "api", "repos/ai-shifu/skills/commits/v1.2.3"
                 )
-        remote.assert_called_once_with("api", "repos/ai-shifu/skills/commits/v1.2.3")
 
     def test_formal_draft_never_edits_an_existing_public_release(self) -> None:
         responses = [
             type(
                 "Response", (), {"returncode": 0, "stdout": json.dumps(payload)}
             )()
-            for payload in ({"sha": self.commit}, {"isDraft": False})
+            for payload in (
+                {"sha": self.commit},
+                {"isDraft": False, "isPrerelease": False},
+            )
         ]
         with (
             patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
@@ -369,7 +581,9 @@ class GitHubReleaseTest(unittest.TestCase):
                 (),
                 {
                     "returncode": 0,
-                    "stdout": json.dumps({"isDraft": False, "assets": []}),
+                    "stdout": json.dumps(
+                        {"isDraft": False, "isPrerelease": False, "assets": []}
+                    ),
                 },
             )()
             with (
@@ -398,10 +612,14 @@ class GitHubReleaseTest(unittest.TestCase):
 
             def fake_gh(*args, check=True):
                 nonlocal published, uploads, interrupt
+                if args[0] == "api":
+                    return self.tag_response()
                 action = args[1]
                 if action == "view":
                     payload = {
+                        "isPrerelease": False,
                         "isDraft": not published,
+                        "tagName": "v1.2.3",
                         "body": notes,
                         "assets": [{"name": name} for name in remote],
                         "url": "https://github.com/ai-shifu/skills/releases/tag/v1.2.3",
@@ -466,9 +684,13 @@ class GitHubReleaseTest(unittest.TestCase):
             def fake_gh(*args, check=True):
                 nonlocal body, published
                 calls.append(args)
+                if args[0] == "api":
+                    return self.tag_response()
                 if args[1] == "view":
                     result = {
+                        "isPrerelease": False,
                         "isDraft": not published,
+                        "tagName": "v1.2.3",
                         "body": body,
                         "assets": [{"name": asset.name} for asset in assets],
                         "url": "https://example.test/release",
@@ -495,7 +717,7 @@ class GitHubReleaseTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "--refresh-notes"):
                     github_releases.publish("v1.2.3", self.commit, assets, notes)
                 self.assertFalse(published)
-                self.assertEqual(len(calls), 1)
+                self.assertEqual(len(calls), 2)
                 github_releases.publish(
                     "v1.2.3", self.commit, assets, notes, refresh_notes=True
                 )
@@ -510,6 +732,7 @@ class GitHubReleaseTest(unittest.TestCase):
                 self.release_dir, "v1.2.3", self.commit, Path(temporary)
             )
             result = {
+                "isPrerelease": False,
                 "isDraft": False,
                 "body": "Existing published notes",
                 "assets": [{"name": asset.name} for asset in assets],
@@ -519,7 +742,9 @@ class GitHubReleaseTest(unittest.TestCase):
             )()
             with (
                 patch.dict(os.environ, {"GITHUB_REPOSITORY": "ai-shifu/skills"}),
-                patch.object(github_releases, "gh", return_value=response) as remote,
+                patch.object(
+                    github_releases, "gh", side_effect=[self.tag_response(), response]
+                ) as remote,
             ):
                 with self.assertRaisesRegex(
                     ValueError, "Published Release notes differ"
@@ -527,14 +752,14 @@ class GitHubReleaseTest(unittest.TestCase):
                     github_releases.publish(
                         "v1.2.3", self.commit, assets, notes, refresh_notes=True
                     )
-            self.assertEqual(remote.call_count, 1)
+            self.assertEqual(remote.call_count, 2)
 
     def test_notes_readback_failure_blocks_publication(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             assets, notes = github_releases.prepare_assets(
                 self.release_dir, "v1.2.3", self.commit, Path(temporary)
             )
-            responses = [
+            responses = [self.tag_response()] + [
                 type(
                     "Response",
                     (),
@@ -542,6 +767,7 @@ class GitHubReleaseTest(unittest.TestCase):
                         "returncode": 0,
                         "stdout": json.dumps(
                             {
+                                "isPrerelease": False,
                                 "isDraft": True,
                                 "body": body,
                                 "assets": [{"name": asset.name} for asset in assets],
@@ -557,4 +783,4 @@ class GitHubReleaseTest(unittest.TestCase):
             ):
                 with self.assertRaisesRegex(ValueError, "readback differs"):
                     github_releases.publish("v1.2.3", self.commit, assets, notes)
-            self.assertEqual(remote.call_count, 2)
+            self.assertEqual(remote.call_count, 3)
