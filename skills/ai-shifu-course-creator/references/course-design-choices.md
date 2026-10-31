@@ -4,9 +4,23 @@ Help the author express consequential course choices and translate them into usa
 
 ## Using Available Context
 
-Reuse the author's instructions, supplied materials, and existing course behavior before asking. Missing fields do not require a questionnaire. Make reasonable, reversible choices when the task supports them; ask when an unresolved choice materially changes the result or conflicts with an explicit requirement. Questions may be combined and have no prescribed order.
+Reuse the author's instructions, supplied materials, and existing course behavior before asking. Missing fields do not require a questionnaire. For an unresolved choice selected by the using agent, frame the question around the consequence for this course. Questions may be combined and have no prescribed order; this reference does not add a checkpoint or determine when work pauses.
 
 When presenting options, explain their concrete learner- or author-visible effects in the target language. Avoid bare labels and unsupported promises. Terminology and first mentions follow [language-policy.md](language-policy.md).
+
+### Asking for Useful Information
+
+Make each request answerable without knowledge of pedagogy or platform terminology. Say what the information will change, offer a reasonable recommendation or fallback when available, and distinguish a provisional assumption from a confirmed fact. Ask about the learning task rather than handing the author a menu of method names. For example: "After this lesson, do learners need to judge whether a plan is suitable, or produce a plan independently? This determines whether I suggest case analysis or hands-on practice. Based on your material, I recommend starting with judgment."
+
+For material requests, identify the needed part and its use: "To illustrate this step using the actual interface, I need a screenshot of the current version. You can supply one, or we can use a clearly labeled generic diagram." Do not present a fabricated interface or teacher experience as an authentic supplied asset. Questions about audience, starting knowledge, source coverage, time limits, learning evidence, or projection context are useful when they resolve the actual design issue; they are not required intake fields. Keep established answers and author corrections usable throughout the task.
+
+### Explaining a Recommendation
+
+Make a recommendation concrete enough to revise: name the proposed method or describe the teaching action, explain the specific learning difficulty it addresses, show the expected learner experience, and state the relevant limit. Apply the [method attribution rules](teaching-design.md#method-attribution) for source selection and evidence boundaries. Keep this explanation brief enough to help the author make the actual decision.
+
+For example: "I recommend a worked example here: show how the solution develops step by step and explain the key judgments. This follows [MIT Teaching + Learning Lab's guidance](https://tll.mit.edu/teaching-resources/how-people-learn/worked-examples/). Your learners are new to this process, so a complete demonstration can make the reasoning visible; understanding it does not yet demonstrate independent performance. If example personalization is selected, we can use a relevant task explicitly mentioned in the learner's existing memory. Without relevant context, use the course's neutral example." This explains a proposed choice without requiring the author to select it from a catalog, asking for more learner data, or placing the rationale in learner-time Prompts.
+
+Explain a visual choice by its purpose as well: "A flowchart lets learners compare the branch conditions together, while the text develops the reasoning behind each judgment." Keep author confirmation and revision focused on the substantive decision and its effect; invocation timing and continuation remain with the using agent.
 
 ## Available Choices
 

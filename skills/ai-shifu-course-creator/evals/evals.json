@@ -1465,6 +1465,85 @@
         "The final navigation control is ?[继续] without an invented question or response-task prefix. Automatic course memory remains available without substitution reads, variable tables, or a separate save step.",
         "The fragment remains local, with executable controls and instructions outside HTML comments and deterministic blocks, and makes no claim of learner-time runtime verification."
       ]
+    },
+    {
+      "eval_name": "idea-to-course",
+      "prompt": "我第一次用 AI 师傅。我想做一门“把工作任务交代清楚”的短课，现在只有这个想法，不知道应该怎么组织。你帮我做成一门能试学的课吧，先只做本地内容，暂不上线。",
+      "followup_turns": [
+        "给刚入职的运营同事，总共约 15 分钟。学完要能把“帮我整理一下活动效果”改写成别人可以执行和验收的任务说明。没有现成材料，可以用明确标注的虚构案例。希望举例和实际价值能结合学员已经提供的工作背景，其他风格正常就好。重要的设计决定可以让我看看，具体讲法你推荐。",
+        "我确认这个学习目标和范围。讲解用自然的同事交流语气，不要像考试；全课只保留一次提交任务说明并获得反馈的练习，不再额外问学员背景。举例和价值说明仍可使用已有背景。按这些决定直接完成本地课程，并给一小段试学内容。"
+      ],
+      "expected_output": "Progressively clarifies consequential gaps, makes a useful recommendation, and turns teacher corrections into a complete local course with contextual examples, sourced teaching rationale and truthful sample-delivery claims.",
+      "expectations": [
+        "The opening gives a useful next deliverable and asks only material unresolved questions; it neither invents an audience nor expands a whole course before the missing direction is resolved.",
+        "The teacher sees actual representative learner-facing content before or with calibrated expansion, not only a capability list or future plan; the run distinguishes illustrative delivery from live platform verification.",
+        "The final course obeys the teacher correction: one submission-and-feedback exercise across the course, no extra learner-background questions, and natural colleague-like language.",
+        "The major goal has a concrete task and success criteria; feedback addresses missing executability or acceptance conditions instead of generic praise.",
+        "Selected examples and practical-value personalization use relevant actual prior context, include neutral fallback, and preserve the goal and other fixed design choices.",
+        "A named teaching method or principle is explained to the teacher with a verifiable supporting source, its fit to this task and a limitation; no invented origin or efficacy guarantee is used.",
+        "No platform login, upload or publication occurs for this local-only task; teacher approval is not repeatedly requested after explicit delegation."
+      ],
+      "id": 118,
+      "files": []
+    },
+    {
+      "eval_name": "slides-to-course",
+      "prompt": "我有一份内部课件，请做成 AI 师傅一对一自学课，先只完成本地内容。学员是刚入职的项目协调员，约 20 分钟，希望学完能找到流程瓶颈并解释改善哪个环节。课件内容：1. 同一批请求依次经过登记、审核、通知；2. 为便于教学，假设每个环节一人、连续工作、无返工、需求充足；3. 三个环节处理能力分别为每小时 12、4、10 件；4. 持续吞吐量受最慢环节限制；5. 只加快登记并不能使整条流程超过每小时 4 件；6. 改善后要重新检查瓶颈，不能假定它永远不变。可以调整讲法，但保留全部事实和假设。希望举例与类比能利用学员已有经历。你看看这些页怎样适合在线学习。",
+      "followup_turns": [
+        "整体目标就按这个来。我倾向保留一张展示三个环节能力的图，其余用文字讲清推理；全课只做一次判断并说明理由的练习，不额外收集个人信息。类比用学员明确说过的熟悉经历，不能只凭职业猜。先把能体现讲法的内容给我看。",
+        "样课方向可以。请按已定要求完成全部本地课，不用逐节等我确认。把“改善后重新找瓶颈”的边界讲清楚。也简短说明采用的具体教学法有什么出处。"
+      ],
+      "expected_output": "Transforms supplied slides into goal-aligned self-study with a purposeful capacity diagram, enough prose reasoning, bounded personalized analogies, a real sample and traceable teacher-facing pedagogical rationale.",
+      "expectations": [
+        "The response reuses the supplied audience, duration, goal and source facts without a repeated intake form, and makes a concrete teaching recommendation.",
+        "A representative excerpt shows actual explanation and visual content or an explicitly illustrative rendering, rather than treating the existing slide titles as a finished self-study course.",
+        "The resulting course keeps all capacities, the stated simplifying assumptions, the bottleneck conclusion and the need to recheck after improvement.",
+        "The final course has one substantive capacity visual and one judgment-with-reason exercise, with useful complementary prose rather than mandatory slide/text repetition or extra learner questions.",
+        "Examples and analogies draw only on relevant explicitly known learner context, explain correspondences and limits, offer neutral fallback, and do not alter required facts, sequence or interaction constraints.",
+        "The teacher-facing rationale names a selected method or principle with a supporting source, task-specific fit and an evidence boundary; theory citations do not replace the executable teaching content.",
+        "After the final delegation the agent completes the local course without another approval gate, and does not claim a live course run or actual learning gains."
+      ],
+      "id": 119,
+      "files": []
+    },
+    {
+      "eval_name": "focused-chapter-revision",
+      "prompt": "我已经有一门成熟课程，只修改第二章下面这一节的授课提示词，其他章节、课程提示词和发布状态都不要动。本次只在本地交付修改后的这一节。目标与结构都已确认，不需要重新做大纲或样课。只增强“举例”和“类比”两个方向的个性化，让例子真正贴近学员已经表达的工作经历；语言风格和价值说明保持原样。纯文字，不新增提问或互动。完成后在给我的说明里简短解释采用的具体教学方法和依据。\n\n原提示词：\n<!-- 理解交接完整性 -->\n先说明交接的四个要素：当前状态、下一步动作、负责人、完成标准。把它类比成接力赛，说明缺失信息会让接手人不知道下一步做什么。\n<!-- 用实例看见缺口 -->\n用“活动名单已收集，还需去重，小李负责，明天 12 点前交付无重复的名单”示范四要素，说明完成标准是可检查的结果。允许在不改变四要素、顺序与判断标准的前提下替换这个示例。\n<!-- 保留边界 -->\n===交接信息不足时，先补齐事实，再承诺完成时间。===\n用一句话回顾四要素的作用，然后结束。",
+      "followup_turns": [],
+      "expected_output": "Makes a scoped, directly runnable personalized revision without reopening confirmed design, adding visuals or interactions, or changing unrelated material; explains method provenance to the teacher separately.",
+      "expectations": [
+        "The task is completed directly without intake questions, a new outline, a sample-approval gate, or any unrelated course artifact or platform operation.",
+        "The four handoff elements, their order, checkable acceptance standard, exact deterministic sentence and one-sentence close are preserved.",
+        "The revised Prompt contains concrete instructions for selecting relevant examples and analogy correspondences from actually known learner experience, not a generic request to personalize or a job-title substitution.",
+        "The Prompt includes a neutral fallback and relevant analogy limits without requesting new learner information or inferring familiarity solely from occupation.",
+        "Only examples and analogies adapt; language style, practical value, structure and task scope are preserved, with no visuals, questions, new interaction or answer-dependent branch.",
+        "The teacher-facing explanation identifies a relevant method or principle with a source and appropriate evidence limits; author-facing justification is kept out of learner-time instructions.",
+        "Validation claims distinguish Prompt inspection or model simulation from actual learner or platform results."
+      ],
+      "id": 120,
+      "files": []
+    },
+    {
+      "id": 121,
+      "prompt": "只写一段可复用的授课提示词，讲清总成本 = 固定成本 + 单件变动成本 × 件数。只启用举例个性化；学员可能已经明确说过自己在为展会准备礼品订单，但没有提供金额，禁止额外提问。允许用明确标注的假设教学数字做计算。作者固定的中性示例为固定成本 100 元、单件变动成本 5 元、20 件，总成本 200 元；必须保留这些数字和公式。已有相关任务时用它解释这些费用与件数的对应，没有相关记忆时用中性示例。只要提示词，不做整课、不部署。",
+      "expected_output": "Uses explicitly labeled hypothetical figures to explain a known learner task without fabricating actual learner data or requesting unnecessary background, while preserving the author-fixed calculation.",
+      "files": [],
+      "expectations": [
+        "The Prompt preserves the exact formula and the author-fixed 100, 5, 20 and 200 calculation.",
+        "It allows explicitly labeled hypothetical teaching amounts and does not claim they are actual learner finances.",
+        "It connects the calculation to the relevant already-known gift-order task, offers a neutral fallback, and adds no learner question, other personalization direction, course workflow or platform operation."
+      ]
+    },
+    {
+      "id": 122,
+      "prompt": "只给一段授课提示词及一小段明确标为模拟的试讲，不做整课、不部署。讲解同一批请求依次登记、审核、通知，三个环节连续工作且无返工、需求充足，每小时能力分别 12、4、10 件，持续吞吐量不超过每小时 4 件。选中举例与类比个性化，但老师限定类比只能来自学员明确说过的熟悉经历；不得再提问收集信息。本次试讲没有任何已有学员经历可用。保留来源事实，纯文字。",
+      "expected_output": "Respects the author condition when learner experience is absent: gives literal source-based teaching rather than inventing a neutral analogy just because analogies were selected.",
+      "files": [],
+      "expectations": [
+        "The reusable Prompt permits an analogy only when relevant explicitly known experience satisfies the author condition, and otherwise uses literal explanation or the source example.",
+        "The simulated delivery contains no new analogy, assumed familiar experience or learner-background question.",
+        "The 12, 4, 10 capacities, throughput bound and simplifying assumptions remain intact; simulated delivery is not claimed as actual learner validation."
+      ]
     }
   ]
 }
