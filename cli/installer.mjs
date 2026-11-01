@@ -11,6 +11,8 @@ export const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..'
 export const skillNames = [
   'ai-shifu-course-creator', 'ai-shifu-learning-report', 'course-direction-advisor',
 ];
+const supportedAgents = ['codex', 'claude-code', 'cursor', 'gemini-cli', 'github-copilot',
+  'openclaw', 'codebuddy', 'opencode', 'windsurf'];
 export const packageInfo = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
 
 function expandHome(value, home) {
@@ -59,6 +61,9 @@ export function agentArgs(args) {
   if (args[0] !== '--agent' || args.length < 2 || args.slice(1).some(x => !/^[a-z0-9][a-z0-9-]*$/.test(x))) {
     throw new Error('Use --agent <agent-name> [agent-name ...], for example --agent codex claude-code.');
   }
+  if (args.slice(1).some(name => !supportedAgents.includes(name))) {
+    throw new Error(`Supported agents: ${supportedAgents.join(', ')}.`);
+  }
   return args;
 }
 
@@ -66,30 +71,35 @@ export function skillInstallArgs(root = packageRoot, agents = []) {
   return ['add', join(root, 'skills'), '--global', '--yes', '--json', '--skill', ...skillNames, ...agentArgs(agents)];
 }
 
-export function legacySkillDirs(env = process.env, home = homedir()) {
-  const roots = [join(home, '.agents'), env.CODEX_HOME || join(home, '.codex'),
-    env.CLAUDE_CONFIG_DIR || join(home, '.claude'), join(home, '.cursor'),
-    join(home, '.workbuddy'), join(home, '.openclaw')];
-  return [...new Set(roots.map(root => join(root, 'skills', skillNames[0])))];
+function agentRoots(env, home) {
+  const openclaw = ['.openclaw', '.clawdbot', '.moltbot'].map(name => join(home, name));
+  return {
+    codex: join(home, '.agents'),
+    'claude-code': expandHome(env.CLAUDE_CONFIG_DIR || join(home, '.claude'), home),
+    cursor: join(home, '.cursor'),
+    'gemini-cli': join(home, '.gemini'),
+    'github-copilot': join(home, '.copilot'),
+    openclaw: openclaw.find(directory => existsSync(directory)) || openclaw[0],
+    codebuddy: join(home, '.codebuddy'),
+    opencode: join(expandHome(env.XDG_CONFIG_HOME || join(home, '.config'), home), 'opencode'),
+    windsurf: join(home, '.codeium', 'windsurf'),
+  };
+}
+
+export function legacySkillDirs(env = process.env, home = homedir(), agents = ['--agent', 'codex']) {
+  const roots = agentRoots(env, home);
+  const selected = agentArgs(agents).slice(1);
+  // Every selected installer target also writes the shared canonical directory.
+  return [...new Set([roots.codex, ...selected.map(name => roots[name])])]
+    .map(root => join(root, 'skills', skillNames[0]));
 }
 
 export function defaultAgentArgs(env = process.env, home = homedir()) {
   // Codex selects the shared ~/.agents/skills directory used by universal
   // consumers. Explicit targets also avoid skills 1.7.4's automatic inclusion
   // of PromptScript, which has no global installation directory.
-  const candidates = [
-    ['claude-code', env.CLAUDE_CONFIG_DIR || join(home, '.claude')],
-    ['cursor', join(home, '.cursor')],
-    ['gemini-cli', join(home, '.gemini')],
-    ['github-copilot', join(home, '.copilot')],
-    ['openclaw', join(home, '.openclaw')],
-    ['openclaw', join(home, '.clawdbot')],
-    ['openclaw', join(home, '.moltbot')],
-    ['codebuddy', join(home, '.codebuddy')],
-    ['opencode', join(env.XDG_CONFIG_HOME || join(home, '.config'), 'opencode')],
-    ['windsurf', join(home, '.codeium', 'windsurf')],
-  ];
-  return ['--agent', 'codex', ...new Set(candidates.filter(([, directory]) => existsSync(directory)).map(([name]) => name))];
+  return ['--agent', 'codex', ...Object.entries(agentRoots(env, home))
+    .filter(([name, directory]) => name !== 'codex' && existsSync(directory)).map(([name]) => name)];
 }
 
 export function preserveLegacyEnv(directories, env = process.env, home = homedir()) {
@@ -192,12 +202,9 @@ export function ensureRuntime(root = packageRoot, env = process.env) {
 
 export function installSkills(agents = [], root = packageRoot, env = process.env) {
   const checked = agentArgs(agents);
-  const [listCommand, ...listArgs] = skillsCommand(['list', '--global', '--json'], root);
-  const listing = run(listCommand, listArgs, { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  const installed = JSON.parse(listing.stdout);
-  if (!Array.isArray(installed)) throw new Error('Cannot inspect installed Skills before migration.');
-  const existing = installed.filter(skill => skill.name === skillNames[0] && typeof skill.path === 'string');
-  preserveLegacyEnv([...legacySkillDirs(env), ...existing.map(skill => skill.path)], env);
+  const home = (process.platform === 'win32' ? env.USERPROFILE || env.HOME : env.HOME || env.USERPROFILE) || homedir();
+  const selectedAgents = checked.length ? checked : defaultAgentArgs(env, home);
+  preserveLegacyEnv(legacySkillDirs(env, home, selectedAgents), env, home);
   const metadata = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
   const marker = { schema_version: 1, distribution: 'npm', version: metadata.version };
   const staging = mkdtempSync(join(tmpdir(), 'ai-shifu-skills-'));
@@ -224,7 +231,7 @@ export function installSkills(agents = [], root = packageRoot, env = process.env
       writable(destination);
       writeFileSync(join(destination, '.ai-shifu-cli.json'), JSON.stringify(marker) + '\n');
     }
-    const [command, ...args] = skillsCommand(skillInstallArgs(staging, checked.length ? checked : defaultAgentArgs(env)), root);
+    const [command, ...args] = skillsCommand(skillInstallArgs(staging, selectedAgents), root);
     const result = spawnSync(command, args, { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
     if (result.error) throw result.error;
     if (result.status !== 0) {

@@ -41,6 +41,7 @@ test('Skill installation uses the exact packaged sources and validates agent fla
   assert.deepEqual(agentArgs(['--agent', 'codex']), ['--agent', 'codex']);
   assert.throws(() => agentArgs(['--agent']), /--agent/);
   assert.throws(() => agentArgs(['--agent', 'codex', '--all']), /--agent/);
+  assert.throws(() => agentArgs(['--agent', 'unknown-agent']), /Supported agents/);
 });
 
 test('automatic targets include the shared directory and only detected separate agents', t => {
@@ -172,6 +173,21 @@ test('a blocked agent directory fails installation instead of reporting success'
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Skill synchronization failed/);
   assert.doesNotMatch(result.stderr, /all three Skills are installed/);
+});
+
+test('a targeted Codex install leaves an unrelated Claude configuration out of migration', t => {
+  const home = temporary(t);
+  const env = isolatedEnv(home);
+  const claudeSkill = join(env.CLAUDE_CONFIG_DIR, 'skills', 'ai-shifu-course-creator');
+  mkdirSync(claudeSkill, { recursive: true });
+  writeFileSync(join(claudeSkill, '.env'), 'SHIFU_DISABLE_ANALYTICS=1\n');
+  const result = spawnSync(process.execPath,
+    [join(packageRoot, 'cli', 'shifu.mjs'), 'skills', 'install', '--agent', 'codex'],
+    { env, encoding: 'utf8', timeout: 30_000 });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(existsSync(join(configDir(env), 'cli.env')), false);
+  assert.equal(existsSync(join(configDir(env), 'legacy-env')), false);
+  assert.equal(readFileSync(join(claudeSkill, '.env'), 'utf8'), 'SHIFU_DISABLE_ANALYTICS=1\n');
 });
 
 test('stages npm metadata from a read-only source and removes staging after success or failure', t => {
