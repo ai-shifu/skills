@@ -9,6 +9,7 @@ deliberate human gate; the release build packs from the remote main branch.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -21,6 +22,7 @@ PUSH_REPOSITORY = "git@github.com:ai-shifu/skills.git"
 BUMP_LEVELS = ("major", "minor", "patch")
 PRIMARY_SKILL = "ai-shifu-course-creator"
 CLI_PACKAGE = "@ai-shifu/cli"
+CLI_RELEASE_VERSION = re.compile(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)")
 
 
 def update_cli_version(clone: Path, skill_name: str, current: str, new: str) -> bool:
@@ -30,6 +32,8 @@ def update_cli_version(clone: Path, skill_name: str, current: str, new: str) -> 
     package_file = clone / "package.json"
     if not package_file.is_file():
         return False  # Older skill-only source revisions remain supported.
+    if not CLI_RELEASE_VERSION.fullmatch(new):
+        raise ValueError("CLI versions must use stable X.Y.Z without leading zeros")
     package = json.loads(package_file.read_text(encoding="utf-8"))
     if package.get("name") != CLI_PACKAGE or package.get("version") != current:
         raise ValueError("CLI package version must match the primary skill before a bump")

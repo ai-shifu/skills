@@ -166,6 +166,30 @@ class BumpVersionTest(unittest.TestCase):
         self.assertFalse(version_bump.update_cli_version(seed, "demo-skill", "1.1.1", "1.2.0"))
         self.assertEqual((seed / "package.json").read_bytes(), before)
 
+    def test_primary_bump_rejects_non_stable_versions_before_writing_metadata(self) -> None:
+        seed = self.add_cli_package()
+        before = {name: (seed / name).read_bytes() for name in ("package.json", "package-lock.json")}
+        for new in ("1.2.0-rc.1", "01.2.0", "1.02.0", "1.2.00", "1.2", "v1.2.0"):
+            with self.subTest(new=new):
+                with self.assertRaisesRegex(ValueError, "stable X.Y.Z"):
+                    version_bump.update_cli_version(seed, "ai-shifu-course-creator", "1.1.1", new)
+                for name, content in before.items():
+                    self.assertEqual((seed / name).read_bytes(), content)
+
+    def test_primary_prerelease_bump_does_not_push_a_branch(self) -> None:
+        self.add_cli_package()
+        before = git("ls-remote", "--heads", self.repo_url, cwd=Path(self.tmp.name))
+        with self.assertRaisesRegex(ValueError, "stable X.Y.Z"):
+            version_bump.bump(make_args(
+                skill_name="ai-shifu-course-creator", skill_version="1.2.0-rc.1", repo_url=self.repo_url,
+            ))
+        self.assertEqual(git("ls-remote", "--heads", self.repo_url, cwd=Path(self.tmp.name)), before)
+
+    def test_companion_prerelease_bump_preserves_existing_support(self) -> None:
+        self.add_cli_package()
+        result = version_bump.bump(make_args(skill_version="1.2.0-rc.1", repo_url=self.repo_url))
+        self.assertEqual(result["new_version"], "1.2.0-rc.1")
+
     def test_bumped_version_levels(self) -> None:
         self.assertEqual(version_bump.bumped_version("1.1.1", "major"), "2.0.0")
         self.assertEqual(version_bump.bumped_version("1.1.1", "minor"), "1.2.0")
