@@ -2,13 +2,13 @@
 
 ## Invocation
 
-Select the command from this skill's installation. A skill synchronized by the npm installer has `.ai-shifu-cli.json` with `schema_version: 1`, `distribution: "npm"`, and a stable release `version`. Use the installed CLI for that distribution:
+Select the command from this skill's installation. A skill synchronized by the npm installer has `.ai-shifu-cli.json` with `schema_version: 1`, `distribution: "npm"`, and a stable release `version`. Check `shifu --version` against that marker once when selecting the command. Use the global CLI only when its version matches:
 
 ```bash
 shifu <command> [--profile <name>]
 ```
 
-Plugin-managed channel packages and unmarked installations, including project-local and older skill-only copies, use `python3 {skillDir}/scripts/shifu-cli.py` even when a global `shifu` is available. This preserves their own version and configuration. For an npm-synchronized skill without `shifu` on `PATH`, the same Python command is the compatibility fallback. Substitute the selected command for `shifu` in the course-command examples below. The Python entrypoint needs the dependencies declared in `{skillDir}/scripts/requirements.txt`. CLI installation and upgrade commands require the installed npm CLI.
+Plugin-managed channel packages and unmarked installations, including project-local and older skill-only copies, use `python3 {skillDir}/scripts/shifu-cli.py` even when a global `shifu` is available. This preserves their own version and configuration. For an npm-synchronized skill with a missing or different global CLI version, the same Python command is the compatibility fallback. Substitute the selected command for `shifu` in the course-command examples below. The Python entrypoint needs the dependencies declared in `{skillDir}/scripts/requirements.txt`. CLI installation and upgrade commands require the installed npm CLI.
 
 `--profile <name>` selects one named profile for this invocation and may appear before or after the command. Supply it at most once. Authenticated commands also accept `--token <jwt>` as a non-persistent override for this invocation. Selection is resolved once before platform access; platform requests, uploads, and returned course links use that same context. See [Profiles](#profiles) for selection and credential precedence. Use `{skillDir}/.env.example` as the supported configuration reference:
 
@@ -34,6 +34,8 @@ shifu update
 ```
 
 `install` is the initial CLI-and-skills entrypoint and runs setup explicitly. Direct global npm installation also runs setup when lifecycle scripts are enabled; when npm skips them, `setup` prepares both the isolated runtime and skills. `skills install` repeats skill synchronization, including for an agent installed later; its `--agent` selection is passed to the skill installer. `skills list` lists the business skills bundled with this CLI. `update` upgrades the CLI and synchronizes its skills together. The using agent decides when these operations are needed under [session controls](../session-controls.md#version-check); ordinary course work does not invoke an upgrade.
+
+Supported `--agent` targets are `codex`, `claude-code`, `cursor`, `gemini-cli`, `github-copilot`, `openclaw`, `codebuddy`, `opencode`, and `windsurf`. Migration inspects only the selected targets and the shared Skill directory that synchronization replaces.
 
 Before synchronizing, legacy skill `.env` files are backed up under the user configuration directory's `legacy-env/`. A consistent legacy configuration is migrated to `cli.env`; user-edited configuration is preserved, while an untouched generated template can still receive the migration. Different legacy configurations without a selected `cli.env` stop synchronization until one is chosen, then the operation can be retried. Successful credential migration or logout clears the matching token from backups and preserves their other settings. Installations outside the selected synchronization targets retain their own source configuration.
 
