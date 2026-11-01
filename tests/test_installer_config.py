@@ -102,6 +102,36 @@ class InstallerConfigurationTests(unittest.TestCase):
         self.assertEqual(self.imported([source]), {"status": "preserved", "imported_profiles": []})
         self.assertEqual(self.environment_file.read_bytes(), current)
 
+    def test_selected_options_without_profiles_still_preserve_the_unique_incoming_account(self):
+        self.root.mkdir()
+        current = b"# Keep my opt-out\nSHIFU_DISABLE_ANALYTICS=1\n"
+        self.environment_file.write_bytes(current)
+        source = self.source("legacy", "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=selected-token\nSHIFU_DISABLE_ANALYTICS=0\n")
+        original_source = (source / ".env").read_bytes()
+        result = self.imported([source])
+        self.assertEqual(result["status"], "imported")
+        self.assertEqual(len(result["imported_profiles"]), 1)
+        context = self.store.resolve(result["imported_profiles"][0], environ={})
+        self.assertEqual(context.base_url, profile_store.SITE_URLS["cn"])
+        self.assertEqual(context.token, "selected-token")
+        self.assertEqual(self.environment_file.read_bytes(), current)
+        self.assertEqual(self.store._env_values()["SHIFU_DISABLE_ANALYTICS"], "1")
+        self.assertEqual((source / ".env").read_bytes(), original_source)
+        self.assertTrue(all("selected-token" not in backup.read_text() for backup in self.backups()))
+
+    def test_selected_options_with_legacy_saved_settings_stop_without_discarding_the_account(self):
+        self.root.mkdir()
+        current = b"SHIFU_DISABLE_ANALYTICS=1\n"
+        self.environment_file.write_bytes(current)
+        write_private_json(self.store.settings_path, {"base_url": profile_store.SITE_URLS["com"]})
+        source = self.source("legacy", "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=selected-token\n")
+        with self.assertRaisesRegex(ProfileError, "existing legacy profile settings"):
+            self.imported([source])
+        self.assertEqual(self.environment_file.read_bytes(), current)
+        self.assertEqual(read_private_json(self.store.settings_path), {"base_url": profile_store.SITE_URLS["com"]})
+        self.assertEqual((source / ".env").read_text(), "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=selected-token\n")
+        self.assertTrue(any("selected-token" in backup.read_text() for backup in self.backups()))
+
     def test_existing_selection_preserves_default_and_credentials_across_conflicting_sources(self):
         current_profile = self.store.set_profile("current", "com")
         self.store.save_token(current_profile, "current-token")

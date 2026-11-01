@@ -515,7 +515,21 @@ class ProfileStore:
                 raise ProfileError("Unsupported profile configuration version.")
             if not settings or settings.get("schema_version") != 2:
                 if not replace_environment:
-                    return {"status": "preserved", "imported_profiles": []}
+                    if not base_url:
+                        return {"status": "preserved", "imported_profiles": []}
+                    if settings:
+                        raise ProfileError(
+                            "Migrate the existing legacy profile settings before importing another installation. "
+                            "Original files and private backups were preserved."
+                        )
+                    # A user-selected option such as the analytics opt-out is
+                    # independent of the incoming account. Preserve that file
+                    # while saving its unique, explicit account in a profile.
+                    initial = {"schema_version": 2, "default_profile": None, "profiles": {}}
+                    name = self._import_installer_profile(initial, base_url, token, identity)
+                    if token:
+                        self._clear_legacy_backup_tokens({_digest(token)})
+                    return {"status": "imported", "imported_profiles": [name]}
                 _write_private_env(self.env_file, content)
                 self._migrate_legacy(installer_identity=identity)
                 names = []
