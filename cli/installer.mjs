@@ -116,7 +116,13 @@ export function preserveLegacyEnv(directories, env = process.env, home = homedir
   writeFileSync(destination, [...contents.values()][0], { mode: 0o600, flag: 'wx' });
 }
 
+export function pythonEnvironment(env = process.env) {
+  return Object.fromEntries(Object.entries(env).filter(([key]) =>
+    !['PYTHONHOME', 'PYTHONPATH'].includes(key.toUpperCase())));
+}
+
 export function findPython(env = process.env, execute = spawnSync) {
+  env = pythonEnvironment(env);
   const candidates = env.AI_SHIFU_PYTHON ? [[env.AI_SHIFU_PYTHON]] :
     [['python3.13'], ['python3.12'], ['python3.11'], ['python3'], ['python'], ['py', '-3']];
   for (const [command, ...prefix] of candidates) {
@@ -152,6 +158,7 @@ function runtimeRun(command, args, options, execute) {
 
 // The worker calls this only while holding runtime-lock.py's native OS lock.
 export function prepareRuntime(root = packageRoot, env = process.env, execute = spawnSync) {
+  env = pythonEnvironment(env);
   const paths = runtimePaths(root, env);
   if (runtimeHealthy(paths, env, execute)) return paths.python;
   const [python, ...prefix] = findPython(env, execute);
@@ -170,6 +177,7 @@ export function prepareRuntime(root = packageRoot, env = process.env, execute = 
 }
 
 export function ensureRuntime(root = packageRoot, env = process.env) {
+  env = pythonEnvironment(env);
   const paths = runtimePaths(root, env);
   const [python, ...prefix] = findPython(env);
   run(python, [...prefix, join(packageRoot, 'cli', 'runtime-lock.py'), `${paths.directory}.lock`,
@@ -210,6 +218,7 @@ export function setup(agents = []) {
 export function pythonInvocation(args, root = packageRoot, env = process.env) {
   return {
     args: [join(root, 'skills', skillNames[0], 'scripts', 'shifu-cli.py'), ...args],
-    env: { ...env, AI_SHIFU_CLI_ENV_FILE: join(configDir(env), 'cli.env') },
+    env: { ...pythonEnvironment(env), AI_SHIFU_CLI_ENV_FILE: join(configDir(env), 'cli.env'),
+      AI_SHIFU_CLI_DISTRIBUTION: 'npm' },
   };
 }

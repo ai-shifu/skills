@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { findPython, prepareRuntime, runtimePaths } from '../installer.mjs';
+import { findPython, prepareRuntime, pythonEnvironment, pythonInvocation, runtimePaths } from '../installer.mjs';
 
 function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'shifu-runtime-'));
@@ -68,6 +68,30 @@ test('setup repairs a stale executable even when the ready marker still exists',
   prepareRuntime(f.root, f.env, f.execute);
   assert.equal(f.installations, 2);
   assert.equal(f.creations, 2);
+});
+
+test('Python detection, runtime preparation and commands discard inherited module overrides', t => {
+  const f = fixture(t);
+  const env = { ...f.env, PYTHONHOME: '/unrelated/python', PythonPath: '/unrelated/modules' };
+  const calls = [];
+  const execute = (command, args, options) => {
+    calls.push(options.env);
+    return f.execute(command, args, options);
+  };
+  findPython(env, execute);
+  prepareRuntime(f.root, env, execute);
+  prepareRuntime(f.root, env, execute);
+  for (const calledEnv of calls) {
+    assert.equal(Object.keys(calledEnv).some(key => ['PYTHONHOME', 'PYTHONPATH'].includes(key.toUpperCase())), false);
+    assert.equal(calledEnv.AI_SHIFU_PYTHON, 'fixture-python');
+  }
+  const invocation = pythonInvocation(['site'], f.root, env);
+  assert.equal(invocation.env.PYTHONHOME, undefined);
+  assert.equal(invocation.env.PythonPath, undefined);
+  assert.equal(invocation.env.AI_SHIFU_CLI_DISTRIBUTION, 'npm');
+  assert.equal(invocation.env.AI_SHIFU_CLI_ENV_FILE, join(f.env.AI_SHIFU_CONFIG_DIR, 'cli.env'));
+  assert.equal(env.PYTHONHOME, '/unrelated/python', 'the caller environment must remain unchanged');
+  assert.equal(pythonEnvironment({ PATH: 'preserved', PYTHONPATH: 'ignored' }).PATH, 'preserved');
 });
 
 function runtimeChildSource() {
