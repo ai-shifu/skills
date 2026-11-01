@@ -60,6 +60,12 @@ jobs:
           node-version: "24"
           registry-url: https://registry.npmjs.org
 
+      - name: Setup Python for installation smoke test
+        id: cli-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Install CLI dependencies without running setup
         run: npm ci --ignore-scripts
 
@@ -70,6 +76,12 @@ jobs:
 
       - name: Test CLI installation and Skill synchronization
         run: npm test
+
+      - name: Verify real installation from the selected release
+        timeout-minutes: 10
+        env:
+          AI_SHIFU_PYTHON: ${{ steps.cli-python.outputs.python-path }}
+        run: npm run test:install
 
       - name: Build the installable npm package
         run: npm pack
