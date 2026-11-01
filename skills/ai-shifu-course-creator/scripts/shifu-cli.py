@@ -662,15 +662,25 @@ def _poll_device_authorization(base_url, device_code):
 
 
 def _login_instruction(context, *, wait=False):
-    executable = "shifu" if os.environ.get("AI_SHIFU_CLI_ENV_FILE") else "shifu-cli.py"
+    npm_entrypoint = (
+        os.environ.get("AI_SHIFU_CLI_DISTRIBUTION") == "npm"
+        or bool(os.environ.get("AI_SHIFU_CLI_ENV_FILE"))
+    )
+    python_fallback = _NPM_SYNCHRONIZED and not npm_entrypoint
+    executable = "shifu" if npm_entrypoint else "shifu-cli.py"
     if platform.system() == "Windows":
         # cmd.exe and PowerShell have different expansion/quoting rules. Provide
         # literal argv, not a shell snippet that can reinterpret a profile name.
         arguments = ["login", f"--profile={context.name}"]
         if wait:
             arguments.append("--wait")
+        if python_fallback:
+            return ("Invoke this complete argument list (JSON, not a shell command): "
+                    + json.dumps([sys.executable, str(Path(__file__).resolve()), *arguments], ensure_ascii=False))
         return (f"Invoke {executable} with this argument list (JSON, not a shell command): "
                 + json.dumps(arguments, ensure_ascii=False))
+    if python_fallback:
+        executable = f"{shlex.quote(sys.executable)} {shlex.quote(str(Path(__file__).resolve()))}"
     command = f"{executable} login --profile={shlex.quote(context.name)}"
     if wait:
         command += " --wait"
