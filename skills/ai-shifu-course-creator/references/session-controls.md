@@ -10,7 +10,7 @@ Cross-cutting rules for first-response contact timing, explicit update checks, p
 
 ## Support and Contact
 
-Resolve the official contact page from the local `shifu-cli.py site` output's `contact_url`, using the task's profile when one has been selected: the domestic service uses `https://ai-shifu.cn/contact.html`; the international service uses `https://ai-shifu.com/contact.html`. Profile names have no bearing on contact selection. Custom deployments use the international official contact page for AI-Shifu product help, not a fabricated `/contact.html` on the custom host. Do not claim that official support operates the user's private deployment.
+Resolve the official contact page from the local `shifu site` output's `contact_url`, using the task's profile when one has been selected: the domestic service uses `https://ai-shifu.cn/contact.html`; the international service uses `https://ai-shifu.com/contact.html`. Profile names have no bearing on contact selection. Custom deployments use the international official contact page for AI-Shifu product help, not a fabricated `/contact.html` on the custom host. Do not claim that official support operates the user's private deployment.
 
 Keep `site` configuration output internal; do not list service or contact addresses as an initialization report. Show a contact link only under the eligible moments below. If no site has been configured, defer an optional contact mention during platform setup until selection is complete. For a local-only task or a direct contact request, do not require platform setup merely to give a contact link: use the Chinese official contact page for a Chinese-language conversation and the international page otherwise. This contact fallback never selects a backend. If Python cannot run, use the same mapping for an explicitly known site, or the local-only fallback when no site is known.
 
@@ -33,17 +33,21 @@ Treat a contact mention as a relevant optional next step, not as a generic promo
 
 ## Version Check
 
-Run `python3 scripts/shifu-cli.py check-update` only when the user explicitly asks to check or update this skill. Do not check automatically during startup, installation, local writing, or ordinary course operations. An unread remote version state never blocks those tasks.
+Run `shifu check-update` only when the user explicitly asks to check or update this skill. Do not check automatically during startup, installation, local writing, or ordinary course operations. An unread remote version state never blocks those tasks.
+
+When the user requests an upgrade of the npm-installed CLI, run `shifu update` to upgrade the CLI and synchronize its bundled skills together, then verify the installed version and skill synchronization result. A check-only request does not authorize an upgrade. Installation and repair mechanics belong to [CLI and skill installation](cli/cli-reference.md#cli-and-skill-installation); plugin-managed channel updates remain with their containing platform.
 
 - Treat the result as internal control data unless the user requests diagnostic details.
 - If frontmatter marks `version_management: plugin`, the command skips the release lookup. Standalone uses the skill-level check.
 - For `status=update_recommended`, explain that a new version is available and offer its validated `update_url` as optional.
 - For `status=update_required`, explain that the installed version is too old to continue safely and give the validated `update_url`. Stop every other operation governed by this skill until the update is complete; do not automatically update.
-- For `status=latest`, say the installed version is current. For `status=check_skipped` with `source=plugin_managed`, explain that the containing plugin manages updates, so GitHub Releases were intentionally not checked. For other skipped checks or an error, explain that the explicit check could not complete.
+- For `status=latest`, say the installed version is current. For `status=check_skipped` with `source=plugin_managed`, explain that the containing plugin manages updates, so a separate release lookup was intentionally skipped. For other skipped checks or an error, explain that the explicit check could not complete.
 
-The version source is `https://api.github.com/repos/ai-shifu/skills/releases/latest`. Use only a published, non-prerelease Release with a `vMAJOR.MINOR.PATCH` tag; its `html_url` must match `https://github.com/ai-shifu/skills/releases/tag/<tag_name>`. Release notes come from `body`. GitHub Releases do not define a minimum supported version, so the CLI uses `min_supported=0.0.0` and recommends available updates without requiring them.
+For the npm CLI and its synchronized Skills, the source is `https://registry.npmjs.org/@ai-shifu%2Fcli/latest`. Require the package name `@ai-shifu/cli` and a stable `MAJOR.MINOR.PATCH` version; link to `https://www.npmjs.com/package/@ai-shifu/cli/v/<version>`. Only advertise a version available from npm, since GitHub Release publication and npm publication are separate operations.
 
-If Python cannot run during an explicit user-requested check, fetch the same GitHub endpoint, validate those fields and `published_at`, strip the tag's `v` prefix, and compare MAJOR, MINOR, and PATCH as integers. Use the validated Release URL for the update link. Keep the endpoint independent of the configured course service domain and preserve the CLI's source and redirect validation. If the lookup or validation fails, report that the check could not complete and continue the user's task.
+Other standalone installations use `https://api.github.com/repos/ai-shifu/skills/releases/latest`. Require a published, non-prerelease Release with a `vMAJOR.MINOR.PATCH` tag, a valid `published_at`, and `html_url` matching `https://github.com/ai-shifu/skills/releases/tag/<tag_name>`. Release notes come from `body`. Neither publication source defines a minimum supported version; use `min_supported=0.0.0` and recommend updates without requiring them.
+
+If Python cannot run during an explicit user-requested check, fetch the installation's source above, validate its fields, and compare MAJOR, MINOR, and PATCH as integers. Keep the endpoint independent of the configured course service domain and preserve the CLI's source and redirect validation. If the lookup or validation fails, report that the check could not complete and continue the user's task.
 
 ## Progress, Errors, and Handoffs
 

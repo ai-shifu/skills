@@ -1,13 +1,15 @@
 """Open a version-bump PR against the ai-shifu/skills source repository.
 
-The bump never merges anything: it clones the source repository, changes only
-the SKILL.md version field (the body must stay byte-identical), pushes a
-branch, and opens a PR. Merging is a deliberate human gate; the release build
-always packs from the remote main branch.
+The bump never merges anything: it clones the source repository, updates
+version metadata while preserving the skill body, pushes a branch, and opens
+a PR. The primary skill and CLI share one release version. Merging is a
+deliberate human gate; the release build packs from the remote main branch.
 """
 
 from __future__ import annotations
 
+import json
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -18,6 +20,39 @@ from .source import run
 
 PUSH_REPOSITORY = "git@github.com:ai-shifu/skills.git"
 BUMP_LEVELS = ("major", "minor", "patch")
+PRIMARY_SKILL = "ai-shifu-course-creator"
+CLI_PACKAGE = "@ai-shifu/cli"
+CLI_RELEASE_VERSION = re.compile(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)")
+
+
+def update_cli_version(clone: Path, skill_name: str, current: str, new: str) -> bool:
+    """Keep CLI version metadata aligned when bumping the primary skill."""
+    if skill_name != PRIMARY_SKILL:
+        return False
+    package_file = clone / "package.json"
+    if not package_file.is_file():
+        return False  # Older skill-only source revisions remain supported.
+    if not CLI_RELEASE_VERSION.fullmatch(new):
+        raise ValueError("CLI versions must use stable X.Y.Z without leading zeros")
+    package = json.loads(package_file.read_text(encoding="utf-8"))
+    if package.get("name") != CLI_PACKAGE or package.get("version") != current:
+        raise ValueError("CLI package version must match the primary skill before a bump")
+    package["version"] = new
+    lock_file = clone / "package-lock.json"
+    lock = None
+    if lock_file.is_file():
+        lock = json.loads(lock_file.read_text(encoding="utf-8"))
+        if lock.get("name") != CLI_PACKAGE or lock.get("version") != current:
+            raise ValueError("CLI lockfile version must match the primary skill before a bump")
+        root_package = lock.get("packages", {}).get("")
+        if not isinstance(root_package, dict) or root_package.get("version") != current:
+            raise ValueError("CLI lockfile root package must match the primary skill before a bump")
+        lock["version"] = new
+        root_package["version"] = new
+    package_file.write_text(json.dumps(package, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if lock is not None:
+        lock_file.write_text(json.dumps(lock, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return True
 
 
 class BumpOptions(Protocol):
@@ -76,11 +111,13 @@ def bump(args: BumpOptions) -> dict:
             text, {"version": new_version}, str(skill_file)
         )
         skill_file.write_bytes(updated.encode("utf-8"))
+        cli_updated = update_cli_version(clone, args.skill_name, current, new_version)
 
         branch = f"bump/{args.skill_name}-v{new_version}"
         title = f"chore: bump version to v{new_version}"
         body = (
-            f"Changed:\nRaised the {args.skill_name} skill version from {current} to {new_version}.\n\n"
+            f"Changed:\nRaised the {args.skill_name} skill"
+            f"{' and CLI package' if cli_updated else ''} version from {current} to {new_version}.\n\n"
             f"Benefit:\nChannels and users can identify and receive the {new_version} release."
         )
         run("git", "checkout", "--quiet", "-b", branch, cwd=clone)

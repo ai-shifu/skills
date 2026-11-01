@@ -18,22 +18,22 @@ These capabilities answer course-author or admin questions about:
 - ratings, listen-vs-read preference
 - follow-up Q&A counts or specific learner conversations
 - follow-up Q&A volume by lesson
-- credit consumption (per-charge detail / by day / by model / by scene / by usage type) — use `shifu-cli.py credit-detail`
+- credit consumption (per-charge detail / by day / by model / by scene / by usage type) — use `shifu credit-detail`
 - which wallet absorbed the deduction for a given course
 - learner profile distribution (goals, level, preferences)
 - individual learner tracking — with the privacy rules in `privacy-and-presentation.md`
 - **course title resolution** — "what is my course `<title>` currently called", "did I rename it", "is the draft title diverging from the published title" (follow the Course Metadata path in `query-recipes.md`)
 
-> Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits — query via `shifu-cli.py credit-detail`.
+> Raw token counts are **not** exposed to creators. Any question about "how much was spent" maps to credits — query via `shifu credit-detail`.
 
-The question "how many courses do I have?" is answered by `shifu-cli.py list` without analytics queries.
+The question "how many courses do I have?" is answered by `shifu list` without analytics queries.
 
 ## CLI-Only Rule
 
-**All analytics traffic goes through `scripts/shifu-cli.py`. Never write raw HTTP, never read tokens directly, never compose `Authorization` / `Token` headers by hand.** Reuse the intended context and valid access under `../authentication.md`.
+**All analytics traffic goes through `shifu`. Never write raw HTTP, never read tokens directly, never compose `Authorization` / `Token` headers by hand.** Reuse the intended context and valid access under `../authentication.md`.
 
-- `shifu-cli.py analytics-query <bid> --dsl '<json-body>'` queries the supported tables documented in `tables.md`. Use `--dsl-file query.json` for long bodies.
-- `shifu-cli.py credit-detail <bid> [--start … --end … --scene 1203 --usage-type 1101 …]` answers credit/spend questions. Do not query `bill_daily_usage_metrics` for credit data: production daily aggregation is not enabled. Scene `1203` is learner spend; `1202` is preview and `1201` is debug.
+- `shifu analytics-query <bid> --dsl '<json-body>'` queries the supported tables documented in `tables.md`. Use `--dsl-file query.json` for long bodies.
+- `shifu credit-detail <bid> [--start … --end … --scene 1203 --usage-type 1101 …]` answers credit/spend questions. Do not query `bill_daily_usage_metrics` for credit data: production daily aggregation is not enabled. Scene `1203` is learner spend; `1202` is preview and `1201` is debug.
 
 ## Query Planning
 
@@ -79,7 +79,7 @@ Before constructing any DSL, identify the correct table. Use this map:
 | Learner profile distribution | `var_variable_values` | see **Recipe 15** | `variable_bid`, `value` (aggregate only!) |
 | Active learner count / archive rate | `shifu_user_archives` | `archived = 0` | `user_bid` |
 | Credit consumption (by day/model/scene) | `bill_daily_usage_metrics` ⚠️ currently empty — use `credit-detail` | `usage_scene = 1203` (learner production) | `consumed_credits`, `stat_date` |
-| **Credit consumption (raw detail)** | **`shifu-cli.py credit-detail`** | `--scene 1203` | CLI command, NOT a DSL query |
+| **Credit consumption (raw detail)** | **`shifu credit-detail`** | `--scene 1203` | CLI command, NOT a DSL query |
 | Look up learner nickname | `user_users` | — | `nickname`, `user_identify` |
 | Current course title | `shifu_published_shifus` | `deleted = 0` (auto-injected) | `title` |
 | Draft course title | `shifu_draft_shifus` | `deleted = 0` (auto-injected) | `title` |
@@ -96,7 +96,7 @@ These are the mistakes that most commonly cause repeated failed queries and wast
 
 These are **different tools for different questions**:
 
-- `shifu-cli.py credit-detail <bid>` — raw per-usage detail, server-side join, **always works**. Use for "how many credits did I spend", "what did my learners cost me", per-lesson breakdown.
+- `shifu credit-detail <bid>` — raw per-usage detail, server-side join, **always works**. Use for "how many credits did I spend", "what did my learners cost me", per-lesson breakdown.
 - DSL against `bill_daily_usage_metrics` — daily aggregated trends by model/scene/type. **Currently empty in production** (cron not registered). Do not use for credit data — it always returns zero rows.
 
 ### Pitfall 3 — `where` must be an array, not a single object
@@ -108,11 +108,11 @@ The DSL requires `where` to be an array of filter objects, even for a single con
 Do not guess table names — many names sound alike. Always check the supported list in `tables.md` first. Common wrong guesses:
 
 - "user logs" or "user_logs" → does not exist. Use `learn_generated_blocks` for interaction data, `learn_progress_records` for progress data.
-- "billing" or "usage" → `bill_daily_usage_metrics` (currently empty) or `shifu-cli.py credit-detail` for actual credit data.
+- "billing" or "usage" → `bill_daily_usage_metrics` (currently empty) or `shifu credit-detail` for actual credit data.
 
 ### Pitfall 5 — Missing `outline_item_bid` in output
 
-For lesson-level data (stuck lessons, follow-ups per lesson, ratings), obtain the `outline_item_bid → name` mapping with `shifu-cli.py show <shifu_bid>` before using lesson filters or presenting dimensions. Showing raw `outline_item_bid` hashes to the user is unreadable and violates the Translation Gate.
+For lesson-level data (stuck lessons, follow-ups per lesson, ratings), obtain the `outline_item_bid → name` mapping with `shifu show <shifu_bid>` before using lesson filters or presenting dimensions. Showing raw `outline_item_bid` hashes to the user is unreadable and violates the Translation Gate.
 
 ## Validation
 

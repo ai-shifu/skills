@@ -28,7 +28,7 @@ This skill owns only:
 - deriving calibrated teaching interpretations and recommendations;
 - rendering the final JSON into HTML.
 
-For live data, use the course creator skill's current analytics capabilities and `scripts/shifu-cli.py` command contracts. Never write raw HTTP, inspect `.env`, read a token, create auth headers, or reproduce analytics query recipes in this skill. If the dependency changes, follow the dependency rather than these descriptive signal names.
+For live data, use the course creator skill's current analytics capabilities and selected CLI command contract. Its invocation guidance owns command selection for npm, channel-managed, project-local, and older installations. Never write raw HTTP, inspect an environment file, read a token, create auth headers, or reproduce analytics query recipes in this skill. If the dependency changes, follow the dependency rather than these descriptive signal names.
 
 ## Reporting Window
 

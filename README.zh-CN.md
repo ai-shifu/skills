@@ -1,8 +1,55 @@
-# AI 师傅 Skills（中文说明）
+# AI 师傅 CLI 与 Skills（中文说明）
 
 [English README](./README.md)
 
-本仓库包含可复用的 AI 师傅 skills，覆盖课程选题、制作部署和学习效果改进。
+安装 `shifu` CLI，即可获得 AI 师傅课程操作命令及配套的智能体 Skills，覆盖课程选题、制作部署和学习效果改进。
+
+## 安装与更新
+
+需要 Node.js 22.20.0+、带 `venv` 的 Python 3.11+，以及下载 npm 与 Python 依赖所需的网络。安装入口参考 [lark-cli 的做法](https://github.com/larksuite/cli)：先安装 CLI，再同步安装配套 Skills。
+
+```bash
+npx @ai-shifu/cli@latest install
+shifu --version
+shifu skills list
+```
+
+安装过程会配置全局 `shifu` 命令、准备隔离的 Python 运行环境，并把全部三个业务 Skills 安装到共享的 `~/.agents/skills` 及检测到的常见智能体目录。Skills 与 CLI 来自同一个 npm 安装包。推荐的 `npx … install` 入口会显式完成配置。直接运行 `npm install --global @ai-shifu/cli` 时，只有启用生命周期脚本才会自动配置；包管理器跳过脚本时，执行 `shifu setup` 即可。安装后重启或刷新智能体以加载新 Skills。
+
+```bash
+shifu update
+shifu setup
+shifu skills install
+shifu skills install --agent codex
+```
+
+`update` 一起升级 CLI 和配套 Skills。`setup` 完整配置运行环境和 Skills；只需修复 Skill 安装或为后来新增的智能体安装时，运行 `skills install`。省略 `--agent` 时使用共享目录及检测到的常见智能体。安装 Skills 不会登录 AI 师傅账号。
+
+当前 npm 包尚未发布；首次发布后，上面的 `npx` 入口才可使用。维护者可以从当前源码测试安装包：
+
+```bash
+npm install --ignore-scripts
+npm test
+npm pack
+npm install --global ./ai-shifu-cli-VERSION.tgz
+shifu setup --agent codex
+```
+
+把 `VERSION` 替换为 `npm pack` 输出的文件名中的版本号。本地依赖安装不会安装用户 Skills；显式执行 `setup` 也适用于 npm 跳过安装脚本的情况。[CLI 发布工作流](.github/workflows/cli-publish.yml) 在显式触发并提供所需 npm 发布凭证后，将经过校验的 Release 标签发布到 npm。
+
+## 开始使用 CLI
+
+```bash
+shifu --help
+shifu site --set cn
+shifu login
+shifu verify
+shifu list
+```
+
+按实际账号选择 `cn`、`com` 或自有服务地址；多账号配置、不同安装方式的命令选择和命令详情见 [CLI 参考](skills/ai-shifu-course-creator/references/cli/cli-reference.md)。配置与浏览器授权凭证继续保存在 AI 师傅用户配置目录中。npm 入口及其同步 Skills 的 Python 备用入口从该目录的 `cli.env` 读取可选环境配置；渠道包和旧 Skill 安装仍兼容自己的 `.env`。
+
+配置过程会保留旧配置；迁移冲突和凭证清理的处理方式见[安装参考](skills/ai-shifu-course-creator/references/cli/cli-reference.md#cli-and-skill-installation)。
 
 ## 包含的 Skills
 
@@ -13,6 +60,7 @@
 ## 仓库结构
 
 ```text
+cli/
 skills/
   ai-shifu-course-creator/
   ai-shifu-learning-report/
@@ -73,10 +121,12 @@ skill 以 `SKILL.md` 作为行为定义。按照 [Agent Skills](https://agentski
 
 课程创作器 CLI 的使用统计可能关联当前账号。设置 `SHIFU_DISABLE_ANALYTICS=1` 可关闭；详见[配置说明](skills/ai-shifu-course-creator/.env.example)。
 
-## 元数据校验
+## 校验
 
 ```bash
 python3 scripts/validate_skill_quality.py
+npm test
+npm run check-version
 ```
 
 ## AI 师傅

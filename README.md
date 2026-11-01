@@ -1,8 +1,55 @@
-# AI-Shifu Skills
+# AI-Shifu CLI and Skills
 
 [中文 README](./README.zh-CN.md)
 
-Reusable AI-Shifu skills for course production and improvement, from topic selection and deployment to privacy-safe learning analysis.
+Install the `shifu` CLI to get AI-Shifu course operations and the matching agent skills, from topic selection and deployment to privacy-safe learning analysis.
+
+## Install and Update
+
+Requires Node.js 22.20.0+, Python 3.11+ with `venv`, and network access for npm and Python dependencies. The installation entrypoint follows the [lark-cli installer](https://github.com/larksuite/cli): install the CLI first, then synchronize its skills.
+
+```bash
+npx @ai-shifu/cli@latest install
+shifu --version
+shifu skills list
+```
+
+Installation adds the global `shifu` command, prepares an isolated Python runtime, and installs all three bundled business skills in the shared `~/.agents/skills` directory and for detected common agents. The skills come from the same npm package as the CLI. The recommended `npx … install` entrypoint runs setup explicitly. A direct `npm install --global @ai-shifu/cli` also runs setup when lifecycle scripts are enabled; if the package manager skips them, run `shifu setup`. Restart or refresh the agent to load newly installed skills.
+
+```bash
+shifu update
+shifu setup
+shifu skills install
+shifu skills install --agent codex
+```
+
+`update` upgrades the CLI and synchronizes its skills together. `setup` prepares both the runtime and skills; use `skills install` for skill-only repair or an agent added later. Omit `--agent` to use the shared directory and detected common agents. Installing skills does not sign in to an AI-Shifu account.
+
+The npm package has not been published yet; the `npx` entrypoint becomes available after its first publication. Maintainers can test the package from this checkout:
+
+```bash
+npm install --ignore-scripts
+npm test
+npm pack
+npm install --global ./ai-shifu-cli-VERSION.tgz
+shifu setup --agent codex
+```
+
+Replace `VERSION` with the version in the tarball filename printed by `npm pack`. Local dependency installation does not install user skills; the explicit setup also works when npm skips installation scripts. The [CLI publication workflow](.github/workflows/cli-publish.yml) publishes a verified release tag to npm when explicitly dispatched with the required npm publishing credential.
+
+## Start Using the CLI
+
+```bash
+shifu --help
+shifu site --set cn
+shifu login
+shifu verify
+shifu list
+```
+
+Choose `cn`, `com`, or your own service URL for the account you intend to use; see the [CLI reference](skills/ai-shifu-course-creator/references/cli/cli-reference.md) for profiles, installation-specific command selection, and command details. Configuration and browser credentials use the existing AI-Shifu user configuration directory. The npm entrypoint and its synchronized skills' Python fallback read optional environment settings from `cli.env` there; channel-managed and older skill installations retain their own `.env` compatibility.
+
+Setup preserves legacy configuration. Migration conflicts and credential cleanup are described in the [installation reference](skills/ai-shifu-course-creator/references/cli/cli-reference.md#cli-and-skill-installation).
 
 ## Included Skills
 
@@ -13,6 +60,7 @@ Reusable AI-Shifu skills for course production and improvement, from topic selec
 ## Repository Layout
 
 ```text
+cli/
 skills/
   ai-shifu-course-creator/
   ai-shifu-learning-report/
@@ -73,10 +121,12 @@ New courses and changes to existing courses follow [automatic platform updates](
 
 Course Creator CLI usage metadata may be linked to your account. Set `SHIFU_DISABLE_ANALYTICS=1` to opt out; see the [configuration](skills/ai-shifu-course-creator/.env.example).
 
-## Validate Metadata
+## Validate
 
 ```bash
 python3 scripts/validate_skill_quality.py
+npm test
+npm run check-version
 ```
 
 ## AI-Shifu
