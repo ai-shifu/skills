@@ -56,6 +56,83 @@ class NpmConfigurationRootTests(unittest.TestCase):
             "schema_version": 1, "config_dir": str(selected),
         })
 
+    def marked_skill(self):
+        skill = self.directory / "marked-skill"
+        shutil.copytree(SCRIPT_DIR, skill / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+        (skill / "SKILL.md").write_text(
+            "---\nname: ai-shifu-course-creator\nmetadata:\n  version: 2.2.1\n"
+            "  version_management: standalone\n---\n", encoding="utf-8")
+        shutil.copyfile(SCRIPT_DIR.parent / ".env.example", skill / ".env.example")
+        (skill / ".ai-shifu-cli.json").write_text(json.dumps({
+            "schema_version": 1, "distribution": "npm", "version": "2.2.1",
+        }), encoding="utf-8")
+        return skill
+
+    def test_marked_fallback_reports_a_bad_pointer_through_the_configuration_error_boundary(self):
+        skill = self.marked_skill()
+        self.default_root.mkdir(parents=True)
+        pointer = self.default_root / "cli-config-root.json"
+        pointer.write_text("not json", encoding="utf-8")
+        result = subprocess.run([sys.executable, str(skill / "scripts/shifu-cli.py"), "site"],
+                                env=self.environment, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 4, result.stderr)
+        self.assertIn("Configuration error:", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(pointer.read_text(), "not json")
+        self.assertFalse((skill / ".env").exists())
+        self.assertFalse((self.default_root / "cli.env").exists())
+        self.assertFalse((self.default_root / "settings.json").exists())
+
+        # An explicit process root remains authoritative even when the default
+        # pointer is damaged, and the pointer is never silently rewritten.
+        selected = self.directory / "explicit"
+        environment = {**self.environment, "AI_SHIFU_CONFIG_DIR": str(selected)}
+        result = subprocess.run([sys.executable, str(skill / "scripts/shifu-cli.py"), "site"],
+                                env=environment, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["status"], "selection_required")
+        self.assertTrue((selected / "cli.env").is_file())
+        self.assertFalse((skill / ".env").exists())
+        self.assertEqual(pointer.read_text(), "not json")
+
+    def test_account_independent_fallback_commands_do_not_use_a_placeholder_root(self):
+        skill = self.marked_skill()
+        self.default_root.mkdir(parents=True)
+        (self.default_root / "cli-config-root.json").write_text("not json", encoding="utf-8")
+        entrypoint = skill / "scripts/shifu-cli.py"
+        help_result = subprocess.run([sys.executable, str(entrypoint), "--help"],
+                                     env=self.environment, capture_output=True, text=True)
+        self.assertEqual(help_result.returncode, 0, help_result.stderr)
+        course = self.directory / "local-course"
+        (course / "lessons").mkdir(parents=True)
+        (course / "lessons/lesson-01.md").write_text("# A local lesson\n", encoding="utf-8")
+        build_result = subprocess.run([sys.executable, str(entrypoint), "build", "--course-dir", str(course)],
+                                      env=self.environment, capture_output=True, text=True)
+        self.assertEqual(build_result.returncode, 0, build_result.stderr)
+        self.assertTrue((course / "shifu-import.json").is_file())
+        script = """import importlib.util, sys
+from pathlib import Path
+entry = Path(sys.argv[1]); sys.path.insert(0, str(entry.parent))
+spec = importlib.util.spec_from_file_location('fallback_cli', entry)
+cli = importlib.util.module_from_spec(spec); spec.loader.exec_module(cli)
+try:
+    cli.config_dir()
+except cli.profiles.ProfileError:
+    pass
+else:
+    raise AssertionError('configuration lookup must not fall back to another directory')
+cli.check_for_update = lambda: {'status': 'latest'}
+sys.argv = [str(entry), 'check-update']; cli.main()
+"""
+        update_result = subprocess.run([sys.executable, "-c", script, str(entrypoint)],
+                                       env=self.environment, capture_output=True, text=True)
+        self.assertEqual(update_result.returncode, 0, update_result.stderr)
+        self.assertEqual(json.loads(update_result.stdout)["status"], "latest")
+        self.assertFalse((skill / ".env").exists())
+        self.assertFalse((self.default_root / "cli.env").exists())
+        self.assertFalse((self.default_root / "settings.json").exists())
+
     def test_explicit_process_root_overrides_legacy_values_and_does_not_read_a_pointer(self):
         chosen = self.directory / "chosen"
         chosen.mkdir()

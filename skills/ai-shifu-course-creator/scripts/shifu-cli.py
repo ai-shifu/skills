@@ -39,7 +39,15 @@ _NPM_SYNCHRONIZED = bool(
 )
 # Resolve the npm install's shared root before dotenv can add legacy overrides.
 # Unmarked installations keep their existing dotenv-based root selection.
-_NPM_CONFIG_DIR = profiles.npm_config_dir() if _NPM_SYNCHRONIZED else None
+_NPM_CONFIG_DIR = None
+_NPM_CONFIG_ERROR = None
+if _NPM_SYNCHRONIZED:
+    try:
+        _NPM_CONFIG_DIR = profiles.npm_config_dir()
+    except profiles.ProfileError as error:
+        # Keep help and account-independent commands importable. Commands that
+        # need configuration re-raise this inside main's normal error boundary.
+        _NPM_CONFIG_ERROR = error
 # The npm entrypoint keeps mutable configuration outside its installation.
 # Its synchronized Skills share that configuration during Python fallback.
 # Unmarked and plugin-managed packages retain their own configuration location.
@@ -129,6 +137,8 @@ def _request_headers(token, *, json_content=True, creator_analytics=False):
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
 def ensure_env_file():
     """Create the runtime .env from .env.example when it does not exist."""
+    if _NPM_CONFIG_ERROR is not None:
+        raise _NPM_CONFIG_ERROR
     if ENV_FILE.exists():
         return
     if not ENV_EXAMPLE_FILE.exists():
@@ -205,6 +215,8 @@ def cmd_logout(args):
 
 
 def config_dir():
+    if _NPM_CONFIG_ERROR is not None:
+        raise _NPM_CONFIG_ERROR
     return _NPM_CONFIG_DIR if _NPM_CONFIG_DIR is not None else profiles.config_dir()
 
 
@@ -3690,6 +3702,12 @@ def main():
     handler = commands.get(args.command)
     if handler:
         try:
+            if _NPM_CONFIG_ERROR is not None:
+                if args.command == "build":
+                    handler(args)
+                    return
+                if args.command != "check-update":
+                    raise _NPM_CONFIG_ERROR
             if args.command != "check-update":
                 _maybe_check_for_updates()
             process_env = dict(os.environ)
