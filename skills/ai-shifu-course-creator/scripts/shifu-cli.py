@@ -28,8 +28,11 @@ from agent_detection import AGENT_DISPLAY_NAMES, detect_agent
 from skill_update_check import automatic_check_for_update, check_for_update
 
 # ── Constants ──────────────────────────────────────────────────────────────────
-ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
-ENV_EXAMPLE_FILE = ENV_FILE.with_name(".env.example")
+_SKILL_DIR = Path(__file__).resolve().parent.parent
+# The npm entrypoint keeps mutable configuration outside its installation.
+# Standalone channel packages retain their existing configuration location.
+ENV_FILE = Path(os.environ.get("AI_SHIFU_CLI_ENV_FILE") or _SKILL_DIR / ".env")
+ENV_EXAMPLE_FILE = _SKILL_DIR / ".env.example"
 
 SITE_URLS = profiles.SITE_URLS
 
@@ -118,6 +121,7 @@ def ensure_env_file():
         print(f"Error: missing environment template: {ENV_EXAMPLE_FILE}",
               file=sys.stderr)
         sys.exit(1)
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     shutil.copyfile(ENV_EXAMPLE_FILE, ENV_FILE)
     os.chmod(ENV_FILE, 0o600)
 

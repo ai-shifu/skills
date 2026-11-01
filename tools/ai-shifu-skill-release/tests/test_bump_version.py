@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import tempfile
@@ -72,6 +73,23 @@ class BumpVersionTest(unittest.TestCase):
 
         self.repo_url = f"file://{self.origin}"
 
+    def add_cli_package(self, *, version="1.1.1", lock_version="1.1.1") -> Path:
+        seed = Path(self.tmp.name) / "seed"
+        skill = seed / "skills/ai-shifu-course-creator/SKILL.md"
+        skill.parent.mkdir(parents=True)
+        skill.write_text(SKILL_MD, encoding="utf-8")
+        package = {"name": "@ai-shifu/cli", "version": version, "bin": {"shifu": "cli/shifu.mjs"}}
+        lock = {
+            "name": "@ai-shifu/cli", "version": lock_version, "lockfileVersion": 3,
+            "packages": {"": {"name": "@ai-shifu/cli", "version": lock_version}},
+        }
+        (seed / "package.json").write_text(json.dumps(package), encoding="utf-8")
+        (seed / "package-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+        git("add", "--all", cwd=seed)
+        git("commit", "--quiet", "-m", "add CLI", cwd=seed)
+        git("push", "--quiet", "origin", "main", cwd=seed)
+        return seed
+
     def test_bump_pushes_branch_without_touching_main(self) -> None:
         args = make_args(skill_version="1.2.0", repo_url=self.repo_url)
         result = version_bump.bump(args)
@@ -115,6 +133,38 @@ class BumpVersionTest(unittest.TestCase):
         args = make_args(skill_version="1.1.1", repo_url=self.repo_url)
         with self.assertRaises(ValueError):
             version_bump.bump(args)
+
+    def test_primary_skill_bump_updates_cli_and_lockfile_on_the_same_branch(self) -> None:
+        self.add_cli_package()
+        result = version_bump.bump(make_args(
+            skill_name="ai-shifu-course-creator", skill_version="1.2.0", repo_url=self.repo_url,
+        ))
+        check = Path(self.tmp.name) / "check-cli"
+        git("clone", "--quiet", "--branch", result["branch"], self.repo_url, str(check), cwd=check.parent)
+        package = json.loads((check / "package.json").read_text())
+        lock = json.loads((check / "package-lock.json").read_text())
+        self.assertEqual(package["version"], "1.2.0")
+        self.assertEqual(package["bin"], {"shifu": "cli/shifu.mjs"})
+        self.assertEqual(lock["version"], "1.2.0")
+        self.assertEqual(lock["packages"][""]["version"], "1.2.0")
+        self.assertEqual(set(git("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD", cwd=check).splitlines()), {
+            "package.json", "package-lock.json", "skills/ai-shifu-course-creator/SKILL.md",
+        })
+        self.assertEqual(json.loads(git("show", "origin/main:package.json", cwd=check))["version"], "1.1.1")
+        self.assertIn("skill and CLI package", git("log", "-1", "--format=%b", cwd=check))
+
+    def test_primary_bump_rejects_drift_before_changing_package_metadata(self) -> None:
+        seed = self.add_cli_package(lock_version="1.0.0")
+        before = (seed / "package.json").read_bytes()
+        with self.assertRaisesRegex(ValueError, "lockfile version"):
+            version_bump.update_cli_version(seed, "ai-shifu-course-creator", "1.1.1", "1.2.0")
+        self.assertEqual((seed / "package.json").read_bytes(), before)
+
+    def test_companion_skill_bump_does_not_change_cli_version(self) -> None:
+        seed = self.add_cli_package()
+        before = (seed / "package.json").read_bytes()
+        self.assertFalse(version_bump.update_cli_version(seed, "demo-skill", "1.1.1", "1.2.0"))
+        self.assertEqual((seed / "package.json").read_bytes(), before)
 
     def test_bumped_version_levels(self) -> None:
         self.assertEqual(version_bump.bumped_version("1.1.1", "major"), "2.0.0")

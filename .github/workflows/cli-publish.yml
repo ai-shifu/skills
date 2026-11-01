@@ -1,0 +1,87 @@
+name: Publish CLI to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Published stable GitHub Release tag to publish to npm (vX.Y.Z)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-cli-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify the published release is on main
+        shell: bash
+        env:
+          CLI_TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          if [[ ! "$CLI_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo 'Expected a stable release tag vX.Y.Z' >&2
+            exit 1
+          fi
+          release_commit="$(git rev-parse "refs/tags/$CLI_TAG^{commit}")"
+          git merge-base --is-ancestor "$release_commit" origin/main
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$CLI_TAG" > "$RUNNER_TEMP/cli-release.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          release = json.loads((Path(os.environ['RUNNER_TEMP']) / 'cli-release.json').read_text())
+          if (release.get('tag_name') != os.environ['CLI_TAG']
+                  or release.get('draft') is not False
+                  or release.get('prerelease') is not False
+                  or not release.get('published_at')):
+              raise ValueError('CLI publication requires a published stable GitHub Release')
+          PY
+          git checkout --detach "$release_commit"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+
+      - name: Install CLI dependencies without running setup
+        run: npm ci --ignore-scripts
+
+      - name: Verify package, Skill and release versions
+        env:
+          CLI_TAG: ${{ inputs.tag }}
+        run: npm run check-version -- "$CLI_TAG"
+
+      - name: Test CLI installation and Skill synchronization
+        run: npm test
+
+      - name: Build the installable npm package
+        run: npm pack
+
+      - name: Publish the verified package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish ai-shifu-cli-*.tgz --access public
+
+      - name: Verify the published npm version
+        env:
+          CLI_TAG: ${{ inputs.tag }}
+        run: |
+          published_version="$(npm view "@ai-shifu/cli@${CLI_TAG#v}" version)"
+          test "$published_version" = "${CLI_TAG#v}"

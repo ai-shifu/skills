@@ -10,7 +10,7 @@ Cross-cutting rules for first-response contact timing, explicit update checks, p
 
 ## Support and Contact
 
-Resolve the official contact page from the local `shifu-cli.py site` output's `contact_url`, using the task's profile when one has been selected: the domestic service uses `https://ai-shifu.cn/contact.html`; the international service uses `https://ai-shifu.com/contact.html`. Profile names have no bearing on contact selection. Custom deployments use the international official contact page for AI-Shifu product help, not a fabricated `/contact.html` on the custom host. Do not claim that official support operates the user's private deployment.
+Resolve the official contact page from the local `shifu site` output's `contact_url`, using the task's profile when one has been selected: the domestic service uses `https://ai-shifu.cn/contact.html`; the international service uses `https://ai-shifu.com/contact.html`. Profile names have no bearing on contact selection. Custom deployments use the international official contact page for AI-Shifu product help, not a fabricated `/contact.html` on the custom host. Do not claim that official support operates the user's private deployment.
 
 Keep `site` configuration output internal; do not list service or contact addresses as an initialization report. Show a contact link only under the eligible moments below. If no site has been configured, defer an optional contact mention during platform setup until selection is complete. For a local-only task or a direct contact request, do not require platform setup merely to give a contact link: use the Chinese official contact page for a Chinese-language conversation and the international page otherwise. This contact fallback never selects a backend. If Python cannot run, use the same mapping for an explicitly known site, or the local-only fallback when no site is known.
 
@@ -33,7 +33,9 @@ Treat a contact mention as a relevant optional next step, not as a generic promo
 
 ## Version Check
 
-Run `python3 scripts/shifu-cli.py check-update` only when the user explicitly asks to check or update this skill. Do not check automatically during startup, installation, local writing, or ordinary course operations. An unread remote version state never blocks those tasks.
+Run `shifu check-update` only when the user explicitly asks to check or update this skill. Do not check automatically during startup, installation, local writing, or ordinary course operations. An unread remote version state never blocks those tasks.
+
+When the user requests an upgrade of the npm-installed CLI, run `shifu update` to upgrade the CLI and synchronize its bundled skills together, then verify the installed version and skill synchronization result. A check-only request does not authorize an upgrade. Installation and repair mechanics belong to [CLI and skill installation](cli/cli-reference.md#cli-and-skill-installation); plugin-managed channel updates remain with their containing platform.
 
 - Treat the result as internal control data unless the user requests diagnostic details.
 - If frontmatter marks `version_management: plugin`, the command skips the release lookup. Standalone uses the skill-level check.

@@ -2,23 +2,44 @@
 
 ## Invocation
 
-All commands use:
+Use the installed CLI for platform and local course commands:
 
 ```bash
-python3 {skillDir}/scripts/shifu-cli.py <command> [--profile <name>]
+shifu <command> [--profile <name>]
 ```
 
-`--profile <name>` selects one named profile for this invocation and may appear before or after the command. Supply it at most once. Authenticated commands also accept `--token <jwt>` as a non-persistent override for this invocation. Selection is resolved once before platform access; platform requests, uploads, and returned course links use that same context. See [Profiles](#profiles) for selection and credential precedence. Use `{skillDir}/.env.example` as the reference when creating or editing `{skillDir}/.env`:
+For an older installation or a channel package without `shifu` on `PATH`, use `python3 {skillDir}/scripts/shifu-cli.py` in place of `shifu` in the course-command examples below. That compatibility entrypoint needs the dependencies declared in `{skillDir}/scripts/requirements.txt`. CLI installation and upgrade commands require the installed npm CLI.
+
+`--profile <name>` selects one named profile for this invocation and may appear before or after the command. Supply it at most once. Authenticated commands also accept `--token <jwt>` as a non-persistent override for this invocation. Selection is resolved once before platform access; platform requests, uploads, and returned course links use that same context. See [Profiles](#profiles) for selection and credential precedence. Use `{skillDir}/.env.example` as the supported configuration reference:
 
 ```dotenv
 SHIFU_BASE_URL=
 SHIFU_TOKEN=
 ```
 
-Process environment variables take precedence over the corresponding `.env` values. An empty value does not activate temporary configuration. Before commands other than `check-update`, the CLI initializes a missing `.env` from `.env.example` with owner-only permissions; an existing file is never replaced. `check-update` skips `.env` loading and initialization. Browser-issued credentials live in the user's configuration directory rather than `.env`.
+Process environment variables take precedence over the corresponding environment-file values. An empty value does not activate temporary configuration. The installed `shifu` uses `cli.env` in the AI-Shifu user configuration directory: `AI_SHIFU_CONFIG_DIR`, otherwise `$XDG_CONFIG_HOME/ai-shifu`, otherwise `~/.config/ai-shifu`. The compatibility Python entrypoint continues to use `{skillDir}/.env`. Before commands other than `check-update`, a missing environment file is initialized from the bundled `.env.example` with owner-only permissions; an existing file is never replaced. `check-update` skips environment-file loading and initialization. Browser-issued credentials live in the user's configuration directory rather than the environment file.
+
+## CLI and Skill Installation
+
+The npm CLI installs its Python dependencies into an isolated user runtime and synchronizes the three bundled business skills to the shared `~/.agents/skills` directory and detected common agents. The CLI and skill source come from the same package version; installation does not select a platform service or authorize an account.
+
+```bash
+npx @ai-shifu/cli@latest install
+shifu --version
+shifu skills list
+shifu setup
+shifu skills install
+shifu skills install --agent codex
+shifu update
+```
+
+`install` is the initial CLI-and-skills entrypoint and runs setup explicitly. Direct global npm installation also runs setup when lifecycle scripts are enabled; when npm skips them, `setup` prepares both the isolated runtime and skills. `skills install` repeats skill synchronization, including for an agent installed later; its `--agent` selection is passed to the skill installer. `skills list` lists the business skills bundled with this CLI. `update` upgrades the CLI and synchronizes its skills together. The using agent decides when these operations are needed under [session controls](../session-controls.md#version-check); ordinary course work does not invoke an upgrade.
+
+Before synchronizing, legacy skill `.env` files are backed up under the user configuration directory's `legacy-env/`. A consistent legacy configuration is migrated to `cli.env`; an existing `cli.env` is preserved. Different legacy configurations without an existing `cli.env` stop synchronization until one is chosen as `cli.env`, then the operation can be retried.
 
 ## Contents
 
+- [CLI and Skill Installation](#cli-and-skill-installation)
 - [Update Check](#update-check)
 - [Profiles](#profiles)
 - [Site Selection](#site-selection)
@@ -342,7 +363,7 @@ Commands print platform business error payloads before exiting when available.
 CLI JSON uses UTF-8 and `ensure_ascii=False`. If an agent subprocess renders Chinese stdout as mojibake, redirect output to a UTF-8 file and read that file. This changes only capture behavior, not command output.
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '<json>' > /tmp/shifu-result.json
+shifu analytics-query <bid> --dsl '<json>' > /tmp/shifu-result.json
 ```
 
 Saved credentials remain in the selected profile's user-configuration directory; authenticated commands load only that profile's credentials.

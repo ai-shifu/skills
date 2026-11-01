@@ -11,6 +11,57 @@ permissions:
   pull-requests: read
 
 jobs:
+  cli:
+    name: Validate CLI (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup CLI Python runtime
+        id: cli-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CLI dependencies without running setup
+        run: npm ci --ignore-scripts
+
+      - name: Check CLI and Skill versions
+        run: npm run check-version
+
+      - name: Test CLI installation and Skill synchronization
+        run: npm test
+
+      - name: Verify real npm installation and automatic Skill setup
+        timeout-minutes: 10
+        env:
+          AI_SHIFU_PYTHON: ${{ steps.cli-python.outputs.python-path }}
+        run: npm run test:install
+
+      - name: Create CLI package directory
+        run: node -e "require('node:fs').mkdirSync('cli-artifacts', {recursive:true})"
+
+      - name: Pack the CLI with bundled Skills
+        run: npm pack --pack-destination cli-artifacts
+
+      - name: Save installable CLI package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-package-${{ matrix.os }}-${{ github.sha }}
+          path: cli-artifacts/*.tgz
+          retention-days: 7
+          if-no-files-found: error
+
   validate:
     runs-on: ubuntu-latest
     steps:

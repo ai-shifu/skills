@@ -40,7 +40,7 @@ Resolve every `## Required References` declaration in those files transitively b
 
 ## Non-Negotiable Boundaries
 
-- Use the course creator skill's current CLI for live data. Never read a token, inspect its environment file, compose authentication headers, or call platform HTTP endpoints directly.
+- Use the course creator skill's current `shifu` CLI for live data, following its invocation and compatibility contract. Never read a token, inspect its environment file, compose authentication headers, or call platform HTTP endpoints directly.
 - Do not copy or freeze the analytics query language in this skill. The course creator skill owns query syntax, table semantics, codes, and recipes.
 - Never place raw follow-up text, answers, phone numbers, emails, names, nicknames, learner labels, or any raw `*_bid` value in either final artifact.
 - Build every lesson-scoped analysis from the current published outline. Include only published, visible teaching leaf lessons, and use that same eligible set for the course entrant denominator, completion numerator, learning path, lesson health, follow-up attribution, and recommendations. If publication or visibility cannot be resolved reliably, mark the affected metrics unavailable instead of falling back to a draft outline.

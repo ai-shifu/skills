@@ -1,0 +1,40 @@
+{
+  "name": "@ai-shifu/cli",
+  "version": "2.2.1",
+  "description": "AI-Shifu CLI with automatic Agent Skills installation",
+  "type": "module",
+  "bin": {
+    "shifu": "cli/shifu.mjs"
+  },
+  "engines": {
+    "node": ">=22.20.0"
+  },
+  "files": [
+    "cli/*.mjs",
+    "skills/**/*.md",
+    "skills/**/*.py",
+    "skills/**/*.txt",
+    "skills/**/*.json",
+    "skills/**/*.yaml",
+    "skills/**/*.html",
+    "skills/**/.env.example"
+  ],
+  "scripts": {
+    "postinstall": "node cli/postinstall.mjs",
+    "check-version": "node cli/check-version.mjs",
+    "prepack": "node cli/check-version.mjs --quiet",
+    "test": "node --test cli/tests/*.test.mjs",
+    "test:install": "node cli/tests/smoke-install.mjs"
+  },
+  "dependencies": {
+    "skills": "1.7.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ai-shifu/skills.git"
+  },
+  "license": "MIT"
+}
