@@ -261,7 +261,8 @@ export function setup(agents = []) {
 export function pythonInvocation(args, root = packageRoot, env = process.env) {
   return {
     args: [join(root, 'skills', skillNames[0], 'scripts', 'shifu-cli.py'), ...args],
-    env: { ...pythonEnvironment(env), AI_SHIFU_CLI_ENV_FILE: join(configDir(env), 'cli.env'),
+    env: { ...pythonEnvironment(env), AI_SHIFU_CONFIG_DIR: configDir(env),
+      AI_SHIFU_CLI_ENV_FILE: join(configDir(env), 'cli.env'),
       AI_SHIFU_CLI_DISTRIBUTION: 'npm' },
   };
 }

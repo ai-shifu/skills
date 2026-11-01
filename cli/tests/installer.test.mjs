@@ -109,6 +109,7 @@ test('Python passthrough preserves business arguments and selects external confi
   const invocation = pythonInvocation(args, packageRoot, env);
   assert.deepEqual(invocation.args.slice(1), args);
   assert.equal(invocation.env.AI_SHIFU_CLI_ENV_FILE, join(configDir(env), 'cli.env'));
+  assert.equal(invocation.env.AI_SHIFU_CONFIG_DIR, configDir(env));
   const paths = runtimePaths(packageRoot, env);
   assert.ok(paths.directory.startsWith(configDir(env)));
   assert.ok(!paths.directory.startsWith(packageRoot));
