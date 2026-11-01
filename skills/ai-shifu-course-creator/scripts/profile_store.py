@@ -564,8 +564,8 @@ class ProfileStore:
             identifier = receipts[identity]
             for name, entry in settings["profiles"].items():
                 if entry["id"] == identifier:
-                    if entry["base_url"] != base_url:
-                        raise ProfileError("An imported profile changed service; select it explicitly before retrying.")
+                    # This source was already consumed. Later logout or service
+                    # changes belong to the user, not a reason to replay it.
                     return name
             raise ProfileError("An imported profile no longer exists.")
         for name, entry in settings["profiles"].items():

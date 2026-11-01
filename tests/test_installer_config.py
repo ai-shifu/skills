@@ -306,6 +306,22 @@ class InstallerConfigurationTests(unittest.TestCase):
         self.assertEqual(len(self.store.list_profiles()), 1)
         self.assertTrue(all("imported-token" not in backup.read_text() for backup in self.backups()))
 
+    def test_consumed_receipt_allows_a_later_service_change_without_replaying_credentials(self):
+        self.store.set_profile("current", "com")
+        source = self.source("legacy", "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=imported-token\n")
+        first = self.imported([source])
+        name = first["imported_profiles"][0]
+        context = self.store.resolve(name, environ={})
+        self.store.logout(context)
+        updated = self.store.set_profile(name, "https://moved.example/teach")
+        result = self.imported([source])
+        self.assertEqual(result["imported_profiles"], [name])
+        self.assertEqual(self.store.resolve(name, environ={}).base_url, updated.base_url)
+        self.assertEqual(self.store.load_token(updated), "")
+        self.assertEqual(self.store.default_profile(), "current")
+        self.assertEqual(len(self.store.list_profiles()), 2)
+        self.assertTrue(all("imported-token" not in backup.read_text() for backup in self.backups()))
+
     def test_invalid_receipt_shapes_fail_closed(self):
         current = self.store.set_profile("current", "cn")
         original = read_private_json(self.store.settings_path)
