@@ -81,6 +81,28 @@ def parse_semver(value: object) -> tuple[int, int, int] | None:
     return major, minor, patch
 
 
+def read_installation_metadata(skill_root: Path = SKILL_ROOT) -> dict[str, object] | None:
+    """Recognize only the npm installer's versioned distribution marker."""
+    try:
+        document = (skill_root / ".ai-shifu-cli.json").read_bytes()
+        if len(document) > 4096:
+            return None
+        metadata = json.loads(document.decode("utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if (
+        not isinstance(metadata, dict)
+        or set(metadata) != {"schema_version", "distribution", "version"}
+        or type(metadata["schema_version"]) is not int
+        or metadata["schema_version"] != 1
+        or metadata["distribution"] != "npm"
+        or not isinstance(metadata["version"], str)
+        or not re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", metadata["version"])
+    ):
+        return None
+    return metadata
+
+
 def read_skill_metadata(skill_md: Path = SKILL_MD) -> dict[str, str] | None:
     """Read scalar frontmatter and version fields inside the metadata mapping."""
     try:

@@ -25,13 +25,24 @@ from dotenv import load_dotenv
 import profile_store as profiles
 from agent_detection import AGENT_DISPLAY_NAMES, detect_agent
 
-from skill_update_check import automatic_check_for_update, check_for_update
+from skill_update_check import (
+    automatic_check_for_update, check_for_update, read_installation_metadata,
+    read_skill_metadata,
+)
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 _SKILL_DIR = Path(__file__).resolve().parent.parent
+_INSTALLATION_METADATA = read_installation_metadata(_SKILL_DIR)
+_SKILL_METADATA = read_skill_metadata(_SKILL_DIR / "SKILL.md") or {}
+_NPM_SYNCHRONIZED = bool(
+    _INSTALLATION_METADATA and _SKILL_METADATA.get("version_management") != "plugin"
+)
 # The npm entrypoint keeps mutable configuration outside its installation.
-# Standalone channel packages retain their existing configuration location.
-ENV_FILE = Path(os.environ.get("AI_SHIFU_CLI_ENV_FILE") or _SKILL_DIR / ".env")
+# Its synchronized Skills share that configuration during Python fallback.
+# Unmarked and plugin-managed packages retain their own configuration location.
+ENV_FILE = Path(os.environ.get("AI_SHIFU_CLI_ENV_FILE") or (
+    profiles.config_dir() / "cli.env" if _NPM_SYNCHRONIZED else _SKILL_DIR / ".env"
+))
 ENV_EXAMPLE_FILE = _SKILL_DIR / ".env.example"
 
 SITE_URLS = profiles.SITE_URLS
