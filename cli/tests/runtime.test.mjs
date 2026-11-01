@@ -106,6 +106,27 @@ print(json.dumps((root / 'creations').read_text()))
 `), 'created\ncreated\n');
 });
 
+test('a validation timeout preserves the cached interpreter and dependencies for retry', t => {
+  const f = fixture(t);
+  const outcome = runCase(f, `
+prepare()
+def slow_run(command, **options):
+    raise subprocess.TimeoutExpired(command, 10)
+try:
+    module.prepare_runtime(paths['directory'], paths['requirements'], paths['python'], sys.stdin.buffer, run=slow_run)
+except RuntimeError as error:
+    message = str(error)
+else:
+    raise AssertionError('validation timeout must not start a rebuild')
+print(json.dumps({'message': message, 'creations': (root / 'creations').read_text(),
+    'marker': Path(paths['marker']).read_text(), 'dependencies': imports.read_text()}))
+`);
+  assert.match(outcome.message, /timed out.*left unchanged.*retry/);
+  assert.equal(outcome.creations, 'created\n');
+  assert.equal(outcome.marker, 'ready\n');
+  assert.equal(outcome.dependencies, 'ready');
+});
+
 test('Python detection and commands discard inherited module overrides', t => {
   const f = fixture(t);
   const env = { ...f.env, PYTHONHOME: '/unrelated/python', PythonPath: '/unrelated/modules', AI_SHIFU_PYTHON: 'fixture-python' };

@@ -22,7 +22,12 @@ def prepare_runtime(directory, requirements, python, lock, run=subprocess.run):
             )
             if result.returncode == 0:
                 return 0
-        except (OSError, subprocess.TimeoutExpired):
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError(
+                "Python runtime validation timed out. The cached installation "
+                "was left unchanged; retry shifu setup."
+            ) from error
+        except OSError:
             pass
     if directory.is_symlink():
         directory.unlink()
