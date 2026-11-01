@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
   readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -19,9 +19,28 @@ function expandHome(value, home) {
   return value === '~' ? home : value.startsWith('~/') || value.startsWith('~\\') ? join(home, value.slice(2)) : value;
 }
 
-export function configDir(env = process.env, home = homedir()) {
+function processConfigDir(env = process.env, home = homedir()) {
   return resolve(expandHome(env.AI_SHIFU_CONFIG_DIR?.trim() ||
     join(env.XDG_CONFIG_HOME?.trim() || join(home, '.config'), 'ai-shifu'), home));
+}
+
+export function configDir(env = process.env, home = homedir()) {
+  const root = processConfigDir(env, home);
+  if (env.AI_SHIFU_CONFIG_DIR?.trim()) return root;
+  const pointer = join(root, 'cli-config-root.json');
+  let value;
+  try {
+    value = JSON.parse(readFileSync(pointer, 'utf8'));
+  } catch (error) {
+    if (error.code === 'ENOENT') return root;
+    throw new Error(`Cannot read npm configuration root pointer: ${pointer}`);
+  }
+  if (!value || Array.isArray(value) || Object.keys(value).sort().join(',') !== 'config_dir,schema_version' ||
+    value.schema_version !== 1 || typeof value.config_dir !== 'string' ||
+    !value.config_dir || value.config_dir.includes('\0') || !isAbsolute(value.config_dir)) {
+    throw new Error(`Invalid npm configuration root pointer: ${pointer}`);
+  }
+  return resolve(value.config_dir);
 }
 
 // Invoke npm's JavaScript entrypoint where available; never interpolate user
@@ -104,7 +123,7 @@ export function defaultAgentArgs(env = process.env, home = homedir()) {
 
 export function preserveLegacyEnv(directories, env = process.env, home = homedir()) {
   if (!directories.some(directory => existsSync(join(directory, '.env')))) return;
-  env = { ...pythonEnvironment(env), AI_SHIFU_CONFIG_DIR: configDir(env, home) };
+  env = pythonEnvironment(env);
   let [python, ...prefix] = findPython(env);
   const probe = spawnSync(python, [...prefix, '-c', 'import dotenv'], { env, stdio: 'ignore' });
   if (probe.error || probe.status !== 0) {
@@ -114,7 +133,7 @@ export function preserveLegacyEnv(directories, env = process.env, home = homedir
   // Profile migration/logout own the same lock, parser, and credential receipt.
   // Node never reads secret contents before acquiring that transaction lock.
   const result = spawnSync(python, [...prefix, join(packageRoot, 'cli', 'migrate-config.py'),
-    configDir(env, home), join(packageRoot, 'skills', skillNames[0], '.env.example'), ...directories],
+    processConfigDir(env, home), join(packageRoot, 'skills', skillNames[0], '.env.example'), ...directories],
   { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(result.stderr.trim() || 'Legacy configuration migration failed.');
@@ -222,8 +241,10 @@ export function installSkills(agents = [], root = packageRoot, env = process.env
 
 export function setup(agents = []) {
   agentArgs(agents);
+  const initialRoot = configDir();
   ensureRuntime();
   installSkills(agents);
+  if (configDir() !== initialRoot) ensureRuntime();
   process.stderr.write(`AI-Shifu ${packageInfo.version}: CLI runtime and all three Skills are installed. Restart your agent to load the Skills.\n`);
 }
 

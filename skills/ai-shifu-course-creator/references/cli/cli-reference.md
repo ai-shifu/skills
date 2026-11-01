@@ -19,6 +19,8 @@ SHIFU_TOKEN=
 
 Process environment variables take precedence over the corresponding environment-file values. An empty value does not activate temporary configuration. The installed `shifu` and the Python fallback of an npm-synchronized skill use `cli.env` in the AI-Shifu user configuration directory: `AI_SHIFU_CONFIG_DIR`, otherwise `$XDG_CONFIG_HOME/ai-shifu`, otherwise `~/.config/ai-shifu`. Plugin-managed and unmarked Python installations continue to use `{skillDir}/.env`. Before commands other than `check-update`, a missing environment file is initialized from the bundled `.env.example` with owner-only permissions; an existing file is never replaced. `check-update` skips environment-file loading and initialization. Browser-issued credentials live in the user's configuration directory rather than the environment file.
 
+Initial npm setup retains a custom configuration directory selected by a legacy environment file when it does not conflict with an existing npm account or directory choice. Future npm commands and the synchronized Python fallback use that recorded directory without moving its credentials. An explicit process `AI_SHIFU_CONFIG_DIR` takes precedence; conflicting directory choices stop setup before synchronization so one can be selected explicitly.
+
 ## CLI and Skill Installation
 
 The npm CLI installs its Python dependencies into an isolated user runtime and synchronizes the three bundled business skills to the shared `~/.agents/skills` directory and detected common agents. The CLI and skill source come from the same package version; installation does not select a platform service or authorize an account.

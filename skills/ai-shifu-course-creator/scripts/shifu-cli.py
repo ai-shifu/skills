@@ -39,7 +39,7 @@ _NPM_SYNCHRONIZED = bool(
 )
 # Resolve the npm install's shared root before dotenv can add legacy overrides.
 # Unmarked installations keep their existing dotenv-based root selection.
-_NPM_CONFIG_DIR = profiles.config_dir() if _NPM_SYNCHRONIZED else None
+_NPM_CONFIG_DIR = profiles.npm_config_dir() if _NPM_SYNCHRONIZED else None
 # The npm entrypoint keeps mutable configuration outside its installation.
 # Its synchronized Skills share that configuration during Python fallback.
 # Unmarked and plugin-managed packages retain their own configuration location.

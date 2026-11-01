@@ -39,14 +39,124 @@ class ProfileContext:
     token: str = field(default="", repr=False)
 
 
+def _process_config_dir(environ):
+    override = str(environ.get("AI_SHIFU_CONFIG_DIR") or "").strip()
+    if override:
+        return _configuration_path(override, environ)
+    xdg_home = str(environ.get("XDG_CONFIG_HOME") or "").strip()
+    base = _configuration_path(xdg_home, environ) if xdg_home else _configuration_path("~", environ) / ".config"
+    return base / "ai-shifu"
+
+
+def _configuration_path(value, environ):
+    home = environ.get("USERPROFILE" if os.name == "nt" else "HOME") or str(Path.home())
+    if home and (value == "~" or value.startswith(("~/", "~\\"))):
+        value = str(Path(home) / value[2:]) if value != "~" else home
+    return Path(value).expanduser()
+
+
 def config_dir():
     """Keep the existing cross-platform XDG-style configuration location."""
-    override = os.environ.get("AI_SHIFU_CONFIG_DIR", "").strip()
-    if override:
-        return Path(override).expanduser()
-    xdg_home = os.environ.get("XDG_CONFIG_HOME", "").strip()
-    base = Path(xdg_home).expanduser() if xdg_home else Path.home() / ".config"
-    return base / "ai-shifu"
+    return _process_config_dir(os.environ)
+
+
+def _npm_root_pointer(default_root):
+    path = Path(default_root) / "cli-config-root.json"
+    data = read_private_json(path)
+    if data is None:
+        return None
+    value = data.get("config_dir")
+    if (set(data) != {"schema_version", "config_dir"}
+            or type(data.get("schema_version")) is not int or data["schema_version"] != 1
+            or not isinstance(value, str) or not value or "\0" in value
+            or not Path(value).is_absolute()):
+        raise ProfileFormatError(f"Invalid npm configuration root pointer: {path}")
+    return Path(value).resolve()
+
+
+def npm_config_dir(environ=None):
+    """Use a recorded npm root without changing unmarked skill installations."""
+    environ = os.environ if environ is None else environ
+    default_root = _process_config_dir(environ).resolve()
+    if str(environ.get("AI_SHIFU_CONFIG_DIR") or "").strip():
+        return default_root
+    return _npm_root_pointer(default_root) or default_root
+
+
+def _has_root_selection(root):
+    """Detect account state or an existing user choice before switching roots."""
+    root = Path(root)
+    settings = read_private_json(root / "settings.json")
+    if settings is not None:
+        if settings.get("schema_version") == 2:
+            if ProfileStore(root, root / "cli.env")._settings()["profiles"]:
+                return True
+        elif settings:
+            return True
+    if any((root / name).exists() for name in (
+        "credentials.json", "pending-device-auth.json", ".profile-migration.json",
+    )):
+        return True
+    profile_directory = root / "profiles"
+    if profile_directory.is_dir() and any(profile_directory.iterdir()):
+        return True
+    environment_file = root / "cli.env"
+    if environment_file.exists():
+        template = Path(__file__).resolve().parent.parent / ".env.example"
+        return _installer_env_values(environment_file.read_bytes()) != _installer_env_values(template.read_bytes())
+    return False
+
+
+def resolve_installer_config_root(default_root, directories, environ=None):
+    """Select a legacy root in place; never copy credentials between roots."""
+    environ = os.environ if environ is None else environ
+    default_root = Path(default_root).resolve()
+    process_override = str(environ.get("AI_SHIFU_CONFIG_DIR") or "").strip()
+    process_xdg = str(environ.get("XDG_CONFIG_HOME") or "").strip()
+    if process_override:
+        return _process_config_dir(environ).resolve()
+    selected = set()
+    for directory in dict.fromkeys(Path(directory) for directory in directories):
+        try:
+            values = _installer_env_values((directory / ".env").read_bytes())
+        except FileNotFoundError:
+            continue
+        legacy_override = str(values.get("AI_SHIFU_CONFIG_DIR") or "").strip()
+        legacy_xdg = str(values.get("XDG_CONFIG_HOME") or "").strip()
+        if not legacy_override and not legacy_xdg:
+            continue
+        override = process_override or legacy_override
+        xdg = process_xdg or legacy_xdg
+        value = override or xdg
+        if "${" in value:
+            raise ProfileError("Legacy configuration roots must be literal paths before installation.")
+        root = _configuration_path(value, environ)
+        selected.add((root if override else root / "ai-shifu").resolve())
+    if len(selected) > 1:
+        raise ProfileError("Selected legacy installations use different configuration roots; choose a root before installation.")
+    pointer = _npm_root_pointer(default_root)
+    candidate = next(iter(selected), pointer or default_root)
+    if pointer is not None:
+        if candidate != pointer:
+            raise ProfileError("The selected legacy configuration root differs from the existing npm root; choose a root explicitly.")
+        return pointer
+    if candidate != default_root and _has_root_selection(default_root):
+        raise ProfileError("The current npm configuration root already has an account or user settings; choose a root explicitly.")
+    return candidate
+
+
+def record_installer_config_root(default_root, selected_root, environ=None):
+    """Publish the path-only pointer after the selected root was imported."""
+    environ = os.environ if environ is None else environ
+    default_root, selected_root = Path(default_root).resolve(), Path(selected_root).resolve()
+    if str(environ.get("AI_SHIFU_CONFIG_DIR") or "").strip() or default_root == selected_root:
+        return
+    pointer = _npm_root_pointer(default_root)
+    if pointer is not None and pointer != selected_root:
+        raise ProfileError("The npm configuration root changed during installation; retry with an explicit root.")
+    write_private_json(default_root / "cli-config-root.json", {
+        "schema_version": 1, "config_dir": str(selected_root),
+    })
 
 
 def normalize_base_url(value):
