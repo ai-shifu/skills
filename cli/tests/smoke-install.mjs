@@ -11,6 +11,11 @@ try {
   const prefix = join(temporary, 'global');
   const configuration = join(temporary, 'configuration');
   mkdirSync(home, { recursive: true });
+  const legacySkill = join(home, '.agents', 'skills', 'ai-shifu-course-creator');
+  mkdirSync(legacySkill, { recursive: true });
+  writeFileSync(join(legacySkill, 'SKILL.md'),
+    '---\nname: ai-shifu-course-creator\ndescription: Legacy installation\n---\n');
+  writeFileSync(join(legacySkill, '.env'), 'SHIFU_DISABLE_ANALYTICS=1\n');
   const npmrc = join(temporary, 'npmrc');
   writeFileSync(npmrc, '');
   const environment = {
@@ -55,6 +60,12 @@ try {
   };
   assertInstalledSkills();
   assert.ok(existsSync(runtimePaths(installedRoot, environment, home).marker), 'postinstall must prepare the Python runtime');
+  assert.equal(readFileSync(join(configuration, 'cli.env'), 'utf8'), 'SHIFU_DISABLE_ANALYTICS=1\n',
+    'the installed migration helper must preserve existing configuration');
+  for (const name of skillNames) {
+    assert.deepEqual(JSON.parse(readFileSync(join(home, '.agents', 'skills', name, '.ai-shifu-cli.json'), 'utf8')),
+      { schema_version: 1, distribution: 'npm', version: packageInfo.version });
+  }
 
   function shifu(arguments_) {
     return run(process.execPath, [entrypoint, ...arguments_], {

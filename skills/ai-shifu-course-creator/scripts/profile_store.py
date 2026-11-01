@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import errno
 import hashlib
+import io
 import json
 import os
 import tempfile
@@ -24,6 +25,10 @@ LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 class ProfileError(ValueError):
     """A profile, its credentials, or an explicit override is unusable."""
+
+
+class ProfileFormatError(ProfileError):
+    """A readable local configuration file has invalid encoding or JSON shape."""
 
 
 @dataclass(frozen=True)
@@ -91,10 +96,12 @@ def read_private_json(path):
         data = json.loads(Path(path).read_text(encoding="utf-8"))
     except FileNotFoundError:
         return None
-    except (OSError, ValueError) as exc:
+    except (UnicodeError, ValueError) as exc:
+        raise ProfileFormatError(f"Invalid configuration file: {path}") from exc
+    except OSError as exc:
         raise ProfileError(f"Cannot read configuration file: {path}") from exc
     if not isinstance(data, dict):
-        raise ProfileError(f"Expected a JSON object in: {path}")
+        raise ProfileFormatError(f"Expected a JSON object in: {path}")
     return data
 
 
@@ -134,13 +141,21 @@ def _digest(value):
 
 def _clear_private_env_keys(path, keys):
     """Clear selected dotenv values through an owner-only atomic replacement."""
+    _write_private_env(path, Path(path).read_bytes(), clear_keys=keys)
+
+
+def _write_private_env(path, content, *, clear_keys=()):
+    """Publish a complete dotenv file with private permissions on every platform."""
     path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     fd, temp_name = tempfile.mkstemp(dir=str(path.parent), prefix=".tmp-profile-")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        with os.fdopen(fd, "wb") as handle:
             os.chmod(temp_name, 0o600)
-            handle.write(path.read_text(encoding="utf-8"))
-        for key in keys:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        for key in clear_keys:
             set_key(temp_name, key, "")
         os.chmod(temp_name, 0o600)
         os.replace(temp_name, path)
@@ -148,6 +163,19 @@ def _clear_private_env_keys(path, keys):
         with contextlib.suppress(OSError):
             os.unlink(temp_name)
         raise
+
+
+def _installer_env_values(content):
+    """Compare dotenv values without comments, quoting differences, or expansion."""
+    try:
+        values = dotenv_values(stream=io.StringIO(content.decode("utf-8")), interpolate=False)
+    except (UnicodeError, ValueError) as exc:
+        raise ProfileError("Cannot read a legacy environment file as UTF-8 dotenv configuration.") from exc
+    return {key: value for key, value in values.items() if value not in (None, "")}
+
+
+def _installer_credential_identity(base_url, token):
+    return _digest(json.dumps([base_url, token], ensure_ascii=False, separators=(",", ":")))
 
 
 class ProfileStore:
@@ -232,6 +260,14 @@ class ProfileStore:
             not profiles and default is not None
         ):
             raise ProfileError("The default profile does not identify a configured profile.")
+        receipts = settings.get("installer_imports", {})
+        if not isinstance(receipts, dict) or any(
+            not isinstance(identity, str) or len(identity) != 64
+            or any(character not in "0123456789abcdef" for character in identity)
+            or not isinstance(identifier, str) or identifier not in ids
+            for identity, identifier in receipts.items()
+        ):
+            raise ProfileError("Invalid installer configuration import receipts.")
         return settings
 
     def _context(self, settings, name):
@@ -367,10 +403,17 @@ class ProfileStore:
             current = self._current_auth_context(context)
             # Keep credentials until backup cleanup succeeds so a failed logout
             # can retry without losing the token needed to identify its copies.
-            credentials = read_private_json(credentials_path(current))
+            try:
+                credentials = read_private_json(credentials_path(current))
+            except ProfileFormatError:
+                # Explicit logout can discard a confirmed corrupt credential
+                # file. I/O errors still stop before anything is removed.
+                credentials = None
             token = (credentials or {}).get("token")
-            if isinstance(token, str) and token.strip():
-                self._clear_legacy_backup_tokens({_digest(token.strip())})
+            token_digests = {_digest(token.strip())} if isinstance(token, str) and token.strip() else set()
+            identities = {identity for identity, identifier in self._settings().get("installer_imports", {}).items()
+                          if identifier == current.directory.name}
+            self._clear_legacy_backup_tokens(token_digests, installer_identities=identities)
             for path in (credentials_path(current), pending_auth_path(current)):
                 with contextlib.suppress(FileNotFoundError):
                     path.unlink()
@@ -384,9 +427,9 @@ class ProfileStore:
         return {key: (value or "").strip()
                 for key, value in dotenv_values(str(path), interpolate=False).items()}
 
-    def _clear_legacy_backup_tokens(self, expected_digests):
+    def _clear_legacy_backup_tokens(self, expected_digests, *, installer_identities=()):
         """Remove only copies of the affected credential from installer backups."""
-        if not expected_digests:
+        if not expected_digests and not installer_identities:
             return
         try:
             backups = list((self.root / "legacy-env").iterdir())
@@ -396,9 +439,145 @@ class ProfileStore:
             # Backups are ordinary installer-created files, never external paths.
             if backup.suffix != ".env" or backup.is_symlink() or not backup.is_file():
                 continue
-            token = self._env_values(backup).get("SHIFU_TOKEN", "")
-            if token and _digest(token) in expected_digests:
+            values = self._env_values(backup)
+            token = values.get("SHIFU_TOKEN", "")
+            matches = bool(token and _digest(token) in expected_digests)
+            if token and not matches and installer_identities:
+                try:
+                    base_url = normalize_base_url(values.get("SHIFU_BASE_URL", ""))
+                except ProfileError:
+                    continue
+                matches = _installer_credential_identity(base_url, token) in installer_identities
+            if matches:
                 _clear_private_env_keys(backup, ["SHIFU_TOKEN"])
+
+    def import_installer_configuration(self, directories, template_file):
+        """Import selected installation settings under the profile transaction lock.
+
+        Original source files stay untouched. Private backups, profile changes,
+        and token cleanup share the same lock as logout and browser login.
+        """
+        with self._configuration_lock():
+            template = Path(template_file).read_bytes()
+            template_values = _installer_env_values(template)
+            configurations = {}
+            backup_directory = self.root / "legacy-env"
+            for directory in dict.fromkeys(Path(directory) for directory in directories):
+                source = directory / ".env"
+                try:
+                    content = source.read_bytes()
+                except FileNotFoundError:
+                    continue
+                backup_directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+                backup = backup_directory / (hashlib.sha256(content).hexdigest() + ".env")
+                if backup.exists():
+                    if backup.is_symlink() or not backup.is_file():
+                        raise ProfileError("Invalid installer configuration backup.")
+                    # A previous import or logout may have cleared its token.
+                    # Never restore the original secret over that sanitized copy.
+                    os.chmod(backup, 0o600)
+                else:
+                    _write_private_env(backup, content)
+                values = _installer_env_values(content)
+                if values != template_values:
+                    fingerprint = json.dumps(values, ensure_ascii=False, sort_keys=True)
+                    configurations.setdefault(fingerprint, (content, values))
+            existing = self.env_file.read_bytes() if self.env_file.exists() else None
+            replace_environment = existing is None or _installer_env_values(existing) == template_values
+            if len(configurations) > 1:
+                if not replace_environment:
+                    # The user has already selected this CLI's configuration;
+                    # keep that choice rather than guessing among old installs.
+                    return {"status": "preserved", "imported_profiles": []}
+                raise ProfileError(
+                    f"Different legacy configurations were saved in {backup_directory}. "
+                    "Choose one configuration before retrying installation."
+                )
+            if not configurations:
+                return {"status": "unchanged", "imported_profiles": []}
+            content, values = next(iter(configurations.values()))
+            base_url = str(values.get("SHIFU_BASE_URL") or "").strip()
+            token = str(values.get("SHIFU_TOKEN") or "").strip()
+            if any("${" in value for value in (base_url, token)) or (token and not base_url):
+                raise ProfileError(
+                    "Legacy credentials need an explicit service URL and literal values before installation. "
+                    "Original files and private backups were preserved."
+                )
+            if base_url:
+                base_url = normalize_base_url(base_url)
+            identity = _installer_credential_identity(base_url, token) if base_url else None
+            settings = read_private_json(self.settings_path)
+            if settings and "schema_version" in settings and settings.get("schema_version") != 2:
+                raise ProfileError("Unsupported profile configuration version.")
+            if not settings or settings.get("schema_version") != 2:
+                if not replace_environment:
+                    return {"status": "preserved", "imported_profiles": []}
+                _write_private_env(self.env_file, content)
+                self._migrate_legacy(installer_identity=identity)
+                names = []
+                if identity:
+                    migrated = self._settings()
+                    identifier = migrated.get("installer_imports", {}).get(identity)
+                    names = [name for name, entry in migrated["profiles"].items() if entry["id"] == identifier]
+                return {"status": "imported", "imported_profiles": names}
+
+            # Finish any prior committed migration before importing another copy.
+            self._migrate_legacy()
+            settings = self._settings()
+            imported_profiles = []
+            if base_url:
+                imported_profiles.append(self._import_installer_profile(settings, base_url, token, identity))
+            if replace_environment:
+                # Existing profiles own credentials. Do not activate the imported
+                # source as a temporary dotenv override of the current default.
+                credential_keys = [key for key in ("SHIFU_BASE_URL", "SHIFU_TOKEN") if key in values]
+                _write_private_env(self.env_file, content, clear_keys=credential_keys)
+            if token:
+                self._clear_legacy_backup_tokens({_digest(token)})
+            return {
+                "status": "imported" if replace_environment or imported_profiles else "preserved",
+                "imported_profiles": imported_profiles,
+            }
+
+    def _import_installer_profile(self, settings, base_url, token, identity):
+        """Create or reuse an inactive profile, never replay an imported token."""
+        receipts = settings.setdefault("installer_imports", {})
+        if identity in receipts:
+            identifier = receipts[identity]
+            for name, entry in settings["profiles"].items():
+                if entry["id"] == identifier:
+                    if entry["base_url"] != base_url:
+                        raise ProfileError("An imported profile changed service; select it explicitly before retrying.")
+                    return name
+            raise ProfileError("An imported profile no longer exists.")
+        for name, entry in settings["profiles"].items():
+            if entry["base_url"] == base_url:
+                context = self._context(settings, name)
+                if not token or self.load_token(context) == token:
+                    receipts[identity] = entry["id"]
+                    write_private_json(self.settings_path, settings)
+                    return name
+        name = f"imported-{urlsplit(base_url).hostname}-{identity[:12]}"
+        if name in settings["profiles"]:
+            raise ProfileError("An imported profile name is already in use; choose an explicit profile before retrying.")
+        identifier = str(uuid.uuid4())
+        settings["profiles"][name] = {"id": identifier, "base_url": base_url}
+        if settings["default_profile"] is None:
+            settings["default_profile"] = name
+        context = self._context(settings, name)
+        try:
+            if token:
+                self.save_token(context, token)
+            receipts[identity] = identifier
+            write_private_json(self.settings_path, settings)
+        except BaseException:
+            # A failed settings commit must not strand an undiscoverable copy
+            # of the credential in a newly allocated profile directory.
+            committed = read_private_json(self.settings_path) or {}
+            if committed.get("profiles", {}).get(name, {}).get("id") != identifier:
+                credentials_path(context).unlink(missing_ok=True)
+            raise
+        return name
 
     def _cleanup_migration(self, journal):
         """Delete only sources whose contents still match the committed migration."""
@@ -431,7 +610,7 @@ class ProfileStore:
         with self._configuration_lock():
             self._migrate_legacy()
 
-    def _migrate_legacy(self):
+    def _migrate_legacy(self, *, installer_identity=None):
         settings = read_private_json(self.settings_path)
         journal = read_private_json(self.migration_path)
         if settings is not None and settings.get("schema_version") == 2:
@@ -494,8 +673,11 @@ class ProfileStore:
             write_private_json(path, data)
             if read_private_json(path) != data:
                 raise ProfileError("Could not verify migrated profile authorization state.")
-        write_private_json(self.settings_path, {
+        migrated_settings = {
             "schema_version": 2, "default_profile": "default",
             "profiles": {"default": {"id": identifier, "base_url": url}},
-        })
+        }
+        if installer_identity is not None:
+            migrated_settings["installer_imports"] = {installer_identity: identifier}
+        write_private_json(self.settings_path, migrated_settings)
         self._cleanup_migration(journal)

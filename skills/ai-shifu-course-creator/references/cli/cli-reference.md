@@ -37,7 +37,9 @@ shifu update
 
 Supported `--agent` targets are `codex`, `claude-code`, `cursor`, `gemini-cli`, `github-copilot`, `openclaw`, `codebuddy`, `opencode`, and `windsurf`. Migration inspects only the selected targets and the shared Skill directory that synchronization replaces.
 
-Before synchronizing, legacy skill `.env` files are backed up under the user configuration directory's `legacy-env/`. A consistent legacy configuration is migrated to `cli.env`; user-edited configuration is preserved, while an untouched generated template can still receive the migration. Different legacy configurations without a selected `cli.env` stop synchronization until one is chosen, then the operation can be retried. Successful credential migration or logout clears the matching token from backups and preserves their other settings. Installations outside the selected synchronization targets retain their own source configuration.
+Before synchronizing, selected legacy skill `.env` files are backed up under the user configuration directory's `legacy-env/`. The profile configuration transaction owns reading, comparing, importing, and cleaning these files, using the same lock as login and logout. Comments and quoting differences do not create conflicts, and untouched empty templates do not compete with configured sources. A consistent configuration is migrated to `cli.env`; user-edited configuration is preserved, while an untouched generated template can still receive the migration. Different effective configurations without a selected `cli.env` stop synchronization until one is chosen, then the operation can be retried.
+
+When profiles already exist, imported credentials go into a separate or matching named profile while the existing default remains selected. Inspect the reported profile with `shifu profile list`; installation does not activate it through dotenv. Recorded imports are not replayed after logout. Successful credential migration or logout clears the matching token from backups and preserves their other settings. Installations outside the selected synchronization targets retain their own source configuration.
 
 ## Contents
 

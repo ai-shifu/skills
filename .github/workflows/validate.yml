@@ -36,10 +36,15 @@ jobs:
       - name: Install CLI dependencies without running setup
         run: npm ci --ignore-scripts
 
+      - name: Install configuration migration test dependency
+        run: python -m pip install "python-dotenv>=1.0"
+
       - name: Check CLI and Skill versions
         run: npm run check-version
 
       - name: Test CLI installation and Skill synchronization
+        env:
+          AI_SHIFU_PYTHON: ${{ steps.cli-python.outputs.python-path }}
         run: npm test
 
       - name: Verify real npm installation and automatic Skill setup

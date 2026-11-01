@@ -103,33 +103,26 @@ export function defaultAgentArgs(env = process.env, home = homedir()) {
 }
 
 export function preserveLegacyEnv(directories, env = process.env, home = homedir()) {
-  const directory = configDir(env, home);
-  const destination = join(directory, 'cli.env');
-  const contents = new Map();
-  for (const dir of directories) {
-    const source = join(dir, '.env');
-    if (!existsSync(source)) continue;
-    const content = readFileSync(source);
-    const digest = createHash('sha256').update(content).digest('hex');
-    contents.set(digest, content);
+  if (!directories.some(directory => existsSync(join(directory, '.env')))) return;
+  env = { ...pythonEnvironment(env), AI_SHIFU_CONFIG_DIR: configDir(env, home) };
+  let [python, ...prefix] = findPython(env);
+  const probe = spawnSync(python, [...prefix, '-c', 'import dotenv'], { env, stdio: 'ignore' });
+  if (probe.error || probe.status !== 0) {
+    python = ensureRuntime(packageRoot, env);
+    prefix = [];
   }
-  if (!contents.size) return;
-  const backup = join(directory, 'legacy-env');
-  mkdirSync(backup, { recursive: true, mode: 0o700 });
-  for (const [digest, content] of contents) {
-    const file = join(backup, `${digest}.env`);
-    if (!existsSync(file)) writeFileSync(file, content, { mode: 0o600, flag: 'wx' });
+  // Profile migration/logout own the same lock, parser, and credential receipt.
+  // Node never reads secret contents before acquiring that transaction lock.
+  const result = spawnSync(python, [...prefix, join(packageRoot, 'cli', 'migrate-config.py'),
+    configDir(env, home), join(packageRoot, 'skills', skillNames[0], '.env.example'), ...directories],
+  { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(result.stderr.trim() || 'Legacy configuration migration failed.');
+  const migration = JSON.parse(result.stdout);
+  if (migration.imported_profiles?.length) {
+    process.stderr.write(`Legacy configuration profile(s): ${migration.imported_profiles.map(name => JSON.stringify(name)).join(', ')}. Inspect accounts with shifu profile list.\n`);
   }
-  const destinationExists = existsSync(destination);
-  const template = readFileSync(join(packageRoot, 'skills', skillNames[0], '.env.example'));
-  // A course command may have initialized cli.env before lifecycle setup ran.
-  // An untouched template contains no user choice and must not hide legacy data.
-  if (destinationExists && !readFileSync(destination).equals(template)) return;
-  if (contents.size > 1) {
-    throw new Error(`Different legacy configurations were saved in ${backup}. Choose one as ${destination}, then retry installation.`);
-  }
-  if (destinationExists) chmodSync(destination, 0o600);
-  writeFileSync(destination, [...contents.values()][0], { mode: 0o600, flag: destinationExists ? 'w' : 'wx' });
+  return migration;
 }
 
 export function pythonEnvironment(env = process.env) {

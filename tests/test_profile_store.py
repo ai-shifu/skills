@@ -406,6 +406,37 @@ class ProfileStoreTests(unittest.TestCase):
         self.assertFalse(credentials.exists())
         self.assertEqual(self.read_env(matching)["SHIFU_TOKEN"], "")
 
+    def test_logout_recovers_corrupt_json_and_clears_only_receipt_linked_backups(self):
+        current = self.store.set_profile("current", "cn")
+        other = self.store.set_profile("other", "com")
+        self.store.save_token(current, "current-token")
+        self.store.save_token(other, "other-token")
+        settings = read_private_json(self.store.settings_path)
+        identity = profile_store._installer_credential_identity(current.base_url, "current-token")
+        settings["installer_imports"] = {identity: current.directory.name}
+        write_private_json(self.store.settings_path, settings)
+        matching = self.backup_env("current", "current-token")
+        untouched = self.backup_env("other", "other-token")
+        original_other = untouched.read_bytes()
+        self.store.credentials_path(current).write_text("confirmed invalid JSON")
+        self.store.logout(current)
+        self.assertFalse(self.store.credentials_path(current).exists())
+        self.assertEqual(self.read_env(matching)["SHIFU_TOKEN"], "")
+        self.assertEqual(untouched.read_bytes(), original_other)
+        self.assertEqual(self.store.load_token(other), "other-token")
+
+    def test_json_format_errors_are_distinct_from_read_failures(self):
+        path = self.directory / "credentials.json"
+        for content in (b"broken", b"[]", b"\xff"):
+            with self.subTest(content=content):
+                path.write_bytes(content)
+                with self.assertRaises(profile_store.ProfileFormatError):
+                    read_private_json(path)
+        with mock.patch.object(Path, "read_text", side_effect=PermissionError("temporarily unreadable")):
+            with self.assertRaises(ProfileError) as raised:
+                read_private_json(path)
+        self.assertNotIsInstance(raised.exception, profile_store.ProfileFormatError)
+
     def test_exported_credentials_alone_are_not_persisted(self):
         self.store.migrate_legacy({"SHIFU_BASE_URL": "cn", "SHIFU_TOKEN": "exported"})
         self.assertFalse(self.store.settings_path.exists())
