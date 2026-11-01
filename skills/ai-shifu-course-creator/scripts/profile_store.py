@@ -561,6 +561,39 @@ class ProfileStore:
             if matches:
                 _clear_private_env_keys(backup, ["SHIFU_TOKEN"])
 
+    def _preflight_installer_account(self):
+        """Migrate only the root's original account inputs, never an incoming URL."""
+        if self.migration_path.exists():
+            self._migrate_legacy()
+        settings = read_private_json(self.settings_path) or {}
+        if settings.get("schema_version") != 2:
+            current = self._env_values()
+            selected_url = current.get("SHIFU_BASE_URL", "")
+            selected_token = current.get("SHIFU_TOKEN", "")
+            if any("${" in value for value in (selected_url, selected_token)) or (selected_token and not selected_url):
+                raise ProfileError("Selected CLI credentials need an explicit service URL and literal values before installation.")
+            credentials = read_private_json(self.root / "credentials.json") or {}
+            pending = read_private_json(self.root / "pending-device-auth.json") or {}
+            original_url = selected_url or settings.get("base_url") or credentials.get("base_url") or pending.get("base_url")
+            origin = normalize_base_url(original_url) if original_url else None
+            if credentials.get("token"):
+                credential_url = credentials.get("base_url") or settings.get("base_url") or selected_url
+                if not credential_url or normalize_base_url(credential_url) != origin:
+                    raise ProfileError("Legacy credentials need their original service configured before installation; original files were preserved.")
+            if pending.get("device_code") and (
+                not pending.get("base_url") or normalize_base_url(pending["base_url"]) != origin
+            ):
+                raise ProfileError("Legacy pending authorization needs its original service configured before installation; original files were preserved.")
+            identity = _installer_credential_identity(normalize_base_url(selected_url), selected_token) if selected_url else None
+            self._migrate_legacy(installer_identity=identity)
+        else:
+            # Also completes a committed migration whose cleanup was interrupted.
+            self._migrate_legacy()
+        for filename, field in (("credentials.json", "token"), ("pending-device-auth.json", "device_code")):
+            remaining = read_private_json(self.root / filename) or {}
+            if remaining.get(field):
+                raise ProfileError("Legacy authorization could not be migrated safely; configure its original service before installation.")
+
     def import_installer_configuration(self, directories, template_file):
         """Import selected installation settings under the profile transaction lock.
 
@@ -568,12 +601,11 @@ class ProfileStore:
         and token cleanup share the same lock as logout and browser login.
         """
         with self._configuration_lock():
-            # Complete a prior transaction before any preserved/unchanged return
-            # can report installation success while its migration is pending.
-            if self.migration_path.exists():
-                self._migrate_legacy()
             template = Path(template_file).read_bytes()
             template_values = _installer_env_values(template)
+            existing = self.env_file.read_bytes() if self.env_file.exists() else None
+            # Keep the original choice even if preflight clears its credentials.
+            replace_environment = existing is None or _installer_env_values(existing) == template_values
             configurations = {}
             backup_directory = self.root / "legacy-env"
             for directory in dict.fromkeys(Path(directory) for directory in directories):
@@ -596,10 +628,11 @@ class ProfileStore:
                 if values != template_values:
                     fingerprint = json.dumps(values, ensure_ascii=False, sort_keys=True)
                     configurations.setdefault(fingerprint, (content, values))
-            existing = self.env_file.read_bytes() if self.env_file.exists() else None
-            replace_environment = existing is None or _installer_env_values(existing) == template_values
+            # Incoming settings cannot establish the origin of older root auth.
+            self._preflight_installer_account()
+            selected_profile = self._settings()["default_profile"]
             if len(configurations) > 1:
-                if not replace_environment:
+                if not replace_environment or selected_profile is not None:
                     # The user has already selected this CLI's configuration;
                     # keep that choice rather than guessing among old installs.
                     return {"status": "preserved", "imported_profiles": []}
@@ -627,31 +660,7 @@ class ProfileStore:
                 if not replace_environment:
                     if not base_url:
                         return {"status": "preserved", "imported_profiles": []}
-                    if settings:
-                        raise ProfileError(
-                            "Migrate the existing legacy profile settings before importing another installation. "
-                            "Original files and private backups were preserved."
-                        )
-                    # A user-selected option such as the analytics opt-out is
-                    # independent of the incoming account. Preserve these options
-                    # while saving the unique, explicit source account in a profile.
-                    selected = _installer_env_values(existing)
-                    selected_url = str(selected.get("SHIFU_BASE_URL") or "").strip()
-                    selected_token = str(selected.get("SHIFU_TOKEN") or "").strip()
-                    if any("${" in value for value in (selected_url, selected_token)) or (selected_token and not selected_url):
-                        raise ProfileError(
-                            "Selected CLI credentials need an explicit service URL and literal values before installation. "
-                            "Original files and private backups were preserved."
-                        )
-                    if selected_url:
-                        selected_url = normalize_base_url(selected_url)
-                        # Preserve the selected account as default before saving
-                        # a different source as an inactive profile. Migration
-                        # retains preferences and clears temporary credentials.
-                        self._migrate_legacy(installer_identity=_installer_credential_identity(selected_url, selected_token))
-                        initial = self._settings()
-                    else:
-                        initial = {"schema_version": 2, "default_profile": None, "profiles": {}}
+                    initial = {"schema_version": 2, "default_profile": None, "profiles": {}}
                     name = self._import_installer_profile(initial, base_url, token, identity)
                     if token:
                         self._clear_legacy_backup_tokens({_digest(token)})

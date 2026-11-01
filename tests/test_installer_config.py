@@ -155,18 +155,92 @@ class InstallerConfigurationTests(unittest.TestCase):
                 self.assertFalse(self.store.settings_path.exists())
                 self.assertEqual((source / ".env").read_text(), "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=incoming-token\n")
 
-    def test_selected_options_with_legacy_saved_settings_stop_without_discarding_the_account(self):
+    def test_selected_options_with_legacy_saved_settings_preserve_the_original_default(self):
         self.root.mkdir()
         current = b"SHIFU_DISABLE_ANALYTICS=1\n"
         self.environment_file.write_bytes(current)
         write_private_json(self.store.settings_path, {"base_url": profile_store.SITE_URLS["com"]})
         source = self.source("legacy", "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=selected-token\n")
-        with self.assertRaisesRegex(ProfileError, "existing legacy profile settings"):
-            self.imported([source])
+        result = self.imported([source])
         self.assertEqual(self.environment_file.read_bytes(), current)
-        self.assertEqual(read_private_json(self.store.settings_path), {"base_url": profile_store.SITE_URLS["com"]})
+        self.assertEqual(self.store.resolve(environ={}).base_url, profile_store.SITE_URLS["com"])
+        incoming = self.store.resolve(result["imported_profiles"][0], environ={})
+        self.assertEqual((incoming.base_url, incoming.token), (profile_store.SITE_URLS["cn"], "selected-token"))
         self.assertEqual((source / ".env").read_text(), "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=selected-token\n")
-        self.assertTrue(any("selected-token" in backup.read_text() for backup in self.backups()))
+        self.assertTrue(all("selected-token" not in backup.read_text() for backup in self.backups()))
+
+    def test_original_unscoped_token_is_bound_only_to_its_saved_service(self):
+        for index, (incoming_url, with_template) in enumerate((
+            ("cn", False), ("cn", True), ("https://custom.example/teach", False), ("https://custom.example/teach", True),
+        )):
+            with self.subTest(incoming=incoming_url, template=with_template):
+                root = self.directory / f"saved-account-{index}"
+                store = ProfileStore(root, root / "cli.env")
+                write_private_json(store.settings_path, {"base_url": profile_store.SITE_URLS["com"]})
+                write_private_json(root / "credentials.json", {"token": "com-only-token"})
+                if with_template:
+                    store.env_file.write_bytes(self.template.read_bytes())
+                source = self.source(f"incoming-{index}", f"SHIFU_BASE_URL={incoming_url}\n")
+                result = store.import_installer_configuration([source], self.template)
+                original = store.resolve(environ={})
+                incoming = store.resolve(result["imported_profiles"][0], environ={})
+                self.assertEqual((original.name, original.base_url, original.token),
+                                 ("default", profile_store.SITE_URLS["com"], "com-only-token"))
+                self.assertEqual(incoming.base_url, profile_store.normalize_base_url(incoming_url))
+                self.assertEqual(incoming.token, "")
+                self.assertFalse(store.credentials_path(incoming).exists())
+                self.assertFalse((root / "credentials.json").exists())
+                self.assertEqual(store.default_profile(), original.name)
+                self.assertEqual(store.resolve(environ=store._env_values()).name, original.name)
+
+    def test_selected_preferences_preserve_original_credentials_and_pending_without_settings(self):
+        self.root.mkdir()
+        current = b"# Keep opt-out\nSHIFU_DISABLE_ANALYTICS=1\n"
+        self.environment_file.write_bytes(current)
+        write_private_json(self.root / "credentials.json", {"base_url": profile_store.SITE_URLS["com"], "token": "original-token"})
+        pending = {"base_url": profile_store.SITE_URLS["com"], "device_code": "original-request", "expires_at": 123}
+        write_private_json(self.root / "pending-device-auth.json", pending)
+        source = self.source("incoming", "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=incoming-token\n")
+        result = self.imported([source])
+        original = self.store.resolve(environ={})
+        incoming = self.store.resolve(result["imported_profiles"][0], environ={})
+        self.assertEqual((original.name, original.base_url, original.token),
+                         ("default", profile_store.SITE_URLS["com"], "original-token"))
+        self.assertEqual(read_private_json(self.store.pending_auth_path(original)), pending)
+        self.assertEqual((incoming.base_url, incoming.token), (profile_store.SITE_URLS["cn"], "incoming-token"))
+        self.assertFalse(self.store.pending_auth_path(incoming).exists())
+        self.assertEqual(self.environment_file.read_bytes(), current)
+        self.store.logout(original)
+        self.assertFalse(self.store.credentials_path(original).exists())
+        self.assertFalse(self.store.pending_auth_path(original).exists())
+        self.assertEqual(self.store.resolve(environ=self.store._env_values()).name, "default")
+        self.assertEqual(self.store.load_token(incoming), "incoming-token")
+
+    def test_unknown_origin_root_authorization_cannot_borrow_the_incoming_url(self):
+        self.root.mkdir()
+        current = b"SHIFU_DISABLE_ANALYTICS=1\n"
+        self.environment_file.write_bytes(current)
+        old_credentials = {"token": "unknown-origin-token"}
+        write_private_json(self.root / "credentials.json", old_credentials)
+        source = self.source("incoming", "SHIFU_BASE_URL=https://custom.example\n")
+        with self.assertRaisesRegex(ProfileError, "original service"):
+            self.imported([source])
+        self.assertEqual(read_private_json(self.root / "credentials.json"), old_credentials)
+        self.assertEqual(self.environment_file.read_bytes(), current)
+        self.assertFalse(self.store.settings_path.exists())
+        self.assertEqual((source / ".env").read_text(), "SHIFU_BASE_URL=https://custom.example\n")
+
+    def test_preflight_cleanup_keeps_the_existing_selection_across_conflicting_sources(self):
+        self.root.mkdir()
+        self.environment_file.write_text("SHIFU_BASE_URL=com\nSHIFU_TOKEN=selected-token\n", encoding="utf-8")
+        sources = [self.source("first", "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=first-token\n"),
+                   self.source("second", "SHIFU_BASE_URL=https://custom.example\nSHIFU_TOKEN=second-token\n")]
+        for _ in range(2):
+            self.assertEqual(self.imported(sources), {"status": "preserved", "imported_profiles": []})
+            context = self.store.resolve(environ=self.store._env_values())
+            self.assertEqual((context.name, context.base_url, context.token),
+                             ("default", profile_store.SITE_URLS["com"], "selected-token"))
+            self.assertEqual(len(self.store.list_profiles()), 1)
 
     def test_existing_selection_preserves_default_and_credentials_across_conflicting_sources(self):
         current_profile = self.store.set_profile("current", "com")
