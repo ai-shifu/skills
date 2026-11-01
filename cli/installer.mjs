@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -137,17 +137,33 @@ export function runtimePaths(root = packageRoot, env = process.env, home = homed
       process.platform === 'win32' ? 'python.exe' : 'python') };
 }
 
-export function ensureRuntime(root = packageRoot, env = process.env) {
+function runtimeHealthy(paths, env, execute) {
+  if (!existsSync(paths.marker) || !existsSync(paths.python)) return false;
+  const result = execute(paths.python, ['-c', 'import requests, dotenv, PIL, pillow_heif'],
+    { env, stdio: 'ignore', timeout: 10_000 });
+  return !result.error && result.status === 0;
+}
+
+function runtimeRun(command, args, options, execute) {
+  const result = execute(command, args, { stdio: 'inherit', ...options });
+  if (result.error) throw new Error(`Cannot run ${command}: ${result.error.message}`);
+  if (result.status !== 0) throw new Error(`${command} exited with ${result.status ?? result.signal}`);
+}
+
+export function ensureRuntime(root = packageRoot, env = process.env, execute = spawnSync) {
   const paths = runtimePaths(root, env);
-  if (existsSync(paths.marker) && existsSync(paths.python)) return paths.python;
-  const [python, ...prefix] = findPython(env);
+  if (runtimeHealthy(paths, env, execute)) return paths.python;
+  const [python, ...prefix] = findPython(env, execute);
   mkdirSync(dirname(paths.directory), { recursive: true, mode: 0o700 });
+  // A cached interpreter can survive removal of its base Python on Windows,
+  // or dependencies may have been removed. Rebuild that controlled directory.
+  rmSync(paths.directory, { recursive: true, force: true });
   process.stderr.write('Preparing the isolated AI-Shifu Python runtime…\n');
-  run(python, [...prefix, '-m', 'venv', paths.directory], { env });
-  run(paths.python, ['-m', 'pip', 'install', '--disable-pip-version-check', '-r', paths.requirements],
-    { env, stdio: ['inherit', 2, 2] });
+  runtimeRun(python, [...prefix, '-m', 'venv', paths.directory], { env }, execute);
+  runtimeRun(paths.python, ['-m', 'pip', 'install', '--disable-pip-version-check', '-r', paths.requirements],
+    { env, stdio: ['inherit', 2, 2] }, execute);
   // Mark ready only after imports succeed, so failed installations can be retried.
-  run(paths.python, ['-c', 'import requests, dotenv, PIL, pillow_heif'], { env });
+  runtimeRun(paths.python, ['-c', 'import requests, dotenv, PIL, pillow_heif'], { env }, execute);
   writeFileSync(paths.marker, 'ready\n', { mode: 0o600 });
   return paths.python;
 }
