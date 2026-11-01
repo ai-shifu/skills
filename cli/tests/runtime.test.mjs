@@ -39,7 +39,7 @@ directory = Path(paths['directory'])
 imports = directory / 'imports-work'
 def fake_run(command, **options):
     if command[1:3] == ['-m', 'venv']:
-        with (root / 'creations').open('a') as count:
+        with (root / 'creations').open('a', newline='\\n') as count:
             count.write('created\\n')
         if os.environ.get('PREPARATION_GATE'):
             (root / 'worker-pid').write_text(str(os.getpid()))

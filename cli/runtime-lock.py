@@ -43,7 +43,7 @@ def prepare_runtime(directory, requirements, python, lock, run=subprocess.run):
         stdin=lock, check=True, stdout=sys.stderr,
     )
     run([python, "-c", IMPORT_CHECK], stdin=lock, check=True)
-    marker.write_text("ready\n", encoding="utf-8")
+    marker.write_text("ready\n", encoding="utf-8", newline="\n")
     marker.chmod(0o600)
     return 0
 
