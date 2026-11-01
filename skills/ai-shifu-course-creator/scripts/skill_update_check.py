@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-open Skill update checks backed by published GitHub Releases."""
+"""Fail-open update checks against the installation's publication source."""
 
 from __future__ import annotations
 
@@ -24,6 +24,8 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 SKILL_MD = SKILL_ROOT / "SKILL.md"
 GITHUB_RELEASES_URL = "https://github.com/ai-shifu/skills/releases"
 MANIFEST_URL = "https://api.github.com/repos/ai-shifu/skills/releases/latest"
+NPM_MANIFEST_URL = "https://registry.npmjs.org/@ai-shifu%2Fcli/latest"
+NPM_PACKAGE_URL = "https://www.npmjs.com/package/@ai-shifu/cli"
 
 SCHEMA_VERSION = 1
 SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
@@ -54,8 +56,8 @@ def _validate_manifest_source_url(url: str, *, allow_loopback: bool) -> None:
         ):
             raise ManifestError("development manifest URL must use a loopback host")
         return
-    if url != MANIFEST_URL:
-        raise ManifestError("version source must use the official GitHub Releases endpoint")
+    if url not in {MANIFEST_URL, NPM_MANIFEST_URL}:
+        raise ManifestError("version source must use an official publication endpoint")
 
 
 def _parse_utc(value: object) -> datetime | None:
@@ -130,6 +132,40 @@ def read_skill_metadata(skill_md: Path = SKILL_MD) -> dict[str, str] | None:
             if key in {"version", "version_management"} and key not in result:
                 result[key] = value.strip().strip("\"'")
     return None
+
+
+def _uses_npm(skill_md: Path) -> bool:
+    return os.environ.get("AI_SHIFU_CLI_DISTRIBUTION") == "npm" or bool(
+        (skill_md.parent / ".ai-shifu-cli.json").is_file()
+        and read_installation_metadata(skill_md.parent)
+    )
+
+
+def _publication_source(skill_md: Path) -> str:
+    return NPM_MANIFEST_URL if _uses_npm(skill_md) else MANIFEST_URL
+
+
+def _update_url(version: str, publication_source: str) -> str:
+    if publication_source == NPM_MANIFEST_URL:
+        return f"{NPM_PACKAGE_URL}/v/{version}"
+    return f"{GITHUB_RELEASES_URL}/tag/v{version}"
+
+
+def validate_npm_release(raw: object) -> dict[str, Any]:
+    """Use only versions actually available to the npm installation command."""
+    if not isinstance(raw, dict) or raw.get("name") != "@ai-shifu/cli":
+        raise ManifestError("npm package name mismatch")
+    version = raw.get("version")
+    if not isinstance(version, str) or not RELEASE_TAG_PATTERN.fullmatch("v" + version):
+        raise ManifestError("npm release must use a stable version")
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "skill_name": SKILL_NAME,
+        "latest": version,
+        "min_supported": "0.0.0",
+        "notes": "",
+        "update_url": _update_url(version, NPM_MANIFEST_URL),
+    }
 
 
 def validate_manifest(
@@ -274,7 +310,7 @@ def fetch_manifest(
     _validate_manifest_source_url(manifest_url, allow_loopback=allow_loopback)
 
     headers = {"Accept": "application/vnd.github+json"}
-    if allow_loopback:
+    if allow_loopback or manifest_url == NPM_MANIFEST_URL:
         headers["Accept"] = "application/json"
 
     response = http_get(
@@ -303,7 +339,9 @@ def fetch_manifest(
         raw = json.loads(body.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ManifestError("manifest is not valid UTF-8 JSON") from exc
-    manifest = validate_manifest(raw) if allow_loopback else validate_github_release(raw)
+    manifest = (validate_manifest(raw) if allow_loopback else
+                validate_npm_release(raw) if manifest_url == NPM_MANIFEST_URL else
+                validate_github_release(raw))
     return manifest, "network"
 
 
@@ -332,6 +370,8 @@ def check_for_update(
         local_version = metadata.get("version", "")
         if parse_semver(local_version) is None:
             raise ManifestError("invalid local version")
+        if manifest_url == MANIFEST_URL and not allow_loopback:
+            manifest_url = _publication_source(skill_md)
         manifest, source = fetch_manifest(
             manifest_url=manifest_url,
             allow_loopback=allow_loopback,
@@ -445,7 +485,7 @@ def _automatic_check_worker(skill_md: Path) -> dict[str, Any]:
         nonlocal retry_after_seconds
         response = requests.get(url, **kwargs)
         final_url = getattr(response, "url", MANIFEST_URL) or MANIFEST_URL
-        if final_url == MANIFEST_URL:
+        if final_url in {MANIFEST_URL, NPM_MANIFEST_URL}:
             retry_after_seconds = _server_retry_delay(response)
         return response
 
@@ -485,7 +525,8 @@ def automatic_check_for_update(
         current_time = (now or datetime.now(timezone.utc)).timestamp()
         directory = Path(state_dir) / "update-check"
         directory.mkdir(mode=0o700, parents=True, exist_ok=True)
-        identity = hashlib.sha256(f"{MANIFEST_URL}\n{local_version}".encode()).hexdigest()
+        publication_source = _publication_source(skill_md)
+        identity = hashlib.sha256(f"{publication_source}\n{local_version}".encode()).hexdigest()
         state_path = directory / f"{identity}.json"
         with _automatic_check_lock(directory / f"{identity}.lock"):
             state = _read_automatic_state(state_path, local_version, current_time)
@@ -520,7 +561,7 @@ def automatic_check_for_update(
                 and result.get("skill_name") == SKILL_NAME
                 and result.get("local_version") == local_version
                 and latest is not None and minimum is not None and minimum <= latest
-                and result.get("update_url") == f"{GITHUB_RELEASES_URL}/tag/v{result.get('latest')}"
+                and result.get("update_url") == _update_url(result.get("latest"), publication_source)
             )
             if not successful:
                 wait = outcome.get("retry_after_seconds", 0)
