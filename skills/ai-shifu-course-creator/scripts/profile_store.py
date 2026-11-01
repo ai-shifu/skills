@@ -132,6 +132,24 @@ def _digest(value):
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _clear_private_env_keys(path, keys):
+    """Clear selected dotenv values through an owner-only atomic replacement."""
+    path = Path(path)
+    fd, temp_name = tempfile.mkstemp(dir=str(path.parent), prefix=".tmp-profile-")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            os.chmod(temp_name, 0o600)
+            handle.write(path.read_text(encoding="utf-8"))
+        for key in keys:
+            set_key(temp_name, key, "")
+        os.chmod(temp_name, 0o600)
+        os.replace(temp_name, path)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(temp_name)
+        raise
+
+
 class ProfileStore:
     def __init__(self, root, env_file):
         self.root = Path(root)
@@ -347,17 +365,42 @@ class ProfileStore:
     def logout(self, context):
         with self._configuration_lock():
             current = self._current_auth_context(context)
+            # Keep credentials until backup cleanup succeeds so a failed logout
+            # can retry without losing the token needed to identify its copies.
+            credentials = None
+            with contextlib.suppress(ProfileError):
+                credentials = read_private_json(credentials_path(current))
+            token = (credentials or {}).get("token")
+            if isinstance(token, str) and token.strip():
+                self._clear_legacy_backup_tokens({_digest(token.strip())})
             for path in (credentials_path(current), pending_auth_path(current)):
                 with contextlib.suppress(FileNotFoundError):
                     path.unlink()
 
-    def _env_values(self):
-        if not self.env_file.exists():
+    def _env_values(self, path=None):
+        path = self.env_file if path is None else Path(path)
+        if not path.exists():
             return {}
         # Legacy migration must inspect saved values, never credentials expanded
         # from the current process environment by python-dotenv.
         return {key: (value or "").strip()
-                for key, value in dotenv_values(str(self.env_file), interpolate=False).items()}
+                for key, value in dotenv_values(str(path), interpolate=False).items()}
+
+    def _clear_legacy_backup_tokens(self, expected_digests):
+        """Remove only copies of the affected credential from installer backups."""
+        if not expected_digests:
+            return
+        try:
+            backups = list((self.root / "legacy-env").iterdir())
+        except FileNotFoundError:
+            return
+        for backup in backups:
+            # Backups are ordinary installer-created files, never external paths.
+            if backup.suffix != ".env" or backup.is_symlink() or not backup.is_file():
+                continue
+            token = self._env_values(backup).get("SHIFU_TOKEN", "")
+            if token and _digest(token) in expected_digests:
+                _clear_private_env_keys(backup, ["SHIFU_TOKEN"])
 
     def _cleanup_migration(self, journal):
         """Delete only sources whose contents still match the committed migration."""
@@ -374,19 +417,10 @@ class ProfileStore:
         if clear_keys:
             # Work on a private copy; interruption can leave either the old or new
             # .env but never a half-written file. The journal makes cleanup retryable.
-            fd, temp_name = tempfile.mkstemp(dir=str(self.env_file.parent), prefix=".tmp-profile-")
-            try:
-                with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                    os.chmod(temp_name, 0o600)
-                    handle.write(self.env_file.read_text(encoding="utf-8"))
-                for key in clear_keys:
-                    set_key(temp_name, key, "")
-                os.chmod(temp_name, 0o600)
-                os.replace(temp_name, self.env_file)
-            except BaseException:
-                with contextlib.suppress(OSError):
-                    os.unlink(temp_name)
-                raise
+            _clear_private_env_keys(self.env_file, clear_keys)
+        token_digest = journal.get("env_fields", {}).get("SHIFU_TOKEN")
+        if token_digest:
+            self._clear_legacy_backup_tokens({token_digest})
         self.migration_path.unlink(missing_ok=True)
 
     def migrate_legacy(self, process_env=None):

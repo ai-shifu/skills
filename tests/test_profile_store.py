@@ -314,6 +314,76 @@ class ProfileStoreTests(unittest.TestCase):
         self.assertIn("# keep comment", self.env_file.read_text())
         self.assertEqual(read_private_json(self.root / "credentials.json")["token"], "older-saved-token")
 
+    def backup_env(self, name, token):
+        path = self.root / "legacy-env" / f"{name}.env"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"# keep backup settings\nSHIFU_BASE_URL=cn\nSHIFU_TOKEN='{token}'\nSHIFU_DISABLE_ANALYTICS=1\n")
+        return path
+
+    def test_migration_clears_only_the_migrated_token_from_backups(self):
+        self.env_file.write_text("SHIFU_BASE_URL=cn\nSHIFU_TOKEN=migrated-token\n")
+        matching = self.backup_env("matching", "migrated-token")
+        other = self.backup_env("other-account", "other-token")
+        other_content = other.read_bytes()
+        self.store.migrate_legacy({})
+        self.assertEqual(self.store.resolve(environ={}).token, "migrated-token")
+        self.assertEqual(self.read_env(matching), {
+            "SHIFU_BASE_URL": "cn", "SHIFU_TOKEN": "", "SHIFU_DISABLE_ANALYTICS": "1",
+        })
+        self.assertIn("# keep backup settings", matching.read_text())
+        self.assertNotIn("migrated-token", matching.read_text())
+        self.assertEqual(other.read_bytes(), other_content)
+        if os.name != "nt":
+            self.assertEqual(matching.stat().st_mode & 0o777, 0o600)
+
+    def test_failed_backup_cleanup_keeps_the_migration_journal_for_retry(self):
+        self.env_file.write_text("SHIFU_BASE_URL=cn\nSHIFU_TOKEN=migrated-token\n")
+        matching = self.backup_env("matching", "migrated-token")
+        clear = profile_store._clear_private_env_keys
+
+        def fail_on_backup(path, keys):
+            if Path(path) == matching:
+                raise OSError("backup temporarily unavailable")
+            return clear(path, keys)
+
+        with mock.patch.object(profile_store, "_clear_private_env_keys", side_effect=fail_on_backup):
+            with self.assertRaisesRegex(OSError, "temporarily unavailable"):
+                self.store.migrate_legacy({})
+        self.assertTrue(self.store.migration_path.exists())
+        self.assertEqual(self.read_env(self.env_file)["SHIFU_TOKEN"], "")
+        self.assertEqual(self.read_env(matching)["SHIFU_TOKEN"], "migrated-token")
+        self.store.migrate_legacy({})
+        self.assertFalse(self.store.migration_path.exists())
+        self.assertEqual(self.read_env(matching)["SHIFU_TOKEN"], "")
+        self.assertEqual(self.store.resolve(environ={}).token, "migrated-token")
+
+    def test_logout_scrubs_matching_backup_tokens_and_keeps_other_accounts(self):
+        first = self.store.set_profile("first", "cn")
+        second = self.store.set_profile("second", "com")
+        self.store.save_token(first, "first-token")
+        self.store.save_token(second, "second-token")
+        first_backup = self.backup_env("first", "first-token")
+        second_backup = self.backup_env("second", "second-token")
+        untouched = second_backup.read_bytes()
+        self.store.logout(first)
+        self.assertFalse(self.store.credentials_path(first).exists())
+        self.assertEqual(self.read_env(first_backup)["SHIFU_TOKEN"], "")
+        self.assertEqual(self.read_env(first_backup)["SHIFU_DISABLE_ANALYTICS"], "1")
+        self.assertEqual(second_backup.read_bytes(), untouched)
+        self.assertEqual(self.store.load_token(second), "second-token")
+
+    def test_failed_logout_backup_cleanup_keeps_credentials_for_retry(self):
+        context = self.store.set_profile("saved", "cn")
+        self.store.save_token(context, "saved-token")
+        matching = self.backup_env("saved", "saved-token")
+        with mock.patch.object(profile_store, "_clear_private_env_keys", side_effect=OSError("backup busy")):
+            with self.assertRaisesRegex(OSError, "backup busy"):
+                self.store.logout(context)
+        self.assertEqual(self.store.load_token(context), "saved-token")
+        self.store.logout(context)
+        self.assertEqual(self.read_env(matching)["SHIFU_TOKEN"], "")
+        self.assertFalse(self.store.credentials_path(context).exists())
+
     def test_exported_credentials_alone_are_not_persisted(self):
         self.store.migrate_legacy({"SHIFU_BASE_URL": "cn", "SHIFU_TOKEN": "exported"})
         self.assertFalse(self.store.settings_path.exists())
