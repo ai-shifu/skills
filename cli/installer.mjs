@@ -109,11 +109,15 @@ export function preserveLegacyEnv(directories, env = process.env, home = homedir
     const file = join(backup, `${digest}.env`);
     if (!existsSync(file)) writeFileSync(file, content, { mode: 0o600, flag: 'wx' });
   }
-  if (existsSync(destination)) return;
+  const destinationExists = existsSync(destination);
+  const template = readFileSync(join(packageRoot, 'skills', skillNames[0], '.env.example'));
+  // A course command may have initialized cli.env before lifecycle setup ran.
+  // An untouched template contains no user choice and must not hide legacy data.
+  if (destinationExists && !readFileSync(destination).equals(template)) return;
   if (contents.size > 1) {
     throw new Error(`Different legacy configurations were saved in ${backup}. Choose one as ${destination}, then retry installation.`);
   }
-  writeFileSync(destination, [...contents.values()][0], { mode: 0o600, flag: 'wx' });
+  writeFileSync(destination, [...contents.values()][0], { mode: 0o600, flag: destinationExists ? 'w' : 'wx' });
 }
 
 export function pythonEnvironment(env = process.env) {

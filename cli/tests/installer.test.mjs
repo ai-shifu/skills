@@ -85,6 +85,21 @@ test('different legacy configurations stop synchronization until one is chosen',
   assert.equal(readdirSync(join(configDir(env), 'legacy-env')).length, 2);
 });
 
+test('an untouched environment template does not suppress later legacy migration', t => {
+  const home = temporary(t);
+  const env = isolatedEnv(home);
+  const source = join(home, 'old-skill');
+  mkdirSync(source);
+  const saved = 'SHIFU_DISABLE_ANALYTICS=1\n';
+  writeFileSync(join(source, '.env'), saved);
+  const configuration = configDir(env);
+  mkdirSync(configuration, { recursive: true });
+  writeFileSync(join(configuration, 'cli.env'),
+    readFileSync(join(packageRoot, 'skills', 'ai-shifu-course-creator', '.env.example')));
+  preserveLegacyEnv([source], env, home);
+  assert.equal(readFileSync(join(configuration, 'cli.env'), 'utf8'), saved);
+});
+
 test('Python passthrough preserves business arguments and selects external configuration', t => {
   const env = isolatedEnv(temporary(t));
   const args = ['--profile', 'teaching', 'status', 'course-123'];
