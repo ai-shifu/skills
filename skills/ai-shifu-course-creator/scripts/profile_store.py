@@ -458,6 +458,10 @@ class ProfileStore:
         and token cleanup share the same lock as logout and browser login.
         """
         with self._configuration_lock():
+            # Complete a prior transaction before any preserved/unchanged return
+            # can report installation success while its migration is pending.
+            if self.migration_path.exists():
+                self._migrate_legacy()
             template = Path(template_file).read_bytes()
             template_values = _installer_env_values(template)
             configurations = {}
@@ -613,6 +617,16 @@ class ProfileStore:
     def _migrate_legacy(self, *, installer_identity=None):
         settings = read_private_json(self.settings_path)
         journal = read_private_json(self.migration_path)
+        if journal and "installer_identity" in journal:
+            recorded_identity = journal["installer_identity"]
+            if installer_identity is not None and installer_identity != recorded_identity:
+                raise ProfileError("Installer configuration changed during migration; retry the pending migration first.")
+            installer_identity = recorded_identity
+        if installer_identity is not None and (
+            not isinstance(installer_identity, str) or len(installer_identity) != 64
+            or any(character not in "0123456789abcdef" for character in installer_identity)
+        ):
+            raise ProfileError("Invalid installer migration identity.")
         if settings is not None and settings.get("schema_version") == 2:
             self._settings()
             if journal:
@@ -662,6 +676,8 @@ class ProfileStore:
         if migration_env.get("SHIFU_BASE_URL"):
             env_fields["SHIFU_BASE_URL"] = _digest(migration_env["SHIFU_BASE_URL"])
         journal = {"id": identifier, "base_url": url, "legacy_files": legacy_files, "env_fields": env_fields}
+        if installer_identity is not None:
+            journal["installer_identity"] = installer_identity
         write_private_json(self.migration_path, journal)
         # A retry reuses the staged ID, but removed or foreign legacy sources
         # must not activate files left behind by an interrupted earlier attempt.

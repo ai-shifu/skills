@@ -222,6 +222,48 @@ class InstallerConfigurationTests(unittest.TestCase):
         self.assertTrue(all("imported-token" not in backup.read_text() for backup in self.backups()))
         self.assertEqual(len(self.store.list_profiles()), 1)
 
+    def interrupted_first_import(self, source):
+        real_write = profile_store.write_private_json
+
+        def fail_settings(path, value):
+            if Path(path) == self.store.settings_path:
+                raise OSError("first settings commit interrupted")
+            return real_write(path, value)
+
+        with mock.patch.object(profile_store, "write_private_json", side_effect=fail_settings):
+            with self.assertRaisesRegex(OSError, "settings commit interrupted"):
+                self.imported([source])
+        self.assertTrue(self.store.migration_path.exists())
+
+    def test_ordinary_migration_recovery_preserves_installer_receipt_after_logout(self):
+        source = self.source("legacy", "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=imported-token\n")
+        self.interrupted_first_import(source)
+        journal = read_private_json(self.store.migration_path)
+        self.assertIn("installer_identity", journal)
+        self.store.migrate_legacy()
+        context = self.store.resolve(environ={})
+        receipts = read_private_json(self.store.settings_path)["installer_imports"]
+        self.assertEqual(receipts[journal["installer_identity"]], context.directory.name)
+        self.store.logout(context)
+        self.imported([source])
+        reformatted = self.source("reformatted", "# Same account\nSHIFU_TOKEN='imported-token'\nSHIFU_BASE_URL='cn'\n")
+        self.imported([reformatted])
+        self.assertEqual(self.store.load_token(context), "")
+        self.assertEqual(self.store.default_profile(), context.name)
+        self.assertEqual(len(self.store.list_profiles()), 1)
+        self.assertTrue(all("imported-token" not in backup.read_text() for backup in self.backups()))
+
+    def test_installer_finishes_pending_migration_before_preserving_a_selected_configuration(self):
+        source = self.source("legacy", "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=imported-token\nSHIFU_DISABLE_ANALYTICS=1\n")
+        self.interrupted_first_import(source)
+        second = self.source("second", "SHIFU_BASE_URL=com\nSHIFU_TOKEN=other-token\n")
+        result = self.imported([source, second])
+        self.assertEqual(result, {"status": "preserved", "imported_profiles": []})
+        self.assertFalse(self.store.migration_path.exists())
+        self.assertEqual(self.store.resolve(environ={}).token, "imported-token")
+        self.assertEqual(self.store._env_values()["SHIFU_DISABLE_ANALYTICS"], "1")
+        self.assertTrue(read_private_json(self.store.settings_path)["installer_imports"])
+
     def test_receipt_also_preserves_logout_when_a_matching_named_profile_was_reused(self):
         current = self.store.set_profile("named", "cn")
         self.store.save_token(current, "imported-token")
