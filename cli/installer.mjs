@@ -150,7 +150,8 @@ function runtimeRun(command, args, options, execute) {
   if (result.status !== 0) throw new Error(`${command} exited with ${result.status ?? result.signal}`);
 }
 
-export function ensureRuntime(root = packageRoot, env = process.env, execute = spawnSync) {
+// The worker calls this only while holding runtime-lock.py's native OS lock.
+export function prepareRuntime(root = packageRoot, env = process.env, execute = spawnSync) {
   const paths = runtimePaths(root, env);
   if (runtimeHealthy(paths, env, execute)) return paths.python;
   const [python, ...prefix] = findPython(env, execute);
@@ -165,6 +166,14 @@ export function ensureRuntime(root = packageRoot, env = process.env, execute = s
   // Mark ready only after imports succeed, so failed installations can be retried.
   runtimeRun(paths.python, ['-c', 'import requests, dotenv, PIL, pillow_heif'], { env }, execute);
   writeFileSync(paths.marker, 'ready\n', { mode: 0o600 });
+  return paths.python;
+}
+
+export function ensureRuntime(root = packageRoot, env = process.env) {
+  const paths = runtimePaths(root, env);
+  const [python, ...prefix] = findPython(env);
+  run(python, [...prefix, join(packageRoot, 'cli', 'runtime-lock.py'), `${paths.directory}.lock`,
+    process.execPath, join(packageRoot, 'cli', 'runtime-worker.mjs'), root], { env });
   return paths.python;
 }
 
