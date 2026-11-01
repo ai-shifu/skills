@@ -155,7 +155,16 @@ export function runtimePaths(root = packageRoot, env = process.env, home = homed
 export function ensureRuntime(root = packageRoot, env = process.env) {
   env = pythonEnvironment(env);
   const paths = runtimePaths(root, env);
-  const [python, ...prefix] = findPython(env);
+  let launcher;
+  try {
+    launcher = findPython(env);
+  } catch (error) {
+    if (env.AI_SHIFU_PYTHON || !existsSync(paths.python)) throw error;
+    // The runtime may still work after its system Python was removed from
+    // PATH. Recheck it under the native lock before accepting the cache.
+    launcher = findPython({ ...env, AI_SHIFU_PYTHON: paths.python });
+  }
+  const [python, ...prefix] = launcher;
   run(python, [...prefix, join(packageRoot, 'cli', 'runtime-lock.py'), `${paths.directory}.lock`,
     '--prepare', paths.directory, paths.requirements, paths.python], { env });
   return paths.python;

@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { findPython, pythonEnvironment, pythonInvocation, runtimePaths } from '../installer.mjs';
+import { ensureRuntime, findPython, pythonEnvironment, pythonInvocation, runtimePaths } from '../installer.mjs';
 
 const helper = fileURLToPath(new URL('../runtime-lock.py', import.meta.url));
 
@@ -125,6 +125,50 @@ print(json.dumps({'message': message, 'creations': (root / 'creations').read_tex
   assert.equal(outcome.creations, 'created\n');
   assert.equal(outcome.marker, 'ready\n');
   assert.equal(outcome.dependencies, 'ready');
+});
+
+test('a healthy cached interpreter can launch setup with no system Python on PATH', t => {
+  const f = fixture(t);
+  const [python, ...prefix] = pythonCommand();
+  const created = spawnSync(python, [...prefix, '-m', 'venv', '--without-pip', f.paths.directory], {
+    env: f.env, encoding: 'utf8',
+  });
+  assert.equal(created.status, 0, created.stderr);
+  const inspected = spawnSync(f.paths.python, ['-c', "import sysconfig; print(sysconfig.get_paths()['purelib'])"], {
+    env: f.env, encoding: 'utf8',
+  });
+  assert.equal(inspected.status, 0, inspected.stderr);
+  const modules = inspected.stdout.trim();
+  mkdirSync(modules, { recursive: true });
+  for (const name of ['requests', 'dotenv', 'PIL', 'pillow_heif']) writeFileSync(join(modules, `${name}.py`), '');
+  writeFileSync(f.paths.marker, 'ready\n');
+  const env = { ...f.env };
+  for (const key of Object.keys(env)) if (key.toUpperCase() === 'PATH' || key === 'AI_SHIFU_PYTHON') delete env[key];
+  env.PATH = '';
+  assert.equal(ensureRuntime(f.root, env), f.paths.python);
+  assert.equal(readFileSync(f.paths.marker, 'utf8'), 'ready\n');
+  assert.equal(existsSync(join(f.root, 'creations')), false);
+});
+
+test('a cached launcher that fails its locked recheck is preserved for external repair', t => {
+  const f = fixture(t);
+  const outcome = runCase(f, `
+prepare()
+imports.unlink()
+sys.prefix = str(directory)
+try:
+    prepare()
+except RuntimeError as error:
+    message = str(error)
+else:
+    raise AssertionError('a running cached interpreter must not remove itself')
+print(json.dumps({'message': message, 'creations': (root / 'creations').read_text(),
+    'marker': Path(paths['marker']).read_text(), 'python': Path(paths['python']).read_text()}))
+`);
+  assert.match(outcome.message, /left unchanged.*AI_SHIFU_PYTHON.*external/);
+  assert.equal(outcome.creations, 'created\n');
+  assert.equal(outcome.marker, 'ready\n');
+  assert.equal(outcome.python, 'fixture runtime');
 });
 
 test('Python detection and commands discard inherited module overrides', t => {

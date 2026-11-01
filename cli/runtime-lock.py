@@ -29,6 +29,14 @@ def prepare_runtime(directory, requirements, python, lock, run=subprocess.run):
             ) from error
         except OSError:
             pass
+    if Path(sys.prefix).resolve() == directory.resolve():
+        # Windows cannot remove the executable of this running helper. A
+        # cached interpreter is a valid launcher only while its runtime works.
+        raise RuntimeError(
+            "The cached Python runtime needs repair and was left unchanged. "
+            "Set AI_SHIFU_PYTHON to an external Python 3.11+ executable, "
+            "then retry shifu setup."
+        )
     if directory.is_symlink():
         directory.unlink()
     elif directory.exists():
