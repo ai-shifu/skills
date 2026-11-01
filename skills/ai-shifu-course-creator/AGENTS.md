@@ -18,6 +18,7 @@
 | `agents/openai.yaml` | Define ChatGPT's display label, short description, and starter prompt for this skill. Discovery behavior remains in `SKILL.md`. |
 | `../../cli/` and `../../package.json` | Own npm CLI distribution, installation, isolated Python runtime setup, and synchronization of bundled business skills. The skill retains its embedded Python entrypoint for existing channel packages; platform behavior stays with its implementation and capability references. |
 | `.env.example` | Document supported service-selection, token, and usage-analytics opt-out variables with safe empty defaults, credential-storage guidance, and the user-facing account-linked usage notice. |
+| `.ai-shifu-cli.json` (installed copies only) | Record the npm installer's distribution marker for a synchronized skill. It selects the npm command and shared user configuration, while unmarked and plugin-managed copies retain their own embedded command and configuration. The installer creates this file; source and channel packages do not include it. |
 | `evals/README.md` | Own the maintainer evaluation protocol, including separate-turn execution, evidence capture, revision comparisons, and the limits of static checks. It does not define course-authoring behavior. |
 | `evals/evals.json` | Hold end-to-end behavioral scenarios, optional input fixtures, and expected outcomes for capability use, authoring, platform, analytics, and boundary regressions. Canonical guidance remains the source of behavior. |
 | `evals/trigger_eval.json` | Test whether representative requests should or should not discover this skill. Keep capability and trigger wording canonical in `SKILL.md` frontmatter. |
@@ -78,7 +79,7 @@
 | `scripts/agent_detection.py` | Identify the Agent environment and own its canonical IDs, display names, and evidence. The CLI decides reporting eligibility. |
 | `scripts/profile_store.py` | Implement named profile configuration, default selection, execution-context resolution, isolated authorization-file storage, URL validation, and recoverable migration from legacy configuration. The CLI consumes one resolved context; references own access guidance. |
 | `scripts/image_preparation.py` | Implement local image decoding, orientation correction, resizing, recompression, output-format selection, and content-hash naming for upload preparation. |
-| `scripts/skill_update_check.py` | Implement fail-open GitHub Release discovery, update availability checks, release and development manifest validation, and bounded automatic CLI checks with user-state scheduling and notice deduplication. The CLI owns invocation timing and notice output. |
+| `scripts/skill_update_check.py` | Validate installed distribution markers and implement fail-open release discovery, update availability checks, release and development manifest validation, and bounded automatic CLI checks with user-state scheduling and notice deduplication. The CLI owns invocation timing and notice output. |
 | `scripts/requirements.txt` | Declare Python runtime dependencies used by the course-creator scripts. |
 
 ## Change Placement Guide

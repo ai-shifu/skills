@@ -47,7 +47,7 @@ shifu verify
 shifu list
 ```
 
-按实际账号选择 `cn`、`com` 或自有服务地址；多账号配置和命令详见 [CLI 参考](skills/ai-shifu-course-creator/references/cli/cli-reference.md)。配置与浏览器授权凭证继续保存在 AI 师傅用户配置目录中。npm 入口从该目录的 `cli.env` 读取可选环境配置；旧 Skill 的 Python 入口仍兼容自己的 `.env`。
+按实际账号选择 `cn`、`com` 或自有服务地址；多账号配置、不同安装方式的命令选择和命令详情见 [CLI 参考](skills/ai-shifu-course-creator/references/cli/cli-reference.md)。配置与浏览器授权凭证继续保存在 AI 师傅用户配置目录中。npm 入口及其同步 Skills 的 Python 备用入口从该目录的 `cli.env` 读取可选环境配置；渠道包和旧 Skill 安装仍兼容自己的 `.env`。
 
 同步 Skills 时，旧 `.env` 会备份到用户配置目录的 `legacy-env/`，配置一致时迁移到 `cli.env`；已有 `cli.env` 会保留。若多份旧配置不同且尚无 `cli.env`，配置过程会停止，待选择其中一份后再重试。
 

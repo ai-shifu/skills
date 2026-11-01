@@ -28,7 +28,7 @@ These are teaching-design decisions, not additional upload or publication approv
 ## Shared Conventions
 
 - Apply [language-policy.md](references/language-policy.md) to conversation and authored content, including target-language resolution and terminology.
-- Use the installed `shifu` CLI for course operations. [CLI invocation](references/cli/cli-reference.md#invocation) owns the command contract and the compatibility entrypoint for channel packages or older skill-only installations.
+- Select this installation's course command under [CLI invocation](references/cli/cli-reference.md#invocation), which owns npm CLI selection and embedded entrypoints for channel packages, project-local copies, and older installations.
 - Apply [session-controls.md](references/session-controls.md) to contact eligibility, explicit-request-only version checks, progress, errors, and completion handoffs. First-response contact conditions remain applicable. The completion handoff applies to the user's completed request, not each internal capability call.
 - Use Markdown links `[descriptive text](URL)` for URLs in user-visible messages. URLs inside Teaching Prompts follow MarkdownFlow rules; URLs inside fenced code blocks are exempt.
 - Honor explicit author choices, source facts, selected exact material, and the distinction between a per-lesson Teaching Prompt and a course-wide Course Prompt. Runtime semantics are defined in [prompt-semantics.md](references/prompt-semantics.md) and [markdownflow-syntax.md](references/markdownflow-syntax.md).

@@ -2,13 +2,13 @@
 
 ## Invocation
 
-Use the installed CLI for platform and local course commands:
+Select the command from this skill's installation. A skill synchronized by the npm installer has `.ai-shifu-cli.json` with `schema_version: 1`, `distribution: "npm"`, and a stable release `version`. Use the installed CLI for that distribution:
 
 ```bash
 shifu <command> [--profile <name>]
 ```
 
-For an older installation or a channel package without `shifu` on `PATH`, use `python3 {skillDir}/scripts/shifu-cli.py` in place of `shifu` in the course-command examples below. That compatibility entrypoint needs the dependencies declared in `{skillDir}/scripts/requirements.txt`. CLI installation and upgrade commands require the installed npm CLI.
+Plugin-managed channel packages and unmarked installations, including project-local and older skill-only copies, use `python3 {skillDir}/scripts/shifu-cli.py` even when a global `shifu` is available. This preserves their own version and configuration. For an npm-synchronized skill without `shifu` on `PATH`, the same Python command is the compatibility fallback. Substitute the selected command for `shifu` in the course-command examples below. The Python entrypoint needs the dependencies declared in `{skillDir}/scripts/requirements.txt`. CLI installation and upgrade commands require the installed npm CLI.
 
 `--profile <name>` selects one named profile for this invocation and may appear before or after the command. Supply it at most once. Authenticated commands also accept `--token <jwt>` as a non-persistent override for this invocation. Selection is resolved once before platform access; platform requests, uploads, and returned course links use that same context. See [Profiles](#profiles) for selection and credential precedence. Use `{skillDir}/.env.example` as the supported configuration reference:
 
@@ -17,7 +17,7 @@ SHIFU_BASE_URL=
 SHIFU_TOKEN=
 ```
 
-Process environment variables take precedence over the corresponding environment-file values. An empty value does not activate temporary configuration. The installed `shifu` uses `cli.env` in the AI-Shifu user configuration directory: `AI_SHIFU_CONFIG_DIR`, otherwise `$XDG_CONFIG_HOME/ai-shifu`, otherwise `~/.config/ai-shifu`. The compatibility Python entrypoint continues to use `{skillDir}/.env`. Before commands other than `check-update`, a missing environment file is initialized from the bundled `.env.example` with owner-only permissions; an existing file is never replaced. `check-update` skips environment-file loading and initialization. Browser-issued credentials live in the user's configuration directory rather than the environment file.
+Process environment variables take precedence over the corresponding environment-file values. An empty value does not activate temporary configuration. The installed `shifu` and the Python fallback of an npm-synchronized skill use `cli.env` in the AI-Shifu user configuration directory: `AI_SHIFU_CONFIG_DIR`, otherwise `$XDG_CONFIG_HOME/ai-shifu`, otherwise `~/.config/ai-shifu`. Plugin-managed and unmarked Python installations continue to use `{skillDir}/.env`. Before commands other than `check-update`, a missing environment file is initialized from the bundled `.env.example` with owner-only permissions; an existing file is never replaced. `check-update` skips environment-file loading and initialization. Browser-issued credentials live in the user's configuration directory rather than the environment file.
 
 ## CLI and Skill Installation
 

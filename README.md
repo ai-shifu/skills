@@ -47,7 +47,7 @@ shifu verify
 shifu list
 ```
 
-Choose `cn`, `com`, or your own service URL for the account you intend to use; see the [CLI reference](skills/ai-shifu-course-creator/references/cli/cli-reference.md) for profiles and command details. Configuration and browser credentials use the existing AI-Shifu user configuration directory. The npm entrypoint reads optional environment settings from `cli.env` there; an older skill's Python entrypoint retains its own `.env` compatibility.
+Choose `cn`, `com`, or your own service URL for the account you intend to use; see the [CLI reference](skills/ai-shifu-course-creator/references/cli/cli-reference.md) for profiles, installation-specific command selection, and command details. Configuration and browser credentials use the existing AI-Shifu user configuration directory. The npm entrypoint and its synchronized skills' Python fallback read optional environment settings from `cli.env` there; channel-managed and older skill installations retain their own `.env` compatibility.
 
 Skill synchronization preserves legacy `.env` files in that configuration directory's `legacy-env/` and migrates a consistent configuration to `cli.env`. An existing `cli.env` is retained. If legacy configurations differ and no `cli.env` exists, setup stops so you can choose one before retrying.
 
