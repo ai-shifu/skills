@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -96,6 +96,7 @@ test('Python detection, runtime preparation and commands discard inherited modul
 
 function runtimeChildSource() {
   return `
+    import { spawnSync } from 'node:child_process';
     import { existsSync, mkdirSync, writeFileSync, appendFileSync } from 'node:fs';
     import { dirname, join } from 'node:path';
     import { prepareRuntime, runtimePaths } from ${JSON.stringify(new URL('../installer.mjs', import.meta.url).href)};
@@ -105,6 +106,17 @@ function runtimeChildSource() {
     const execute = (command, args) => {
       if (command === 'fixture-python' && args.includes('venv')) {
         appendFileSync(join(root, 'creations'), 'created\\n');
+        if (process.env.PREPARATION_GATE) {
+          writeFileSync(join(root, 'worker-pid'), String(process.pid));
+          while (!existsSync(process.env.PREPARATION_GATE)) {
+            Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+          }
+        }
+        if (process.env.MUTATOR_GATE) {
+          writeFileSync(join(root, 'worker-pid'), String(process.pid));
+          const mutator = "const fs=require('node:fs'); fs.writeFileSync(process.env.MUTATOR_PID, String(process.pid)); while(!fs.existsSync(process.env.MUTATOR_GATE)) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,25);";
+          spawnSync(process.execPath, ['-e', mutator], { stdio: 'inherit' });
+        }
         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
         mkdirSync(dirname(paths.python), { recursive: true });
         writeFileSync(paths.python, 'fixture runtime');
@@ -139,44 +151,97 @@ test('parallel first commands share one initialized runtime', async t => {
   assert.ok(existsSync(f.paths.marker));
 });
 
-test('an exited initializer leaves the persistent lock file reusable by all waiters', async t => {
+async function waitForFile(filename) {
+  for (let attempt = 0; !existsSync(filename) && attempt < 200; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  assert.ok(existsSync(filename), `expected worker signal: ${filename}`);
+}
+
+function watchChild(child) {
+  let stderr = '';
+  child.stderr?.on('data', data => { stderr += data; });
+  return once(child, 'exit').then(([code]) => ({ code, stderr }));
+}
+
+function kill(pid) {
+  if (!pid) return;
+  try { process.kill(pid, 'SIGKILL'); } catch (error) {
+    if (error.code !== 'ESRCH') throw error;
+  }
+}
+
+for (const mutatorSurvives of [false, true]) test(
+  mutatorSurvives ? 'an orphaned mutator retains exclusivity after its helper and worker are killed' :
+    'an orphaned worker retains exclusivity after its lock helper is killed', async t => {
   const f = fixture(t);
   const driver = join(f.root, 'runtime-child.mjs');
   writeFileSync(driver, runtimeChildSource());
   const [python, ...prefix] = findPython(process.env);
   const helper = fileURLToPath(new URL('../runtime-lock.py', import.meta.url));
   const lock = `${f.paths.directory}.lock`;
-  const acquired = join(f.root, 'lock-acquired');
-  const sleeper = `require('node:fs').writeFileSync(${JSON.stringify(acquired)}, String(process.pid)); setTimeout(() => {}, 30_000);`;
-  const holder = spawn(python, [...prefix, helper, lock, process.execPath, '-e', sleeper],
-    { stdio: 'ignore' });
-  let workerPid;
-  t.after(() => {
-    holder.kill('SIGKILL');
-    if (workerPid) try { process.kill(workerPid, 'SIGKILL'); } catch (error) {
-      if (error.code !== 'ESRCH') throw error;
-    }
+  const gate = join(f.root, 'continue-preparation');
+  const mutatorPidFile = join(f.root, 'mutator-pid');
+  const holder = spawn(python, [...prefix, helper, lock, process.execPath, driver], {
+    env: { ...f.env, FIXTURE_ROOT: f.root, ...(mutatorSurvives ?
+      { MUTATOR_GATE: gate, MUTATOR_PID: mutatorPidFile } : { PREPARATION_GATE: gate }) },
+    stdio: ['ignore', 'ignore', 'pipe'],
   });
-  for (let attempt = 0; !existsSync(acquired) && attempt < 100; attempt++) {
-    await new Promise(resolve => setTimeout(resolve, 25));
+  const holderOutcome = watchChild(holder);
+  const waiters = [];
+  let workerPid;
+  let mutatorPid;
+  try {
+    await waitForFile(join(f.root, 'worker-pid'));
+    workerPid = Number(readFileSync(join(f.root, 'worker-pid'), 'utf8'));
+    if (mutatorSurvives) {
+      await waitForFile(mutatorPidFile);
+      mutatorPid = Number(readFileSync(mutatorPidFile, 'utf8'));
+    }
+    holder.kill('SIGKILL');
+    await holderOutcome;
+    if (mutatorSurvives) kill(workerPid);
+    assert.ok(existsSync(lock));
+    const probe = spawnSync(python, [...prefix, '-c', `
+import errno, os, sys
+try:
+    with open(sys.argv[1], 'a+b') as lock:
+        if os.name == 'nt':
+            import msvcrt
+            lock.write(b'\\0')
+            lock.flush()
+            lock.seek(0)
+            msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+except OSError as error:
+    if error.errno in (errno.EACCES, errno.EAGAIN) or getattr(error, 'winerror', None) == 32:
+        sys.exit(75)
+    raise
+`, lock], { encoding: 'utf8' });
+    assert.equal(probe.status, 75, `a competing process must still observe a held lock: ${probe.stderr}`);
+    const outcomes = [];
+    for (const i of [0, 1, 2]) {
+      const child = spawn(python, [...prefix, helper, lock, process.execPath, driver], {
+        env: { ...f.env, FIXTURE_ROOT: f.root }, stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      waiters.push(child);
+      outcomes.push(watchChild(child));
+    }
+    await new Promise(resolve => setTimeout(resolve, 400));
+    assert.equal(readFileSync(join(f.root, 'creations'), 'utf8'), 'created\n',
+      'waiters must not rebuild while the original mutation process remains alive');
+    assert.equal(existsSync(f.paths.marker), false);
+    writeFileSync(gate, 'continue');
+    for (const outcome of await Promise.all(outcomes)) assert.equal(outcome.code, 0, outcome.stderr);
+    assert.equal(readFileSync(join(f.root, 'creations'), 'utf8'), mutatorSurvives ? 'created\ncreated\n' : 'created\n');
+    assert.ok(existsSync(f.paths.marker));
+    assert.ok(existsSync(lock));
+  } finally {
+    kill(holder.pid);
+    for (const waiter of waiters) kill(waiter.pid);
+    kill(workerPid);
+    kill(mutatorPid);
   }
-  assert.ok(existsSync(acquired), 'the holder must acquire the native lock');
-  workerPid = Number(readFileSync(acquired, 'utf8'));
-  const exited = once(holder, 'exit');
-  holder.kill('SIGKILL');
-  await exited;
-  process.kill(workerPid, 'SIGKILL');
-  workerPid = undefined;
-  assert.ok(existsSync(lock));
-  const waiters = [0, 1, 2].map(() => spawn(python, [...prefix, helper, lock, process.execPath, driver], {
-    env: { ...f.env, FIXTURE_ROOT: f.root }, stdio: ['ignore', 'pipe', 'pipe'],
-  }));
-  const outcomes = await Promise.all(waiters.map(async child => {
-    let stderr = '';
-    child.stderr.on('data', data => { stderr += data; });
-    return { code: (await once(child, 'exit'))[0], stderr };
-  }));
-  for (const outcome of outcomes) assert.equal(outcome.code, 0, outcome.stderr);
-  assert.equal(readFileSync(join(f.root, 'creations'), 'utf8'), 'created\n');
-  assert.ok(existsSync(lock));
 });

@@ -1,4 +1,4 @@
-"""Run one runtime preparation while holding a native, process-owned file lock."""
+"""Keep runtime preparation exclusive until its last inherited handle closes."""
 
 import errno
 import os
@@ -8,53 +8,70 @@ import sys
 import time
 
 
+def acquire(lock_path):
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+        import msvcrt
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        create_file = kernel32.CreateFileW
+        create_file.argtypes = [
+            wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+            wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE,
+        ]
+        create_file.restype = wintypes.HANDLE
+        # Unlike Windows byte-range locks, CreateFile's sharing restrictions
+        # remain in effect for inherited or duplicated handles. Passing this
+        # handle as worker stdin keeps it open if this helper is terminated.
+        handle = create_file(str(lock_path), 0x80000000 | 0x40000000, 0, None, 4, 0x80, None)
+        if handle == wintypes.HANDLE(-1).value:
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            descriptor = msvcrt.open_osfhandle(handle, os.O_RDWR | os.O_BINARY)
+        except BaseException:
+            close_handle = kernel32.CloseHandle
+            close_handle.argtypes = [wintypes.HANDLE]
+            close_handle.restype = wintypes.BOOL
+            close_handle(handle)
+            raise
+        return os.fdopen(descriptor, "r+b")
+
+    import fcntl
+
+    lock = lock_path.open("a+b")
+    try:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BaseException:
+        lock.close()
+        raise
+    return lock
+
+
 def run_locked(lock_path, command):
     lock_path = Path(lock_path)
     lock_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    # Keep this file in place: unlinking it could let waiters lock different
-    # inodes. The OS releases the lock if its process exits unexpectedly.
-    with lock_path.open("a+b") as lock:
-        if os.name == "nt":
-            import msvcrt
-
-            if lock_path.stat().st_size == 0:
-                lock.write(b"\0")
-                lock.flush()
-
-            def acquire():
-                lock.seek(0)
-                msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
-
-            def release():
-                lock.seek(0)
-                msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
-        else:
-            import fcntl
-
-            def acquire():
-                fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-
-            def release():
-                fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
-
-        deadline = time.monotonic() + 300
-        while True:
-            try:
-                acquire()
-                break
-            except OSError as error:
-                if error.errno not in (errno.EACCES, errno.EAGAIN):
-                    raise
-                if time.monotonic() >= deadline:
-                    raise RuntimeError(
-                        "Another process is preparing the Python runtime. "
-                        "Wait for it to finish, then retry."
-                    ) from error
-                time.sleep(0.1)
+    # Keep this file in place so all waiters open the same inode/file object.
+    deadline = time.monotonic() + 300
+    while True:
         try:
-            return subprocess.run(command, check=False).returncode
-        finally:
-            release()
+            lock = acquire(lock_path)
+            break
+        except OSError as error:
+            busy = getattr(error, "winerror", None) == 32 if os.name == "nt" else error.errno in (errno.EACCES, errno.EAGAIN)
+            if not busy:
+                raise
+            if time.monotonic() >= deadline:
+                raise RuntimeError(
+                    "Another process is preparing the Python runtime. "
+                    "Wait for it to finish, then retry."
+                ) from error
+            time.sleep(0.1)
+    with lock:
+        # Runtime setup is non-interactive. Its otherwise unused stdin carries
+        # the lock through the worker and its venv/pip subprocesses. Do not
+        # explicitly unlock: an orphaned worker may still own a duplicate.
+        return subprocess.run(command, check=False, stdin=lock).returncode
 
 
 if __name__ == "__main__":
