@@ -97,8 +97,10 @@ test('an untouched environment template does not suppress later legacy migration
   mkdirSync(configuration, { recursive: true });
   writeFileSync(join(configuration, 'cli.env'),
     readFileSync(join(packageRoot, 'skills', 'ai-shifu-course-creator', '.env.example')));
+  chmodSync(join(configuration, 'cli.env'), 0o644);
   preserveLegacyEnv([source], env, home);
   assert.equal(readFileSync(join(configuration, 'cli.env'), 'utf8'), saved);
+  if (process.platform !== 'win32') assert.equal(statSync(join(configuration, 'cli.env')).mode & 0o777, 0o600);
 });
 
 test('Python passthrough preserves business arguments and selects external configuration', t => {

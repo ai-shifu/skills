@@ -128,6 +128,7 @@ export function preserveLegacyEnv(directories, env = process.env, home = homedir
   if (contents.size > 1) {
     throw new Error(`Different legacy configurations were saved in ${backup}. Choose one as ${destination}, then retry installation.`);
   }
+  if (destinationExists) chmodSync(destination, 0o600);
   writeFileSync(destination, [...contents.values()][0], { mode: 0o600, flag: destinationExists ? 'w' : 'wx' });
 }
 
