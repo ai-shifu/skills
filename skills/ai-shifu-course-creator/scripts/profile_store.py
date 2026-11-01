@@ -367,9 +367,7 @@ class ProfileStore:
             current = self._current_auth_context(context)
             # Keep credentials until backup cleanup succeeds so a failed logout
             # can retry without losing the token needed to identify its copies.
-            credentials = None
-            with contextlib.suppress(ProfileError):
-                credentials = read_private_json(credentials_path(current))
+            credentials = read_private_json(credentials_path(current))
             token = (credentials or {}).get("token")
             if isinstance(token, str) and token.strip():
                 self._clear_legacy_backup_tokens({_digest(token.strip())})

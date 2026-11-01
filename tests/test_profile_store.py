@@ -384,6 +384,28 @@ class ProfileStoreTests(unittest.TestCase):
         self.assertEqual(self.read_env(matching)["SHIFU_TOKEN"], "")
         self.assertFalse(self.store.credentials_path(context).exists())
 
+    def test_logout_read_failure_preserves_credentials_and_backups_for_retry(self):
+        context = self.store.set_profile("saved", "cn")
+        self.store.save_token(context, "saved-token")
+        matching = self.backup_env("saved", "saved-token")
+        credentials = self.store.credentials_path(context)
+        original_credentials, original_backup = credentials.read_bytes(), matching.read_bytes()
+        real_read = profile_store.read_private_json
+
+        def unavailable(path):
+            if Path(path) == credentials:
+                raise ProfileError("Credentials temporarily unavailable")
+            return real_read(path)
+
+        with mock.patch.object(profile_store, "read_private_json", side_effect=unavailable):
+            with self.assertRaisesRegex(ProfileError, "temporarily unavailable"):
+                self.store.logout(context)
+        self.assertEqual(credentials.read_bytes(), original_credentials)
+        self.assertEqual(matching.read_bytes(), original_backup)
+        self.store.logout(context)
+        self.assertFalse(credentials.exists())
+        self.assertEqual(self.read_env(matching)["SHIFU_TOKEN"], "")
+
     def test_exported_credentials_alone_are_not_persisted(self):
         self.store.migrate_legacy({"SHIFU_BASE_URL": "cn", "SHIFU_TOKEN": "exported"})
         self.assertFalse(self.store.settings_path.exists())
