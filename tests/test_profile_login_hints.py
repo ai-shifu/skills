@@ -17,6 +17,9 @@ spec.loader.exec_module(cli)
 
 
 class ProfileLoginHintTests(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(mock.patch.dict(cli.os.environ, {}, clear=True))
+
     def test_windows_hints_round_trip_without_shell_interpretation(self):
         names = ["Daily Work", "客户 A", "a&echo injected", "quote\"name", "quote'name",
                  "%USERNAME%", "!expanded!", "$(whoami)", "a|b", "a^b", "-demo"]
@@ -37,6 +40,29 @@ class ProfileLoginHintTests(unittest.TestCase):
         context = types.SimpleNamespace(name="客户 & A")
         with mock.patch.object(cli.platform, "system", return_value="Windows"):
             self.assertIn(cli._login_instruction(context), cli._auth_recovery(context))
+
+    def test_npm_hints_use_the_installed_command(self):
+        context = types.SimpleNamespace(name="客户 & A")
+        with mock.patch.dict(cli.os.environ, {"AI_SHIFU_CLI_ENV_FILE": "/user/cli.env"}):
+            for system in ("Darwin", "Windows"):
+                with self.subTest(system=system), mock.patch.object(cli.platform, "system", return_value=system):
+                    hint = cli._login_instruction(context, wait=True)
+                    self.assertNotIn("shifu-cli.py", hint)
+                    if system == "Windows":
+                        prefix = "Invoke shifu with this argument list (JSON, not a shell command): "
+                        self.assertTrue(hint.startswith(prefix))
+                        argv = json.loads(hint[len(prefix):])
+                    else:
+                        self.assertTrue(hint.startswith("Run `shifu login "))
+                        argv = cli.shlex.split(hint.removeprefix("Run `").removesuffix("`"))[1:]
+                    args = cli.build_parser().parse_args(argv)
+                    self.assertEqual(args.profile, context.name)
+                    self.assertTrue(args.wait)
+
+    def test_compatibility_hints_keep_the_embedded_command(self):
+        with mock.patch.object(cli.platform, "system", return_value="Darwin"):
+            self.assertEqual(cli._login_instruction(types.SimpleNamespace(name="default")),
+                             "Run `shifu-cli.py login --profile=default`")
 
 
 if __name__ == "__main__":
