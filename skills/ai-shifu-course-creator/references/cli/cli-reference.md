@@ -35,7 +35,7 @@ shifu update
 
 `install` is the initial CLI-and-skills entrypoint and runs setup explicitly. Direct global npm installation also runs setup when lifecycle scripts are enabled; when npm skips them, `setup` prepares both the isolated runtime and skills. `skills install` repeats skill synchronization, including for an agent installed later; its `--agent` selection is passed to the skill installer. `skills list` lists the business skills bundled with this CLI. `update` upgrades the CLI and synchronizes its skills together. The using agent decides when these operations are needed under [session controls](../session-controls.md#version-check); ordinary course work does not invoke an upgrade.
 
-Before synchronizing, legacy skill `.env` files are backed up under the user configuration directory's `legacy-env/`. A consistent legacy configuration is migrated to `cli.env`; an existing `cli.env` is preserved. Different legacy configurations without an existing `cli.env` stop synchronization until one is chosen as `cli.env`, then the operation can be retried.
+Before synchronizing, legacy skill `.env` files are backed up under the user configuration directory's `legacy-env/`. A consistent legacy configuration is migrated to `cli.env`; user-edited configuration is preserved, while an untouched generated template can still receive the migration. Different legacy configurations without a selected `cli.env` stop synchronization until one is chosen, then the operation can be retried. Successful credential migration or logout clears the matching token from backups and preserves their other settings. Installations outside the selected synchronization targets retain their own source configuration.
 
 ## Contents
 
@@ -132,7 +132,7 @@ site --set com
 site --url https://your-service.example
 ```
 
-`site` is the compatibility entrypoint for inspecting the effective context or configuring the selected/default profile. It prints JSON with `status=configured`, the effective `base_url`, `profile`, and official `contact_url`, or `status=selection_required` with no configured service. `profile` is null for temporary or unconfigured contexts. Contact links depend on the service address: the domestic official service uses the Chinese contact page; the international official service and custom deployments use the international contact page. Profile names do not affect this mapping. Profile inspection and configuration make no platform requests; the shared CLI [automatic update check](#update-check) can query GitHub before dispatch.
+`site` is the compatibility entrypoint for inspecting the effective context or configuring the selected/default profile. It prints JSON with `status=configured`, the effective `base_url`, `profile`, and official `contact_url`, or `status=selection_required` with no configured service. `profile` is null for temporary or unconfigured contexts. Contact links depend on the service address: the domestic official service uses the Chinese contact page; the international official service and custom deployments use the international contact page. Profile names do not affect this mapping. Profile inspection and configuration make no platform requests; the shared CLI [automatic update check](#update-check) can query the installation's publication source before dispatch.
 
 `site --set cn/com` and `site --url <URL>` update the selected/default profile using the same URL and authorization rules as `profile set`. With no configured profile, initial setup creates an ordinary profile named `default`. Use explicit `--profile` to configure a named profile when temporary environment configuration is active.
 
@@ -310,7 +310,7 @@ build --course-dir ./course-a/ [-o shifu-import.json] \
   [--title "..."] [--description "..."] [--keywords "..."] [--chapter-name "..."]
 ```
 
-`build` compiles the course locally and writes the import JSON to `-o` or `<course-dir>/shifu-import.json`. The shared CLI [automatic update check](#update-check) can query GitHub before compilation; compilation itself needs no platform connection. File discovery, field precedence, directory schemas, and the generated import schema are defined in `course-directory-spec.md`.
+`build` compiles the course locally and writes the import JSON to `-o` or `<course-dir>/shifu-import.json`. The shared CLI [automatic update check](#update-check) can query the installation's publication source before compilation; compilation itself needs no platform connection. File discovery, field precedence, directory schemas, and the generated import schema are defined in `course-directory-spec.md`.
 
 `import --new` creates a new course. `import <shifu_bid>` targets an existing course. Both forms send content fields. Existing-course import leaves omitted platform attributes unchanged; new-course import uses platform defaults for omitted attributes.
 
