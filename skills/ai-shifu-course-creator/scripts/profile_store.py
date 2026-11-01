@@ -605,7 +605,7 @@ class ProfileStore:
                     return {"status": "preserved", "imported_profiles": []}
                 raise ProfileError(
                     f"Different legacy configurations were saved in {backup_directory}. "
-                    "Choose one configuration before retrying installation."
+                    f"Copy one selected private backup to {self.env_file} with owner-only access, then retry installation."
                 )
             if not configurations:
                 return {"status": "unchanged", "imported_profiles": []}
