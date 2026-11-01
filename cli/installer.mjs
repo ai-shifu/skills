@@ -152,45 +152,12 @@ export function runtimePaths(root = packageRoot, env = process.env, home = homed
       process.platform === 'win32' ? 'python.exe' : 'python') };
 }
 
-function runtimeHealthy(paths, env, execute) {
-  if (!existsSync(paths.marker) || !existsSync(paths.python)) return false;
-  const result = execute(paths.python, ['-c', 'import requests, dotenv, PIL, pillow_heif'],
-    { env, stdio: 'ignore', timeout: 10_000 });
-  return !result.error && result.status === 0;
-}
-
-function runtimeRun(command, args, options, execute) {
-  const result = execute(command, args, { stdio: 'inherit', ...options });
-  if (result.error) throw new Error(`Cannot run ${command}: ${result.error.message}`);
-  if (result.status !== 0) throw new Error(`${command} exited with ${result.status ?? result.signal}`);
-}
-
-// The worker calls this only while holding runtime-lock.py's native OS lock.
-export function prepareRuntime(root = packageRoot, env = process.env, execute = spawnSync) {
-  env = pythonEnvironment(env);
-  const paths = runtimePaths(root, env);
-  if (runtimeHealthy(paths, env, execute)) return paths.python;
-  const [python, ...prefix] = findPython(env, execute);
-  mkdirSync(dirname(paths.directory), { recursive: true, mode: 0o700 });
-  // A cached interpreter can survive removal of its base Python on Windows,
-  // or dependencies may have been removed. Rebuild that controlled directory.
-  rmSync(paths.directory, { recursive: true, force: true });
-  process.stderr.write('Preparing the isolated AI-Shifu Python runtime…\n');
-  runtimeRun(python, [...prefix, '-m', 'venv', paths.directory], { env }, execute);
-  runtimeRun(paths.python, ['-m', 'pip', 'install', '--disable-pip-version-check', '-r', paths.requirements],
-    { env, stdio: ['inherit', 2, 2] }, execute);
-  // Mark ready only after imports succeed, so failed installations can be retried.
-  runtimeRun(paths.python, ['-c', 'import requests, dotenv, PIL, pillow_heif'], { env }, execute);
-  writeFileSync(paths.marker, 'ready\n', { mode: 0o600 });
-  return paths.python;
-}
-
 export function ensureRuntime(root = packageRoot, env = process.env) {
   env = pythonEnvironment(env);
   const paths = runtimePaths(root, env);
   const [python, ...prefix] = findPython(env);
   run(python, [...prefix, join(packageRoot, 'cli', 'runtime-lock.py'), `${paths.directory}.lock`,
-    process.execPath, join(packageRoot, 'cli', 'runtime-worker.mjs'), root], { env });
+    '--prepare', paths.directory, paths.requirements, paths.python], { env });
   return paths.python;
 }
 

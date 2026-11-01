@@ -3,9 +3,44 @@
 import errno
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
+
+IMPORT_CHECK = "import requests, dotenv, PIL, pillow_heif"
+
+
+def prepare_runtime(directory, requirements, python, lock, run=subprocess.run):
+    directory = Path(directory)
+    marker = directory / ".ready"
+    if marker.exists() and Path(python).exists():
+        try:
+            result = run(
+                [python, "-c", IMPORT_CHECK], stdin=lock, check=False,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10,
+            )
+            if result.returncode == 0:
+                return 0
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    if directory.is_symlink():
+        directory.unlink()
+    elif directory.exists():
+        shutil.rmtree(directory)
+    directory.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    print("Preparing the isolated AI-Shifu Python runtime…", file=sys.stderr)
+    # Python passes the original lock handle directly to every mutator. There
+    # is no intermediate Node CRT descriptor table on Windows.
+    run([sys.executable, "-m", "venv", str(directory)], stdin=lock, check=True)
+    run(
+        [python, "-m", "pip", "install", "--disable-pip-version-check", "-r", requirements],
+        stdin=lock, check=True, stdout=sys.stderr,
+    )
+    run([python, "-c", IMPORT_CHECK], stdin=lock, check=True)
+    marker.write_text("ready\n", encoding="utf-8")
+    marker.chmod(0o600)
+    return 0
 
 
 def acquire(lock_path):
@@ -69,14 +104,16 @@ def run_locked(lock_path, command):
             time.sleep(0.1)
     with lock:
         # Runtime setup is non-interactive. Its otherwise unused stdin carries
-        # the lock through the worker and its venv/pip subprocesses. Do not
+        # the lock through the venv/pip subprocesses. Do not
         # explicitly unlock: an orphaned worker may still own a duplicate.
+        if command[0] == "--prepare":
+            return prepare_runtime(*command[1:], lock)
         return subprocess.run(command, check=False, stdin=lock).returncode
 
 
 if __name__ == "__main__":
     try:
         sys.exit(run_locked(sys.argv[1], sys.argv[2:]))
-    except (OSError, RuntimeError) as error:
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
         print(f"AI-Shifu runtime: {error}", file=sys.stderr)
         sys.exit(1)
