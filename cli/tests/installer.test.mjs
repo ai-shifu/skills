@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync,
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync,
   statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { agentArgs, configDir, defaultAgentArgs, findPython, packageInfo, packageRoot, preserveLegacyEnv,
+import { agentArgs, configDir, defaultAgentArgs, findPython, installSkills, packageInfo, packageRoot, preserveLegacyEnv,
   pythonInvocation, runtimePaths, skillInstallArgs, skillsCommand } from '../installer.mjs';
 
 function temporary(t) {
@@ -136,6 +136,7 @@ test('real Skills installer copies all bundled Skills, migrates env and supports
   const unrelated = join(home, '.agents', 'skills', 'unrelated');
   mkdirSync(unrelated, { recursive: true });
   writeFileSync(join(unrelated, 'SKILL.md'), 'unrelated skill\n');
+  mkdirSync(env.CLAUDE_CONFIG_DIR, { recursive: true });
   for (let i = 0; i < 2; i++) {
     const result = spawnSync(process.execPath,
       [join(packageRoot, 'cli', 'shifu.mjs'), 'skills', 'install', ...(i ? ['--agent', 'codex'] : [])],
@@ -143,6 +144,12 @@ test('real Skills installer copies all bundled Skills, migrates env and supports
     assert.equal(result.status, 0, result.stderr + result.stdout);
     for (const name of ['ai-shifu-course-creator', 'ai-shifu-learning-report', 'course-direction-advisor']) {
       assert.ok(existsSync(join(home, '.agents', 'skills', name, 'SKILL.md')), name);
+      const marker = { schema_version: 1, distribution: 'npm', version: packageInfo.version };
+      for (const installation of [join(home, '.agents', 'skills'), join(env.CLAUDE_CONFIG_DIR, 'skills')]) {
+        assert.deepEqual(JSON.parse(readFileSync(join(installation, name, '.ai-shifu-cli.json'), 'utf8')), marker);
+      }
+      assert.equal(existsSync(join(packageRoot, 'skills', name, '.ai-shifu-cli.json')), false);
+      assert.equal(existsSync(join(packageRoot, 'skills', name, '.env')), false);
     }
     assert.equal(readFileSync(join(configDir(env), 'cli.env'), 'utf8'), 'SHIFU_DISABLE_ANALYTICS=1\n');
     assert.equal(existsSync(join(legacy, '.env')), false);
@@ -165,4 +172,75 @@ test('a blocked agent directory fails installation instead of reporting success'
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Skill synchronization failed/);
   assert.doesNotMatch(result.stderr, /all three Skills are installed/);
+});
+
+test('stages npm metadata from a read-only source and removes staging after success or failure', t => {
+  const home = mkdtempSync(join(tmpdir(), 'ai-shifu-readonly-'));
+  const readonly = [];
+  t.after(() => {
+    for (const source of readonly) {
+      chmodSync(source, 0o700);
+      chmodSync(join(source, 'nested'), 0o700);
+    }
+    rmSync(home, { recursive: true, force: true });
+  });
+  const root = join(home, 'package');
+  const env = isolatedEnv(home);
+  mkdirSync(root);
+  writeFileSync(join(root, 'package.json'), JSON.stringify({ name: '@ai-shifu/cli', version: '9.8.7' }));
+  const dependency = join(root, 'node_modules', 'skills');
+  mkdirSync(dependency, { recursive: true });
+  writeFileSync(join(dependency, 'package.json'), JSON.stringify({ name: 'skills', bin: './fixture.mjs', type: 'module' }));
+  const trace = join(home, 'stage-path');
+  writeFileSync(join(dependency, 'fixture.mjs'), `
+    import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+    import { join } from 'node:path';
+    if (process.argv[2] === 'list') console.log('[]');
+    else {
+      const source = process.argv[3];
+      writeFileSync(process.env.STAGING_TRACE, source);
+      const names = ['ai-shifu-course-creator', 'ai-shifu-learning-report', 'course-direction-advisor'];
+      const outcomes = names.map(name => {
+        const target = join(process.env.HOME, '.agents', 'skills', name);
+        mkdirSync(target, { recursive: true });
+        cpSync(join(source, name), target, { recursive: true });
+        return { name, status: process.env.FAIL_INSTALL ? 'failed' : 'installed', path: target };
+      });
+      console.log(JSON.stringify(outcomes));
+      process.exitCode = process.env.FAIL_INSTALL ? 1 : 0;
+    }
+  `);
+  const sources = ['ai-shifu-course-creator', 'ai-shifu-learning-report', 'course-direction-advisor'].map(name => {
+    const source = join(root, 'skills', name);
+    mkdirSync(join(source, 'nested'), { recursive: true });
+    writeFileSync(join(source, 'SKILL.md'), `---\nname: ${name}\ndescription: fixture\n---\n`);
+    writeFileSync(join(source, '.env.example'), 'SHIFU_TOKEN=\n');
+    writeFileSync(join(source, '.env'), 'SHIFU_TOKEN=must-not-copy\n');
+    writeFileSync(join(source, '.env.local'), 'must-not-copy\n');
+    mkdirSync(join(source, '__pycache__'));
+    writeFileSync(join(source, '__pycache__', 'cached.pyc'), 'must-not-copy');
+    chmodSync(join(source, 'nested'), 0o555);
+    chmodSync(source, 0o555);
+    readonly.push(source);
+    return source;
+  });
+  for (const fail of [false, true]) {
+    const installationEnv = { ...env, STAGING_TRACE: trace, ...(fail ? { FAIL_INSTALL: '1' } : {}) };
+    if (fail) assert.throws(() => installSkills(['--agent', 'codex'], root, installationEnv), /Skill synchronization failed/);
+    else installSkills(['--agent', 'codex'], root, installationEnv);
+    const stagedSource = readFileSync(trace, 'utf8');
+    assert.equal(existsSync(stagedSource), false, 'staged sources must be cleaned after every outcome');
+    for (const source of sources) {
+      const name = source.split(/[\\/]/).at(-1);
+      const target = join(home, '.agents', 'skills', name);
+      assert.deepEqual(JSON.parse(readFileSync(join(target, '.ai-shifu-cli.json'), 'utf8')),
+        { schema_version: 1, distribution: 'npm', version: '9.8.7' });
+      assert.equal(existsSync(join(target, '.env')), false);
+      assert.equal(existsSync(join(target, '.env.local')), false);
+      assert.equal(existsSync(join(target, '__pycache__')), false);
+      assert.equal(readFileSync(join(target, '.env.example'), 'utf8'), 'SHIFU_TOKEN=\n');
+      assert.equal(existsSync(join(source, '.ai-shifu-cli.json')), false);
+      assert.equal(readFileSync(join(source, '.env'), 'utf8'), 'SHIFU_TOKEN=must-not-copy\n');
+    }
+  }
 });

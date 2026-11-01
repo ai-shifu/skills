@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
+  readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -197,17 +198,47 @@ export function installSkills(agents = [], root = packageRoot, env = process.env
   if (!Array.isArray(installed)) throw new Error('Cannot inspect installed Skills before migration.');
   const existing = installed.filter(skill => skill.name === skillNames[0] && typeof skill.path === 'string');
   preserveLegacyEnv([...legacySkillDirs(env), ...existing.map(skill => skill.path)], env);
-  const [command, ...args] = skillsCommand(skillInstallArgs(root, checked.length ? checked : defaultAgentArgs(env)), root);
-  const result = spawnSync(command, args, { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    throw new Error(`Skill synchronization failed: ${result.stdout || result.stderr || result.signal}`);
-  }
-  const outcomes = JSON.parse(result.stdout);
-  if (!Array.isArray(outcomes) || skillNames.some(name =>
-    !outcomes.some(item => item.name === name && item.status === 'installed')) ||
-    outcomes.some(item => item.status !== 'installed')) {
-    throw new Error('Skill synchronization did not install all three bundled Skills. Retry shifu skills install.');
+  const metadata = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  const marker = { schema_version: 1, distribution: 'npm', version: metadata.version };
+  const staging = mkdtempSync(join(tmpdir(), 'ai-shifu-skills-'));
+  // Source packages may be read-only. Change only temporary directory modes.
+  const writable = directory => {
+    chmodSync(directory, 0o700);
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.isDirectory()) writable(join(directory, entry.name));
+    }
+  };
+  try {
+    for (const name of skillNames) {
+      const destination = join(staging, 'skills', name);
+      cpSync(join(root, 'skills', name), destination, {
+        recursive: true,
+        filter(source) {
+          const filename = basename(source);
+          return !lstatSync(source).isSymbolicLink() &&
+            !['.git', '__pycache__', '__pypackages__', 'node_modules', '.venv', '.DS_Store'].includes(filename) &&
+            !(filename.startsWith('.env') && filename !== '.env.example') &&
+            !filename.startsWith('.update-check') && !/\.py[co]$/.test(filename);
+        },
+      });
+      writable(destination);
+      writeFileSync(join(destination, '.ai-shifu-cli.json'), JSON.stringify(marker) + '\n');
+    }
+    const [command, ...args] = skillsCommand(skillInstallArgs(staging, checked.length ? checked : defaultAgentArgs(env)), root);
+    const result = spawnSync(command, args, { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    if (result.error) throw result.error;
+    if (result.status !== 0) {
+      throw new Error(`Skill synchronization failed: ${result.stdout || result.stderr || result.signal}`);
+    }
+    const outcomes = JSON.parse(result.stdout);
+    if (!Array.isArray(outcomes) || skillNames.some(name =>
+      !outcomes.some(item => item.name === name && item.status === 'installed')) ||
+      outcomes.some(item => item.status !== 'installed')) {
+      throw new Error('Skill synchronization did not install all three bundled Skills. Retry shifu skills install.');
+    }
+  } finally {
+    writable(staging);
+    rmSync(staging, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
   }
   process.stderr.write(`Installed Skills: ${skillNames.join(', ')}\n`);
 }
