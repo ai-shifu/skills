@@ -97,7 +97,8 @@ class ProfileLoginHintTests(unittest.TestCase):
             "---\nname: ai-shifu-course-creator\ndescription: Test\nmetadata:\n"
             "  version: 2.2.1\n  version_management: standalone\n---\n", encoding="utf-8",
         )
-        environment = {**self.process_environment, "AI_SHIFU_CONFIG_DIR": str(root / "configuration")}
+        environment = {**self.process_environment, "AI_SHIFU_CONFIG_DIR": str(root / "configuration"),
+                       "PYTHONIOENCODING": "utf-8"}
         environment.pop("AI_SHIFU_CLI_ENV_FILE", None)
         environment.pop("AI_SHIFU_CLI_DISTRIBUTION", None)
         entry = skill / "scripts" / "shifu-cli.py"
@@ -116,7 +117,8 @@ print(cli._login_instruction(types.SimpleNamespace(name=sys.argv[2]), wait=True)
         for system in ("Darwin", "Windows"):
             with self.subTest(system=system):
                 result = subprocess.run([sys.executable, "-c", script, str(entry), profile, system],
-                                        env=environment, text=True, capture_output=True, check=True)
+                                        env=environment, encoding="utf-8", capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
                 hint = result.stdout.strip()
                 if system == "Windows":
                     prefix = "Invoke this complete argument list (JSON, not a shell command): "
