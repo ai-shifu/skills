@@ -119,6 +119,42 @@ class InstallerConfigurationTests(unittest.TestCase):
         self.assertEqual((source / ".env").read_bytes(), original_source)
         self.assertTrue(all("selected-token" not in backup.read_text() for backup in self.backups()))
 
+    def test_selected_cli_account_stays_default_when_importing_a_different_source(self):
+        self.root.mkdir()
+        self.environment_file.write_text(
+            "# Keep my selection\nSHIFU_BASE_URL=com\nSHIFU_TOKEN=chosen-token\nSHIFU_DISABLE_ANALYTICS=1\n",
+            encoding="utf-8",
+        )
+        source = self.source("legacy", "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=incoming-token\nSHIFU_DISABLE_ANALYTICS=0\n")
+        result = self.imported([source])
+        default = self.store.resolve(environ=self.store._env_values())
+        self.assertEqual((default.name, default.base_url, default.token),
+                         ("default", profile_store.SITE_URLS["com"], "chosen-token"))
+        incoming = self.store.resolve(result["imported_profiles"][0], environ={})
+        self.assertNotEqual(incoming.name, default.name)
+        self.assertEqual((incoming.base_url, incoming.token), (profile_store.SITE_URLS["cn"], "incoming-token"))
+        self.assertEqual(self.store._env_values()["SHIFU_DISABLE_ANALYTICS"], "1")
+        self.assertIn("# Keep my selection", self.environment_file.read_text())
+        self.assertEqual(self.store._env_values().get("SHIFU_BASE_URL"), "")
+        self.assertEqual(self.store._env_values().get("SHIFU_TOKEN"), "")
+        self.store.logout(default)
+        logged_out = self.store.resolve(environ=self.store._env_values())
+        self.assertEqual((logged_out.name, logged_out.token), (default.name, ""))
+        self.assertEqual(self.store.load_token(incoming), "incoming-token")
+
+    def test_unresolved_selected_cli_credentials_stop_without_guessing(self):
+        self.root.mkdir()
+        source = self.source("legacy", "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=incoming-token\n")
+        for selected in ("SHIFU_TOKEN=unscoped-token\n", "SHIFU_BASE_URL=${SERVICE}\nSHIFU_TOKEN=token\n",
+                         "SHIFU_BASE_URL=com\nSHIFU_TOKEN=${TOKEN}\n"):
+            with self.subTest(selected=selected):
+                self.environment_file.write_text(selected, encoding="utf-8")
+                with self.assertRaisesRegex(ProfileError, "Selected CLI credentials need an explicit service URL"):
+                    self.imported([source])
+                self.assertEqual(self.environment_file.read_text(), selected)
+                self.assertFalse(self.store.settings_path.exists())
+                self.assertEqual((source / ".env").read_text(), "SHIFU_BASE_URL=cn\nSHIFU_TOKEN=incoming-token\n")
+
     def test_selected_options_with_legacy_saved_settings_stop_without_discarding_the_account(self):
         self.root.mkdir()
         current = b"SHIFU_DISABLE_ANALYTICS=1\n"

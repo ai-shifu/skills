@@ -523,9 +523,25 @@ class ProfileStore:
                             "Original files and private backups were preserved."
                         )
                     # A user-selected option such as the analytics opt-out is
-                    # independent of the incoming account. Preserve that file
-                    # while saving its unique, explicit account in a profile.
-                    initial = {"schema_version": 2, "default_profile": None, "profiles": {}}
+                    # independent of the incoming account. Preserve these options
+                    # while saving the unique, explicit source account in a profile.
+                    selected = _installer_env_values(existing)
+                    selected_url = str(selected.get("SHIFU_BASE_URL") or "").strip()
+                    selected_token = str(selected.get("SHIFU_TOKEN") or "").strip()
+                    if any("${" in value for value in (selected_url, selected_token)) or (selected_token and not selected_url):
+                        raise ProfileError(
+                            "Selected CLI credentials need an explicit service URL and literal values before installation. "
+                            "Original files and private backups were preserved."
+                        )
+                    if selected_url:
+                        selected_url = normalize_base_url(selected_url)
+                        # Preserve the selected account as default before saving
+                        # a different source as an inactive profile. Migration
+                        # retains preferences and clears temporary credentials.
+                        self._migrate_legacy(installer_identity=_installer_credential_identity(selected_url, selected_token))
+                        initial = self._settings()
+                    else:
+                        initial = {"schema_version": 2, "default_profile": None, "profiles": {}}
                     name = self._import_installer_profile(initial, base_url, token, identity)
                     if token:
                         self._clear_legacy_backup_tokens({_digest(token)})
