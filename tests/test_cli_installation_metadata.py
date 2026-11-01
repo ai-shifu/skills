@@ -96,6 +96,44 @@ print(cli.ENV_FILE)
         self.environment["AI_SHIFU_CLI_ENV_FILE"] = str(selected)
         self.assertEqual(self.selected_environment(), selected)
 
+    def loaded_configuration_root(self):
+        script = """import importlib.util, sys
+from pathlib import Path
+entry = Path(sys.argv[1])
+sys.path.insert(0, str(entry.parent))
+spec = importlib.util.spec_from_file_location('isolated_cli', entry)
+cli = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(cli)
+cli.load_env()
+print(cli.config_dir())
+"""
+        result = subprocess.run([sys.executable, "-c", script, str(self.skill / "scripts" / "shifu-cli.py")],
+                                env=self.environment, capture_output=True, text=True, check=True)
+        return Path(result.stdout.strip())
+
+    def test_synchronized_fallback_keeps_the_install_root_after_loading_dotenv(self):
+        (self.skill / ".ai-shifu-cli.json").write_text(json.dumps(self.metadata), encoding="utf-8")
+        home = self.root / "home"
+        self.environment.update({"HOME": str(home), "USERPROFILE": str(home)})
+        self.environment.pop("AI_SHIFU_CONFIG_DIR", None)
+        self.environment.pop("XDG_CONFIG_HOME", None)
+        selected = home / ".config" / "ai-shifu"
+        selected.mkdir(parents=True)
+        for variable in ("AI_SHIFU_CONFIG_DIR", "XDG_CONFIG_HOME"):
+            with self.subTest(variable=variable):
+                (selected / "cli.env").write_text(f"{variable}={self.root / 'redirected'}\n", encoding="utf-8")
+                self.assertEqual(self.loaded_configuration_root(), selected)
+                self.assertFalse((self.root / "redirected").exists())
+
+    def test_unmarked_and_plugin_dotenv_configuration_selection_is_unchanged(self):
+        self.environment.pop("AI_SHIFU_CONFIG_DIR", None)
+        selected = self.root / "legacy-configuration"
+        (self.skill / ".env").write_text(f"AI_SHIFU_CONFIG_DIR={selected}\n", encoding="utf-8")
+        self.assertEqual(self.loaded_configuration_root(), selected)
+        (self.skill / ".ai-shifu-cli.json").write_text(json.dumps(self.metadata), encoding="utf-8")
+        self.write_skill("plugin")
+        self.assertEqual(self.loaded_configuration_root(), selected)
+
 
 if __name__ == "__main__":
     unittest.main()

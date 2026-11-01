@@ -37,11 +37,14 @@ _SKILL_METADATA = read_skill_metadata(_SKILL_DIR / "SKILL.md") or {}
 _NPM_SYNCHRONIZED = bool(
     _INSTALLATION_METADATA and _SKILL_METADATA.get("version_management") != "plugin"
 )
+# Resolve the npm install's shared root before dotenv can add legacy overrides.
+# Unmarked installations keep their existing dotenv-based root selection.
+_NPM_CONFIG_DIR = profiles.config_dir() if _NPM_SYNCHRONIZED else None
 # The npm entrypoint keeps mutable configuration outside its installation.
 # Its synchronized Skills share that configuration during Python fallback.
 # Unmarked and plugin-managed packages retain their own configuration location.
 ENV_FILE = Path(os.environ.get("AI_SHIFU_CLI_ENV_FILE") or (
-    profiles.config_dir() / "cli.env" if _NPM_SYNCHRONIZED else _SKILL_DIR / ".env"
+    _NPM_CONFIG_DIR / "cli.env" if _NPM_CONFIG_DIR is not None else _SKILL_DIR / ".env"
 ))
 ENV_EXAMPLE_FILE = _SKILL_DIR / ".env.example"
 
@@ -202,7 +205,7 @@ def cmd_logout(args):
 
 
 def config_dir():
-    return profiles.config_dir()
+    return _NPM_CONFIG_DIR if _NPM_CONFIG_DIR is not None else profiles.config_dir()
 
 
 def credentials_path(context):
@@ -3684,7 +3687,7 @@ def main():
                 load_env()
             if args.command not in {"check-update", "build"}:
                 profile_store().migrate_legacy(process_env)
-                # Resolve the config root from dotenv before migration, then
+                # Resolve this installation's config root before migration, then
                 # discard only dotenv credential values that cleanup may have
                 # removed. Exported process values keep their original priority.
                 for key in ("SHIFU_BASE_URL", "SHIFU_TOKEN"):
