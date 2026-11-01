@@ -74,6 +74,9 @@ jobs:
       - name: Build the installable npm package
         run: npm pack
 
+      - name: Prevent older releases from replacing npm latest
+        run: node cli/check-publication.mjs
+
       - name: Publish the verified package
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
