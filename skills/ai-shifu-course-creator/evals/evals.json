@@ -1544,6 +1544,145 @@
         "The simulated delivery contains no new analogy, assumed familiar experience or learner-background question.",
         "The 12, 4, 10 capacities, throughput bound and simplifying assumptions remain intact; simulated delivery is not claimed as actual learner validation."
       ]
+    },
+    {
+      "id": 123,
+      "eval_name": "adaptive-records-goal-distinguish",
+      "prompt": "只在本地写一节中文 MarkdownFlow 授课提示词，并另用一小段话解释教法选择及其局限；如使用已有名称的教学法，给出支持实际所用原则的可靠来源。纯文字，不按个人背景适配，不生成课程提示词，不连接平台。具体教法、教学动作和篇章组织由你选择，已有信息足够，请直接完成。\n\n学员是从未负责过会议记录的新入职同事，约 10 分钟。目标只到“能判断一条记录是否把提议误写成决定，并根据会议原文说明理由”，不要求写出完整的决定记录。允许必要的作答与反馈，不必增加无关任务。\n\n共同材料如下。讨论记录可以保留意见和备选方案；决定记录只能写会议已经明确同意的事项，并写清行动、负责人、截止时间。已同意的事项缺少某项信息时，应标出待补，不能猜。尚未形成决定的提议应如实记为未决，不能把提出建议的人当成已确定的负责人。\n\n会议甲：主持人说：“我们已经决定，活动报名表由小林在周五 17 点前去重后发给项目组。”小周说：“要不要给未回复的人发提醒？我只是提建议。”主持人说：“提醒方案还没决定，负责人和时间下次确认。”\n\n会议乙：小陈说：“建议周三前把常见问题上线，由小李负责？”主持人说：“上线方案没定。现在只确定：小李在周二 12 点前核对前三条答案，并把核对结果发到项目群。上线负责人和时间下次决定。”",
+      "expected_output": "Chooses and implements teaching that helps a novice distinguish an agreed decision from a proposal and justify the distinction from source evidence.",
+      "files": [],
+      "expectations": [
+        "The learning task elicits a judgment and its supporting evidence from the meeting rather than only recall of a definition or production of a complete record. Its criteria distinguish an actual agreement from a merely detailed proposal.",
+        "Explanatory support makes the relevant distinction visible for a novice, and feedback addresses why the source supports or fails to support the claimed decision.",
+        "Compared with the matched writing objective in case 124, the requested learner performance and its assessment reflect the different goal. A particular method name, sequence, number of activities or different surface layout is not required.",
+        "The teacher-facing rationale connects the stated objective and starting knowledge to the chosen teaching actions and their limits; a named method has a verifiable source that supports the principle actually used, without claiming a uniquely optimal method or guaranteed learning gains.",
+        "The runnable Teaching Prompt supplies the content and reasoning needed by its chosen actions; a method name, citation, or generic instruction to explain or practice is not a substitute for implementing those actions.",
+        "The lesson preserves the distinction between agreed decisions and unresolved proposals, including the actual action, owner and deadline when it uses either meeting. It does not turn a suggestion or missing information into an agreement.",
+        "Any authored interaction uses a real supported response surface, waits for the current answer, and applies executable success criteria and response-dependent feedback. Static Prompt inspection is not presented as an observed learner run.",
+        "The agent honors local text-only scope without a new questionnaire, approval gate, intermediate schema, background collection, Course Prompt or platform operation."
+      ]
+    },
+    {
+      "id": 124,
+      "eval_name": "adaptive-records-goal-write-novice",
+      "prompt": "只在本地写一节中文 MarkdownFlow 授课提示词，并另用一小段话解释教法选择及其局限；如使用已有名称的教学法，给出支持实际所用原则的可靠来源。纯文字，不按个人背景适配，不生成课程提示词，不连接平台。具体教法、教学动作和篇章组织由你选择，已有信息足够，请直接完成。\n\n学员是从未负责过会议记录的新入职同事，约 10 分钟。目标是“能根据会议原文独立写出可执行的决定记录，并把未决提议如实留下”。允许必要的作答与反馈，不必增加无关任务。\n\n共同材料如下。讨论记录可以保留意见和备选方案；决定记录只能写会议已经明确同意的事项，并写清行动、负责人、截止时间。已同意的事项缺少某项信息时，应标出待补，不能猜。尚未形成决定的提议应如实记为未决，不能把提出建议的人当成已确定的负责人。\n\n会议甲：主持人说：“我们已经决定，活动报名表由小林在周五 17 点前去重后发给项目组。”小周说：“要不要给未回复的人发提醒？我只是提建议。”主持人说：“提醒方案还没决定，负责人和时间下次确认。”\n\n会议乙：小陈说：“建议周三前把常见问题上线，由小李负责？”主持人说：“上线方案没定。现在只确定：小李在周二 12 点前核对前三条答案，并把核对结果发到项目群。上线负责人和时间下次决定。”",
+      "expected_output": "Chooses and implements suitable novice support leading to an actual written decision record with criteria for source fidelity, executability and unresolved matters.",
+      "files": [],
+      "expectations": [
+        "The learner must attempt a decision record. Success requires the agreed action, owner and deadline to match the source, with unresolved proposals kept unresolved; selecting a correct record, repeating three element names or reporting confidence alone does not establish this goal.",
+        "The lesson makes the reasoning needed for the writing task available to a novice, using a suitable explanation, demonstration, guided attempt or another justified support. It does not merely assign unsupported independent writing.",
+        "Compared with case 123, the teaching and evidence reach production rather than stopping at recognition. Compared with the same writing goal for experienced learners in case 125, the amount or kind of support reflects the different starting knowledge; neither comparison requires distinct method labels.",
+        "The teacher-facing rationale connects the stated objective and starting knowledge to the chosen teaching actions and their limits; a named method has a verifiable source that supports the principle actually used, without claiming a uniquely optimal method or guaranteed learning gains.",
+        "The runnable Teaching Prompt supplies the content and reasoning needed by its chosen actions; a method name, citation, or generic instruction to explain or practice is not a substitute for implementing those actions.",
+        "The lesson preserves the distinction between agreed decisions and unresolved proposals, including the actual action, owner and deadline when it uses either meeting. It does not turn a suggestion or missing information into an agreement.",
+        "Any authored interaction uses a real supported response surface, waits for the current answer, and applies executable success criteria and response-dependent feedback. Static Prompt inspection is not presented as an observed learner run.",
+        "The agent honors local text-only scope without a new questionnaire, approval gate, intermediate schema, background collection, Course Prompt or platform operation."
+      ]
+    },
+    {
+      "id": 125,
+      "eval_name": "adaptive-records-goal-write-experienced",
+      "prompt": "只在本地写一节中文 MarkdownFlow 授课提示词，并另用一小段话解释教法选择及其局限；如使用已有名称的教学法，给出支持实际所用原则的可靠来源。纯文字，不按个人背景适配，不生成课程提示词，不连接平台。具体教法、教学动作和篇章组织由你选择，已有信息足够，请直接完成。\n\n学员是已经能在简单会议原文中准确提取行动、负责人、截止时间的项目协调员，约 10 分钟。目标是“能根据会议原文独立写出可执行的决定记录，并把未决提议如实留下”。允许必要的作答与反馈，不必增加无关任务。\n\n共同材料如下。讨论记录可以保留意见和备选方案；决定记录只能写会议已经明确同意的事项，并写清行动、负责人、截止时间。已同意的事项缺少某项信息时，应标出待补，不能猜。尚未形成决定的提议应如实记为未决，不能把提出建议的人当成已确定的负责人。\n\n会议甲：主持人说：“我们已经决定，活动报名表由小林在周五 17 点前去重后发给项目组。”小周说：“要不要给未回复的人发提醒？我只是提建议。”主持人说：“提醒方案还没决定，负责人和时间下次确认。”\n\n会议乙：小陈说：“建议周三前把常见问题上线，由小李负责？”主持人说：“上线方案没定。现在只确定：小李在周二 12 点前核对前三条答案，并把核对结果发到项目群。上线负责人和时间下次决定。”",
+      "expected_output": "Uses established prior knowledge to focus the same writing goal on distinguishing agreement from proposals, with support proportionate to demonstrated needs.",
+      "files": [],
+      "expectations": [
+        "The learner still attempts a faithful, executable decision record and preserves unresolved proposals, using the same substantive success criteria as the novice writing case 124.",
+        "The design uses the stated ability to extract basic fields and gives meaningful attention to deciding what was actually agreed. It does not spend the whole lesson re-teaching field names or assume complete mastery merely from the learner role.",
+        "Compared with case 124, the authored support, entry task or feedback strategy reflects the established prior knowledge in a substantive way. Identical pedagogy with only a new audience label is insufficient; a new method name or wholly different sequence is unnecessary.",
+        "The teacher-facing rationale connects the stated objective and starting knowledge to the chosen teaching actions and their limits; a named method has a verifiable source that supports the principle actually used, without claiming a uniquely optimal method or guaranteed learning gains.",
+        "The runnable Teaching Prompt supplies the content and reasoning needed by its chosen actions; a method name, citation, or generic instruction to explain or practice is not a substitute for implementing those actions.",
+        "The lesson preserves the distinction between agreed decisions and unresolved proposals, including the actual action, owner and deadline when it uses either meeting. It does not turn a suggestion or missing information into an agreement.",
+        "Any authored interaction uses a real supported response surface, waits for the current answer, and applies executable success criteria and response-dependent feedback. Static Prompt inspection is not presented as an observed learner run.",
+        "The agent honors local text-only scope without a new questionnaire, approval gate, intermediate schema, background collection, Course Prompt or platform operation."
+      ]
+    },
+    {
+      "id": 126,
+      "eval_name": "adaptive-records-feedback-correct",
+      "prompt": "只在本地写一个简短的中文 MarkdownFlow 授课提示词片段，再用一小段话说明教学选择依据。学员已理解材料中的记录原则，现在需要把原则用于会议乙。教法与讲解方式由你选择，但保留这项实际任务：用文本输入让学员根据会议乙写出已经确定的决定和仍未决定的事项；问题或任务说明不能直接附上答案。按真实回答判断记录是否忠实、是否可执行；遇到错误或信息不足时给针对性提示并让学员再试，正确则解释达标依据并结束，不追问无关问题。对作答前和作答后的行为都要写成可执行指令。不要代答、生成课程提示词或连接平台。\n\n共同材料如下。讨论记录可以保留意见和备选方案；决定记录只能写会议已经明确同意的事项，并写清行动、负责人、截止时间。已同意的事项缺少某项信息时，应标出待补，不能猜。尚未形成决定的提议应如实记为未决，不能把提出建议的人当成已确定的负责人。\n\n会议甲：主持人说：“我们已经决定，活动报名表由小林在周五 17 点前去重后发给项目组。”小周说：“要不要给未回复的人发提醒？我只是提建议。”主持人说：“提醒方案还没决定，负责人和时间下次确认。”\n\n会议乙：小陈说：“建议周三前把常见问题上线，由小李负责？”主持人说：“上线方案没定。现在只确定：小李在周二 12 点前核对前三条答案，并把核对结果发到项目群。上线负责人和时间下次决定。”",
+      "followup_turns": [
+        "现在用刚才的授课提示词做一次明确标为模拟的试讲，把我后续消息作为模拟学员的实际输入。这一轮请开始授课，到需要我作答处就停下；不要预先编出我的答案或展示作答后的反馈。",
+        "已经确定：小李在周二 12 点前核对前三条答案，把核对结果发到项目群。仍未决定：常见问题是否上线，以及上线的负责人和时间。"
+      ],
+      "expected_output": "Recognizes a source-faithful executable answer, explains why it meets the criteria and closes the simulated activity without unnecessary remediation.",
+      "files": [],
+      "expectations": [
+        "The feedback recognizes both the agreed checking task and the unresolved launch, relates the correct action, owner, deadline and delivery destination to the source, and closes the activity as authored.",
+        "It does not manufacture a missing detail, force a retry, or introduce another test after this sufficient answer. A successful simulated response is described only as meeting the criteria for this task.",
+        "The authored task requests a written record and defines observable criteria: only the answer-checking action is agreed, Xiaoli owns it, the deadline is Tuesday noon, the result goes to the project group, and the proposed launch remains undecided.",
+        "During the simulated first delivery turn, the agent offers the actual response task and pauses without fabricating an answer, exposing the solution as the task, or issuing answer-specific feedback before the follow-up arrives.",
+        "After the supplied response arrives, feedback uses its actual content rather than applying the same praise or correction to every answer. The simulation follows the authored feedback intent and does not silently redesign the lesson to rescue an incomplete Prompt.",
+        "The teaching-method rationale stays teacher-facing and supports the actual learning actions, with a reliable source when it invokes a named established method. No method name or fixed pedagogical sequence is required.",
+        "The run remains an explicitly labeled local simulation. It does not claim a platform pause/resume test, learning gains or real learner mastery, and it performs no platform operation."
+      ]
+    },
+    {
+      "id": 127,
+      "eval_name": "adaptive-records-feedback-misconception",
+      "prompt": "只在本地写一个简短的中文 MarkdownFlow 授课提示词片段，再用一小段话说明教学选择依据。学员已理解材料中的记录原则，现在需要把原则用于会议乙。教法与讲解方式由你选择，但保留这项实际任务：用文本输入让学员根据会议乙写出已经确定的决定和仍未决定的事项；问题或任务说明不能直接附上答案。按真实回答判断记录是否忠实、是否可执行；遇到错误或信息不足时给针对性提示并让学员再试，正确则解释达标依据并结束，不追问无关问题。对作答前和作答后的行为都要写成可执行指令。不要代答、生成课程提示词或连接平台。\n\n共同材料如下。讨论记录可以保留意见和备选方案；决定记录只能写会议已经明确同意的事项，并写清行动、负责人、截止时间。已同意的事项缺少某项信息时，应标出待补，不能猜。尚未形成决定的提议应如实记为未决，不能把提出建议的人当成已确定的负责人。\n\n会议甲：主持人说：“我们已经决定，活动报名表由小林在周五 17 点前去重后发给项目组。”小周说：“要不要给未回复的人发提醒？我只是提建议。”主持人说：“提醒方案还没决定，负责人和时间下次确认。”\n\n会议乙：小陈说：“建议周三前把常见问题上线，由小李负责？”主持人说：“上线方案没定。现在只确定：小李在周二 12 点前核对前三条答案，并把核对结果发到项目群。上线负责人和时间下次决定。”",
+      "followup_turns": [
+        "现在用刚才的授课提示词做一次明确标为模拟的试讲，把我后续消息作为模拟学员的实际输入。这一轮请开始授课，到需要我作答处就停下；不要预先编出我的答案或展示作答后的反馈。",
+        "已经确定由小李负责，在周三前把常见问题上线。"
+      ],
+      "expected_output": "Identifies that a detailed proposal was mistaken for an agreed action, gives source-based corrective support and waits for a genuine revised attempt.",
+      "files": [],
+      "expectations": [
+        "The feedback identifies the substantive misconception: the launch and Wednesday deadline came from a proposal, whereas the confirmed action is checking answers by Tuesday noon. It does not accept the answer merely because action, owner and deadline are present.",
+        "It offers a source-directed hint or explanation, requests a revised record and pauses for that new response. It neither writes the learner revision and treats it as submitted nor reports success without receiving it.",
+        "The authored task requests a written record and defines observable criteria: only the answer-checking action is agreed, Xiaoli owns it, the deadline is Tuesday noon, the result goes to the project group, and the proposed launch remains undecided.",
+        "During the simulated first delivery turn, the agent offers the actual response task and pauses without fabricating an answer, exposing the solution as the task, or issuing answer-specific feedback before the follow-up arrives.",
+        "After the supplied response arrives, feedback uses its actual content rather than applying the same praise or correction to every answer. The simulation follows the authored feedback intent and does not silently redesign the lesson to rescue an incomplete Prompt.",
+        "The teaching-method rationale stays teacher-facing and supports the actual learning actions, with a reliable source when it invokes a named established method. No method name or fixed pedagogical sequence is required.",
+        "The run remains an explicitly labeled local simulation. It does not claim a platform pause/resume test, learning gains or real learner mastery, and it performs no platform operation."
+      ]
+    },
+    {
+      "id": 128,
+      "eval_name": "adaptive-records-feedback-incomplete",
+      "prompt": "只在本地写一个简短的中文 MarkdownFlow 授课提示词片段，再用一小段话说明教学选择依据。学员已理解材料中的记录原则，现在需要把原则用于会议乙。教法与讲解方式由你选择，但保留这项实际任务：用文本输入让学员根据会议乙写出已经确定的决定和仍未决定的事项；问题或任务说明不能直接附上答案。按真实回答判断记录是否忠实、是否可执行；遇到错误或信息不足时给针对性提示并让学员再试，正确则解释达标依据并结束，不追问无关问题。对作答前和作答后的行为都要写成可执行指令。不要代答、生成课程提示词或连接平台。\n\n共同材料如下。讨论记录可以保留意见和备选方案；决定记录只能写会议已经明确同意的事项，并写清行动、负责人、截止时间。已同意的事项缺少某项信息时，应标出待补，不能猜。尚未形成决定的提议应如实记为未决，不能把提出建议的人当成已确定的负责人。\n\n会议甲：主持人说：“我们已经决定，活动报名表由小林在周五 17 点前去重后发给项目组。”小周说：“要不要给未回复的人发提醒？我只是提建议。”主持人说：“提醒方案还没决定，负责人和时间下次确认。”\n\n会议乙：小陈说：“建议周三前把常见问题上线，由小李负责？”主持人说：“上线方案没定。现在只确定：小李在周二 12 点前核对前三条答案，并把核对结果发到项目群。上线负责人和时间下次决定。”",
+      "followup_turns": [
+        "现在用刚才的授课提示词做一次明确标为模拟的试讲，把我后续消息作为模拟学员的实际输入。这一轮请开始授课，到需要我作答处就停下；不要预先编出我的答案或展示作答后的反馈。",
+        "先把答案弄好，上线以后再说。"
+      ],
+      "expected_output": "Distinguishes an incomplete but not necessarily mistaken answer from an explicit misconception and elicits the missing source-grounded details.",
+      "files": [],
+      "expectations": [
+        "The feedback acknowledges that launch has not been settled while identifying the missing actionable detail: the exact checking task, owner, deadline and delivery destination. It does not claim the learner believes the launch is already approved or diagnose an unsupported misconception.",
+        "It asks the learner to complete the record using the meeting source, gives proportionate support, and waits for an actual revised answer rather than inventing missing details on the learner's behalf or prematurely declaring mastery.",
+        "The authored task requests a written record and defines observable criteria: only the answer-checking action is agreed, Xiaoli owns it, the deadline is Tuesday noon, the result goes to the project group, and the proposed launch remains undecided.",
+        "During the simulated first delivery turn, the agent offers the actual response task and pauses without fabricating an answer, exposing the solution as the task, or issuing answer-specific feedback before the follow-up arrives.",
+        "After the supplied response arrives, feedback uses its actual content rather than applying the same praise or correction to every answer. The simulation follows the authored feedback intent and does not silently redesign the lesson to rescue an incomplete Prompt.",
+        "The teaching-method rationale stays teacher-facing and supports the actual learning actions, with a reliable source when it invokes a named established method. No method name or fixed pedagogical sequence is required.",
+        "The run remains an explicitly labeled local simulation. It does not claim a platform pause/resume test, learning gains or real learner mastery, and it performs no platform operation."
+      ]
+    },
+    {
+      "id": 129,
+      "eval_name": "adaptive-records-short-no-interaction",
+      "prompt": "只在本地写一段适合约 90 秒自学短讲的中文 MarkdownFlow 授课提示词，教新人避免把会议乙的建议误写成决定。纯文字，无互动，不要求学员作答、停下来思考或点击继续，也不新增任何收集背景的步骤。选择适合这个限制的讲法，并在提示词之外简短说明选择及验证局限；如引用已有名称的教学法，给出支持实际原则的可靠来源。不生成课程提示词、不连接平台。\n\n共同材料如下。讨论记录可以保留意见和备选方案；决定记录只能写会议已经明确同意的事项，并写清行动、负责人、截止时间。已同意的事项缺少某项信息时，应标出待补，不能猜。尚未形成决定的提议应如实记为未决，不能把提出建议的人当成已确定的负责人。\n\n会议甲：主持人说：“我们已经决定，活动报名表由小林在周五 17 点前去重后发给项目组。”小周说：“要不要给未回复的人发提醒？我只是提建议。”主持人说：“提醒方案还没决定，负责人和时间下次确认。”\n\n会议乙：小陈说：“建议周三前把常见问题上线，由小李负责？”主持人说：“上线方案没定。现在只确定：小李在周二 12 点前核对前三条答案，并把核对结果发到项目群。上线负责人和时间下次决定。”",
+      "expected_output": "Selects and implements a concise explanatory or demonstrative approach that fits a non-interactive short lesson without claiming observed understanding.",
+      "files": [],
+      "expectations": [
+        "The chosen actions make the proposal-versus-agreement distinction understandable within the short format using source-grounded explanation or demonstration. They supply the relevant reasoning rather than listing a method name or silently omitting the learning difficulty.",
+        "The Prompt requests no learner response, private reflection task or navigation click, and contains no new-answer-dependent branch, attempted assessment or invented learner answer. It does not force an interactive method after acknowledging the restriction.",
+        "Any illustrated correct record preserves the confirmed answer-checking task, owner, Tuesday-noon deadline and result destination, with launch undecided; it does not import the Wednesday launch proposal as a commitment.",
+        "The teacher-facing explanation gives a task-specific reason and a relevant limitation, including that no learner answer has been observed. It does not call the absence of an interaction a defect or claim the learner has mastered the skill.",
+        "The result remains a local text-only snippet with no new design gate, Course Prompt or platform operation; no specific teaching label, three-step template or exhaustive retelling of both meetings is required."
+      ]
+    },
+    {
+      "id": 130,
+      "eval_name": "adaptive-records-custom-method",
+      "prompt": "只在本地写中文 MarkdownFlow 授课提示词。我指定自定义教法“先验坏记录”，只做下面三个教学动作并保持顺序：先展示一条明确标为错误的记录“已经决定由小李周三前上线常见问题”；再带学员回看会议乙，找出建议、已确定事项和未决事项的原文依据；最后示范改成忠实且可执行的决定记录，保留未决事项。采用什么具体解释措辞由你定。纯文字，不加提问、练习、开场或结尾，不生成课程提示词、不操作平台。只输出授课提示词，不需要方法来源或设计报告。\n\n共同材料如下。讨论记录可以保留意见和备选方案；决定记录只能写会议已经明确同意的事项，并写清行动、负责人、截止时间。已同意的事项缺少某项信息时，应标出待补，不能猜。尚未形成决定的提议应如实记为未决，不能把提出建议的人当成已确定的负责人。\n\n会议甲：主持人说：“我们已经决定，活动报名表由小林在周五 17 点前去重后发给项目组。”小周说：“要不要给未回复的人发提醒？我只是提建议。”主持人说：“提醒方案还没决定，负责人和时间下次确认。”\n\n会议乙：小陈说：“建议周三前把常见问题上线，由小李负责？”主持人说：“上线方案没定。现在只确定：小李在周二 12 点前核对前三条答案，并把核对结果发到项目群。上线负责人和时间下次决定。”",
+      "expected_output": "Faithfully implements the teacher-defined three-action method with concrete source reasoning and correction, without redispatching into a preferred teaching pattern.",
+      "files": [],
+      "expectations": [
+        "The Prompt implements the requested order: show the specified false record as false, inspect the relevant source evidence, then demonstrate a faithful revision. It preserves exactly those teaching actions without a compulsory test, opening, close or replacement sequence.",
+        "The source-comparison instructions explain why a proposal and Wednesday deadline do not establish the launch decision, and distinguish that from the confirmed answer-checking task. Merely naming the custom method or asking the Teaching Agent to use it is insufficient.",
+        "The demonstrated revision contains the confirmed checking action, Xiaoli as owner, Tuesday-noon deadline and project-group delivery, while the launch, its owner and timing remain unresolved.",
+        "The agent honors the custom method without inventing a research origin, forcing a choice from a catalog, requiring a plan or source lookup for the user-created label, or adding teacher-facing rationale to the requested runtime-only output.",
+        "The Prompt uses executable ordinary teaching instructions and useful source-only block comments while keeping all essential facts and actions outside comments; it adds no learner interaction, parser-level conditional syntax, Course Prompt or platform operation."
+      ]
     }
   ]
 }

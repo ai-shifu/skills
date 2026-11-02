@@ -63,6 +63,25 @@ checks, staged replays, and completed separate-turn runs in the report. A small
 sample of model runs is behavioral evidence for those runs, not proof of a
 general improvement in learner outcomes.
 
+### Matched Teaching-Choice Cases
+
+Cases 123–130 reuse the same meeting-record material. Run each case in its own
+fresh executor session before comparing the resulting teaching behavior:
+
+| Cases | Comparison |
+| --- | --- |
+| 123 and 124 | Same novice audience and source, with recognition versus independent writing as the learning goal. |
+| 124 and 125 | Same writing goal and source, with different established prior knowledge. |
+| 126, 127 and 128 | Same authored response task and simulated delivery, followed by a correct, mistaken or incomplete answer. |
+| 129 and 130 | Boundary checks for a short non-interactive lesson and a teacher-defined teaching sequence. |
+
+For the matched pairs, compare the learner task, explanatory support, success
+criteria and feedback rather than requiring different method names or layouts.
+Keep each answer-path case in a separate session so an earlier simulated answer
+does not become context for another path. Send its follow-up messages as separate
+turns under the protocol above. The evaluator can inspect the matched outputs;
+the executors receive only their own case messages and source material.
+
 From the repository root, run the static manifest check with:
 
 ```bash

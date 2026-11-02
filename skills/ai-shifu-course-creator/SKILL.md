@@ -49,7 +49,7 @@ Decide what learners should understand or do and how teaching can help them get 
 | Write listing copy | Course topic, audience, goals, and supported outcomes | Learner-facing course description; this prose does not require MarkdownFlow. [Course description](references/course-description.md) |
 | Review teaching quality | Available material, design, or course content | Scoped findings and requested repairs for factual support, source coverage, and learning effectiveness. [Review](references/course-review.md), [checks](references/review-checklist.md) |
 
-Teaching patterns, interaction counts, and visual rhythms in [teaching-design.md](references/teaching-design.md) are recommendations. The agent chooses teaching strategy within the user's explicit constraints.
+Teaching patterns, interaction counts, and visual rhythms in [teaching-design.md](references/teaching-design.md) are recommendations. Select a strategy for the learning task using its content, intended performance, learner starting point, and constraints under [approach selection](references/teaching-design.md#selecting-an-approach-for-the-learning-task). The agent may combine approaches within the user's explicit constraints.
 
 ### Express in MarkdownFlow
 
