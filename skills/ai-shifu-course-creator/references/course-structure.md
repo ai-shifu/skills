@@ -12,6 +12,8 @@ For long or noisy material, semantic segments can help preserve traceability. Re
 
 - Choose lesson boundaries around teachable questions, skills, or outcomes rather than heading depth alone. A single core question is useful when it makes a lesson coherent; it is not a universal quota.
 - Choose chapter grouping, lesson granularity, and ordering for the audience, prerequisites, source relationships, and requested result. Honor explicit ordering and count constraints.
+- Choose genuine learning dependencies rather than copying an expert's work sequence automatically. Independent modules may stay parallel; a low-cost first draft can precede deeper instruction when the necessary prerequisites are available. Use a learner's existing draft or result as an entry point where it serves the goal, rather than forcing a restart.
+- Increase task complexity, independence, and transfer distance in relation to available performance evidence and support. Return from prerequisite help to the original task or an appropriate equivalent. Course-level orientation and integration can connect the whole experience without becoming repeated openings and closes in every lesson.
 - When reconstructing an existing course faithfully, preserve its required coverage and ordering. When restructuring is requested or useful within the task, keep required facts and source relationships intact and make consequential rearrangements clear.
 - Keep required source points and immutable spans represented. Do not drop difficult material merely to fit a lesson count.
 - Separate uncertainty in the source from a design choice. Identify missing evidence or conflicting constraints without inventing source claims; a useful draft may state its assumptions.
