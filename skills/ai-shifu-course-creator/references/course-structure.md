@@ -24,4 +24,10 @@ For long or noisy material, semantic segments can help preserve traceability. Re
 
 Return the requested structure at the useful level of detail: chapter and lesson titles, objectives or core questions, source associations, and unresolved assumptions where relevant. The caller decides whether it needs an outline, a local `structure.json`, or information for another capability. The actual directory format belongs to [cli/course-directory-spec.md](cli/course-directory-spec.md).
 
-Check coherence, requested source coverage, explicit counts and order, and exact preservation within the affected scope. Do not generate Teaching Prompts, cross-lesson tables, or a phase report merely because a structure was requested.
+Check coherence, requested source coverage, explicit counts and order, and exact preservation within the affected scope. Do not generate Teaching Prompts, a separate cross-lesson planning table, or a phase report merely because a structure was requested.
+
+### Outline Presentation
+
+When showing a course outline to the teacher, include a concise teaching-strategy entry for every lesson shown. For a strategy established by the available material or proposed within the user's requested scope, name the approach and describe the concrete teaching action and how it serves that lesson's goal; a method label alone is insufficient. For example: "Compare a discussion record with a decision record to make the missing owner and deadline visible." A table or lesson list is sufficient; no new planning artifact is required. Follow [approach selection](teaching-design.md#selecting-an-approach-for-the-learning-task) and [method attribution](teaching-design.md#method-attribution) for recommendations and their sources.
+
+Reuse confirmed teaching choices. For an existing course, ground each summary in the available Teaching Prompt or design material rather than inferring a strategy from the title alone. Mark unsupported or unresolved strategies as not yet established; this entry needs no approach or teaching action, and a read-only summary must not add a new design. Distinguish any proposed change from the course's current design.
