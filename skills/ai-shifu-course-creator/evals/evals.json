@@ -1841,6 +1841,33 @@
         "The reported title and button work is attributed to the learner, while body text and the location revision are attributed to the teammate. A successful group artifact is not treated as evidence that the individual performed every project skill.",
         "Once this revision meets the task criteria, the activity closes with those evidence limits. It does not force a full launch, expanded market study, extra intake or another compulsory project cycle."
       ]
+    },
+    {
+      "id": 139,
+      "eval_name": "outline-shows-lesson-teaching-strategies",
+      "prompt": "只在本地给我一门 AI 师傅微课的课程大纲，面向第一次写会议纪要的团队负责人，固定三节：1. 区分讨论与决定；2. 写清决定；3. 检查并补全记录。已确认教学安排：第一节并列讲解一条讨论记录和一条决定记录；第二节完整示范写一条决定记录，并解释各要素；第三节展示一条缺项记录及补全后的版本，说明检查依据。全课纯文字，不向学员提问、不收集回答。必要事实只有：讨论可含意见和备选方案；决定需明确做什么、谁负责、何时完成；未形成决定时如实标记未决。结构和安排已经确定，不需要样课或确认，只展示大纲，不写授课提示词、不连接平台。",
+      "expected_output": "Shows the three-lesson outline with a concrete teaching-strategy summary for each lesson, reusing the confirmed non-interactive design.",
+      "files": [],
+      "expectations": [
+        "All three lessons retain the confirmed order and each displays its teaching strategy without requiring a separate request to show strategies.",
+        "Each strategy describes the actual teaching action and its purpose for the lesson goal, rather than only naming a method: contrast the two record types, explain a complete worked example, and compare an incomplete record with its completed version.",
+        "The summaries preserve the supplied teaching choices and non-interactive scope, without adding learner questions, practice submissions, feedback loops or different methods merely for variety.",
+        "Named method attribution follows the existing source and evidence boundaries, without repeating the same source for every lesson or claiming observed learner results.",
+        "The response remains an outline; it does not reopen confirmed choices, require an intermediate schema or approval, generate Teaching Prompts, or operate the platform."
+      ]
+    },
+    {
+      "id": 140,
+      "eval_name": "existing-outline-distinguishes-known-and-unknown-strategies",
+      "prompt": "只读整理下面这门已有 AI 师傅课程的大纲，不修改课程，不补设计，也不访问平台。课程叫“识别信息边界”，两节课的顺序已确认。第一节“相关与因果”的授课提示词是：“并列展示两地气温与冰淇淋销量一起上升，以及促销使销量上升这两个例子。解释前者的共同变化不能单凭同时发生确认因果，后者仍需检查其他因素。全程只作讲解，不询问学员。”第二节叫“判断证据是否充分”，目前只拿到了标题，没有正文或教学设计。请直接展示这两节课的大纲。",
+      "expected_output": "Shows a grounded strategy for the supplied lesson and explicitly leaves the title-only lesson strategy unknown, without inventing an existing design.",
+      "files": [],
+      "expectations": [
+        "The outline includes both lessons in the supplied order, with a teaching-strategy entry for each even though the request did not explicitly ask for strategies.",
+        "The first strategy is grounded in the actual non-interactive comparison and explanation in the supplied Teaching Prompt, and briefly connects it to distinguishing correlation from causation.",
+        "The second strategy is marked unknown or not yet established from the available material. The lesson title is not treated as evidence of a teaching method, interaction, assessment or existing feedback path.",
+        "The response honors the read-only summary scope without designing the second lesson, rewriting the first, requesting approval or accessing the platform."
+      ]
     }
   ]
 }

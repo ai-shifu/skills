@@ -30,6 +30,7 @@ These are teaching-design decisions, not additional upload or publication approv
 - Apply [language-policy.md](references/language-policy.md) to conversation and authored content, including target-language resolution and terminology.
 - Apply [session-controls.md](references/session-controls.md) to contact eligibility, explicit-request-only version checks, progress, errors, and completion handoffs. First-response contact conditions remain applicable. The completion handoff applies to the user's completed request, not each internal capability call.
 - Use Markdown links `[descriptive text](URL)` for URLs in user-visible messages. URLs inside Teaching Prompts follow MarkdownFlow rules; URLs inside fenced code blocks are exempt.
+- When showing a course outline to the teacher, apply [outline presentation](references/course-structure.md#outline-presentation).
 - Honor explicit author choices, source facts, selected exact material, and the distinction between a per-lesson Teaching Prompt and a course-wide Course Prompt. Runtime semantics are defined in [prompt-semantics.md](references/prompt-semantics.md) and [markdownflow-syntax.md](references/markdownflow-syntax.md).
 - Apply [automatic platform updates](#automatic-platform-updates) to new courses and changes to existing courses.
 
