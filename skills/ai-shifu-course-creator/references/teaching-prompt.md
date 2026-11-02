@@ -132,6 +132,12 @@ Respond based on the learner's answer:
 - If the needed information is unavailable or irrelevant, use the course-appropriate fallback rather than inventing an answer.
 - Prompt prose carries the teaching response, not an explanation of the machine-facing encoding decision.
 
+### Simulation Integration
+
+For a selected interactive-page activity, specify the model, assumptions, adjustable quantities, observable changes, and comparisons needed for its teaching purpose. Identify executable HTML or JavaScript, usable controls, and any required page-to-course event bridge as target capabilities to verify; a page-generation instruction alone does not establish them.
+
+Do not treat a slider movement, animation, page-local button, or page-local answer as a recorded course answer without an established integration. When an authored feedback path or later teaching needs the learner's observations, collect them through a real course interaction within the permitted interaction scope, or use a verified integration. State how the actual submission will be used under [Memory and Branch Encoding](#memory-and-branch-encoding). An exploration without a course submission can remain an activity, but do not invent observations or claim that its page events entered course memory.
+
 ### Preservation Encoding
 
 Use [source-preservation.md](source-preservation.md) to identify the selected exact span and authoritative source. No segment record or character-offset JSON is required.
@@ -216,6 +222,87 @@ If the criteria are still unmet, provide the relevant explanation or complete ca
 ```
 
 The first pair changes the target performance for the same audience; the second pair keeps the quote task and criteria while changing the assumed starting knowledge and support. The differences should be visible in instruction and feedback, not only method labels. These are authored examples, not recorded learner results. The follow-ups in the latter fragments depend on the target's [natural-language interaction capabilities](markdownflow-syntax.md#natural-language-interactions); actual waiting, generated controls, and response-dependent delivery require a learner-time run to verify.
+
+### Contingent Hints and Actionable Revision
+
+These additional fragments use other materials to show different teaching actions; they extend the options above rather than replace the cost-model examples. Actionable feedback identifies a gap in the current work and a useful edit. Contingent hints adjust how much help the learner receives to make that edit. They can work together without requiring a fixed hint ladder. In this activity, the teacher permits responsive revisions until the notice meets the supplied criteria.
+
+```markdown
+<!-- Turn a vague instruction into a notice that a reader can act on -->
+Explain that the task is to rewrite "Please submit a book report soon" using these confirmed requirements:
+a 300-word book report, due Friday at 17:00, submitted through the course platform.
+
+?[ {{Rewrite "Please submit a book report soon" as an actionable notice using the confirmed length, deadline, and submission destination.}} ...Write the revised notice]
+
+<!-- Use the actual draft to guide a useful next revision -->
+Wait for the actual draft, then check all four criteria: the book-report task, 300 words, Friday at 17:00, and the course-platform destination.
+- When every criterion is accurate and clear, identify what makes the notice actionable, summarize the checking criteria, and end the activity.
+- When a criterion is missing or inaccurate, name a concrete gap in this draft and the edit needed. Do not rewrite the whole notice for the learner.
+- When the learner is stuck making that edit, give one clue tied to the actual obstacle. For a vague deadline, for example, point to the confirmed day and time rather than supplying a complete notice. Do not give hints for requirements already handled correctly.
+When a revision is needed, initiate a real text-input interaction asking for the complete revised notice, with that full response task associated with the control. Wait for the actual new draft before continuing.
+Recheck every criterion in the latest draft, including newly introduced errors; do not check only the gap mentioned last time.
+If the learner still cannot make the edit, add only the support needed for the remaining obstacle, such as modeling that one detail, then ask for another complete revision through a real text-input interaction and wait again.
+Reduce help as the learner can proceed. Repeat the same checking and response process until the notice meets the criteria, then end rather than adding another required revision.
+```
+
+A Feynman-style explain-to-a-novice task can likewise implement [self-explanation](teaching-design.md#method-attribution): specify whom the learner is trying to teach, the concept's accuracy criteria, and how an actual gap leads to a new explanation. A simulated novice's questions are instructional role-play, not evidence that the learner has taught a real peer. End when the explanation meets its criteria rather than forcing additional questions.
+
+### Round-Based Retrieval With Stable Items
+
+This is one implementation of retrieval practice for previously taught distinctions, not a replacement for first explanation or a required quiz pattern. The teacher has selected whole-round feedback and retries of incorrect items until all original items have been answered correctly. Each item's visible label and complete question identify it across rounds; these labels are not MarkdownFlow variables.
+
+```markdown
+<!-- Collect a complete round of independent judgments before revealing results -->
+Use this confirmed activity record: 20 people attended, and the activity took place in the library.
+The learner has already studied that a factual description is checkable, while an opinion expresses an evaluation.
+Ask the following three fixed items in order. Record each actual selection and wait for it before moving to the next item.
+Until every item in the current round has an actual answer, withhold correct answers, correctness judgments, explanations, and scores.
+Keep each item's original label, complete question, option wording, option order, and scoring criterion unchanged in every retry.
+
+?[ {{Item A: Is "20 people attended this activity" a factual description or an opinion?}} Factual description | Opinion]
+
+?[ {{Item B: Is "This was the best activity" a factual description or an opinion?}} Factual description | Opinion]
+
+?[ {{Item C: Is "This activity deserves 10 out of 10" a factual description or an opinion?}} Factual description | Opinion]
+
+<!-- Score the actual round and retain only its incorrect original items -->
+Only after receiving actual answers to every item in the current round, use these fixed scoring criteria:
+- Item A is a factual description: the confirmed attendance record supports it.
+- Item B is an opinion: "best" depends on an evaluation standard.
+- Item C is an opinion: a numerical rating still expresses an evaluation.
+Show a result table using the original item labels, the learner's actual selections, correct answers, and correctness.
+Report the number correct out of the number of items included in this round, and briefly explain the incorrect judgments.
+When the round has incorrect items, start a new round containing only those same original items, in their original relative order. Do not add items already answered correctly or renumber the remaining items.
+For each retained item, recreate a real single-select interaction with the same complete question prefix and options, wait for its actual new selection, and record that selection before presenting the next retained item.
+Do not use an earlier answer to complete a pending interaction. Again withhold answers, correctness, explanations, and scores until every retained item has an actual answer in this new round.
+Score that round using the same criteria, match the results by original item label, report its own correct count and denominator, and retain only the items still incorrect for the next round.
+Continue this process until every original item has been answered correctly. Then summarize that factual claims need evidence and numerical statements can still be opinions, and end the exercise.
+Describe this result as completing the current practice; answering the same items after explanations does not establish transfer or long-term retention.
+```
+
+### Socratic Questioning for an Open Judgment
+
+Use this fragment when the goal is a defensible judgment with clear reasons and conditions. The criteria evaluate the reasoning, not agreement with one preferred view. It does not require every possible question or counterexample to be asked.
+
+```markdown
+<!-- Let the learner define the open judgment and give an initial reason -->
+Introduce the question: does fairness require giving every learner exactly the same learning support?
+Explain that different standards may be defensible when their reasons and conditions are clear.
+
+?[ {{Does fairness require exactly the same learning support for every learner? Explain what "fairness" and "the same support" mean in your judgment, and give a reason.}} ...Write your judgment, meanings, and reason]
+
+<!-- Choose the next useful question from the learner's actual reasoning -->
+Wait for the actual answer. Acknowledge what is already clear, then use the learner's own definitions, reasons, assumptions, and later corrections to decide whether another question is useful.
+- When a key meaning is unclear, ask one concrete clarification, such as whether "the same" refers to time, materials, or access to the task. Do not replace the learner's definition with your preferred standard.
+- When the meanings are clear but the reason or an assumption is missing, ask for the basis of that specific judgment or a condition it needs. Do not repeat questions already answered.
+- When a relevant boundary remains unexamined, choose one comparison that tests the learner's actual reason. For an emphasis on identical materials, ask whether providing larger type to a learner who cannot read ordinary type is fair under that standard. For an emphasis on meeting every need, ask how the standard handles two learners needing extra explanation when only ten minutes remain. For another clear standard, change a condition that matters to that standard.
+For each needed question, initiate one real text-input interaction with the complete question associated with its response surface. Wait for the actual new answer before choosing a further question or giving response-dependent feedback.
+Evaluate whether definitions stay consistent, reasons support the judgment, and relevant conditions are stated. If two statements conflict, point to those actual statements and invite clarification rather than declaring the whole view wrong.
+Allow the learner to retain or revise the judgment with reasons, including acknowledging an unresolved tradeoff. Do not force a change of position or ask all of the comparison questions.
+As soon as the learner can explain a coherent judgment, its reasons, and relevant limits, summarize what their actual answers clarified or changed and what remains uncertain, then end the discussion without another required answer.
+```
+
+These additional fragments also require the target's [natural-language interaction capabilities](markdownflow-syntax.md#natural-language-interactions) for generated follow-ups and retries. Static review can assess the authored instructions; actual waiting, stable item identity, whole-round withholding, and response-dependent follow-up need a learner-time run to verify. No learner outcomes are claimed by these examples.
 
 ## Outputs
 

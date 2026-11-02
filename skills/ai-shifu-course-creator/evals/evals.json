@@ -1683,6 +1683,163 @@
         "The agent honors the custom method without inventing a research origin, forcing a choice from a catalog, requiring a plan or source lookup for the user-created label, or adding teacher-facing rationale to the requested runtime-only output.",
         "The Prompt uses executable ordinary teaching instructions and useful source-only block comments while keeping all essential facts and actions outside comments; it adds no learner interaction, parser-level conditional syntax, Course Prompt or platform operation."
       ]
+    },
+    {
+      "id": 131,
+      "eval_name": "adaptive-hints-wait-and-fade",
+      "prompt": "只在本地写一个简短的中文 MarkdownFlow 授课提示词片段，带学员练习把通知写成一句话摘要。学员知道摘要要保留与当前任务有关的关键信息，但有时不知道怎样选。先给一次独立尝试；卡住后按实际缺口给恰好够用的线索，每给一次实质帮助都要等学员的新尝试，再决定是否继续帮助。学员能完成后，用第二条通知做一次无提示的新任务核对，达标就结束。教学动作由你按需要安排，不预设必须经过几级提示。只写这个练习，不生成课程提示词，不连接平台。\n\n通知一：“图书馆下周一至周五整理书架，一层阅览室每天17点关闭，二层阅览室照常开放。需要晚间自习的同学请前往二层；自助还书和线上续借不受影响。”摘要任务是让晚间自习的同学知道这几天的变化与去处。\n\n通知二：“因设备检修，本周六图书馆全天闭馆，周日8点恢复开放。周六到期图书可顺延至周日归还，电子书查阅不受影响。”新任务只概括闭馆和恢复开放的安排。",
+      "followup_turns": [
+        "现在按刚才的提示词做一次明确标为模拟的试讲。后续消息是模拟学员的实际输入。请开始第一个任务，到需要我作答处停下，不预写我的答案或反馈。",
+        "我只想到图书馆要整理书架，没想好怎样把晚间自习安排说清楚。",
+        "下周一至周五，一层阅览室每天17点关闭，晚间自习请去照常开放的二层。",
+        "本周六图书馆全天闭馆，周日8点恢复开放。"
+      ],
+      "expected_output": "Provides a proportionate hint, waits for a genuine attempt, withdraws support after success and closes after the independent new task meets its criteria.",
+      "files": [],
+      "expectations": [
+        "The authored activity supplies both notices, the actual summary purposes, supported response controls and observable success criteria. It implements contingent support rather than merely naming a teaching method.",
+        "After the learner states the actual difficulty, the simulation offers a useful clue about selecting the time, first-floor change or evening alternative, then pauses for a new attempt. It does not immediately supply successive hint levels, a complete learner summary or a fabricated retry.",
+        "The sufficient first summary is recognized without forcing unused hint levels. The second task is presented without a solution or new substantive hint before its actual answer arrives.",
+        "The final summary preserves Saturday closure and Sunday 08:00 reopening; the activity ends when this new-task answer meets the stated criteria instead of adding an unrelated interview or another compulsory test.",
+        "The report distinguishes completion with support on the first notice from the supplied independent answer on the second; neither proves delayed retention or a general learning effect.",
+        "The exchange remains a local labeled simulation, with no Course Prompt, platform operation, fixed method name, mandatory intermediate schema or whole-course sequence."
+      ]
+    },
+    {
+      "id": 132,
+      "eval_name": "actionable-feedback-latest-revision",
+      "prompt": "只在本地写一个简短的中文 MarkdownFlow 授课提示词片段，让学员把模糊通知“请大家尽快交一份读书报告”改成能直接执行的通知。已确定要求：300字读书报告、周五17点前、交到课程平台作业区。先收学员实际改写，再依据这同一组要求给可执行的修改建议；每次收到修改都检查最新全文，既看旧问题是否解决，也查修改中新出现的问题。允许合理不同措辞，达标后具体说明并结束。不要代写学员最终稿，不生成课程提示词，不连接平台。",
+      "followup_turns": [
+        "现在按刚才的提示词做一次明确标为模拟的试讲。后续消息是模拟学员实际提交的版本。请开始，到需要我提交改写处停下，不预写我的答案或反馈。",
+        "请大家写一份300字读书报告，周五17点前提交。",
+        "请大家写一份300字读书报告，周六17点前交到课程平台作业区。",
+        "请大家在周五17点前，把300字读书报告交到课程平台作业区。"
+      ],
+      "expected_output": "Reviews the latest full version on every revision, catches a newly introduced deadline error and ends after a source-faithful actionable notice.",
+      "files": [],
+      "expectations": [
+        "The first submitted version is judged against the given requirements: it includes length and deadline but lacks the specific destination. Feedback identifies that actionable gap and requests a real revision rather than supplying a purported learner submission.",
+        "On the second version, feedback recognizes that the destination has been fixed and detects the newly incorrect Saturday deadline. It does not repeat a stale missing-destination comment or approve the version solely because the previous issue was addressed.",
+        "On the final version, feedback recognizes the correct task, length, Friday 17:00 deadline and course-platform assignment area, explains the current success and closes without an unnecessary further revision.",
+        "The Prompt and simulated turns use actual response controls and wait for the next submitted version before evaluating it. Feedback is specific and proportionate to the current version; exact wording is not required.",
+        "The result remains a local labeled simulation with no invented submission, actual learner mastery claim, platform test or platform operation. It requires neither a method label nor a fixed sequence outside this requested revision activity."
+      ]
+    },
+    {
+      "id": 133,
+      "eval_name": "continuous-quiz-stable-identities-and-scores",
+      "prompt": "只在本地写一个中文 MarkdownFlow 连续答题练习片段。固定使用下列三题，保留题号、题干、选项和判分标准；每题只有一个选择。逐题等真实作答，一轮内只记录和推进，不揭晓答案、对错或暗示性的解释；整轮收齐后再公布逐题选择、对错、答对题数和错题。下一轮只重做仍答错的原题，保持原题身份与标准，答对题退出，直到这三题都已答对便结束。按实际作答核算，不能用预计结果代替记录，也不把看过解析后的同题改对说成长久掌握。不要增加新题，不生成课程提示词，不连接平台。\n\n题目材料是已核实的活动记录：“本次活动20人报名、18人签到，活动在301教室举行。”事实描述是可由这份记录直接核对的陈述；意见判断是表达个人评价的陈述。\nQ1：“本次活动18人签到。”选项 A：事实描述；B：意见判断。判分：A，依据是签到记录。\nQ2：“这次活动是最成功的一次。”选项 A：事实描述；B：意见判断。判分：B，“最成功”是评价，记录未给这种评价的客观标准。\nQ3：“活动在301教室举行。”选项 A：事实描述；B：意见判断。判分：A，依据是地点记录。",
+      "followup_turns": [
+        "现在按刚才的提示词做一次明确标为模拟的试讲。我后续每条消息是当前题的真实模拟选择。请开始第一轮第一题，每次到一个选择处停下，不能预填后续答案或反馈。",
+        "Q1 选A。",
+        "Q2 选A。",
+        "Q3 选B。",
+        "Q2 选B。",
+        "Q3 仍选B。",
+        "Q3 选A。"
+      ],
+      "expected_output": "Runs three original questions across three rounds, delays within-round feedback, computes actual scores of 1/3, 1/2 and 1/1, and removes corrected items without changing identity.",
+      "files": [],
+      "expectations": [
+        "The authored Prompt contains exactly Q1, Q2 and Q3 with the supplied statements, A/B options and answer criteria. It provides supported response controls and executable instructions for recording choices, round-end feedback and retry selection.",
+        "Before the first-round Q3 answer, the simulation does not reveal or imply whether Q1 or Q2 was correct. After each submitted choice it advances only to the next pending question and waits.",
+        "After first-round choices A, A, B, the result is Q1 correct, Q2 incorrect, Q3 incorrect, totaling 1/3. The next round contains only original Q2 and Q3; Q1 is removed.",
+        "In round two, Q2 B is not graded aloud before the pending Q3 response. After Q3 B arrives, the round result is Q2 correct, Q3 incorrect, totaling 1/2; only original Q3 remains for round three.",
+        "After round-three Q3 A, the result is 1/1 for that round and the original set has now been answered correctly. The activity ends without reviving Q1 or Q2, adding variants, or treating prior wrong answers as initially correct.",
+        "Question identities, wording, options and criteria remain stable across retries. The agent does not renumber the remaining Q3 as a new Q1, merge answers from different rounds, invent a missing response or announce an unsupported score.",
+        "The closing description is limited to this immediate answer-and-retry performance. It does not claim transfer, independent first-attempt success, durable mastery, reliable automated scoring or a completed platform run from the local simulation."
+      ]
+    },
+    {
+      "id": 134,
+      "eval_name": "self-explanation-genuine-reteach-and-stop",
+      "prompt": "只在本地写一个简短中文 MarkdownFlow 授课提示词片段，用老师称作“费曼式学习”的活动，让学员向完全不懂的新同事解释“相关不等于因果”。活动重点是学员自己组织解释，老师根据其真实解释发现缺口、给必要帮助并等学员重新讲；解释已经清楚就结束，不要求背术语、不让AI冒充学员完成重讲。不要把这项活动说成已验证效果的完整教学理论，不生成课程提示词，不连接平台。\n\n必要材料：相关是两个变量一起变化；因果是一个因素的变化在相应条件下导致另一个因素变化。一起变化本身不能排除第三个因素，也不能确定因果方向。例子：夏天冰淇淋销量和溺水人数都上升，炎热天气可能同时增加买冰淇淋和游泳的人数，不能仅据这两项统计认定吃冰淇淋导致溺水。本活动的合格解释应用普通语言讲出共同变化不等于直接导致，并用这个例子说明一种合理的替代解释。",
+      "followup_turns": [
+        "现在按刚才的提示词做一次明确标为模拟的试讲。后续消息是模拟学员的真实解释。请开始，到要我向新同事解释处停下。",
+        "冰淇淋卖得多的时候溺水也多，说明冰淇淋会让人溺水，这就是相关带来的因果。",
+        "两件事一起增加，只能说明它们在一起变化，还不能说明前一件让后一件发生。比如天热会让更多人买冰淇淋，也会让更多人去游泳，因此可能同时看到冰淇淋销量和溺水人数增加；还得排除这些其他原因，不能只看两项数字就断定吃冰淇淋导致溺水。"
+      ],
+      "expected_output": "Uses the learner actual explanation to correct the correlation-to-causation error, waits for a new plain-language explanation and ends when it is clear.",
+      "files": [],
+      "expectations": [
+        "The runnable task elicits the learner own explanation to a novice rather than only presenting an AI explanation, a definition-recall quiz or a fictional dialogue in which the learner has already succeeded.",
+        "The first actual explanation is recognized as conflating co-variation and causation. Feedback addresses that specific inference with proportionate support and requests a fresh explanation through a real response control, then waits.",
+        "The second explanation is assessed on its ordinary-language distinction and the plausible hot-weather alternative, not on using a required method label or exact phrase. It is accepted as meeting the supplied task criteria and the activity closes.",
+        "If the author describes the mechanism, it treats explaining to a novice as self-explanation and bounds the claim; naming Feynman does not establish a uniquely verified method, guaranteed learning gain or observed durable mastery.",
+        "The exchange remains a labeled local simulation with no Course Prompt, platform operation, fabricated learner rewrite or compulsory extra test after the sufficient explanation."
+      ]
+    },
+    {
+      "id": 135,
+      "eval_name": "open-judgment-reasons-without-forced-conclusion",
+      "prompt": "只在本地写一个简短中文 MarkdownFlow 讨论片段，帮助新任主管检视“紧急项目应不应该奖励加班”的判断。可以用苏格拉底式追问，但必须承接学员真实观点，按其定义、证据、假设或适用条件中最值得检查的一处继续；有依据地保留或修订观点都可以，不预设唯一价值结论。学员已能说明立场、理由与适用边界就收束，不为了问下去而无限追问。不生成课程提示词，不连接平台。\n\n案例材料：团队上月有两个项目，甲按期交付、成员平均加班6小时；乙延期两天、成员平均加班8小时。项目难度、需求变化和返工量没有记录。部门可奖励有记录的紧急贡献，但正常考核仍看质量、交付及协作，不能把加班时长直接当成贡献。这些材料不足以单独断言加班造成或避免了延期。允许讨论公平、健康、交付和激励之间的取舍。",
+      "followup_turns": [
+        "现在按刚才的提示词做一次明确标为模拟的试讲。我后续消息是模拟学员的实际观点。请开始，到需要我表达判断处停下，不预写我会同意什么。",
+        "我支持紧急项目奖励加班。有人牺牲休息来救急，应当被看见；但我不想让大家为了奖故意拖到晚上。",
+        "我仍支持有限奖励，但奖的是有记录的紧急贡献，不按小时排高低。先看是否有真实紧急需要、完成了什么和质量是否合格，同时保留正常交付和协作考核，发现故意拖延就不奖。这两个项目的难度和需求变化不清楚，不能用6小时和8小时推断谁更努力或加班有没有效果。如果长期靠救急才能交付，应先查计划或资源问题，不能让奖励代替改善。"
+      ],
+      "expected_output": "Builds on the actual position, probes a relevant assumption or boundary, and accepts a reasoned retained view without steering toward a required value judgment.",
+      "files": [],
+      "expectations": [
+        "The authored activity and simulation elicit an actual judgment, then choose a relevant follow-up from the expressed concern about recognizing urgent contribution without rewarding delay. They do not deliver a fixed string of unrelated questions or invent a learner position.",
+        "The case facts are used within their limits: differing overtime totals and delivery outcomes do not establish cause, effort, quality or fairness without the missing context.",
+        "The final response is recognized as a reasoned retained position with evidence limits, contribution criteria, incentive safeguards and a boundary for chronic emergencies. Retaining support is not automatically marked wrong because the learner has not adopted an anti-overtime conclusion.",
+        "The activity ends when the supplied justification and conditions satisfy the stated discussion goal. It does not force another confession, a predetermined moral statement or an unnecessary extra test.",
+        "Any method explanation remains teacher-facing and limited to the actual questioning actions. The result remains a local labeled simulation with real response pauses, no claimed learner-outcome evidence and no platform operation."
+      ]
+    },
+    {
+      "id": 136,
+      "eval_name": "simulation-no-event-bridge-page-only",
+      "prompt": "只在本地写一个中文 MarkdownFlow 授课提示词片段，并在片段外简短说明目前能核实与不能核实的事。不打开网页、不连接平台。老师已有下列页面，要求保留原图片块与“只使用页面展示，不向学员另加文字问答、提交表单或背景收集”的限制；请按这个条件帮助学员比较排队模型的变化，不要擅自改成问答课。\n\n保留的图片块：\n![排队仿真（HTML view）](https://example.com/queue-sim.html)\n\n页面契约：页面内有到达速率、服务速率、开始和重置控件，以及显示队列长度随模型时间变化的图。初值为每分钟到达5人、服务6人；从空队列开始，按固定速率计算，队列长度不小于零，不含随机波动。学员可在页面中单独调高到达速率或服务速率并比较图。页面仅在自身内部变化，没有事件回传、截图读取、工具日志或结果提交接口；MarkdownFlow 收不到操作或观察数据。本地也没有运行页面的记录。\n\n课程记忆中只有学员先前的文字：“我想知道为什么窗口一直忙，队伍还会变长。”可以用这个已知问题说明比较目的，但不能据此推断学员后来调了什么、看到了什么或是否解释正确。",
+      "expected_output": "Preserves the page-only interaction constraint, gives model-grounded comparison guidance and states the lack of operation or observation evidence without inventing a memory bridge.",
+      "files": [],
+      "expectations": [
+        "The authored snippet preserves the supplied image block and page-only constraint. It can guide comparisons within the existing page, but adds no external text response, submit control, compulsory background interview or new condition requiring a learner answer.",
+        "Teaching guidance uses the stated model assumptions and compares arrival and service rates without claiming the page was opened, implemented or executed. It distinguishes the described interactive model from an observed platform run.",
+        "The lack of an event bridge is explicit where it affects feedback or memory: page clicks, parameter settings, graph observations and learner understanding are unavailable to the Teaching Agent. Ordinary automatic text-input memory is not presented as a way to capture unsubmitted page activity.",
+        "The Prompt does not assert that the learner has operated a control, observed queue growth, entered an explanation or created a memory record, and does not build answer-dependent feedback on those nonexistent inputs.",
+        "The known prior question may orient the comparison but is not treated as a new answer or permission to add intake. The teacher-facing limitation identifies the missing operation and observation evidence without claiming mastery or forcing a change to the author constraint."
+      ]
+    },
+    {
+      "id": 137,
+      "eval_name": "software-troubleshooting-small-verifiable-changes",
+      "prompt": "只在本地写一个简短中文 MarkdownFlow 软件实操带练片段，帮助学员完成原任务：“保留四行明细，算出B2到B5四个数的合计”。不重做课程，不生成课程提示词，不连接平台。本课程没有屏幕读取、文件读取或执行软件的接口；只能用学员提供的公式、单元格内容和实际操作后报告的结果。请把可能原因当作待核实假设，每次建议一个小改动或核对，等学员真实反馈后再决定下一步，最后回到原任务检查。不能声称已看见屏幕、替学员改了表或亲自验证修复。\n\n学员目前贴出的材料：B2为数字10，B3为数字20，B4为数字30，B5在编辑栏中显示为前面带单引号的“'40”，B6公式为“=SUM(B2:B4)”，B6当前显示60。学员说“第四行没算进去，不知道该改哪里”。目标合计为100，但应保留原明细，不能直接把B6覆盖成100。",
+      "followup_turns": [
+        "现在按刚才的提示词做一次明确标为模拟的试讲。后续消息是模拟学员实际操作后报告的材料。请从当前材料开始，给本轮需要的一项小操作或核对后停下，不预写我的结果。",
+        "我先把B6公式范围改成了=SUM(B2:B5)，B6还是60。其他单元格没改。",
+        "我核对并把B5的文本40转换成了数值40，没有改其他明细。B6仍是=SUM(B2:B5)，现在显示100，B2到B5分别为数值10、20、30、40。"
+      ],
+      "expected_output": "Uses only supplied software evidence, checks the formula range and text-valued entry through incremental actions, and limits the repair conclusion to reported original-task results.",
+      "files": [],
+      "expectations": [
+        "The authored activity identifies the formula range and possible text-valued B5 as evidence-grounded issues or hypotheses. It does not claim screen access, tool execution or a personally verified diagnosis.",
+        "The first simulated action is small and checkable, such as including B5 in the range or inspecting its value type, and the agent waits for the actual result before giving the next substantive change. It does not prefill successful results or silently perform both changes.",
+        "When the learner reports the expanded range still totals 60, feedback uses that new evidence and examines the remaining text-value possibility instead of declaring the range change sufficient or blindly repeating it.",
+        "The final check returns to the original task: four original detail values are retained, the SUM formula covers B2:B5 and the reported result is 100. It does not replace the formula with a hard-coded total or alter unrelated rows.",
+        "The conclusion attributes the evidence to the learner report within the labeled simulation and distinguishes it from direct software inspection or execution. It does not state that the agent has verified the fix in a real file, observed a platform test or established general software proficiency."
+      ]
+    },
+    {
+      "id": 138,
+      "eval_name": "existing-project-revision-and-evidence-boundaries",
+      "prompt": "只在本地写一个简短中文 MarkdownFlow 项目实训片段。学生小组已有新生工作坊报名页草稿，直接围绕这个真实对象迭代，不要求先重走选题、收集背景、课程准备或整套项目流程。目标是让新生看完知道活动时间、地点、报名动作和截止时间，内容准确；根据最新作品给修改反馈，区分AI模拟受众的意见、真实目标用户的反馈、小组成果和个人贡献。当前迭代达标就收束，不额外要求完整商业验证。不生成课程提示词，不连接平台。\n\n已确认活动信息：本周五19至20点，A203教室；周四18点前点击报名按钮填写姓名，名额30人。当前小组草稿：“周五晚来新生工作坊，学会高效协作。点击报名，一起来体验！”按钮文字为“报名”。课程里已经有这些活动信息和草稿，不再收集一遍。学员尚未说明个人负责哪些部分。\n\n本片段允许用文字提交最新版草稿和反馈记录，不提供真实页面发布、用户访问、招募或访谈工具。请根据实际提交判断，不能替小组编造访谈或让AI模拟评价冒充真实新生使用证据。",
+      "followup_turns": [
+        "现在按刚才的提示词做一次明确标为模拟的试讲。我后续消息是模拟学员提交的当前作品和已有证据。请直接从现有草稿开始，到需要我修改或提供当前材料处停下。",
+        "最新版是：“新生工作坊，本周五19至20点，一起学高效协作。周四18点前点击报名按钮填写姓名，限30人。”按钮是“报名”。AI模拟一个新生后说“内容很清楚、很吸引人”，所以我们已经通过真实用户验证了吧？这是小组稿，我写了标题和按钮，同伴写正文。",
+        "最新版是：“新生工作坊，本周五19至20点在A203教室，一起学高效协作。周四18点前点击报名按钮填写姓名，限30人。”按钮是“报名”。我们请了两位真实新生各自阅读，他们都能说出周五19点、A203，以及周四18点前点击报名填写姓名；没有发布页面，也没有测试真实提交。标题和按钮是我做的，正文与补上地点是同伴做的。"
+      ],
+      "expected_output": "Iterates the existing group draft, corrects the missing location and the simulated-audience claim, and reports the limited user feedback and individual contribution truthfully.",
+      "files": [],
+      "expectations": [
+        "The authored activity and first simulation turn start from the supplied page draft, confirmed event facts and immediate quality criteria. They do not require a new project proposal, repeated background intake, mandatory preparation sequence or unrelated artifact before revision.",
+        "The latest first submission is checked as a whole: time, deadline, action and capacity are present, but A203 is still missing. Feedback gives a concrete next revision and does not assess an obsolete earlier draft.",
+        "The AI-generated novice opinion is identified as simulated feedback, not evidence of real user comprehension, use or successful signup. The agent does not invent interviews, visits or page submissions to fill that gap.",
+        "The final submitted draft is assessed against the stated information and readability goal. The reported two real novices support only that limited comprehension check within the simulation; they do not establish completed page publication, a working submission flow or broader product success.",
+        "The reported title and button work is attributed to the learner, while body text and the location revision are attributed to the teammate. A successful group artifact is not treated as evidence that the individual performed every project skill.",
+        "Once this revision meets the task criteria, the activity closes with those evidence limits. It does not force a full launch, expanded market study, extra intake or another compulsory project cycle."
+      ]
     }
   ]
 }
