@@ -225,7 +225,7 @@ The first pair changes the target performance for the same audience; the second 
 
 ### Contingent Hints and Actionable Revision
 
-These additional fragments use other materials to show different teaching actions; they extend the options above rather than replace the cost-model examples. Actionable feedback identifies a gap in the current work and a useful edit. Contingent hints adjust how much help the learner receives to make that edit. They can work together without requiring a fixed hint ladder. In this activity, the teacher permits responsive revisions until the notice meets the supplied criteria.
+This notice-revision example applies the [hinting and feedback guidance](teaching-design.md#preserve-each-selected-approachs-learning-actions). The teacher permits responsive revisions until the notice meets the supplied criteria.
 
 ```markdown
 <!-- Turn a vague instruction into a notice that a reader can act on -->
@@ -244,8 +244,6 @@ Recheck every criterion in the latest draft, including newly introduced errors; 
 If the learner still cannot make the edit, add only the support needed for the remaining obstacle, such as modeling that one detail, then ask for another complete revision through a real text-input interaction and wait again.
 Reduce help as the learner can proceed. Repeat the same checking and response process until the notice meets the criteria, then end rather than adding another required revision.
 ```
-
-A Feynman-style explain-to-a-novice task can likewise implement [self-explanation](teaching-design.md#method-attribution): specify whom the learner is trying to teach, the concept's accuracy criteria, and how an actual gap leads to a new explanation. A simulated novice's questions are instructional role-play, not evidence that the learner has taught a real peer. End when the explanation meets its criteria rather than forcing additional questions.
 
 ### Round-Based Retrieval With Stable Items
 
