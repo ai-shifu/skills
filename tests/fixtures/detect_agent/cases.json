@@ -1,5 +1,5 @@
 {
-  "spec_version": "0.1.9",
+  "spec_version": "0.1.10",
   "cases": [
     {
       "name": "empty environment",
@@ -2193,6 +2193,174 @@
       },
       "expected": {
         "agent_id": "devin",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "deepseek harness shell marker",
+      "env": {
+        "DSH_SHELL": "1"
+      },
+      "expected": {
+        "agent_id": "deepseek-harness",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "deepseek harness zero shell marker is non-empty",
+      "env": {
+        "DSH_SHELL": "0"
+      },
+      "expected": {
+        "agent_id": "deepseek-harness",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "deepseek harness false string marker is non-empty",
+      "env": {
+        "DSH_SHELL": "false"
+      },
+      "expected": {
+        "agent_id": "deepseek-harness",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "deepseek harness whitespace-only marker is non-empty",
+      "env": {
+        "DSH_SHELL": " "
+      },
+      "expected": {
+        "agent_id": "deepseek-harness",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "deepseek harness session id alone does not match",
+      "env": {
+        "DSH_SESSION_ID": "synthetic-session"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "deepseek harness empty shell marker fails",
+      "env": {
+        "DSH_SHELL": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "deepseek harness home configuration does not match",
+      "env": {
+        "DSH_HOME": "synthetic-home"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "deepseek harness profile context does not match",
+      "env": {
+        "DSH_PROFILE": "synthetic-profile",
+        "DSH_PROFILE_DIR": "synthetic-profile-dir"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "deepseek harness runtime marker wins editor hint",
+      "env": {
+        "DSH_SHELL": "1",
+        "ZED_TERM": "1"
+      },
+      "expected": {
+        "agent_id": "deepseek-harness",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "nested codex marker precedes deepseek harness",
+      "env": {
+        "DSH_SHELL": "1",
+        "CODEX_THREAD_ID": "synthetic-thread"
+      },
+      "expected": {
+        "agent_id": "codex",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "nested claude code marker precedes deepseek harness",
+      "env": {
+        "DSH_SHELL": "1",
+        "CLAUDECODE": "1"
+      },
+      "expected": {
+        "agent_id": "claude-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "nested devin marker precedes deepseek harness",
+      "env": {
+        "DSH_SHELL": "1",
+        "DEVIN_DIR": "synthetic-dir"
+      },
+      "expected": {
+        "agent_id": "devin",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "unknown declaration blocks deepseek harness marker",
+      "env": {
+        "AI_AGENT": "unregistered-example",
+        "DSH_SHELL": "1"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "deepseek harness deployment region fact does not match",
+      "env": {
+        "DSH_DEPLOYMENT_REGION": "cn-north"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "nested instinct marker precedes deepseek harness",
+      "env": {
+        "DSH_SHELL": "1",
+        "INSTINCT_OUTER_TOOL_USE_ID": "synthetic-tool-use"
+      },
+      "expected": {
+        "agent_id": "instinct",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "nested lingguang marker precedes deepseek harness",
+      "env": {
+        "DSH_SHELL": "1",
+        "EXEC_FROM": "synthetic-origin"
+      },
+      "expected": {
+        "agent_id": "lingguang",
         "evidence": "runtime-marker"
       }
     }

@@ -78,11 +78,13 @@ class CallerDetectionTests(unittest.TestCase):
             "devin": "Devin",
             "instinct": "Instinct",
             "lingguang": "Lingguang",
+            "deepseek-harness": "DeepSeek Harness",
             "zed": "Zed",
             "hi": "hi",
             "sandbase-harness": "SandBase Harness",
             "unknown": "Unknown Agent",
         }
+        self.assertEqual(set(names), set(cli.AGENT_DISPLAY_NAMES) | {"unknown"})
         with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(cli, "_client_version", return_value="3.12.45"):
             for family, name in names.items():
                 with self.subTest(family=family):
@@ -408,6 +410,50 @@ class UsageTransportTests(unittest.TestCase):
                 })
                 captured = repr(self.captured_requests())
                 self.assertNotIn("private-instinct", captured)
+                for marker in environment:
+                    self.assertNotIn(marker, captured)
+                self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
+
+    def test_deepseek_attribution_is_bounded_on_all_business_transports(self):
+        private_value = "private-deepseek-session\r\nInjected: value"
+        configuration = dict.fromkeys((
+            "DSH_HOME", "DSH_SESSION_ID", "DSH_PROFILE", "DSH_PROFILE_DIR",
+            "DSH_DEPLOYMENT_REGION",
+        ), private_value)
+        cases = [
+            ({"DSH_SHELL": value}, "deepseek-harness", "DeepSeek Harness")
+            for value in ("0", "false", " ", private_value)
+        ]
+        cases.extend((
+            (configuration, "unknown", "Unknown Agent"),
+            ({"DSH_SHELL": "", **configuration}, "unknown", "Unknown Agent"),
+            ({"AI_AGENT": " DEEPSEEK-HARNESS "}, "deepseek-harness", "DeepSeek Harness"),
+        ))
+        for nested, family, name in (
+            ({"AI_AGENT": "codex"}, "codex", "Codex"),
+            ({"AI_AGENT": "unregistered"}, "unknown", "Unknown Agent"),
+            ({"CODEX_THREAD_ID": "private-session"}, "codex", "Codex"),
+            ({"DEVIN_DIR": private_value}, "devin", "Devin"),
+            ({"INSTINCT_OUTER_TOOL_USE_ID": private_value}, "instinct", "Instinct"),
+            ({"EXEC_FROM": private_value}, "lingguang", "Lingguang"),
+        ):
+            cases.append(({"DSH_SHELL": private_value, **nested}, family, name))
+        for environment, family, name in cases:
+            with self.subTest(environment=environment):
+                os.environ.clear()
+                os.environ.update(environment)
+                self.get.reset_mock()
+                self.post.reset_mock()
+                with mock.patch.object(cli, "cmd_list", side_effect=self.all_business_transports):
+                    self.run_cli("list")
+                self.assert_usage_headers({
+                    **EXPECTED_METADATA,
+                    "X-AI-Shifu-Caller-Agent": family,
+                    "X-AI-Shifu-Caller-Agent-Name": name,
+                })
+                captured = repr(self.captured_requests())
+                self.assertNotIn("private-deepseek", captured)
+                self.assertNotIn("Injected", captured)
                 for marker in environment:
                     self.assertNotIn(marker, captured)
                 self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
