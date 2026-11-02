@@ -152,21 +152,21 @@ The shared material is a hypothetical order: total cost equals fixed cost plus p
 For beginners whose goal is to explain how quantity affects total cost, use a concrete comparison and ask for the relationship. This checks explanation rather than independent quote production. The teacher has allowed one response and no follow-up question.
 
 ```markdown
-<!-- 用具体订单理解两类成本与数量的关系 -->
-用明确标注的假设教学订单说明：总成本 = 固定成本 + 单件变动成本 × 件数。
-固定成本为 100 元，单件变动成本为 5 元；20 件的总成本为 200 元。
-说明适用条件：在讨论的件数范围内，这两项成本标准不变，且没有其他费用。
-对比 20 件与 30 件：总成本从 200 元变为 250 元，因为增加了 10 件的变动成本；
-固定成本仍然只计一次。解释公式中各项与订单的对应关系。
+<!-- Use a concrete order to connect the two cost types to quantity -->
+Use an explicitly labeled hypothetical teaching order to explain: total cost = fixed cost + per-unit variable cost × quantity.
+The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; 20 units cost 200 yuan in total.
+State the assumptions: both cost terms remain unchanged over the quantity range being discussed, and there are no other charges.
+Compare 20 units with 30 units: total cost increases from 200 yuan to 250 yuan because of the variable cost of 10 additional units;
+the fixed cost is still counted only once. Explain how each term in the formula corresponds to the order.
 
-<!-- 检查学员能否解释变化的原因 -->
-?[ {{在上述条件不变时，订单多做 10 件，为什么总成本只增加 50 元，而不是再增加一次固定成本？}} ...请说明哪些费用变化、哪些不变]
+<!-- Check whether the learner can explain why the cost changes -->
+?[ {{With the assumptions above unchanged, why does adding 10 units increase total cost by only 50 yuan, without adding the fixed cost again?}} ...Explain which costs change and which remain unchanged]
 
-等待本次真实回答，再反馈：
-- 如果解释了固定成本不变、每增加一件增加 5 元，指出其抓住了费用变化的依据。
-- 如果把固定成本重复计入，指出它在这个订单模型中只计一次，逐项解释新增费用。
-- 如果只重复“增加 50 元”或理由不清楚，说明数值正确尚不能表明理解原因，补充费用关系。
-不再提问。用一句话回到公式及其适用条件；不宣称学员已经能够独立报价。
+Wait for the current actual answer, then give feedback:
+- If the learner explains that the fixed cost stays unchanged and each additional unit adds 5 yuan, identify the reasoning they got right.
+- If they count the fixed cost again, explain that it is counted only once in this order model, and explain the additional costs item by item.
+- If they only repeat "an increase of 50 yuan" or their reasoning is unclear, explain that the correct number alone does not demonstrate understanding of the cause, and explain the cost relationship.
+Do not ask another question. Close with one sentence returning to the formula and its assumptions; do not claim that the learner can now produce a quote independently.
 ```
 
 ### Same Beginners, Goal of Producing a Quote
@@ -174,23 +174,23 @@ For beginners whose goal is to explain how quantity affects total cost, use a co
 When the goal changes to calculating a quote and stating its assumptions, a worked example makes the procedure visible before an independent attempt. Unlike the explanation variant, do not disclose the target calculation before the response. The teacher permits one supported revision after feedback.
 
 ```markdown
-<!-- 看见一次完整计算及每一步的依据 -->
-用假设教学订单演示：总成本 = 固定成本 + 单件变动成本 × 件数。
-固定成本为 100 元，单件变动成本为 5 元；20 件时，变动成本为 5 × 20 = 100 元，
-加上只计一次的固定成本 100 元，总成本为 200 元。
-说明每一步对应的费用，并指出模型要求成本标准在讨论的件数范围内不变、没有其他费用。
+<!-- Show a complete calculation and the reasoning behind each step -->
+Use a hypothetical teaching order to demonstrate: total cost = fixed cost + per-unit variable cost × quantity.
+The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; for 20 units, the variable cost is 5 × 20 = 100 yuan.
+Add the fixed cost of 100 yuan, counted only once, to obtain a total cost of 200 yuan.
+Explain which cost each step represents, and state that the model requires unchanged cost terms over the quantity range being discussed and no other charges.
 
-<!-- 独立给出另一个数量的报价和条件 -->
-?[ {{沿用固定成本 100 元、单件变动成本 5 元的模型，为 30 件订单报价。请写出计算过程，并说明这个报价成立的条件。}} ...写出算式、总成本和适用条件]
+<!-- Independently quote another quantity and state the assumptions -->
+?[ {{Using the model with a fixed cost of 100 yuan and a per-unit variable cost of 5 yuan, produce a quote for an order of 30 units. Show your calculation and state the assumptions under which the quote holds.}} ...Write the calculation, total cost, and assumptions]
 
-等待本次真实回答。以下判定信息仅用于收到回答后的反馈，不提前展示：
-完整结果为 100 + 5 × 30 = 250 元；条件包括两项成本标准不变、没有其他费用。
-- 如果计算、金额和条件都正确，指出具体正确之处，结束本次练习。
-- 如果算式结构正确而算错，指出算错的位置；如果重复计算固定成本或漏项，解释对应费用。
-- 如果只报 250 元或条件缺失，认可已提供的正确部分，明确缺少的计算依据或条件，不推断学员已有误解。
-对后两类回答，给出针对缺口的提示，发起一次文本输入互动，请学员修改或补全报价。
-等待本次修改的真实回答，按同样标准反馈后结束；仍有缺口时给出完整示范并指出未解决之处，
-不继续循环，也不把看过示范视为独立完成。
+Wait for the current actual answer. Use the following criteria only for feedback after receiving it; do not show them beforehand:
+The complete result is 100 + 5 × 30 = 250 yuan; the assumptions include unchanged cost terms and no other charges.
+- If the calculation, amount, and assumptions are all correct, identify what is correct and end the exercise.
+- If the calculation is set up correctly but contains an arithmetic error, identify where it occurs; if the fixed cost is counted again or a cost is omitted, explain the relevant cost.
+- If the learner gives only 250 yuan or omits assumptions, acknowledge the correct parts they supplied and identify the missing calculation basis or assumptions, without inferring a misconception.
+For either of the latter two cases, give a hint targeted to the gap and initiate one text-input interaction asking the learner to revise or complete the quote.
+Wait for the actual revision, give feedback using the same criteria, and end. If gaps remain, provide a complete demonstration and identify what remains unresolved.
+Do not continue looping or treat seeing the demonstration as independent performance.
 ```
 
 ### Same Quote Goal, Learners Already Able to Use the Formula
@@ -198,21 +198,21 @@ When the goal changes to calculating a quote and stating its assumptions, a work
 For learners with supplied evidence that they already use this formula, keep the quote goal and success criteria but remove the initial step-by-step demonstration. A direct application can reveal whether help is needed. Here the teacher permits one follow-up; an authored feedback path supplies targeted help rather than letting the Teaching Agent freely redesign the lesson.
 
 ```markdown
-<!-- 用已有技能完成报价，暴露需要帮助的具体位置 -->
-简要给出假设教学订单的模型：总成本 = 固定成本 + 单件变动成本 × 件数。
-固定成本为 100 元，单件变动成本为 5 元；已知 20 件时总成本为 200 元。
-本模型适用条件为成本标准在讨论的件数范围内不变，且没有其他费用。
-不先演示计算步骤，也不提前给出下面任务的结果。
+<!-- Use existing skills to produce a quote and reveal where help is needed -->
+Briefly state the hypothetical teaching order model: total cost = fixed cost + per-unit variable cost × quantity.
+The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; the given total cost for 20 units is 200 yuan.
+The model assumes unchanged cost terms over the quantity range being discussed and no other charges.
+Do not demonstrate the calculation steps first or disclose the result of the task below in advance.
 
-?[ {{沿用固定成本 100 元、单件变动成本 5 元的模型，为 30 件订单报价。请写出计算过程，并说明这个报价成立的条件。}} ...写出算式、总成本和适用条件]
+?[ {{Using the model with a fixed cost of 100 yuan and a per-unit variable cost of 5 yuan, produce a quote for an order of 30 units. Show your calculation and state the assumptions under which the quote holds.}} ...Write the calculation, total cost, and assumptions]
 
-等待本次真实回答，再按以下标准反馈：
-完整结果为 100 + 5 × 30 = 250 元，并说明成本标准不变、没有其他费用。
-- 如果结果、推理和条件完整，简短确认依据，结束；不再补上一段完整入门教学。
-- 如果发生计算或费用分类错误，针对实际错误解释相关步骤，再请学员修改报价。
-- 如果只有金额或理由含混，指出尚缺的依据，请学员补充；不要因为答案不完整就断言其不会计算。
-需要修改或补充时，发起一次真实的文本输入互动并等待回答。依据新回答反馈后结束。
-仍未满足标准时给出对应解释或完整计算，明确剩余缺口；不无限重试，不声称已证明掌握。
+Wait for the current actual answer, then give feedback using these criteria:
+The complete result is 100 + 5 × 30 = 250 yuan, with unchanged cost terms and no other charges stated as assumptions.
+- If the result, reasoning, and assumptions are complete, briefly confirm the reasoning and end; do not add a full introductory explanation.
+- If there is an arithmetic or cost-classification error, explain the relevant steps for that actual error, then ask the learner to revise the quote.
+- If the learner gives only an amount or unclear reasoning, identify the missing basis and ask them to supply it; do not conclude that they cannot calculate merely because the answer is incomplete.
+When revision or additional information is needed, initiate one real text-input interaction and wait for the answer. Give feedback on that new answer and end.
+If the criteria are still unmet, provide the relevant explanation or complete calculation and identify the remaining gaps; do not retry indefinitely or claim mastery has been demonstrated.
 ```
 
 The first pair changes the target performance for the same audience; the second pair keeps the quote task and criteria while changing the assumed starting knowledge and support. The differences should be visible in instruction and feedback, not only method labels. These are authored examples, not recorded learner results. The follow-ups in the latter fragments depend on the target's [natural-language interaction capabilities](markdownflow-syntax.md#natural-language-interactions); actual waiting, generated controls, and response-dependent delivery require a learner-time run to verify.
