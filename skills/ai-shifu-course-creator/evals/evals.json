@@ -1742,6 +1742,7 @@
       "files": [],
       "expectations": [
         "The authored Prompt contains exactly Q1, Q2 and Q3 with the supplied statements, A/B options and answer criteria. It provides supported response controls and executable instructions for recording choices, round-end feedback and retry selection.",
+        "Each newly generated control prefix preserves the original item identity and statement within a complete classification question or response task. Keeping a fixed statement does not reduce the response task to only an item label and quotation; option wording and order remain unchanged.",
         "Before the first-round Q3 answer, the simulation does not reveal or imply whether Q1 or Q2 was correct. After each submitted choice it advances only to the next pending question and waits.",
         "After first-round choices A, A, B, the result is Q1 correct, Q2 incorrect, Q3 incorrect, totaling 1/3. The next round contains only original Q2 and Q3; Q1 is removed.",
         "In round two, Q2 B is not graded aloud before the pending Q3 response. After Q3 B arrives, the round result is Q2 correct, Q3 incorrect, totaling 1/2; only original Q3 remains for round three.",
