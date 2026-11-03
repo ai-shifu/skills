@@ -2088,7 +2088,7 @@
       "files": [],
       "expectations": [
         "The Teaching Prompt explicitly requests an AI-Shifu-generated interactive experimental slide. It does not reduce the task to a static diagram or require the teacher to supply a prebuilt HTML page, separate image or custom event bridge before authoring it.",
-        "Instructions specify usable rate controls, meaningful values and units, initial state, playback, pause or inspection, and reset behavior. State after changing a rate is defined so the displayed queue follows the fixed-rate model without an inconsistent history.",
+        "Instructions specify usable rate controls, meaningful values and units, initial state, playback, a pause that preserves the current queue and graph for comparison, and reset behavior. State after changing a rate is defined so the displayed queue follows the fixed-rate model without an inconsistent history.",
         "Displayed motion and quantities follow the supplied model and make the requested comparisons visible. Queue length remains nonnegative; the Prompt does not invent random variation, ungrounded experimental results or a claim that busy service always implies a shrinking queue.",
         "The result has useful source-only block comments with all executable instructions outside them, adds no separate course response or submission, and does not infer learner actions, observations or memory updates from page-local controls.",
         "The response distinguishes authored behavior from generated or tested behavior and makes no claim of observed learner understanding. It adds no background questionnaire, Course Prompt, platform operation or unrelated course redesign."
