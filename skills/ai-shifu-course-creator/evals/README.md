@@ -223,6 +223,11 @@ into the authored course. Record each case and turn actually run, including
 failures and incomplete paths, rather than reporting the matrix as executed
 because it exists in the repository.
 
+The [2026-11-03 recorded comparison](results/runtime-adaptation.md) includes the
+frozen artifact hashes, captured examples and limits for one executed revision
+pair. It is evidence for those simulations, not a new authoring template or
+proof of real learner outcomes.
+
 From the repository root, run the static manifest check with:
 
 ```bash
