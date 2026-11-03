@@ -146,7 +146,7 @@ For example:
 <!-- Comparing rates makes queue growth visible -->
 
 Generate an interactive experimental slide showing a simplified queue. Use fixed arrival and service rates, an initially empty queue, no random variation, and a continuous quantity model: queue length at time t minutes is max(0, (arrival rate - service rate) * t).
-Provide arrival-rate and service-rate sliders from 0 to 10 people per minute, initially 5 and 6. Changing either rate resets the model time and queue to zero and pauses playback.
+Provide arrival-rate and service-rate sliders from 0 to 10 people per minute, initially 5 and 6. Changing either rate resets the model time and queue to zero, pauses playback, preserves earlier traces as comparison history labeled with their arrival and service rates, and starts a new current trace at the origin.
 Provide Play, Pause, and Reset controls. Animate model time from 0 to 2 minutes, plotting queue length against time with labeled axes and current rate values. Pause preserves the current graph; Reset restores the initial rates and empty queue, sets model time to zero, clears the graph, and pauses playback.
 Keep the current settings and graph visible so the learner can compare arrival below service with arrival above service, and then compare the effect of increasing service. Keep all exploration within the slide; do not add a course question or submission.
 ```
