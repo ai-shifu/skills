@@ -1411,6 +1411,9 @@ class CourseCreatorContractTests(unittest.TestCase):
 
     def test_evals_cover_adaptive_defaults_and_explicit_author_boundaries(self):
         self.assert_eval_family(
+            (158,), ("all five supported directions", "learning_support", "default"),
+        )
+        self.assert_eval_family(
             (158, 159, 160, 161, 162, 163),
             (
                 "learning_support", "new-course", "existing", "actual",
