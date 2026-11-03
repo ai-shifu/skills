@@ -1,5 +1,5 @@
 {
-  "spec_version": "0.1.10",
+  "spec_version": "0.1.11",
   "cases": [
     {
       "name": "empty environment",
@@ -2362,6 +2362,1326 @@
       "expected": {
         "agent_id": "lingguang",
         "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "qwen code one marker semantics",
+      "env": {
+        "QWEN_CODE": "1"
+      },
+      "expected": {
+        "agent_id": "qwen-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "qwen code zero marker semantics",
+      "env": {
+        "QWEN_CODE": "0"
+      },
+      "expected": {
+        "agent_id": "qwen-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "qwen code false marker semantics",
+      "env": {
+        "QWEN_CODE": "false"
+      },
+      "expected": {
+        "agent_id": "qwen-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "qwen code whitespace marker semantics",
+      "env": {
+        "QWEN_CODE": " "
+      },
+      "expected": {
+        "agent_id": "qwen-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "qwen code empty marker semantics",
+      "env": {
+        "QWEN_CODE": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "qwen code similarly prefixed name is not a marker",
+      "env": {
+        "QWEN_CODE_EXTRA": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "roo active one marker semantics",
+      "env": {
+        "ROO_ACTIVE": "1"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo active zero marker semantics",
+      "env": {
+        "ROO_ACTIVE": "0"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo active false marker semantics",
+      "env": {
+        "ROO_ACTIVE": "false"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo active whitespace marker semantics",
+      "env": {
+        "ROO_ACTIVE": " "
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo active empty marker semantics",
+      "env": {
+        "ROO_ACTIVE": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "roo active similarly prefixed name is not a marker",
+      "env": {
+        "ROO_ACTIVE_EXTRA": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "roo cli runtime one marker semantics",
+      "env": {
+        "ROO_CLI_RUNTIME": "1"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo cli runtime zero marker semantics",
+      "env": {
+        "ROO_CLI_RUNTIME": "0"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo cli runtime false marker semantics",
+      "env": {
+        "ROO_CLI_RUNTIME": "false"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo cli runtime whitespace marker semantics",
+      "env": {
+        "ROO_CLI_RUNTIME": " "
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo cli runtime empty marker semantics",
+      "env": {
+        "ROO_CLI_RUNTIME": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "roo cli runtime similarly prefixed name is not a marker",
+      "env": {
+        "ROO_CLI_RUNTIME_EXTRA": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "cline active one marker semantics",
+      "env": {
+        "CLINE_ACTIVE": "1"
+      },
+      "expected": {
+        "agent_id": "cline",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cline active zero marker semantics",
+      "env": {
+        "CLINE_ACTIVE": "0"
+      },
+      "expected": {
+        "agent_id": "cline",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cline active false marker semantics",
+      "env": {
+        "CLINE_ACTIVE": "false"
+      },
+      "expected": {
+        "agent_id": "cline",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cline active whitespace marker semantics",
+      "env": {
+        "CLINE_ACTIVE": " "
+      },
+      "expected": {
+        "agent_id": "cline",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cline active empty marker semantics",
+      "env": {
+        "CLINE_ACTIVE": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "cline active similarly prefixed name is not a marker",
+      "env": {
+        "CLINE_ACTIVE_EXTRA": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "cline wrapper one marker semantics",
+      "env": {
+        "CLINE_WRAPPER_PATH": "1"
+      },
+      "expected": {
+        "agent_id": "cline",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cline wrapper zero marker semantics",
+      "env": {
+        "CLINE_WRAPPER_PATH": "0"
+      },
+      "expected": {
+        "agent_id": "cline",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cline wrapper false marker semantics",
+      "env": {
+        "CLINE_WRAPPER_PATH": "false"
+      },
+      "expected": {
+        "agent_id": "cline",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cline wrapper whitespace marker semantics",
+      "env": {
+        "CLINE_WRAPPER_PATH": " "
+      },
+      "expected": {
+        "agent_id": "cline",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cline wrapper empty marker semantics",
+      "env": {
+        "CLINE_WRAPPER_PATH": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "cline wrapper similarly prefixed name is not a marker",
+      "env": {
+        "CLINE_WRAPPER_PATH_EXTRA": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "copilot cli one marker semantics",
+      "env": {
+        "COPILOT_CLI": "1"
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot cli zero marker semantics",
+      "env": {
+        "COPILOT_CLI": "0"
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot cli false marker semantics",
+      "env": {
+        "COPILOT_CLI": "false"
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot cli whitespace marker semantics",
+      "env": {
+        "COPILOT_CLI": " "
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot cli empty marker semantics",
+      "env": {
+        "COPILOT_CLI": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "copilot cli similarly prefixed name is not a marker",
+      "env": {
+        "COPILOT_CLI_EXTRA": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "copilot agent session one marker semantics",
+      "env": {
+        "COPILOT_AGENT_SESSION_ID": "1"
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot agent session zero marker semantics",
+      "env": {
+        "COPILOT_AGENT_SESSION_ID": "0"
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot agent session false marker semantics",
+      "env": {
+        "COPILOT_AGENT_SESSION_ID": "false"
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot agent session whitespace marker semantics",
+      "env": {
+        "COPILOT_AGENT_SESSION_ID": " "
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot agent session empty marker semantics",
+      "env": {
+        "COPILOT_AGENT_SESSION_ID": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "copilot agent session similarly prefixed name is not a marker",
+      "env": {
+        "COPILOT_AGENT_SESSION_ID_EXTRA": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "qwen code precedes inherited gemini marker",
+      "env": {
+        "QWEN_CODE": "1",
+        "GEMINI_CLI": "1"
+      },
+      "expected": {
+        "agent_id": "qwen-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "qwenwork and qwen code keep distinct precedence",
+      "env": {
+        "QODER_WORK_INTEGRATION_PRODUCT": "synthetic",
+        "QWEN_CODE": "1"
+      },
+      "expected": {
+        "agent_id": "qwenwork",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "qwen code runtime wins cursor editor context",
+      "env": {
+        "QWEN_CODE": "1",
+        "CURSOR_TRACE_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": "qwen-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "qwen code configuration names alone do not match",
+      "env": {
+        "QWEN_CODE_SANDBOX": "synthetic",
+        "QWEN_CODE_CONFIG": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "roo active precedes cline compatibility marker",
+      "env": {
+        "ROO_ACTIVE": "1",
+        "CLINE_ACTIVE": "1"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo cli precedes cline wrapper compatibility marker",
+      "env": {
+        "ROO_CLI_RUNTIME": "1",
+        "CLINE_WRAPPER_PATH": "synthetic"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo cli precedes codex by documented table order",
+      "env": {
+        "ROO_CLI_RUNTIME": "1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "roo empty alternatives fail",
+      "env": {
+        "ROO_ACTIVE": "",
+        "ROO_CLI_RUNTIME": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "roo metadata and configuration alone do not match",
+      "env": {
+        "ROO_CODE_TASK_ID": "synthetic",
+        "ROO_CLI_RUNTIME_CONFIG": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "cline both empty alternatives fail",
+      "env": {
+        "CLINE_ACTIVE": "",
+        "CLINE_WRAPPER_PATH": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "cline wrapper wins inherited claude marker",
+      "env": {
+        "CLINE_WRAPPER_PATH": "synthetic",
+        "CLAUDECODE": "1"
+      },
+      "expected": {
+        "agent_id": "cline",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cline configuration alone does not match",
+      "env": {
+        "CLINE_DIR": "synthetic",
+        "CLINE_API_KEY": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "copilot empty execution markers retain model hint",
+      "env": {
+        "COPILOT_CLI": "",
+        "COPILOT_AGENT_SESSION_ID": "",
+        "COPILOT_MODEL": "synthetic"
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "context-hint"
+      }
+    },
+    {
+      "name": "copilot runtime wins token hint",
+      "env": {
+        "COPILOT_CLI": "1",
+        "COPILOT_GITHUB_TOKEN": "synthetic-test-token"
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot session runtime wins editor hint",
+      "env": {
+        "COPILOT_AGENT_SESSION_ID": "synthetic",
+        "CURSOR_TRACE_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "claude marker precedes copilot runtime",
+      "env": {
+        "CLAUDECODE": "1",
+        "COPILOT_CLI": "1"
+      },
+      "expected": {
+        "agent_id": "claude-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "cursor cli marker precedes copilot runtime",
+      "env": {
+        "CURSOR_AGENT": "1",
+        "COPILOT_CLI": "1"
+      },
+      "expected": {
+        "agent_id": "cursor-cli",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot runtime precedes kiro runtime",
+      "env": {
+        "COPILOT_CLI": "1",
+        "AGENT_CONTEXT_OUT": "synthetic"
+      },
+      "expected": {
+        "agent_id": "github-copilot",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "copilot both empty execution alternatives fail",
+      "env": {
+        "COPILOT_CLI": "",
+        "COPILOT_AGENT_SESSION_ID": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "copilot prefixed configuration does not establish execution",
+      "env": {
+        "COPILOT_CLI_CONFIG": "synthetic",
+        "COPILOT_AGENT_JOB_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "unknown declaration masks qwen code marker",
+      "env": {
+        "AI_AGENT": "unknown-test-agent",
+        "QWEN_CODE": "1"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "unknown declaration masks roo marker",
+      "env": {
+        "AI_AGENT": "unknown-test-agent",
+        "ROO_ACTIVE": "1"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "unknown declaration masks cline wrapper marker",
+      "env": {
+        "AI_AGENT": "unknown-test-agent",
+        "CLINE_WRAPPER_PATH": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "unknown declaration masks copilot runtime marker",
+      "env": {
+        "AI_AGENT": "unknown-test-agent",
+        "COPILOT_CLI": "1"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "qwen code explicit declaration",
+      "env": {
+        "AI_AGENT": "qwen-code"
+      },
+      "expected": {
+        "agent_id": "qwen-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "roo code explicit declaration",
+      "env": {
+        "AGENT": "roo-code"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "known versioned declaration wins inherited marker",
+      "env": {
+        "AI_AGENT": "codex@1.0",
+        "CLAUDECODE": "1"
+      },
+      "expected": {
+        "agent_id": "codex",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "versioned second declaration is supported",
+      "env": {
+        "AGENT": "qwen-code@1.2.3"
+      },
+      "expected": {
+        "agent_id": "qwen-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "versioned declaration strips only outer ASCII whitespace",
+      "env": {
+        "AI_AGENT": "\t\n CODEX@V1.0+BUILD-7 \r\u000b\f"
+      },
+      "expected": {
+        "agent_id": "codex",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version label may be a single ASCII digit",
+      "env": {
+        "AI_AGENT": "roo-code@0"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version label may be a single ASCII letter",
+      "env": {
+        "AI_AGENT": "hi@X"
+      },
+      "expected": {
+        "agent_id": "hi",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version label is opaque rather than semver",
+      "env": {
+        "AI_AGENT": "sandbase-harness@nightly.2026-11+build"
+      },
+      "expected": {
+        "agent_id": "sandbase-harness",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "codex compatibility alias accepts version label",
+      "env": {
+        "AI_AGENT": "CODEX_CLI@V1"
+      },
+      "expected": {
+        "agent_id": "codex",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude compatibility alias accepts version label",
+      "env": {
+        "AI_AGENT": "claude_code@2.1.205"
+      },
+      "expected": {
+        "agent_id": "claude-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "gemini compatibility alias accepts version label",
+      "env": {
+        "AGENT": "gemini_cli@1.0"
+      },
+      "expected": {
+        "agent_id": "gemini-cli",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "opencode compatibility alias accepts version label",
+      "env": {
+        "AI_AGENT": "open_code@1.0"
+      },
+      "expected": {
+        "agent_id": "opencode",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "grok compatibility alias accepts version label",
+      "env": {
+        "AI_AGENT": "grok@1.0"
+      },
+      "expected": {
+        "agent_id": "grok-build",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "literal claude alias remains supported",
+      "env": {
+        "AI_AGENT": "claude_code"
+      },
+      "expected": {
+        "agent_id": "claude-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "literal claude alias wins inherited codex marker",
+      "env": {
+        "AI_AGENT": "CLAUDE_CODE",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": "claude-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude numeric agent declaration",
+      "env": {
+        "AI_AGENT": "claude-code_2-1-205_agent"
+      },
+      "expected": {
+        "agent_id": "claude-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude numeric harness declaration",
+      "env": {
+        "AGENT": "claude-code_2-1-205_harness"
+      },
+      "expected": {
+        "agent_id": "claude-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude formatted declaration ASCII normalization",
+      "env": {
+        "AI_AGENT": " \tCLAUDE-CODE_02-01-000_AGENT\r\n"
+      },
+      "expected": {
+        "agent_id": "claude-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude harness declaration wins runtime marker",
+      "env": {
+        "AI_AGENT": "claude-code_2-1-205_harness",
+        "QWEN_CODE": "1"
+      },
+      "expected": {
+        "agent_id": "claude-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "empty first declaration permits versioned second",
+      "env": {
+        "AI_AGENT": " \t\r\n",
+        "AGENT": "roo-code@v2",
+        "CLINE_ACTIVE": "1"
+      },
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "valid first versioned declaration precedes second",
+      "env": {
+        "AI_AGENT": "codex@1",
+        "AGENT": "claude-code_2-1-205_agent",
+        "CRUSH": "1"
+      },
+      "expected": {
+        "agent_id": "codex",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "unknown product at version blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "unknown-test-agent@1.0",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "missing version after at blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "missing name before at blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "@1.0",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "repeated at separator blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@@1.0",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "second at version segment blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@1.0@2.0",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version begins with dot blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@.1",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version begins with plus blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@+1",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version begins with minus blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@-1",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version has underscore blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@v1_0",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version has slash blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@1/2",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "slash is not a version separator blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex/1.0",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version has internal ASCII space blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@1 2",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version has internal ASCII tab blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@1\t2",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "version has internal newline blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@1\n2",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "space before at separator blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex @1",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "space after at separator blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@ 1",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "NBSP before version blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@ 1",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "NBSP around full version declaration blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": " codex@1 ",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "Unicode digit in version blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@１",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "Unicode letter in version blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex@é",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "Unicode confusable product at version blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "KIMI@1",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "unknown underscore suffix blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex_1_agent",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude alias is not recursively format parsed blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "claude_code_2-1-205_agent",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude format requires three version components blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "claude-code_2-1_agent",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude format rejects four version components blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "claude-code_2-1-205-1_agent",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude format rejects dotted numeric version blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "claude-code_2.1.205_agent",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude format rejects unknown mode blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "claude-code_2-1-205_assistant",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude format rejects trailing content blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "claude-code_2-1-205_agent_extra",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude format rejects missing version component blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "claude-code_2--205_agent",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "claude format rejects Unicode numeric component blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "claude-code_２-1-205_agent",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "Claude special format cannot name other products blocks both declaration and marker fallback",
+      "env": {
+        "AI_AGENT": "codex_2-1-205_agent",
+        "AGENT": "manus@1",
+        "CODEX_THREAD_ID": "synthetic"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "invalid versioned second declaration blocks markers",
+      "env": {
+        "AI_AGENT": "",
+        "AGENT": "codex@",
+        "QWEN_CODE": "1"
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "ASCII-insensitive provider finds versioned declaration",
+      "env": {
+        "ai_agent": "QWEN-CODE@V1",
+        "cline_active": "1"
+      },
+      "env_name_case": "ascii-insensitive",
+      "expected": {
+        "agent_id": "qwen-code",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "ASCII-insensitive provider finds new roo runtime name",
+      "env": {
+        "roo_cli_runtime": "false"
+      },
+      "env_name_case": "ascii-insensitive",
+      "expected": {
+        "agent_id": "roo-code",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "sensitive provider does not normalize new marker names",
+      "env": {
+        "copilot_cli": "1"
+      },
+      "env_name_case": "sensitive",
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
       }
     }
   ]

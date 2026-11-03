@@ -1,4 +1,4 @@
-"""Local implementation of ai-shifu/detect-agent 0.1.10 (MIT).
+"""Local implementation of ai-shifu/detect-agent 0.1.11 (MIT).
 
 Specification attribution (MIT License):
 Copyright (c) 2026 ai-shifu
@@ -25,11 +25,12 @@ SOFTWARE.
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Callable, Mapping
 
 
-SPEC_VERSION = "0.1.10"
-SPEC_COMMIT = "aa61e85dddee4bf81aa517163b6db00ba98ce58a"
+SPEC_VERSION = "0.1.11"
+SPEC_COMMIT = "c06e732d17d02f74fd9b452f20c4fa17a9f95a03"
 
 # Product spelling is also the bounded CLI display-name contract. Context-only
 # products are reportable only when explicitly declared, not from a context hint.
@@ -48,7 +49,9 @@ AGENT_DISPLAY_NAMES = {
     "doubao-work": "Doubao Work",
     "kimi": "Kimi Code",
     "grok-build": "Grok Build",
+    "qwen-code": "Qwen Code",
     "gemini-cli": "Gemini CLI",
+    "roo-code": "Roo Code",
     "cline": "Cline",
     "codex": "Codex",
     "antigravity": "Antigravity",
@@ -62,7 +65,7 @@ AGENT_DISPLAY_NAMES = {
     "cursor-cli": "Cursor CLI",
     "kiro": "Kiro",
     "openclaw": "OpenClaw",
-    "github-copilot": "GitHub Copilot",
+    "github-copilot": "GitHub Copilot CLI",
     "replit": "Replit",
     "devin": "Devin",
     "instinct": "Instinct",
@@ -83,6 +86,11 @@ _DECLARATION_ALIASES = {
 }
 _ASCII_TRIM = "\t\n\v\f\r "
 _ASCII_LOWER = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")
+_DECLARATION_FORMATS = (
+    re.compile(r"([a-z][a-z0-9_-]*)@([a-z0-9][a-z0-9.+-]*)"),
+    re.compile(r"(claude-code)_[0-9]+-[0-9]+-[0-9]+_agent"),
+    re.compile(r"(claude-code)_[0-9]+-[0-9]+-[0-9]+_harness"),
+)
 
 # Each row is OR over alternatives; each alternative is AND over predicates.
 # None means non-empty, while a string is an exact case-sensitive value.
@@ -105,8 +113,10 @@ _RUNTIME_RULES = (
     ("doubao-work", ((("DOUBAO_OFFICE_AGENT_NAME", None),),)),
     ("kimi", ((("KIMI_PLUGIN_ROOT", None),),)),
     ("grok-build", ((("GROK_AGENT", "1"),), (("GROK_PLUGIN_ROOT", None),), (("GROK_PLUGIN_DATA", None),))),
+    ("qwen-code", ((("QWEN_CODE", None),),)),
     ("gemini-cli", ((("GEMINI_CLI", None),),)),
-    ("cline", ((("CLINE_ACTIVE", None),),)),
+    ("roo-code", ((("ROO_ACTIVE", None),), (("ROO_CLI_RUNTIME", None),))),
+    ("cline", ((("CLINE_ACTIVE", None),), (("CLINE_WRAPPER_PATH", None),))),
     ("codex", (
         (("CODEX_SANDBOX", None),), (("CODEX_CI", None),),
         (("CODEX_THREAD_ID", None),), (("CODEX_SANDBOX_NETWORK_DISABLED", None),),
@@ -123,6 +133,7 @@ _RUNTIME_RULES = (
     )),
     ("claude-code", ((("CLAUDECODE", None),), (("CLAUDE_CODE", None),))),
     ("cursor-cli", ((("CURSOR_AGENT", None),), (("CURSOR_EXTENSION_HOST_ROLE", "agent-exec"),))),
+    ("github-copilot", ((("COPILOT_CLI", None),), (("COPILOT_AGENT_SESSION_ID", None),))),
     ("kiro", ((("AGENT_CONTEXT_OUT", None),),)),
     ("openclaw", ((("OPENCLAW_SHELL", None),),)),
     # Nested agent CLI markers take precedence over inherited command environments.
@@ -146,6 +157,19 @@ def _result(agent_id: str | None, evidence: str) -> dict[str, str | None]:
     return {"agent_id": agent_id, "evidence": evidence}
 
 
+def _declaration_id(normalized: str) -> str | None:
+    agent_id = _DECLARATION_ALIASES.get(normalized, normalized)
+    if agent_id in AGENT_DISPLAY_NAMES:
+        return agent_id
+    for pattern in _DECLARATION_FORMATS:
+        match = pattern.fullmatch(normalized)
+        if match is not None:
+            name = match.group(1)
+            agent_id = _DECLARATION_ALIASES.get(name, name)
+            return agent_id if agent_id in AGENT_DISPLAY_NAMES else None
+    return None
+
+
 def detect_agent(
     environment: Mapping[str, str],
     *,
@@ -165,8 +189,7 @@ def detect_agent(
         declaration = raw.strip(_ASCII_TRIM)
         if declaration:
             normalized = declaration.translate(_ASCII_LOWER)
-            agent_id = _DECLARATION_ALIASES.get(normalized, normalized)
-            return _result(agent_id if agent_id in AGENT_DISPLAY_NAMES else None, "declared")
+            return _result(_declaration_id(normalized), "declared")
 
     for agent_id, alternatives in _RUNTIME_RULES:
         if any(all(_matches(environment, key, expected) for key, expected in group) for group in alternatives):
