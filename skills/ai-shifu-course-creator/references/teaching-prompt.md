@@ -132,6 +132,27 @@ Respond based on the learner's answer:
 - If the needed information is unavailable or irrelevant, use the course-appropriate fallback rather than inventing an answer.
 - Prompt prose carries the teaching response, not an explanation of the machine-facing encoding decision.
 
+### Slide Interaction and Animation
+
+AI-Shifu slide generation supports in-slide interaction and animation as a basic capability. Describe the intended behavior directly in the Teaching Prompt's slide-generation instructions; a separate static image or prebuilt external page is not required. Use the chosen teaching purpose to specify the relevant details:
+
+- **Interaction:** Which elements can be operated, such as buttons, sliders, draggable objects, or selectable cases; what each action changes; and any meaningful input ranges, initial values, or reset behavior.
+- **Animation:** What moves or changes, in what order, and what triggers it, such as automatic playback, a click, or a parameter change. Specify timing, stepping, pause, or replay when needed to follow the process.
+- **Observable result:** What the learner should compare or notice, with labels and a readable state for inspection. For an experiment or simulation, include the model, assumptions, units, and relationships that determine the displayed effect rather than requesting decorative motion or arbitrary results.
+
+For example:
+
+```markdown
+<!-- Comparing rates makes queue growth visible -->
+
+Generate an interactive experimental slide showing a simplified queue. Use fixed arrival and service rates, an initially empty queue, no random variation, and a continuous quantity model: queue length at time t minutes is max(0, (arrival rate - service rate) * t).
+Provide arrival-rate and service-rate sliders from 0 to 10 people per minute, initially 5 and 6. Changing either rate resets the model time and queue to zero, pauses playback, preserves earlier traces as comparison history labeled with their arrival and service rates, and starts a new current trace at the origin.
+Provide Play, Pause, and Reset controls. Animate model time from 0 to 2 minutes, plotting queue length against time with labeled axes and current rate values. Pause preserves the current graph; Reset restores the initial rates and empty queue, sets model time to zero, clears the graph, and pauses playback.
+Keep the current settings and graph visible so the learner can compare arrival below service with arrival above service, and then compare the effect of increasing service. Keep all exploration within the slide; do not add a course question or submission.
+```
+
+Describe the requested behavior without claiming that the slide has already been generated or tested. Course-answer collection and memory integration follow [Simulation Integration](#simulation-integration).
+
 ### Simulation Integration
 
 For a selected interactive-page activity, specify the model, assumptions, adjustable quantities, observable changes, and comparisons needed for its teaching purpose. Identify executable HTML or JavaScript, usable controls, and any required page-to-course event bridge as target capabilities to verify; a page-generation instruction alone does not establish them.

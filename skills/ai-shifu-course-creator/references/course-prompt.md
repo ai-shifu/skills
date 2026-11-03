@@ -63,7 +63,7 @@ Preserve all six sections in order and every non-placeholder instruction. Render
 - Only create a slide, PPT, visual page, or classroom projection page when the current user message explicitly requests one. Do not proactively create visuals.
 - Follow the current user message's slide-text relationship. Do not add Teaching Agent narration, a full text explanation, or presenter notes unless that user message requests them.
 - Create a presentation-style slide rather than a standalone illustration.
-- In-slide option labels must not be interactive.
+- In-slide course question option labels must not be interactive.
 - Keep in-slide text concise and prompt-like. Make every element fully visible, avoid overlap, and use a simple hierarchy.
 - When the current user message requests text alongside a slide, treat the slide as a structural prompt and follow it with a complete text explanation that assumes the learner has not seen the slide.
 ```
