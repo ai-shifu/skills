@@ -1478,9 +1478,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         )
         request = fixture["author_request"]
         for context in fixture["learner_contexts"]:
-            background = context["registration_context"].get("background")
-            if background:
-                self.assertNotIn(background, request)
+            for value in context["registration_context"].values():
+                if value:
+                    self.assertNotIn(value, request)
         for path in fixture["answer_paths"]:
             self.assertNotIn(path["first_answer"], request)
 
