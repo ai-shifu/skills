@@ -1868,6 +1868,88 @@
         "The second strategy is marked unknown or not yet established from the available material. The lesson title is not treated as evidence of a teaching method, interaction, assessment or existing feedback path.",
         "The response honors the read-only summary scope without designing the second lesson, rewriting the first, requesting approval or accessing the platform."
       ]
+    },
+    {
+      "id": 141,
+      "eval_name": "choose-visuals-for-an-unspecified-medium",
+      "prompt": "只在本地写一节约 3 分钟的中文 MarkdownFlow 授课提示词，目标是让门店新人看懂瓶颈会怎样限制整体产能。教学方向和材料已经确认，不需要重新做大纲、样课或收集背景；不提问、不安排互动，不联网、不连接平台，也不生成课程提示词。表现形式由你根据教学需要选择，我没有指定必须用幻灯片、板书或纯文字。请在提示词外用两三句话说明所选表现形式的教学作用及依据。\n\n唯一材料：在这个简化模型中，接单、配货、打包串行进行，各工序独立、持续工作且中间缓冲充足，不考虑波动；三道工序的处理能力分别是每分钟 8 单、5 单、10 单，整体稳定处理能力取最小值，为每分钟 5 单。只把配货提高到每分钟 7 单后，整体为每分钟 7 单；其余条件不变。必须讲清原有与改进后的整体上限，以及为什么只提高非瓶颈工序不能突破原来的配货上限。",
+      "expected_output": "Chooses a useful teaching representation within an open medium choice and encodes the selected comparison and bottleneck reasoning directly in the Teaching Prompt.",
+      "files": [],
+      "expectations": [
+        "The authoring agent makes a concrete medium choice that serves the bottleneck and before/after comparison. It may use a flow diagram, aligned capacity bars, board-style construction, another suitable representation or a sufficiently clear textual comparison; no unique page type or visual count is required.",
+        "It does not claim that the teacher must explicitly request slides before the authoring agent can select a useful visual. Any chosen visual has runnable content and a purpose in the Teaching Prompt, rather than being left to the Teaching Agent to invent later.",
+        "The instruction preserves the simplifying assumptions, the three original rates, the change from 5 to 7 orders per minute, the minimum-capacity reasoning and the limit of improving a non-bottleneck stage. It does not add real-store evidence or claim a causal business result outside the model.",
+        "The representation and explanation make the relationship understandable without a compulsory cover, closing graphic, slide ratio or visual/text alternation. No interaction or additional background collection is introduced.",
+        "The brief teacher-facing rationale connects the representation to this comprehension need, keeps any source claim within its support and remains outside learner-time instructions. The response performs no platform operation or claimed learner-effectiveness test."
+      ]
+    },
+    {
+      "id": 142,
+      "eval_name": "cover-key-principle-and-threshold-as-chosen-visuals",
+      "prompt": "只在本地写一个中文 MarkdownFlow 授课提示词，用于现场教师控制节奏的纯课堂投屏，不要 AI 旁白、长段口头解释或互动，不联网、不连接平台。作者已经确定按顺序使用三个视觉块：封面、关键制度提示、核心原则金句；不要增加第四个块，也不要另生成课程提示词。请让每块都有可以实际生成的内容，不只列页名。\n\n封面主题是“风险信号与欺诈结论”，核心问题是“看到异常，能立即认定欺诈吗？”；制度提示须完整呈现：账号信息不一致和短时间多设备登录都是风险信号，单独任一信号都不能证明欺诈；两个及以上风险信号同时出现时，必须在 15 分钟内上报。最后突出课程作者总结的金句：“先验证，再处置；先留证，再定责。”并保留其语境：金句提示核验和留证的行动原则，不表示风险信号已经证明欺诈。无需人物肖像或装饰插画，不要把作者总结伪装成名人引语。",
+      "expected_output": "Authors the selected orientation, key-information and principle visuals as executable projection-ready instructions without discarding their factual conditions or adding narration.",
+      "files": [],
+      "expectations": [
+        "The Teaching Prompt implements exactly the three author-selected visual blocks in the supplied order, with the cover topic and core question, the complete rule and the final principle. It does not reject these uses because they are not structural diagrams.",
+        "The rule retains both risk signals, the boundary that either alone does not prove fraud, the threshold of two or more simultaneous signals and the 15-minute reporting unit and requirement. The concise visual does not shorten away these conditions.",
+        "The final principle keeps its supplied wording and verification/evidence context. It is not turned into proof of fraud, an unsupported absolute conclusion or a fabricated quotation from a named authority.",
+        "Each selected block carries concrete display content outside source-only navigation comments. The output remains projection-ready without Teaching Agent narration, compulsory explanatory prose after each block, simulated interactive labels or extra decorative images.",
+        "The choices remain lesson-specific Teaching Prompt instructions, with no additional course artifact, approval gate, online operation or claim that cover and quotation pages guarantee learning."
+      ]
+    },
+    {
+      "id": 143,
+      "eval_name": "board-style-reasoning-with-a-stable-reference",
+      "prompt": "只在本地写一段中文 MarkdownFlow 授课提示词，给第一次学成本模型的成年人看懂算式如何形成，不提问、不安排互动，不联网、不连接平台。学习目标与材料都已确定，直接交付提示词；不要课程提示词，也不需要声称已制作或运行任何动画。请选择能让学习者跟上推理的呈现方法，逐步展示必要判断，完成后保留完整参照供核对，不能只抛出最终答案。\n\n教学材料：假设固定准备费用为 100 元，每件材料费为 5 元，件数为 n，不考虑折扣和其他费用。先区分不随件数变的 100 元与随件数变的 5n 元，再组成总成本 C = 100 + 5n。用 n = 20 算出 C = 200 元，再用 n = 40 算出 C = 300 元，解释增加 20 件只增加 100 元材料费，固定费用不重复加。全程只用这些已知假设数字；展示完后要能同时对照公式、各量含义和两次计算。",
+      "expected_output": "Makes the reasoning visible through a board-style or equivalently staged worked example while retaining a complete formula and calculation reference.",
+      "files": [],
+      "expectations": [
+        "The Prompt directs the Teaching Agent to construct the fixed term, variable term, combined formula and substitutions in a recoverable sequence, rather than merely presenting the completed formula or naming a drawing effect.",
+        "Board-style writing, progressive annotation or another executable staged representation is acceptable. The chosen medium exposes the intermediate reasoning without claiming that handwriting itself is universally superior or that an unimplemented animation has been tested.",
+        "The worked example preserves the model assumptions, quantities and units, 100 + 5 times 20 = 200, 100 + 5 times 40 = 300 and the 100-yuan increase. It explains why the fixed fee is counted once in each total.",
+        "After the staged explanation, the complete formula, symbol meanings and both calculations remain available together as the requested reference; essential earlier information is not made inaccessible by the unfolding presentation.",
+        "The sequence adds no learner question, artificial continue control, cover requirement or slide/text quota. Teaching directions remain outside navigation comments, with no platform or actual animation-execution claim."
+      ]
+    },
+    {
+      "id": 144,
+      "eval_name": "text-only-boundary-with-important-information",
+      "prompt": "只写一个本地中文 MarkdownFlow 授课提示词，面向退款审核新人，已确认全程纯文字；虽然有标题、重要制度和金句，也不要封面、幻灯片、图片、图示或视觉版式指令。不联网、不连接平台，不生成课程提示词；不收集背景、不提问、不安排互动。教学动作已确定：先解释风险信号与结论的区别，再讲清上报条件，最后用金句提醒行动原则，不能增加其他步骤。\n\n材料：本节主题是“风险信号与欺诈结论”。账号信息不一致和短时间多设备登录都是风险信号，单独任一信号都不能证明欺诈；两个及以上风险信号同时出现时，必须在 15 分钟内上报。最后使用课程作者总结的金句：“先验证，再处置；先留证，再定责。”金句提示核验和留证，不表示已经证明欺诈。",
+      "expected_output": "Preserves the explicit text-only delivery even when the lesson includes orientation, a critical threshold and a memorable principle.",
+      "files": [],
+      "expectations": [
+        "The result uses only the three approved textual teaching actions in the supplied order. It contains no slide, cover, image, diagram, visual card, board-drawing instruction or other visual layout direction.",
+        "The explanation preserves the distinction between risk signals and proof, both signal examples, the threshold of two or more simultaneous signals and the 15-minute reporting condition and unit.",
+        "The final principle retains its supplied wording and verification/evidence context without inventing quotation attribution. Importance and memorability are not treated as permission to override the author-selected medium.",
+        "The body remains runnable Teaching Prompt instructions outside any navigation comments and adds no question, interaction, background collection, extra teaching action, companion artifact or platform operation."
+      ]
+    },
+    {
+      "id": 145,
+      "eval_name": "short-lesson-does-not-need-visual-padding",
+      "prompt": "只在本地审查下面这段已经确认的短授课提示词，告诉我它是否因为没有封面、独立金句页和结尾总结图而不合格，并简短解释理由；这轮不要重写或添加内容，不联网、不连接平台。这是给已上过文件管理课的人看的 30 秒提醒，不收集回答，没有新增学习目标，现有文本不要求改变表现形式。\n\n<!-- 保留原始材料 -->\n说明修改文件前先保存原件，再在副本上改动；原件用于之后核对，副本承载本次修改。\n<!-- 用简短原则收束 -->\n最后提醒“先留原件，再动副本”，然后结束。",
+      "expected_output": "Assesses the short reminder on its actual teaching purpose without imposing cover, quotation-page or closing-graphic requirements.",
+      "files": [],
+      "expectations": [
+        "The review does not fail the artifact merely because it omits a cover, standalone principle page or closing visual. It recognizes that the current concise explanation and closing phrase can already serve this reminder goal.",
+        "It explains any visual recommendation through an actual additional teaching benefit, rather than a fixed page catalog, the presence of a memorable phrase, visual quota or claim that more media necessarily improve retention.",
+        "It respects audit-only scope: the source is not rewritten or reformatted, and no visual, interaction, companion Prompt or platform operation is added.",
+        "The response distinguishes a reasoned design judgment from observed learning gains. It does not invent learner confusion, demand a new sample or claim that the existing reminder has been empirically proven effective."
+      ]
+    },
+    {
+      "id": 146,
+      "eval_name": "course-prompt-keeps-visual-runtime-ownership",
+      "prompt": "只根据下面已确认的本地设计，生成完整中文 Course Prompt，沿用技能的六段模板；不联网、不访问平台，不修改或生成课节授课提示词，也不重新设计课程。课程叫“看懂成本变化”，目标是让成人初学者理解总成本 = 固定成本 + 单件变动成本 × 件数，使用场景是标准 AI 一对一自学。作者姓名为空，不按个人背景适配。\n\n已有第一节授课提示词已经明确安排主题封面、逐步形成成本算式的板书式示范、带适用条件的核心原则页，页序、内容及配套解释均已确定。第二节已有授课提示词只做文字算例讲解，没有任何视觉指令。这些差异都是作者决定，必须保留。本次只将课程层面的统一要求表达出来。",
+      "expected_output": "Materializes the canonical Course Prompt while keeping lesson-specific visual selection and structure in the existing Teaching Prompts.",
+      "files": [],
+      "expectations": [
+        "The output retains the six localized template sections in order and every non-placeholder template behavior, fills the supplied course identity, learning goal, delivery and non-personalized baseline, omits the empty optional named role item and leaves no unresolved placeholder.",
+        "The Slides section preserves the runtime explicit-request gate: the Teaching Agent creates a slide, PPT, visual page or projection page only when the current user message requests it, and does not independently add visuals.",
+        "The first lesson visual choices stay owned by its Teaching Prompt. The Course Prompt adds no cover-specific, quotation-specific, first-page, page-count or lesson-order instruction and does not reconstruct that local teaching sequence.",
+        "The second lesson remains compatible with its text-only authored sequence; broadening the authoring agent visual options does not authorize runtime cover, emphasis or summary visuals in a lesson that contains no such instruction.",
+        "Existing slide/text and narration constraints remain represented, and the selected one-on-one course does not acquire an unselected classroom-delivery mode. No companion artifact, approval gate or platform operation is introduced."
+      ]
     }
   ]
 }

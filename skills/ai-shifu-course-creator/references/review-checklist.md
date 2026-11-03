@@ -27,7 +27,7 @@ Observable criteria for the artifacts and scope actually available. Use `pass`, 
 - New or explicitly rewritten Teaching Prompts have concise source-only navigation comments for useful teaching blocks under [teaching-prompt.md](teaching-prompt.md). Optional layouts and agent-created layouts are valid when readable and runtime-safe.
 - In audit-only existing content, comment and layout normalization is `not-assessed`; do not reformat or add comments. Continue checking observable syntax and runtime behavior.
 - Syntax-owned structures and immutable source content retain their required form and scope in any layout. Required runtime content remains complete outside source-only comments.
-- Pure classroom slides retain their intended instructor-paced behavior; explicit text-only constraints contain no visual instructions. Visuals serve a defined purpose rather than padding length. General slide presentation requirements belong in the Course Prompt.
+- Pure classroom slides retain their intended instructor-paced behavior; explicit text-only constraints contain no visual instructions. Chosen visuals have a defined purpose and suitable medium or unfolding under [visual-text coordination](teaching-design.md#visual-text-coordination), rather than padding length. General slide presentation requirements belong in the Course Prompt.
 
 ## Personalization
 
