@@ -19,6 +19,7 @@
 | `.env.example` | Document supported service-selection, token, and usage-analytics opt-out variables with safe empty defaults, credential-storage guidance, and the user-facing account-linked usage notice. |
 | `evals/README.md` | Own the maintainer evaluation protocol, including separate-turn execution, evidence capture, revision comparisons, and the limits of static checks. It does not define course-authoring behavior. |
 | `evals/evals.json` | Hold end-to-end behavioral scenarios, optional input fixtures, and expected outcomes for capability use, authoring, platform, analytics, and boundary regressions. Canonical guidance remains the source of behavior. |
+| `evals/fixtures/runtime-adaptation.json` | Hold the reproducible authoring request, independent learner contexts, and coordinator-only turn scripts for frozen-prompt comparisons. The evaluation protocol remains in `evals/README.md`; this fixture does not define authoring policy. |
 | `evals/trigger_eval.json` | Test whether representative requests should or should not discover this skill. Keep capability and trigger wording canonical in `SKILL.md` frontmatter. |
 
 ## Core Reference Responsibilities

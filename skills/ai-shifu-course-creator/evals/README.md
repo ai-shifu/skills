@@ -138,6 +138,84 @@ separate results. For revision comparisons, report each case and turn actually
 executed, observed failures and not-assessed criteria; adding these cases or
 passing the manifest check does not establish a behavioral pass.
 
+### Frozen-Prompt Runtime Adaptation
+
+Use [fixtures/runtime-adaptation.json](fixtures/runtime-adaptation.json) for a
+matched independent-model comparison of runtime teaching. The fixture contains
+coordinator-only inputs, including future answers and assessment criteria. Do
+not attach the complete fixture to an authoring or delivery executor. Cases
+158–163 cover the associated authoring default, explicit-selection compatibility,
+existing-course boundary and response-dependent teaching; the frozen comparison
+below supplies a separate delivery experiment rather than regenerating a lesson
+for every learner.
+
+1. For each skill revision, start one fresh authoring session with only
+   `author_request` and that revision's skill. The request supplies the common
+   material, goal and fixed verification task without a test learner profile or
+   an instruction to enable personalization. Preserve the resulting Course
+   Prompt and Teaching Prompt exactly once. Record the skill commit or snapshot,
+   author model and host, tools, session and turn identifiers, both artifact
+   paths and their SHA-256 hashes. If authoring is incomplete, report that result
+   instead of inventing or quietly repairing a frozen pair.
+2. Start a fresh delivery session for each entry in `sessions`. Every session for
+   that revision receives the same byte-identical frozen Course Prompt and
+   Teaching Prompt, plus only its own `registration_context`. Use the host's
+   documented course- and lesson-instruction positions where available; otherwise
+   record the simulated context arrangement. Ask the executor to deliver these
+   artifacts without rewriting them. Do not provide authoring references, other
+   learner contexts, answer paths, future turns or evaluator criteria. Recheck
+   the artifact hashes across sessions; a repaired or newly authored Prompt is
+   a different experiment and cannot rescue a failed frozen run.
+3. Let initial delivery reach the fixed task and wait for the learner. Only then
+   send that session's `first_answer` as a new user turn. Preserve the complete
+   output after each turn. If a session references a follow-up script, send its
+   messages one at a time after the preceding assistant turn has completed.
+   Future inputs remain with the coordinator. An early or missing pause is an
+   observed failure; do not synthesize missing learner submissions or silently
+   rewrite delivery to restore the intended path.
+4. Compare the six core sessions as the full product of two relevant backgrounds
+   and three answers: correct, misconception and incomplete. The backgrounds
+   have identical stated prior knowledge and expression preference, so compare
+   backgrounds at the same answer and answers within the same background.
+   Compare the preference variant with `product_misconception`, changing only
+   the stated support preference. The empty and irrelevant-interest contexts
+   test neutral fallback with that same mistaken answer. The fixed task,
+   required evidence and success criteria stay identical across all nine.
+5. Use the three follow-up scripts to inspect an independent attempt, updated
+   background with a newly introduced error, and continued difficulty followed
+   by a stop. Judge the actual current submission: a repaired old error does
+   not make a new population-inference error correct. An explicit request for
+   independent work should not receive an advance solution. A stop or unresolved
+   difficulty must not be reported as independent completion or mastery.
+6. Give an independent evaluator the frozen artifacts, actual registration
+   context, full chronological outputs and coordinator-only criteria. Hide skill
+   revision labels and randomize revision order for the evaluator while retaining
+   the mapping with the coordinator. Evaluate source fidelity, relevant observable
+   support, current-answer use, waiting, fixed standards, fallback and closure;
+   attach an output location to each pass or failure. Different wording, role
+   labels, length or method names alone do not establish adaptive teaching. Nor
+   must every background produce a different action when the same support is
+   justified by the available evidence. Report unobserved behavior as
+   not-assessed and retain authored, simulated and platform evidence separately.
+
+| Sessions | Controlled comparison |
+| --- | --- |
+| `product_correct`, `product_misconception`, `product_incomplete` | Same product-work background and preferences, three actual-answer paths. |
+| `teacher_correct`, `teacher_misconception`, `teacher_incomplete` | Same teaching-work background and preferences, the same three answer paths. |
+| `preference_misconception` | Product background and prior knowledge unchanged; only support preference changes. |
+| `empty_misconception`, `irrelevant_misconception` | The same mistaken answer with absent or irrelevant registration context. |
+
+For an old/new revision comparison, freeze one pair per revision and run the
+same nine session inputs for each, with matched model, host and tools. Keep
+revision outputs out of the other revision's authoring and delivery sessions.
+The resulting eighteen sessions are local model simulations, not platform
+pause/resume tests, newly published courses or real-learner learning evidence.
+The fixture is evaluation input, not a course-directory schema, CLI payload or
+requirement to build a model runner. Its strings and keys must not be serialized
+into the authored course. Record each case and turn actually run, including
+failures and incomplete paths, rather than reporting the matrix as executed
+because it exists in the repository.
+
 From the repository root, run the static manifest check with:
 
 ```bash

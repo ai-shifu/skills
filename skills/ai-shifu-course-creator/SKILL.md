@@ -52,6 +52,8 @@ Decide what learners should understand or do and how teaching can help them get 
 
 Teaching patterns, interaction counts, and visual rhythms in [teaching-design.md](references/teaching-design.md) are recommendations. Select a strategy for the learning task using its content, intended performance, learner starting point, and constraints under [approach selection](references/teaching-design.md#selecting-an-approach-for-the-learning-task). The agent may combine approaches within the user's explicit constraints.
 
+For new courses, apply the [personalization defaults](references/prompt-semantics.md#personalization-directions) and make useful [response-dependent support](references/teaching-prompt.md#make-response-dependent-support-runnable) executable. Use registration background and learning preferences supplied at delivery, together with actual course answers, to shape permitted explanations, hints, and practice. Preserve explicit author restrictions and existing-course authorization; this adds no required questionnaire, diagnostic phase, or lesson template.
+
 ### Express in MarkdownFlow
 
 Make the intended teaching behavior executable in Teaching Prompts and Course Prompts. Preserve supplied design choices; use the teaching-design capabilities for choices that remain open rather than letting syntax or a layout template determine pedagogy.
