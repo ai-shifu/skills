@@ -171,10 +171,51 @@ Avoid asking for information already available in memory unless a deliberate upd
 
 ## Visual-Text Coordination
 
-Decide whether visuals serve the teaching purpose; text-only, slide-led, image-led, and mixed lessons are available. There is no mandatory visual unit, opening page, cover, alternating cadence, or closing visual.
+Choose visuals for a teaching purpose: orient the learner, focus attention, organize knowledge, explain relationships, expose reasoning, support a task, or prepare later application. When the author leaves the form open, the authoring agent may select board-style work, illustrations, slides, or a mixture and make those choices concrete in the Teaching Prompt. Text-only lessons remain valid. There is no mandatory visual unit, opening page, cover, slide ratio, alternating cadence, or closing visual.
 
-- A visual can expose a relationship, comparison, sequence, evidence, or case. Avoid pages added solely to pad length.
-- Choose a visual where seeing elements together clarifies a structural or spatial relationship, a process, a comparison, or a change in evidence. Text can carry precise definitions, reasoning, contextual details, and response feedback; a complex topic does not automatically require slides. Explain what comprehension need the proposed visual addresses rather than setting a slide ratio or converting paragraphs into images.
+### Situations Worth Considering
+
+Use this open set of situations to identify what the learner needs to see, understand, or remember. These are design options, not a page checklist or evidence that each situation needs a separate slide. A visual may serve several purposes; a short text heading or inline emphasis may already suffice.
+
+| Situation | Teaching purpose and possible treatment |
+| --- | --- |
+| Course or lesson cover | Establish the topic, core question, or intended result. Use a concise title and purposeful visual when useful; a new lesson does not automatically need a separate cover. |
+| Learning route or transition | Show the current position and how it connects to earlier and later material with a route, chapter map, or stage marker. |
+| Core question or cognitive conflict | Focus attention on a question, unexpected observation, or consequential case that the lesson will explain. |
+| Memorable statement or core conclusion | Make a reusable principle or decision criterion a focal point. Preserve its conditions and limits; a memorable phrase must still convey an accurate idea. |
+| Key facts, definitions, formulas, or warnings | Make information easy to identify or consult, including thresholds, units, and operating restrictions. A clear text card or board note may be sufficient without an illustration. |
+| Overall structure or conceptual relationships | Expose parts, hierarchy, dependencies, or connections through an architecture diagram, concept map, tree, or network. |
+| Procedure or decision path | Make order, prerequisites, and branches visible with a flowchart, decision tree, or action checklist. |
+| Mechanism, causation, or change | Show how a process develops, which condition changes, and why an outcome follows through a causal chain, state diagram, or progressively built model. |
+| Comparison, boundary, or misconception | Place cases, examples and non-examples, or an error and its correction together; identify the consequential difference rather than only contrasting their appearance. |
+| Data, evidence, or trends | Show quantities, distributions, changes, or evidential comparisons with an appropriate chart. Keep values, units, axes, assumptions, and sources accurate. |
+| Real objects, situations, or spatial details | Use a photograph, interface capture, map, or section diagram when shape, location, or observable detail is itself part of the learning task; mark where to look. |
+| Derivation, worked example, or operation | Expose intermediate judgments through board-style construction, staged solutions, execution traces, or annotated demonstrations rather than showing only a finished answer. |
+| Shared task or thinking material | Keep case evidence, constraints, instructions, or an incomplete diagram available while the learner works. Visual material does not by itself authorize a new interaction. |
+| Feedback or correction | Mark the relevant part of the learner's actual available answer or work, or compare versions and explain why a change is needed. Do not invent a learner submission. |
+| Integration, review, or transfer | Reorganize what has been taught into a summary map, checklist, decision card, or action path for later use. Displaying it does not establish retention or mastery. |
+
+### Select the Medium and Unfolding
+
+- **Board-style construction:** Prefer progressive writing, drawing, or annotation when the learner needs to follow the formation of a derivation, model, solution, or judgment. Retain intermediate steps needed for comparison and leave a usable overall reference. A static sequence of stages can serve this purpose when live drawing or animation is unavailable; do not promise unsupported learner-time capabilities.
+- **Illustration, photograph, or annotated capture:** Prefer a prepared visual when shape, spatial relations, real detail, or a precise diagram matters. Place labels near what they describe and connect the representation to the concept or task.
+- **Slide or reference page:** Prefer a stable shared view when the learner needs an overall comparison, a focused conclusion, task instructions, or information to consult. A slide can use text, diagrams, or evidence; it does not require decorative imagery. Prepared visuals and board-style annotations can be combined.
+
+The medium is a design choice, not a ranking of learning effectiveness. Choose whether an item needs its own page from the need to pause, focus attention, compare, or revisit it. Avoid pages added solely to pad length or reproduce ordinary paragraphs as images. A complex topic does not automatically require slides, and important information does not automatically require a separate page.
+
+### Research Basis and Limits
+
+Use these sources under [method attribution](#method-attribution) when explaining a choice to the teacher. The situations and medium choices above apply the supported principles; they are not a research-validated page taxonomy.
+
+- **Multimedia learning:** [Mayer's review](https://onlinelibrary.wiley.com/doi/10.1111/jcal.12197) supports relevant verbal and graphical representations, pre-training, and segmenting. The [IES practice guide](https://ies.ed.gov/ncee/wwc/PracticeGuide/1) rates combining graphics with verbal descriptions as moderate evidence and also recommends connecting abstract and concrete representations. These support meaningful relationships and processes, not arbitrary illustration of every paragraph or a guarantee for a particular learner.
+- **Signaling, coherence, and contiguity:** [Fiorella and Mayer](https://www.cambridge.org/core/books/abs/cambridge-handbook-of-multimedia-learning/principles-for-reducing-extraneous-processing-in-multimedia-learning/F29A19FCD34C542806F736E0661C05F5) explain highlighting essential organization, excluding irrelevant material, and aligning related words and graphics in space and time. These inform a focal conclusion, clear labels, and selective emphasis; they do not establish that every memorable statement deserves a separate page or that decoration improves learning.
+- **Organization and signposts:** [Carnegie Mellon's lecture guidance](https://www.cmu.edu/teaching/designteach/teach/instructionalstrategies/lectures.html) recommends an introduction, outline, agenda, or visual organization and markers for key points and transitions. This supports orientation and route design; a particular cover or transition page remains a local choice, not a mandatory research-backed unit.
+- **Conclusion with evidence:** [Alley and colleagues' slide research](https://www.writing.engr.psu.edu/research.html) found better understanding and retention for an assertion-evidence structure than common topic-and-bullet slides in the studied technical presentation. This supports a clear claim with relevant visual evidence; it does not establish learning gains from a slogan alone or require the same slide structure everywhere.
+- **Progressive construction and attention:** [Durham's digital-handwriting guidance](https://helpguides.webspace.durham.ac.uk/approaches/inclusive/structuring-learning-content/digital-handwriting-in-teaching-a-practical-guide/) describes live derivations, models, and prepared visuals with annotation; it is a practice guide. In [Zhang and colleagues' normal-distribution experiments](https://link.springer.com/article/10.3758/s13421-024-01526-7), the study detected no significant learning difference between a moving cursor over static slides and visible-hand drawing in one comparison; this does not establish equivalence. Attend to unfolding and attention guidance rather than assuming that handwriting or animation is always superior.
+
+### Coordinate With Text and Delivery
+
+- Text can carry precise definitions, reasoning, contextual details, and response feedback. Preserve the explanation needed by the actual learning task and medium.
 - A visual followed by explanation is one useful pattern: let the explanation develop relationships, reasoning, context, or application rather than merely repeat labels. Other coherent arrangements are valid.
 - Keep labels near their referents, signal the relevant relationship, and reveal complex information in manageable parts when useful. These recommendations follow [UCSB's guidance on explaining content and slide design](https://citral.ucsb.edu/faculty/resources/engaging-students/explaining-content). Apply them to the actual delivery medium: findings about narrated graphics do not mean that accompanying explanatory text is forbidden in a text-based lesson. Accessibility and explicit author requirements still matter.
 - Keep question controls as the actual response surface. If a visual introduces the question, avoid simulated controls or duplicated option sets that confuse the learner about where to answer.
