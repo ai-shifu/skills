@@ -1950,6 +1950,84 @@
         "The second lesson remains compatible with its text-only authored sequence; broadening the authoring agent visual options does not authorize runtime cover, emphasis or summary visuals in a lesson that contains no such instruction.",
         "Existing slide/text and narration constraints remain represented, and the selected one-on-one course does not acquire an unselected classroom-delivery mode. No companion artifact, approval gate or platform operation is introduced."
       ]
+    },
+    {
+      "id": 147,
+      "eval_name": "reuse-direct-prior-knowledge-evidence-for-selection",
+      "prompt": "只在本地帮我设计下一段约5分钟的报价培训，说明教学安排和选择理由，不写完整课程、不连接平台。目标是让学员给新订单报价，并说清模型成立的条件。模型只有：总价=100元固定准备费+每件5元×件数，不考虑折扣和其他费用。\n\n同一位学员刚提交的两道作业及原话都在这里：3件时写出100+5×3=115元，7件时写出100+5×7=135元；解释“准备费每单只算一次，多一件增加5元；假设这两项费用不变，而且没有其他收费”。两题均未看答案独立完成。下一段想换一个数量，让他继续处理订单。请直接利用这些材料判断适合怎样教，并简短说明还缺什么关键证据；不要为了套流程重做整门课。",
+      "expected_output": "Uses the supplied independent work as relevant prior-knowledge evidence and selects proportionate next practice without repeating a diagnostic intake.",
+      "files": [],
+      "expectations": [
+        "The recommendation explicitly uses the two correct independent calculations, stated reasoning and assumptions as direct evidence for the current quote task. It does not substitute confidence, occupation or time spent studying for that evidence.",
+        "The next teaching choice reflects demonstrated ability, such as a new independent quantity or a focused extension, rather than requiring a complete novice demonstration or repeated diagnostic questions before proceeding.",
+        "Any proposed additional evidence concerns a consequential unresolved goal or transfer limit. The agent does not request another equivalent pretest, background questionnaire or repeated submission merely to follow a standard sequence.",
+        "The rationale distinguishes the demonstrated task from unobserved broader proficiency or delayed retention, and remains within local design scope without platform access or invented learner outcomes."
+      ]
+    },
+    {
+      "id": 148,
+      "eval_name": "target-a-consequential-prerequisite-uncertainty",
+      "prompt": "只在本地给我一个10分钟的门店毛利入门教学建议，说明怎样开始、后续重点和选择依据，不写完整课程、不连接平台。目标是学员面对售价100元、进货成本80元的商品，能理解毛利20元、毛利率20%，以及毛利率的分母为什么是售价。只用这些数字和关系。\n\n这批新员工的数学基础差异很大，我目前只知道有人说“我以前学过百分数”，没有他们的作业或计算记录，也不知道他们是否理解20%与0.2的关系。这会影响他们能否看懂毛利率。课程允许简短文字或选择题互动，但总共只有10分钟。请给出能实际执行的安排，避免把有限时间都用于收集背景。",
+      "expected_output": "Addresses the consequential uncertainty about percentage knowledge through a minimal relevant diagnostic or an explicit provisional design assumption.",
+      "files": [],
+      "expectations": [
+        "The response identifies the uncertain prerequisite that can change the lesson's explanation or support: interpreting a percentage and relating the rate to its base. Self-reported past study is treated as indirect rather than sufficient performance evidence.",
+        "It either proposes a brief task directly revealing that prerequisite within the allowed interaction, or makes a clearly labeled provisional assumption with an appropriate fallback. It does not infer proficiency or a misconception without evidence.",
+        "When a diagnostic is selected, the response explains how different observed results would change the next teaching action; it does not add a general background survey or collect answers that will not affect instruction.",
+        "The arrangement preserves the 10-minute goal and supplied quantities, explains the evidence-based reason for assessing prior knowledge, and makes no platform operation or claim to have received a learner answer."
+      ]
+    },
+    {
+      "id": 149,
+      "eval_name": "choose-practice-organization-for-distinct-learning-goals",
+      "prompt": "只在本地帮我为一门基础统计课比较四种教学需要，各给出合适的活动安排、选择理由，以及哪些安排可以合并；不写完整课程、不连接平台。可以使用技能中已有参考资料，不要求联网查新资料。\n\nA组已经学过均值、中位数和极差，也理解例子，但离开讲义就常想不起定义和适用条件。B组今天能做对，希望一个月后的工作中仍记得并会用，课程可以在后续几周安排简短复习。C组是刚接触计算的新手，看完整解答时似乎能跟上，自己开始计算就容易乱。D组已经学过三种统计量，别人明确指定方法时都能算，但面对新情境时常不知道该选择哪一种。\n\n请分别说明选择依据，不要把四种情况都安排成一样的刷题。设计建议需要有参考来源，并说明这些来源能支持到什么程度。",
+      "expected_output": "Distinguishes retrieval, spacing, worked-example/problem alternation and mixed-type discrimination practice by their learning goals while allowing compatible combinations.",
+      "files": [],
+      "expectations": [
+        "The four recommendations respond to the actual obstacles: effortful recall for A, delayed revisits for B, supported example study and a transition to solving for C, and choosing among already taught alternatives for D. Equivalent concrete designs are acceptable without exact method wording.",
+        "The response explains that retrieval concerns what learners do, spacing concerns when they revisit, and example/problem alternation concerns the transition between support and independent solving. It allows a delayed retrieval activity to serve compatible goals instead of forcing one exclusive label per group.",
+        "For D, mixed practice is connected to discriminating relevant conditions among learned methods. It is not justified by treating evidence for alternating worked examples and problems as direct proof for arbitrary mixtures of question types or untaught content.",
+        "The teacher-facing explanation cites relevant available sources, distinguishes supported principles from the local design recommendation, and does not promise retention or transfer without later evidence. The response stays within local design scope."
+      ]
+    },
+    {
+      "id": 150,
+      "eval_name": "short-bounded-output-does-not-require-full-project-learning",
+      "prompt": "只在本地设计一个5分钟的入职培训活动，给出活动名称、教学方法建议和理由，不写完整课程、不连接平台。学员已经知道会议决定应写清做什么、谁负责、何时完成。这段唯一目标是把一条含糊记录补成完整决定，最后交出一条可用记录。已确认事实：小李负责整理客户常见问题，周五17点前交到团队共享文档。原记录是“尽快整理一下客户问题”。\n\n我希望活动有实际产出，但没有后续调研、团队协作、真实客户接触或公开展示安排，也没有更长的课时。请按这些条件安排，让活动能在这5分钟内结束，并给出教学选择的参考依据。",
+      "expected_output": "Chooses a proportionate short application or revision activity and does not label a single bounded output as complete project-based learning.",
+      "files": [],
+      "expectations": [
+        "The proposed activity targets completing the one decision record with the supplied task, owner, deadline and destination, and can finish within the stated five-minute boundary.",
+        "The existence of a usable output alone is not treated as evidence that a complete project-based learning design is appropriate or implemented. A task, application or feedback-based revision is acceptable without forcing a particular label.",
+        "The method rationale connects the bounded goal and available conditions to the chosen activity, with a relevant source and a truthful distinction between a short task and the broader requirements of a full project design.",
+        "The response does not add compulsory research, peer collaboration, external users, a public presentation, extra lessons or platform operations to satisfy a method framework. It does not claim observed learning results."
+      ]
+    },
+    {
+      "id": 151,
+      "eval_name": "select-full-project-learning-when-conditions-support-it",
+      "prompt": "只在本地为一个4周的成人培训单元提出教学方法和整体活动设计，说明为什么适合、需要哪些证据及参考来源，不写完整授课提示词，不联网、不连接平台，也不替我们联系任何人。目标是让学员综合运用流程分析、资料调查、方案取舍和表达能力，改善一个真实服务流程。\n\n条件已落实：每位学员可以在获准接触的社区图书角或单位内部服务中自选一个具体问题，自行确定改进方案；真实负责人同意提供现有记录并接受访谈。四周内有持续调查时间，可以尝试方案、收集反馈、修改成果并反思。最终要向负责人和其他学员公开展示可使用的改进成果，解释证据及取舍，课程能够安排两轮指导和修改。请直接使用这些已知条件，不重新调查背景；成果还没有开始制作，当前只有设计。",
+      "expected_output": "Recognizes that the stated goal and available conditions can support a complete project-based learning design, with authentic inquiry, choice, revision and an external audience.",
+      "files": [],
+      "expectations": [
+        "The recommended main approach is justified by integrated performance, a real problem and usable output, learner choice, sustained investigation, reflection, feedback and revision, and the available external audience. A complete project-based design is supported here rather than rejected merely because it is more involved than a short exercise.",
+        "The plan makes investigation, consequential decisions, iterative artifact improvement and the final audience serve the learning goal. It may add targeted instruction or scaffolding where prerequisites or actual obstacles require them without replacing the project with an unrelated fixed lecture sequence.",
+        "The rationale cites a relevant project-design source, such as the framework already linked in the skill, and treats it as support for design criteria rather than proof that this local course has improved learning.",
+        "The response identifies what future artifacts, reasoning, feedback and revisions could provide evidence while preserving the current design-only status. It does not invent completed interviews, learner work, implementation success, audience feedback or platform activity."
+      ]
+    },
+    {
+      "id": 152,
+      "eval_name": "compare-methods-by-the-current-obstacle-with-compatible-support",
+      "prompt": "只在本地为下面三个已有片段选择下一步教学安排，逐一说明依据、值得比较的其他做法及参考来源，不写完整课程、不连接平台。允许后续文字互动，但现在只交付设计建议，不扮演学员，不编造他们的回答。\n\nA：成本模型为总价=100元固定费+每件5元×件数。学员已经独立算出20件200元、30件250元，但解释增加10件为什么只加50元时，只说“照公式算就对了”。目标是理解费用变化的理由。\n\nB：报名通知的准确要求是周五19至20点、A203教室、周四18点前点击报名并填写姓名。学员提交“周五晚来工作坊，点击报名！”后，不知道怎样把它改成可执行的通知；这段目标是完成并改进同一份通知。\n\nC：学员主张“公平就是给每个人完全一样的学习支持”，目前的理由只有“公平本来就该一样”。目标是形成有理由、有条件的判断；随后还要练习向坚持统一支持的经理说明决定，并应对经理的实际追问。经理由教学中的模拟角色承担。\n\n请依据每处实际障碍选择，不要为了每段都用不同方法而增加活动，也不要把能组合的做法硬拆成互斥选项。",
+      "expected_output": "Chooses and compares methods by conceptual explanation, artifact revision and open-judgment obstacles while allowing targeted support and a later communication simulation.",
+      "files": [],
+      "expectations": [
+        "For A, the choice targets the missing explanation of fixed and variable costs rather than repeating a full calculation demonstration merely because the learner is labeled a beginner, or treating two correct numbers as proof of causal understanding. Self-explanation with focused help is one appropriate design.",
+        "For B, the proposal uses the actual draft and confirmed criteria to support a useful revision. It distinguishes feedback on the existing work from a cue for a specific stuck step and allows these supports to be combined rather than requiring a wholly separate method or new artifact.",
+        "For C, the design examines the learner's reasons, meanings or assumptions without forcing one predetermined position, and distinguishes that judgment goal from the later need to respond in an evolving exchange. A case, purposeful questioning and a subsequent role-play may be combined when each serves that goal.",
+        "The comparison explains consequential differences among plausible alternatives, cites relevant skill sources with appropriate limits, and keeps simulated interpersonal practice distinct from real workplace outcomes. It preserves the local design-only scope and does not invent a learner response or platform execution."
+      ]
     }
   ]
 }
