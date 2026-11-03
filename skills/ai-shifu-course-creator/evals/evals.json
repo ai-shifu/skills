@@ -1974,7 +1974,7 @@
         "The response identifies the uncertain prerequisite that can change the lesson's explanation or support: interpreting a percentage and relating the rate to its base. Self-reported past study is treated as indirect rather than sufficient performance evidence.",
         "It either proposes a brief task directly revealing that prerequisite within the allowed interaction, or makes a clearly labeled provisional assumption with an appropriate fallback. It does not infer proficiency or a misconception without evidence.",
         "When a diagnostic is selected, the response explains how different observed results would change the next teaching action; it does not add a general background survey or collect answers that will not affect instruction.",
-        "The arrangement preserves the 10-minute goal and supplied quantities, explains the evidence-based reason for assessing prior knowledge, and makes no platform operation or claim to have received a learner answer."
+        "The arrangement preserves the 10-minute goal and supplied quantities. When a diagnostic is selected, it explains the evidence-based reason for assessing prior knowledge. When a provisional assumption is used, it labels that assumption and explains why the uncertainty matters. It makes no platform operation or claim to have received a learner answer."
       ]
     },
     {
