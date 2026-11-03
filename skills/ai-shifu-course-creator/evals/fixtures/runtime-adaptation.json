@@ -132,7 +132,8 @@
           "id": "complete_independently",
           "message": "不能直接用。原文存在，也支持这 4 名受邀同事觉得快；它没有提供其他顾客的反馈，不能推成所有顾客。可改成“本次内部试用的 4 名受邀同事都反馈新页面加载快，其他顾客的体验尚未核验”。"
         }
-      ]
+      ],
+      "eligibility": "Optional: dispatch only while the frozen authored activity remains open and explicitly permits this transfer task. Otherwise skip these turns and record transfer as not-assessed; never resume a completed lesson."
     },
     {
       "id": "updated_context_new_error",
@@ -170,6 +171,7 @@
     "Empty and irrelevant context use neutral course-appropriate teaching without guessed roles, jazz analogies or new background collection; actual-answer feedback remains available.",
     "The latest background correction supersedes the stale registration context where relevant. The next review recognizes the repaired all-users claim and addresses the newly introduced population-percentage error.",
     "An independent attempt receives no advance answer or unnecessary hints, and its successful conclusion is tied to the submitted evidence. Repeated difficulty changes support or ends within scope; a stop request ends without fabricated completion or mastery.",
-    "Keep evaluator criteria and future turns coordinator-only. Record each completed turn, actual waiting, frozen hashes, model/host/revision and not-assessed evidence. These independent-model sessions are simulations, not platform verification or real learner outcomes."
+    "Keep evaluator criteria and future turns coordinator-only. Record each completed turn, actual waiting, frozen hashes, model/host/revision and not-assessed evidence. These independent-model sessions are simulations, not platform verification or real learner outcomes.",
+    "Follow-up scripts do not reopen completed activities or authorize new tasks. Optional independent transfer is not-assessed if the frozen Prompt does not permit it or has already closed; do not count correct closure as adaptive failure."
   ]
 }

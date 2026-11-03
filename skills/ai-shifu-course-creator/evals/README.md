@@ -173,6 +173,13 @@ for every learner.
    Future inputs remain with the coordinator. An early or missing pause is an
    observed failure; do not synthesize missing learner submissions or silently
    rewrite delivery to restore the intended path.
+   Before dispatching a follow-up, check whether the authored activity has
+   already ended and whether that path permits the requested task. Do not resume
+   a completed lesson or reward an unauthored extension. In particular, the
+   optional independent-transfer script is not assessed when a correct fixed-task
+   answer has already closed the lesson or transfer was not authorized. Record
+   the skipped turns and reason; successful completion of the fixed task remains
+   valid evidence for that task, not transfer to another task.
 4. Compare the six core sessions as the full product of two relevant backgrounds
    and three answers: correct, misconception and incomplete. The backgrounds
    have identical stated prior knowledge and expression preference, so compare
