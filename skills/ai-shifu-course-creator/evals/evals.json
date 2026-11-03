@@ -2028,6 +2028,57 @@
         "For C, the design examines the learner's reasons, meanings or assumptions without forcing one predetermined position, and distinguishes that judgment goal from the later need to respond in an evolving exchange. A case, purposeful questioning and a subsequent role-play may be combined when each serves that goal.",
         "The comparison explains consequential differences among plausible alternatives, cites relevant skill sources with appropriate limits, and keeps simulated interpersonal practice distinct from real workplace outcomes. It preserves the local design-only scope and does not invent a learner response or platform execution."
       ]
+    },
+    {
+      "id": 153,
+      "eval_name": "natural-request-selects-teaching-for-record-writing",
+      "prompt": "我们新来的同事写会议纪要时，常把说得很具体的建议直接记成决定。我想做一个约10分钟的自学练习，让他们能根据会议原话写出已经确定的事项，并把未决事项如实留下。请只在本地写中文 MarkdownFlow 授课提示词，纯文字，可以作答，不连接平台；教法由你选，最后简单说明安排的理由。\n\n材料规则：决定必须有会议明确同意的依据，写清做什么、谁负责、何时完成；已同意事项缺信息时标注待补，不能猜。建议即使有人名和时间，也不等于已同意。\n\n会议甲：小周说“建议小林在周五前给未回复的人发提醒。”主持人说“提醒方案还没定。现在确定的是：小林在周四17点前把报名表去重，发到项目群。”\n\n会议乙：小李说“要不要我周三把常见问题上线？”主持人说“上线还没决定。现在先由小李核对前三条答案，核对结果放到共享文档，截止时间稍后确认。”",
+      "expected_output": "Independently selects and implements teaching that addresses confusing detailed proposals with decisions, with a meaningful writing task and source-grounded feedback.",
+      "files": [],
+      "expectations": [
+        "The chosen teaching actions address the reported confusion between a detailed proposal and an explicit agreement. A concrete contrast, explanation, worked example or another justified approach makes that distinction usable rather than only naming a method.",
+        "The learner attempts a decision record from the supplied material. Recalling field names, reporting confidence or merely selecting a ready-made answer is not treated as demonstrating the requested writing ability.",
+        "The runnable Prompt supplies success criteria and response-dependent feedback grounded in the source. It can distinguish a faithful answer, a proposal mistaken for a decision and incomplete information without assigning the same praise or correction to every response.",
+        "Facts remain faithful: the reminder and launch are unresolved; meeting A confirms deduplication by Xiaolin before Thursday 17:00 and delivery to the project group; meeting B confirms checking three answers by Xiaoli and delivery to the shared document, with its deadline still to be supplied.",
+        "The authoring output makes learner participation executable and does not substitute an invented learner submission for an actual answer. Its design rationale stays outside learner-time instructions and does not claim that the proposed exercise has already improved learning.",
+        "The result respects the local text-only lesson scope without requiring a new questionnaire, per-step approval, companion Course Prompt or platform operation."
+      ]
+    },
+    {
+      "id": 154,
+      "eval_name": "practice-stalls-and-learner-stops-without-mastery",
+      "prompt": "请只在本地写一个约5分钟的中文 MarkdownFlow 自学练习，帮新人练习把通知缩成一句有用的摘要。学员知道摘要要保留与读者当前任务有关的信息，但自己取舍时常卡住。用纯文字，可以让学员作答，教法和帮助方式由你安排，不连接平台。\n\n通知：“图书馆下周一至周五整理书架，一层阅览室每天17点关闭，二层阅览室照常开放。需要晚间自习的同学请前往二层；自助还书和线上续借不受影响。”本次摘要给需要晚间自习的人看，应让他们知道这几天有什么变化、该去哪里。",
+      "followup_turns": [
+        "现在用刚才写的提示词做一次标明为模拟的试讲，我接下来的消息就是模拟学员输入。请开始。",
+        "我不知道该保留什么。",
+        "摘要就是“自助还书和线上续借不受影响”。",
+        "还是不会，我分不清这些信息哪个对晚间自习有用。",
+        "今天先停吧，我不想继续做这道题了。"
+      ],
+      "expected_output": "Responds to actual stalled attempts with proportionate support and honors stopping without inventing a successful revision or demonstrated mastery.",
+      "files": [],
+      "expectations": [
+        "The authored exercise includes an answerable summary task, source-grounded criteria and a usable feedback path. It gives the Teaching Agent a way to handle unresolved difficulty within the lesson scope instead of requiring endless retries until a correct answer appears.",
+        "The initial simulated delivery offers an actual response opportunity and pauses. It does not invent the learner answer or present response-specific feedback before receiving that answer.",
+        "Feedback uses the actual difficulty: the submitted sentence about returning and renewing books omits the evening-study change and destination. Assistance focuses on the relevant closing time and alternative reading room, or another useful cue grounded in the notice.",
+        "Repeated uncertainty leads to a meaningful adjustment in support or a bounded pause or close, rather than recycling the same question indefinitely. A demonstration may be provided, but the agent does not report its own summary as the learner's completed work.",
+        "The explicit final request to stop is honored without another required response, compulsory new task or an insistence on answering correctly first. If the authored exercise has already closed, the request does not restart it.",
+        "The close accurately identifies the unresolved summary-selection difficulty and does not claim independent completion, transfer or mastery from seeing a demonstration. The execution remains a local simulation, not a platform pause/resume test or observed learner-effectiveness study."
+      ]
+    },
+    {
+      "id": 155,
+      "eval_name": "brief-demonstration-preserves-unmet-performance-goal",
+      "prompt": "我希望新人看完后能独立把杂乱会议记录整理成可执行的行动计划：区分提议和决定，提取任务、负责人、期限，识别依赖，并处理缺失信息。但这次只有90秒，全程纯文字、无互动，不能让学员作答、停下来想、点击继续，也没有后续课或作业安排。请直接给我在这些条件下能做的中文 MarkdownFlow 授课提示词，并在提示词外简短说明这个版本能达到什么程度。只做本地设计，不连接平台。\n\n只用这些材料：决定必须有明确同意依据；提议记为未决；已同意任务缺信息则标注待补，不能猜；只有原文明确说明的先后条件才能写成依赖。\n\n会议原话：小周说“建议周三前发出报名通知，小李来发？”主持人说“通知还没决定。现在确定：小林在周二12点前核对活动地点，把结果放到共享文档。小陈拿到核对结果后再确认场地布置，布置确认的期限稍后补。”",
+      "expected_output": "Provides a feasible short demonstration while explicitly retaining the broader independent-performance goal as unverified under the fixed delivery constraints.",
+      "files": [],
+      "expectations": [
+        "The teacher-facing explanation explicitly identifies the gap between the desired independent multistep performance and what a 90-second non-interactive demonstration can provide or verify. It does not silently relabel the original goal as merely recognizing terms and then claim the original goal is met.",
+        "The delivered lesson provides a concise, executable explanation or worked demonstration using the supplied meeting. It preserves the undecided notice, Xiaolin's location check and Tuesday noon deadline, the shared-document destination, Xiaocheng's dependency on the result and the unresolved layout-confirmation deadline.",
+        "The response preserves the fixed text-only, non-interactive, 90-second design scope. It does not add learner questions, reflection pauses, continue controls, slides, a mandatory background intake or an approval gate before delivering the feasible content.",
+        "The explanation identifies the missing opportunity or evidence for independent performance, such as applying the criteria to another record and receiving feedback, without presenting that practice as an already scheduled lesson, assignment or reminder.",
+        "The response does not claim observed mastery, actual duration measurement, completed learner work or platform verification. It distinguishes the authored demonstration from evidence that a learner can independently execute the full process."
+      ]
     }
   ]
 }

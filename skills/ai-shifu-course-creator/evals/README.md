@@ -108,6 +108,31 @@ listed follow-ups as separate turns; case 136 is an authoring-boundary case.
 Keep future learner inputs and all evaluator fields outside the executor
 context under the protocol above.
 
+### Natural Requests and Unfinished Learning
+
+Cases 153–155 supplement the more prescriptive activity regressions with
+requests that leave teaching decisions to the skill and with unsuccessful
+learning paths:
+
+| Case | What to inspect |
+| --- | --- |
+| 153 | A natural request for meeting-record practice; inspect the chosen teaching actions, actual writing task, success criteria and feedback without supplying those decisions in the teacher request. |
+| 154 | A self-study exercise followed by uncertainty, an irrelevant summary, continued difficulty and a request to stop; inspect support, non-achievement closure and truthful evidence. |
+| 155 | An independent multistep performance goal under a fixed 90-second non-interactive limit; inspect the feasible demonstration and the unresolved gap without silently changing the goal or constraints. |
+
+Run case 154's follow-ups as separate turns, withholding future learner inputs
+and evaluator criteria. Follow the authored activity rather than redesigning
+it during simulation to rescue a missing feedback or stopping path. A useful
+bounded close may occur before the final follow-up; do not require extra
+attempts merely to consume the messages or treat a later stop request as
+permission to restart the activity. Inspect both the authored instructions and
+the actual handling of the supplied responses.
+
+For revision comparisons, retain the same inputs and execution setup and judge
+the resulting teaching behavior, not method-name variety or a fixed interaction
+count. These scenarios do not establish real learner outcomes; recording them
+here also does not establish that they have been run.
+
 Record scenario additions, static validation and completed behavioral runs as
 separate results. For revision comparisons, report each case and turn actually
 executed, observed failures and not-assessed criteria; adding these cases or
