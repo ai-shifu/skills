@@ -2098,11 +2098,11 @@
       "id": 157,
       "eval_name": "course-prompt-permits-authored-motion-and-controls",
       "prompt": "只在本地生成《流程与排队》完整中文课程提示词，不改已有授课提示词，不连接平台。课程作者姓名为空，受众是初学者，标准 AI 一对一自学，不按个人背景适配；目标是理解流程状态变化以及到达和服务速率怎样影响队列。\n\n已有课节安排已确认：第一节用幻灯片自动依次高亮接单、分流、处理三个状态并演示流转，不需要学员点击。第二节生成实验幻灯片，允许页内调速率、播放、暂停和重置；页面不回传课程答案。第三节只有文字和正式课程单选题，选项通过课程答题控件提交，不加任何视觉。各课节的具体内容、顺序和行为由已有授课提示词决定，本次只写课程层面统一规则。",
-      "expected_output": "Materializes the Course Prompt with uniform slide rules that allow authored animation and experiment controls while preserving real course answer collection and lesson ownership.",
+      "expected_output": "Materializes uniform Course Prompt rules without repeating slide-generation capability guidance, preserving lesson ownership and restricting only course question option labels.",
       "files": [],
       "expectations": [
         "The Course Prompt retains the six localized template sections and fills the supplied topic, goal, audience, one-on-one delivery and uniform non-personalized baseline, omitting the empty named role item and unresolved placeholders.",
-        "General slide rules permit interaction and animation specified by the Teaching Prompt, including experimental controls. No blanket ban on in-slide interactivity, mandatory click to advance every animation, static-only requirement or extra capability-approval gate blocks the confirmed lesson behavior.",
+        "The Course Prompt relies on its existing rule to follow each Teaching Prompt without adding a slide interaction or animation capability reminder or repeating instructions for controls, triggers, state changes or motion. The existing non-interactive label restriction applies only to course question option labels and does not prohibit experimental controls.",
         "The current-message visual-request gate, selected slide-text relationship and narration constraints remain represented. The text-only third lesson does not acquire visuals; specific states, rates, lesson numbers and playback sequences remain owned by the existing Teaching Prompts rather than being copied into the Course Prompt.",
         "Course question option labels on a slide do not become competing answer controls, while requested experiment controls remain usable. The artifact does not claim page-local operations are submitted course answers or enter course memory automatically.",
         "No Teaching Prompt rewrite, background intake, unselected classroom mode, platform operation or claim of generated or tested slides is introduced."
