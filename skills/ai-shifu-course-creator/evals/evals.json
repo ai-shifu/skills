@@ -2079,6 +2079,34 @@
         "The explanation identifies the missing opportunity or evidence for independent performance, such as applying the criteria to another record and receiving feedback, without presenting that practice as an already scheduled lesson, assignment or reminder.",
         "The response does not claim observed mastery, actual duration measurement, completed learner work or platform verification. It distinguishes the authored demonstration from evidence that a learner can independently execute the full process."
       ]
+    },
+    {
+      "id": 156,
+      "eval_name": "generated-slide-supports-interactive-experiment",
+      "prompt": "只在本地写一段中文 MarkdownFlow 授课提示词，不连接平台，也不实际生成或运行幻灯片。目标和材料都已确认，直接交付：让学习者用一张 AI 师傅生成的实验幻灯片看懂为什么服务窗口一直忙，队伍还会变长。希望学员能在幻灯片内自己调到达速率和服务速率，让过程动起来，并能停下来比较、重新开始；只在页内探索，不另加文字问答或提交。\n\n模型：从空队列开始，到达与服务按固定速率连续计算，队列长度不小于零，不考虑随机波动；初始每分钟到达5人、服务6人。要能比较到达低于服务、到达高于服务和提高服务速率的效果。页内操作没有回传课程的接口。",
+      "expected_output": "Directly authors slide-generation instructions with useful in-slide controls and model-grounded animation while preserving page-only exploration and evidence boundaries.",
+      "files": [],
+      "expectations": [
+        "The Teaching Prompt explicitly requests an AI-Shifu-generated interactive experimental slide. It does not reduce the task to a static diagram or require the teacher to supply a prebuilt HTML page, separate image or custom event bridge before authoring it.",
+        "Instructions specify usable rate controls, meaningful values and units, initial state, playback, pause or inspection, and reset behavior. State after changing a rate is defined so the displayed queue follows the fixed-rate model without an inconsistent history.",
+        "Displayed motion and quantities follow the supplied model and make the requested comparisons visible. Queue length remains nonnegative; the Prompt does not invent random variation, ungrounded experimental results or a claim that busy service always implies a shrinking queue.",
+        "The result has useful source-only block comments with all executable instructions outside them, adds no separate course response or submission, and does not infer learner actions, observations or memory updates from page-local controls.",
+        "The response distinguishes authored behavior from generated or tested behavior and makes no claim of observed learner understanding. It adds no background questionnaire, Course Prompt, platform operation or unrelated course redesign."
+      ]
+    },
+    {
+      "id": 157,
+      "eval_name": "course-prompt-permits-authored-motion-and-controls",
+      "prompt": "只在本地生成《流程与排队》完整中文课程提示词，不改已有授课提示词，不连接平台。课程作者姓名为空，受众是初学者，标准 AI 一对一自学，不按个人背景适配；目标是理解流程状态变化以及到达和服务速率怎样影响队列。\n\n已有课节安排已确认：第一节用幻灯片自动依次高亮接单、分流、处理三个状态并演示流转，不需要学员点击。第二节生成实验幻灯片，允许页内调速率、播放、暂停和重置；页面不回传课程答案。第三节只有文字和正式课程单选题，选项通过课程答题控件提交，不加任何视觉。各课节的具体内容、顺序和行为由已有授课提示词决定，本次只写课程层面统一规则。",
+      "expected_output": "Materializes the Course Prompt with uniform slide rules that allow authored animation and experiment controls while preserving real course answer collection and lesson ownership.",
+      "files": [],
+      "expectations": [
+        "The Course Prompt retains the six localized template sections and fills the supplied topic, goal, audience, one-on-one delivery and uniform non-personalized baseline, omitting the empty named role item and unresolved placeholders.",
+        "General slide rules permit interaction and animation specified by the Teaching Prompt, including experimental controls. No blanket ban on in-slide interactivity, mandatory click to advance every animation, static-only requirement or extra capability-approval gate blocks the confirmed lesson behavior.",
+        "The current-message visual-request gate, selected slide-text relationship and narration constraints remain represented. The text-only third lesson does not acquire visuals; specific states, rates, lesson numbers and playback sequences remain owned by the existing Teaching Prompts rather than being copied into the Course Prompt.",
+        "Course question option labels on a slide do not become competing answer controls, while requested experiment controls remain usable. The artifact does not claim page-local operations are submitted course answers or enter course memory automatically.",
+        "No Teaching Prompt rewrite, background intake, unselected classroom mode, platform operation or claim of generated or tested slides is introduced."
+      ]
     }
   ]
 }
