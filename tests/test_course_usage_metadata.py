@@ -39,6 +39,14 @@ INSTINCT_RUNTIME_MARKERS = (
     "INSTINCT_OUTER_TOOL_USE_STARTED_AT",
     "INSTINCT_OUTER_TOOL_USE_TIMEOUT_SECONDS",
 )
+ADDITIONAL_CLI_RUNTIME_MARKERS = (
+    ("QWEN_CODE", "qwen-code", "Qwen Code"),
+    ("ROO_ACTIVE", "roo-code", "Roo Code"),
+    ("ROO_CLI_RUNTIME", "roo-code", "Roo Code"),
+    ("CLINE_WRAPPER_PATH", "cline", "Cline"),
+    ("COPILOT_CLI", "github-copilot", "GitHub Copilot CLI"),
+    ("COPILOT_AGENT_SESSION_ID", "github-copilot", "GitHub Copilot CLI"),
+)
 
 
 class CallerDetectionTests(unittest.TestCase):
@@ -63,7 +71,9 @@ class CallerDetectionTests(unittest.TestCase):
             "doubao-work": "Doubao Work",
             "kimi": "Kimi Code",
             "grok-build": "Grok Build",
+            "qwen-code": "Qwen Code",
             "gemini-cli": "Gemini CLI",
+            "roo-code": "Roo Code",
             "cline": "Cline",
             "antigravity": "Antigravity",
             "augment-cli": "Augment CLI",
@@ -73,7 +83,7 @@ class CallerDetectionTests(unittest.TestCase):
             "pi": "Pi",
             "cowork": "Claude Cowork",
             "kiro": "Kiro",
-            "github-copilot": "GitHub Copilot",
+            "github-copilot": "GitHub Copilot CLI",
             "replit": "Replit",
             "devin": "Devin",
             "instinct": "Instinct",
@@ -123,6 +133,57 @@ class CallerDetectionTests(unittest.TestCase):
         self.assertEqual(cli._detect_caller_agent({
             "SAND_AGENT": "1", "CURSOR_AGENT": "1", "HERMES_SESSION_ID": "1",
         }), "hermes-agent")
+
+    def test_additional_cli_markers_require_complete_names_and_nonempty_values(self):
+        for marker, family, _name in ADDITIONAL_CLI_RUNTIME_MARKERS:
+            with self.subTest(marker=marker):
+                self.assertEqual(cli._detect_caller_agent({marker: ""}), "unknown")
+                self.assertEqual(cli._detect_caller_agent({f"{marker}_CONFIG": "1"}), "unknown")
+                for value in ("0", "false", " ", "private-cli-session\r\nInjected: value"):
+                    with self.subTest(value=value):
+                        self.assertEqual(cli._detect_caller_agent({marker: value}), family)
+                self.assertEqual(cli._detect_caller_agent({
+                    "AI_AGENT": "unregistered", "AGENT": "codex", marker: "1",
+                }), "unknown")
+
+    def test_additional_cli_markers_preserve_runtime_priority(self):
+        cases = (
+            ({"GROK_PLUGIN_ROOT": "1", "QWEN_CODE": "1"}, "grok-build"),
+            ({"QWEN_CODE": "1", "GEMINI_CLI": "1"}, "qwen-code"),
+            ({"GEMINI_CLI": "1", "ROO_ACTIVE": "1"}, "gemini-cli"),
+            ({"ROO_ACTIVE": "1", "CLINE_ACTIVE": "1"}, "roo-code"),
+            ({"ROO_CLI_RUNTIME": "1", "CLINE_WRAPPER_PATH": "1"}, "roo-code"),
+            ({"CLINE_WRAPPER_PATH": "1", "CODEX_THREAD_ID": "1"}, "cline"),
+            ({"CODEX_THREAD_ID": "1", "COPILOT_CLI": "1"}, "codex"),
+            ({"CURSOR_AGENT": "1", "COPILOT_AGENT_SESSION_ID": "1"}, "cursor-cli"),
+            ({"COPILOT_CLI": "1", "AGENT_CONTEXT_OUT": "1"}, "github-copilot"),
+            ({"COPILOT_AGENT_SESSION_ID": "1", "COPILOT_MODEL": "hint"}, "github-copilot"),
+        )
+        for environment, expected in cases:
+            with self.subTest(environment=environment):
+                self.assertEqual(cli._detect_caller_agent(environment), expected)
+
+    def test_versioned_declarations_resolve_known_names_and_block_fallback(self):
+        for key, declaration, expected in (
+            ("AI_AGENT", " \tQWEN-CODE@1.2.3+private-build\r\n", "qwen-code"),
+            ("AGENT", "ROO-CODE@nightly", "roo-code"),
+            ("AI_AGENT", "codex_cli@0.10.0", "codex"),
+            ("AGENT", "claude-code_2-1-205_agent", "claude-code"),
+            ("AI_AGENT", "CLAUDE-CODE_2-1-205_HARNESS", "claude-code"),
+        ):
+            with self.subTest(key=key, declaration=declaration):
+                self.assertEqual(cli._detect_caller_agent({
+                    key: declaration, "QWEN_CODE": "1", "CURSOR_AGENT": "1",
+                }), expected)
+        for declaration in (
+            "qwen-code@", "roo-code@v1 trailing", "unregistered@1.0",
+            "claude_code_2-1-205_agent", "claude-code_2-1-205_console",
+            "qwen-code@private\nInjected: value",
+        ):
+            with self.subTest(declaration=declaration):
+                self.assertEqual(cli._detect_caller_agent({
+                    "AI_AGENT": declaration, "AGENT": "codex@0.10.0", "QWEN_CODE": "1",
+                }), "unknown")
 
     def test_cue_devin_and_lingguang_runtime_markers_use_nonempty_values(self):
         for marker, family in (
@@ -356,7 +417,7 @@ class UsageTransportTests(unittest.TestCase):
             ({"SAND_AGENT": "1", "CURSOR_AGENT": "1", "HERMES_AGENT": "1"}, "hermes-agent", "Hermes Agent"),
             ({"AI_AGENT": "unknown-declaration", "CODEX_THREAD_ID": "1"}, "unknown", "Unknown Agent"),
             ({"COPILOT_MODEL": "synthetic-model"}, "unknown", "Unknown Agent"),
-            ({"AI_AGENT": " GITHUB-COPILOT "}, "github-copilot", "GitHub Copilot"),
+            ({"AI_AGENT": " GITHUB-COPILOT "}, "github-copilot", "GitHub Copilot CLI"),
             ({"CODEX_THREAD_ID": ""}, "unknown", "Unknown Agent"),
             ({"VTCODE": "0"}, "vtcode", "VT Code"),
             ({"MANUS_LONG_DESKTOP_WORKER": "false"}, "cue", "Cue"),
@@ -454,6 +515,50 @@ class UsageTransportTests(unittest.TestCase):
                 captured = repr(self.captured_requests())
                 self.assertNotIn("private-deepseek", captured)
                 self.assertNotIn("Injected", captured)
+                for marker in environment:
+                    self.assertNotIn(marker, captured)
+                self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
+
+    def test_upgraded_cli_attribution_is_bounded_on_all_business_transports(self):
+        private_value = "private-upgraded-cli\r\nInjected: value"
+        cases = [
+            ({marker: private_value}, family, name)
+            for marker, family, name in ADDITIONAL_CLI_RUNTIME_MARKERS
+        ]
+        cases.extend((
+            ({marker: "" for marker, _family, _name in ADDITIONAL_CLI_RUNTIME_MARKERS}, "unknown", "Unknown Agent"),
+            ({f"{marker}_CONFIG": private_value for marker, _family, _name in ADDITIONAL_CLI_RUNTIME_MARKERS}, "unknown", "Unknown Agent"),
+            ({"QWEN_CODE": private_value, "GEMINI_CLI": "1"}, "qwen-code", "Qwen Code"),
+            ({"ROO_ACTIVE": private_value, "CLINE_ACTIVE": "1"}, "roo-code", "Roo Code"),
+            ({"COPILOT_CLI": private_value, "AGENT_CONTEXT_OUT": "1"}, "github-copilot", "GitHub Copilot CLI"),
+            ({"AI_AGENT": "unregistered", "AGENT": "codex", "COPILOT_CLI": private_value}, "unknown", "Unknown Agent"),
+            ({"AI_AGENT": " QWEN-CODE@9.8.765+private-build ", "CURSOR_AGENT": "1"}, "qwen-code", "Qwen Code"),
+            ({"AGENT": "roo-code@private-nightly"}, "roo-code", "Roo Code"),
+            ({"AI_AGENT": "codex_cli@9.8.765+private-build"}, "codex", "Codex"),
+            ({"AGENT": "claude-code_9-8-765_agent"}, "claude-code", "Claude Code"),
+            ({"AI_AGENT": "CLAUDE-CODE_9-8-765_HARNESS"}, "claude-code", "Claude Code"),
+            ({"AI_AGENT": "qwen-code@", "AGENT": "codex", "QWEN_CODE": private_value}, "unknown", "Unknown Agent"),
+            ({"AI_AGENT": "unregistered@private-version", "AGENT": "codex", "ROO_ACTIVE": private_value}, "unknown", "Unknown Agent"),
+        ))
+        for environment, family, name in cases:
+            with self.subTest(environment=environment):
+                os.environ.clear()
+                os.environ.update(environment)
+                self.get.reset_mock()
+                self.post.reset_mock()
+                with mock.patch.object(cli, "cmd_list", side_effect=self.all_business_transports):
+                    self.run_cli("list")
+                self.assert_usage_headers({
+                    **EXPECTED_METADATA,
+                    "X-AI-Shifu-Caller-Agent": family,
+                    "X-AI-Shifu-Caller-Agent-Name": name,
+                })
+                captured = repr(self.captured_requests())
+                for private_fragment in (
+                    "private-upgraded-cli", "Injected", "private-build", "private-nightly",
+                    "private-version", "9.8.765", "9-8-765", "_agent", "_HARNESS",
+                ):
+                    self.assertNotIn(private_fragment, captured)
                 for marker in environment:
                     self.assertNotIn(marker, captured)
                 self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
