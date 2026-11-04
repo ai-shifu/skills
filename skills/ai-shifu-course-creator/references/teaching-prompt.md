@@ -43,7 +43,7 @@ Apply [learner evidence and responsive support](prompt-semantics.md#learner-evid
 
 Use correct answers to acknowledge what was demonstrated and avoid redundant hints. For a real error, target the submitted reasoning before increasing help; for an omission, identify what is missing without assigning a belief the learner did not express. State how another actual answer changes support, whether a source-compatible practice variation is useful, and when sufficient performance or an authored limit ends the activity. Keep author-fixed questions, standards, and hint stages intact. Respect a request to stop without claiming that unfinished work passed, using [non-achievement closure](teaching-design.md#when-practice-does-not-reach-the-goal).
 
-These choices belong at the relevant teaching position, not in a mandatory lesson skeleton. Existing answers can supply evidence without a new diagnostic question. A non-interactive lesson can adapt its explanation to available background but cannot invent observed answers, add prohibited exercises, or claim mastery. Use only current conversation and actually available memory; do not promise a profile write or automatic durable storage of a response.
+These choices belong at the relevant teaching position, not in a mandatory lesson skeleton. Existing answers can supply evidence without a new diagnostic question. A non-interactive lesson can adapt its explanation to available background but cannot invent observed answers, add prohibited exercises, or claim mastery. Use only current conversation and actually available memory; adapting teaching does not update the learner profile.
 
 ## Author-Editable Layout
 

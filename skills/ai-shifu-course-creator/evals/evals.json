@@ -96,14 +96,14 @@
     },
     {
       "id": 9,
-      "prompt": "设计两节课：第一节先让学员选 A 或 B，并立刻给出对应解释，这个答案后面不再用于教学；另用命名回答收集一个学习目标，供当前课程第二节和课程提示词在可用记忆中复用，而且课程提示词可能在目标填写前先运行。普通回答可用于当前可见课时对话，不要假设所有输入都会跨课时持久或带来其他课程历史。请展示两种交互写法、第二节如何读取当前课程可用的目标，以及目标尚未填写或因记忆预算未提供时的处理；不要另起程序变量名、读取替换占位符或额外中间表。",
-      "expected_output": "Uses an actual current-conversation answer for immediate feedback and a named current-course goal for bounded later reuse, with an unavailable-memory fallback.",
+      "prompt": "设计两节课：第一节先让学员选 A 或 B，并立刻给出对应解释，这个答案后面不再用于教学；另问一个学习目标，第二节和课程提示词都要用到，而且课程提示词可能在目标填写前先运行。所有课程输入会自动进入 memory，整门课任何地方均可使用。请展示两种交互写法、第二节如何从 memory 读取学习目标，以及目标尚未填写时的处理；不要要求另起程序变量名、读取替换占位符、单独保存或额外中间表。",
+      "expected_output": "Uses automatic course-wide memory for both immediate feedback and cross-lesson reuse, with a grounded fallback before the learning goal is available.",
       "files": [],
       "expectations": [
-        "The A/B interaction uses valid ?[...] syntax and waits for the actual answer before immediate feedback in the current conversation; it does not promise that an ordinary unnamed answer becomes permanently available across lessons or courses.",
-        "The learning-goal interaction uses the canonical named-answer form for current-course reuse. Later lesson and Course Prompt instructions read the actual available goal without a separate programmatic key, substitution placeholder or state table; a named answer is not a guarantee of unlimited model-visible memory.",
-        "When the learning goal is unavailable before collection or omitted from model-visible memory, the Course Prompt uses a neutral course-appropriate fallback without inventing a goal, reading other-course history or adding a question outside the approved design.",
-        "It preserves both distinct teaching purposes and their order, differentiates current-conversation evidence from named current-course memory, and does not claim automatic global-profile writeback or universal persistence."
+        "The A/B interaction uses valid ?[...] syntax and waits for the actual answer before its immediate feedback; the fact that no later teaching action uses the answer does not exclude it from automatic memory.",
+        "The learning-goal input automatically enters memory and is available to the later lesson and Course Prompt. Their ordinary instructions read the relevant actual goal without requiring a separate programmatic key, substitution placeholder, explicit save action, or state table.",
+        "When the learning goal is unavailable before collection, the Course Prompt uses neutral course-appropriate defaults, without inventing a goal or asking an extra question outside the approved design.",
+        "It preserves both distinct teaching purposes and their order, without replacing automatic memory with a manually maintained list of permitted inputs or destinations."
       ]
     },
     {
@@ -1327,26 +1327,26 @@
     },
     {
       "id": 107,
-      "prompt": "只写一个本地授课提示词片段，不连接平台；目标环境已支持自然语言发起互动。我想让互动选项根据当时的对话动态生成，不要现在替学习者写死选项。教学情境是：学习者已经在当前课时对话中描述了一次沟通困难，这段实际回答当前可见。请用自然语言要求授课智能体结合这段实际回答，发起一次单选互动，让学习者选择下一步最想练习的沟通动作；届时生成三个具体、互不重复的行动选项，并允许自行补充。等实际作答后，围绕所选或补充的行动给出一条可执行的练习建议。答案只用于当前课时的实际反馈，不要求跨课时持久，不新增背景采集、开场、总结或幻灯片。每个教学块前写中文 HTML 说明注释。",
+      "prompt": "只写一个本地授课提示词片段，不连接平台；目标环境已支持自然语言发起互动。我想让互动选项根据当时的对话动态生成，不要现在替学习者写死选项。教学情境是：学习者已经在本课描述了一次沟通困难。请用自然语言要求授课智能体结合这段实际回答，发起一次单选互动，让学习者选择下一步最想练习的沟通动作；届时生成三个具体、互不重复的行动选项，并允许自行补充。等实际作答后，围绕所选或补充的行动给出一条可执行的练习建议。答案只用于本课，由运行时自动进入 memory，不新增背景采集、开场、总结或幻灯片。每个教学块前写中文 HTML 说明注释。",
       "expected_output": "Authors a natural-language interaction that generates contextual choices at learner time and waits for the actual answer before giving feedback.",
       "files": [],
       "expectations": [
         "The Teaching Prompt instructs the Teaching Agent in ordinary natural language to initiate a real single-select interaction using the learner's actual earlier description in this lesson, generate three concrete distinct action options at learner time, and allow a custom text answer.",
         "It retains the dynamic generation request rather than enumerating a fixed option list, wrapping generation instructions inside ?[], or requiring a prewritten question and control. It does not introduce a new parser token or conditional syntax.",
         "It explicitly waits for the learner's actual selection or custom answer before giving one actionable practice suggestion related to that answer. It does not fabricate the prior description, the options the learner will see, or the answer.",
-        "The actual prior description is available in the current conversation and the new answer is used after submission. Immediate feedback requires no separate programmatic key, substitution placeholder, explicit save step or state table; it does not promise automatic availability in later lessons or other courses. Generation and feedback instructions remain outside comments and deterministic blocks.",
+        "The actual prior description and new answer are available through automatic memory; no separate programmatic key, substitution placeholder, explicit save step, or state table is required. The requested generation and feedback instructions remain executable outside explanatory comments and deterministic blocks.",
         "It preserves the local-only scope, adds none of the prohibited teaching actions or platform calls, and does not claim that a live interaction, generated options, or pause/resume behavior has been verified."
       ]
     },
     {
       "id": 108,
-      "prompt": "只在本地改写下面的授课提示词片段，不访问平台；目标环境已经支持自然语言发起互动。第一个互动必须保留：问学习者“想先练哪项核验能力？”，紧接 ?[核验来源 | 核对计算]，措辞、顺序和单选不能变。第二个互动不要预设选项：根据第一个互动在当前课时对话中的实际回答和接下来讨论的核验案例，用自然语言要求授课智能体动态生成二至四个适合该案例的练习任务，让学习者多选，不允许自填；等本次真实作答后，逐项给出第一步建议。后续课节希望复用这两次选择，但只能在届时模型上下文确实提供了当前课程的已保存值时使用，未提供则按中性课程安排继续；不保证无命名前缀的普通回答跨课时持久，不因为作者希望后续复用就额外写入记忆。学员此前可能选过其它练习任务，必须等待本次真实作答，不能提前拿旧答案继续。不要添加教学环节、采集新背景、记忆写入动作、生成配套课程提示词或改平台；添加中文教学块说明注释。",
-      "expected_output": "Combines an unchanged fixed control with dynamic multi-select teaching and current-answer feedback, using later current-course values only when actually provided.",
+      "prompt": "只在本地改写下面的授课提示词片段，不访问平台；目标环境已经支持自然语言发起互动，所有课程输入会自动进入 memory。第一个互动必须保留：问学习者“想先练哪项核验能力？”，紧接 ?[核验来源 | 核对计算]，措辞、顺序和单选不能变，后续课节会从 memory 读取这次选择。第二个互动不要预设选项：根据第一个互动的实际回答和接下来讨论的核验案例，用自然语言要求授课智能体动态生成二至四个适合该案例的练习任务，让学习者多选，不允许自填；等本次真实作答后，根据 memory 中这次实际选择逐项给出第一步建议，后续课节也会使用它。学员此前可能选过其它练习任务，必须使用本次真实作答，不能提前拿旧答案继续。不要添加教学环节、采集新背景、生成配套课程提示词或改平台；添加中文教学块说明注释。",
+      "expected_output": "Combines an unchanged fixed control with dynamic multi-select teaching that waits for the current answer and reuses actual course inputs through automatic memory.",
       "files": [],
       "expectations": [
-        "The first question and standalone control ?[核验来源 | 核对计算] remain unchanged in wording, order and single-select mode. Later lessons may reuse an actually supplied saved current-course value; the artifact does not silently rewrite the fixed control or promise ordinary-answer persistence.",
+        "The first question and standalone control ?[核验来源 | 核对计算] remain unchanged in wording, order, and single-select mode; later lessons can read the actual selection from memory without altering the control.",
         "The second interaction is an ordinary natural-language instruction to generate two to four suitable practice tasks at learner time from the first actual answer and the current case, allow multiple selections, and disallow custom input. It does not precompute the choices or rewrite the first control as dynamic.",
-        "The first answer is available in the current conversation for the dynamic task, and feedback reads the actual current selection rather than a previous task choice. Later reuse is conditional on the host actually providing saved current-course information, with a neutral unavailable-value fallback. The author's wish to reuse is not a learner explicit memory request and authorizes no added write, new key, global-profile update or unlimited history.",
+        "Both actual responses automatically enter course-wide memory and remain usable later. The second interaction requires no separate programmatic key, substitution placeholder, explicit save step, or state table, and its feedback reads the current selection rather than a previous task choice.",
         "The Teaching Agent waits for the real second answer before giving a first-step suggestion for each selected task, without inventing answers, using stale answers, or adding another collection to obtain the response again.",
         "The output keeps both interactions and their intended response behavior executable outside comments and deterministic markers, adds no authoring schema or prohibited teaching or platform action, and makes no live-runtime verification claim."
       ]
@@ -1366,13 +1366,13 @@
     },
     {
       "id": 110,
-      "prompt": "只写本地、纯文字的第三节授课提示词片段，不连接平台。当前课程可用记忆已包含前两节的相关信息：通过命名回答记录的跨部门交接延误和“先核对接收人”的选择，以及学员已实际说“请记住，消息已发出但无人确认”后保留的补充；后来学员又实际要求“请把刚才的记忆更正为接收人已确认，但遗漏了截止时间”。这些明确请求来自学员，不是课程作者替学员授权。这些信息是本次实际提供的当前课程记忆，不是所有普通聊天或其他课程历史自动可见。第三节目标是把先前交接问题改写为包含行动、负责人和截止时间的一条记录。请读取相关可用记忆，使用最后更正后的实际情况展开这一个教学动作；若某项未提供或因预算不可用，保留未知，不伪造已读完整历史。不要再次采集背景，不要把可用记忆误限定为控件回答，不要另起程序变量名、读取替换占位符或额外中间表。不能编造学员未提供的负责人和日期；需要这些具体事实时保留待确认项，不新增互动或其它教学动作。每块前添加中文 HTML 学习结果导航注释。",
-      "expected_output": "Uses available named answers and explicitly remembered corrections from the current course while honoring unknown facts and memory limits.",
+      "prompt": "只写本地、纯文字的第三节授课提示词片段，不连接平台。前两节里学员已经通过普通聊天描述了跨部门交接延误，单选时选了“先核对接收人”，又在自填补充中说明“消息已发出但无人确认”，随后主动更正为“接收人已确认，但遗漏了截止时间”。所有课程输入自动进入 memory。第三节目标是把先前交接问题改写为包含行动、负责人和截止时间的一条记录。请从 memory 读取相关输入，使用最后更正后的实际情况展开这一个教学动作；不要再次采集背景，不要把输入限定为控件回答，不要要求另起程序变量名、读取替换占位符、单独保存、手工摘要或中间表。不能编造学员未提供的负责人和日期；需要这些具体事实时保留待确认项，不新增互动或其它教学动作。每块前添加中文 HTML 学习结果导航注释。",
+      "expected_output": "Uses all kinds of actual course input from automatic memory across lessons while honoring corrections, missing facts, and the approved teaching scope.",
       "files": [],
       "expectations": [
-        "The Teaching Prompt uses the supplied available current-course memory from named answers and the learner's actual explicit memory request and correction. Author instructions alone are not learner authorization to save unnamed answers. It does not reduce usable evidence to control answers or claim that every ordinary chat, other-course error or historical mastery is automatically visible.",
+        "The Teaching Prompt reads relevant memory from ordinary chat, the fixed single-select response, custom input, and the later unsolicited correction. All course inputs are automatically remembered; access is not restricted to approved fields, control answers, selected lessons, or manually saved summaries.",
         "The later lesson uses the latest actual correction: the recipient confirmed but the deadline was omitted. It does not revive the older unconfirmed-message account or fabricate an extra learner response.",
-        "Current-course memory is used only when actually supplied to the model. Budget-related omission or unavailable information remains unknown; no complete-history retrieval, separate programmatic key, substitution placeholder, global-profile writeback or unnecessary state table is promised.",
+        "Memory is available throughout the course without a separate programmatic key, substitution placeholder, explicit save action, manual summary, state table, or new platform operation.",
         "It preserves the one approved action of rewriting the handoff record with action, owner, and deadline. Unknown owner and date remain to-be-confirmed facts rather than invented details; it adds no background question or new teaching action.",
         "The executable memory-reading and teaching instructions remain outside HTML comments and deterministic blocks; comments describe immediate learning results. The response makes no claim that live memory retrieval or learner-time behavior has been tested."
       ]
@@ -1417,7 +1417,7 @@
     },
     {
       "id": 114,
-      "prompt": "只在本地写六个独立授课提示词片段，不连接平台；每块前加中文 HTML 学习结果导航注释。前五块按以下问题和模式新生成显式互动控件，问题措辞不能改：A 单选“你想先练哪项核验能力？”，选项依次为“核验来源”“核对计算”；B 多选“你想练哪些核验能力？”，选项同 A；C 自填“最近一次核验遇到了什么困难？”，提示“请描述实际困难”；D 单选并允许自填“你最常核验什么来源？”，选项依次为“同事消息”“外部网页”，自填提示“其他来源”；E 多选并允许自填“你常核验哪些来源？”，选项和提示同 D。各题等待真实回答后给一句简短反馈，不增加教学动作。F 只生成一个显示“Continue”的继续按钮，不是问题，不收集背景。前五项用完整问题前缀关联命名回答，供当前课程在实际可用记忆中复用；不保证普通未命名回答或所有历史跨课时持久，也不另建变量表。",
+      "prompt": "只在本地写六个独立授课提示词片段，不连接平台；每块前加中文 HTML 学习结果导航注释。前五块按以下问题和模式新生成显式互动控件，问题措辞不能改：A 单选“你想先练哪项核验能力？”，选项依次为“核验来源”“核对计算”；B 多选“你想练哪些核验能力？”，选项同 A；C 自填“最近一次核验遇到了什么困难？”，提示“请描述实际困难”；D 单选并允许自填“你最常核验什么来源？”，选项依次为“同事消息”“外部网页”，自填提示“其他来源”；E 多选并允许自填“你常核验哪些来源？”，选项和提示同 D。各题等待真实回答后给一句简短反馈，不增加教学动作。F 只生成一个显示“Continue”的继续按钮，不是问题，不收集背景。答案自动进入课内 memory，不另建变量表或保存步骤。",
       "expected_output": "Uses each complete authored question as the prefix of every newly generated response control while keeping an action-only navigation button simple.",
       "files": [],
       "expectations": [
@@ -1425,20 +1425,20 @@
         "C retains the full question and uses exactly ?[ {{最近一次核验遇到了什么困难？}} ...请描述实际困难]. The prefix carries the complete question rather than the input hint, an abbreviated label, or a programmatic key.",
         "D retains the full question and uses exactly ?[ {{你最常核验什么来源？}} 同事消息 | 外部网页 | ...其他来源]. E retains the full question and uses exactly ?[ {{你常核验哪些来源？}} 同事消息 || 外部网页 || ...其他来源]. Custom input remains available in both, with single-select and multi-select modes respectively.",
         "F uses ?[Continue] without inventing a question, question prefix, background collection, or answer field for an action-only navigation control.",
-        "The five question prefixes immediately follow ?[ and precede options or the input hint. Their complete questions associate named actual answers for current-course memory use when available; they do not guarantee that all ordinary inputs or other-course history are model-visible. Controls add no bare substitution reads or variable table; the navigation-only Continue control creates no learner-background answer.",
+        "The five question prefixes immediately follow ?[ and precede options or the input hint. Each complete question in its prefix is sufficient; no separate question text before the control is required. The controls add no bare substitution reads, variable table, or explicit save step; all actual course inputs remain automatically available through memory.",
         "Every question waits for its actual answer before its one brief feedback instruction. The result remains local, executable outside comments and deterministic blocks, and makes no claim of a verified live interaction."
       ]
     },
     {
       "id": 115,
-      "prompt": "只在本地改写一个授课提示词片段，不访问平台；目标环境已支持自然语言发起真实互动。先完整保留原问题“想先练哪项核验能力？”和原控件 ?[核验来源 | 核对计算]，包括措辞、字符、顺序和单选模式。之后根据这次真实回答和当时讨论的案例，用自然语言要求授课智能体在运行时生成一个具体问题和二至四个练习任务选项，允许多选但不允许自填；现在不要预写第二题或它的选项。等待这次真实回答后逐项给出第一步建议。即时反馈使用当前课时的实际回答；后续课节仅在届时确实提供已保存的当前课程值时复用，未提供则使用中性安排，不承诺普通回答自动持久，也不因作者要求而新增记忆写入。不要添加教学环节、另起程序变量名、读取替换占位符、额外手工状态表或平台操作；每块前加中文 HTML 学习结果导航注释。",
+      "prompt": "只在本地改写一个授课提示词片段，不访问平台；目标环境已支持自然语言发起真实互动。先完整保留原问题“想先练哪项核验能力？”和原控件 ?[核验来源 | 核对计算]，包括措辞、字符、顺序和单选模式。之后根据这次真实回答和当时讨论的案例，用自然语言要求授课智能体在运行时生成一个具体问题和二至四个练习任务选项，允许多选但不允许自填；现在不要预写第二题或它的选项。等待这次真实回答后逐项给出第一步建议。两次回答自动进入课内 memory，后续课节均可使用。不要添加教学环节、另起程序变量名、读取替换占位符、单独保存步骤或平台操作；每块前加中文 HTML 学习结果导航注释。",
       "expected_output": "Preserves an author-fixed control and keeps the later question and options dynamic, with feedback grounded in the actual new answer.",
       "files": [],
       "expectations": [
         "The original question 想先练哪项核验能力？ and standalone control ?[核验来源 | 核对计算] remain byte-for-byte unchanged, including wording, option order, and single-select mode. The new-generation convention does not silently rewrite an author-fixed control.",
         "The second interaction stays an ordinary natural-language instruction outside ?[] and comments. It asks the Teaching Agent to use the first actual answer and the case at learner time to generate the concrete question and two to four suitable practice-task options, with multiple selections and no custom input.",
         "It does not supply a fixed second question or option list now, put the generation instruction inside ?[], or introduce a new parser construct.",
-        "The Teaching Agent waits for the current real answer before giving each selected task its first-step suggestion, rather than using an earlier choice to answer a pending interaction. Immediate feedback uses current-conversation evidence; later reuse depends on actually supplied saved current-course information and an unavailable-value fallback. It adds no memory write based only on author intent and no fixed-control rewrite, programmatic answer key, substitution read or variable table.",
+        "The Teaching Agent waits for the current real answer before giving each selected task its first-step suggestion, rather than using an earlier choice to answer the pending interaction. Both actual responses remain available through automatic course memory without programmatic answer keys, substitution reads, a variable table, or a explicit save operation.",
         "The fragment preserves both interaction purposes and the requested scope, adds no background collection or teaching stage, and does not claim a live runtime interaction or memory retrieval was verified."
       ]
     },
@@ -2202,121 +2202,121 @@
     },
     {
       "id": 164,
-      "eval_name": "new-course-reuses-optional-introduction-before-targeted-task-gap",
+      "eval_name": "new-course-reuses-known-background-before-targeted-task-gap",
       "prompt": "请帮我新建一门约 8 分钟的 AI 师傅中文一对一自学微课，只完成本地课程提示词和授课提示词，不连接平台。课程一章一节，纯文字，可以问答。目标是让学员把自己本周的一项真实任务，写成可以验收的结果；资料已经足够，请直接完成，教法由你安排。\n\n共同材料：可验收的结果要说明交付物是什么、何时交付，以及别人依据什么检查它是否完成。“把资料整理好”只表达动作，没有说明最终交付物和完成标准。可以用这个中性教学例子演示：周五 18 点前提交一份活动报名名单，名单无重复项，每条含姓名和联系方式；不要把这个例子当成学员的真实任务。\n\n课内必须让学员最终提交自己本周真实任务的结果描述，而不是照抄示例。请围绕交付物、期限和检查标准评价实际提交，必要时提示并让其修订；如果还缺真实任务，先取得完成这项练习必要的信息。不能替学员编造实际交付物、日期或业务约束，也不能把看过示范当成独立完成。",
-      "expected_output": "Authors a complete local course that reuses available personal introduction or current-course task information and asks only an authorized missing real-task gap.",
+      "expected_output": "Authors a complete local course that reuses available personal background and learning preferences or current-course task information and asks only an authorized missing real-task gap.",
       "files": [],
       "expectations": [
-        "It directly creates complete Chinese Course Prompt and Teaching Prompt artifacts for the local text-only new course, without requesting future learner names, professions, styles, introductions or task profiles from the course author.",
-        "Runtime instructions first use relevant information actually available from the optional personal introduction and current-course memory. They do not insert a compulsory name, profession and style questionnaire before checking what is known.",
+        "It directly creates complete Chinese Course Prompt and Teaching Prompt artifacts for the local text-only new course, without requesting future learner names, professions, styles, background or task profiles from the course author.",
+        "Runtime instructions first use relevant information already available in personal background, learning preferences and current-course memory. They do not insert a compulsory name, profession and style questionnaire before checking what is known.",
         "If the required real current-week task is still missing and interaction is permitted, the lesson asks only for the necessary task gap, briefly explains its use for the result-writing exercise and waits for the actual reply. An already-known task is not collected again.",
         "The real exercise preserves deliverable, deadline and checkable completion criteria, does not substitute the neutral example for the learner's actual task, and gives feedback on the actual submission rather than claiming mastery from self-described experience.",
-        "The artifacts do not promise all learner history, other-course wrong answers, unlimited memory or automatic global introduction writeback. Unavailable information remains unknown, and platform-internal field names or test-person details are not serialized into the reusable Prompts.",
+        "The artifacts do not invent other-course wrong answers or automatically update global background and learning preferences. Unavailable information remains unknown, and platform-internal field names or test-person details are not serialized into the reusable Prompts.",
         "Authoring checks and any later model simulation remain distinct from platform delivery or observed learner outcomes; no platform operation occurs."
       ]
     },
     {
       "id": 165,
-      "eval_name": "known-introduction-avoids-repeated-name-role-style-and-task-intake",
-      "prompt": "只在本地写一段可复用中文授课提示词，不连接平台。目标是让学员把本周真实任务写成可验收结果，标准为交付物、期限、检查标准；允许文字作答和按实际提交反馈。平台授课时可能有学员自愿填写的个人介绍，也可能没有；目前尚无本课作答证据。请把信息使用与必要补问写成可执行指令，不先替未来学员填写资料。",
+      "eval_name": "known-background-avoids-repeated-name-role-style-and-task-intake",
+      "prompt": "只在本地写一段可复用中文授课提示词，不连接平台。目标是让学员把本周真实任务写成可验收结果，标准为交付物、期限、检查标准；允许文字作答和按实际提交反馈。授课时使用平台提供的个人背景和学习偏好；相关信息也可能缺失。目前尚无本课作答证据。请把信息使用与必要补问写成可执行指令，不先替未来学员填写资料。",
       "followup_turns": [
-        "现在用刚才的片段开始一次明确标为模拟的授课，到需要我实际作答时停。已知称呼小林、语言中文；个人介绍是“我是项目协调员，有两年经验，喜欢先结论后理由、表达简洁。本周要在周五17点前交付5家供应商的报价对比表，每家列出价格、交期和报价原文链接；检查时要求5家信息齐全，数字都能回到原文核对”。当前课程没有其他表现证据。"
+        "现在用刚才的片段开始一次明确标为模拟的授课，到需要我实际作答时停。已知称呼小林、语言中文；个人背景和学习偏好是“我是项目协调员，有两年经验，喜欢先结论后理由、表达简洁。本周要在周五17点前交付5家供应商的报价对比表，每家列出价格、交期和报价原文链接；检查时要求5家信息齐全，数字都能回到原文核对”。当前课程没有其他表现证据。"
       ],
-      "expected_output": "Uses the already supplied introduction and task without repeating intake or treating experience as demonstrated task ability.",
+      "expected_output": "Uses the supplied personal background, learning preferences and task without repeating intake or treating experience as demonstrated task ability.",
       "files": [],
       "expectations": [
-        "The reusable Prompt first checks relevant available introduction and current-course information; it does not freeze a test identity, internal platform field or fabricated profile into its body.",
+        "The reusable Prompt first checks relevant personal background, learning preferences and current-course information; it does not freeze a test identity, internal platform field or fabricated profile into its body.",
         "The simulated delivery reuses the known task and appropriate expression preference. It asks no repeated name, profession, style or current-week-task question; a request to actually write the result description is distinguishable from recollecting background.",
         "Two years of self-reported experience does not prove mastery, authorize skipping required reasoning or count as a current submission. Any completion judgment waits for actual performance.",
-        "The simulation does not claim to have fetched other-course history, automatically updated the global introduction or verified platform behavior."
+        "The simulation does not claim to have fetched other-course history, automatically updated the global background and learning preferences or verified platform behavior."
       ]
     },
     {
       "id": 166,
-      "eval_name": "partial-introduction-asks-only-necessary-current-task-gap",
-      "prompt": "只在本地写一段中文授课提示词，并给一小段明确标为模拟的首轮授课，不连接平台。要让学员用自己本周真实任务练习交付物、期限和检查标准，允许必要文字互动。现有可用个人介绍只说“我是项目协调员，喜欢先结论后理由，表达简洁”；称呼和语言已经知道，没有给本周任务，当前课程也没有这个任务的可用记忆。请安排下一步，不把中性示例当成真实任务，不替学员补日期或业务约束。",
+      "eval_name": "partial-background-asks-only-necessary-current-task-gap",
+      "prompt": "只在本地写一段中文授课提示词，并给一小段明确标为模拟的首轮授课，不连接平台。要让学员用自己本周真实任务练习交付物、期限和检查标准，允许必要文字互动。现有个人背景和学习偏好是“我是项目协调员，喜欢先结论后理由，表达简洁”；称呼和语言已经知道，没有给本周任务，当前课程也没有这个任务的可用记忆。请安排下一步，不把中性示例当成真实任务，不替学员补日期或业务约束。",
       "expected_output": "Uses known role and preference while requesting only the missing current-task information needed for the authorized exercise.",
       "files": [],
       "expectations": [
-        "The instructions use relevant available introduction instead of repeating a complete intake. The next permitted question asks only for the current-week task and any necessary task facts still missing, without asking again for name, profession or style.",
+        "The instructions use relevant available background and learning preferences instead of repeating a complete intake. The next permitted question asks only for the current-week task and any necessary task facts still missing, without asking again for name, profession or style.",
         "The learner-visible request briefly explains the purpose of the gap question: the real task is needed to write and check an assessable result. It waits for an actual reply instead of inventing deliverables, deadlines or constraints.",
         "The role and preference may inform permitted expression but are not task-performance evidence. A provided neutral example remains labeled as an example and is not accepted as the learner's real submission.",
-        "No global-profile writeback, automatic cross-course history, unlimited memory or platform verification is claimed."
+        "No global-profile writeback, automatic cross-course history or platform verification is claimed."
       ]
     },
     {
       "id": 167,
-      "eval_name": "reuse-available-named-current-course-task-without-other-course-history",
-      "prompt": "只在本地写一段可执行中文授课提示词，不连接平台。学员的可选个人介绍只有“项目协调员，喜欢简洁说明”。但本次实际提供的当前课程记忆中，命名回答“本周需要完成的一项真实任务”已经记录：周五17点前交付5家供应商报价对比表，每家含价格、交期和报价原文链接，验收要求信息齐全且数字可回到原文核对。现在继续练习把该任务写成包含交付物、期限和检查标准的结果。不要重复采集已知任务；允许实际结果提交与针对性反馈。学员可能学过其他课程，但没有提供那些课程的对话、错题或掌握记录。",
-      "expected_output": "Reuses an actually available named current-course task without assuming access to other-course conversations or mastery.",
+      "eval_name": "reuse-available-current-course-task-without-other-course-history",
+      "prompt": "只在本地写一段可执行中文授课提示词，不连接平台。已知个人背景和学习偏好只有“项目协调员，喜欢简洁说明”。但本次实际提供的当前课程记忆中，已有回答“本周需要完成的一项真实任务”已经记录：周五17点前交付5家供应商报价对比表，每家含价格、交期和报价原文链接，验收要求信息齐全且数字可回到原文核对。现在继续练习把该任务写成包含交付物、期限和检查标准的结果。不要重复采集已知任务；允许实际结果提交与针对性反馈。学员可能学过其他课程，但没有提供那些课程的对话、错题或掌握记录。",
+      "expected_output": "Reuses an available current-course task without assuming access to other-course conversations or mastery.",
       "files": [],
       "expectations": [
-        "The Prompt uses the available named current-course task as exercise context and does not ask the learner to supply the same weekly task again. It still waits for an actual result-writing response rather than pretending that recalled context is a new submission.",
-        "The lesson does not infer access to other-course conversations, wrong answers, scores or mastery from the optional global introduction or the existence of other courses.",
-        "If the required task value is not actually supplied at delivery because of a memory limit, its scoped missing-information path remains explicit rather than claiming complete recall or inventing facts. A scoped fallback or permitted task-gap question is distinct from repeated intake when the value is present.",
-        "Current-course information is not automatically written back into the global introduction, and no internal field, new platform schema or retrieval claim is introduced."
+        "The Prompt uses the available current-course task as exercise context and does not ask the learner to supply the same weekly task again. It still waits for an actual result-writing response rather than pretending that recalled context is a new submission.",
+        "The lesson does not infer access to other-course conversations, wrong answers, scores or mastery from the global background and learning preferences or the existence of other courses.",
+        "If the required task information is unavailable, the lesson uses its permitted missing-information question or neutral fallback rather than inventing facts. This differs from repeated intake when the task is already known.",
+        "Current-course information is not automatically written back into the global background and learning preferences, and no internal field, new platform schema or retrieval claim is introduced."
       ]
     },
     {
       "id": 168,
-      "eval_name": "empty-unknown-irrelevant-and-budget-omitted-introduction-use-neutral-teaching",
-      "prompt": "只写四个彼此独立的中文授课提示词短片段，不连接平台。共同目标只是讲清交付物、期限、检查标准，不要求学员提供自己的真实任务；用同一中性教学例子：周五18点前提交活动报名名单，名单无重复项，每条含姓名和联系方式。A：可用个人介绍为空。B：个人介绍显示 UNKNOWN。C：仅知喜欢爵士乐。D：已知学员以前写过介绍，但本轮模型可见上下文因预算未提供介绍或任务内容。称呼和语言如已知可直接使用。没有必要采集新资料，请各给可运行的短片段。",
-      "expected_output": "Falls back to neutral source-based teaching when personal context is absent, unknown, irrelevant or omitted from bounded model context.",
+      "eval_name": "empty-unknown-irrelevant-and-unavailable-background-use-neutral-teaching",
+      "prompt": "只写四个彼此独立的中文授课提示词短片段，不连接平台。共同目标只是讲清交付物、期限、检查标准，不要求学员提供自己的真实任务；用同一中性教学例子：周五18点前提交活动报名名单，名单无重复项，每条含姓名和联系方式。A：可用个人背景和学习偏好为空。B：个人背景和学习偏好显示 UNKNOWN。C：仅知喜欢爵士乐。D：已知学员以前提供过背景和学习偏好，但本轮没有提供相关背景、偏好或任务内容。称呼和语言如已知可直接使用。没有必要采集新资料，请各给可运行的短片段。",
+      "expected_output": "Falls back to neutral source-based teaching when personal background and learning preferences are absent, unknown, irrelevant or unavailable.",
       "files": [],
       "expectations": [
         "All four fragments teach the supplied neutral example without guessing a profession, experience, preference, deadline or real task. An irrelevant hobby causes no forced music analogy or retargeting.",
-        "Empty, UNKNOWN and unavailable model-visible context remain unknown. D does not claim the learner never provided an introduction, retrieve unlimited history or fabricate the omitted value.",
-        "Because the supplied objective and neutral material do not need personal facts, none adds a background questionnaire or task-gap question merely because the introduction is absent.",
-        "Available address and language may be used, but no automatic global introduction update, current-course performance record or other-course assessment is invented."
+        "Empty, UNKNOWN and unavailable memory remain unknown. D does not claim that the learner never provided background and learning preferences or fabricate the missing information.",
+        "Because the supplied objective and neutral material do not need personal facts, none adds a background questionnaire or task-gap question merely because personal background and learning preferences are unavailable.",
+        "Available address and language may be used, but no automatic global background and learning preferences update, current-course performance record or other-course assessment is invented."
       ]
     },
     {
       "id": 169,
       "eval_name": "disabled-interaction-repair-removes-repeat-intake-and-false-history-promises",
-      "prompt": "只在本地修复下面这段中文授课提示词，不生成课程提示词、不连接平台。课程用纯文字讲清可验收结果的三个要素：交付物、期限、检查标准。此次明确禁止所有互动，不向学员提问或要求输入；只用中性示例“周五 18 点前提交一份活动报名名单，名单无重复项，每条含姓名和联系方式”做讲解，不把示例写成学员的真实情况。只输出修复后的授课提示词。\n\n错误片段：\n先询问学员姓名、职业和喜欢什么讲解风格，即使个人介绍已经写过也重新确认。自动读取学员所有其他课程的对话、错题和掌握情况，根据那些答题成绩判断本课能力；只要学员自述经验丰富就跳过三个要素的解释。把学员在本课说出的新信息自动写回个人画像，以后所有课都能永久读取。若当前看不到个人介绍或记忆，按学员的职业猜一个真实任务并继续。随后解释交付物、期限和检查标准，并让学员提交本周任务。",
+      "prompt": "只在本地修复下面这段中文授课提示词，不生成课程提示词、不连接平台。课程用纯文字讲清可验收结果的三个要素：交付物、期限、检查标准。此次明确禁止所有互动，不向学员提问或要求输入；只用中性示例“周五 18 点前提交一份活动报名名单，名单无重复项，每条含姓名和联系方式”做讲解，不把示例写成学员的真实情况。只输出修复后的授课提示词。\n\n错误片段：\n先询问学员姓名、职业和喜欢什么讲解风格，即使个人背景和学习偏好已经写过也重新确认。自动读取学员所有其他课程的对话、错题和掌握情况，根据那些答题成绩判断本课能力；只要学员自述经验丰富就跳过三个要素的解释。把学员在本课说出的新信息自动写回个人画像，以后所有课都能永久读取。若当前看不到个人背景和学习偏好或记忆，按学员的职业猜一个真实任务并继续。随后解释交付物、期限和检查标准，并让学员提交本周任务。",
       "expected_output": "Repairs false data-access and profile-writeback promises while preserving the explicit non-interactive neutral demonstration.",
       "files": [],
       "expectations": [
-        "The repaired Teaching Prompt contains no learner question, response surface, input request, waiting instruction or required submission; the disabled interaction restriction covers missing-introduction and missing-memory cases too.",
-        "It removes repeated name, profession and style intake, automatic access to all other-course history or wrong answers, and automatic global-profile or personal-introduction writeback promises.",
+        "The repaired Teaching Prompt contains no learner question, response surface, input request, waiting instruction or required submission; the disabled interaction restriction also applies when personal background, learning preferences or memory are unavailable.",
+        "It removes repeated name, profession and style intake, automatic access to all other-course history or wrong answers, and automatic updates to global personal background and learning preferences.",
         "It preserves explanation of deliverable, deadline and checkable criteria using only the fixed neutral example, without claiming the example is the learner's real task or assessing mastery from self-reported experience.",
         "Unknown or unavailable context follows the neutral explanation. The repair does not ask the author to supply future learner profiles, add companion artifacts or perform platform operations."
       ]
     },
     {
       "id": 170,
-      "eval_name": "reusable-prompt-does-not-request-future-learner-introductions-from-author",
-      "prompt": "请只写一段可复用中文授课提示词，教未来学员把自己本周真实任务写成可验收结果，允许必要问答，不连接平台。我现在不知道未来有哪些学员，也拿不到他们的个人介绍；这不影响请你完成提示词。授课时平台可能提供可选介绍、称呼、语言和当前课程记忆，也可能有缺失。事实只有交付物、期限、检查标准；不要替未来学员编造任务。",
-      "expected_output": "Completes reusable runtime instructions without turning optional future introduction availability into an author-side data prerequisite.",
+      "eval_name": "reusable-prompt-does-not-request-future-learner-background-from-author",
+      "prompt": "请只写一段可复用中文授课提示词，教未来学员把自己本周真实任务写成可验收结果，允许必要问答，不连接平台。我现在不知道未来有哪些学员，也拿不到他们的个人背景和学习偏好；这不影响请你完成提示词。授课时使用平台提供的个人背景和学习偏好、称呼、语言和当前课程记忆；相关信息可能有缺失。事实只有交付物、期限、检查标准；不要替未来学员编造任务。",
+      "expected_output": "Completes reusable runtime instructions without requiring the author to supply future learners' personal background and learning preferences.",
       "files": [],
       "expectations": [
-        "It directly writes the requested reusable Prompt instead of asking the course author for every future learner's name, role, style, introduction or goals, or requiring a structured registration form.",
-        "At delivery, it uses relevant available introduction and current-course information first, then requests only the necessary real-task gap if still missing and permitted. It separates this learner-time question from author-time requirements.",
+        "It directly writes the requested reusable Prompt instead of asking the course author for every future learner's name, role, style, background or goals, or requiring a structured registration form.",
+        "At delivery, it first uses relevant personal background, learning preferences and current-course information, then requests only the necessary real-task gap if still missing and permitted. It separates this learner-time question from author-time requirements.",
         "The reusable artifact contains executable actual-answer feedback and an unknown-context path, without test identities, internal global-profile keys, invented task facts or automatic profile-writeback promises.",
         "The result stays within local lesson scope and does not claim that future profiles, memory or learner performance have already been observed."
       ]
     },
     {
       "id": 171,
-      "eval_name": "self-description-and-onboarding-are-not-mastery-assessment",
-      "prompt": "只在本地审查下面的授课安排，给出问题及最小修改建议，不连接平台、不重写整课。学员第一次进入这门结果写作课；可选个人介绍说“我做项目管理20年，想提高工作效率，喜欢简洁”。当前课程没有实际作答证据。现安排为：“系统注册时已经采集每位学员的职业、目标、先备知识和掌握程度；这位是资深人员，所以直接跳过交付物、期限、检查标准解释，默认已经掌握。需要补证据时读取学员其他课程全部错题和成绩；若本轮看不到记忆，就认定学员从没填写介绍。”本课允许依据实际提交反馈，但没有授权额外能力测评问卷。",
-      "expected_output": "Distinguishes optional self-description from assessed performance and removes assumed complete onboarding, cross-course history and missing-context conclusions.",
+      "eval_name": "self-reported-background-and-learning-preferences-are-not-mastery-assessment",
+      "prompt": "只在本地审查下面的授课安排，给出问题及最小修改建议，不连接平台、不重写整课。学员第一次进入这门结果写作课；提供的个人背景和学习偏好是“我做项目管理20年，想提高工作效率，喜欢简洁”。当前课程没有实际作答证据。现安排为：“系统注册时已经采集每位学员的职业、目标、先备知识和掌握程度；这位是资深人员，所以直接跳过交付物、期限、检查标准解释，默认已经掌握。需要补证据时读取学员其他课程全部错题和成绩；若本轮看不到记忆，就认定学员从没提供背景和学习偏好。”本课允许依据实际提交反馈，但没有授权额外能力测评问卷。",
+      "expected_output": "Distinguishes personal background and learning preferences from demonstrated understanding, without inventing assessment evidence or another course's history.",
       "files": [],
       "expectations": [
-        "The review identifies that account-wide teaching inputs are available address, language and an optional free-text introduction, not a guaranteed structured registration assessment of role, goals, prerequisites or mastery. Onboarding can be changed or skipped.",
+        "The review identifies that personal background and learning preferences are teaching inputs, not an assessment of the learner's mastery.",
         "Self-described years of experience and a concision preference are not measured task ability. The minimum repair keeps necessary reasoning and waits for actual current-task evidence before claiming mastery, without replacing this with a new compulsory assessment questionnaire.",
         "Other-course conversations, wrong answers and scores are not assumed available; genuinely new-course performance is unknown until supplied. Available current-course answers may inform subsequent support within their actual scope.",
-        "A value omitted from model-visible memory or unavailable under budget is unknown, not proof the learner never supplied it. The repair does not invent a missing introduction or automatic global writeback."
+        "Unavailable information is unknown, not proof that the learner never supplied it. The repair does not invent missing background or automatically update global background and learning preferences."
       ]
     },
     {
       "id": 172,
       "eval_name": "reuse-preserves-explicit-goal-update-comparison",
-      "prompt": "只在本地生成中文课程提示词和一个对应授课片段，不连接平台。已有个人介绍包含职业、喜欢的讲解风格和最初学习目标。课节已明确安排：在结束前请学员重新表述一次当前学习目标，与开头实际目标比较，允许目标改变；这次更新是教学任务的一部分。请保留这项明确的更新和真实回答等待，不重新询问姓名、职业或风格，也不把旧目标替学员作答。",
+      "prompt": "只在本地生成中文课程提示词和一个对应授课片段，不连接平台。已有个人背景和学习偏好包含职业、喜欢的讲解风格和最初学习目标。课节已明确安排：在结束前请学员重新表述一次当前学习目标，与开头实际目标比较，允许目标改变；这次更新是教学任务的一部分。请保留这项明确的更新和真实回答等待，不重新询问姓名、职业或风格，也不把旧目标替学员作答。",
       "expected_output": "Preserves a purposeful author-required goal update and comparison while avoiding redundant biographical intake.",
       "files": [],
       "expectations": [
-        "The Course Prompt reuse rule permits the explicit purposeful update or comparison task; it does not impose a blanket ban on asking about an already known goal.",
+        "The Course Prompt follows the lesson's explicit purposeful update and comparison task without imposing a blanket ban on asking about an already known goal.",
         "The Teaching Prompt waits for the learner's actual updated goal, compares it with the genuinely available earlier goal, and allows a supported change without inventing an answer or missing history.",
         "Known name, profession and style are not collected again. The task does not authorize a broader questionnaire, another course's history, or automatic global-profile writeback."
       ]
@@ -2324,7 +2324,7 @@
     {
       "id": 173,
       "eval_name": "known-weekly-task-asks-only-for-missing-deadline",
-      "prompt": "只在本地写一段中文授课提示词，并给一小段明确标为模拟的首轮授课，不连接平台。要让学员用自己本周真实任务练习交付物、期限和检查标准，允许必要文字互动。现有可用个人介绍已说“我是项目协调员，喜欢先结论后理由、表达简洁。本周要交付5家供应商的报价对比表，每家含价格、交期和报价原文链接；检查时要求5家信息齐全，每个数字可回到报价原文核对”。称呼和语言已经知道，只有这项任务的交付期限尚未提供，当前课程可用记忆中也没有期限。请安排下一步，保留已知任务及其真实要求，不替学员猜日期、改任务或增加业务约束。后续消息作为模拟学员的实际输入，按已写片段继续。",
+      "prompt": "只在本地写一段中文授课提示词，并给一小段明确标为模拟的首轮授课，不连接平台。要让学员用自己本周真实任务练习交付物、期限和检查标准，允许必要文字互动。现有个人背景和学习偏好已包含“我是项目协调员，喜欢先结论后理由、表达简洁。本周要交付5家供应商的报价对比表，每家含价格、交期和报价原文链接；检查时要求5家信息齐全，每个数字可回到报价原文核对”。称呼和语言已经知道，只有这项任务的交付期限尚未提供，当前课程可用记忆中也没有期限。请安排下一步，保留已知任务及其真实要求，不替学员猜日期、改任务或增加业务约束。后续消息作为模拟学员的实际输入，按已写片段继续。",
       "followup_turns": [
         "这项任务的交付期限是本周五17点前。",
         "我的结果描述是：本周五17点前提交5家供应商的报价对比表，每家列出价格、交期和报价原文链接；5家信息齐全，表内每个数字都能回到报价原文核对。"
@@ -2332,7 +2332,7 @@
       "expected_output": "Reuses a known task and its criteria, explains why its deadline is needed, asks only for that gap and then uses the actual supplied deadline in the result description and feedback.",
       "files": [],
       "expectations": [
-        "The instructions reuse the available introduction, the five-supplier comparison task and its known checking criteria. They do not ask again for name, profession, style, task identity or already supplied task requirements.",
+        "The instructions reuse the available background and learning preferences, the five-supplier comparison task and its known checking criteria. They do not ask again for name, profession, style, task identity or already supplied task requirements.",
         "Before asking the learner-visible deadline question, the simulated delivery briefly explains that the deadline will make this result description complete and allow the recipient to judge on-time delivery. The next question asks only for the missing actual deadline and waits, rather than restarting intake or guessing a date.",
         "After the learner supplies Friday before 17:00, the delivery uses that actual deadline together with the known deliverable and checking criteria. It does not substitute the neutral example deadline, infer a calendar date or introduce another business condition.",
         "A supplied deadline is task information, not by itself a complete new result-writing submission. Any authored request for a fresh result description waits for the learner's actual reply, which is evaluated against the known deliverable, supplied deadline and original checking criteria; a Teaching Agent-written sentence is not treated as the learner's work.",

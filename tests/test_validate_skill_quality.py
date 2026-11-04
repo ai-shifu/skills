@@ -1388,19 +1388,18 @@ class CourseCreatorContractTests(unittest.TestCase):
             ("unavailable", "deterministic", "exact", "feedback", "memory"),
         )
 
-    def test_evals_cover_available_memory_scope_and_real_answers(self):
+    def test_evals_cover_automatic_memory_and_real_answers(self):
         self.assert_eval_family(
             (9, 107, 108, 110),
             (
                 "memory",
-                "available",
-                "current conversation",
-                "current-course",
+                "automatically",
+                "throughout the course",
+                "ordinary chat",
                 "correction",
                 "actual answer",
-                "unavailable",
-                "named",
-                "explicit memory request",
+                "explicit save",
+                "placeholder",
             ),
         )
 
@@ -1572,12 +1571,12 @@ class CourseCreatorContractTests(unittest.TestCase):
                 self.assertTrue(answer["context_ids"])
                 self.assertLessEqual(set(answer["context_ids"]), set(contexts))
 
-    def test_evals_cover_learner_introduction_reuse_and_missing_context(self):
+    def test_evals_cover_background_reuse_and_missing_context(self):
         self.assert_eval_family((173,), ("deadline", "task identity", "on-time delivery"))
         self.assert_eval_family((172,), ("purposeful", "comparison", "actual"))
         self.assert_eval_family(
             (164, 165, 166, 167, 168, 169, 170, 171),
-            ("introduction", "gap", "current-course", "global", "disabled", "actual"),
+            ("learning preferences", "gap", "current-course", "global", "disabled", "actual"),
         )
 
     def test_evals_preserve_automatic_creation_publication_and_truthful_handoff(self):

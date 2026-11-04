@@ -45,7 +45,7 @@ Response-dependent teaching is distinct from background-based personalization. E
 
 The Teaching Prompt owns the local evidence to inspect, permitted support or practice changes, acceptance criteria, and stopping boundary. These need not be a fixed diagnostic sequence or a questionnaire. Reuse relevant available context and answers, wait for new answers when needed, and honor the author's interaction limits. Missing or irrelevant background does not prevent teaching or remove response-dependent feedback.
 
-Use only information available in the current conversation or supplied course memory. Adapting current teaching neither updates the registration profile nor establishes that an ordinary answer was durably saved; do not promise profile updates or future recall without an established runtime mechanism.
+Use only information available in the current conversation or supplied course memory. Adapting current teaching does not update the learner profile.
 
 ## Reuse Before Collecting Learner Context
 
