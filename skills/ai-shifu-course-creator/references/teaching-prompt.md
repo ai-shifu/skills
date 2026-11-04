@@ -35,6 +35,8 @@ Apply [reuse before collecting](prompt-semantics.md#reuse-before-collecting-lear
 
 Keep the conditional question, its permitted scope, the use of an actual answer, and the fallback together. With partial context, ask for the consequential gap alone; with no relevant context, teach neutrally unless that gap is required for the selected activity. A standalone Teaching Prompt needs enough local guidance to do this without relying on an omitted Course Prompt. Do not copy a test learner's introduction, platform profile tags, or internal field names into reusable runtime instructions. Preserve the separation between reusing a stated goal and checking performance through a new task.
 
+Before a necessary context question, instruct the Teaching Agent to tell the learner briefly how the missing detail will be used in the current activity. A purpose written only in source comments, execution notes, an unspoken lesson title, or a later explanation does not explain the request to the learner. This is a local reason for the question, not a required course opening or a new background questionnaire.
+
 ### Make Response-Dependent Support Runnable
 
 Apply [learner evidence and responsive support](prompt-semantics.md#learner-evidence-and-responsive-support) to the actual learning task, including when background personalization is explicitly disabled. When the selected task calls for practice, write what counts as an adequate answer, how to distinguish a submitted misconception from an incomplete answer, which support or practice changes are permitted, and when to stop. A generic "give personalized feedback" instruction leaves the teaching decision unresolved.
