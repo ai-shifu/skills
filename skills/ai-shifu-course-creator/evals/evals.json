@@ -233,9 +233,9 @@
       "files": [],
       "expectations": [
         "Because this user explicitly limits the turn to resolving the missing personalization choice, it asks about that choice and starts no lesson generation, structure creation, or deployment; a missing choice is not silently treated as an empty selection.",
-        "The question presents the four independent directions 举例, 类比, 语言风格, and 价值阐述 as a multiple selection, and permits selecting none. It presents no ordered intensity scale or five-level choice.",
-        "Before asking, it explains each direction through its learner-visible effect: examples use relevant tasks, analogies use familiar situations with valid correspondence, language style uses stated expression preferences, and value explanations connect approved content to stated goals or constraints. Its first mention identifies the role as AI 师傅的授课智能体 before a shortened 授课智能体 reference.",
-        "The explanation says the choices use only learner context already available and never authorize new context collection, interactions, or branches.",
+        "The question presents the five independent directions 举例, 类比, 语言风格, 价值阐述, and 学习支持 as a multiple selection, and permits selecting none. It presents no ordered intensity scale or five-level choice.",
+        "Before asking, it explains each direction through its learner-visible effect: examples use relevant tasks, analogies use familiar situations with valid correspondence, language style uses stated expression preferences, value explanations connect approved content to stated goals or constraints, and learning support uses relevant stated experience to adjust permitted explanation support or practice conditions. Its first mention identifies the role as AI 师傅的授课智能体 before a shortened 授课智能体 reference.",
+        "The explanation distinguishes background-based support from response-dependent feedback on already authorized tasks. Choices use only available learner context and preserve the explicit disabled-interaction constraint; they do not authorize new context collection or learner submissions.",
         "It distinguishes selecting background-based adaptation from deciding whether an example or analogy is needed. Unselected directions preserve the course and author defaults; selecting none does not remove required teaching aids or make ordinary wording a mandatory transcript.",
         "The preview preserves the teaching sequence, slide count and order, each slide and content slot's 教学目的, required actions, facts, exact material, and interaction and close placement.",
         "The response reuses the supplied usage scenario, interaction policy, Listen Mode, and structure choices without asking them again or silently selecting directions."
@@ -282,8 +282,8 @@
       "expected_output": "Asks the same effect-aware personalization multi-select question used in other delivery modes instead of inferring an empty selection from slide-only delivery.",
       "files": [],
       "expectations": [
-        "The response asks for the missing personalization_directions, presents the four independent choices 举例, 类比, 语言风格, and 价值阐述 with their effects, and permits selecting none. It uses no strength scale.",
-        "Slide-only delivery does not supply a personalization default, reduce the available choices, or change their meaning. The unresolved selection stays unresolved until the author answers or explicitly skips; it is not silently normalized to []. Required examples, teaching sequence, slide structure, and presentation behavior remain intact.",
+        "The response asks for the explicitly requested unresolved personalization_directions, presents the five independent choices 举例, 类比, 语言风格, 价值阐述, and 学习支持 with their effects, and permits selecting none. It uses no strength scale.",
+        "The explicitly limited design-choice turn does not silently apply the new-course authoring default instead of answering the requested question. Slide-only delivery does not reduce the available choices or authorize single-learner feedback, new interactions or reordering of fixed slides; selected support stays within the instructor-paced projected content.",
         "The response reuses the supplied usage scenario, interaction policy, Listen Mode, and structure choices without asking them again.",
         "It honors the explicitly limited design-question turn and starts no lesson generation, structure creation, or deployment."
       ]
@@ -485,7 +485,7 @@
         "Both Course Prompts retain all six canonical sections in order, resolve every applicable XXX placeholder, and contain no unresolved placeholder or serialized authoring-control field.",
         "Course A preserves the author's intended audience of experienced emergency physicians and does not change or retarget the course because of an individual learner profile.",
         "Course B preserves the author's intended audience of workplace training organizers and does not retarget the course to one learner profile.",
-        "In every delivery mode, both Course Prompts materialize exactly the four selected directions: adapt language style from stated preferences, choose examples from relevant tasks and analogies from familiar situations, and explain practical value through stated goals, tasks, or constraints. They do not silently add background-based prerequisite scaffolding, pacing, emphasis, explanation-depth changes, or feedback personalization as extra directions.",
+        "In every delivery mode, both Course Prompts materialize exactly the four explicitly selected directions: adapt language style from stated preferences, choose examples from relevant tasks and analogies from familiar situations, and explain practical value through stated goals, tasks, or constraints. Because learning_support is not selected, they do not silently add background-based prerequisite scaffolding, pacing, emphasis, explanation-depth changes or practice changes; authorized feedback on actual learner answers remains independent of that background selection.",
         "Practical-value explanations remain grounded in the course content and stated learner context; neither Course Prompt invents benefits, guarantees outcomes, or treats a role label as proof that a proposed analogy is familiar.",
         "Both Course Prompts preserve the existing Teaching Prompts' objectives, facts and boundaries, methods, sequence, pacing, required examples, interactions, exact material, slide count and order, and close.",
         "Pure classroom slides still contain no Teaching Agent narration or address to a single learner even while relevant learner context shapes open projected content.",
@@ -501,7 +501,7 @@
       "expectations": [
         "The repaired artifact keeps all six canonical sections in order, contains no unresolved XXX placeholder, and preserves the author's licensed-counselor audience and course goal.",
         "The repaired Course Prompt does not change or retarget the intended audience based on learner context and removes the instructions to add pages, replace approved examples, or ask extra interactions.",
-        "The repaired runtime instructions directly connect relevant explicitly stated background and preferences to the four selected directions: language style, task-relevant examples, familiar analogies, and practical value for stated goals, tasks, or constraints in every delivery mode. They do not silently grant separate background-based changes to scaffolding, emphasis, explanation depth, pacing, or feedback.",
+        "The repaired runtime instructions directly connect relevant explicitly stated background and preferences to the four selected directions: language style, task-relevant examples, familiar analogies, and practical value for stated goals, tasks, or constraints in every delivery mode. They do not grant the unselected learning_support direction or use background to change scaffolding, explanation support, pacing or practice. They do not disable response-dependent feedback already authorized by a lesson task.",
         "The practical-value direction does not invent benefits or promise outcomes; personalization stays within the supplied professional course content and does not assume knowledge or familiarity from occupation alone.",
         "The approved objectives, facts and boundaries, teaching method, sequence, pacing, required examples, interactions, exact material, four-page structure, and close remain unchanged.",
         "Pure classroom slides remain projection-ready without Teaching Agent narration or addressing a single learner.",
@@ -876,7 +876,7 @@
         "Every variant retains the example demonstrating alert-to-independent-verification and the analogy explaining why a signal is not a conclusion. Empty selection and unselected directions do not delete either required teaching aid or reduce either to an empty instruction.",
         "Only examples_only and all direct the example toward relevant inventory-verification work. Only analogies_only and all direct the analogy toward the stated familiar parcel-notification situation or another relevant explicitly known familiar situation. Their essential conditions, correspondence, limits, and takeaways remain executable locally.",
         "Only style_only and all adapt ordinary language style to the stated direct, concise preference. Only value_only and all relate the existing practical value to avoiding unnecessary repeated stocktaking; they neither invent a quantified benefit nor promise that all false alarms will disappear.",
-        "Unselected directions use course-appropriate shared arrangements even when relevant individual context is known; an example-only choice must not also personalize the analogy, language style, or value framing. No variant uses scaffolding, pacing, explanation-depth changes, or feedback policy as an unselected extra dimension.",
+        "Unselected directions use course-appropriate shared arrangements even when relevant individual context is known; an example-only choice must not also personalize the analogy, language style or value framing. None of these explicit legacy selections includes learning_support, so background does not add scaffolding, pacing, explanation-depth changes or practice changes. This does not prohibit feedback on an actual answer when a different authored task authorizes it; this case remains explicitly non-interactive.",
         "The case and analogy preserve all source facts. Each analogy has an intelligible correspondence and teaches any limitation needed to avoid implying confirmed danger, certain false alarm, or a verified cause.",
         "The common variant remains a runnable Prompt with complete explanation and ordinary generative wording; it neither becomes a mandatory transcript nor wraps ordinary content in deterministic markers.",
         "Selected directions are materialized at their relevant existing teaching actions with neutral course-appropriate fallback when context is unavailable or irrelevant; they are not a global authoring note or reliance on an omitted Course Prompt."
@@ -1066,13 +1066,13 @@
     },
     {
       "id": 87,
-      "prompt": "只检查 Course Design Intake 输入，不生成课程或连接平台。以下 personalization_directions 输入互相独立：A=\"examples\"；B=[\"examples\", \"examples\"]；C=[\"examples\", \"pace\"]；D=[1, true]；E=null；F=[]。请逐项说明接受还是需要修正，并解释如何处理；不要自行替作者选择方向。",
+      "prompt": "只检查 Course Design Intake 输入，不生成课程或连接平台。以下 personalization_directions 输入互相独立：A=\"examples\"；B=[\"examples\", \"examples\"]；C=[\"examples\", \"pace\"]；D=[1, true]；E=null；F=[]；G=[\"learning_support\"]。请逐项说明接受还是需要修正，并解释如何处理；不要自行替作者选择方向。",
       "expected_output": "Validates the new transient direction array without coercing malformed, duplicate, unsupported, or null values into a valid choice.",
       "files": [],
       "expectations": [
-        "Only F is accepted as a complete explicit empty selection.",
+        "F is accepted as a complete explicit empty selection and G as a valid learning-support-only selection; neither is silently broadened.",
         "A is rejected because a single string is not an array; it is not silently split or wrapped.",
-        "B is rejected as a duplicate-containing array rather than silently deduplicated, and C is rejected because pace is outside examples, analogies, language_style, and value_relevance.",
+        "B is rejected as a duplicate-containing array rather than silently deduplicated, and C is rejected because pace is outside examples, analogies, language_style, value_relevance, and learning_support.",
         "D rejects non-string elements and E rejects null rather than treating it as missing, explicit skip, or an empty array.",
         "The response requests correction of invalid supplied values without guessing intent, running intake defaults, creating output artifacts, or using platform tools."
       ]
@@ -1085,10 +1085,10 @@
       "expectations": [
         "All four Course Prompts contain the six canonical sections in order with every applicable placeholder resolved and no personalization_directions field, machine enum, selection list, or authoring rationale serialized into their bodies.",
         "A keeps the course's shared examples, analogy, language style, and value framing without background-based adaptation, while preserving the required teaching actions and complete explanations.",
-        "The fixed template preserves lesson decisions, privacy, and neutral fallback without independently authorizing learner-context adaptation; only the materialized personalization placeholder grants the selected effects.",
-        "B directly enables background-based example selection or explanation only; it does not also personalize analogies, language style, value, scaffolding, pacing, or explanation depth.",
+        "The fixed template preserves lesson decisions, privacy and neutral fallback; only the materialized selected directions grant background-based effects. Existing authorized response-dependent feedback is not a background direction and is not disabled by an empty selection.",
+        "B directly enables background-based example selection or explanation only; it does not also personalize analogies, language style, value, scaffolding, pacing, explanation depth or practice conditions because learning_support is not selected.",
         "C directly adapts language style from stated preferences and relates approved practical value to stated goals or constraints; it retains shared course arrangements for examples and analogies.",
-        "D directly materializes all four selected directions, preserving valid analogy correspondence and limits and prohibiting invented benefits or guaranteed outcomes.",
+        "D directly materializes all four explicitly selected legacy directions without silently enabling learning_support, preserving valid analogy correspondence and limits and prohibiting invented benefits or guaranteed outcomes.",
         "Every variant preserves the author's workplace audience, lesson objectives, facts, boundaries, sequence, required examples, interactions, exact material, slide structure, and close; no Course Prompt adds an interaction, state-management requirement, or lesson-local teaching plan.",
         "Where selected adaptation has no relevant stated context, the instruction uses neutral course-appropriate defaults without inferred facts, profile disclosure, learner-profile tags, or internal fields. Unselected dimensions never become enabled merely because context is supplied."
       ]
@@ -2106,6 +2106,98 @@
         "The current-message visual-request gate, selected slide-text relationship and narration constraints remain represented. The text-only third lesson does not acquire visuals; specific states, rates, lesson numbers and playback sequences remain owned by the existing Teaching Prompts rather than being copied into the Course Prompt.",
         "Course question option labels on a slide do not become competing answer controls, while requested experiment controls remain usable. The artifact does not claim page-local operations are submitted course answers or enter course memory automatically.",
         "No Teaching Prompt rewrite, background intake, unselected classroom mode, platform operation or claim of generated or tested slides is introduced."
+      ]
+    },
+    {
+      "id": 158,
+      "eval_name": "new-course-default-authors-runtime-adaptive-teaching",
+      "prompt": "请帮我新建一门约 8 分钟的 AI 师傅中文一对一自学微课，只完成本地课程提示词和授课提示词，不连接平台。课程一章一节、纯文字，可以让学员作答。目标是让会使用 AI 的职场人核验 AI 引用：区分“原文确实存在”和“原文支持当前结论”，并把结论限制在证据允许的范围。材料已经足够，请直接完成，教法由你安排。\n\n共同材料：原文真实存在仍不代表它支持 AI 写出的具体说法；核验时要找到原文，再对照原文是否支持这句结论及其推断范围。原文没有说的内容不能补成事实，个别反馈也不能直接概括成所有人的需求。\n\n本课必须保留下面这项独立核验任务，题目材料与达标标准不变，不要在学员作答前给出答案：某产品收到 5 名自愿参与者的反馈，其中 3 人明确提出需要批量导出功能，其余 2 人没有谈及该功能。原文真实存在，人数也已核对。AI 整理为“原文证明所有用户都需要批量导出功能”。请让学员判断这句话是否可直接使用，分别说明原文是否存在、是否支持这句具体结论、结论的范围，并写出证据允许的一句修正。达标依据是同时完成这三个核验并给出不越过证据的修正，不能把其他 2 人未提及当成反对。",
+      "expected_output": "Authors one complete local course with the new-course background-adaptation default and executable response-dependent teaching, without receiving individual test profiles or an explicit personalization request.",
+      "files": [],
+      "expectations": [
+        "The output contains complete Chinese Course Prompt and Teaching Prompt artifacts for the requested new one-chapter one-lesson text-only course, without a questionnaire, platform operation or test-learner profile.",
+        "Without an explicit personalization request, the new-course default materializes all five supported directions as direct runtime instructions, including learning_support for available relevant registration background or preferences; the artifacts do not serialize the control field, enum array or platform-internal fields.",
+        "Lesson-local instructions identify what available context may change in explanation, hints or permitted practice support, with neutral fallback for missing or irrelevant context. They do not rely solely on a course-wide instruction to personalize, freeze a test profession into the lesson or infer mastery from a role or preference.",
+        "The fixed verification task and its success criteria remain intact: source existence, support for the specific claim and inference scope, with a source-bounded correction. Five voluntary participants, three requests, two not-mentioned responses and the distinction from all users remain faithful.",
+        "The authored task offers a real response surface and waits. Feedback distinguishes correct evidence-based completion, the source-exists-therefore-supports misconception and incomplete reasoning; hints or permitted practice address the actual gap, update from later corrections, and provide an honest stop or unresolved-difficulty path.",
+        "The author receives no registration_context, future learner answer, coordinator-only evaluation criteria or simulated outcome. Authored instructions and static checks are not reported as observed delivery or learner effectiveness."
+      ]
+    },
+    {
+      "id": 159,
+      "eval_name": "explicit-legacy-four-directions-do-not-enable-learning-support",
+      "prompt": "只在本地更新一份已有课程提示词，不改授课提示词、不连接平台。personalization_directions=[\"examples\",\"analogies\",\"language_style\",\"value_relevance\"]，这是本次明确选择。课程面向会使用 AI 的职场人，目标是核验 AI 引用；既有课节已固定核验任务、正确性标准与文字互动。允许按照实际作答给针对性反馈，但不能凭个人背景改变讲解支架、提示梯度或练习条件。请给完整六段式中文 Course Prompt，使用所选方向和已有边界。",
+      "expected_output": "Preserves the explicit legacy four-direction authorization without silently adding background-based learning support, while retaining already authorized actual-answer feedback.",
+      "files": [],
+      "expectations": [
+        "The Course Prompt materializes exactly examples, analogies, language style and practical value; the new-course default does not add learning_support to this explicit selection or existing-course task.",
+        "Relevant background can change the selected expression dimensions but cannot change scaffolding, support progression or practice conditions. The existing verification goal, required reasoning, task and success criteria stay intact.",
+        "Feedback on the actual submitted answer remains permitted within the existing task, including correcting a source-exists-therefore-supports error; it is not disabled merely because learning_support is unselected.",
+        "The result retains the six Course Prompt sections and expresses instructions naturally without an enum array, internal profile field, new background questionnaire, Teaching Prompt rewrite or platform operation."
+      ]
+    },
+    {
+      "id": 160,
+      "eval_name": "empty-background-selection-keeps-answer-dependent-feedback",
+      "prompt": "只写一个中文 MarkdownFlow 授课提示词片段并做后续模拟，不连接平台。personalization_directions=[]，不要根据个人背景改写。已批准的任务是：原文真实存在，5 名自愿参与者中 3 人提出批量导出需求，另 2 人未提及；让学员判断“原文证明所有用户都需要批量导出”能否直接使用，写出依据和证据允许的修正。允许文本作答、针对实际错误给提示、必要时要求修订并等待；正确则解释达标依据并结束。背景选择为空不改变这个既有任务。",
+      "followup_turns": [
+        "现在用刚才的提示词做明确标为模拟的试讲，从任务开始，到我作答处停。",
+        "原文找到了，所以所有用户都需要这个功能是有依据的。",
+        "原文只支持本次 5 名自愿参与者中 3 人提出需求，不能推成所有用户。可写“本次 5 名自愿参与者中，3 人提出批量导出需求，其余 2 人未谈及；其他用户的需求还没有证据”。"
+      ],
+      "expected_output": "Keeps a uniform background-independent lesson while responding differently to an actual misconception and its corrected answer.",
+      "files": [],
+      "expectations": [
+        "The empty selection disables background-based adaptation, not the authorized task feedback. The Prompt has executable criteria and response-dependent support without selecting learning_support or guessing a learner profile.",
+        "The first delivery turn presents the actual task and waits without giving its answer. After the mistaken answer, feedback targets the confusion between source existence and support for the all-users claim, requests a revision and waits.",
+        "After the corrected answer, feedback recognizes the supported sample scope and correction, closes without a forced extra retry, and does not repeat the previous misconception as if it remained unresolved.",
+        "The source facts, task standard and distinction between two unmentioned responses and opposition remain intact. No platform or real-learner success is claimed."
+      ]
+    },
+    {
+      "id": 161,
+      "eval_name": "existing-course-without-direction-input-keeps-current-authorization",
+      "prompt": "只在本地把下面已有课程提示词改成自然中文，不重新设计、不补写授课提示词、不连接平台。本次没有新的个性化选择，不增加能力。课程目标是核验 AI 引用。现有规则已确定：根据学员明确说过的相关任务选择例子；没有相关背景用统一案例；已有核验练习会等待实际答案，并按答案指出证据缺口。其它表达、讲解支持和练习条件沿用统一安排。保留六段式 Course Prompt，并保持这些行为。",
+      "expected_output": "Preserves the actual authorization of an existing course when a transient personalization control is absent instead of applying the new-course default.",
+      "files": [],
+      "expectations": [
+        "The absent transient control does not make this existing-course rewrite a new-course default case. Background adaptation remains examples-only, with no added analogy, style, value or learning_support permission.",
+        "The existing learner task and actual-answer feedback remain executable, including waiting and pointing out evidence gaps. The rewrite does not disable them or require a new direction array to continue.",
+        "The result preserves the course goal, neutral fallback, uniform support and practice conditions, six-section artifact and local language-edit scope, without a questionnaire, companion artifact or platform operation."
+      ]
+    },
+    {
+      "id": 162,
+      "eval_name": "learning-support-adjusts-help-without-lowering-task-standard",
+      "prompt": "只写一个可复用的中文授课提示词片段，不连接平台。personalization_directions=[\"learning_support\"]；举例、类比、语言风格和价值阐述都使用统一安排。本课已有固定文本核验任务：原文真实存在，5 名自愿参与者中 3 人明确提出批量导出需求，另外 2 人没提及；判断“所有用户都需要”是否被支持，并按原文修正。达标标准固定为核对存在、支持关系和推断范围，不改变题目数字。平台可能已提供相关学习经历和支持偏好，也可能没有；没有完成任何当前作答。请让支持方式可根据相关已有信息调整，并写明收到实际回答后如何继续。",
+      "expected_output": "Materializes learning-support-only background adaptation and actual-answer-contingent assistance without changing fixed facts, examples or mastery criteria.",
+      "files": [],
+      "expectations": [
+        "Relevant explicit prior experience or support preferences can affect the amount, chunking or progression of explanation support within this task. Empty or irrelevant context uses neutral support and no guessed profession or mastery.",
+        "Only learning_support is enabled for background adaptation. The Prompt does not also personalize example scenarios, analogies, ordinary language style or value framing; it requests no new profile collection and includes no internal profile field or serialized direction array.",
+        "The fixed numbers, task, required three-part verification and success criteria stay invariant. A stated preference for brevity or an experienced job title does not justify omitting necessary reasoning, marking an unsubmitted answer correct or replacing independent work with a demonstration.",
+        "The task waits for an actual answer. Subsequent assistance targets demonstrated gaps, reduces unnecessary help after sufficient performance and allows bounded non-achievement closure instead of endless retries or fabricated mastery."
+      ]
+    },
+    {
+      "id": 163,
+      "eval_name": "latest-answer-and-context-correction-drive-next-support",
+      "prompt": "只写一个简短的中文授课提示词并在后续做标为模拟的试讲，不连接平台。允许五个个性化方向。目标与核验任务固定：原文真实存在，5 名自愿参与者中 3 人提出批量导出需求，另 2 人未提及；核验“所有用户都需要”并给出依据和修正。用真实文本作答和针对性提示，必要时修订，达标或学员要求停止时结束。平台当前已知学员是产品经理、正在整理访谈、偏好直接清楚；这些信息不是已掌握本题的证据。",
+      "followup_turns": [
+        "现在用刚才的提示词开始模拟授课，到我作答处停，不编造我的回答。",
+        "原文确实存在，所以可以证明所有用户都需要。",
+        "更正背景：我现在转为内容编辑，当前任务是核验文章引用。我的修正是：只证明本次 3/5，所以可以写“60% 的所有用户需要”，不再说所有用户都需要。",
+        "我还是卡住了，分不清这次的比例为什么不能用于所有用户。",
+        "今天先停，不想继续这道题了。"
+      ],
+      "expected_output": "Updates teaching from the latest evidence, recognizes a newly introduced inference error and honors a stop without claiming mastery.",
+      "files": [],
+      "expectations": [
+        "The initial delivery waits for the actual answer. Feedback identifies the source-existence versus support error rather than assuming proficiency from the registered product-manager role.",
+        "The later explicit background correction supersedes stale registration information where relevant; teaching does not keep treating the learner as currently responsible for product interviews or quote a stored profile.",
+        "Review of the revised answer recognizes that the all-users unanimity claim was removed but catches the new error of generalizing a voluntary-sample percentage to all users. It does not repeat only the old error or approve merely because an earlier point improved.",
+        "Continued difficulty changes support in a way tied to the population-inference obstacle, without lowering the success criteria or presenting the Teaching Agent's answer as an independent learner result.",
+        "The explicit stop ends the task without another compulsory answer, invented completion or mastery claim. The fixed five/three/two facts and unmentioned-versus-opposed distinction remain intact, and all delivery evidence remains simulated."
       ]
     }
   ]

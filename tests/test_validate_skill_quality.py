@@ -21,6 +21,7 @@ PERSONALIZATION_DIRECTIONS = (
     "analogies",
     "language_style",
     "value_relevance",
+    "learning_support",
 )
 
 
@@ -1289,13 +1290,19 @@ class CourseCreatorContractTests(unittest.TestCase):
         cls.by_id = {case["id"]: case for case in cls.evals["evals"]}
 
     def test_optional_personalization_control_keeps_supported_values(self):
-        controls = (COURSE_CREATOR_REFERENCES / "authoring-contracts.md").read_text(
-            encoding="utf-8"
-        )
-        values = markdown_table_first_column(
-            markdown_section(controls, "Personalization Directions"), "Value"
-        )
-        self.assertCountEqual(PERSONALIZATION_DIRECTIONS, values)
+        for filename, header in (
+            ("authoring-contracts.md", "Value"),
+            ("prompt-semantics.md", "Direction"),
+        ):
+            with self.subTest(filename=filename):
+                document = (COURSE_CREATOR_REFERENCES / filename).read_text(
+                    encoding="utf-8"
+                )
+                values = markdown_table_first_column(
+                    markdown_section(document, "Personalization Directions"),
+                    header,
+                )
+                self.assertCountEqual(PERSONALIZATION_DIRECTIONS, values)
 
     def test_documented_markdownflow_controls_keep_the_runtime_syntax(self):
         runtime = (COURSE_CREATOR_REFERENCES / "markdownflow-syntax.md").read_text(
@@ -1365,7 +1372,7 @@ class CourseCreatorContractTests(unittest.TestCase):
 
     def assert_eval_family(self, case_ids: tuple[int, ...], concepts: tuple[str, ...]):
         for case_id in case_ids:
-            self.assertIn(case_id, self.by_id)
+            self.assertTrue(case_id in self.by_id, f"missing behavioral eval {case_id}")
         criteria = " ".join(
             criterion
             for case_id in case_ids
@@ -1401,6 +1408,97 @@ class CourseCreatorContractTests(unittest.TestCase):
             (19, 20, 37, 38, 71, 72, 85, 86, 87, 88, 89, 90, 91),
             ("unselected", "empty selection", "fallback", "not-assessed", "source"),
         )
+
+    def test_evals_cover_adaptive_defaults_and_explicit_author_boundaries(self):
+        self.assert_eval_family(
+            (158,), ("all five supported directions", "learning_support", "default"),
+        )
+        self.assert_eval_family(
+            (158, 159, 160, 161, 162, 163),
+            (
+                "learning_support", "new-course", "existing", "actual",
+                "empty selection", "stop",
+            ),
+        )
+
+    def test_frozen_prompt_fixture_separates_background_and_answer_axes(self):
+        fixture = json.loads(
+            (self.skill_root / "evals" / "fixtures" / "runtime-adaptation.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        contexts = {
+            context["id"]: context["registration_context"]
+            for context in fixture["learner_contexts"]
+        }
+        paths = {path["id"]: path for path in fixture["answer_paths"]}
+        sessions = fixture["sessions"]
+        self.assertEqual(len(contexts), len(fixture["learner_contexts"]))
+        self.assertEqual(len(paths), len(fixture["answer_paths"]))
+        self.assertEqual({"correct", "misconception", "incomplete"}, set(paths))
+        self.assertEqual(9, len(sessions))
+        self.assertEqual(9, len({session["id"] for session in sessions}))
+
+        observed_pairs = []
+        for session in sessions:
+            self.assertIn(session["context_id"], contexts)
+            self.assertIn(session["answer_path_id"], paths)
+            observed_pairs.append((session["context_id"], session["answer_path_id"]))
+        expected_pairs = [
+            (context_id, path_id)
+            for context_id in ("teacher", "product_manager")
+            for path_id in paths
+        ] + [
+            (context_id, "misconception")
+            for context_id in ("preference_variant", "empty", "irrelevant")
+        ]
+        self.assertCountEqual(expected_pairs, observed_pairs)
+
+        teacher = contexts["teacher"]
+        product_manager = contexts["product_manager"]
+        for field in ("prior_knowledge", "expression_preference"):
+            self.assertEqual(teacher[field], product_manager[field])
+        self.assertNotEqual(teacher["background"], product_manager["background"])
+        preference_variant = contexts["preference_variant"]
+        for field in ("background", "prior_knowledge"):
+            self.assertEqual(product_manager[field], preference_variant[field])
+        self.assertNotEqual(
+            product_manager["expression_preference"],
+            preference_variant["expression_preference"],
+        )
+        self.assertEqual({}, contexts["empty"])
+        self.assertNotIn("background", contexts["irrelevant"])
+        self.assertNotIn("prior_knowledge", contexts["irrelevant"])
+
+    def test_frozen_prompt_fixture_keeps_future_inputs_out_of_author_request(self):
+        fixture = json.loads(
+            (self.skill_root / "evals" / "fixtures" / "runtime-adaptation.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        request = fixture["author_request"]
+        for context in fixture["learner_contexts"]:
+            for value in context["registration_context"].values():
+                if value:
+                    self.assertNotIn(value, request)
+        for path in fixture["answer_paths"]:
+            self.assertNotIn(path["first_answer"], request)
+
+        scripts = {
+            script["id"]: script for script in fixture["followup_scripts"]
+        }
+        self.assertEqual(len(scripts), len(fixture["followup_scripts"]))
+        for session in fixture["sessions"]:
+            if "followup_script_id" in session:
+                self.assertIn(session["followup_script_id"], scripts)
+        for script in scripts.values():
+            self.assertTrue(script["turns"])
+            self.assertEqual(
+                len(script["turns"]), len({turn["id"] for turn in script["turns"]})
+            )
+            for turn in script["turns"]:
+                self.assertTrue(turn["message"].strip())
+                self.assertNotIn(turn["message"], request)
 
     def test_evals_preserve_automatic_creation_publication_and_truthful_handoff(self):
         self.assert_eval_family(

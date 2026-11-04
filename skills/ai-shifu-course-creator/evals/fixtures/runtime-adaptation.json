@@ -1,0 +1,177 @@
+{
+  "fixture_version": 1,
+  "purpose": "Coordinator-owned reproducible inputs for independent-model frozen-prompt comparisons; not a course artifact or a model runner.",
+  "author_request": "请帮我新建一门约 8 分钟的 AI 师傅中文一对一自学微课，只完成本地课程提示词和授课提示词，不连接平台。课程一章一节、纯文字，可以让学员作答。目标是让会使用 AI 的职场人核验 AI 引用：区分“原文确实存在”和“原文支持当前结论”，并把结论限制在证据允许的范围。材料已经足够，请直接完成，教法由你安排。\n\n共同材料：原文真实存在仍不代表它支持 AI 写出的具体说法；核验时要找到原文，再对照原文是否支持这句结论及其推断范围。原文没有说的内容不能补成事实，个别反馈也不能直接概括成所有人的需求。\n\n本课必须保留下面这项独立核验任务，题目材料与达标标准不变，不要在学员作答前给出答案：某产品收到 5 名自愿参与者的反馈，其中 3 人明确提出需要批量导出功能，其余 2 人没有谈及该功能。原文真实存在，人数也已核对。AI 整理为“原文证明所有用户都需要批量导出功能”。请让学员判断这句话是否可直接使用，分别说明原文是否存在、是否支持这句具体结论、结论的范围，并写出证据允许的一句修正。达标依据是同时完成这三个核验并给出不越过证据的修正，不能把其他 2 人未提及当成反对。",
+  "authoring_contract": {
+    "source_facts": [
+      "原文真实存在不等于支持具体结论。",
+      "固定任务有 5 名自愿参与者，3 人明确提出批量导出需求，2 人未谈及；未提及不等于反对。",
+      "不能由这些自愿参与者的反馈推断所有用户的需求。"
+    ],
+    "fixed_task": "判断“原文证明所有用户都需要批量导出功能”能否直接使用；分别核验原文存在、具体支持关系、推断范围，并给出证据允许的一句修正。",
+    "success_criteria": [
+      "承认原文真实存在且人数已核对。",
+      "指出原文只支持本次 5 名自愿参与者中 3 人提出该需求，不支持所有用户都需要。",
+      "修正结论保留样本和参与方式的范围，不把另外 2 人未提及当成反对，也不把 3/5 直接外推成所有用户的需求比例。"
+    ],
+    "transfer_task": {
+      "source": "一次内部试用记录真实存在，4 名受邀同事都表示新页面加载快；没有其他使用者的反馈。",
+      "claim": "所有顾客都认为新页面加载快。",
+      "success_criteria": "原文存在且支持这 4 名受邀同事的体验，不能推及所有顾客；修正只报告这次内部试用记录中的 4 名同事。"
+    }
+  },
+  "learner_contexts": [
+    {
+      "id": "product_manager",
+      "registration_context": {
+        "background": "产品经理，正在整理用户访谈，用 AI 辅助提炼需求，希望避免把少数意见写成所有用户需求。",
+        "prior_knowledge": "会使用 AI，知道引用可能不存在；尚未证明能区分来源存在、具体支持关系和推断范围。",
+        "expression_preference": "表达直接、清楚，保留必要推理；练习先让我自己作答。"
+      }
+    },
+    {
+      "id": "teacher",
+      "registration_context": {
+        "background": "初中历史教师，正在准备课堂史料，用 AI 辅助整理材料，希望避免把个别记述概括成所有人的态度。",
+        "prior_knowledge": "会使用 AI，知道引用可能不存在；尚未证明能区分来源存在、具体支持关系和推断范围。",
+        "expression_preference": "表达直接、清楚，保留必要推理；练习先让我自己作答。"
+      }
+    },
+    {
+      "id": "preference_variant",
+      "registration_context": {
+        "background": "产品经理，正在整理用户访谈，用 AI 辅助提炼需求，希望避免把少数意见写成所有用户需求。",
+        "prior_knowledge": "会使用 AI，知道引用可能不存在；尚未证明能区分来源存在、具体支持关系和推断范围。",
+        "expression_preference": "我希望把推理分成短步骤；卡住时先给一个线索，等我尝试后再增加帮助，不要直接替我作答。"
+      }
+    },
+    {
+      "id": "empty",
+      "registration_context": {}
+    },
+    {
+      "id": "irrelevant",
+      "registration_context": {
+        "interest": "喜欢爵士乐。"
+      }
+    }
+  ],
+  "answer_paths": [
+    {
+      "id": "correct",
+      "first_answer": "不能直接使用。原文存在、人数也核对了，但只支持这次 5 名自愿参与者中 3 人提出批量导出需求，不能证明所有用户都需要。可改为“本次 5 名自愿参与者中，3 人明确提出批量导出需求，其余 2 人未谈及；需求的普遍性仍需进一步核验”。"
+    },
+    {
+      "id": "misconception",
+      "first_answer": "可以直接使用，原文已经找到，人数也核对了，既然有 3 人提出需求，就证明 AI 的“所有用户都需要”有依据。"
+    },
+    {
+      "id": "incomplete",
+      "first_answer": "不能直接用，还需要核实一下。"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "product_correct",
+      "context_id": "product_manager",
+      "answer_path_id": "correct",
+      "followup_script_id": "independent_completion"
+    },
+    {
+      "id": "product_misconception",
+      "context_id": "product_manager",
+      "answer_path_id": "misconception",
+      "followup_script_id": "updated_context_new_error"
+    },
+    {
+      "id": "product_incomplete",
+      "context_id": "product_manager",
+      "answer_path_id": "incomplete"
+    },
+    {
+      "id": "teacher_correct",
+      "context_id": "teacher",
+      "answer_path_id": "correct"
+    },
+    {
+      "id": "teacher_misconception",
+      "context_id": "teacher",
+      "answer_path_id": "misconception"
+    },
+    {
+      "id": "teacher_incomplete",
+      "context_id": "teacher",
+      "answer_path_id": "incomplete",
+      "followup_script_id": "stuck_then_stop"
+    },
+    {
+      "id": "preference_misconception",
+      "context_id": "preference_variant",
+      "answer_path_id": "misconception"
+    },
+    {
+      "id": "empty_misconception",
+      "context_id": "empty",
+      "answer_path_id": "misconception"
+    },
+    {
+      "id": "irrelevant_misconception",
+      "context_id": "irrelevant",
+      "answer_path_id": "misconception"
+    }
+  ],
+  "followup_scripts": [
+    {
+      "id": "independent_completion",
+      "turns": [
+        {
+          "id": "request_independent_transfer",
+          "message": "我想不靠提示再独立核验一条：原文真实存在，一次内部试用中，4 名受邀同事都表示新页面加载快，没有其他人的反馈。AI 写成“所有顾客都认为新页面加载快”。请先只把核验任务交给我，到需要我作答时停下，不提前分析或给答案。"
+        },
+        {
+          "id": "complete_independently",
+          "message": "不能直接用。原文存在，也支持这 4 名受邀同事觉得快；它没有提供其他顾客的反馈，不能推成所有顾客。可改成“本次内部试用的 4 名受邀同事都反馈新页面加载快，其他顾客的体验尚未核验”。"
+        }
+      ],
+      "eligibility": "Optional: dispatch only while the frozen authored activity remains open and explicitly permits this transfer task. Otherwise skip these turns and record transfer as not-assessed; never resume a completed lesson."
+    },
+    {
+      "id": "updated_context_new_error",
+      "turns": [
+        {
+          "id": "correct_background_and_introduce_new_error",
+          "message": "先更正一下注册背景：我现在已转为内容编辑，当前要核验文章引用，不再负责产品需求。我的修正是：原文存在，只证明 3/5 的参与者需要，所以可以写“60% 的所有用户需要批量导出”，不再说所有用户都需要。"
+        },
+        {
+          "id": "correct_remaining_error",
+          "message": "明白了，3/5 只是这次自愿参与者中的比例，不能直接当成所有用户的比例。修正为“本次 5 名自愿参与者中，3 人明确提出批量导出需求，其余 2 人未谈及；对其他用户还没有证据”。"
+        }
+      ]
+    },
+    {
+      "id": "stuck_then_stop",
+      "turns": [
+        {
+          "id": "still_stuck",
+          "message": "我还是卡住了。我知道原文能找到，但仍分不清它为什么不能支持那句话，也不知道怎样缩小结论范围。"
+        },
+        {
+          "id": "stop_without_completion",
+          "message": "今天先停吧，我不想继续做这道题了。"
+        }
+      ]
+    }
+  ],
+  "evaluation_criteria": [
+    "All nine delivery sessions use byte-identical frozen Course Prompt and Teaching Prompt files; authoring receives no test registration context or future learner answer.",
+    "Relevant context affects observable explanation, support or permitted practice conditions rather than only a role name; common facts, the fixed task and success criteria stay identical.",
+    "The two core contexts share prior knowledge and expression preference. Compare their same-answer paths; compare different-answer paths within each context. Compare the preference variant only against product_misconception.",
+    "Correct, misconception and incomplete answers elicit materially appropriate different feedback: recognize sufficient evidence and close; correct the actual support/scope error and wait; elicit missing reasoning without inventing a misconception.",
+    "The preference variant changes the form or amount of contingent support while preserving necessary reasoning and the task standard. A concise preference is not evidence of mastery.",
+    "Empty and irrelevant context use neutral course-appropriate teaching without guessed roles, jazz analogies or new background collection; actual-answer feedback remains available.",
+    "The latest background correction supersedes the stale registration context where relevant. The next review recognizes the repaired all-users claim and addresses the newly introduced population-percentage error.",
+    "An independent attempt receives no advance answer or unnecessary hints, and its successful conclusion is tied to the submitted evidence. Repeated difficulty changes support or ends within scope; a stop request ends without fabricated completion or mastery.",
+    "Keep evaluator criteria and future turns coordinator-only. Record each completed turn, actual waiting, frozen hashes, model/host/revision and not-assessed evidence. These independent-model sessions are simulations, not platform verification or real learner outcomes.",
+    "Follow-up scripts do not reopen completed activities or authorize new tasks. Optional independent transfer is not-assessed if the frozen Prompt does not permit it or has already closed; do not count correct closure as adaptive failure."
+  ]
+}
