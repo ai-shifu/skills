@@ -2320,6 +2320,25 @@
         "The Teaching Prompt waits for the learner's actual updated goal, compares it with the genuinely available earlier goal, and allows a supported change without inventing an answer or missing history.",
         "Known name, profession and style are not collected again. The task does not authorize a broader questionnaire, another course's history, or automatic global-profile writeback."
       ]
+    },
+    {
+      "id": 173,
+      "eval_name": "known-weekly-task-asks-only-for-missing-deadline",
+      "prompt": "只在本地写一段中文授课提示词，并给一小段明确标为模拟的首轮授课，不连接平台。要让学员用自己本周真实任务练习交付物、期限和检查标准，允许必要文字互动。现有可用个人介绍已说“我是项目协调员，喜欢先结论后理由、表达简洁。本周要交付5家供应商的报价对比表，每家含价格、交期和报价原文链接；检查时要求5家信息齐全，每个数字可回到报价原文核对”。称呼和语言已经知道，只有这项任务的交付期限尚未提供，当前课程可用记忆中也没有期限。请安排下一步，保留已知任务及其真实要求，不替学员猜日期、改任务或增加业务约束。后续消息作为模拟学员的实际输入，按已写片段继续。",
+      "followup_turns": [
+        "这项任务的交付期限是本周五17点前。",
+        "我的结果描述是：本周五17点前提交5家供应商的报价对比表，每家列出价格、交期和报价原文链接；5家信息齐全，表内每个数字都能回到报价原文核对。"
+      ],
+      "expected_output": "Reuses a known task and its criteria, explains why its deadline is needed, asks only for that gap and then uses the actual supplied deadline in the result description and feedback.",
+      "files": [],
+      "expectations": [
+        "The instructions reuse the available introduction, the five-supplier comparison task and its known checking criteria. They do not ask again for name, profession, style, task identity or already supplied task requirements.",
+        "Before asking the learner-visible deadline question, the simulated delivery briefly explains that the deadline will make this result description complete and allow the recipient to judge on-time delivery. The next question asks only for the missing actual deadline and waits, rather than restarting intake or guessing a date.",
+        "After the learner supplies Friday before 17:00, the delivery uses that actual deadline together with the known deliverable and checking criteria. It does not substitute the neutral example deadline, infer a calendar date or introduce another business condition.",
+        "A supplied deadline is task information, not by itself a complete new result-writing submission. Any authored request for a fresh result description waits for the learner's actual reply, which is evaluated against the known deliverable, supplied deadline and original checking criteria; a Teaching Agent-written sentence is not treated as the learner's work.",
+        "Feedback recognizes the actual description's five-supplier table, Friday-before-17:00 deadline, complete price/delivery-time/source-link information and traceable numbers. It does not recollect the task or add unsupported requirements after the three elements are clear.",
+        "The run remains an explicitly labeled local simulation, with no global-profile writeback, automatic other-course history or platform-verification claim. This scenario definition alone is not evidence that its model conversation has been executed."
+      ]
     }
   ]
 }
