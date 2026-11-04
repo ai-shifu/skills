@@ -12,7 +12,7 @@ The supported tables for these analytics capabilities, the fields each carries, 
 | `order_orders` | Enrolments / revenue / channel distribution / refund rate / **total spend per learner** | `user_bid`, `status` (501-505, see code table; **paid** = `502`), `payment_channel` (pingxx/stripe/alipay/wechatpay/…), `paid_price` |
 | `var_variable_values` | Learner profile distribution (goals / level / preferences) | `user_bid`, `variable_bid`, `value` (aggregate only — **do not select raw value**; see `privacy-and-presentation.md`) |
 | `shifu_user_archives` | Active learner count / archive rate | `user_bid`, `archived` (0 active / 1 archived) |
-| `bill_daily_usage_metrics` ⚠️ EMPTY | Was designed to hold pre-aggregated daily credit totals. **Currently 0 rows in production** — the `billing.aggregate_daily_usage_metrics` Celery beat job is not yet registered, so nothing populates this table. **Do not query for credit data via this DSL table; use `shifu-cli.py credit-detail` instead** (server-side bill_usage × credit_ledger_entries join). When the cron is eventually enabled, the previous DSL recipes will work again — until then they always return empty. | `stat_date`, `creator_bid`, `usage_scene` (1201 debug / 1202 preview / 1203 production), `usage_type` (1101 Teaching Agent / 1102 TTS), `provider`, `model`, `billing_metric` (7451 Teaching Agent input / 7452 Teaching Agent cache / 7453 Teaching Agent output), `consumed_credits`, `record_count` |
+| `bill_daily_usage_metrics` ⚠️ EMPTY | Was designed to hold pre-aggregated daily credit totals. **Currently 0 rows in production** — the `billing.aggregate_daily_usage_metrics` Celery beat job is not yet registered, so nothing populates this table. **Do not query for credit data via this DSL table; use `shifu credit-detail` instead** (server-side bill_usage × credit_ledger_entries join). When the cron is eventually enabled, the previous DSL recipes will work again — until then they always return empty. | `stat_date`, `creator_bid`, `usage_scene` (1201 debug / 1202 preview / 1203 production), `usage_type` (1101 Teaching Agent / 1102 TTS), `provider`, `model`, `billing_metric` (7451 Teaching Agent input / 7452 Teaching Agent cache / 7453 Teaching Agent output), `consumed_credits`, `record_count` |
 | `user_users` ⚠️ | **Look up nickname by known `user_bid`** / **reverse-look up `user_bid` by phone or email** | `user_bid`, `nickname` (auto PII-redacted), `user_identify` (masked, e.g. `138*****000`); restricted-access rules in `privacy-and-presentation.md` |
 | `shifu_published_shifus` 🆕 | **Current published title for one of my courses** / does the same `shifu_bid` have rename history? | `title`, `created_user_bid`, `created_at`, `updated_at`. **Row-lookup only** — aggregate / group_by are rejected; `title` accepts `op=like` with trailing-% (anti-enumeration: ≥ 2 non-wildcard chars); `limit ≤ 50`; owner-only (auto-filtered to `created_user_bid = <you>`) |
 | `shifu_draft_shifus` 🆕 | **Current draft (editor) title** — useful when the draft has been renamed but not yet re-published, so the published title still lags | Same fields and restrictions as `shifu_published_shifus` |
@@ -21,7 +21,7 @@ The course-scoped tables listed above (everything except `user_users`) are autom
 
 `user_users` is a **global** user table (no `shifu_bid` column). Its access restrictions are documented in `privacy-and-presentation.md`.
 
-**Token usage is intentionally not exposed.** Creators can only see _credit_ consumption. The canonical real-time path is `shifu-cli.py credit-detail <bid>`, which the backend joins on the fly from `bill_usage` × `credit_ledger_entries` and returns ABS(amount) as `credits` (positive). When the daily aggregation cron is enabled, `bill_daily_usage_metrics.consumed_credits` will become the path for "by-day trend" DSL queries; until then it is empty and `credit-detail` is the only working path.
+**Token usage is intentionally not exposed.** Creators can only see _credit_ consumption. The canonical real-time path is `shifu credit-detail <bid>`, which the backend joins on the fly from `bill_usage` × `credit_ledger_entries` and returns ABS(amount) as `credits` (positive). When the daily aggregation cron is enabled, `bill_daily_usage_metrics.consumed_credits` will become the path for "by-day trend" DSL queries; until then it is empty and `credit-detail` is the only working path.
 
 ## Course title is "current published", not "history"
 
@@ -36,7 +36,7 @@ PDF §0 + §7 of the 2026-05-15 query handbook describes the failure mode this r
 Operational corollaries:
 
 - A title you saw in an earlier turn of this same conversation does not count as the current title — the author may have renamed the course mid-conversation. Re-resolve via Recipe 0b whenever you take a destructive or final action on a title-named course.
-- Do not bypass this with `shifu-cli.py list` — that command lists drafts only, so a course whose draft title leads its published title appears under the wrong name in the listing.
+- Do not bypass this with `shifu list` — that command lists drafts only, so a course whose draft title leads its published title appears under the wrong name in the listing.
 - When the only matches are historical, state it explicitly: "This course was previously called X. It is currently called Y. Are you asking about Y, or do you mean a different course?" Never silently substitute one for the other.
 
 ## `learn_generated_blocks` type codes
@@ -180,8 +180,8 @@ All `*_bid` values are 36-char pseudo-IDs. Never display them raw. Translate as 
 
 | Field | How to translate |
 | --- | --- |
-| `shifu_bid` | Use the `shifu-cli.py list` cache: `bid → name` |
-| `outline_item_bid` | Use the `shifu-cli.py show <shifu_bid>` cache: recurse the outline tree to map `bid → name`; render as "Lesson X.Y: \<title\>" |
+| `shifu_bid` | Use the `shifu list` cache: `bid → name` |
+| `outline_item_bid` | Use the `shifu show <shifu_bid>` cache: recurse the outline tree to map `bid → name`; render as "Lesson X.Y: \<title\>" |
 | `progress_record_bid` | Two-step: ① DSL query `learn_progress_records` with `where progress_record_bid in […]` + `select progress_record_bid, outline_item_bid` to get the mapping; ② translate `outline_item_bid` via the outline cache |
 | `user_bid` | **Never show raw**. Use ordinal labels ("Learner A / B / C" or "Top 1 / Top 2"). If the user wants to know who, batch the user_bids (deduped, ≤ 50) into a `user_users` query per `privacy-and-presentation.md` and append the nickname: `Learner A (Python 学徒)` |
 | `variable_bid` | The documented analytics/CLI interface has no variable-name lookup. Discover available IDs internally with `group_by variable_bid count_distinct user_bid` (Recipe 15). A question label alone does not resolve an ID: use a verified mapping or confirm the relevant aggregate candidate distribution before selecting an ID. Never guess the mapping or display the raw `variable_bid`. |
@@ -210,10 +210,10 @@ A learner can have multiple progress records for the **same lesson** (`outline_i
 | Amount type | Source | Who pays | How to query |
 | --- | --- | --- | --- |
 | **Course price / revenue** | `order_orders.paid_price` | Learner pays the creator | DSL `order_orders` |
-| **Teaching Agent invocation credit consumption** | `credit_ledger_entries.amount` (joined with `bill_usage` server-side) | Creator's credits are deducted | `shifu-cli.py credit-detail <bid>` (`bill_daily_usage_metrics` is currently empty pending cron registration) |
+| **Teaching Agent invocation credit consumption** | `credit_ledger_entries.amount` (joined with `bill_usage` server-side) | Creator's credits are deducted | `shifu credit-detail <bid>` (`bill_daily_usage_metrics` is currently empty pending cron registration) |
 | **Plan / credit pack purchases** | Internal billing tables | Creator recharges credits | not queryable |
 
-If the user asks "how much revenue did my course earn" → DSL `order_orders`. If the user asks "how many credits did I spend / what did it cost" → `shifu-cli.py credit-detail`. **These are completely different — do not mix them.**
+If the user asks "how much revenue did my course earn" → DSL `order_orders`. If the user asks "how many credits did I spend / what did it cost" → `shifu credit-detail`. **These are completely different — do not mix them.**
 
 The `credit-detail` endpoint returns the absolute credit amount (`ABS(credit_ledger_entries.amount)`) already in account-currency units; no further conversion needed. Do not try to re-derive credits from token counts — token data is not part of the creator surface.
 
@@ -225,8 +225,8 @@ When in doubt, do not guess — use only the supported tables documented above. 
 | --- | --- | --- |
 | `user_logs` | Does not exist | `learn_generated_blocks` for interaction data, `learn_progress_records` for progress |
 | `logs` / `event_logs` | Does not exist | Same as above |
-| `billing` / `usage` | Does not exist | `bill_daily_usage_metrics` (currently empty) or `shifu-cli.py credit-detail` |
-| `credits` / `credit_logs` | Does not exist | `shifu-cli.py credit-detail <bid>` |
+| `billing` / `usage` | Does not exist | `bill_daily_usage_metrics` (currently empty) or `shifu credit-detail` |
+| `credits` / `credit_logs` | Does not exist | `shifu credit-detail <bid>` |
 | `users` | Wrong name (it's `user_users`) | `user_users` |
 | `lessons` / `courses` | Does not exist | `shifu_published_shifus` / `shifu_draft_shifus` for metadata, `learn_progress_records` for learner data |
 

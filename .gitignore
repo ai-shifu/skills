@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 
+# Node packages and local tarballs
+node_modules/
+*.tgz
+
 # macOS
 .DS_Store
 .AppleDouble

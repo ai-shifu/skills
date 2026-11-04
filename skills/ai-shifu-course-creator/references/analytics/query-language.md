@@ -66,7 +66,7 @@ Per-learner grouping is supported on `learn_progress_records`, `learn_generated_
 The smallest legal body is `table` plus either `select` or `aggregate`:
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <shifu_bid> --dsl '{
+shifu analytics-query <shifu_bid> --dsl '{
   "table": "learn_progress_records",
   "aggregate": [{"fn":"count","alias":"n"}],
   "limit": 1
