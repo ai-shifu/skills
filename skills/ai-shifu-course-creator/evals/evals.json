@@ -168,14 +168,14 @@
         "It directly produces the requested local Teaching Prompt from the supplied text, with a sales-review example and the requested falsifying-evidence interaction.",
         "It adds no slide, image, diagram, image search, upload, platform authentication, course lookup, deployment, or sync operation.",
         "The explanation, interaction, and immediate feedback make the lesson runnable without a required close, visual quota, mandatory lead-in, or named pedagogical loop.",
-        "The interaction uses valid MarkdownFlow syntax, waits for the actual response, and can later read that response from automatic course-wide memory without special persistence instructions.",
+        "The interaction uses valid MarkdownFlow syntax, waits for the actual response and uses that current-conversation answer for immediate feedback; it makes no unsupported cross-lesson persistence promise.",
         "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. The body uses readable author-editable formatting appropriate to the task; no particular list hierarchy, heading scheme, or template is required.",
         "The interaction question, standalone unprefixed control, and immediate feedback remain together with no navigation comment splitting their behavior."
       ]
     },
     {
       "id": 15,
-      "prompt": "Course Design Intake、分段和教学模式已经确定，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只生成一节标准 AI 授课的授课提示词，不生成课程提示词、不部署。lesson_id 固定为 L15，核心问题是‘退款审核人员如何区分风险信号与欺诈结论？’。\n\n来源与不可变约束：\n1. 账号信息不一致和短时间内多设备登录都只是风险信号，不能单独证明欺诈。\n2. 教学中的处置顺序必须是：核验身份 → 留存证据 → 决定处置。\n3. 下面制度阈值原句必须作为独立确定性内容原样出现且只出现一次：两个及以上风险信号同时出现时，必须在 15 分钟内上报。\n4. 下面固定金句必须作为独立确定性内容原样出现且只出现一次：先验证，再处置；先留证，再定责。\n\n课内单选互动必须使用下面完整提问和控件，二者各出现一次且顺序不变：\n这个案例当前最应该先做什么？\n?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]\n\n该答案只在本课用于即时反馈：针对每个选项解释其后果，并把正确选择重新连回‘风险信号不是欺诈结论’。后续课节和课程提示词不安排使用这个答案；它仍会自动进入 memory。\n\n没有其他固定文案或视觉样式要求。请自行选择能讲清本课的教学安排，只有在有帮助时才使用幻灯片；个性化方向只决定在这些已固定的教学动作中哪些表达可基于学习者背景调整，不改变教学结构或必须讲清的内容。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts；不要解释过程。",
+      "prompt": "Course Design Intake、分段和教学模式已经确定，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只生成一节标准 AI 授课的授课提示词，不生成课程提示词、不部署。lesson_id 固定为 L15，核心问题是‘退款审核人员如何区分风险信号与欺诈结论？’。\n\n来源与不可变约束：\n1. 账号信息不一致和短时间内多设备登录都只是风险信号，不能单独证明欺诈。\n2. 教学中的处置顺序必须是：核验身份 → 留存证据 → 决定处置。\n3. 下面制度阈值原句必须作为独立确定性内容原样出现且只出现一次：两个及以上风险信号同时出现时，必须在 15 分钟内上报。\n4. 下面固定金句必须作为独立确定性内容原样出现且只出现一次：先验证，再处置；先留证，再定责。\n\n课内单选互动必须使用下面完整提问和控件，二者各出现一次且顺序不变：\n这个案例当前最应该先做什么？\n?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]\n\n该答案只在本课用于即时反馈：针对每个选项解释其后果，并把正确选择重新连回‘风险信号不是欺诈结论’。后续课节和课程提示词不安排使用这个答案。\n\n没有其他固定文案或视觉样式要求。请自行选择能讲清本课的教学安排，只有在有帮助时才使用幻灯片；个性化方向只决定在这些已固定的教学动作中哪些表达可基于学习者背景调整，不改变教学结构或必须讲清的内容。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts；不要解释过程。",
       "expected_output": "Produces a runnable Teaching Prompt preserving exact source, interaction, explicit choices, and requested JSON output without a universal teaching cadence.",
       "files": [],
       "expectations": [
@@ -183,7 +183,7 @@
         "The Teaching Prompt preserves the distinction between risk signals and a fraud conclusion and teaches identity verification before evidence retention before the handling decision.",
         "The exact standalone deterministic lines `===两个及以上风险信号同时出现时，必须在 15 分钟内上报。===` and `===先验证，再处置；先留证，再定责。===` each occur exactly once.",
         "The exact question and `?[直接拒绝退款 | 先核验身份并留存证据 | 等客户再次联系]` control each occur exactly once, preserve option order, and lead to immediate answer-specific feedback.",
-        "The Teaching Prompt waits for the actual response before feedback and relies on automatic memory without requesting a separate programmatic key, substitution placeholder, or explicit save action.",
+        "The Teaching Prompt waits for the actual response before feedback and uses the available current-conversation answer without requesting an unnecessary programmatic key, substitution placeholder or explicit save action for immediate feedback.",
         "With navigation comments ignored by the Teaching Agent, the body directly carries the chosen teaching sequence, required content, interaction placement, feedback, and close, including any visuals actually chosen; it does not substitute an authoring explanation of design or preservation categories.",
         "The agent chooses a coherent teaching sequence and any useful visuals while preserving all supplied facts, operational order, exact material, question, option order, immediate feedback, and close; no universal brief-text-first or slide/text alternation is required.",
         "The selected directions produce executable local teaching requirements within the fixed lesson; ordinary wording remains an instruction rather than a mandatory transcript, and the result adds no concrete typography, color, coordinates, animation, or uniform point quota.",
@@ -195,7 +195,7 @@
     },
     {
       "id": 16,
-      "prompt": "personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只修复下面这份已经完成的授课提示词。不要重做课程结构，不生成课程提示词，不部署，也不要输出审计报告。它现在把普通讲解和幻灯片细节写得像逐字稿与排版施工单；请按技能的现行规则作最小修复，同时保持教学意图、事实、顺序、互动效果和收束结果完整、可运行。\n\n原授课提示词：\n\n# 第 3 节：异常容器处置\n\n第1页：使用 16:9 深蓝色背景，标题‘异常容器处置’居中，标题 44pt，副标题 24pt。\n你要逐字说：‘大家把目光看向屏幕左侧那只鲜红色警报灯。现在，请和我一起深呼吸三秒。’\n\n第2页：左 40% 放容器照片，右 60% 放三条文字，每条依次淡入。\n你要逐字说：‘标签缺失就像一颗已经拉开保险栓的手雷，它在提醒我们危险已经发生。’\n必须讲清：标签缺失或破损只是风险信号，不能据此判定内容物危险。\n\n第3页：使用红黄绿三色箭头和飞入动画展示以下顺序：原地隔离 → 记录容器编号和当前时间 → 上报值班主管。\n你要逐字说：‘第一步，原地隔离；第二步，一字不差地抄下编号；第三步，马上找到值班主管。’\n\n===未确认内容物前，不得移动容器。===\n\n!===\n紧急处置口诀：\n不触碰、不移动、先隔离、再上报。\n!===\n\n看到标签缺失但容器完好时，第一步应该做什么？\n?[立即打开确认 | 原地隔离并上报 | 继续使用]\n\n学员选择后，分别说明每个选项会造成的后果，并用正确选项收束到规定的处置顺序。这个答案只用于本课，不在后续复用。\n\n必须保留一个核心问题、上述三项来源事实及其顺序、完整互动及即时反馈。两个确定性内容必须原样、原结构、各出现一次。不要用另一套固定模板替代原有问题；其余具体程度按技能规则决定。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts。lesson_id 固定为 L16。",
+      "prompt": "personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只修复下面这份已经完成的授课提示词。不要重做课程结构，不生成课程提示词，不部署，也不要输出审计报告。它现在把普通讲解和幻灯片细节写得像逐字稿与排版施工单；请按技能的现行规则作最小修复，同时保持教学意图、事实、顺序、互动效果和收束结果完整、可运行。\n\n原授课提示词：\n\n# 第 3 节：异常容器处置\n\n第1页：使用 16:9 深蓝色背景，标题‘异常容器处置’居中，标题 44pt，副标题 24pt。\n你要逐字说：‘大家把目光看向屏幕左侧那只鲜红色警报灯。现在，请和我一起深呼吸三秒。’\n\n第2页：左 40% 放容器照片，右 60% 放三条文字，每条依次淡入。\n你要逐字说：‘标签缺失就像一颗已经拉开保险栓的手雷，它在提醒我们危险已经发生。’\n必须讲清：标签缺失或破损只是风险信号，不能据此判定内容物危险。\n\n第3页：使用红黄绿三色箭头和飞入动画展示以下顺序：原地隔离 → 记录容器编号和当前时间 → 上报值班主管。\n你要逐字说：‘第一步，原地隔离；第二步，一字不差地抄下编号；第三步，马上找到值班主管。’\n\n===未确认内容物前，不得移动容器。===\n\n!===\n紧急处置口诀：\n不触碰、不移动、先隔离、再上报。\n!===\n\n看到标签缺失但容器完好时，第一步应该做什么？\n?[立即打开确认 | 原地隔离并上报 | 继续使用]\n\n学员选择后，分别说明每个选项会造成的后果，并用正确选项收束到规定的处置顺序。这个实际答案只用于本课时即时反馈，不安排后续复用。\n\n必须保留一个核心问题、上述三项来源事实及其顺序、完整互动及即时反馈。两个确定性内容必须原样、原结构、各出现一次。不要用另一套固定模板替代原有问题；其余具体程度按技能规则决定。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts。lesson_id 固定为 L16。",
       "expected_output": "Repairs the supplied over-scripted artifact into a direct runtime Teaching Prompt while preserving its three-slide sequence, source facts, runtime controls, deterministic content, and current-lesson feedback behavior.",
       "files": [],
       "expectations": [
@@ -212,7 +212,7 @@
     },
     {
       "id": 17,
-      "prompt": "Course Design Intake 和课节结构已经完成，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只生成一节纯课堂幻灯片模式的授课提示词：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白或长篇口头解释。lesson_id 固定为 L17，核心问题是‘向外部供应商发送客户数据前，如何确定合规动作？’。\n\n必须呈现的事实与关系：\n- L1 公开数据：审核后可以公开。\n- L2 内部数据：只能通过获授权的内部渠道流转。\n- L3 敏感数据：外发前需要审批，并使用获批准的加密渠道。\n- 决策顺序是：识别数据级别 → 核验接收方授权 → 选择合规通道 → 登记外发。\n\n下面是内部制度原文，必须作为独立确定性内容原样出现且只出现一次：\n外发含客户联系方式的数据前，必须完成数据分级、接收方授权核验和外发登记。\n\n下面图片已经选定并上传。必须按‘制度原文 → 图片 → 图注 → 互动’的顺序使用；图片和图注都要作为独立确定性内容原样出现且只出现一次：\n![数据分级与外发路径](https://static.example.com/training/data-export-path-v3.png)\n图：先分级，再核验授权，最后登记外发。\n\n互动必须完整保留并放在图片和图注之后：\n一份包含客户手机号的表格需要发给外部供应商，发送前最先确认什么？\n?[供应商是否催得急 | 数据级别与授权范围 | 文件是否足够美观]\n\n答案只用于本课的简短反馈；后续课节不安排再次使用，仍由运行时自动进入 memory。\n\n没有额外的固定文案或视觉样式要求。结果必须足以生成可直接投屏的课堂幻灯片；请固定完整教学顺序和幻灯片结构，包括页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及制度、图片、图注、互动和收束的位置。所选个性化方向只适用于这些固定槽位内的投屏内容，不能添加 AI 旁白或按单个学习者重新编排页面。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts；不要解释过程。",
+      "prompt": "Course Design Intake 和课节结构已经完成，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只生成一节纯课堂幻灯片模式的授课提示词：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白或长篇口头解释。lesson_id 固定为 L17，核心问题是‘向外部供应商发送客户数据前，如何确定合规动作？’。\n\n必须呈现的事实与关系：\n- L1 公开数据：审核后可以公开。\n- L2 内部数据：只能通过获授权的内部渠道流转。\n- L3 敏感数据：外发前需要审批，并使用获批准的加密渠道。\n- 决策顺序是：识别数据级别 → 核验接收方授权 → 选择合规通道 → 登记外发。\n\n下面是内部制度原文，必须作为独立确定性内容原样出现且只出现一次：\n外发含客户联系方式的数据前，必须完成数据分级、接收方授权核验和外发登记。\n\n下面图片已经选定并上传。必须按‘制度原文 → 图片 → 图注 → 互动’的顺序使用；图片和图注都要作为独立确定性内容原样出现且只出现一次：\n![数据分级与外发路径](https://static.example.com/training/data-export-path-v3.png)\n图：先分级，再核验授权，最后登记外发。\n\n互动必须完整保留并放在图片和图注之后：\n一份包含客户手机号的表格需要发给外部供应商，发送前最先确认什么？\n?[供应商是否催得急 | 数据级别与授权范围 | 文件是否足够美观]\n\n答案只用于本课时的简短反馈；后续课节不安排再次使用。\n\n没有额外的固定文案或视觉样式要求。结果必须足以生成可直接投屏的课堂幻灯片；请固定完整教学顺序和幻灯片结构，包括页数、页序、每页和各内容槽位要达成的教学目的、内容分组、语义布局，以及制度、图片、图注、互动和收束的位置。所选个性化方向只适用于这些固定槽位内的投屏内容，不能添加 AI 旁白或按单个学习者重新编排页面。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts；不要解释过程。",
       "expected_output": "Produces a projection-ready pure-classroom-slide Teaching Prompt whose ordered page directions preserve regulated text, image order, and interaction behavior while honoring the explicit personalization directions.",
       "files": [],
       "expectations": [
@@ -243,7 +243,7 @@
     },
     {
       "id": 19,
-      "prompt": "Course Design Intake 已全部完成。请基于同一份材料，分别以 personalization_directions=[]、[\"examples\"]、[\"language_style\", \"value_relevance\"] 生成同一节标准 AI 一对一授课的授课提示词。已知学习者负责门店排班，希望识别冒充总部的邮件，偏好直接、简洁的讲法。三份都直接按下面的运行时顺序写：先用一段简短文字引出核心问题；创建第 1 页，建立可疑邮件判断边界并说明多因素认证不能替代唯一且强度足够的密码，随后立即解释该边界；创建第 2 页，按‘核验发件人和域名 → 不打开链接地检查链接目标 → 通过内部安全渠道上报’呈现处置路径，加入一个实际的可疑邮件例子并放置下方确定性原文，随后立即解释怎样应用三步路径；创建第 3 页，只显示下方完整互动问题，紧接下方控件，回答后立即针对各选项反馈并回扣核心问题完成收束。每一页都有标题。三份的页数、页序、内容分组、三页后的讲解或反馈，以及确定性内容、互动和收束的位置逐项一致；方向选择只决定哪些表达可基于该学习者背景适配；未选择的方向使用课程统一安排。没有安排类比，不得追加类比。\n\n核心问题是‘员工收到疑似钓鱼邮件时，如何安全判断并处置？’。必须保持的事实是：多因素认证可以降低账号被接管的风险，但不能替代唯一且强度足够的密码。下面原文必须在每份结果中作为独立确定性内容原样出现且只出现一次：\n===不要点击、回复或转发尚未核验的可疑邮件。===\n\n下面互动也必须在每份结果中完整出现且只出现一次，选项顺序不变，答案只用于本课即时反馈，仍会自动进入 memory：\n收到一封要求立即重置密码的邮件时，第一步应做什么？\n?[直接点击邮件链接 | 独立核验发件人和域名 | 转发给同事确认]\n\n只输出一个可解析的 JSON 对象，字段仅为 variants；variants 必须依次包含 3 项，每项字段仅为 variant 和 teaching_prompt，variant 依次为 common、examples_only、style_and_value；不要把作者控制字段写入 teaching_prompt。",
+      "prompt": "Course Design Intake 已全部完成。请基于同一份材料，分别以 personalization_directions=[]、[\"examples\"]、[\"language_style\", \"value_relevance\"] 生成同一节标准 AI 一对一授课的授课提示词。已知学习者负责门店排班，希望识别冒充总部的邮件，偏好直接、简洁的讲法。三份都直接按下面的运行时顺序写：先用一段简短文字引出核心问题；创建第 1 页，建立可疑邮件判断边界并说明多因素认证不能替代唯一且强度足够的密码，随后立即解释该边界；创建第 2 页，按‘核验发件人和域名 → 不打开链接地检查链接目标 → 通过内部安全渠道上报’呈现处置路径，加入一个实际的可疑邮件例子并放置下方确定性原文，随后立即解释怎样应用三步路径；创建第 3 页，只显示下方完整互动问题，紧接下方控件，回答后立即针对各选项反馈并回扣核心问题完成收束。每一页都有标题。三份的页数、页序、内容分组、三页后的讲解或反馈，以及确定性内容、互动和收束的位置逐项一致；方向选择只决定哪些表达可基于该学习者背景适配；未选择的方向使用课程统一安排。没有安排类比，不得追加类比。\n\n核心问题是‘员工收到疑似钓鱼邮件时，如何安全判断并处置？’。必须保持的事实是：多因素认证可以降低账号被接管的风险，但不能替代唯一且强度足够的密码。下面原文必须在每份结果中作为独立确定性内容原样出现且只出现一次：\n===不要点击、回复或转发尚未核验的可疑邮件。===\n\n下面互动也必须在每份结果中完整出现且只出现一次，选项顺序不变，答案只用于本课时即时反馈：\n收到一封要求立即重置密码的邮件时，第一步应做什么？\n?[直接点击邮件链接 | 独立核验发件人和域名 | 转发给同事确认]\n\n只输出一个可解析的 JSON 对象，字段仅为 variants；variants 必须依次包含 3 项，每项字段仅为 variant 和 teaching_prompt，variant 依次为 common、examples_only、style_and_value；不要把作者控制字段写入 teaching_prompt。",
       "expected_output": "Produces comparable empty-selection, examples-only, and style-and-value Teaching Prompts with the same three-slide sequence and adaptation limited to each selected subset.",
       "files": [],
       "expectations": [
@@ -261,7 +261,7 @@
     },
     {
       "id": 20,
-      "prompt": "Course Design Intake 已全部完成，交付模式是纯课堂幻灯片：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白。请用同一份材料分别生成 personalization_directions=[] 和 [\"examples\"] 的两份授课提示词；已知本次参训群体负责门店客户回访。两份都直接按下面顺序创建四页：第 1 页提出核心问题、呈现‘识别数据级别’，并完整放入一个简短、具体的客户数据例子；第 2 页呈现‘确认接收方授权 → 完成审批 → 使用获批准的渠道外发’并放置下方制度原文；第 3 页只显示下方图片与紧随其后的图注；第 4 页只显示下方完整互动问题，紧接下方控件，回答后给出各选项简短反馈并完成收束。每页都有标题。两份的页数、页序、内容分组、具体例子的页面位置，以及制度、图片、图注、互动、反馈和收束的位置逐项一致；只在选择举例的版本中根据已知参训背景调整已安排的例子；其它方向保持课程统一安排。\n\n核心问题是‘向合作方外发客户数据前，如何完成合规检查？’；决策顺序固定为：识别数据级别 → 确认接收方授权 → 完成审批 → 使用获批准的渠道外发。\n\n下面制度、图片和图注必须在每份结果中作为独立确定性内容原样各出现一次，并保持制度 → 图片 → 图注 → 互动的顺序：\n===外发客户数据前，必须完成接收方授权核验和审批。===\n===![客户数据外发决策路径](https://static.example.com/training/customer-data-export.png)===\n===图：先确认数据级别和授权，再审批并选择合规通道。===\n\n下面互动必须在图片和图注之后完整出现且只出现一次，答案只用于本课简短反馈，仍会自动进入 memory：\n哪项条件满足后才可以外发客户数据？\n?[合作方口头承诺保密 | 已核验授权并完成审批 | 文件已经压缩]\n\n只输出一个可解析的 JSON 对象，字段仅为 variants；variants 必须依次包含 2 项，每项字段仅为 variant 和 teaching_prompt，variant 依次为 common、examples_only；不要把作者控制字段写入 teaching_prompt。",
+      "prompt": "Course Design Intake 已全部完成，交付模式是纯课堂幻灯片：课堂只投屏，由现场教师控制节奏，不需要 AI 旁白。请用同一份材料分别生成 personalization_directions=[] 和 [\"examples\"] 的两份授课提示词；已知本次参训群体负责门店客户回访。两份都直接按下面顺序创建四页：第 1 页提出核心问题、呈现‘识别数据级别’，并完整放入一个简短、具体的客户数据例子；第 2 页呈现‘确认接收方授权 → 完成审批 → 使用获批准的渠道外发’并放置下方制度原文；第 3 页只显示下方图片与紧随其后的图注；第 4 页只显示下方完整互动问题，紧接下方控件，回答后给出各选项简短反馈并完成收束。每页都有标题。两份的页数、页序、内容分组、具体例子的页面位置，以及制度、图片、图注、互动、反馈和收束的位置逐项一致；只在选择举例的版本中根据已知参训背景调整已安排的例子；其它方向保持课程统一安排。\n\n核心问题是‘向合作方外发客户数据前，如何完成合规检查？’；决策顺序固定为：识别数据级别 → 确认接收方授权 → 完成审批 → 使用获批准的渠道外发。\n\n下面制度、图片和图注必须在每份结果中作为独立确定性内容原样各出现一次，并保持制度 → 图片 → 图注 → 互动的顺序：\n===外发客户数据前，必须完成接收方授权核验和审批。===\n===![客户数据外发决策路径](https://static.example.com/training/customer-data-export.png)===\n===图：先确认数据级别和授权，再审批并选择合规通道。===\n\n下面互动必须在图片和图注之后完整出现且只出现一次，答案只用于本课时简短反馈：\n哪项条件满足后才可以外发客户数据？\n?[合作方口头承诺保密 | 已核验授权并完成审批 | 文件已经压缩]\n\n只输出一个可解析的 JSON 对象，字段仅为 variants；variants 必须依次包含 2 项，每项字段仅为 variant 和 teaching_prompt，variant 依次为 common、examples_only；不要把作者控制字段写入 teaching_prompt。",
       "expected_output": "Produces common and examples-personalized projection-ready prompts that share the same four-page sequence and honor an explicit direction selection in pure-slide delivery.",
       "files": [],
       "expectations": [
@@ -340,7 +340,7 @@
     },
     {
       "id": 26,
-      "prompt": "personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只对下面这份标准 AI 一对一授课提示词做最小修复，不生成课程提示词、不部署，也不要输出审计报告。lesson_id 固定为 L26。\n\n它的问题是第三页提前显示正确答案，且反馈没有紧接互动。请修复这两个问题；视觉开场、连续对照图和统一讲解都是我批准的节奏，请保留。保留恰好三页视觉单元及其原有顺序和教学目的，保留全部事实、确定性内容、完整互动、即时反馈和收束结果。不要增加封面或其他填充页。\n\n原授课提示词：\n\n第1页：用对照关系呈现两个风险信号——供应商突然要求变更收款账户、同时催促立即付款——以及边界：它们只是风险信号，不能单独证明欺诈。\n\n第2页：呈现处置顺序：通过原登记联系方式独立核验 → 留存核验记录 → 提交双人复核 → 决定是否付款。\n\n===付款信息变更未经原登记联系人独立核验，不得发起付款。===\n\n第3页：展示完整问题“供应商邮件要求改用新账户并立即付款时，第一步应该做什么？”，同时在页内列出三个选项，并标注“正确答案：通过原登记联系方式独立核验”。\n\n供应商邮件要求改用新账户并立即付款时，第一步应该做什么？\n?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]\n\n最后统一讲解：说明两个风险信号为什么不能直接推出欺诈结论，解释四步处置顺序，并针对三个选项分别给出后果；用正确选择回扣核心问题并完成行动收束。答案只用于本课，仍会自动进入 memory。\n\n最小修复时只把选项反馈移到控件后，保留前两张对照图之后的统一解释，不得删改事实、改变处置顺序、改变三页的教学目的或改动确定性内容、问题、控件及选项顺序。所选方向只允许在已有教学动作内进行相应的背景适配，必须保留每处详细讲解所需的事实与推理。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts。",
+      "prompt": "personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]。请只对下面这份标准 AI 一对一授课提示词做最小修复，不生成课程提示词、不部署，也不要输出审计报告。lesson_id 固定为 L26。\n\n它的问题是第三页提前显示正确答案，且反馈没有紧接互动。请修复这两个问题；视觉开场、连续对照图和统一讲解都是我批准的节奏，请保留。保留恰好三页视觉单元及其原有顺序和教学目的，保留全部事实、确定性内容、完整互动、即时反馈和收束结果。不要增加封面或其他填充页。\n\n原授课提示词：\n\n第1页：用对照关系呈现两个风险信号——供应商突然要求变更收款账户、同时催促立即付款——以及边界：它们只是风险信号，不能单独证明欺诈。\n\n第2页：呈现处置顺序：通过原登记联系方式独立核验 → 留存核验记录 → 提交双人复核 → 决定是否付款。\n\n===付款信息变更未经原登记联系人独立核验，不得发起付款。===\n\n第3页：展示完整问题“供应商邮件要求改用新账户并立即付款时，第一步应该做什么？”，同时在页内列出三个选项，并标注“正确答案：通过原登记联系方式独立核验”。\n\n供应商邮件要求改用新账户并立即付款时，第一步应该做什么？\n?[按邮件中的新账户付款 | 通过原登记联系方式独立核验 | 回复邮件索要承诺]\n\n最后统一讲解：说明两个风险信号为什么不能直接推出欺诈结论，解释四步处置顺序，并针对三个选项分别给出后果；用正确选择回扣核心问题并完成行动收束。答案只用于本课时即时反馈，不安排后续复用。\n\n最小修复时只把选项反馈移到控件后，保留前两张对照图之后的统一解释，不得删改事实、改变处置顺序、改变三页的教学目的或改动确定性内容、问题、控件及选项顺序。所选方向只允许在已有教学动作内进行相应的背景适配，必须保留每处详细讲解所需的事实与推理。\n\n只输出一个可解析的 JSON 对象，字段仅为 lesson_teaching_prompts。",
       "expected_output": "Repairs premature answer disclosure and feedback placement while preserving the author-approved visual-first and pooled-explanation rhythm.",
       "files": [],
       "expectations": [
@@ -1279,7 +1279,7 @@
       "expectations": [
         "It directly produces a runnable Teaching Prompt and preserves the supplied four teaching actions, their order, both number sets, their mean of 50, and the source boundary; the approved teaching design remains unchanged rather than becoming a proposal or a different lesson method.",
         "The exact learner-facing question is immediately followed by the standalone unprefixed control ?[每个数值的分布也相同 | 不能据此认定分布相同], with the supplied option order and immediate option-specific feedback carrying the stated reasoning and limits.",
-        "The actual answer automatically enters memory and supports immediate feedback; the fragment adds no explicit save step, collection question, cross-lesson teaching dependency, or intermediate state table.",
+        "The actual answer in the current conversation supports immediate feedback; the fragment adds no unnecessary save step, collection question, cross-lesson memory dependency or intermediate state table, and makes no universal persistence claim.",
         "The conclusion appears exactly once as the standalone deterministic line ===平均数相同，不代表分布相同。===; its wording and markers remain intact outside HTML comments and ordinary layout formatting.",
         "Each meaningful teaching block has a standalone localized HTML explanatory comment, while all numbers, instructions, controls, feedback and exact content remain in the runtime body when the Teaching Agent ignores comments. Readable source layout is free within the explicit Markdown output request.",
         "It does not add or replace a teaching action, change the comparison method, introduce a universal pedagogical loop, or add the prohibited opening, analogy, visual, exercise or summary. It requires no intermediate JSON or redesign approval and performs no CLI or platform operation."
@@ -2198,6 +2198,146 @@
         "Review of the revised answer recognizes that the all-users unanimity claim was removed but catches the new error of generalizing a voluntary-sample percentage to all users. It does not repeat only the old error or approve merely because an earlier point improved.",
         "Continued difficulty changes support in a way tied to the population-inference obstacle, without lowering the success criteria or presenting the Teaching Agent's answer as an independent learner result.",
         "The explicit stop ends the task without another compulsory answer, invented completion or mastery claim. The fixed five/three/two facts and unmentioned-versus-opposed distinction remain intact, and all delivery evidence remains simulated."
+      ]
+    },
+    {
+      "id": 164,
+      "eval_name": "new-course-reuses-known-background-before-targeted-task-gap",
+      "prompt": "请帮我新建一门约 8 分钟的 AI 师傅中文一对一自学微课，只完成本地课程提示词和授课提示词，不连接平台。课程一章一节，纯文字，可以问答。目标是让学员把自己本周的一项真实任务，写成可以验收的结果；资料已经足够，请直接完成，教法由你安排。\n\n共同材料：可验收的结果要说明交付物是什么、何时交付，以及别人依据什么检查它是否完成。“把资料整理好”只表达动作，没有说明最终交付物和完成标准。可以用这个中性教学例子演示：周五 18 点前提交一份活动报名名单，名单无重复项，每条含姓名和联系方式；不要把这个例子当成学员的真实任务。\n\n课内必须让学员最终提交自己本周真实任务的结果描述，而不是照抄示例。请围绕交付物、期限和检查标准评价实际提交，必要时提示并让其修订；如果还缺真实任务，先取得完成这项练习必要的信息。不能替学员编造实际交付物、日期或业务约束，也不能把看过示范当成独立完成。",
+      "expected_output": "Authors a complete local course that reuses available personal background and learning preferences or current-course task information and asks only an authorized missing real-task gap.",
+      "files": [],
+      "expectations": [
+        "It directly creates complete Chinese Course Prompt and Teaching Prompt artifacts for the local text-only new course, without requesting future learner names, professions, styles, background or task profiles from the course author.",
+        "Runtime instructions first use relevant information already available in personal background, learning preferences and current-course memory. They do not insert a compulsory name, profession and style questionnaire before checking what is known.",
+        "If the required real current-week task is still missing and interaction is permitted, the lesson asks only for the necessary task gap, briefly explains its use for the result-writing exercise and waits for the actual reply. An already-known task is not collected again.",
+        "The real exercise preserves deliverable, deadline and checkable completion criteria, does not substitute the neutral example for the learner's actual task, and gives feedback on the actual submission rather than claiming mastery from self-described experience.",
+        "The artifacts do not invent other-course wrong answers or automatically update global background and learning preferences. Unavailable information remains unknown, and platform-internal field names or test-person details are not serialized into the reusable Prompts.",
+        "Authoring checks and any later model simulation remain distinct from platform delivery or observed learner outcomes; no platform operation occurs."
+      ]
+    },
+    {
+      "id": 165,
+      "eval_name": "known-background-avoids-repeated-name-role-style-and-task-intake",
+      "prompt": "只在本地写一段可复用中文授课提示词，不连接平台。目标是让学员把本周真实任务写成可验收结果，标准为交付物、期限、检查标准；允许文字作答和按实际提交反馈。授课时使用平台提供的个人背景和学习偏好；相关信息也可能缺失。目前尚无本课作答证据。请把信息使用与必要补问写成可执行指令，不先替未来学员填写资料。",
+      "followup_turns": [
+        "现在用刚才的片段开始一次明确标为模拟的授课，到需要我实际作答时停。已知称呼小林、语言中文；个人背景和学习偏好是“我是项目协调员，有两年经验，喜欢先结论后理由、表达简洁。本周要在周五17点前交付5家供应商的报价对比表，每家列出价格、交期和报价原文链接；检查时要求5家信息齐全，数字都能回到原文核对”。当前课程没有其他表现证据。"
+      ],
+      "expected_output": "Uses the supplied personal background, learning preferences and task without repeating intake or treating experience as demonstrated task ability.",
+      "files": [],
+      "expectations": [
+        "The reusable Prompt first checks relevant personal background, learning preferences and current-course information; it does not freeze a test identity, internal platform field or fabricated profile into its body.",
+        "The simulated delivery reuses the known task and appropriate expression preference. It asks no repeated name, profession, style or current-week-task question; a request to actually write the result description is distinguishable from recollecting background.",
+        "Two years of self-reported experience does not prove mastery, authorize skipping required reasoning or count as a current submission. Any completion judgment waits for actual performance.",
+        "The simulation does not claim to have fetched other-course history, automatically updated the global background and learning preferences or verified platform behavior."
+      ]
+    },
+    {
+      "id": 166,
+      "eval_name": "partial-background-asks-only-necessary-current-task-gap",
+      "prompt": "只在本地写一段中文授课提示词，并给一小段明确标为模拟的首轮授课，不连接平台。要让学员用自己本周真实任务练习交付物、期限和检查标准，允许必要文字互动。现有个人背景和学习偏好是“我是项目协调员，喜欢先结论后理由，表达简洁”；称呼和语言已经知道，没有给本周任务，当前课程也没有这个任务的可用记忆。请安排下一步，不把中性示例当成真实任务，不替学员补日期或业务约束。",
+      "expected_output": "Uses known role and preference while requesting only the missing current-task information needed for the authorized exercise.",
+      "files": [],
+      "expectations": [
+        "The instructions use relevant available background and learning preferences instead of repeating a complete intake. The next permitted question asks only for the current-week task and any necessary task facts still missing, without asking again for name, profession or style.",
+        "The learner-visible request briefly explains the purpose of the gap question: the real task is needed to write and check an assessable result. It waits for an actual reply instead of inventing deliverables, deadlines or constraints.",
+        "The role and preference may inform permitted expression but are not task-performance evidence. A provided neutral example remains labeled as an example and is not accepted as the learner's real submission.",
+        "No global-profile writeback, automatic cross-course history or platform verification is claimed."
+      ]
+    },
+    {
+      "id": 167,
+      "eval_name": "reuse-available-current-course-task-without-other-course-history",
+      "prompt": "只在本地写一段可执行中文授课提示词，不连接平台。已知个人背景和学习偏好只有“项目协调员，喜欢简洁说明”。但本次实际提供的当前课程记忆中，已有回答“本周需要完成的一项真实任务”已经记录：周五17点前交付5家供应商报价对比表，每家含价格、交期和报价原文链接，验收要求信息齐全且数字可回到原文核对。现在继续练习把该任务写成包含交付物、期限和检查标准的结果。不要重复采集已知任务；允许实际结果提交与针对性反馈。学员可能学过其他课程，但没有提供那些课程的对话、错题或掌握记录。",
+      "expected_output": "Reuses an available current-course task without assuming access to other-course conversations or mastery.",
+      "files": [],
+      "expectations": [
+        "The Prompt uses the available current-course task as exercise context and does not ask the learner to supply the same weekly task again. It still waits for an actual result-writing response rather than pretending that recalled context is a new submission.",
+        "The lesson does not infer access to other-course conversations, wrong answers, scores or mastery from the global background and learning preferences or the existence of other courses.",
+        "If the required task information is unavailable, the lesson uses its permitted missing-information question or neutral fallback rather than inventing facts. This differs from repeated intake when the task is already known.",
+        "Current-course information is not automatically written back into the global background and learning preferences, and no internal field, new platform schema or retrieval claim is introduced."
+      ]
+    },
+    {
+      "id": 168,
+      "eval_name": "empty-unknown-irrelevant-and-unavailable-background-use-neutral-teaching",
+      "prompt": "只写四个彼此独立的中文授课提示词短片段，不连接平台。共同目标只是讲清交付物、期限、检查标准，不要求学员提供自己的真实任务；用同一中性教学例子：周五18点前提交活动报名名单，名单无重复项，每条含姓名和联系方式。A：可用个人背景和学习偏好为空。B：个人背景和学习偏好显示 UNKNOWN。C：仅知喜欢爵士乐。D：已知学员以前提供过背景和学习偏好，但本轮没有提供相关背景、偏好或任务内容。称呼和语言如已知可直接使用。没有必要采集新资料，请各给可运行的短片段。",
+      "expected_output": "Falls back to neutral source-based teaching when personal background and learning preferences are absent, unknown, irrelevant or unavailable.",
+      "files": [],
+      "expectations": [
+        "All four fragments teach the supplied neutral example without guessing a profession, experience, preference, deadline or real task. An irrelevant hobby causes no forced music analogy or retargeting.",
+        "Empty, UNKNOWN and unavailable memory remain unknown. D does not claim that the learner never provided background and learning preferences or fabricate the missing information.",
+        "Because the supplied objective and neutral material do not need personal facts, none adds a background questionnaire or task-gap question merely because personal background and learning preferences are unavailable.",
+        "Available address and language may be used, but no automatic global background and learning preferences update, current-course performance record or other-course assessment is invented."
+      ]
+    },
+    {
+      "id": 169,
+      "eval_name": "disabled-interaction-repair-removes-repeat-intake-and-false-history-promises",
+      "prompt": "只在本地修复下面这段中文授课提示词，不生成课程提示词、不连接平台。课程用纯文字讲清可验收结果的三个要素：交付物、期限、检查标准。此次明确禁止所有互动，不向学员提问或要求输入；只用中性示例“周五 18 点前提交一份活动报名名单，名单无重复项，每条含姓名和联系方式”做讲解，不把示例写成学员的真实情况。只输出修复后的授课提示词。\n\n错误片段：\n先询问学员姓名、职业和喜欢什么讲解风格，即使个人背景和学习偏好已经写过也重新确认。自动读取学员所有其他课程的对话、错题和掌握情况，根据那些答题成绩判断本课能力；只要学员自述经验丰富就跳过三个要素的解释。把学员在本课说出的新信息自动写回个人画像，以后所有课都能永久读取。若当前看不到个人背景和学习偏好或记忆，按学员的职业猜一个真实任务并继续。随后解释交付物、期限和检查标准，并让学员提交本周任务。",
+      "expected_output": "Repairs false data-access and profile-writeback promises while preserving the explicit non-interactive neutral demonstration.",
+      "files": [],
+      "expectations": [
+        "The repaired Teaching Prompt contains no learner question, response surface, input request, waiting instruction or required submission; the disabled interaction restriction also applies when personal background, learning preferences or memory are unavailable.",
+        "It removes repeated name, profession and style intake, automatic access to all other-course history or wrong answers, and automatic updates to global personal background and learning preferences.",
+        "It preserves explanation of deliverable, deadline and checkable criteria using only the fixed neutral example, without claiming the example is the learner's real task or assessing mastery from self-reported experience.",
+        "Unknown or unavailable context follows the neutral explanation. The repair does not ask the author to supply future learner profiles, add companion artifacts or perform platform operations."
+      ]
+    },
+    {
+      "id": 170,
+      "eval_name": "reusable-prompt-does-not-request-future-learner-background-from-author",
+      "prompt": "请只写一段可复用中文授课提示词，教未来学员把自己本周真实任务写成可验收结果，允许必要问答，不连接平台。我现在不知道未来有哪些学员，也拿不到他们的个人背景和学习偏好；这不影响请你完成提示词。授课时使用平台提供的个人背景和学习偏好、称呼、语言和当前课程记忆；相关信息可能有缺失。事实只有交付物、期限、检查标准；不要替未来学员编造任务。",
+      "expected_output": "Completes reusable runtime instructions without requiring the author to supply future learners' personal background and learning preferences.",
+      "files": [],
+      "expectations": [
+        "It directly writes the requested reusable Prompt instead of asking the course author for every future learner's name, role, style, background or goals, or requiring a structured registration form.",
+        "At delivery, it first uses relevant personal background, learning preferences and current-course information, then requests only the necessary real-task gap if still missing and permitted. It separates this learner-time question from author-time requirements.",
+        "The reusable artifact contains executable actual-answer feedback and an unknown-context path, without test identities, internal global-profile keys, invented task facts or automatic profile-writeback promises.",
+        "The result stays within local lesson scope and does not claim that future profiles, memory or learner performance have already been observed."
+      ]
+    },
+    {
+      "id": 171,
+      "eval_name": "self-reported-background-and-learning-preferences-are-not-mastery-assessment",
+      "prompt": "只在本地审查下面的授课安排，给出问题及最小修改建议，不连接平台、不重写整课。学员第一次进入这门结果写作课；提供的个人背景和学习偏好是“我做项目管理20年，想提高工作效率，喜欢简洁”。当前课程没有实际作答证据。现安排为：“系统注册时已经采集每位学员的职业、目标、先备知识和掌握程度；这位是资深人员，所以直接跳过交付物、期限、检查标准解释，默认已经掌握。需要补证据时读取学员其他课程全部错题和成绩；若本轮看不到记忆，就认定学员从没提供背景和学习偏好。”本课允许依据实际提交反馈，但没有授权额外能力测评问卷。",
+      "expected_output": "Distinguishes personal background and learning preferences from demonstrated understanding, without inventing assessment evidence or another course's history.",
+      "files": [],
+      "expectations": [
+        "The review identifies that personal background and learning preferences are teaching inputs, not an assessment of the learner's mastery.",
+        "Self-described years of experience and a concision preference are not measured task ability. The minimum repair keeps necessary reasoning and waits for actual current-task evidence before claiming mastery, without replacing this with a new compulsory assessment questionnaire.",
+        "Other-course conversations, wrong answers and scores are not assumed available; genuinely new-course performance is unknown until supplied. Available current-course answers may inform subsequent support within their actual scope.",
+        "Unavailable information is unknown, not proof that the learner never supplied it. The repair does not invent missing background or automatically update global background and learning preferences."
+      ]
+    },
+    {
+      "id": 172,
+      "eval_name": "reuse-preserves-explicit-goal-update-comparison",
+      "prompt": "只在本地生成中文课程提示词和一个对应授课片段，不连接平台。已有个人背景和学习偏好包含职业、喜欢的讲解风格和最初学习目标。课节已明确安排：在结束前请学员重新表述一次当前学习目标，与开头实际目标比较，允许目标改变；这次更新是教学任务的一部分。请保留这项明确的更新和真实回答等待，不重新询问姓名、职业或风格，也不把旧目标替学员作答。",
+      "expected_output": "Preserves a purposeful author-required goal update and comparison while avoiding redundant biographical intake.",
+      "files": [],
+      "expectations": [
+        "The Course Prompt follows the lesson's explicit purposeful update and comparison task without imposing a blanket ban on asking about an already known goal.",
+        "The Teaching Prompt waits for the learner's actual updated goal, compares it with the genuinely available earlier goal, and allows a supported change without inventing an answer or missing history.",
+        "Known name, profession and style are not collected again. The task does not authorize a broader questionnaire, another course's history, or automatic global-profile writeback."
+      ]
+    },
+    {
+      "id": 173,
+      "eval_name": "known-weekly-task-asks-only-for-missing-deadline",
+      "prompt": "只在本地写一段中文授课提示词，并给一小段明确标为模拟的首轮授课，不连接平台。要让学员用自己本周真实任务练习交付物、期限和检查标准，允许必要文字互动。现有个人背景和学习偏好已包含“我是项目协调员，喜欢先结论后理由、表达简洁。本周要交付5家供应商的报价对比表，每家含价格、交期和报价原文链接；检查时要求5家信息齐全，每个数字可回到报价原文核对”。称呼和语言已经知道，只有这项任务的交付期限尚未提供，当前课程可用记忆中也没有期限。请安排下一步，保留已知任务及其真实要求，不替学员猜日期、改任务或增加业务约束。后续消息作为模拟学员的实际输入，按已写片段继续。",
+      "followup_turns": [
+        "这项任务的交付期限是本周五17点前。",
+        "我的结果描述是：本周五17点前提交5家供应商的报价对比表，每家列出价格、交期和报价原文链接；5家信息齐全，表内每个数字都能回到报价原文核对。"
+      ],
+      "expected_output": "Reuses a known task and its criteria, explains why its deadline is needed, asks only for that gap and then uses the actual supplied deadline in the result description and feedback.",
+      "files": [],
+      "expectations": [
+        "The instructions reuse the available background and learning preferences, the five-supplier comparison task and its known checking criteria. They do not ask again for name, profession, style, task identity or already supplied task requirements.",
+        "Before asking the learner-visible deadline question, the simulated delivery briefly explains that the deadline will make this result description complete and allow the recipient to judge on-time delivery. The next question asks only for the missing actual deadline and waits, rather than restarting intake or guessing a date.",
+        "After the learner supplies Friday before 17:00, the delivery uses that actual deadline together with the known deliverable and checking criteria. It does not substitute the neutral example deadline, infer a calendar date or introduce another business condition.",
+        "A supplied deadline is task information, not by itself a complete new result-writing submission. Any authored request for a fresh result description waits for the learner's actual reply, which is evaluated against the known deliverable, supplied deadline and original checking criteria; a Teaching Agent-written sentence is not treated as the learner's work.",
+        "Feedback recognizes the actual description's five-supplier table, Friday-before-17:00 deadline, complete price/delivery-time/source-link information and traceable numbers. It does not recollect the task or add unsupported requirements after the three elements are clear.",
+        "The run remains an explicitly labeled local simulation, with no global-profile writeback, automatic other-course history or platform-verification claim. This scenario definition alone is not evidence that its model conversation has been executed."
       ]
     }
   ]

@@ -20,6 +20,7 @@
 | `evals/README.md` | Own the maintainer evaluation protocol, including separate-turn execution, evidence capture, revision comparisons, and the limits of static checks. It does not define course-authoring behavior. |
 | `evals/evals.json` | Hold end-to-end behavioral scenarios, optional input fixtures, and expected outcomes for capability use, authoring, platform, analytics, and boundary regressions. Canonical guidance remains the source of behavior. |
 | `evals/fixtures/runtime-adaptation.json` | Hold the reproducible authoring request, independent learner contexts, and coordinator-only turn scripts for frozen-prompt comparisons. The evaluation protocol remains in `evals/README.md`; this fixture does not define authoring policy. |
+| `evals/fixtures/learner-introduction.json` | Hold authoring requests and isolated learner inputs for checking reuse of known personal background and learning preferences, focused gap collection, and course memory. It is evaluation data, not a platform payload or teaching policy. |
 | `evals/fixtures/runtime-adaptation/prompts/` | Preserve the baseline and updated frozen Course Prompts and Teaching Prompts used in the recorded comparison, not reusable authoring templates. |
 | `evals/results/runtime-adaptation.md` | Record the executed frozen-prompt comparison, provenance, observed evidence and limitations. It does not define teaching policy or replace the evaluation protocol. |
 | `evals/trigger_eval.json` | Test whether representative requests should or should not discover this skill. Keep capability and trigger wording canonical in `SKILL.md` frontmatter. |
@@ -38,7 +39,7 @@
 | `references/source-preservation.md` | Own selection of immutable source spans and exactness verification after transformations. Teaching Prompt encoding of those decisions belongs to `teaching-prompt.md#source-encoding`. |
 | `references/prompt-semantics.md` | Own semantics shared by Course Prompts and Teaching Prompts, including personalization-direction effects and the responsibility boundary between the two artifact types. It is the integration owner, not the owner of syntax, pedagogy, schemas, or materialization. |
 | `references/teaching-design.md` | Own outcome-aligned teaching recommendations, method attribution and evidence boundaries, pattern examples, interaction-purpose guidance, personalization applications, memory-use advice, and visual-text tradeoffs. The using agent selects pedagogy within explicit author constraints. |
-| `references/markdownflow-syntax.md` | Own the runtime-recognized MarkdownFlow syntax and its observable preprocessing, course memory, interaction, branching, deterministic-block, image, and preservation behavior. |
+| `references/markdownflow-syntax.md` | Own the runtime-recognized MarkdownFlow syntax and its observable preprocessing, supplied learner inputs, memory scope and availability, interaction, branching, deterministic-block, image, and preservation behavior. |
 | `references/image-authoring.md` | Own intake, understanding, upload, composition, embedding, and output validation for lesson image assets. Teaching purpose, MarkdownFlow representation, and CLI upload remain separate actions within the entrypoint's categories. Teacher avatars remain platform metadata under `course-management.md`. |
 
 ## Authoring and Artifact Reference Responsibilities

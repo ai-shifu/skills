@@ -12,9 +12,11 @@ The Teaching Agent ignores HTML comments (`<!-- ... -->`) in Prompt content.
 
 ## Memory
 
-Every learner input within a course is automatically recorded in that learner's course memory, including choices, text answers, follow-up questions, and corrections. The Teaching Agent can use this memory anywhere in the course, across lessons and in the Course Prompt.
+The platform supplies the learner's preferred form of address, language, personal background, and learning preferences.
 
-Describe memory use in ordinary language, for example `Use the communication difficulty the learner described earlier in the course to tailor the next practice task`. Memory is recorded automatically; authors describe what earlier input is relevant and how it affects teaching.
+Course memory includes the learner's choices, text answers, follow-up questions, and corrections within the course. The Teaching Agent can use this memory across lessons and in the Course Prompt.
+
+Describe memory use in ordinary language, for example `Use the communication difficulty the learner described earlier in the course to tailor the next practice task`. Authors describe what earlier input is relevant and how it affects teaching.
 
 Use the learner's actual inputs and account for later corrections. If relevant information is unavailable, follow the authored fallback rather than inventing it. When a lesson asks a new question, wait for the actual new answer before giving its feedback; existing memory does not answer a pending interaction on the learner's behalf.
 

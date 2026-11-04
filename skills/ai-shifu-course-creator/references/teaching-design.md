@@ -16,7 +16,7 @@ Explicit author choices constrain teaching design. The optional structured polic
 | `disabled` | Solicit no learner answer and create no branch that requires a newly collected answer. Explanations, demonstrations, worked applications, or consolidation may still adapt to relevant [course memory](markdownflow-syntax.md#memory). |
 | `unspecified` | Let the authoring agent decide whether and where interactions improve the requested lesson; there is no default per-lesson interaction requirement. |
 
-The supported purpose names describe learner-context collection for later teaching, pre-content thinking that an explanation can refine, and lesson-end self-check for consolidation. The authoring agent chooses suitable placements and scope unless the author has specified them. Selecting self-check does not imply a check in every lesson unless that scope was requested.
+The supported purpose names describe learner-context collection for later teaching, pre-content thinking that an explanation can refine, and lesson-end self-check for consolidation. The authoring agent chooses suitable placements and scope unless the author has specified them. Selecting learner-context collection does not require repeating information already available; use [existing-information reuse](teaching-prompt.md#encode-existing-context-reuse) for any consequential gap. Selecting self-check does not imply a check in every lesson unless that scope was requested.
 
 ## Lesson Design
 
@@ -182,7 +182,7 @@ Use examples or analogies to address a comprehension need, such as abstraction, 
 
 ### Personalized Teaching Within the Resolved Directions
 
-Apply the resolved directions and fallback rules from [prompt-semantics.md#personalization-directions](prompt-semantics.md#personalization-directions). Use relevant registration background and preferences already supplied by the platform rather than repeating an intake. The purpose is to make a relationship, practical consequence, or permitted form of learning support fit the learner's task. Background-based personalization differs from responding to performance through authored feedback paths; [learner evidence and responsive support](prompt-semantics.md#learner-evidence-and-responsive-support) owns that distinction and evidence precedence.
+Apply the resolved directions and fallback rules from [prompt-semantics.md#personalization-directions](prompt-semantics.md#personalization-directions). Use relevant personal background, learning preferences, and course memory under [existing-information reuse](teaching-prompt.md#encode-existing-context-reuse). The purpose is to make a relationship, practical consequence, or permitted form of learning support fit the learner's task. Background-based personalization differs from responding to performance through authored feedback paths; [learner evidence and responsive support](prompt-semantics.md#learner-evidence-and-responsive-support) owns that distinction and evidence precedence.
 
 For example, with Examples selected: "When explaining sampling bias, if relevant learning memory explicitly says the learner reviews only returned questionnaires, use that task to explain why nonrespondents may affect the conclusion. Preserve the example's required conditions, reasoning, and conclusion. Without relevant context, use the course's neutral questionnaire example." The stated task makes the missing responses concrete; a profession label alone would not establish that connection. The fallback must still teach the same concept.
 
@@ -205,7 +205,7 @@ Questions, controls, feedback, and branches must remain executable together. [te
 
 Use relevant earlier learner input to connect explanations, feedback, examples, and reflection to what the learner actually said. The runtime memory contract belongs to [markdownflow-syntax.md#memory](markdownflow-syntax.md#memory); express the teaching use naturally, such as revisiting the learner's stated goal or comparing an earlier attempt with the current answer.
 
-Avoid asking for information already available in memory unless a deliberate update or staged comparison serves the lesson. Handle missing or irrelevant context without inventing an answer. Apply [interaction policy precedence](#interaction-policy-precedence) and the personalization boundaries in [prompt-semantics.md](prompt-semantics.md) when using memory.
+Avoid asking for personal background, learning preferences, or course answers already available in memory unless a deliberate update or staged comparison serves the lesson. Follow [existing-information reuse](teaching-prompt.md#encode-existing-context-reuse), [interaction policy precedence](#interaction-policy-precedence), and the personalization boundaries in [prompt-semantics.md](prompt-semantics.md).
 
 ## Visual-Text Coordination
 
