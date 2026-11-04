@@ -1552,11 +1552,20 @@ class CourseCreatorContractTests(unittest.TestCase):
             self.assertTrue(request.strip())
             for context in contexts.values():
                 introduction = context["global_profile"]["sys_user_background"]
-                if introduction:
-                    self.assertNotIn(introduction, request)
-                for value in context["current_course_memory"].values():
+                runtime_values = [introduction] if introduction else []
+                runtime_values.extend(context["current_course_memory"].values())
+                for value in runtime_values:
                     self.assertIsInstance(value, str)
                     self.assertNotIn(value, request)
+                    # A copied clause can disclose runtime facts without the full value.
+                    fragments = [
+                        fragment.strip()
+                        for fragment in re.split(r"[，。；！？\n]", value)
+                        if len(fragment.strip()) >= 8
+                    ]
+                    self.assertTrue(fragments)
+                    for fragment in fragments:
+                        self.assertNotIn(fragment, request)
             for answer in answers:
                 self.assertTrue(answer["message"].strip())
                 self.assertNotIn(answer["message"], request)
