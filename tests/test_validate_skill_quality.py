@@ -1564,6 +1564,7 @@ class CourseCreatorContractTests(unittest.TestCase):
                 self.assertLessEqual(set(answer["context_ids"]), set(contexts))
 
     def test_evals_cover_learner_introduction_reuse_and_missing_context(self):
+        self.assert_eval_family((172,), ("purposeful", "comparison", "actual"))
         self.assert_eval_family(
             (164, 165, 166, 167, 168, 169, 170, 171),
             ("introduction", "gap", "current-course", "global", "disabled", "actual"),

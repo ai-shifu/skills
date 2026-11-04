@@ -2308,6 +2308,18 @@
         "Other-course conversations, wrong answers and scores are not assumed available; genuinely new-course performance is unknown until supplied. Available current-course answers may inform subsequent support within their actual scope.",
         "A value omitted from model-visible memory or unavailable under budget is unknown, not proof the learner never supplied it. The repair does not invent a missing introduction or automatic global writeback."
       ]
+    },
+    {
+      "id": 172,
+      "eval_name": "reuse-preserves-explicit-goal-update-comparison",
+      "prompt": "只在本地生成中文课程提示词和一个对应授课片段，不连接平台。已有个人介绍包含职业、喜欢的讲解风格和最初学习目标。课节已明确安排：在结束前请学员重新表述一次当前学习目标，与开头实际目标比较，允许目标改变；这次更新是教学任务的一部分。请保留这项明确的更新和真实回答等待，不重新询问姓名、职业或风格，也不把旧目标替学员作答。",
+      "expected_output": "Preserves a purposeful author-required goal update and comparison while avoiding redundant biographical intake.",
+      "files": [],
+      "expectations": [
+        "The Course Prompt reuse rule permits the explicit purposeful update or comparison task; it does not impose a blanket ban on asking about an already known goal.",
+        "The Teaching Prompt waits for the learner's actual updated goal, compares it with the genuinely available earlier goal, and allows a supported change without inventing an answer or missing history.",
+        "Known name, profession and style are not collected again. The task does not authorize a broader questionnaire, another course's history, or automatic global-profile writeback."
+      ]
     }
   ]
 }
