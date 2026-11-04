@@ -1,0 +1,92 @@
+{
+  "fixture_version": 1,
+  "purpose": "Coordinator-owned authoring and independent-delivery inputs for reusing an optional learner introduction and available current-course information.",
+  "author_request": "请帮我新建一门约 8 分钟的 AI 师傅中文一对一自学微课，只完成本地课程提示词和授课提示词，不连接平台。课程一章一节，纯文字，可以问答。目标是让学员把自己本周的一项真实任务，写成可以验收的结果；资料已经足够，请直接完成，教法由你安排。\n\n共同材料：可验收的结果要说明交付物是什么、何时交付，以及别人依据什么检查它是否完成。“把资料整理好”只表达动作，没有说明最终交付物和完成标准。可以用这个中性教学例子演示：周五 18 点前提交一份活动报名名单，名单无重复项，每条含姓名和联系方式；不要把这个例子当成学员的真实任务。\n\n课内必须让学员最终提交自己本周真实任务的结果描述，而不是照抄示例。请围绕交付物、期限和检查标准评价实际提交，必要时提示并让其修订；如果还缺真实任务，先取得完成这项练习必要的信息。不能替学员编造实际交付物、日期或业务约束，也不能把看过示范当成独立完成。",
+  "repair_request": "只在本地修复下面这段中文授课提示词，不生成课程提示词、不连接平台。课程用纯文字讲清可验收结果的三个要素：交付物、期限、检查标准。此次明确禁止所有互动，不向学员提问或要求输入；只用中性示例“周五 18 点前提交一份活动报名名单，名单无重复项，每条含姓名和联系方式”做讲解，不把示例写成学员的真实情况。只输出修复后的授课提示词。\n\n错误片段：\n先询问学员姓名、职业和喜欢什么讲解风格，即使个人介绍已经写过也重新确认。自动读取学员所有其他课程的对话、错题和掌握情况，根据那些答题成绩判断本课能力；只要学员自述经验丰富就跳过三个要素的解释。把学员在本课说出的新信息自动写回个人画像，以后所有课都能永久读取。若当前看不到个人介绍或记忆，按学员的职业猜一个真实任务并继续。随后解释交付物、期限和检查标准，并让学员提交本周任务。",
+  "authoring_contract": {
+    "facts": [
+      "可验收结果说明交付物、期限和检查标准。",
+      "中性例子不能充当学员的真实任务或实际提交。"
+    ],
+    "required_task": "围绕学员本周真实任务写出结果描述，以交付物、期限和检查标准检查实际提交。",
+    "success_criteria": [
+      "三项要素明确且一致。",
+      "真实任务和约束来自已提供的介绍、当前课程可用记忆或学员实际回答；不编造。",
+      "反馈区分独立完成、提示后修订和未完成。"
+    ]
+  },
+  "runtime_contexts": [
+    {
+      "id": "rich",
+      "global_profile": {
+        "sys_user_nickname": "小林",
+        "sys_user_language": "zh-CN",
+        "sys_user_background": "我是项目协调员，有两年工作经验，喜欢先结论后理由、表达简洁。本周要在周五 17 点前交付一份 5 家供应商的报价对比表，每家包括价格、交期和报价原文链接；检查时要求 5 家信息齐全，每个数字都能回到报价原文核对。"
+      },
+      "current_course_memory": {}
+    },
+    {
+      "id": "partial",
+      "global_profile": {
+        "sys_user_nickname": "小林",
+        "sys_user_language": "zh-CN",
+        "sys_user_background": "我是项目协调员，有两年工作经验，喜欢先结论后理由、表达简洁。最近在学习怎样把任务描述得更清楚。"
+      },
+      "current_course_memory": {}
+    },
+    {
+      "id": "partial_with_course_memory",
+      "global_profile": {
+        "sys_user_nickname": "小林",
+        "sys_user_language": "zh-CN",
+        "sys_user_background": "我是项目协调员，有两年工作经验，喜欢先结论后理由、表达简洁。最近在学习怎样把任务描述得更清楚。"
+      },
+      "current_course_memory": {
+        "本周需要完成的一项真实任务": "周五 17 点前交付一份 5 家供应商的报价对比表；每家含价格、交期和报价原文链接，5 家信息齐全，每个数字都能回到报价原文核对。"
+      }
+    },
+    {
+      "id": "empty",
+      "global_profile": {
+        "sys_user_nickname": "小林",
+        "sys_user_language": "zh-CN",
+        "sys_user_background": ""
+      },
+      "current_course_memory": {}
+    }
+  ],
+  "coordinator_only": {
+    "conditional_answers": [
+      {
+        "id": "supply_missing_current_task",
+        "context_ids": [
+          "partial",
+          "empty"
+        ],
+        "when": "Only after the lesson permissibly asks for the missing current-week task; do not use this to answer repeated name, profession or style collection, or dispatch it before an actual request.",
+        "message": "我本周真实要做的是：周五 17 点前交付 5 家供应商的报价对比表，每家包括价格、交期和报价原文链接；验收时看 5 家信息是否齐全、各数字能否回到报价原文核对。"
+      },
+      {
+        "id": "submit_result_description",
+        "context_ids": [
+          "rich",
+          "partial",
+          "partial_with_course_memory",
+          "empty"
+        ],
+        "when": "Only if the authored activity is still open and explicitly asks the learner to write or revise the result description. Never reopen a completed activity or invent a submission.",
+        "message": "我的结果描述是：周五 17 点前提交 5 家供应商的报价对比表；每家列出价格、交期和报价原文链接，5 家信息全部齐全，表内每个数字都可回到报价原文核对。"
+      }
+    ]
+  },
+  "evaluation_criteria": [
+    "Authoring receives only the selected author_request or repair_request, without runtime_contexts, global_profile values, current_course_memory or future conditional answers.",
+    "Each independent delivery receives one frozen Course Prompt and Teaching Prompt pair plus only its own three available global values and current-course memory; coordinator field labels are test packaging, not an added platform schema.",
+    "The rich introduction supplies the relevant role, preference and real current-week task. Use relevant available information without asking again for the learner name, profession, style or the already-known task. Self-reported experience is not measured mastery.",
+    "For partial and empty introduction, ask only for the missing current-week task information needed by the authorized real-task exercise, briefly connect the question to writing an assessable result and wait for an actual reply. Do not require a full background form.",
+    "For partial_with_course_memory, reuse the available named current-course task answer instead of asking for that task again. This is not access to complete conversations, errors or mastery from other courses.",
+    "Use only actual available statements; empty, UNKNOWN, irrelevant or omitted memory is unknown. Do not invent task dates or constraints, promise unlimited memory or automatically write new learner information into the global introduction.",
+    "The repair request remains non-interactive and uses its supplied neutral example. It removes repeated intake, other-course history access and automatic profile-writeback promises without asking the author for future learner profiles.",
+    "Record actual prompts, context, successive inputs and visible outputs separately. Supply a conditional answer only after the corresponding permitted request, keep future input coordinator-only and label model simulation separately from platform or real-learner evidence."
+  ]
+}

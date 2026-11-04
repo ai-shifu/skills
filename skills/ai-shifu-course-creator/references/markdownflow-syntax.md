@@ -12,11 +12,17 @@ The Teaching Agent ignores HTML comments (`<!-- ... -->`) in Prompt content.
 
 ## Memory
 
-Every learner input within a course is automatically recorded in that learner's course memory, including choices, text answers, follow-up questions, and corrections. The Teaching Agent can use this memory anywhere in the course, across lessons and in the Course Prompt.
+The platform's account-wide teaching inputs are the learner's preferred form of address, account language, and saved personal introduction. The introduction is optional free text, up to 1000 characters; relevant experience, preferences, goals, and constraints are available only when the learner actually supplied them. These are not separate required registration fields or a verified assessment of ability. Onboarding can be configured, skipped, or unavailable, so a new course must not assume a complete introduction.
 
-Describe memory use in ordinary language, for example `Use the communication difficulty the learner described earlier in the course to tailor the next practice task`. Memory is recorded automatically; authors describe what earlier input is relevant and how it affects teaching.
+The Teaching Agent can also use the current conversation and supplied current-course memory. Account-wide inputs can follow the learner between courses; another course's conversations, wrong answers, scores, or mastery judgments are not automatically imported. A genuinely new course normally has no task-performance evidence yet. A later lesson can receive this course's saved values; resuming or restarting an existing course is not necessarily an empty-memory start.
+
+Ordinary answers, follow-up questions, and corrections can inform the current lesson conversation. Durable reuse across lessons depends on the runtime's named-answer mechanism or the learner's actual explicit request to remember information, and on the value actually being available. An author instruction to remember ordinary input is not itself a learner request or a named binding; do not promise that every ordinary input is automatically saved throughout the course. A current-course memory write does not automatically update the account-wide introduction. Refer naturally to available input, for example `Use the communication difficulty the learner described earlier in this course to tailor the next practice task`, without inventing a storage action or requiring a separate save ritual merely to respond to the current answer.
 
 Use the learner's actual inputs and account for later corrections. If relevant information is unavailable, follow the authored fallback rather than inventing it. When a lesson asks a new question, wait for the actual new answer before giving its feedback; existing memory does not answer a pending interaction on the learner's behalf.
+
+The host refreshes available values during teaching, but model context is bounded: stored information can be omitted, and values being collected again for the current authored task can be withheld from initial memory. Missing context does not prove that the learner never provided it. Use available authorized recall when supported; otherwise follow the lesson's scoped question or fallback. Do not assume that all account, order, progress, or historical records are teaching input.
+
+The implementation basis is the platform's [account-field mapping](https://github.com/ai-shifu/ai-shifu/blob/52841676e8226f9e66138b9e5678cc2ead46309a/src/api/flaskr/service/profile/account_fields.py#L108), [current-course memory scope](https://github.com/ai-shifu/ai-shifu/blob/52841676e8226f9e66138b9e5678cc2ead46309a/src/api/flaskr/service/memory/facade.py#L25), [memory-write policy](https://github.com/ai-shifu/ai-shifu/blob/52841676e8226f9e66138b9e5678cc2ead46309a/src/api/markdownflow/engine/prompts/memory_policy.md), and [bounded first-prompt memory](https://github.com/ai-shifu/ai-shifu/blob/52841676e8226f9e66138b9e5678cc2ead46309a/src/api/markdownflow/engine/script.py#L301). These are runtime input boundaries, not additional authoring fields or instructions to copy platform keys into course artifacts.
 
 ## Interactions
 
@@ -48,7 +54,7 @@ An explicit control can carry its complete learner-facing question or response t
 - `?[ {{Which action will you practice?}} Verify the source | ...Another action]`: single-select plus text input.
 - `?[ {{Which actions will you practice?}} Verify the source || ...Other actions]`: multi-select plus text input.
 
-The prefix associates the answer with that question or response task; the response controls retain their existing selection and input semantics. Automatic [course memory](#memory) still records all learner input, including input without this prefix. Authoring requirements for filling the question or response task belong to [Interaction Encoding](teaching-prompt.md#interaction-encoding).
+The prefix associates the answer with that question or response task; the response controls retain their existing selection and input semantics. Conversation use and durable availability follow the [memory contract](#memory); input without this prefix must not be promised automatic reuse in a later lesson. Authoring requirements for filling the question or response task belong to [Interaction Encoding](teaching-prompt.md#interaction-encoding).
 
 ### Natural-Language Interactions
 

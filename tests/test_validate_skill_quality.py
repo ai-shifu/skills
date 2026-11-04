@@ -1388,18 +1388,19 @@ class CourseCreatorContractTests(unittest.TestCase):
             ("unavailable", "deterministic", "exact", "feedback", "memory"),
         )
 
-    def test_evals_cover_automatic_memory_and_real_answers(self):
+    def test_evals_cover_available_memory_scope_and_real_answers(self):
         self.assert_eval_family(
             (9, 107, 108, 110),
             (
                 "memory",
-                "automatically",
-                "throughout the course",
-                "ordinary chat",
+                "available",
+                "current conversation",
+                "current-course",
                 "correction",
                 "actual answer",
-                "explicit save",
-                "placeholder",
+                "unavailable",
+                "named",
+                "explicit memory request",
             ),
         )
 
@@ -1499,6 +1500,74 @@ class CourseCreatorContractTests(unittest.TestCase):
             for turn in script["turns"]:
                 self.assertTrue(turn["message"].strip())
                 self.assertNotIn(turn["message"], request)
+
+    def test_learner_introduction_fixture_keeps_global_and_course_context_separate(self):
+        fixture = json.loads(
+            (self.skill_root / "evals" / "fixtures" / "learner-introduction.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        contexts = {context["id"]: context for context in fixture["runtime_contexts"]}
+        self.assertEqual(len(contexts), len(fixture["runtime_contexts"]))
+        self.assertEqual(
+            {"rich", "partial", "partial_with_course_memory", "empty"},
+            set(contexts),
+        )
+        for context in contexts.values():
+            profile = context["global_profile"]
+            self.assertEqual(
+                {"sys_user_nickname", "sys_user_language", "sys_user_background"},
+                set(profile),
+            )
+            self.assertTrue(all(isinstance(value, str) for value in profile.values()))
+            self.assertLessEqual(len(profile["sys_user_background"]), 1000)
+            self.assertIsInstance(context["current_course_memory"], dict)
+
+        partial = contexts["partial"]
+        with_memory = contexts["partial_with_course_memory"]
+        self.assertEqual(partial["global_profile"], with_memory["global_profile"])
+        self.assertTrue(with_memory["current_course_memory"])
+        for context_id in ("rich", "partial", "empty"):
+            self.assertEqual({}, contexts[context_id]["current_course_memory"])
+        self.assertTrue(contexts["rich"]["global_profile"]["sys_user_background"])
+        self.assertTrue(partial["global_profile"]["sys_user_background"])
+        self.assertNotEqual(
+            contexts["rich"]["global_profile"]["sys_user_background"],
+            partial["global_profile"]["sys_user_background"],
+        )
+        self.assertEqual("", contexts["empty"]["global_profile"]["sys_user_background"])
+
+    def test_learner_introduction_fixture_keeps_runtime_inputs_out_of_author_requests(self):
+        fixture = json.loads(
+            (self.skill_root / "evals" / "fixtures" / "learner-introduction.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        requests = (fixture["author_request"], fixture["repair_request"])
+        contexts = {context["id"]: context for context in fixture["runtime_contexts"]}
+        answers = fixture["coordinator_only"]["conditional_answers"]
+        self.assertTrue(answers)
+        self.assertEqual(len(answers), len({answer["id"] for answer in answers}))
+        for request in requests:
+            self.assertTrue(request.strip())
+            for context in contexts.values():
+                introduction = context["global_profile"]["sys_user_background"]
+                if introduction:
+                    self.assertNotIn(introduction, request)
+                for value in context["current_course_memory"].values():
+                    self.assertIsInstance(value, str)
+                    self.assertNotIn(value, request)
+            for answer in answers:
+                self.assertTrue(answer["message"].strip())
+                self.assertNotIn(answer["message"], request)
+                self.assertTrue(answer["context_ids"])
+                self.assertLessEqual(set(answer["context_ids"]), set(contexts))
+
+    def test_evals_cover_learner_introduction_reuse_and_missing_context(self):
+        self.assert_eval_family(
+            (164, 165, 166, 167, 168, 169, 170, 171),
+            ("introduction", "gap", "current-course", "global", "disabled", "actual"),
+        )
 
     def test_evals_preserve_automatic_creation_publication_and_truthful_handoff(self):
         self.assert_eval_family(
