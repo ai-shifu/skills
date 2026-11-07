@@ -78,7 +78,9 @@ Encode the chosen teaching design without changing author requirements or exact 
 
 ### Layout Encoding
 
-Keep syntax-owned and exact structures in their required form and position. Leave standalone `?[]` controls, `===...===` lines, multi-line fences with standalone `!===` delimiters, fenced code, Markdown images, tables, and fixed-display image lines free of added list markers or indentation. Resume ordinary instructions at the top level after a standalone structure. Preserve any list markers and indentation that belong to exact source content.
+Keep syntax-owned and exact structures in their required form and position. Leave standalone `?[]` controls, `===...===` lines, multi-line fences with standalone `!===` delimiters, Markdown images, tables, and fixed-display image lines free of added list markers or indentation. Resume ordinary instructions at the top level after a standalone structure. Preserve any list markers and indentation that belong to exact source content.
+
+Keep ordinary fenced code outside the list by default. When the author explicitly requests a fence inside a list item, use the indentation required for that item only if the target runtime recognizes the complete fence and exact-source requirements permit the indentation. Preserve the fence, language tag, and code content.
 
 For a format-only rewrite, verify that removing only the added comments, list markers, and layout indentation recovers the original content and order. This is an authoring check. The list formatting is ordinary Markdown in the Teaching Prompt.
 
