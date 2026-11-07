@@ -109,14 +109,14 @@
     {
       "id": 10,
       "prompt": "Course Design Intake 已完成，personalization_directions=[\"examples\", \"analogies\", \"language_style\", \"value_relevance\"]，interaction_policy 已选择 disabled。同一份材料的核心概念是“风险 = 概率 × 影响”，并需要一张二维矩阵概念图；我还提供了一张“团队在白板前标注高风险事项”的图片及这句图片说明。请直接给出两种结构化生成结果：标准 AI 一对一授课与纯课堂幻灯片，并说明已提供图片的理解、上传和嵌入处理（无需真实上传）。标准结果不是纯文字模式，必须保留概念图和作者图片这两个实质视觉单元。除授课提示词格式所需的导航注释外，两种结果都不能内嵌 SVG、HTML、Mermaid、PlantUML 或 Graphviz 源码。",
-      "expected_output": "Uses the requested visuals with sufficient explanation in each delivery mode while leaving teaching order and readable Prompt layout to the agent.",
+      "expected_output": "Uses the requested visuals and sufficient explanation in both delivery modes, with a coherent teaching order and an author-editable list layout.",
       "files": [],
       "expectations": [
         "The standard one-on-one Teaching Prompt explains probability and impact as jointly determining risk and uses both requested substantive visuals: the matrix and the author image.",
         "The explanation gives enough context, causal relationships, and practical interpretation to understand each required visual rather than only repeating labels or its caption. The agent may choose the useful placement and cadence; no brief-text-first or mandatory visual/text alternation is imposed.",
         "The pure classroom-slide version uses both requested visuals as projection-ready content in a coherent teaching sequence, with no required Teaching Agent narration or compulsory prose after each visual.",
         "The supplied author image is understood, uploaded only when authorized and needed, and embedded using the actual returned URL and informative alt text. A simulated upload does not invent a successful real upload.",
-        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. The body uses readable author-editable formatting appropriate to the task; no particular list hierarchy, heading scheme, or template is required.",
+        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. Ordinary teaching instructions use Markdown unordered-list items in execution order, with subordinate details nested where useful.",
         "Both Prompts carry concrete learner-time instructions rather than authoring commentary. Other than navigation comments, neither embeds raw SVG, HTML, Mermaid, PlantUML, or Graphviz source."
       ]
     },
@@ -162,14 +162,14 @@
     {
       "id": 14,
       "prompt": "根据这段纯文字材料生成一节授课提示词：解释确认偏误，给一个销售复盘案例，再让学员选择哪条证据最可能推翻原判断。材料没有图片，我也不需要配图。只在本地给我结果，不部署。",
-      "expected_output": "Generates a complete text-only lesson directly, preserving the requested interaction and free choice of readable layout.",
+      "expected_output": "Generates a complete text-only lesson directly, preserving the requested interaction in an author-editable list layout.",
       "files": [],
       "expectations": [
         "It directly produces the requested local Teaching Prompt from the supplied text, with a sales-review example and the requested falsifying-evidence interaction.",
         "It adds no slide, image, diagram, image search, upload, platform authentication, course lookup, deployment, or sync operation.",
         "The explanation, interaction, and immediate feedback make the lesson runnable without a required close, visual quota, mandatory lead-in, or named pedagogical loop.",
         "The interaction uses valid MarkdownFlow syntax, waits for the actual response and uses that current-conversation answer for immediate feedback; it makes no unsupported cross-lesson persistence promise.",
-        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. The body uses readable author-editable formatting appropriate to the task; no particular list hierarchy, heading scheme, or template is required.",
+        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. Ordinary teaching instructions use Markdown unordered-list items in execution order, with subordinate details nested where useful.",
         "The interaction question, standalone unprefixed control, and immediate feedback remain together with no navigation comment splitting their behavior."
       ]
     },
@@ -189,7 +189,7 @@
         "The selected directions produce executable local teaching requirements within the fixed lesson; ordinary wording remains an instruction rather than a mandatory transcript, and the result adds no concrete typography, color, coordinates, animation, or uniform point quota.",
         "Every local direction states required content and effect. Background-based example, analogy, style, or value directions are direct teaching requirements, not authoring commentary about the personalization selection.",
         "The exact ?[] control and immediate feedback directly carry the approved teaching effect; the Teaching Prompt adds no explanation of state encoding or unnecessary persistence steps.",
-        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. The body uses readable author-editable formatting appropriate to the task; no particular list hierarchy, heading scheme, or template is required.",
+        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. Ordinary teaching instructions use Markdown unordered-list items in execution order, with subordinate details nested where useful.",
         "The two exact deterministic lines and the unchanged interaction control remain standalone and unprefixed, byte-for-byte intact, outside navigation comments; question, control, and immediate feedback remain adjacent regardless of body layout."
       ]
     },
@@ -1142,7 +1142,7 @@
         "It outputs one runnable Teaching Prompt directly rather than a plan, intake form, segmentation JSON, course index, or full-course package.",
         "The lesson teaches all three source facts with understandable distinctions and an appropriate application or demonstration, without inventing a learner identity.",
         "It adds no learner-response control, state-management requirement, platform operation, Course Prompt, course description, or deployment proposal.",
-        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. The body uses readable author-editable formatting appropriate to the task; no particular list hierarchy, heading scheme, or template is required.",
+        "Every teaching block has one standalone localized HTML navigation comment immediately before it, stating the immediate learning result. Comments are safe HTML and contain no runtime instruction that is missing from the body. Ordinary teaching instructions use Markdown unordered-list items in execution order, with subordinate details nested where useful.",
         "It does not claim that missing intermediate JSON, an orchestration phase, an approved execution plan, or a completed questionnaire prevents the requested lesson."
       ]
     },
@@ -1216,7 +1216,7 @@
       "expectations": [
         "It produces only the requested source-bounded course description and runnable third-lesson Teaching Prompt; either output may be prepared first.",
         "The lesson preserves finding the original source and separately checking whether its actual text supports the specific claim; a plausible citation alone is not treated as verification.",
-        "The Teaching Prompt includes localized standalone HTML learning-result comments for its teaching blocks with readable task-appropriate formatting.",
+        "The Teaching Prompt includes localized standalone HTML learning-result comments for its teaching blocks with ordinary instructions written as unordered-list items.",
         "It does not require course-index, segmentation, standardized JSON, a design questionnaire, a complete course package, other lessons, or a Course Prompt.",
         "It makes no platform calls and adds no learner interaction, state-management requirement, guaranteed result, or unrequested pedagogical phase."
       ]
@@ -1230,7 +1230,7 @@
         "It preserves the two consecutive visual directions followed by the pooled comparison explanation, with the supplied values and valid averages.",
         "The actual explanation distinguishes equal means from equal distributions and avoids claiming all equal means hide different distributions.",
         "It does not insert a compulsory text lead-in, explanatory paragraph after the first visual, standalone cover, mandatory close, interaction, or extra teaching action.",
-        "The runnable fragment has one localized standalone HTML learning-result comment per teaching block and no embedded raw graphics code, intermediate JSON, or platform operation."
+        "The runnable fragment has one localized standalone HTML learning-result comment per teaching block and list-based ordinary instructions, with no embedded raw graphics code, intermediate JSON, or platform operation."
       ]
     },
     {
@@ -1281,7 +1281,7 @@
         "The exact learner-facing question is immediately followed by the standalone unprefixed control ?[每个数值的分布也相同 | 不能据此认定分布相同], with the supplied option order and immediate option-specific feedback carrying the stated reasoning and limits.",
         "The actual answer in the current conversation supports immediate feedback; the fragment adds no unnecessary save step, collection question, cross-lesson memory dependency or intermediate state table, and makes no universal persistence claim.",
         "The conclusion appears exactly once as the standalone deterministic line ===平均数相同，不代表分布相同。===; its wording and markers remain intact outside HTML comments and ordinary layout formatting.",
-        "Each meaningful teaching block has a standalone localized HTML explanatory comment, while all numbers, instructions, controls, feedback and exact content remain in the runtime body when the Teaching Agent ignores comments. Readable source layout is free within the explicit Markdown output request.",
+        "Each meaningful teaching block has a standalone localized HTML explanatory comment, while all numbers, instructions, controls, feedback and exact content remain in the runtime body when the Teaching Agent ignores comments. Ordinary instructions use Markdown unordered-list items in the approved teaching order.",
         "It does not add or replace a teaching action, change the comparison method, introduce a universal pedagogical loop, or add the prohibited opening, analogy, visual, exercise or summary. It requires no intermediate JSON or redesign approval and performs no CLI or platform operation."
       ]
     },

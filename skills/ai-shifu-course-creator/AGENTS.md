@@ -47,7 +47,7 @@
 | File | Canonical responsibility |
 | --- | --- |
 | `references/course-structure.md` | Own source analysis, optional traceable segmentation, chapter grouping, and lesson-structure planning from available inputs. It does not require generation or a fixed segment schema. |
-| `references/teaching-prompt.md` | Own writing or revising one runnable Teaching Prompt from available inputs, required source-only block comments, optional layout templates, and interaction, memory, branch, preservation, and image integration. Runtime syntax remains in `markdownflow-syntax.md`; no phase envelope or fixed planning run is required. |
+| `references/teaching-prompt.md` | Own writing or revising one runnable Teaching Prompt from available inputs, author-editable list layout and source-only block comments, and interaction, memory, branch, preservation, and image integration. Runtime syntax remains in `markdownflow-syntax.md`; no phase envelope or fixed planning run is required. |
 | `references/course-prompt.md` | Own materialization of the six-section course-wide Course Prompt, including fill sources and uniform presentation requirements. Lesson pedagogy, sequence, interactions, and position-specific slide decisions remain Teaching Prompt concerns. |
 | `references/course-description.md` | Own the learner-facing course listing and SEO description artifact, its supported source claims, output form, and validation. |
 | `references/course-review.md` | Own scoped review and requested minimal repairs of available artifacts, findings, uncertainty, and truthful validation results. It applies teaching-design or MarkdownFlow-expression criteria from the checklist without orchestrating other capabilities; platform readback remains with the relevant CLI capability. |

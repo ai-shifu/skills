@@ -8,7 +8,7 @@ The **Teaching Agent** is AI-Shifu's learner-time AI role that executes Course P
 
 Teaching Prompts and Course Prompts are instructions consumed by the Teaching Agent, not a mandatory spoken transcript or finished prose addressed directly to the learner. State what the Teaching Agent should explain, ask, show, adapt, and do in response. Include the required content, relationships, boundaries, and intended effect needed for reliable execution. Near-final wording is appropriate when source fidelity or the author requires it.
 
-The authoring agent chooses teaching approaches, lesson steps, visuals, and layouts suited to the task. No fixed teaching pattern, internal execution plan, or authoring phase is a prerequisite. Once written, a Prompt makes its intended learner-time behavior concrete; optionality during authoring does not make runtime instructions optional.
+The authoring agent chooses teaching approaches, lesson steps, and visuals suited to the task, then expresses them using the [Teaching Prompt authoring guidance](teaching-prompt.md). No fixed teaching pattern, internal execution plan, or authoring phase is a prerequisite. Once written, a Prompt makes its intended learner-time behavior concrete; optionality during authoring does not make runtime instructions optional.
 
 Address imperative instructions to the Teaching Agent. Name the learner explicitly when referring to learner actions, for example, "Ask the learner to compare the cases." Every second-person form in Prompt instructions, including English `you` and Chinese `你` or `您`, refers to the Teaching Agent. Learner-visible text inside a MarkdownFlow `?[]` interaction or [standalone deterministic output](markdownflow-syntax.md#deterministic-blocks) may address the learner directly.
 

@@ -1329,27 +1329,48 @@ class CourseCreatorContractTests(unittest.TestCase):
             [line for line in lines if line.startswith("# ")],
         )
 
-    def test_teaching_prompt_examples_keep_runtime_content_outside_comments(self):
+    def test_teaching_prompt_examples_keep_comments_and_controls_separate(self):
         document = (COURSE_CREATOR_REFERENCES / "teaching-prompt.md").read_text(
             encoding="utf-8"
         )
         examples = list(validate_skill_quality.RE_MARKDOWN_FENCE.finditer(document))
         self.assertGreaterEqual(len(examples), 3)
-        layouts = set()
         for example in examples:
             body = example.group("body")
             comments = re.findall(r"<!--(.*?)-->", body, re.DOTALL)
-            runtime = re.sub(r"<!--.*?-->", "", body, flags=re.DOTALL).strip()
+            runtime = validate_skill_quality.markdown_without_fenced_code_or_html_comments(
+                body
+            )
             self.assertTrue(comments)
-            self.assertTrue(runtime)
+            self.assertTrue(runtime.strip())
             for comment in comments:
                 self.assertNotIn("<!--", comment)
                 self.assertNotIn("-->", comment)
                 self.assertNotRegex(comment, r"\?\[|\{\{|https?://|!===|===")
-            for control in re.findall(r"(?m)^\?\[[^\n]+\]$", body):
-                self.assertIn(control, runtime)
-            layouts.add("list" if re.search(r"(?m)^- ", runtime) else "paragraph")
-        self.assertEqual({"list", "paragraph"}, layouts)
+            for line in runtime.splitlines():
+                if line.lstrip(" -").startswith("?["):
+                    with self.subTest(line=line):
+                        self.assertRegex(line, r"^\?\[[^\n]+\]$")
+
+    def test_teaching_prompt_default_example_uses_lists(self):
+        document = (COURSE_CREATOR_REFERENCES / "teaching-prompt.md").read_text(
+            encoding="utf-8"
+        )
+        layout = markdown_section(document, "Instruction Lists")
+        example = validate_skill_quality.RE_MARKDOWN_FENCE.search(layout)
+        self.assertIsNotNone(example)
+        runtime = validate_skill_quality.markdown_without_fenced_code_or_html_comments(
+            example.group("body")
+        )
+        self.assertRegex(runtime, r"(?m)^- \S")
+        for line in runtime.splitlines():
+            if not line.strip():
+                continue
+            with self.subTest(line=line):
+                if line.lstrip(" -").startswith(("?[", "===")):
+                    self.assertRegex(line, r"^(?:\?\[[^\n]+\]|===.+===)$")
+                else:
+                    self.assertRegex(line, r"^(?:  )*- \S")
 
     def test_behavioral_evaluation_manifest_is_usable(self):
         self.assertEqual("AI-Shifu Course Creator", self.evals["skill_name"])
@@ -1603,10 +1624,10 @@ class CourseCreatorContractTests(unittest.TestCase):
             ("directly", "description", "one runnable", "JSON", "without"),
         )
 
-    def test_evals_cover_custom_design_and_multiple_readable_layouts(self):
+    def test_evals_cover_default_lists_and_explicit_source_layouts(self):
         self.assert_eval_family(
-            (95, 96, 99),
-            ("custom", "paragraph", "unordered", "slide", "HTML", "standalone"),
+            (15, 94, 95, 96, 99),
+            ("custom", "paragraph", "unordered-list items", "slide", "HTML", "standalone"),
         )
 
     def test_evals_cover_audit_and_limited_repair_without_forced_reformatting(self):
