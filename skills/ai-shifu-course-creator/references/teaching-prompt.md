@@ -179,6 +179,7 @@ For beginners whose goal is to explain how quantity affects total cost, use a co
 - Wait for the current actual answer, then give feedback:
   - If the learner explains that the fixed cost stays unchanged and each additional unit adds 5 yuan, identify the reasoning they got right.
   - If they count the fixed cost again, explain that it is counted only once in this order model, and explain the additional costs item by item.
+  - If they give another clearly incorrect explanation, identify the specific error and explain the relevant cost relationship using the quantities in this order.
   - If they only repeat "an increase of 50 yuan" or their reasoning is unclear, explain that the correct number alone does not demonstrate understanding of the cause, and explain the cost relationship.
 - Do not ask another question. Close with one sentence returning to the formula and its assumptions; do not claim that the learner can now produce a quote independently.
 ```
