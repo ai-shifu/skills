@@ -448,7 +448,7 @@
         "The first lesson may introduce the course or teacher when useful, but no greeting, teacher biography, cover, core-question count, or fixed lead-in sequence is required.",
         "Any teacher identification uses only the supplied name 崔晓玲 without inventing credentials, and later lessons do not automatically repeat a welcome or teacher introduction.",
         "Explicit personalization directions can shape permitted expression without adding a background question, interaction, example, analogy, or other teaching action merely because the direction is selected.",
-        "Each new teaching block has a localized standalone HTML explanatory comment and ordinary instructions written as unordered-list items; no JSON or full-course companion artifact is required."
+        "Each new teaching block has a localized standalone HTML explanatory comment and a readable layout; no JSON or full-course companion artifact is required."
       ]
     },
     {
