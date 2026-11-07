@@ -60,7 +60,7 @@ Make the intended teaching behavior executable in Teaching Prompts and Course Pr
 
 | Capability | Useful inputs | Result and guidance |
 | --- | --- | --- |
-| Write or revise a lesson | Topic, source, existing Prompt, or supplied design | Runnable Teaching Prompt with an author-editable list layout. A separate design run is not required. [Teaching Prompt](references/teaching-prompt.md) |
+| Write or revise a lesson | Topic, source, existing Prompt, or supplied design | Runnable Teaching Prompt with the author-editable layout for the requested scope. A separate design run is not required. [Teaching Prompt](references/teaching-prompt.md) |
 | Specify slide interaction and animation | Dynamic process, experimental model, or intended learner controls | Slide-generation instructions for controls, motion, and observable changes. [Interactive slides and animation](references/teaching-prompt.md#slide-interaction-and-animation) |
 | Write or revise a Course Prompt | Course title, topic, goals, audience, and design context | Course-wide Prompt using the existing six-section template. [Course Prompt](references/course-prompt.md) |
 | Encode interactions, memory use, and exact content | Intended response behavior, relevant prior answers, selected exact material | Explicit controls or natural-language interactions with context-generated options, course memory use, branches, and deterministic output. [MarkdownFlow](references/markdownflow-syntax.md), [Prompt semantics](references/prompt-semantics.md) |
