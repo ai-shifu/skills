@@ -14,8 +14,8 @@ Use [review-checklist.md](review-checklist.md) for observable criteria relevant 
 
 - Prioritize factual correctness, source fidelity, runtime behavior, and learner impact over cosmetic polish.
 - For an audit or focused fix, preserve existing meaning and information density and use the smallest coherent repair. A requested rewrite permits broader changes within the author's constraints.
-- Teaching patterns, lesson sequences, visual cadence, interaction quotas, and optional source layouts are design choices; do not classify the absence of a preferred option as a defect.
-- Audit-only work does not add navigation comments or normalize an existing Teaching Prompt's layout. A new or explicitly rewritten Prompt uses the mandatory source-only comments and an appropriate layout under [teaching-prompt.md](teaching-prompt.md).
+- Teaching patterns, lesson sequences, visual cadence, and interaction quotas are design choices. Evaluate the choices against the teaching goal and the author's constraints.
+- Apply the [author-editable layout check](review-checklist.md#teaching-design-and-layout) within the requested scope.
 - Do not introduce silent factual changes or omit required evidence. Explain consequential structural or content changes when repairing them.
 - Recheck the behavior actually affected by an interaction, memory-use instruction, branch, image, or deterministic-span change. Check affected artifacts when a reference to earlier learner input or course-wide instruction changes.
 
