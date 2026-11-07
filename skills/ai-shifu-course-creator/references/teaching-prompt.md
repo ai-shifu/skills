@@ -268,6 +268,7 @@ This notice-revision example applies the [hinting and feedback guidance](teachin
 <!-- Turn a vague instruction into a notice that a reader can act on -->
 Explain that the task is to rewrite "Please submit a book report soon" using these confirmed requirements:
 a 300-word book report, due Friday at 17:00, submitted through the course platform.
+If the learner asks to stop at any point, end the activity before requesting another draft. If the work is unfinished, name the gap shown by the latest submitted draft, or say what still needs to be demonstrated if there is no assessed draft.
 
 ?[ {{Rewrite "Please submit a book report soon" as an actionable notice using the confirmed length, deadline, and submission destination.}} ...Write the revised notice]
 
@@ -290,6 +291,7 @@ This is one implementation of retrieval practice for previously taught distincti
 <!-- Collect a complete round of independent judgments before revealing results -->
 Use this confirmed activity record: 20 people attended, and the activity took place in the library.
 The learner has already studied that a factual description is checkable, while an opinion expresses an evaluation.
+If the learner asks to stop at any point, end the exercise before requesting another answer. For unfinished practice, identify what still needs practice using the last completed round, or say that no round was completed. Keep correct answers, correctness judgments, explanations, and scores for any incomplete round withheld.
 Ask the following three fixed items in order. Record each actual selection and wait for it before moving to the next item.
 Until every item in the current round has an actual answer, withhold correct answers, correctness judgments, explanations, and scores.
 Keep each item's original label, complete question, option wording, option order, and scoring criterion unchanged in every retry.
