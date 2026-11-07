@@ -69,7 +69,10 @@ For every newly written or explicitly rewritten Teaching Prompt, use source-only
 - Explain fixed and variable costs to the learner.
   - Use rent as the fixed-cost example and raw materials as the variable-cost example.
   - Explain that the distinction concerns how total cost changes with activity over the stated period.
-  - Ask the learner to consider which assumptions make those examples valid.
+
+===In this example, assume rent stays fixed over the period being discussed.===
+
+- Ask the learner to consider which assumptions make those examples valid.
 ```
 
 ## Source Encoding

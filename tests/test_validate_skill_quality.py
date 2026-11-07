@@ -1329,7 +1329,7 @@ class CourseCreatorContractTests(unittest.TestCase):
             [line for line in lines if line.startswith("# ")],
         )
 
-    def test_teaching_prompt_examples_use_lists_and_standalone_controls(self):
+    def test_teaching_prompt_examples_keep_comments_and_controls_separate(self):
         document = (COURSE_CREATOR_REFERENCES / "teaching-prompt.md").read_text(
             encoding="utf-8"
         )
@@ -1338,7 +1338,9 @@ class CourseCreatorContractTests(unittest.TestCase):
         for example in examples:
             body = example.group("body")
             comments = re.findall(r"<!--(.*?)-->", body, re.DOTALL)
-            runtime = re.sub(r"<!--.*?-->", "", body, flags=re.DOTALL)
+            runtime = validate_skill_quality.markdown_without_fenced_code_or_html_comments(
+                body
+            )
             self.assertTrue(comments)
             self.assertTrue(runtime.strip())
             for comment in comments:
@@ -1346,13 +1348,29 @@ class CourseCreatorContractTests(unittest.TestCase):
                 self.assertNotIn("-->", comment)
                 self.assertNotRegex(comment, r"\?\[|\{\{|https?://|!===|===")
             for line in runtime.splitlines():
-                if not line.strip():
-                    continue
-                with self.subTest(line=line):
-                    if line.lstrip(" -").startswith("?["):
+                if line.lstrip(" -").startswith("?["):
+                    with self.subTest(line=line):
                         self.assertRegex(line, r"^\?\[[^\n]+\]$")
-                    else:
-                        self.assertRegex(line, r"^(?:  )*- \S")
+
+    def test_teaching_prompt_default_example_uses_lists(self):
+        document = (COURSE_CREATOR_REFERENCES / "teaching-prompt.md").read_text(
+            encoding="utf-8"
+        )
+        layout = markdown_section(document, "Instruction Lists")
+        example = validate_skill_quality.RE_MARKDOWN_FENCE.search(layout)
+        self.assertIsNotNone(example)
+        runtime = validate_skill_quality.markdown_without_fenced_code_or_html_comments(
+            example.group("body")
+        )
+        self.assertRegex(runtime, r"(?m)^- \S")
+        for line in runtime.splitlines():
+            if not line.strip():
+                continue
+            with self.subTest(line=line):
+                if line.lstrip(" -").startswith(("?[", "===")):
+                    self.assertRegex(line, r"^(?:\?\[[^\n]+\]|===.+===)$")
+                else:
+                    self.assertRegex(line, r"^(?:  )*- \S")
 
     def test_behavioral_evaluation_manifest_is_usable(self):
         self.assertEqual("AI-Shifu Course Creator", self.evals["skill_name"])
