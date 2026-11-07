@@ -203,7 +203,8 @@ When the goal changes to calculating a quote and stating its assumptions, a work
   - If the calculation, amount, and assumptions are all correct, identify what is correct and end the exercise.
   - If the calculation is set up correctly but contains an arithmetic error, identify where it occurs; if the fixed cost is counted again or a cost is omitted, explain the relevant cost.
   - If the learner gives only 250 yuan or omits assumptions, acknowledge the correct parts they supplied and identify the missing calculation basis or assumptions, without inferring a misconception.
-- For either of the latter two cases, give a hint targeted to the gap and initiate one text-input interaction asking the learner to revise or complete the quote.
+  - If a stated assumption contradicts the model, acknowledge any correct calculation and explain which assumption fails and how it affects the quote.
+- If the answer does not meet the criteria, give a hint targeted to the gap and initiate one text-input interaction asking the learner to revise or complete the quote.
 - Wait for the actual revision, give feedback using the same criteria, and end. If gaps remain, provide a complete demonstration and identify what remains unresolved.
 - Do not continue looping or treat seeing the demonstration as independent performance.
 ```
@@ -223,9 +224,10 @@ For learners with supplied evidence that they already use this formula, keep the
 
 - Wait for the current actual answer, then give feedback using these criteria:
   - The complete result is 100 + 5 × 30 = 250 yuan, with unchanged cost terms and no other charges stated as assumptions.
-  - If the result, reasoning, and assumptions are complete, briefly confirm the reasoning and end; do not add a full introductory explanation.
+  - If the result, reasoning, and assumptions are correct and complete, briefly confirm the reasoning and end; do not add a full introductory explanation.
   - If there is an arithmetic or cost-classification error, explain the relevant steps for that actual error, then ask the learner to revise the quote.
   - If the learner gives only an amount or unclear reasoning, identify the missing basis and ask them to supply it; do not conclude that they cannot calculate merely because the answer is incomplete.
+  - If a stated assumption contradicts the model, acknowledge any correct calculation, explain how the assumption affects the quote, and ask the learner to revise it.
 - When revision or additional information is needed, initiate one real text-input interaction and wait for the answer. Give feedback on that new answer and end.
 - If the criteria are still unmet, provide the relevant explanation or complete calculation and identify the remaining gaps; do not retry indefinitely or claim mastery has been demonstrated.
 ```
