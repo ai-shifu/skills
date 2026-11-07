@@ -1,6 +1,6 @@
 # Teaching Prompt
 
-Write or revise one runnable per-lesson Teaching Prompt from a topic, brief, source material, existing Prompt, or supplied design. Use the available context directly; a segmentation schema, separate planning run, Course Prompt, or fixed intermediate JSON is not a prerequisite. The authoring agent chooses teaching strategies and layout; the learner-time Teaching Agent follows the resulting instructions.
+Write or revise one runnable per-lesson Teaching Prompt from a topic, brief, source material, existing Prompt, or supplied design. Use the available context directly; a segmentation schema, separate planning run, Course Prompt, or fixed intermediate JSON is not a prerequisite. The authoring agent chooses teaching strategies and expresses them using the [author-editable layout](#author-editable-layout); the learner-time Teaching Agent follows the resulting instructions.
 
 Shared Prompt meaning and artifact boundaries are in [prompt-semantics.md](prompt-semantics.md), runtime syntax in [markdownflow-syntax.md](markdownflow-syntax.md), optional author controls in [authoring-contracts.md](authoring-contracts.md), and teaching suggestions in [teaching-design.md](teaching-design.md). Consult [image-authoring.md](image-authoring.md) for actual image assets and [source-preservation.md](source-preservation.md) for selected exact material.
 
@@ -47,7 +47,7 @@ These choices belong at the relevant teaching position, not in a mandatory lesso
 
 ## Author-Editable Layout
 
-Every newly generated or explicitly rewritten Teaching Prompt must have source-only explanatory comments. Layout otherwise remains the agent's choice. Do not normalize layout, add comments, or backfill existing courses during an audit-only request. A limited repair to an existing Prompt is not an explicit rewrite: preserve its layout unless changing it is necessary for that repair.
+For every newly written or explicitly rewritten Teaching Prompt, use source-only explanatory comments and write ordinary Teaching Agent instructions as Markdown unordered-list items unless the author explicitly requests a different source layout. In an audit, leave existing formatting intact. In a focused repair, preserve the existing layout and comments except where the requested repair requires a change.
 
 ### Required Comments
 
@@ -58,13 +58,10 @@ Every newly generated or explicitly rewritten Teaching Prompt must have source-o
 - Keep the interaction question and unchanged standalone control, or its natural-language generation instructions, together with immediate feedback in one editing unit rather than inserting navigation comments inside that sequence.
 - Do not put the literal delimiters `<!--` or `-->` inside a comment body.
 
-### Optional Layout Templates
+### Instruction Lists
 
-These are alternatives, not a required sequence or an exhaustive list. The agent may combine them or design another layout while preserving the comments and runtime syntax.
-
-#### Hierarchical Action List
-
-Useful when one teaching action has several constraints or feedback cases. Nesting expresses ownership; it does not impose a teaching pattern.
+- Use one concise top-level item per independent teaching action, in learner-time order. For example, a slide can be a top-level action with its content and presentation constraints beneath it.
+- Nest separable details, substeps, constraints, or feedback cases beneath the action they support. Keep a simple action flat. The hierarchy helps the teacher scan and edit one part at a time while preserving the intended teaching sequence and detail.
 
 ```markdown
 <!-- The learner can distinguish fixed and variable costs -->
@@ -75,45 +72,15 @@ Useful when one teaching action has several constraints or feedback cases. Nesti
   - Ask the learner to consider which assumptions make those examples valid.
 ```
 
-#### Short Paragraph Blocks
-
-Useful for compact lessons or tightly connected reasoning. Each paragraph remains a direct instruction to the Teaching Agent.
-
-```markdown
-<!-- A break-even calculation becomes usable -->
-
-Explain to the learner that break-even units equal fixed costs divided by contribution per unit. Use fixed costs of 1000 and contribution of 20 per unit to demonstrate the result of 50 units. Explain that the calculation assumes the stated price and variable cost remain constant within the relevant range.
-
-<!-- The calculation is checked against its assumptions -->
-
-Ask the learner which assumption would fail if a volume discount changed the selling price.
-
-?[Selling price | Office address]
-
-Explain the selected answer and correct any confusion using the quantities in the calculation. Connect the price change to contribution per unit and explain why the original result must be recalculated.
-```
-
-#### Per-Slide Instruction Blocks
-
-Useful for a requested slide deck. Slide count, purpose, order, and the choice to include narration come from the user's needs and lesson design.
-
-```markdown
-<!-- Two cost behaviors are visible side by side -->
-
-Create a classroom slide comparing fixed and variable costs. Show total cost against activity for each behavior and label the assumptions. Keep the two diagrams aligned for comparison.
-
-<!-- The comparison can be applied to a concrete case -->
-
-Create a slide with the rent and raw-materials cases. Show the relevant time period and activity measure so the instructor can explain why each classification applies. Do not add Teaching Agent narration to this classroom-only deck.
-```
-
 ## Source Encoding
 
 Encode the chosen teaching design without changing author requirements or exact material. Parser recognition and runtime effects belong to [markdownflow-syntax.md](markdownflow-syntax.md).
 
 ### Layout Encoding
 
-Ordinary instructions may use lists, paragraphs, or another suitable source layout. Keep syntax-owned and exact structures intact: do not prefix or newly indent standalone `?[]` controls, `===...===` lines, multi-line fences with standalone `!===` delimiters, fenced code, Markdown images, tables, or fixed-display image lines merely to fit a layout. Preserve source-required list markers and indentation as content.
+Keep syntax-owned and exact structures in their required form and position. Leave standalone `?[]` controls, `===...===` lines, multi-line fences with standalone `!===` delimiters, fenced code, Markdown images, tables, and fixed-display image lines free of added list markers or indentation. Resume ordinary instructions at the top level after a standalone structure. Preserve any list markers and indentation that belong to exact source content.
+
+For a format-only rewrite, verify that removing only the added comments, list markers, and layout indentation recovers the original content and order. This is an authoring check. The list formatting is ordinary Markdown in the Teaching Prompt.
 
 ### Interaction Encoding
 
@@ -134,10 +101,9 @@ For example:
 
 ?[ {{Rewrite "Organize customer feedback" as a plan with a specific action, an owner, and a deadline.}} ...State who will do what and by when]
 
-Respond based on the learner's answer:
-
-- If all three details are present, explain why the plan is clear, then continue with the subsequent content.
-- If a detail is missing, identify it and give a hint. Initiate another interaction and ask the learner to complete the plan. Wait for the learner's actual response, then respond to the new answer using the same criteria.
+- Respond based on the learner's answer.
+  - If all three details are present, explain why the plan is clear, then continue with the subsequent content.
+  - If a detail is missing, identify it and give a hint. Initiate another interaction and ask the learner to complete the plan. Wait for the learner's actual response, then respond to the new answer using the same criteria.
 ```
 
 ### Memory and Branch Encoding
@@ -161,10 +127,10 @@ For example:
 ```markdown
 <!-- Comparing rates makes queue growth visible -->
 
-Generate an interactive experimental slide showing a simplified queue. Use fixed arrival and service rates, an initially empty queue, no random variation, and a continuous quantity model: queue length at time t minutes is max(0, (arrival rate - service rate) * t).
-Provide arrival-rate and service-rate sliders from 0 to 10 people per minute, initially 5 and 6. Changing either rate resets the model time and queue to zero, pauses playback, preserves earlier traces as comparison history labeled with their arrival and service rates, and starts a new current trace at the origin.
-Provide Play, Pause, and Reset controls. Animate model time from 0 to 2 minutes, plotting queue length against time with labeled axes and current rate values. Pause preserves the current graph; Reset restores the initial rates and empty queue, sets model time to zero, clears the graph, and pauses playback.
-Keep the current settings and graph visible so the learner can compare arrival below service with arrival above service, and then compare the effect of increasing service. Keep all exploration within the slide; do not add a course question or submission.
+- Generate an interactive experimental slide showing a simplified queue. Use fixed arrival and service rates, an initially empty queue, no random variation, and a continuous quantity model: queue length at time t minutes is max(0, (arrival rate - service rate) * t).
+  - Provide arrival-rate and service-rate sliders from 0 to 10 people per minute, initially 5 and 6. Changing either rate resets the model time and queue to zero, pauses playback, preserves earlier traces as comparison history labeled with their arrival and service rates, and starts a new current trace at the origin.
+  - Provide Play, Pause, and Reset controls. Animate model time from 0 to 2 minutes, plotting queue length against time with labeled axes and current rate values. Pause preserves the current graph; Reset restores the initial rates and empty queue, sets model time to zero, clears the graph, and pauses playback.
+  - Keep the current settings and graph visible so the learner can compare arrival below service with arrival above service, and then compare the effect of increasing service. Keep all exploration within the slide; do not add a course question or submission.
 ```
 
 Describe the requested behavior without claiming that the slide has already been generated or tested. Course-answer collection and memory integration follow [Simulation Integration](#simulation-integration).
@@ -196,20 +162,20 @@ For beginners whose goal is to explain how quantity affects total cost, use a co
 
 ```markdown
 <!-- Use a concrete order to connect the two cost types to quantity -->
-Use an explicitly labeled hypothetical teaching order to explain: total cost = fixed cost + per-unit variable cost × quantity.
-The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; 20 units cost 200 yuan in total.
-State the assumptions: both cost terms remain unchanged over the quantity range being discussed, and there are no other charges.
-Compare 20 units with 30 units: total cost increases from 200 yuan to 250 yuan because of the variable cost of 10 additional units;
-the fixed cost is still counted only once. Explain how each term in the formula corresponds to the order.
+- Use an explicitly labeled hypothetical teaching order to explain: total cost = fixed cost + per-unit variable cost × quantity.
+  - The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; 20 units cost 200 yuan in total.
+  - State the assumptions: both cost terms remain unchanged over the quantity range being discussed, and there are no other charges.
+- Compare 20 units with 30 units. Total cost increases from 200 yuan to 250 yuan because of the variable cost of 10 additional units.
+  - Explain that the fixed cost is still counted only once and show how each term in the formula corresponds to the order.
 
 <!-- Check whether the learner can explain why the cost changes -->
 ?[ {{With the assumptions above unchanged, why does adding 10 units increase total cost by only 50 yuan, without adding the fixed cost again?}} ...Explain which costs change and which remain unchanged]
 
-Wait for the current actual answer, then give feedback:
-- If the learner explains that the fixed cost stays unchanged and each additional unit adds 5 yuan, identify the reasoning they got right.
-- If they count the fixed cost again, explain that it is counted only once in this order model, and explain the additional costs item by item.
-- If they only repeat "an increase of 50 yuan" or their reasoning is unclear, explain that the correct number alone does not demonstrate understanding of the cause, and explain the cost relationship.
-Do not ask another question. Close with one sentence returning to the formula and its assumptions; do not claim that the learner can now produce a quote independently.
+- Wait for the current actual answer, then give feedback:
+  - If the learner explains that the fixed cost stays unchanged and each additional unit adds 5 yuan, identify the reasoning they got right.
+  - If they count the fixed cost again, explain that it is counted only once in this order model, and explain the additional costs item by item.
+  - If they only repeat "an increase of 50 yuan" or their reasoning is unclear, explain that the correct number alone does not demonstrate understanding of the cause, and explain the cost relationship.
+- Do not ask another question. Close with one sentence returning to the formula and its assumptions; do not claim that the learner can now produce a quote independently.
 ```
 
 ### Same Beginners, Goal of Producing a Quote
@@ -218,22 +184,22 @@ When the goal changes to calculating a quote and stating its assumptions, a work
 
 ```markdown
 <!-- Show a complete calculation and the reasoning behind each step -->
-Use a hypothetical teaching order to demonstrate: total cost = fixed cost + per-unit variable cost × quantity.
-The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; for 20 units, the variable cost is 5 × 20 = 100 yuan.
-Add the fixed cost of 100 yuan, counted only once, to obtain a total cost of 200 yuan.
-Explain which cost each step represents, and state that the model requires unchanged cost terms over the quantity range being discussed and no other charges.
+- Use a hypothetical teaching order to demonstrate: total cost = fixed cost + per-unit variable cost × quantity.
+  - The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; for 20 units, the variable cost is 5 × 20 = 100 yuan.
+  - Add the fixed cost of 100 yuan, counted only once, to obtain a total cost of 200 yuan.
+  - Explain which cost each step represents, and state that the model requires unchanged cost terms over the quantity range being discussed and no other charges.
 
 <!-- Independently quote another quantity and state the assumptions -->
 ?[ {{Using the model with a fixed cost of 100 yuan and a per-unit variable cost of 5 yuan, produce a quote for an order of 30 units. Show your calculation and state the assumptions under which the quote holds.}} ...Write the calculation, total cost, and assumptions]
 
-Wait for the current actual answer. Use the following criteria only for feedback after receiving it; do not show them beforehand:
-The complete result is 100 + 5 × 30 = 250 yuan; the assumptions include unchanged cost terms and no other charges.
-- If the calculation, amount, and assumptions are all correct, identify what is correct and end the exercise.
-- If the calculation is set up correctly but contains an arithmetic error, identify where it occurs; if the fixed cost is counted again or a cost is omitted, explain the relevant cost.
-- If the learner gives only 250 yuan or omits assumptions, acknowledge the correct parts they supplied and identify the missing calculation basis or assumptions, without inferring a misconception.
-For either of the latter two cases, give a hint targeted to the gap and initiate one text-input interaction asking the learner to revise or complete the quote.
-Wait for the actual revision, give feedback using the same criteria, and end. If gaps remain, provide a complete demonstration and identify what remains unresolved.
-Do not continue looping or treat seeing the demonstration as independent performance.
+- Wait for the current actual answer. Use the following criteria only for feedback after receiving it; do not show them beforehand:
+  - The complete result is 100 + 5 × 30 = 250 yuan; the assumptions include unchanged cost terms and no other charges.
+  - If the calculation, amount, and assumptions are all correct, identify what is correct and end the exercise.
+  - If the calculation is set up correctly but contains an arithmetic error, identify where it occurs; if the fixed cost is counted again or a cost is omitted, explain the relevant cost.
+  - If the learner gives only 250 yuan or omits assumptions, acknowledge the correct parts they supplied and identify the missing calculation basis or assumptions, without inferring a misconception.
+- For either of the latter two cases, give a hint targeted to the gap and initiate one text-input interaction asking the learner to revise or complete the quote.
+- Wait for the actual revision, give feedback using the same criteria, and end. If gaps remain, provide a complete demonstration and identify what remains unresolved.
+- Do not continue looping or treat seeing the demonstration as independent performance.
 ```
 
 ### Same Quote Goal, Learners Already Able to Use the Formula
@@ -242,20 +208,20 @@ For learners with supplied evidence that they already use this formula, keep the
 
 ```markdown
 <!-- Use existing skills to produce a quote and reveal where help is needed -->
-Briefly state the hypothetical teaching order model: total cost = fixed cost + per-unit variable cost × quantity.
-The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; the given total cost for 20 units is 200 yuan.
-The model assumes unchanged cost terms over the quantity range being discussed and no other charges.
-Do not demonstrate the calculation steps first or disclose the result of the task below in advance.
+- Briefly state the hypothetical teaching order model: total cost = fixed cost + per-unit variable cost × quantity.
+  - The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; the given total cost for 20 units is 200 yuan.
+  - The model assumes unchanged cost terms over the quantity range being discussed and no other charges.
+- Do not demonstrate the calculation steps first or disclose the result of the task below in advance.
 
 ?[ {{Using the model with a fixed cost of 100 yuan and a per-unit variable cost of 5 yuan, produce a quote for an order of 30 units. Show your calculation and state the assumptions under which the quote holds.}} ...Write the calculation, total cost, and assumptions]
 
-Wait for the current actual answer, then give feedback using these criteria:
-The complete result is 100 + 5 × 30 = 250 yuan, with unchanged cost terms and no other charges stated as assumptions.
-- If the result, reasoning, and assumptions are complete, briefly confirm the reasoning and end; do not add a full introductory explanation.
-- If there is an arithmetic or cost-classification error, explain the relevant steps for that actual error, then ask the learner to revise the quote.
-- If the learner gives only an amount or unclear reasoning, identify the missing basis and ask them to supply it; do not conclude that they cannot calculate merely because the answer is incomplete.
-When revision or additional information is needed, initiate one real text-input interaction and wait for the answer. Give feedback on that new answer and end.
-If the criteria are still unmet, provide the relevant explanation or complete calculation and identify the remaining gaps; do not retry indefinitely or claim mastery has been demonstrated.
+- Wait for the current actual answer, then give feedback using these criteria:
+  - The complete result is 100 + 5 × 30 = 250 yuan, with unchanged cost terms and no other charges stated as assumptions.
+  - If the result, reasoning, and assumptions are complete, briefly confirm the reasoning and end; do not add a full introductory explanation.
+  - If there is an arithmetic or cost-classification error, explain the relevant steps for that actual error, then ask the learner to revise the quote.
+  - If the learner gives only an amount or unclear reasoning, identify the missing basis and ask them to supply it; do not conclude that they cannot calculate merely because the answer is incomplete.
+- When revision or additional information is needed, initiate one real text-input interaction and wait for the answer. Give feedback on that new answer and end.
+- If the criteria are still unmet, provide the relevant explanation or complete calculation and identify the remaining gaps; do not retry indefinitely or claim mastery has been demonstrated.
 ```
 
 The first pair changes the target performance for the same audience; the second pair keeps the quote task and criteria while changing the assumed starting knowledge and support. The differences should be visible in instruction and feedback, not only method labels. These are authored examples, not recorded learner results. The follow-ups in the latter fragments depend on the target's [natural-language interaction capabilities](markdownflow-syntax.md#natural-language-interactions); actual waiting, generated controls, and response-dependent delivery require a learner-time run to verify.
@@ -265,21 +231,20 @@ The first pair changes the target performance for the same audience; the second 
 This notice-revision example applies the [hinting and feedback guidance](teaching-design.md#preserve-each-selected-approachs-learning-actions). The teacher permits responsive revisions until the notice meets the supplied criteria.
 
 ```markdown
-<!-- Turn a vague instruction into a notice that a reader can act on -->
-Explain that the task is to rewrite "Please submit a book report soon" using these confirmed requirements:
-a 300-word book report, due Friday at 17:00, submitted through the course platform.
+<!-- Rewrite a vague notice and check whether a reader can act on it -->
+- Explain that the task is to rewrite "Please submit a book report soon" using the confirmed requirements.
+  - The book report is 300 words, due Friday at 17:00, and submitted through the course platform.
 
 ?[ {{Rewrite "Please submit a book report soon" as an actionable notice using the confirmed length, deadline, and submission destination.}} ...Write the revised notice]
 
-<!-- Use the actual draft to guide a useful next revision -->
-Wait for the actual draft, then check all four criteria: the book-report task, 300 words, Friday at 17:00, and the course-platform destination.
-- When every criterion is accurate and clear, identify what makes the notice actionable, summarize the checking criteria, and end the activity.
-- When a criterion is missing or inaccurate, name a concrete gap in this draft and the edit needed. Do not rewrite the whole notice for the learner.
-- When the learner is stuck making that edit, give one clue tied to the actual obstacle. For a vague deadline, for example, point to the confirmed day and time rather than supplying a complete notice. Do not give hints for requirements already handled correctly.
-When a revision is needed, initiate a real text-input interaction asking for the complete revised notice, with that full response task associated with the control. Wait for the actual new draft before continuing.
-Recheck every criterion in the latest draft, including newly introduced errors; do not check only the gap mentioned last time.
-If the learner still cannot make the edit, add only the support needed for the remaining obstacle, such as modeling that one detail, then ask for another complete revision through a real text-input interaction and wait again.
-Reduce help as the learner can proceed. Repeat the same checking and response process until the notice meets the criteria, then end rather than adding another required revision.
+- Wait for the actual draft, then check all four criteria: the book-report task, 300 words, Friday at 17:00, and the course-platform destination.
+  - When every criterion is accurate and clear, identify what makes the notice actionable, summarize the checking criteria, and end the activity.
+  - When a criterion is missing or inaccurate, name a concrete gap in this draft and the edit needed. Do not rewrite the whole notice for the learner.
+  - When the learner is stuck making that edit, give one clue tied to the actual obstacle. For a vague deadline, for example, point to the confirmed day and time rather than supplying a complete notice. Do not give hints for requirements already handled correctly.
+- When a revision is needed, initiate a real text-input interaction asking for the complete revised notice, with that full response task associated with the control. Wait for the actual new draft before continuing.
+- Recheck every criterion in the latest draft, including newly introduced errors; do not check only the gap mentioned last time.
+- If the learner still cannot make the edit, add only the support needed for the remaining obstacle, such as modeling that one detail, then ask for another complete revision through a real text-input interaction and wait again.
+- Reduce help as the learner can proceed. Repeat the same checking and response process until the notice meets the criteria, then end rather than adding another required revision.
 ```
 
 ### Round-Based Retrieval With Stable Items
@@ -288,11 +253,11 @@ This is one implementation of retrieval practice for previously taught distincti
 
 ```markdown
 <!-- Collect a complete round of independent judgments before revealing results -->
-Use this confirmed activity record: 20 people attended, and the activity took place in the library.
-The learner has already studied that a factual description is checkable, while an opinion expresses an evaluation.
-Ask the following three fixed items in order. Record each actual selection and wait for it before moving to the next item.
-Until every item in the current round has an actual answer, withhold correct answers, correctness judgments, explanations, and scores.
-Keep each item's original label, complete question, option wording, option order, and scoring criterion unchanged in every retry.
+- Use this confirmed activity record: 20 people attended, and the activity took place in the library.
+  - The learner has already studied that a factual description is checkable, while an opinion expresses an evaluation.
+- Ask the following three fixed items in order. Record each actual selection and wait for it before moving to the next item.
+  - Until every item in the current round has an actual answer, withhold correct answers, correctness judgments, explanations, and scores.
+  - Keep each item's original label, complete question, option wording, option order, and scoring criterion unchanged in every retry.
 
 ?[ {{Item A: Is "20 people attended this activity" a factual description or an opinion?}} Factual description | Opinion]
 
@@ -301,18 +266,18 @@ Keep each item's original label, complete question, option wording, option order
 ?[ {{Item C: Is "This activity deserves 10 out of 10" a factual description or an opinion?}} Factual description | Opinion]
 
 <!-- Score the actual round and retain only its incorrect original items -->
-Only after receiving actual answers to every item in the current round, use these fixed scoring criteria:
-- Item A is a factual description: the confirmed attendance record supports it.
-- Item B is an opinion: "best" depends on an evaluation standard.
-- Item C is an opinion: a numerical rating still expresses an evaluation.
-Show a result table using the original item labels, the learner's actual selections, correct answers, and correctness.
-Report the number correct out of the number of items included in this round, and briefly explain the incorrect judgments.
-When the round has incorrect items, start a new round containing only those same original items, in their original relative order. Do not add items already answered correctly or renumber the remaining items.
-For each retained item, recreate a real single-select interaction with the same complete question prefix and options, wait for its actual new selection, and record that selection before presenting the next retained item.
-Do not use an earlier answer to complete a pending interaction. Again withhold answers, correctness, explanations, and scores until every retained item has an actual answer in this new round.
-Score that round using the same criteria, match the results by original item label, report its own correct count and denominator, and retain only the items still incorrect for the next round.
-Continue this process until every original item has been answered correctly. Then summarize that factual claims need evidence and numerical statements can still be opinions, and end the exercise.
-Describe this result as completing the current practice; answering the same items after explanations does not establish transfer or long-term retention.
+- Only after receiving actual answers to every item in the current round, use these fixed scoring criteria:
+  - Item A is a factual description: the confirmed attendance record supports it.
+  - Item B is an opinion: "best" depends on an evaluation standard.
+  - Item C is an opinion: a numerical rating still expresses an evaluation.
+- Show a result table using the original item labels, the learner's actual selections, correct answers, and correctness.
+- Report the number correct out of the number of items included in this round, and briefly explain the incorrect judgments.
+- When the round has incorrect items, start a new round containing only those same original items, in their original relative order. Do not add items already answered correctly or renumber the remaining items.
+- For each retained item, recreate a real single-select interaction with the same complete question prefix and options, wait for its actual new selection, and record that selection before presenting the next retained item.
+- Do not use an earlier answer to complete a pending interaction. Again withhold answers, correctness, explanations, and scores until every retained item has an actual answer in this new round.
+- Score that round using the same criteria, match the results by original item label, report its own correct count and denominator, and retain only the items still incorrect for the next round.
+- Continue this process until every original item has been answered correctly. Then summarize that factual claims need evidence and numerical statements can still be opinions, and end the exercise.
+- Describe this result as completing the current practice; answering the same items after explanations does not establish transfer or long-term retention.
 ```
 
 ### Socratic Questioning for an Open Judgment
@@ -320,21 +285,20 @@ Describe this result as completing the current practice; answering the same item
 Use this fragment when the goal is a defensible judgment with clear reasons and conditions. The criteria evaluate the reasoning, not agreement with one preferred view. It does not require every possible question or counterexample to be asked.
 
 ```markdown
-<!-- Let the learner define the open judgment and give an initial reason -->
-Introduce the question: does fairness require giving every learner exactly the same learning support?
-Explain that different standards may be defensible when their reasons and conditions are clear.
+<!-- Form an open judgment, then clarify its reasoning and limits -->
+- Introduce the question: does fairness require giving every learner exactly the same learning support?
+- Explain that different standards may be defensible when their reasons and conditions are clear.
 
 ?[ {{Does fairness require exactly the same learning support for every learner? Explain what "fairness" and "the same support" mean in your judgment, and give a reason.}} ...Write your judgment, meanings, and reason]
 
-<!-- Choose the next useful question from the learner's actual reasoning -->
-Wait for the actual answer. Acknowledge what is already clear, then use the learner's own definitions, reasons, assumptions, and later corrections to decide whether another question is useful.
-- When a key meaning is unclear, ask one concrete clarification, such as whether "the same" refers to time, materials, or access to the task. Do not replace the learner's definition with your preferred standard.
-- When the meanings are clear but the reason or an assumption is missing, ask for the basis of that specific judgment or a condition it needs. Do not repeat questions already answered.
-- When a relevant boundary remains unexamined, choose one comparison that tests the learner's actual reason. For an emphasis on identical materials, ask whether providing larger type to a learner who cannot read ordinary type is fair under that standard. For an emphasis on meeting every need, ask how the standard handles two learners needing extra explanation when only ten minutes remain. For another clear standard, change a condition that matters to that standard.
-For each needed question, initiate one real text-input interaction with the complete question associated with its response surface. Wait for the actual new answer before choosing a further question or giving response-dependent feedback.
-Evaluate whether definitions stay consistent, reasons support the judgment, and relevant conditions are stated. If two statements conflict, point to those actual statements and invite clarification rather than declaring the whole view wrong.
-Allow the learner to retain or revise the judgment with reasons, including acknowledging an unresolved tradeoff. Do not force a change of position or ask all of the comparison questions.
-As soon as the learner can explain a coherent judgment, its reasons, and relevant limits, summarize what their actual answers clarified or changed and what remains uncertain, then end the discussion without another required answer.
+- Wait for the actual answer. Acknowledge what is already clear, then use the learner's own definitions, reasons, assumptions, and later corrections to decide whether another question is useful.
+  - When a key meaning is unclear, ask one concrete clarification, such as whether "the same" refers to time, materials, or access to the task. Do not replace the learner's definition with your preferred standard.
+  - When the meanings are clear but the reason or an assumption is missing, ask for the basis of that specific judgment or a condition it needs. Do not repeat questions already answered.
+  - When a relevant boundary remains unexamined, choose one comparison that tests the learner's actual reason. For an emphasis on identical materials, ask whether providing larger type to a learner who cannot read ordinary type is fair under that standard. For an emphasis on meeting every need, ask how the standard handles two learners needing extra explanation when only ten minutes remain. For another clear standard, change a condition that matters to that standard.
+- For each needed question, initiate one real text-input interaction with the complete question associated with its response surface. Wait for the actual new answer before choosing a further question or giving response-dependent feedback.
+- Evaluate whether definitions stay consistent, reasons support the judgment, and relevant conditions are stated. If two statements conflict, point to those actual statements and invite clarification rather than declaring the whole view wrong.
+- Allow the learner to retain or revise the judgment with reasons, including acknowledging an unresolved tradeoff. Do not force a change of position or ask all of the comparison questions.
+- As soon as the learner can explain a coherent judgment, its reasons, and relevant limits, summarize what their actual answers clarified or changed and what remains uncertain, then end the discussion without another required answer.
 ```
 
 These additional fragments also require the target's [natural-language interaction capabilities](markdownflow-syntax.md#natural-language-interactions) for generated follow-ups and retries. Static review can assess the authored instructions; actual waiting, stable item identity, whole-round withholding, and response-dependent follow-up need a learner-time run to verify. No learner outcomes are claimed by these examples.
@@ -353,8 +317,8 @@ Check the observable result within the requested scope:
 - Explicit source, audience, delivery, interaction, personalization, and approved design constraints are honored.
 - Confirmed goals, sample decisions, and teacher corrections remain consistent across affected content; any included learning task, success criteria, and feedback address the intended capability.
 - Selected personalization has concrete permitted effects using relevant available context and a neutral fallback, while preserving required facts, sequence, visual structure, and interaction behavior. Teacher-facing production and method-selection notes remain outside runtime prose.
-- Newly written or explicitly rewritten Prompts have useful explanatory comments before meaningful blocks. Essential teaching content remains complete outside comments, and the chosen layout preserves runtime controls and exact spans.
+- Newly written or explicitly rewritten Prompts follow [Author-Editable Layout](#author-editable-layout) and [Layout Encoding](#layout-encoding). Essential teaching content remains complete outside comments.
 - Questions, controls, feedback, use of relevant memory, natural-language branches, and handling of unavailable information are coherent and use valid MarkdownFlow.
 - Source material selected for exact preservation matches its authoritative source. Do not claim source coverage when the source is unavailable.
 - Image-specific checks apply when actual image assets are used.
-- Available companion artifacts are consistent; unavailable or out-of-scope checks are not assessed. A recommended pattern, visual cadence, interaction quota, or optional layout is never a pass/fail criterion.
+- Available companion artifacts are consistent; unavailable or out-of-scope checks are not assessed. A recommended pattern, visual cadence, or interaction quota is never a pass/fail criterion.
