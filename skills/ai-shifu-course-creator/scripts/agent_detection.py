@@ -1,4 +1,4 @@
-"""Local implementation of ai-shifu/detect-agent 0.1.11 (MIT).
+"""Local implementation of ai-shifu/detect-agent 0.1.12 (MIT).
 
 Specification attribution (MIT License):
 Copyright (c) 2026 ai-shifu
@@ -29,8 +29,8 @@ import re
 from collections.abc import Callable, Mapping
 
 
-SPEC_VERSION = "0.1.11"
-SPEC_COMMIT = "c06e732d17d02f74fd9b452f20c4fa17a9f95a03"
+SPEC_VERSION = "0.1.12"
+SPEC_COMMIT = "e90adc7cb392c602f1a5a354ceba3f3f2cf031e7"
 
 # Product spelling is also the bounded CLI display-name contract. Context-only
 # products are reportable only when explicitly declared, not from a context hint.
@@ -71,6 +71,7 @@ AGENT_DISPLAY_NAMES = {
     "instinct": "Instinct",
     "lingguang": "Lingguang",
     "deepseek-harness": "DeepSeek Harness",
+    "today": "Today",
     "cursor": "Cursor",
     "zed": "Zed",
     "hi": "hi",
@@ -145,6 +146,7 @@ _RUNTIME_RULES = (
     )),
     ("lingguang", ((("EXEC_FROM", None),),)),
     ("deepseek-harness", ((("DSH_SHELL", None),),)),
+    ("today", ((("TODAY_ENV", None),),)),
 )
 
 

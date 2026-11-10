@@ -154,7 +154,7 @@ class CourseProfileProcessTests(unittest.TestCase):
             "CODEX_SANDBOX CODEX_CI CODEX_THREAD_ID CODEX_SANDBOX_NETWORK_DISABLED "
             "ANTIGRAVITY_AGENT ANTIGRAVITY_CLI_ALIAS AUGMENT_AGENT OPENCODE_CLIENT OPENCODE "
             "GOOSE_TERMINAL JUNIE_SHIM_PATH PI_CODING_AGENT CLAUDE_CODE_IS_COWORK CLAUDECODE "
-            "CLAUDE_CODE CURSOR_EXTENSION_HOST_ROLE AGENT_CONTEXT_OUT OPENCLAW_SHELL"
+            "CLAUDE_CODE CURSOR_EXTENSION_HOST_ROLE AGENT_CONTEXT_OUT OPENCLAW_SHELL TODAY_ENV"
         ).split())
         self.run_cli("profile", "set", "one", "--base-url", self.origin + "/one", env=clean_hints)
         self.save_json(self.profile_dir("one") / "credentials.json", {
