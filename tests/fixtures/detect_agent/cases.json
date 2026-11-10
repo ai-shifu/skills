@@ -1,5 +1,5 @@
 {
-  "spec_version": "0.1.11",
+  "spec_version": "0.1.12",
   "cases": [
     {
       "name": "empty environment",
@@ -3679,6 +3679,98 @@
         "copilot_cli": "1"
       },
       "env_name_case": "sensitive",
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "today non-empty marker",
+      "env": {
+        "TODAY_ENV": "production"
+      },
+      "expected": {
+        "agent_id": "today",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "today zero value counts",
+      "env": {
+        "TODAY_ENV": "0"
+      },
+      "expected": {
+        "agent_id": "today",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "today false value counts",
+      "env": {
+        "TODAY_ENV": "false"
+      },
+      "expected": {
+        "agent_id": "today",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "today whitespace value counts",
+      "env": {
+        "TODAY_ENV": " "
+      },
+      "expected": {
+        "agent_id": "today",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "today empty marker fails",
+      "env": {
+        "TODAY_ENV": ""
+      },
+      "expected": {
+        "agent_id": null,
+        "evidence": "none"
+      }
+    },
+    {
+      "name": "today declaration",
+      "env": {
+        "AGENT": "today"
+      },
+      "expected": {
+        "agent_id": "today",
+        "evidence": "declared"
+      }
+    },
+    {
+      "name": "today coexists with codex",
+      "env": {
+        "TODAY_ENV": "1",
+        "CODEX_THREAD_ID": "synthetic-thread"
+      },
+      "expected": {
+        "agent_id": "codex",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "today coexists with deepseek-harness",
+      "env": {
+        "TODAY_ENV": "1",
+        "DSH_SHELL": "1"
+      },
+      "expected": {
+        "agent_id": "deepseek-harness",
+        "evidence": "runtime-marker"
+      }
+    },
+    {
+      "name": "today skill dir only is not a marker",
+      "env": {
+        "TODAY_SKILL_DIR": "/opt/today/skills"
+      },
       "expected": {
         "agent_id": null,
         "evidence": "none"

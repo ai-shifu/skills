@@ -1,4 +1,4 @@
-"""Pinned detect-agent 0.1.11 conformance with synthetic lookup providers only."""
+"""Pinned detect-agent 0.1.12 conformance with synthetic lookup providers only."""
 
 from __future__ import annotations
 
@@ -48,8 +48,8 @@ class AgentDetectionConformanceTests(unittest.TestCase):
     def test_all_pinned_portable_cases_without_host_capabilities(self):
         fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
         self.assertEqual(fixture["spec_version"], detector.SPEC_VERSION)
-        self.assertEqual(detector.SPEC_COMMIT, "c06e732d17d02f74fd9b452f20c4fa17a9f95a03")
-        self.assertEqual(len(fixture["cases"]), 347)
+        self.assertEqual(detector.SPEC_COMMIT, "e90adc7cb392c602f1a5a354ceba3f3f2cf031e7")
+        self.assertEqual(len(fixture["cases"]), 356)
         original_locale = locale.setlocale(locale.LC_CTYPE)
         try:
             for target_locale in ("C", "tr_TR.UTF-8", "Turkish_Turkey.1254"):
@@ -71,7 +71,7 @@ class AgentDetectionConformanceTests(unittest.TestCase):
             locale.setlocale(locale.LC_CTYPE, original_locale)
 
     def test_catalog_declarations_and_aliases(self):
-        self.assertEqual(len(detector.AGENT_DISPLAY_NAMES), 40)
+        self.assertEqual(len(detector.AGENT_DISPLAY_NAMES), 41)
         self.assertNotIn("unknown", detector.AGENT_DISPLAY_NAMES)
         for agent_id in detector.AGENT_DISPLAY_NAMES:
             with self.subTest(agent_id=agent_id):

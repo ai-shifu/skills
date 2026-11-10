@@ -89,6 +89,7 @@ class CallerDetectionTests(unittest.TestCase):
             "instinct": "Instinct",
             "lingguang": "Lingguang",
             "deepseek-harness": "DeepSeek Harness",
+            "today": "Today",
             "zed": "Zed",
             "hi": "hi",
             "sandbase-harness": "SandBase Harness",
@@ -519,7 +520,7 @@ class UsageTransportTests(unittest.TestCase):
                     self.assertNotIn(marker, captured)
                 self.assertEqual(cli._USAGE_METADATA_HEADERS, {})
 
-    def test_upgraded_cli_attribution_is_bounded_on_all_business_transports(self):
+    def test_additional_agent_attribution_is_bounded_on_all_business_transports(self):
         private_value = "private-upgraded-cli\r\nInjected: value"
         cases = [
             ({marker: private_value}, family, name)
@@ -539,6 +540,7 @@ class UsageTransportTests(unittest.TestCase):
             ({"AI_AGENT": "CLAUDE-CODE_9-8-765_HARNESS"}, "claude-code", "Claude Code"),
             ({"AI_AGENT": "qwen-code@", "AGENT": "codex", "QWEN_CODE": private_value}, "unknown", "Unknown Agent"),
             ({"AI_AGENT": "unregistered@private-version", "AGENT": "codex", "ROO_ACTIVE": private_value}, "unknown", "Unknown Agent"),
+            ({"TODAY_ENV": private_value}, "today", "Today"),
         ))
         for environment, family, name in cases:
             with self.subTest(environment=environment):
