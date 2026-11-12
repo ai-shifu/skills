@@ -27,7 +27,7 @@ Any violation of the rules below returns `11002` (`invalidDsl`):
 Collect `user_bid` values from another query first, then resolve names in one batch:
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"user_users",
  "select":["user_bid","nickname"],
  "where":[{"field":"user_bid","op":"in","value":["u-bid-1","u-bid-2","u-bid-3"]}],
@@ -51,7 +51,7 @@ Returns:
 ### Use B — reverse-look up `user_bid` from a phone number
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"user_users",
  "select":["user_bid","nickname","user_identify"],
  "where":[{"field":"user_identify","op":"=","value":"13800138000"}],

@@ -2,23 +2,50 @@
 
 ## Invocation
 
-All commands use:
+Select the command from this skill's installation. A skill synchronized by the npm installer has `.ai-shifu-cli.json` with `schema_version: 1`, `distribution: "npm"`, and a stable release `version`. Check `shifu --version` against that marker once when selecting the command. Use the global CLI only when its version matches:
 
 ```bash
-python3 {skillDir}/scripts/shifu-cli.py <command> [--profile <name>]
+shifu <command> [--profile <name>]
 ```
 
-`--profile <name>` selects one named profile for this invocation and may appear before or after the command. Supply it at most once. Authenticated commands also accept `--token <jwt>` as a non-persistent override for this invocation. Selection is resolved once before platform access; platform requests, uploads, and returned course links use that same context. See [Profiles](#profiles) for selection and credential precedence. Use `{skillDir}/.env.example` as the reference when creating or editing `{skillDir}/.env`:
+Plugin-managed channel packages and unmarked installations, including project-local and older skill-only copies, use `python3 {skillDir}/scripts/shifu-cli.py` even when a global `shifu` is available. This preserves their own version and configuration. For an npm-synchronized skill with a missing or different global CLI version, the same Python command is the compatibility fallback. Substitute the selected command for `shifu` in the course-command examples below. The Python entrypoint needs the dependencies declared in `{skillDir}/scripts/requirements.txt`. CLI installation and upgrade commands require the installed npm CLI.
+
+`--profile <name>` selects one named profile for this invocation and may appear before or after the command. Supply it at most once. Authenticated commands also accept `--token <jwt>` as a non-persistent override for this invocation. Selection is resolved once before platform access; platform requests, uploads, and returned course links use that same context. See [Profiles](#profiles) for selection and credential precedence. Use `{skillDir}/.env.example` as the supported configuration reference:
 
 ```dotenv
 SHIFU_BASE_URL=
 SHIFU_TOKEN=
 ```
 
-Process environment variables take precedence over the corresponding `.env` values. An empty value does not activate temporary configuration. Before commands other than `check-update`, the CLI initializes a missing `.env` from `.env.example` with owner-only permissions; an existing file is never replaced. `check-update` skips `.env` loading and initialization. Browser-issued credentials live in the user's configuration directory rather than `.env`.
+Process environment variables take precedence over the corresponding environment-file values. An empty value does not activate temporary configuration. The installed `shifu` and the Python fallback of an npm-synchronized skill use `cli.env` in the AI-Shifu user configuration directory: `AI_SHIFU_CONFIG_DIR`, otherwise `$XDG_CONFIG_HOME/ai-shifu`, otherwise `~/.config/ai-shifu`. Plugin-managed and unmarked Python installations continue to use `{skillDir}/.env`. Before commands other than `check-update`, a missing environment file is initialized from the bundled `.env.example` with owner-only permissions; an existing file is never replaced. `check-update` skips environment-file loading and initialization. Browser-issued credentials live in the user's configuration directory rather than the environment file.
+
+Initial npm setup retains a custom configuration directory selected by a legacy environment file when it does not conflict with an existing npm account or directory choice. Future npm commands and the synchronized Python fallback use that recorded directory without moving its credentials. An explicit process `AI_SHIFU_CONFIG_DIR` takes precedence; conflicting directory choices stop setup before synchronization so one can be selected explicitly.
+
+## CLI and Skill Installation
+
+The npm CLI installs its Python dependencies into an isolated user runtime and synchronizes the three bundled business skills to the shared `~/.agents/skills` directory and detected common agents. The CLI and skill source come from the same package version; installation does not select a platform service or authorize an account.
+
+```bash
+npx @ai-shifu/cli@latest install
+shifu --version
+shifu skills list
+shifu setup
+shifu skills install
+shifu skills install --agent codex
+shifu update
+```
+
+`install` is the initial CLI-and-skills entrypoint and runs setup explicitly. Direct global npm installation also runs setup when lifecycle scripts are enabled; when npm skips them, `setup` prepares both the isolated runtime and skills. `skills install` repeats skill synchronization, including for an agent installed later; its `--agent` selection is passed to the skill installer. `skills list` lists the business skills bundled with this CLI. `update` upgrades the CLI and synchronizes its skills together. The using agent decides when these operations are needed under [session controls](../session-controls.md#version-check); ordinary course work does not invoke an upgrade.
+
+Supported `--agent` targets are `codex`, `claude-code`, `cursor`, `gemini-cli`, `github-copilot`, `openclaw`, `codebuddy`, `opencode`, and `windsurf`. Migration inspects only the selected targets and the shared Skill directory that synchronization replaces.
+
+Before synchronizing, selected legacy skill `.env` files are backed up under the user configuration directory's `legacy-env/`. The profile configuration transaction owns reading, comparing, importing, and cleaning these files, using the same lock as login and logout. Comments and quoting differences do not create conflicts, and untouched empty templates do not compete with configured sources. A consistent configuration is migrated to `cli.env`; user-edited configuration is preserved, while an untouched generated template can still receive the migration. Different effective configurations without a selected `cli.env` stop synchronization until one is chosen, then the operation can be retried.
+
+When profiles already exist, imported credentials go into a separate or matching named profile while the existing default remains selected. Inspect the reported profile with `shifu profile list`; installation does not activate it through dotenv. Recorded imports are not replayed after logout. Successful credential migration or logout clears the matching token from backups and preserves their other settings. Installations outside the selected synchronization targets retain their own source configuration.
 
 ## Contents
 
+- [CLI and Skill Installation](#cli-and-skill-installation)
 - [Update Check](#update-check)
 - [Profiles](#profiles)
 - [Site Selection](#site-selection)
@@ -111,7 +138,7 @@ site --set com
 site --url https://your-service.example
 ```
 
-`site` is the compatibility entrypoint for inspecting the effective context or configuring the selected/default profile. It prints JSON with `status=configured`, the effective `base_url`, `profile`, and official `contact_url`, or `status=selection_required` with no configured service. `profile` is null for temporary or unconfigured contexts. Contact links depend on the service address: the domestic official service uses the Chinese contact page; the international official service and custom deployments use the international contact page. Profile names do not affect this mapping. Profile inspection and configuration make no platform requests; the shared CLI [automatic update check](#update-check) can query GitHub before dispatch.
+`site` is the compatibility entrypoint for inspecting the effective context or configuring the selected/default profile. It prints JSON with `status=configured`, the effective `base_url`, `profile`, and official `contact_url`, or `status=selection_required` with no configured service. `profile` is null for temporary or unconfigured contexts. Contact links depend on the service address: the domestic official service uses the Chinese contact page; the international official service and custom deployments use the international contact page. Profile names do not affect this mapping. Profile inspection and configuration make no platform requests; the shared CLI [automatic update check](#update-check) can query the installation's publication source before dispatch.
 
 `site --set cn/com` and `site --url <URL>` update the selected/default profile using the same URL and authorization rules as `profile set`. With no configured profile, initial setup creates an ordinary profile named `default`. Use explicit `--profile` to configure a named profile when temporary environment configuration is active.
 
@@ -289,7 +316,7 @@ build --course-dir ./course-a/ [-o shifu-import.json] \
   [--title "..."] [--description "..."] [--keywords "..."] [--chapter-name "..."]
 ```
 
-`build` compiles the course locally and writes the import JSON to `-o` or `<course-dir>/shifu-import.json`. The shared CLI [automatic update check](#update-check) can query GitHub before compilation; compilation itself needs no platform connection. File discovery, field precedence, directory schemas, and the generated import schema are defined in `course-directory-spec.md`.
+`build` compiles the course locally and writes the import JSON to `-o` or `<course-dir>/shifu-import.json`. The shared CLI [automatic update check](#update-check) can query the installation's publication source before compilation; compilation itself needs no platform connection. File discovery, field precedence, directory schemas, and the generated import schema are defined in `course-directory-spec.md`.
 
 `import --new` creates a new course. `import <shifu_bid>` targets an existing course. Both forms send content fields. Existing-course import leaves omitted platform attributes unchanged; new-course import uses platform defaults for omitted attributes.
 
@@ -342,7 +369,7 @@ Commands print platform business error payloads before exiting when available.
 CLI JSON uses UTF-8 and `ensure_ascii=False`. If an agent subprocess renders Chinese stdout as mojibake, redirect output to a UTF-8 file and read that file. This changes only capture behavior, not command output.
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '<json>' > /tmp/shifu-result.json
+shifu analytics-query <bid> --dsl '<json>' > /tmp/shifu-result.json
 ```
 
 Saved credentials remain in the selected profile's user-configuration directory; authenticated commands load only that profile's credentials.

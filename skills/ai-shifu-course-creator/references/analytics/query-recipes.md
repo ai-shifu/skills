@@ -1,6 +1,6 @@
 # Analytics Query Recipes
 
-Ready-to-run templates, grouped by scenario. Most examples run through `shifu-cli.py analytics-query <bid> --dsl '…'` (the DSL path); the **Credit Consumption** section is the exception — it uses `shifu-cli.py credit-detail <bid> …` (why the DSL path is unavailable: `tables.md`). Substitute `<bid>` with the actual `shifu_bid` from `shifu-cli.py list` (or from a Course Metadata recipe below). Grammar and field meanings are documented in `query-language.md` and `tables.md`.
+Ready-to-run templates, grouped by scenario. Most examples run through `shifu analytics-query <bid> --dsl '…'` (the DSL path); the **Credit Consumption** section is the exception — it uses `shifu credit-detail <bid> …` (why the DSL path is unavailable: `tables.md`). Substitute `<bid>` with the actual `shifu_bid` from `shifu list` (or from a Course Metadata recipe below). Grammar and field meanings are documented in `query-language.md` and `tables.md`.
 
 ## Invocation Notes
 
@@ -13,7 +13,7 @@ For DSL recipes, the bodies omit `shifu_bid` — the CLI injects it from the pos
 - [Progress](#progress)
 - [Orders](#orders)
 - [Ratings](#ratings)
-- [Credit Consumption](#credit-consumption-use-shifu-clipy-credit-detail)
+- [Credit Consumption](#credit-consumption-use-shifu-credit-detail)
 - [Active Learners](#active-learners)
 - [Learner Profile](#learner-profile)
 - [Per-Learner Top-N](#per-learner-top-n)
@@ -21,7 +21,7 @@ For DSL recipes, the bodies omit `shifu_bid` — the CLI injects it from the pos
 
 ## Course Metadata (resolve `shifu_bid ↔ current title`)
 
-> Whenever the user mentions a course by **title**, resolve the current `shifu_bid → title` mapping via the metadata tables **before** issuing any downstream analytics query — `shifu-cli.py list` is a draft snapshot and is not a substitute. Which row is authoritative, the draft fallback, and the historical-title phrasing rule: `tables.md` → "Course title is 'current published', not 'history'".
+> Whenever the user mentions a course by **title**, resolve the current `shifu_bid → title` mapping via the metadata tables **before** issuing any downstream analytics query — `shifu list` is a draft snapshot and is not a substitute. Which row is authoritative, the draft fallback, and the historical-title phrasing rule: `tables.md` → "Course title is 'current published', not 'history'".
 >
 > When matching by user-supplied keyword, normalize whitespace client-side (`replace(title, ' ', '')`) before comparing — the DB stores titles with whatever spacing the author used.
 
@@ -30,7 +30,7 @@ For DSL recipes, the bodies omit `shifu_bid` — the CLI injects it from the pos
 The most common case: the user names a course you have not previously resolved this session.
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"shifu_published_shifus",
  "where":[{"field":"title","op":"like","value":"<keyword>%"}],
  "select":["title","created_user_bid","updated_at"],
@@ -38,14 +38,14 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-> The keyword must be ≥ 2 non-wildcard characters (anti-enumeration guard); trailing `%` only. Returns titles for the **caller's own published courses** whose name starts with the keyword. The `<bid>` positional value is required by the CLI; pick any one of your `shifu_bid` values from `shifu-cli.py list` — the metadata query is still constrained to the caller's own rows by the auto-injected `created_user_bid` filter, but the CLI's positional argument also clamps `shifu_bid`, so for cross-course lookups you fan out one call per known `shifu_bid` and merge client-side. (Path: when the user has many courses, run Recipe 0a once per known `shifu_bid` from `list`, then aggregate.)
+> The keyword must be ≥ 2 non-wildcard characters (anti-enumeration guard); trailing `%` only. Returns titles for the **caller's own published courses** whose name starts with the keyword. The `<bid>` positional value is required by the CLI; pick any one of your `shifu_bid` values from `shifu list` — the metadata query is still constrained to the caller's own rows by the auto-injected `created_user_bid` filter, but the CLI's positional argument also clamps `shifu_bid`, so for cross-course lookups you fan out one call per known `shifu_bid` and merge client-side. (Path: when the user has many courses, run Recipe 0a once per known `shifu_bid` from `list`, then aggregate.)
 
 ### Recipe 0b — Confirm the current title of a known `shifu_bid`
 
 When you already have a `shifu_bid` (from a prior list / show call) and want to verify the live name:
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"shifu_published_shifus",
  "select":["title","created_user_bid","updated_at"],
  "limit":1
@@ -59,7 +59,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 If Recipe 0b returns empty, the course is in draft (not yet published or unpublished). Look at the editor copy instead:
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"shifu_draft_shifus",
  "select":["title","created_user_bid","updated_at"],
  "limit":1
@@ -68,7 +68,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 > When the published title and the draft title disagree, surface both to the user — the discrepancy usually means a recent rename that has not been republished yet.
 
-**CLI shortcut**: `shifu-cli.py find-title <keyword>` chains Recipes 0a → 0c on every course you own and prints a grouped Published / Draft-only / Historical table.
+**CLI shortcut**: `shifu find-title <keyword>` chains Recipes 0a → 0c on every course you own and prints a grouped Published / Draft-only / Historical table.
 
 ## Course Overview (one-stop popularity dashboard)
 
@@ -78,14 +78,14 @@ Use this when the user wants a high-level snapshot of a course rather than one s
 
 ```bash
 # 1) Learner count (distinct learners who entered the course)
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_progress_records",
  "aggregate":[{"fn":"count_distinct","field":"user_bid","alias":"learners"}],
  "limit":1
 }'
 
 # 1b) Most-recent activity time (latest progress record; row-query, not max() — min/max are numeric-only)
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_progress_records",
  "select":["created_at"],
  "order_by":[{"field":"created_at","dir":"desc"}],
@@ -93,7 +93,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 
 # 2) Paid order count + revenue (status = 502 paid; never use >=, it leaks refunds/pending)
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"order_orders",
  "where":[{"field":"status","op":"=","value":502}],
  "aggregate":[
@@ -103,7 +103,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 
 # 3) Active (non-archived) learner count
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"shifu_user_archives",
  "where":[{"field":"archived","op":"=","value":0}],
  "aggregate":[{"fn":"count_distinct","field":"user_bid","alias":"active_learners"}],
@@ -126,7 +126,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 1 — Progress funnel
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_progress_records",
  "select":["status"],
  "group_by":["status"],
@@ -138,7 +138,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 2 — Top 20 stuck lessons
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_progress_records",
  "where":[{"field":"status","op":"=","value":602}],
  "select":["outline_item_bid"],
@@ -154,7 +154,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 3 — Paid buyers (price > ¥0) and revenue
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"order_orders",
  "where":[
    {"field":"status","op":"=","value":502},
@@ -169,7 +169,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 4 — Free-enrolment count (paid but ¥0)
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"order_orders",
  "where":[
    {"field":"status","op":"=","value":502},
@@ -182,7 +182,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 5 — Order status distribution (funnel view)
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"order_orders",
  "select":["status"],
  "group_by":["status"],
@@ -194,7 +194,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 6 — Payment channel breakdown (paid orders only)
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"order_orders",
  "where":[{"field":"status","op":"=","value":502}],
  "select":["payment_channel"],
@@ -209,7 +209,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 7 — Lowest-rated lessons
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_lesson_feedbacks",
  "select":["progress_record_bid"],
  "group_by":["progress_record_bid"],
@@ -221,14 +221,14 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 
 > Each row's `progress_record_bid` must be translated to a chapter/lesson name via the two-step lookup in `tables.md` (ID Field Translation Rules).
 
-## Credit Consumption (use `shifu-cli.py credit-detail`)
+## Credit Consumption (use `shifu credit-detail`)
 
 > The DSL `bill_daily_usage_metrics` recipes that lived here previously are deprecated — that table is empty in production until the daily aggregation job is enabled (details: `tables.md`). Until then `credit-detail` is the only working path for credit data.
 
 ### Recipe 8 — Today's credit consumption
 
 ```bash
-python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-16 --end 2026-05-16
+shifu credit-detail <bid> --start 2026-05-16 --end 2026-05-16
 ```
 
 Returns `summary` (total credits, distinct users / progress records, wallet creator, time range) plus `rows` (per-usage detail: created_at, user_bid, progress_record_bid, outline_item_bid, usage_type, usage_scene, provider, model, credits).
@@ -236,7 +236,7 @@ Returns `summary` (total credits, distinct users / progress records, wallet crea
 ### Recipe 9 — Credits over an arbitrary date window
 
 ```bash
-python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-01 --end 2026-05-15
+shifu credit-detail <bid> --start 2026-05-01 --end 2026-05-15
 ```
 
 `start` / `end` are inclusive ISO dates; end must be on or after start.
@@ -244,7 +244,7 @@ python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-01 --end 2026-0
 ### Recipe 10 — Production-only spend (exclude preview / debug)
 
 ```bash
-python3 scripts/shifu-cli.py credit-detail <bid> --scene 1203
+shifu credit-detail <bid> --scene 1203
 ```
 
 `--scene` accepts a comma-separated subset of `{1201, 1202, 1203}` (debug / preview / production). Combine with `--start` / `--end` to scope a window.
@@ -253,10 +253,10 @@ python3 scripts/shifu-cli.py credit-detail <bid> --scene 1203
 
 ```bash
 # Teaching Agent only
-python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1101
+shifu credit-detail <bid> --usage-type 1101
 
 # TTS only
-python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1102
+shifu credit-detail <bid> --usage-type 1102
 ```
 
 `--usage-type` accepts a comma-separated subset of `{1101, 1102}`.
@@ -264,7 +264,7 @@ python3 scripts/shifu-cli.py credit-detail <bid> --usage-type 1102
 ### Recipe 12 — Pagination for large windows
 
 ```bash
-python3 scripts/shifu-cli.py credit-detail <bid> --start 2026-05-01 --limit 200 --offset 200
+shifu credit-detail <bid> --start 2026-05-01 --limit 200 --offset 200
 ```
 
 `--limit` caps at 1000; the `summary` block always reflects the full filtered set regardless of paging.
@@ -313,7 +313,7 @@ Pseudo-shape:
 ### Recipe 14 — Active learner count
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"shifu_user_archives",
  "where":[{"field":"archived","op":"=","value":0}],
  "aggregate":[{"fn":"count_distinct","field":"user_bid","alias":"active_n"}],
@@ -328,7 +328,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 If `variable_bid` is unknown, discover the course's available IDs and learner counts internally first:
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"var_variable_values",
  "select":["variable_bid"],
  "group_by":["variable_bid"],
@@ -344,7 +344,7 @@ Resolve the requested question under `tables.md` → ID Field Translation Rules.
 Once the relevant ID is established, query its answer distribution:
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"var_variable_values",
  "where":[{"field":"variable_bid","op":"=","value":"<variable_bid>"}],
  "select":["value"],
@@ -365,7 +365,7 @@ Page each field-discovery query or candidate distribution using the `limit` and 
 ### Recipe 16 — Lessons completed per learner — Top N
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_progress_records",
  "where":[{"field":"status","op":"=","value":603}],
  "select":["user_bid"],
@@ -385,7 +385,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 17 — Total follow-up questions + unique questioners
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_generated_blocks",
  "where":[{"field":"type","op":"=","value":321}],
  "aggregate":[
@@ -398,7 +398,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 18 — Top N most active questioners
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_generated_blocks",
  "where":[{"field":"type","op":"=","value":321}],
  "select":["user_bid"],
@@ -412,7 +412,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 19 — Full Q&A replay for a single lesson (audited, `limit ≤ 100`)
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_generated_blocks",
  "where":[
    {"field":"type","op":"in","value":[321, 322]},
@@ -428,7 +428,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 20 — All follow-up questions by one learner (raw text, `limit ≤ 100`)
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_generated_blocks",
  "where":[
    {"field":"type","op":"=","value":321},
@@ -442,7 +442,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 ### Recipe 21 — Latest Teaching Agent answers (evaluate the underlying model)
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_generated_blocks",
  "where":[{"field":"type","op":"=","value":322}],
  "select":["generated_content","progress_record_bid","created_at"],
@@ -460,7 +460,7 @@ Substitute `<N>` (default 10, ≤ 100) below; cap the user_users batch to 50 ded
 **Step 1 — fetch the latest N follow-up questions**
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_generated_blocks",
  "where":[{"field":"type","op":"=","value":321}],
  "select":["user_bid","generated_content","progress_record_bid","outline_item_bid","position","created_at"],
@@ -476,7 +476,7 @@ Each row is one question: `(user_bid, question_text, progress_record_bid, outlin
 Collect the distinct `progress_record_bid` values from Step 1 and pass them into `in`:
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_generated_blocks",
  "where":[
    {"field":"type","op":"=","value":322},
@@ -494,7 +494,7 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 Collect the distinct `user_bid` values from Step 1 (dedup, max 50):
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"user_users",
  "where":[{"field":"user_bid","op":"in","value":["<u-bid-1>","<u-bid-2>","..."]}],
  "select":["user_bid","nickname","user_identify"],
@@ -524,7 +524,7 @@ If the user starts from a phone number and wants to know which learner asked, ru
 Where are learners actually asking? Group `type = 321` by `outline_item_bid` to find which lessons drive follow-up traffic:
 
 ```bash
-python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
+shifu analytics-query <bid> --dsl '{
  "table":"learn_generated_blocks",
  "where":[{"field":"type","op":"=","value":321}],
  "select":["outline_item_bid"],
@@ -537,4 +537,4 @@ python3 scripts/shifu-cli.py analytics-query <bid> --dsl '{
 }'
 ```
 
-> Translate each `outline_item_bid` to "Lesson X.Y: \<title\>" via the `shifu-cli.py show <bid>` outline cache before presenting. High-ask lessons are usually candidates for content reinforcement (more concrete examples / explicit interaction). Low-ask lessons are often either very clear _or_ skipped — cross-reference with `learn_progress_records` to tell which.
+> Translate each `outline_item_bid` to "Lesson X.Y: \<title\>" via the `shifu show <bid>` outline cache before presenting. High-ask lessons are usually candidates for content reinforcement (more concrete examples / explicit interaction). Low-ask lessons are often either very clear _or_ skipped — cross-reference with `learn_progress_records` to tell which.

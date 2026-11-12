@@ -25,11 +25,36 @@ from dotenv import load_dotenv
 import profile_store as profiles
 from agent_detection import AGENT_DISPLAY_NAMES, detect_agent
 
-from skill_update_check import automatic_check_for_update, check_for_update
+from skill_update_check import (
+    automatic_check_for_update, check_for_update, read_installation_metadata,
+    read_skill_metadata,
+)
 
 # ── Constants ──────────────────────────────────────────────────────────────────
-ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
-ENV_EXAMPLE_FILE = ENV_FILE.with_name(".env.example")
+_SKILL_DIR = Path(__file__).resolve().parent.parent
+_INSTALLATION_METADATA = read_installation_metadata(_SKILL_DIR)
+_SKILL_METADATA = read_skill_metadata(_SKILL_DIR / "SKILL.md") or {}
+_NPM_SYNCHRONIZED = bool(
+    _INSTALLATION_METADATA and _SKILL_METADATA.get("version_management") != "plugin"
+)
+# Resolve the npm install's shared root before dotenv can add legacy overrides.
+# Unmarked installations keep their existing dotenv-based root selection.
+_NPM_CONFIG_DIR = None
+_NPM_CONFIG_ERROR = None
+if _NPM_SYNCHRONIZED:
+    try:
+        _NPM_CONFIG_DIR = profiles.npm_config_dir()
+    except profiles.ProfileError as error:
+        # Keep help and account-independent commands importable. Commands that
+        # need configuration re-raise this inside main's normal error boundary.
+        _NPM_CONFIG_ERROR = error
+# The npm entrypoint keeps mutable configuration outside its installation.
+# Its synchronized Skills share that configuration during Python fallback.
+# Unmarked and plugin-managed packages retain their own configuration location.
+ENV_FILE = Path(os.environ.get("AI_SHIFU_CLI_ENV_FILE") or (
+    _NPM_CONFIG_DIR / "cli.env" if _NPM_CONFIG_DIR is not None else _SKILL_DIR / ".env"
+))
+ENV_EXAMPLE_FILE = _SKILL_DIR / ".env.example"
 
 SITE_URLS = profiles.SITE_URLS
 
@@ -112,12 +137,15 @@ def _request_headers(token, *, json_content=True, creator_analytics=False):
 # ── Shared Infrastructure ──────────────────────────────────────────────────────
 def ensure_env_file():
     """Create the runtime .env from .env.example when it does not exist."""
+    if _NPM_CONFIG_ERROR is not None:
+        raise _NPM_CONFIG_ERROR
     if ENV_FILE.exists():
         return
     if not ENV_EXAMPLE_FILE.exists():
         print(f"Error: missing environment template: {ENV_EXAMPLE_FILE}",
               file=sys.stderr)
         sys.exit(1)
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     shutil.copyfile(ENV_EXAMPLE_FILE, ENV_FILE)
     os.chmod(ENV_FILE, 0o600)
 
@@ -187,7 +215,9 @@ def cmd_logout(args):
 
 
 def config_dir():
-    return profiles.config_dir()
+    if _NPM_CONFIG_ERROR is not None:
+        raise _NPM_CONFIG_ERROR
+    return _NPM_CONFIG_DIR if _NPM_CONFIG_DIR is not None else profiles.config_dir()
 
 
 def credentials_path(context):
@@ -644,15 +674,26 @@ def _poll_device_authorization(base_url, device_code):
 
 
 def _login_instruction(context, *, wait=False):
+    npm_entrypoint = (
+        os.environ.get("AI_SHIFU_CLI_DISTRIBUTION") == "npm"
+        or bool(os.environ.get("AI_SHIFU_CLI_ENV_FILE"))
+    )
+    python_fallback = _NPM_SYNCHRONIZED and not npm_entrypoint
+    executable = "shifu" if npm_entrypoint else "shifu-cli.py"
     if platform.system() == "Windows":
         # cmd.exe and PowerShell have different expansion/quoting rules. Provide
         # literal argv, not a shell snippet that can reinterpret a profile name.
         arguments = ["login", f"--profile={context.name}"]
         if wait:
             arguments.append("--wait")
-        return ("Invoke shifu-cli.py with this argument list (JSON, not a shell command): "
+        if python_fallback:
+            return ("Invoke this complete argument list (JSON, not a shell command): "
+                    + json.dumps([sys.executable, str(Path(__file__).resolve()), *arguments], ensure_ascii=False))
+        return (f"Invoke {executable} with this argument list (JSON, not a shell command): "
                 + json.dumps(arguments, ensure_ascii=False))
-    command = f"shifu-cli.py login --profile={shlex.quote(context.name)}"
+    if python_fallback:
+        executable = f"{shlex.quote(sys.executable)} {shlex.quote(str(Path(__file__).resolve()))}"
+    command = f"{executable} login --profile={shlex.quote(context.name)}"
     if wait:
         command += " --wait"
     return f"Run `{command}`"
@@ -3661,6 +3702,12 @@ def main():
     handler = commands.get(args.command)
     if handler:
         try:
+            if _NPM_CONFIG_ERROR is not None:
+                if args.command == "build":
+                    handler(args)
+                    return
+                if args.command != "check-update":
+                    raise _NPM_CONFIG_ERROR
             if args.command != "check-update":
                 _maybe_check_for_updates()
             process_env = dict(os.environ)
@@ -3668,7 +3715,7 @@ def main():
                 load_env()
             if args.command not in {"check-update", "build"}:
                 profile_store().migrate_legacy(process_env)
-                # Resolve the config root from dotenv before migration, then
+                # Resolve this installation's config root before migration, then
                 # discard only dotenv credential values that cleanup may have
                 # removed. Exported process values keep their original priority.
                 for key in ("SHIFU_BASE_URL", "SHIFU_TOKEN"):
