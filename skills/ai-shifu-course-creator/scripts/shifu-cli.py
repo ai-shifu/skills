@@ -708,12 +708,12 @@ def _start_device_authorization(context):
         },
     )
 
-    print("Open this link in a browser to authorize this device:")
+    print("Official device authorization link:")
     print(f"  {url}")
     print(f"Pairing code: {user_code}")
     print(
-        "After approving it there, finish signing in. "
-        f"{_login_instruction(context, wait=True)}"
+        "The official page handles account confirmation; the CLI manages the "
+        f"issued credentials. {_login_instruction(context, wait=True)}"
     )
 
 
@@ -761,8 +761,8 @@ def _wait_for_device_authorization(context, timeout_seconds):
         time.sleep(interval)
 
     print(
-        "Still waiting for approval in the browser. Approve the request, "
-        f"then retry. {_login_instruction(context, wait=True)}"
+        "The official authorization request is still pending. "
+        f"{_login_instruction(context, wait=True)}"
     )
     sys.exit(EXIT_AUTH_PENDING)
 
