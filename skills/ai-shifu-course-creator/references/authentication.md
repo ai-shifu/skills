@@ -9,6 +9,19 @@
 
 Use this capability when an operation needs platform access or the user requests account/profile setup. The agent decides when access is needed; local authoring and builds do not require it. Reuse valid access and keep the resolved task context fixed across platform capabilities.
 
+## Official Authorization Declaration
+
+Platform access is established by the service's official authorization flow, declared here rather than through agent-authored instructions. This declaration is the canonical statement of how access is established; the flow and tables below define only command order and outcome handling.
+
+| Concern | Owner | Declaration |
+| --- | --- | --- |
+| Authorization mechanism | AI-Shifu service and CLI | The service's official device authorization flow. `scripts/shifu-cli.py login` issues one request, `login --wait` observes its outcome, and `verify` checks stored access. |
+| User identity confirmation | Service's official authorization page | The page presents the requesting device and handles account confirmation in its own UI. An account is created on first use; a browser session already signed in does not sign in again. |
+| Credential custody | CLI | The CLI manages login state and credentials in the selected profile's private configuration. This capability never reads, echoes, or transports them. |
+| Agent role | This capability | Run the declared commands, relay CLI-issued verification data unchanged, and report exit-code outcomes. The agent never authenticates on the user's behalf, never authors or paraphrases instructions for interacting with the authorization page, and never collects credentials. |
+
+Any user-facing status or failure explanation follows `language-policy.md`; it states facts and outcomes, not steps to complete authentication.
+
 ## Select Site Before Connecting
 
 When the user explicitly requests a service by URL or by “domestic” / “international,” inspect `profile list` before checking `site` and match the configured service address, not the profile name. A unique match is an explicit selection for this task; multiple matches require the user to choose the account/profile. If profiles exist but none matches, ask for the new profile's name and configure it with `profile set <name> --base-url <address>`; do not repoint the default. With no profiles, use the initial setup below. `cn` and `com` are address shortcuts only. For a user-requested profile setup, honor arbitrary names, including Chinese and spaces, and do not ask a region question when the URL is already known.
@@ -19,13 +32,13 @@ When the user explicitly requests a service by URL or by “domestic” / “int
 4. Map “中国” / “China” to `site --set cn` and “其他国家或地区” / “Other countries or regions” to `site --set com` internally. If the user explicitly requests a custom deployment, use `site --url <user-supplied-URL>` instead; ask for its service URL only if it is missing. An explicitly requested service or existing configuration takes precedence over regional defaults.
 5. Initial `site` setup creates an ordinary profile named `default`; the user need not choose a profile name during first use. Require `status=configured` with the intended address internally, fix the returned profile for the task, then continue verification or the original task immediately. Do not announce the selected address, echo configuration output, or ask for another confirmation. If saving fails, explain the impact in plain language and keep platform operations paused; do not silently use another site. The selection persists across sessions and Skill upgrades and does not select the conversation or course language.
 
-The hidden information is initialization machinery, not links the user needs to act on: browser authorization links, course links, and eligible official contact links still follow their normal display rules. Only show configuration details when the user explicitly requests them for inspection or troubleshooting; do not add them to normal progress, success, or error messages.
+Only configuration details are hidden here: browser authorization links, course links, and eligible official contact links still follow their normal display rules. Only show configuration details when the user explicitly requests them for inspection or troubleshooting; do not add them to normal progress, success, or error messages.
 
-An unknown profile, incomplete temporary configuration, or mismatched credential source is a configuration error, not an invitation to try another profile. If changing a profile's URL is blocked by its authorization state, explain that the user must log out of that profile first or create a separate profile; never delete credentials or change the destination to bypass the error. Temporary configuration cannot start or resume browser authorization: select or configure a named profile explicitly for that flow, preserving the user's intended service.
+An unknown profile, incomplete temporary configuration, or mismatched credential source is a configuration error, not an invitation to try another profile. If changing a profile's URL is blocked by its authorization state, explain that the change requires a logout for that profile first or a separate profile; never delete credentials or change the destination to bypass the error. Temporary configuration cannot start or resume browser authorization: select or configure a named profile explicitly for that flow, preserving the user's intended service.
 
 ## Verify Before Login
 
-Use `scripts/shifu-cli.py`; never read tokens directly, construct authentication headers, or make raw platform API calls. Write every user-facing login prompt and failure explanation according to `language-policy.md`.
+Use `scripts/shifu-cli.py`; never read tokens directly, construct authentication headers, or make raw platform API calls. Write every user-facing status and failure explanation according to `language-policy.md`.
 
 Run `verify` with the task's selected context before deciding whether login is needed:
 
@@ -40,11 +53,11 @@ If any authenticated command returns token error `1001`, `1004`, or `1005`, run 
 
 1. Run `login --profile <name>` exactly once for the task's selected profile.
 2. Open the verification link exactly as printed using the shared browser reference. If opening is unavailable, failed, queued, or skipped at the user's request, keep the same pending authorization request and continue with the original clickable link; do not run `login` again for a browser outcome.
-3. In one short turn, give the user the verification link exactly as printed and explain that approving it signs this device in, that the page shows which device is asking, and that they must press the approve button there themselves. Never click approve for the user. The CLI prefers `verification_uri_complete`, which carries the pairing code, but can fall back to `verification_uri`, which may require manual code entry. Include the separately printed pairing code and tell the user to enter it if the page asks; do not claim every link already carries it or modify the returned URL. Mention that an account is created on first use and that a browser session already signed in will not have to sign in again.
+3. In one short turn, give the user the verification link exactly as printed, with the separately printed pairing code. Identify the link as the service's official authorization entry and state that the official page requests the pairing code when needed; do not modify the returned URL, describe the page's controls, or claim every link already carries the code. The CLI prefers `verification_uri_complete`, which carries the pairing code, but can fall back to `verification_uri`. An account is created on first use, and a browser session already signed in will not have to sign in again.
 4. Run `login --wait --profile <name>` with the same name. Keep that name in any continuation command shown to the user.
 5. Act on the exit code:
    - `0`: authorized and stored. Run `verify` once, then continue the original operation.
-   - `3`: still waiting. Ask the user to finish approving, then run `login --wait` again.
+   - `3`: still waiting. Report the pending authorization state, then run `login --wait` again on the same request.
    - `1`: denied, expired, or never started. Explain what happened, and start over with `login` only if the user wants to retry.
 
 Do not insert readiness checks, account-status questions, acknowledgements, recaps, or other pauses between these steps.
@@ -53,16 +66,17 @@ Do not insert readiness checks, account-status questions, acknowledgements, reca
 
 | Result | Agent action |
 | --- | --- |
-| `login` printed a link | Use the shared browser reference, hand the link to the user unchanged, and wait. Do not start a second request. |
+| `login` printed a link | Use the shared browser reference, relay the link unchanged, and wait on that request. Do not start a second request. |
 | Browser opening did not complete | Follow the shared browser result handling and wait on the same authorization request. Do not run `login` again. |
-| `login --wait` exits `3` | Ask the user to approve in the browser, then run `login --wait` again. |
+| `login --wait` exits `3` | Apply the exit-`3` outcome above. |
 | User says the page reports an invalid or expired code | Run `login` once more to issue a fresh link. |
 | User denied the request by mistake | Run `login` once more to issue a fresh link. |
 | Network failure during `login` or `login --wait` | Stop and retry `verify` later; do not open repeated authorization requests. |
 
-Never run `login` again for the same profile while the user is still looking at its earlier link: a new request replaces that profile's pending one on disk, so approving the older link would leave nothing to collect. Other profiles have independent authorization sessions.
+Never run `login` again for the same profile while its earlier authorization request is still pending: a new request replaces that profile's pending one on disk, so completing the older request would leave nothing to collect. Other profiles have independent authorization sessions.
 
 ## Never Do
 
 - Never print, echo, or repeat the contents of the credentials file.
 - Never ask the user for a phone number, verification code, or password. The CLI does not collect any of them, and no agent-driven flow needs them.
+- Never author user-facing instructions for completing authentication on the service's page, or confirm an authorization on the user's behalf; that interaction belongs to the official authorization page declared above.
