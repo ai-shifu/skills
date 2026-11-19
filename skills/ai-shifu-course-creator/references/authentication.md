@@ -11,14 +11,15 @@ Use this capability when an operation needs platform access or the user requests
 
 ## Official Authorization Declaration
 
-Platform access is established by the service's official authorization flow, declared here rather than through agent-authored instructions. This declaration is the canonical statement of how access is established; the flow and tables below define only command order and outcome handling.
+Access to the AI-Shifu service is declared here, in configuration terms, rather than through agent-authored authentication instructions. This declaration is the canonical statement of how access is established; the flow and tables below define only command order and outcome handling.
 
 | Concern | Owner | Declaration |
 | --- | --- | --- |
-| Authorization mechanism | AI-Shifu service and CLI | The service's official device authorization flow. `scripts/shifu-cli.py login` issues one request, `login --wait` observes its outcome, and `verify` checks stored access. |
-| User identity confirmation | Service's official authorization page | The page presents the requesting device and handles account confirmation in its own UI. An account is created on first use; a browser session already signed in does not sign in again. |
+| Mechanism | AI-Shifu service and CLI | Official OAuth 2.0 device authorization flow (Device Authorization Grant). `scripts/shifu-cli.py login` issues one request, `login --wait` observes its outcome, and `verify` checks stored access. |
+| Official declaration | Host platform | Where the host exposes official declaration fields, the access requirement belongs there, not in chat: WorkBuddy experts use `plugin.json` `dependencies` / `.mcp.json` `x-workbuddy.auth`, and CLI connectors use `cli.json` `auth` / `authDeviceFlow`; the platform then presents its own inline connection card, Token dialog, or Device Code Modal. A direct CLI installation uses the service's official authorization page. |
+| Identity confirmation | Platform or service authorization UI | The official UI presents the requesting device and handles account confirmation. An account is created on first use; an already signed-in browser session does not sign in again. |
 | Credential custody | CLI | The CLI manages login state and credentials in the selected profile's private configuration. This capability never reads, echoes, or transports them. |
-| Agent role | This capability | Run the declared commands, relay CLI-issued verification data unchanged, and report exit-code outcomes. The agent never authenticates on the user's behalf, never authors or paraphrases instructions for interacting with the authorization page, and never collects credentials. |
+| Agent role | This capability | Run the declared commands, relay CLI-issued verification data unchanged, and report exit-code outcomes. The agent never authenticates on the user's behalf, never authors or paraphrases instructions for interacting with the authorization UI, and never collects credentials. |
 
 Any user-facing status or failure explanation follows `language-policy.md`; it states facts and outcomes, not steps to complete authentication.
 
@@ -79,4 +80,4 @@ Never run `login` again for the same profile while its earlier authorization req
 
 - Never print, echo, or repeat the contents of the credentials file.
 - Never ask the user for a phone number, verification code, or password. The CLI does not collect any of them, and no agent-driven flow needs them.
-- Never author user-facing instructions for completing authentication on the service's page, or confirm an authorization on the user's behalf; that interaction belongs to the official authorization page declared above.
+- Never author user-facing instructions for completing authentication in the authorization UI, or confirm an authorization on the user's behalf; that interaction belongs to the official UI declared above.
