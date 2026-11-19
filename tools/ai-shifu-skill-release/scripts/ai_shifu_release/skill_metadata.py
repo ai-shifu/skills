@@ -80,6 +80,7 @@ def format_frontmatter_value(value: str) -> str:
 def update_skill_frontmatter(text: str, updates: dict[str, str], source: str) -> str:
     frontmatter, body = split_skill_document(text, source)
     lines = frontmatter.split("\n")
+    has_metadata_overrides = any(key.startswith("metadata.") for key in updates)
     for key, value in updates.items():
         if key.startswith("metadata."):
             top_level_keys: set[str] = set()
@@ -113,7 +114,11 @@ def update_skill_frontmatter(text: str, updates: dict[str, str], source: str) ->
                     f"Unsupported metadata mapping in YAML frontmatter: {source}"
                 )
             end = start + 1
-            while end < len(lines) and (not lines[end] or lines[end][0].isspace()):
+            while end < len(lines) and (
+                not lines[end]
+                or lines[end][0].isspace()
+                or lines[end].lstrip().startswith("#")
+            ):
                 end += 1
             seen: set[str] = set()
             indexes = []
@@ -132,11 +137,16 @@ def update_skill_frontmatter(text: str, updates: dict[str, str], source: str) ->
                         f"Duplicate metadata {nested_key} in YAML frontmatter: {source}"
                     )
                 seen.add(nested_key)
+                plain_value = (
+                    re.split(r"\s+#", nested_value, maxsplit=1)[0].rstrip()
+                    if not nested_value.startswith(('"', "'"))
+                    else nested_value
+                )
                 if nested_value.startswith(
                     ("[", "{", "|", ">", "&", "*", "!", "@", "`")
                 ) or re.fullmatch(
-                    r"(?:null|~|true|false|yes|no|on|off|[-+]?\d+(?:\.\d+)?|\d{4}-\d{2}-\d{2})",
-                    nested_value,
+                    r"(?:null|~|true|false|yes|no|on|off|[-+]?\d+(?:\.\d+)?|[-+]?0x[\da-f_]+|\d{4}-\d{2}-\d{2})",
+                    plain_value,
                     re.IGNORECASE,
                 ):
                     raise ValueError(f"Metadata values must be strings: {source}")
@@ -155,6 +165,9 @@ def update_skill_frontmatter(text: str, updates: dict[str, str], source: str) ->
         if key in {"version", "version_management"}:
             in_metadata = False
             for index, line in enumerate(lines):
+                # Preserve historical variants unless plugin metadata is being updated.
+                if has_metadata_overrides and line.lstrip().startswith("#"):
+                    continue
                 if line and not line[0].isspace():
                     in_metadata = line == "metadata:"
                     if in_metadata:

@@ -72,6 +72,65 @@ class DoubaoPackageTest(unittest.TestCase):
         self.assertNotIn("description", overrides)
         self.assertEqual(source["description"], "Create with MarkdownFlow (MDF).")
 
+    def test_quoted_source_descriptions_are_decoded_for_display(self) -> None:
+        for raw, expected in (
+            (
+                r'"Create a \"course\" and use \u4e2d\u6587."',
+                'Create a "course" and use 中文.',
+            ),
+            ("'Create the author''s course.'", "Create the author's course."),
+        ):
+            with self.subTest(raw=raw):
+                frontmatter = "name: ai-shifu-course-creator\ndescription: " + raw
+                source = doubao.parse_plugin_source_frontmatter(frontmatter)
+                overrides = doubao.skill_overrides(self.profile["skills"][0], source)
+                self.assertEqual(overrides["metadata.display_description"], expected)
+                document = f"---\n{frontmatter}\n---\n# Body\n"
+                result = update_skill_frontmatter(document, overrides, "test")
+                self.assertIn("description: " + raw, result)
+                self.assertEqual(
+                    doubao.parse_frontmatter(result)["description"], expected
+                )
+
+    def test_unindented_comments_do_not_split_metadata(self) -> None:
+        text = (
+            "---\nname: x\ndescription: Example\nmetadata:\n"
+            "  version: 1.2.3\n# Display fields: retained comment\n"
+            "  display_name: Old\n  version_management: standalone\n---\nBody\n"
+        )
+        result = update_skill_frontmatter(
+            text,
+            {"metadata.display_name": "New", "version_management": "plugin"},
+            "test",
+        )
+        self.assertEqual(result.count("  display_name:"), 1)
+        self.assertEqual(result.count("  version_management:"), 1)
+        self.assertIn("# Display fields: retained comment", result)
+        self.assertIn("  version_management: plugin", result)
+        self.assertEqual(
+            doubao.parse_frontmatter(result)["metadata.display_name"], "New"
+        )
+
+    def test_metadata_hex_integers_must_be_quoted(self) -> None:
+        for value in ("0x10", "-0XFF", "0x1_FF", "0x10 # hex integer"):
+            with (
+                self.subTest(value=value),
+                self.assertRaisesRegex(ValueError, "strings"),
+            ):
+                update_skill_frontmatter(
+                    f"---\nname: x\nmetadata:\n  retry_count: {value}\n---\nBody\n",
+                    {"metadata.display_name": "New"},
+                    "test",
+                )
+        for value in ('"0x10"', "'0x10'"):
+            with self.subTest(value=value):
+                result = update_skill_frontmatter(
+                    f"---\nname: x\nmetadata:\n  retry_count: {value}\n---\nBody\n",
+                    {"metadata.display_name": "New"},
+                    "test",
+                )
+                self.assertIn(f"  retry_count: {value}", result)
+
     def test_adds_metadata_when_missing(self) -> None:
         text = "---\nname: report\ndescription: Report\n---\nBody\n"
         result = update_skill_frontmatter(

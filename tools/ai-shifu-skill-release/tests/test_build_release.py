@@ -318,6 +318,29 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
         self.assertEqual(packaged.count("MDF"), 1)
         verification.verify(release_dir)
 
+    def test_doubao_preserves_quoted_source_and_updates_metadata_after_comment(
+        self,
+    ) -> None:
+        source = self.source_skill_text.replace(
+            "description: Test fixture.", r'description: "Create a \"course\"."'
+        ).replace(
+            "  version_management: standalone\n",
+            "  version_management: standalone\n# Display fields\n  display_name: Old\n",
+        )
+        (self.skill / "SKILL.md").write_text(source, encoding="utf-8")
+        self.git("add", "skills/ai-shifu-course-creator/SKILL.md")
+        self.git("commit", "-m", "fixture quoted description and metadata comment")
+        release_dir = self.build()
+        report = json.loads((release_dir / "release.json").read_text())
+        root = release_dir / report["artifacts"]["doubao"]["directory"]
+        packaged = (root / "skills/ai-shifu-course-creator/SKILL.md").read_text()
+        fields = doubao_channel.parse_frontmatter(packaged)
+        self.assertIn(r'description: "Create a \"course\"."', packaged)
+        self.assertEqual(fields["metadata.display_description"], 'Create a "course".')
+        self.assertEqual(fields["metadata.display_name"], "课程制作管理")
+        self.assertEqual(packaged.count("  display_name:"), 1)
+        verification.verify(release_dir)
+
     def test_channel_templates_keep_git_file_modes(self) -> None:
         release_dir = self.build()
         report = json.loads((release_dir / "release.json").read_text())

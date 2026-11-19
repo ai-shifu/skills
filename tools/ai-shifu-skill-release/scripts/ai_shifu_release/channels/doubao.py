@@ -113,11 +113,49 @@ def skill_overrides(skill: dict, source: dict[str, str]) -> dict[str, str]:
     return overrides
 
 
+def parse_plugin_source_frontmatter(frontmatter: str) -> dict[str, str]:
+    """Read plugin fields without changing the source document's scalar spelling."""
+    lines = frontmatter.splitlines()
+    fields = parse_skill_frontmatter(
+        "\n".join(line for line in lines if not line.lstrip().startswith("#"))
+    )
+    descriptions = [
+        line.partition(":")[2].strip()
+        for line in lines
+        if re.match(r"^description\s*:", line)
+    ]
+    if len(descriptions) > 1:
+        raise ValueError("Duplicate description in Doubao skill frontmatter")
+    if not descriptions:
+        return fields
+    value = descriptions[0]
+    if value.startswith('"'):
+        try:
+            decoded, end = json.JSONDecoder().raw_decode(value)
+        except json.JSONDecodeError as exc:
+            raise ValueError("Unsupported quoted Doubao skill description") from exc
+        if not isinstance(decoded, str) or (
+            value[end:].strip() and not value[end:].lstrip().startswith("#")
+        ):
+            raise ValueError("Unsupported quoted Doubao skill description")
+        fields["description"] = decoded
+    elif value.startswith("'"):
+        match = re.fullmatch(r"'((?:[^']|'')*)'(?:\s+#.*)?\s*", value)
+        if not match:
+            raise ValueError("Unsupported quoted Doubao skill description")
+        fields["description"] = match.group(1).replace("''", "'")
+    else:
+        fields["description"] = re.split(r"\s+#", value, maxsplit=1)[0].strip()
+    return fields
+
+
 def parse_frontmatter(text: str) -> dict[str, str]:
     frontmatter, _ = doubao_legacy.split_skill_document(text, "Doubao SKILL.md")
-    fields = parse_skill_frontmatter(frontmatter)
+    fields = parse_plugin_source_frontmatter(frontmatter)
     in_metadata = False
     for line in frontmatter.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
         if line and not line[0].isspace():
             in_metadata = line == "metadata:"
         elif in_metadata:
@@ -247,7 +285,7 @@ def build_doubao_artifact(channel: str, context: BuildContext) -> dict:
         name = skill["name"]
         source = context.source_skills[name]
         frontmatter, body = read_skill_document(source / "SKILL.md")
-        metadata = parse_skill_frontmatter(frontmatter)
+        metadata = parse_plugin_source_frontmatter(frontmatter)
         source_frontmatter[name] = metadata
         overrides = skill_overrides(skill, metadata)
         destination = stage_dir / "skills" / name
@@ -335,7 +373,7 @@ def verify_doubao_artifact(
         raw = record.get("source_frontmatter")
         if not isinstance(raw, str):
             raise ValueError(f"doubao {name} source frontmatter is missing")
-        source_frontmatter[name] = parse_skill_frontmatter(raw)
+        source_frontmatter[name] = parse_plugin_source_frontmatter(raw)
     validate_package(directory, profile, source_frontmatter, skill["version"])
     for name, record in embedded.items():
         overrides = skill_overrides(profile_skills[name], source_frontmatter[name])
