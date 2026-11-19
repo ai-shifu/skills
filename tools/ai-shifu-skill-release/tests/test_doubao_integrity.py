@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
-from ai_shifu_release import artifacts
 from ai_shifu_release.channels import doubao
 from ai_shifu_release.verify import verify
 from support import ReleaseFixture
@@ -33,90 +33,107 @@ class DoubaoIntegrityTest(unittest.TestCase):
         self.profile = json.loads(self.record["source_profile_json"])
         self.source_frontmatter = ReleaseFixture.source_frontmatter(self.report)
 
-    def rewrite_avatar(self, avatar: str) -> None:
-        self.profile["avatar"] = avatar
-        profile_json = json.dumps(self.profile, ensure_ascii=False) + "\n"
-        self.record["source_profile_json"] = profile_json
-        self.record["source_profile_sha256"] = artifacts.content_hash(
-            profile_json.encode("utf-8")
-        )
-        (self.package / "agent.yml").write_text(
-            doubao.render_agent_yml(self.profile, self.source_frontmatter),
-            encoding="utf-8",
-        )
-        (self.package / "README.md").write_text(
-            doubao.render_readme(self.profile), encoding="utf-8"
-        )
-        ReleaseFixture.refresh_doubao_hashes(self.release_dir, self.report)
-
-    def assert_ledger_matches(self) -> None:
-        self.assertEqual(
-            self.record["source_profile_sha256"],
-            artifacts.content_hash(self.record["source_profile_json"].encode("utf-8")),
-        )
-        self.assertEqual(self.record["tree_sha256"], artifacts.tree_hash(self.package))
-        self.assertEqual(
-            self.record["archive_sha256"],
-            artifacts.file_hash(self.release_dir / self.record["archive"]),
-        )
-        self.assertEqual(
-            self.report["release_sha256"],
-            artifacts.release_hash(
-                digest
-                for channel in artifacts.CHANNEL_ORDER
-                for digest in artifacts.artifact_hashes(
-                    self.report["artifacts"][channel]
-                )
-            ),
-        )
-
-    def test_valid_main_source_release_still_verifies(self) -> None:
-        self.assertEqual(
-            self.report["source"]["commit"], self.fixture.git("rev-parse", "main")
-        )
+    def test_valid_release_and_copied_release_verify(self) -> None:
         verify(self.release_dir)
+        copied = self.root / "copied"
+        shutil.copytree(self.release_dir, copied)
+        verify(copied)
 
-    def assert_external_avatar_rejected(self, *, relative: bool) -> None:
-        original_avatar = self.package / self.profile["avatar"]
-        external_avatar = self.root / "outside-avatar.png"
-        shutil.copy2(original_avatar, external_avatar)
-        original_avatar.unlink()
-        avatar = (
-            os.path.relpath(external_avatar, self.package)
-            if relative
-            else str(external_avatar)
-        )
-        self.rewrite_avatar(avatar)
-        self.assert_ledger_matches()
-        self.assertTrue(external_avatar.is_file())
-        with self.assertRaisesRegex(ValueError, "Doubao avatar"):
-            verify(self.release_dir)
-
-    def test_rejects_absolute_external_avatar_after_rehashing_every_ledger(
-        self,
-    ) -> None:
-        self.assert_external_avatar_rejected(relative=False)
-
-    def test_rejects_parent_external_avatar_after_rehashing_every_ledger(self) -> None:
-        self.assert_external_avatar_rejected(relative=True)
-
-    def test_package_validator_rejects_avatar_symlink_outside_package(self) -> None:
-        avatar = self.package / self.profile["avatar"]
-        external_avatar = self.root / "outside-avatar.png"
-        shutil.copy2(avatar, external_avatar)
-        avatar.unlink()
-        avatar.symlink_to(external_avatar)
+    def test_rejects_icon_symlink_outside_package(self) -> None:
+        icon = self.package / doubao.ICON_PATH
+        external = self.root / "external.png"
+        shutil.copy2(icon, external)
+        icon.unlink()
+        icon.symlink_to(external)
         with self.assertRaisesRegex(ValueError, "escapes release directory"):
             doubao.validate_package(self.package, self.profile, self.source_frontmatter)
 
-    def test_nested_avatar_package_verifies_after_copying(self) -> None:
-        original_avatar = self.package / self.profile["avatar"]
-        nested_avatar = self.package / "images/avatar.png"
-        nested_avatar.parent.mkdir()
-        original_avatar.rename(nested_avatar)
-        self.rewrite_avatar("images/avatar.png")
-        self.assert_ledger_matches()
-        verify(self.release_dir)
-        copied_release = self.root / "copied-release"
-        shutil.copytree(self.release_dir, copied_release)
-        verify(copied_release)
+    def test_rejects_invalid_icon_dimensions_and_size(self) -> None:
+        icon = self.package / doubao.ICON_PATH
+        data = bytearray(icon.read_bytes())
+        data[16:20] = (256).to_bytes(4, "big")
+        data[20:24] = (256).to_bytes(4, "big")
+        icon.write_bytes(data)
+        with self.assertRaisesRegex(ValueError, "512x512"):
+            doubao.validate_package(self.package, self.profile, self.source_frontmatter)
+
+    def test_rejects_manifest_version_after_rehashing(self) -> None:
+        path = self.package / "plugin.json"
+        manifest = json.loads(path.read_text())
+        manifest["version"] = "9.9.9"
+        path.write_text(json.dumps(manifest, ensure_ascii=False))
+        ReleaseFixture.refresh_doubao_hashes(self.release_dir, self.report)
+        with self.assertRaisesRegex(ValueError, "plugin.json differs"):
+            verify(self.release_dir)
+
+    def test_rejects_missing_skill_and_legacy_workspace(self) -> None:
+        (self.package / "skills/course-direction-advisor/SKILL.md").unlink()
+        with self.assertRaisesRegex(ValueError, "missing SKILL.md"):
+            doubao.validate_package(self.package, self.profile, self.source_frontmatter)
+        (self.package / "workspace").mkdir()
+        with self.assertRaisesRegex(ValueError, "legacy partner"):
+            doubao.validate_package(self.package, self.profile, self.source_frontmatter)
+
+    def test_rejects_oversized_file_and_too_many_entries(self) -> None:
+        extra = self.package / "large.bin"
+        extra.write_bytes(b"x" * (doubao.MAX_FILE_BYTES + 1))
+        with self.assertRaisesRegex(ValueError, "exceeds 2 MiB"):
+            doubao.validate_package(self.package, self.profile, self.source_frontmatter)
+        extra.unlink()
+        many = self.package / "extra"
+        many.mkdir()
+        for number in range(doubao.MAX_ENTRIES):
+            (many / str(number)).write_text("x")
+        with self.assertRaisesRegex(ValueError, "1024 ZIP entries"):
+            doubao.validate_package(self.package, self.profile, self.source_frontmatter)
+
+    def test_rejects_non_whitelisted_skill_change_after_rehashing(self) -> None:
+        skill = self.package / "skills/ai-shifu-learning-report/SKILL.md"
+        skill.write_text(
+            skill.read_text().replace("# Learning Report", "# Changed Report")
+        )
+        ReleaseFixture.refresh_doubao_hashes(self.release_dir, self.report)
+        with self.assertRaisesRegex(ValueError, "body differs"):
+            verify(self.release_dir)
+
+    def test_zip_limits_include_directory_entries_and_expanded_sizes(self) -> None:
+        archive = self.root / "limits.zip"
+        with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+            bundle.writestr("folder/", "")
+            bundle.writestr("folder/large.txt", "a" * 2000)
+        with patch.object(doubao, "MAX_ENTRIES", 1):
+            with self.assertRaisesRegex(ValueError, "1024 ZIP entries"):
+                doubao.validate_archive_limits(archive)
+        with patch.object(doubao, "MAX_FILE_BYTES", 1000):
+            with self.assertRaisesRegex(ValueError, "exceeding 2 MiB"):
+                doubao.validate_archive_limits(archive)
+        with patch.object(doubao, "MAX_PACKAGE_BYTES", 1000):
+            with self.assertRaisesRegex(ValueError, "16 MiB uncompressed"):
+                doubao.validate_archive_limits(archive)
+
+
+class DoubaoLegacyCompatibilityTest(ReleaseFixture, unittest.TestCase):
+    def test_build_and_verify_historical_profile(self) -> None:
+        profile = (
+            self.source_repo
+            / "tools/ai-shifu-skill-release/channels/doubao/profile.json"
+        )
+        legacy = Path(__file__).parent / "fixtures/doubao-legacy-profile.json"
+        shutil.copy2(legacy, profile)
+        self.git("add", str(profile.relative_to(self.source_repo)))
+        self.git("commit", "-m", "historical partner fixture")
+        release = self.build()
+        report = json.loads((release / "release.json").read_text())
+        record = report["artifacts"]["doubao"]
+        root = release / record["directory"]
+        self.assertTrue((root / "agent.yml").is_file())
+        self.assertTrue(
+            (root / "workspace/skills/ai-shifu-course-creator/SKILL.md").is_file()
+        )
+        self.assertEqual(record["archive_root"], "doubao-ai-shifu-1.2.3")
+        verify(release)
+        self.assertEqual(self.build(), release)
+
+
+if __name__ == "__main__":
+    unittest.main()

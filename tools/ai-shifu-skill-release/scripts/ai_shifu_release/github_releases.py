@@ -295,7 +295,9 @@ def publish(
         if final["tagName"] != tag:
             raise ValueError("Published Release tag differs from the requested version")
         if {item["name"] for item in final["assets"]} != expected_assets:
-            raise ValueError("Published Release asset set differs from the verified draft")
+            raise ValueError(
+                "Published Release asset set differs from the verified draft"
+            )
         if final.get("body", "").strip() != expected_body.strip():
             raise ValueError("Published Release notes differ from the verified draft")
     return final["url"]
@@ -310,7 +312,7 @@ def asset_name(channel: str, archive: str) -> str:
 def extract_archive(archive: Path, destination: Path, archive_root: str) -> None:
     """Restore regular files from a verified archive while rejecting unsafe paths."""
     verify_zip(archive)
-    prefix = f"{archive_root}/"
+    prefix = f"{archive_root}/" if archive_root else ""
     with zipfile.ZipFile(archive) as bundle:
         for item in bundle.infolist():
             if item.is_dir():
@@ -325,7 +327,9 @@ def extract_archive(archive: Path, destination: Path, archive_root: str) -> None
             mode = item.external_attr >> 16
             if not stat.S_ISREG(mode):
                 raise ValueError(f"Non-file ZIP entry: {item.filename}")
-            target = destination.joinpath(*relative.parts[1:])
+            target = destination.joinpath(
+                *(relative.parts[1:] if archive_root else relative.parts)
+            )
             target.parent.mkdir(parents=True, exist_ok=True)
             if target.exists():
                 raise ValueError(f"Duplicate ZIP entry: {item.filename}")

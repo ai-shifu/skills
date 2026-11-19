@@ -18,7 +18,9 @@ TOOL_ROOT = Path(__file__).resolve().parents[1]
 
 
 class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
-    def test_workbuddy_includes_complete_learning_report_from_pinned_source(self) -> None:
+    def test_workbuddy_includes_complete_learning_report_from_pinned_source(
+        self,
+    ) -> None:
         for relative, content in {
             "scripts/render_report.py": "print('report renderer')\n",
             "assets/report-template.html": "<html>report template</html>\n",
@@ -85,7 +87,9 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
             self.report_skill_text,
         )
 
-    def test_workbuddy_verification_rejects_report_drift_with_refreshed_archive_hash(self) -> None:
+    def test_workbuddy_verification_rejects_report_drift_with_refreshed_archive_hash(
+        self,
+    ) -> None:
         release_dir = self.build()
         report_path = release_dir / "release.json"
         report = json.loads(report_path.read_text())
@@ -226,107 +230,61 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
         doubao = report["artifacts"]["doubao"]
         doubao_root = release_dir / doubao["directory"]
         profile = doubao_channel.load_profile(
-            Path(__file__).resolve().parents[1] / "channels/doubao/profile.json"
+            TOOL_ROOT / "channels/doubao/profile.json"
         )
-        source_frontmatter = self.source_frontmatter(report)
         self.assertEqual(doubao_root.name, "doubao-ai-shifu-1.2.3")
+        self.assertEqual(doubao["archive_root"], "")
         self.assertEqual(
-            (doubao_root / "agent.yml").read_text(encoding="utf-8"),
-            doubao_channel.render_agent_yml(profile, source_frontmatter),
+            json.loads((doubao_root / "plugin.json").read_text()),
+            doubao_channel.render_plugin(profile, "1.2.3"),
         )
+        self.assertFalse((doubao_root / "agent.yml").exists())
+        self.assertFalse((doubao_root / "workspace").exists())
         self.assertEqual(
-            sorted(path.name for path in (doubao_root / "workspace/skills").iterdir()),
+            sorted(path.name for path in (doubao_root / "skills").iterdir()),
             [
                 "ai-shifu-course-creator",
                 "ai-shifu-learning-report",
                 "course-direction-advisor",
             ],
         )
-        self.assertFalse(
-            (doubao_root / "workspace/skills/ai-shifu-course-creator/icon.png").exists()
-        )
-        self.assertFalse(
-            (
-                doubao_root / "workspace/skills/ai-shifu-learning-report/icon.png"
-            ).exists()
-        )
-        self.assertFalse(
-            (doubao_root / "workspace/skills/ai-shifu-course-creator/.env").exists()
-        )
-        with zipfile.ZipFile(release_dir / doubao["archive"]) as archive:
-            names = archive.namelist()
-            self.assertTrue(names)
-            self.assertTrue(
-                all(name.startswith("doubao-ai-shifu-1.2.3/") for name in names)
-            )
-            self.assertFalse(
-                any("__MACOSX" in name or "desktop" in name for name in names)
-            )
+        self.assertFalse((doubao_root / "skills/ai-shifu-course-creator/.env").exists())
         embedded = doubao["embedded_skills"]
-        self.assertEqual(
-            set(embedded),
-            {
-                "ai-shifu-course-creator",
-                "ai-shifu-learning-report",
-                "course-direction-advisor",
-            },
+        self.assertEqual(set(embedded), {item["name"] for item in profile["skills"]})
+        for item in profile["skills"]:
+            name = item["name"]
+            text = (doubao_root / "skills" / name / "SKILL.md").read_text()
+            fields = doubao_channel.parse_frontmatter(text)
+            self.assertEqual(fields["name"], name)
+            self.assertEqual(fields["metadata.display_name"], item["display_name"])
+            self.assertEqual(
+                fields["metadata.display_description"], fields["description"]
+            )
+            self.assertEqual(embedded[name]["root"], f"skills/{name}")
+            self.assertEqual(
+                embedded[name]["source_commit"], report["source"]["commit"]
+            )
+        creator = doubao_channel.parse_frontmatter(
+            (doubao_root / "skills/ai-shifu-course-creator/SKILL.md").read_text()
         )
-        creator_text = (
-            doubao_root / "workspace/skills/ai-shifu-course-creator/SKILL.md"
-        ).read_text(encoding="utf-8")
-        creator_frontmatter = doubao_channel.parse_frontmatter(creator_text)
-        self.assertEqual(creator_frontmatter["description"], "Test fixture.")
-        self.assertEqual(creator_frontmatter["label"], "课程制作管理")
-        self.assertEqual(creator_frontmatter["icon"], "")
-        self.assertEqual(creator_frontmatter["version_management"], "plugin")
-        report_text = (
-            doubao_root / "workspace/skills/ai-shifu-learning-report/SKILL.md"
-        ).read_text(encoding="utf-8")
-        report_frontmatter = doubao_channel.parse_frontmatter(report_text)
-        self.assertEqual(
-            report_frontmatter["description"],
-            "Build one privacy-safe learning report.",
-        )
-        self.assertEqual(report_frontmatter["label"], "课程学习报告")
-        self.assertEqual(report_frontmatter["icon"], "")
-        self.assertNotIn("version_management", report_frontmatter)
-        report_body = skill_metadata.split_skill_document(
-            report_text,
-            "report",
-        )[1]
-        self.assertEqual(
-            artifacts.content_hash(report_body.encode("utf-8")),
-            embedded["ai-shifu-learning-report"]["body_sha256"],
-        )
-        advisor_root = doubao_root / "workspace/skills/course-direction-advisor"
-        expected_advisor = skill_metadata.update_skill_frontmatter(
-            self.advisor_skill_text,
-            {"label": "做课方向建议", "icon": ""},
-            "advisor",
-        )
-        self.assertEqual((advisor_root / "SKILL.md").read_text(), expected_advisor)
+        self.assertEqual(creator["version_management"], "plugin")
+        advisor_root = doubao_root / "skills/course-direction-advisor"
         self.assertEqual(
             (advisor_root / "references/guide.md").read_text(), "advisor guide\n"
-        )
-        self.assertEqual(
-            embedded["course-direction-advisor"]["source_commit"],
-            report["source"]["commit"],
         )
         self.assertEqual(
             set(embedded["course-direction-advisor"]["source_files"]),
             {"SKILL.md", "references/guide.md"},
         )
         with zipfile.ZipFile(release_dir / doubao["archive"]) as archive:
-            advisor_prefix = (
-                "doubao-ai-shifu-1.2.3/workspace/skills/course-direction-advisor"
+            names = set(archive.namelist())
+            self.assertIn("plugin.json", names)
+            self.assertIn("com.doubao/assets/plugin-icon.png", names)
+            self.assertIn("skills/course-direction-advisor/references/guide.md", names)
+            self.assertFalse(
+                any(name.startswith("doubao-ai-shifu-1.2.3/") for name in names)
             )
-            self.assertEqual(
-                archive.read(f"{advisor_prefix}/SKILL.md").decode(), expected_advisor
-            )
-            self.assertEqual(
-                archive.read(f"{advisor_prefix}/references/guide.md"),
-                b"advisor guide\n",
-            )
+            self.assertFalse(any("__MACOSX" in name for name in names))
         for channel in ("clawhub", "skillhub", "workbuddy"):
             with zipfile.ZipFile(
                 release_dir / report["artifacts"][channel]["archive"]
@@ -340,12 +298,32 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
 
         verification.verify(release_dir)
 
+    def test_doubao_display_description_omits_source_search_abbreviation(self) -> None:
+        source = self.source_skill_text.replace(
+            "description: Test fixture.",
+            "description: Create with MarkdownFlow (MDF).",
+        )
+        (self.skill / "SKILL.md").write_text(source, encoding="utf-8")
+        self.git("add", "skills/ai-shifu-course-creator/SKILL.md")
+        self.git("commit", "-m", "fixture search abbreviation")
+        release_dir = self.build()
+        report = json.loads((release_dir / "release.json").read_text())
+        root = release_dir / report["artifacts"]["doubao"]["directory"]
+        packaged = (root / "skills/ai-shifu-course-creator/SKILL.md").read_text()
+        fields = doubao_channel.parse_frontmatter(packaged)
+        self.assertEqual(fields["description"], "Create with MarkdownFlow (MDF).")
+        self.assertEqual(
+            fields["metadata.display_description"], "Create with MarkdownFlow."
+        )
+        self.assertEqual(packaged.count("MDF"), 1)
+        verification.verify(release_dir)
+
     def test_channel_templates_keep_git_file_modes(self) -> None:
         release_dir = self.build()
         report = json.loads((release_dir / "release.json").read_text())
         entries = {
             "workbuddy": "workbuddy-ai-shifu-1.2.3/agents/ai-shifu.md",
-            "doubao": "doubao-ai-shifu-1.2.3/workspace/AGENTS.md",
+            "doubao": "plugin.json",
         }
         for channel, entry in entries.items():
             with self.subTest(channel=channel):
@@ -617,8 +595,8 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
             Path(__file__).resolve().parents[1] / "channels/doubao/profile.json"
         )
         source_frontmatter = self.source_frontmatter(report)
-        (root / "README.md").write_text("changed\n", encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "README.md differs"):
+        (root / "plugin.json").write_text("{}\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "plugin version|plugin.json differs"):
             doubao_channel.validate_package(root, profile, source_frontmatter)
 
     def test_doubao_rejects_local_paths(self) -> None:
@@ -629,7 +607,7 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
             Path(__file__).resolve().parents[1] / "channels/doubao/profile.json"
         )
         source_frontmatter = self.source_frontmatter(report)
-        identity = root / "workspace/IDENTITY.md"
+        identity = root / "skills/ai-shifu-course-creator/references/guide.md"
         identity.write_text(
             identity.read_text(encoding="utf-8")
             + "\n读取 /Users/example/private/file.md\n",
@@ -642,7 +620,7 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
         release_dir = self.build()
         report = json.loads((release_dir / "release.json").read_text())
         root = release_dir / report["artifacts"]["doubao"]["directory"]
-        skill_file = root / "workspace/skills/ai-shifu-course-creator/SKILL.md"
+        skill_file = root / "skills/ai-shifu-course-creator/SKILL.md"
         skill_file.write_text(
             skill_file.read_text().replace(
                 "description: Test fixture.", "description: Channel rewrite."
@@ -660,7 +638,7 @@ class BuildReleaseTest(ReleaseFixture, unittest.TestCase):
                 release_dir = self.build()
                 report = json.loads((release_dir / "release.json").read_text())
                 root = release_dir / report["artifacts"]["doubao"]["directory"]
-                report_root = root / "workspace/skills/ai-shifu-learning-report"
+                report_root = root / "skills/ai-shifu-learning-report"
                 if mutation == "change":
                     (report_root / "references/guide.md").write_text("changed\n")
                 else:

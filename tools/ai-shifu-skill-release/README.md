@@ -137,7 +137,9 @@ The release trust chain is: a commit anchors the source, deterministic builds ma
 
 `verify` independently recalculates directory and ZIP hashes, verifies the canonical ClawHub `SKILL.md` against its source hash, compares channel contents byte for byte against their permitted variants, and checks the combined release hash and directory name. Directory hashes include paths, modes, and contents. Secret-pattern scanning and ZIP path checks also apply.
 
-Doubao verification additionally checks its single archive root, required files, three scenarios, three recommended instructions, three skill entries, embedded source manifests, avatar, and local-path leakage. It uses the source profile recorded in `release.json`, so later changes to the local profile cannot invalidate an older package. Its embedded skills may only change an existing `version_management: standalone` to `plugin` and add `label` and an empty `icon`. Other source files and skill bodies must remain unchanged.
+The current Doubao ZIP has `plugin.json` at its root, three direct `skills/<name>/` directories, and the 512×512 icon under `com.doubao/assets/`. It is a Skill-only plugin: it does not invent an MCP server, CLI connector, or application interface. Verification checks the manifest and version, Skill display metadata, icon, platform ZIP and file-size limits, embedded source manifests, and local-path leakage. Skill variants only set `metadata.display_name`, derive `metadata.display_description` from the source description without its search-only abbreviation, and change an existing `version_management: standalone` to `plugin`; other source files and Skill bodies remain unchanged. The recorded source profile selects the format, so older partner packages can still be rebuilt and verified without reading the current profile.
+
+The package follows Doubao's [plugin overview](https://open.doubao.com/document/plugin-docs-center/getting-started/what-is-plugin), [manifest requirements](https://open.doubao.com/document/plugin-docs-center/reference/generic-plugin-protocol-fields), and [Skill requirements](https://open.doubao.com/document/plugin-docs-center/build/mcp-server-development/plugin-development-spec/skill-development).
 
 The current `release.json` contract is **schema 6**. Schema 5 and older candidates must be rebuilt for this automation workflow. Loading a release for publication always runs verification first.
 
@@ -168,7 +170,7 @@ Options include `--level major|minor|patch`, `--draft`, and `--no-pr`. With `--n
 | `artifacts/skillhub/*.zip` | SkillHub archive for review and retention |
 | `artifacts/workbuddy/workbuddy-ai-shifu-<version>/` | Expanded WorkBuddy package for review |
 | `artifacts/workbuddy/*.zip` | WorkBuddy plugin upload |
-| `artifacts/doubao/doubao-ai-shifu-<version>/` | Expanded Doubao Work partner package |
+| `artifacts/doubao/doubao-ai-shifu-<version>/` | Expanded Doubao plugin package |
 | `artifacts/doubao/*.zip` | Doubao submission ZIP |
 | `release.json` | Source commit, versions, builder provenance, and SHA-256 ledger |
 | `release-report.json` | Channel preflight, publication, and failure status |
@@ -206,7 +208,7 @@ python3 scripts/release.py record-manual dist/<release-id> \
 
 Use `doubao` for the other manual targets. Valid states are `submitted`, `verified`, and `failed`. `submitted` and `verified` require a platform URL; only a failure without a platform page can omit it. Do not label a submission as independently verified without supporting evidence.
 
-The Doubao plan lists every embedded skill, the recommended instructions, and runtime checks. Platform testing should cover starting a course from scratch, choosing a course direction, and converting uploaded material into a course, plus the retained learning-report capability. Record the result after the platform checks.
+The Doubao plan lists every embedded Skill, three suggested test instructions, and runtime checks; these are test inputs, not plugin manifest fields. Platform testing should cover starting a course from scratch, choosing a course direction, and converting uploaded material into a course, plus the retained learning-report capability. For [console submission](https://open.doubao.com/document/plugin-docs-center/publish), provide the required accessible Feishu evaluation-report links for the Skills; public listings also require 5–10 test prompts. Platform acceptance and runtime behavior remain to be verified on the target client. Record the result after the platform checks.
 
 ## Configuration and Channel Assets
 
@@ -215,7 +217,7 @@ The Doubao plan lists every embedded skill, the recommended instructions, and ru
 - WorkBuddy reads `author.name` and `author.email` from the packaged `.codebuddy-plugin/plugin.json`. The build fills the source template's placeholders from the committed `release.toml` at the same source revision. GitHub Actions and local builds use that one file; no publisher repository variables are needed. The name and email are public in the package, so review changes to this file in a PR. The build fails if either value is missing or is a placeholder.
 - ClawHub preserves the exported `SKILL.md` unchanged. Its slug and display name are CLI arguments. SkillHub only adds or replaces `slug` and `displayName` in frontmatter.
 - WorkBuddy only changes the embedded primary skill's version management to `plugin`. Companion skills are copied unchanged, including their scripts, assets, and references. The plugin template's `skills` list owns collection independently of Doubao. `release.json` records companion source commits and file hashes under `companion_skills`; verification compares every companion file with that manifest. Its shell remains under `channels/`.
-- `channels/doubao/profile.json` owns the stable identity, display labels, and recommended instructions. Skill names and descriptions come from source frontmatter; icons remain empty for platform matching. The first two scenarios do not require uploaded material. The third scenario uses supplied material. The learning-report skill remains embedded even though it is not one of the three displayed scenarios.
+- `channels/doubao/profile.json` owns the plugin identity, Skill display labels, and manual test instructions. Skill names and descriptions come from source frontmatter; `channels/doubao/avatar.png` supplies the plugin icon, and Skills inherit it. The first two test instructions do not require uploaded material. The third uses supplied material. The learning-report Skill remains embedded and requires separate testing. The retained `workspace` template serves historical partner builds only; new plugins do not include it.
 - `channels/avatars/expert.png` is the shared 512×512 avatar. WorkBuddy includes it through the build. Preserve the relative `channels/workbuddy/avatars` symlink.
 
 Engineering prose is English. Chinese channel prompts, display copy, platform enums, matching rules, and their test fixtures are intentional and must retain their behavior.

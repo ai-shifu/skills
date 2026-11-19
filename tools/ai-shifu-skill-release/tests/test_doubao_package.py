@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import copy
+import json
 import unittest
 from pathlib import Path
 
 from ai_shifu_release.channels import doubao
+from ai_shifu_release.skill_metadata import update_skill_frontmatter
 
 
 class DoubaoPackageTest(unittest.TestCase):
@@ -12,175 +14,112 @@ class DoubaoPackageTest(unittest.TestCase):
         self.profile = doubao.load_profile(
             Path(__file__).resolve().parents[1] / "channels/doubao/profile.json"
         )
-        self.source_frontmatter = {
-            "ai-shifu-course-creator": {
-                "name": "ai-shifu-course-creator",
-                "description": "Create and manage AI-Shifu courses.",
-                "version": "1.2.7",
-                "version_management": "standalone",
-            },
-            "ai-shifu-learning-report": {
-                "name": "ai-shifu-learning-report",
-                "description": "Create a privacy-safe AI-Shifu learning report.",
-            },
-            "course-direction-advisor": {
-                "name": "course-direction-advisor",
-                "description": "Select course topics from source materials and market evidence.",
-            },
+        self.source = {
+            "name": "ai-shifu-course-creator",
+            "description": "Create and manage AI-Shifu courses.",
+            "version_management": "standalone",
         }
 
-    def test_generated_surfaces_share_recommended_instructions(self) -> None:
-        agent = doubao.render_agent_yml(self.profile, self.source_frontmatter)
-        readme = doubao.render_readme(self.profile)
-        for instruction in self.profile["recommended_instructions"]:
-            self.assertIn(instruction, agent)
-            self.assertIn(instruction, readme)
-        first = self.profile["recommended_instructions"][0]
-        self.assertIn(f"zh-CN: {doubao.quote(first)}", agent)
-        self.assertIn('id: "ai-shifu"', agent)
-        self.assertIn('name: "AI师傅教学专家"', agent)
-        self.assertIn("AI师傅教学专家", agent)
-        self.assertNotRegex(agent, doubao.AI_SHIFU_SPACING_PATTERN)
-        self.assertIn('icon: ""', agent)
-        self.assertIn('description: "Create and manage AI-Shifu courses."', agent)
-        self.assertIn('name: "course-direction-advisor"', agent)
-        self.assertIn('display_name: "做课方向建议"', agent)
-        self.assertIn(
-            'description: "Select course topics from source materials and market evidence."',
-            agent,
+    def test_manifest_uses_official_plugin_fields(self) -> None:
+        manifest = doubao.render_plugin(self.profile, "1.2.3")
+        self.assertEqual(manifest["name"], "ai-shifu")
+        self.assertEqual(manifest["version"], "1.2.3")
+        self.assertEqual(
+            manifest["extensions"]["com.doubao"]["displayName"],
+            {"zh": "AI师傅教学专家"},
         )
         self.assertEqual(
-            first,
-            "以“为什么要学习AI”为主题，创建一门AI师傅课程",
+            manifest["extensions"]["com.doubao"]["icon"],
+            "./com.doubao/assets/plugin-icon.png",
         )
         self.assertEqual(
-            self.profile["recommended_instructions"][1],
-            "我想做一门跟 AI 相关的课，帮我找找具体什么方向比较好？",
-        )
-        self.assertEqual(
-            self.profile["recommended_instructions"][2],
-            "帮我把这份上传的素材转成AI师傅课程",
-        )
-        self.assertIn("从0开始建课", self.profile["core_scenarios"][0])
-        self.assertIn("做课方向建议", self.profile["core_scenarios"][1])
-        self.assertIn("上传自己的PPT", self.profile["core_scenarios"][2])
-        for scenario, readme_scenario in zip(
-            self.profile["core_scenarios"], self.profile["readme_scenarios"]
-        ):
-            self.assertEqual(
-                scenario, f"{readme_scenario['name']}：{readme_scenario['description']}"
-            )
-
-    def test_rejects_spacing_inside_ai_shifu_brand_in_agent_yml(self) -> None:
-        source_frontmatter = copy.deepcopy(self.source_frontmatter)
-        source_frontmatter["ai-shifu-learning-report"]["description"] = (
-            "Create an AI 师傅 learning report."
-        )
-        with self.assertRaisesRegex(
-            ValueError, "spaces inside the AI-Shifu brand name"
-        ):
-            doubao.render_agent_yml(self.profile, source_frontmatter)
-
-    def test_skill_overrides_are_limited_to_doubao_required_fields(self) -> None:
-        skills = {skill["name"]: skill for skill in self.profile["skills"]}
-        creator = doubao.skill_overrides(
-            skills["ai-shifu-course-creator"],
-            self.source_frontmatter["ai-shifu-course-creator"],
-        )
-        report = doubao.skill_overrides(
-            skills["ai-shifu-learning-report"],
-            self.source_frontmatter["ai-shifu-learning-report"],
-        )
-        advisor = doubao.skill_overrides(
-            skills["course-direction-advisor"],
-            self.source_frontmatter["course-direction-advisor"],
+            set(manifest), {"name", "version", "description", "extensions"}
         )
 
+    def test_source_description_and_metadata_are_preserved(self) -> None:
+        updates = doubao.skill_overrides(self.profile["skills"][0], self.source)
         self.assertEqual(
-            creator,
+            updates,
             {
-                "label": "课程制作管理",
-                "icon": "",
+                "metadata.display_name": "课程制作管理",
+                "metadata.display_description": self.source["description"],
                 "version_management": "plugin",
             },
         )
-        self.assertEqual(report, {"label": "课程学习报告", "icon": ""})
-        self.assertEqual(advisor, {"label": "做课方向建议", "icon": ""})
-        self.assertNotIn("description", creator)
-        self.assertNotIn("name", creator)
-
-    def test_rejects_conflicting_source_label_or_custom_icon(self) -> None:
-        skill = self.profile["skills"][0]
-        conflicting_label = dict(self.source_frontmatter[skill["name"]])
-        conflicting_label["label"] = "另一个标签"
-        with self.assertRaisesRegex(ValueError, "label conflicts"):
-            doubao.skill_overrides(skill, conflicting_label)
-
-        custom_icon = dict(self.source_frontmatter[skill["name"]])
-        custom_icon["icon"] = "custom.png"
-        with self.assertRaisesRegex(ValueError, "icon must be empty"):
-            doubao.skill_overrides(skill, custom_icon)
-
-    def test_allows_uploaded_material_only_in_third_instruction(self) -> None:
-        self.assertRegex(
-            self.profile["recommended_instructions"][2],
-            doubao.EXTERNAL_INPUT_PATTERN,
+        source = (
+            "---\nname: ai-shifu-course-creator\n"
+            "description: Create and manage AI-Shifu courses.\n"
+            "metadata:\n  version: 1.2.3\n  version_management: standalone\n"
+            "  short-description: Example\n---\n# Body\n"
         )
-        doubao.validate_profile(self.profile)
+        result = update_skill_frontmatter(source, updates, "test")
+        self.assertIn("  version_management: plugin\n", result)
+        self.assertIn("  short-description: Example\n", result)
+        self.assertIn('  display_name: "课程制作管理"\n', result)
+        self.assertIn(
+            '  display_description: "Create and manage AI-Shifu courses."\n', result
+        )
+        self.assertTrue(result.endswith("---\n# Body\n"))
+        self.assertNotIn("\nlabel:", result)
+        self.assertNotIn("\nicon:", result)
 
-        for index in (0, 1):
-            with self.subTest(index=index):
-                profile = copy.deepcopy(self.profile)
-                profile["recommended_instructions"][index] = (
-                    "请上传一份课程附件，我会根据附件内容生成完整的课程教学脚本。"
+    def test_display_description_omits_search_only_abbreviation(self) -> None:
+        source = dict(self.source, description="Create with MarkdownFlow (MDF).")
+        overrides = doubao.skill_overrides(self.profile["skills"][0], source)
+        self.assertEqual(
+            overrides["metadata.display_description"], "Create with MarkdownFlow."
+        )
+        self.assertNotIn("description", overrides)
+        self.assertEqual(source["description"], "Create with MarkdownFlow (MDF).")
+
+    def test_adds_metadata_when_missing(self) -> None:
+        text = "---\nname: report\ndescription: Report\n---\nBody\n"
+        result = update_skill_frontmatter(
+            text,
+            {"metadata.display_name": "报告", "metadata.display_description": "Report"},
+            "test",
+        )
+        self.assertIn(
+            'metadata:\n  display_name: "报告"\n  display_description: "Report"', result
+        )
+
+    def test_rejects_invalid_or_duplicate_metadata(self) -> None:
+        for metadata in (
+            "metadata: {version: 1}\n",
+            "metadata:\n  version: 1\n",
+            "metadata:\n  one: a\n  one: b\n",
+            "metadata:\n  nested:\n    item: value\n",
+            "metadata:\n  a: x\nmetadata:\n  b: y\n",
+        ):
+            with self.subTest(metadata=metadata), self.assertRaises(ValueError):
+                update_skill_frontmatter(
+                    "---\nname: x\n" + metadata + "---\nbody\n",
+                    {"metadata.display_name": "x"},
+                    "test",
                 )
-                with self.assertRaisesRegex(ValueError, "not zero-input"):
-                    doubao.validate_profile(profile)
 
-    def test_rejects_duplicate_or_insufficient_skills(self) -> None:
+    def test_rejects_bad_source_and_profile(self) -> None:
+        for description in ("", " ", "x" * 1025):
+            source = dict(self.source, description=description)
+            with (
+                self.subTest(description=description[:8]),
+                self.assertRaisesRegex(ValueError, "description"),
+            ):
+                doubao.skill_overrides(self.profile["skills"][0], source)
         profile = copy.deepcopy(self.profile)
-        profile["skills"] = profile["skills"][:1]
-        with self.assertRaisesRegex(ValueError, "at least two skills"):
+        profile["package_format"] = "unknown"
+        with self.assertRaisesRegex(ValueError, "Unsupported Doubao package format"):
+            doubao.validate_profile(profile)
+        profile = copy.deepcopy(self.profile)
+        profile["skills"][0]["name"] = "x" * 65
+        with self.assertRaises(ValueError):
             doubao.validate_profile(profile)
 
-    def test_rejects_duplicate_channel_metadata_for_skills(self) -> None:
-        profile = copy.deepcopy(self.profile)
-        profile["skills"][0]["description"] = "Channel-owned description."
-        with self.assertRaisesRegex(ValueError, "unsupported profile fields"):
-            doubao.validate_profile(profile)
-
-    def test_avatar_requires_a_safe_nonempty_relative_path(self) -> None:
-        invalid = (
-            None,
-            1,
-            [],
-            {},
-            "",
-            "   ",
-            ".",
-            "./",
-            "/tmp/avatar.png",
-            "../avatar.png",
-            "images/../../avatar.png",
-            "images\\avatar.png",
-            "C:/avatar.png",
-            "C:avatar.png",
-            "avatar\n.png",
-            "avatar\r.png",
-            "avatar\x00.png",
-            "avatar\x7f.png",
-            "avatar\x85.png",
-        )
-        for avatar in invalid:
-            with self.subTest(avatar=avatar):
-                profile = copy.deepcopy(self.profile)
-                profile["avatar"] = avatar
-                with self.assertRaisesRegex(ValueError, "Doubao avatar"):
-                    doubao.validate_profile(profile)
-
-        profile = copy.deepcopy(self.profile)
-        profile["avatar"] = "images/avatar.png"
-        doubao.validate_profile(profile)
+    def test_legacy_profile_is_still_recognized(self) -> None:
+        path = Path(__file__).parent / "fixtures/doubao-legacy-profile.json"
+        legacy = json.loads(path.read_text())
+        doubao.validate_profile(legacy)
+        self.assertNotIn("package_format", legacy)
 
 
 if __name__ == "__main__":

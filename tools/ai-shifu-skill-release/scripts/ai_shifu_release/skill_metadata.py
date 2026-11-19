@@ -81,6 +81,73 @@ def update_skill_frontmatter(text: str, updates: dict[str, str], source: str) ->
     frontmatter, body = split_skill_document(text, source)
     lines = frontmatter.split("\n")
     for key, value in updates.items():
+        if key.startswith("metadata."):
+            top_level_keys: set[str] = set()
+            for line in lines:
+                if not line or line[0].isspace() or line.startswith("#"):
+                    continue
+                match = re.match(r"^([A-Za-z0-9_-]+):(?:\s|$)", line)
+                if not match:
+                    raise ValueError(f"Unsupported YAML frontmatter: {source}")
+                if match.group(1) in top_level_keys:
+                    raise ValueError(
+                        f"Duplicate {match.group(1)} in YAML frontmatter: {source}"
+                    )
+                top_level_keys.add(match.group(1))
+            field = key.removeprefix("metadata.")
+            if field not in {"display_name", "display_description"}:
+                raise ValueError(f"Unsupported metadata override: {key}")
+            metadata_headers = [
+                i for i, line in enumerate(lines) if re.match(r"^metadata\s*:", line)
+            ]
+            if len(metadata_headers) > 1:
+                raise ValueError(f"Duplicate metadata in YAML frontmatter: {source}")
+            if not metadata_headers:
+                lines.extend(
+                    ["metadata:", f"  {field}: {json.dumps(value, ensure_ascii=False)}"]
+                )
+                continue
+            start = metadata_headers[0]
+            if lines[start] != "metadata:":
+                raise ValueError(
+                    f"Unsupported metadata mapping in YAML frontmatter: {source}"
+                )
+            end = start + 1
+            while end < len(lines) and (not lines[end] or lines[end][0].isspace()):
+                end += 1
+            seen: set[str] = set()
+            indexes = []
+            for index in range(start + 1, end):
+                line = lines[index]
+                if not line.strip() or line.lstrip().startswith("#"):
+                    continue
+                match = re.fullmatch(r"  ([A-Za-z0-9_-]+):\s*(.+)", line)
+                if not match:
+                    raise ValueError(
+                        f"Unsupported metadata value in YAML frontmatter: {source}"
+                    )
+                nested_key, nested_value = match.groups()
+                if nested_key in seen:
+                    raise ValueError(
+                        f"Duplicate metadata {nested_key} in YAML frontmatter: {source}"
+                    )
+                seen.add(nested_key)
+                if nested_value.startswith(
+                    ("[", "{", "|", ">", "&", "*", "!", "@", "`")
+                ) or re.fullmatch(
+                    r"(?:null|~|true|false|yes|no|on|off|[-+]?\d+(?:\.\d+)?|\d{4}-\d{2}-\d{2})",
+                    nested_value,
+                    re.IGNORECASE,
+                ):
+                    raise ValueError(f"Metadata values must be strings: {source}")
+                if nested_key == field:
+                    indexes.append(index)
+            replacement = f"  {field}: {json.dumps(value, ensure_ascii=False)}"
+            if indexes:
+                lines[indexes[0]] = replacement
+            else:
+                lines.insert(end, replacement)
+            continue
         pattern = re.compile(rf"^{re.escape(key)}:\s*.*$")
         indexes = [index for index, line in enumerate(lines) if pattern.fullmatch(line)]
         nested_indexes = []

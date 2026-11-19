@@ -1,105 +1,56 @@
-"""Build, render, and validate the Doubao Work partner package."""
+"""Build and verify Doubao Plugin packages and historical partner packages."""
 
 from __future__ import annotations
 
-import hashlib
 import json
-import math
 import re
 import shutil
-import struct
-import unicodedata
+import zipfile
 from pathlib import Path, PurePosixPath
 
 from ai_shifu_release.artifacts import (
     artifact_path,
     assert_contents_equal,
     content_hash,
-    copy_tree,
     directory_contents,
     directory_manifest,
     expected_variant_contents,
     file_hash,
-    manifest_tree_hash,
     scan_tree,
     tree_hash,
     verify_zip,
     write_zip,
     zip_subtree_contents,
 )
-from ai_shifu_release.channels import BuildContext
+from ai_shifu_release.channels import BuildContext, doubao_legacy
 from ai_shifu_release.config import channel_path
 from ai_shifu_release.skill_metadata import (
     build_skill_variant,
     read_skill_document,
-    split_skill_document,
-    update_skill_frontmatter,
 )
-from ai_shifu_release.skill_metadata import parse_frontmatter as parse_skill_frontmatter
-
-# Localized platform values and package copy must retain their Chinese wording.
-ALLOWED_TAGS = {
-    "内容创作",
-    "办公提效",
-    "产品研发",
-    "金融与理财",
-    "电商运营",
-    "短剧与短视频",
-    "数据分析",
-    "学习教育",
-    "求职与人事",
-    "市场营销",
-    "销售与客户",
-    "经营管理",
-    "商业研究",
-}
-
-
-ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-
-
-SKILL_NAME_PATTERN = ID_PATTERN
-
-
-FORBIDDEN_WORDS = (
-    "保证",
-    "必过",
-    "稳赚",
-    "某公司",
-    "XX 行业",
-    "一站式",
-    "全面赋能",
-    "一键",
-    "TODO",
-    "FIXME",
-    "待替换",
-    "占位符",
+from ai_shifu_release.skill_metadata import (
+    parse_frontmatter as parse_skill_frontmatter,
 )
 
-
-TEMPLATE_RESIDUE = ("TODO", "FIXME", "待替换", "占位符")
-
-
-EXTERNAL_INPUT_PATTERN = re.compile(r"上传|附件|提供材料|把.*发给我|这份文件")
-
-
-AI_SHIFU_SPACING_PATTERN = re.compile(r"AI\s+师傅")
+PLUGIN_FORMAT = "plugin-v1"
+ICON_PATH = "./com.doubao/assets/plugin-icon.png"
+MAX_PACKAGE_BYTES = 16 * 1024 * 1024
+MAX_FILE_BYTES = 2 * 1024 * 1024
+MAX_ENTRIES = 1024
+MAX_SKILLS = 10
 
 
-LEAK_PATTERNS = (
-    re.compile(r"/Users/[^/\s]+/"),
-    re.compile(r"/home/[^/\s]+/"),
-    re.compile(r"C:\\Users\\", re.IGNORECASE),
-    re.compile(r"localhost:\d+", re.IGNORECASE),
-    re.compile(r"\b10(?:\.\d{1,3}){3}\b"),
-    re.compile(r"\b192\.168(?:\.\d{1,3}){2}\b"),
-)
-
-
-REQUIRED_WORKSPACE_FILES = ("IDENTITY.md", "USER.md", "SOUL.md", "AGENTS.md")
-
-
-SKILL_PROFILE_FIELDS = {"name", "display_name"}
+def validate_archive_limits(archive: Path) -> None:
+    if archive.stat().st_size > MAX_PACKAGE_BYTES:
+        raise ValueError("Doubao plugin ZIP exceeds 16 MiB")
+    with zipfile.ZipFile(archive) as bundle:
+        entries = bundle.infolist()
+        if len(entries) > MAX_ENTRIES:
+            raise ValueError("Doubao plugin exceeds 1024 ZIP entries")
+        if any(entry.file_size > MAX_FILE_BYTES for entry in entries):
+            raise ValueError("Doubao plugin ZIP contains a file exceeding 2 MiB")
+        if sum(entry.file_size for entry in entries) > MAX_PACKAGE_BYTES:
+            raise ValueError("Doubao plugin ZIP exceeds 16 MiB uncompressed")
 
 
 def load_profile(path: Path) -> dict:
@@ -108,113 +59,52 @@ def load_profile(path: Path) -> dict:
     return profile
 
 
-def text_length(value: str) -> int:
-    units = 0
-    for character in value:
-        if character.isspace():
-            continue
-        units += 2 if unicodedata.east_asian_width(character) in {"W", "F", "A"} else 1
-    return math.ceil(units / 2)
+def validate_profile(profile: dict) -> None:
+    # The profile also owns the manual test scenarios, including for old releases.
+    doubao_legacy.validate_profile(profile)
+    package_format = profile.get("package_format")
+    if package_format not in (None, PLUGIN_FORMAT):
+        raise ValueError(f"Unsupported Doubao package format: {package_format}")
+    if package_format == PLUGIN_FORMAT:
+        if len(profile["id"]) > 64:
+            raise ValueError("Doubao plugin name must be at most 64 characters")
+        if not 1 <= len(profile["skills"]) <= MAX_SKILLS:
+            raise ValueError("Doubao plugin must contain at most 10 skills")
+        for item in profile["skills"]:
+            if len(item["name"]) > 64 or len(item["display_name"]) > 128:
+                raise ValueError("Doubao skill name or display name is too long")
 
 
-def quote(value: str) -> str:
-    return json.dumps(value, ensure_ascii=False)
-
-
-def welcome_message(profile: dict) -> str:
-    lines = [profile["welcome_intro"], "", "你可以直接使用以下指令："]
-    for instruction in profile["recommended_instructions"]:
-        lines.append(f"- {instruction}")
-    lines.extend(
-        [
-            "",
-            "信息不足时，我会说明尚未验证的部分，并交付可继续补充的结构或检查清单。",
-        ]
-    )
-    return "\n".join(lines)
-
-
-def render_agent_yml(
-    profile: dict, source_frontmatter: dict[str, dict[str, str]]
-) -> str:
-    expected_names = {skill["name"] for skill in profile["skills"]}
-    if set(source_frontmatter) != expected_names:
-        raise ValueError("Doubao source frontmatter skill set mismatch")
-    lines = [
-        f"id: {quote(profile['id'])}",
-        f"name: {quote(profile['name'])}",
-        f"avatar: {quote(profile['avatar'])}",
-        "tags:",
-        *[f"  - {quote(tag)}" for tag in profile["tags"]],
-        f"description: {quote(profile['description'])}",
-        "core_scenarios:",
-        *[f"  - {quote(item)}" for item in profile["core_scenarios"]],
-        "recommended_instructions:",
-        *[f"  - {quote(item)}" for item in profile["recommended_instructions"]],
-        "welcome_message:",
-        "  zh-CN: |-",
-        *[
-            f"    {line}" if line else ""
-            for line in welcome_message(profile).splitlines()
-        ],
-        "recommended_question:",
-        f"  zh-CN: {quote(profile['recommended_instructions'][0])}",
-        f"  en-US: {quote(profile['recommended_question_en'])}",
-        "ai_tags:",
-        *[f"  - {quote(item)}" for item in profile["ai_tags"]],
-        "skills:",
-    ]
-    for skill in profile["skills"]:
-        metadata = source_frontmatter[skill["name"]]
-        lines.extend(
-            [
-                f"  - icon: {quote('')}",
-                f"    name: {quote(metadata['name'])}",
-                f"    display_name: {quote(skill['display_name'])}",
-                f"    description: {quote(metadata['description'])}",
-            ]
-        )
-    rendered = "\n".join(lines) + "\n"
-    if AI_SHIFU_SPACING_PATTERN.search(rendered):
-        raise ValueError(
-            "Doubao agent.yml must not contain spaces inside the AI-Shifu brand name"
-        )
-    return rendered
-
-
-def render_readme(profile: dict) -> str:
-    lines = ["## 核心场景", "", profile["readme_intro"], ""]
-    for scenario in profile["readme_scenarios"]:
-        lines.append(f"- **{scenario['name']}**：{scenario['description']}")
-    lines.extend(["", "## 推荐指令", ""])
-    lines.extend(
-        f"- {instruction}" for instruction in profile["recommended_instructions"]
-    )
-    return "\n".join(lines) + "\n"
+def render_plugin(profile: dict, version: str) -> dict:
+    return {
+        "name": profile["id"],
+        "version": version,
+        "description": profile["description"],
+        "extensions": {
+            "com.doubao": {
+                "displayName": {"zh": profile["name"]},
+                "displayDescription": {"zh": profile["description"]},
+                "icon": ICON_PATH,
+            }
+        },
+    }
 
 
 def skill_overrides(skill: dict, source: dict[str, str]) -> dict[str, str]:
     name = skill["name"]
+    description = source.get("description", "")
     if source.get("name") != name:
         raise ValueError(f"Doubao skill name mismatch: {name}")
-    if not source.get("description"):
-        raise ValueError(f"Doubao source skill is missing description: {name}")
-
-    expected_label = skill["display_name"]
-    source_label = source.get("label")
-    if source_label and source_label != expected_label:
-        raise ValueError(f"Doubao source skill label conflicts with profile: {name}")
-
-    source_icon = source.get("icon")
-    if source_icon:
-        raise ValueError(f"Doubao source skill icon must be empty: {name}")
-
-    overrides: dict[str, str] = {}
-    if source_label != expected_label:
-        overrides["label"] = expected_label
-    if "icon" not in source:
-        overrides["icon"] = ""
-
+    if not description.strip() or len(description) > 1024:
+        raise ValueError(
+            f"Doubao skill description must be 1 to 1024 characters: {name}"
+        )
+    overrides = {
+        "metadata.display_name": skill["display_name"],
+        "metadata.display_description": description.replace(
+            "MarkdownFlow (MDF)", "MarkdownFlow"
+        ),
+    }
     version_management = source.get("version_management")
     if version_management == "standalone":
         overrides["version_management"] = "plugin"
@@ -224,225 +114,101 @@ def skill_overrides(skill: dict, source: dict[str, str]) -> dict[str, str]:
 
 
 def parse_frontmatter(text: str) -> dict[str, str]:
-    if not text.startswith("---\n") or "\n---\n" not in text[4:]:
-        raise ValueError("Doubao skill has invalid YAML frontmatter")
-    raw = text[4:].split("\n---\n", 1)[0]
-    fields = {}
+    frontmatter, _ = doubao_legacy.split_skill_document(text, "Doubao SKILL.md")
+    fields = parse_skill_frontmatter(frontmatter)
     in_metadata = False
-    for line in raw.splitlines():
-        if ":" not in line:
-            continue
-        if not line[0].isspace():
-            key, value = line.split(":", 1)
-            key = key.strip()
-            in_metadata = key == "metadata"
-        elif in_metadata and line.startswith("  ") and not line.startswith("   "):
-            key, value = line.strip().split(":", 1)
-            if key not in {"version", "version_management"} or key in fields:
-                continue
-        else:
-            continue
-        value = value.strip()
-        try:
-            fields[key] = json.loads(value)
-        except json.JSONDecodeError:
-            fields[key] = value.strip("'\"")
+    for line in frontmatter.splitlines():
+        if line and not line[0].isspace():
+            in_metadata = line == "metadata:"
+        elif in_metadata:
+            match = re.fullmatch(r"  (display_name|display_description):\s*(.+)", line)
+            if match:
+                fields[f"metadata.{match.group(1)}"] = json.loads(match.group(2))
     return fields
-
-
-def _require_count(profile: dict, field: str, expected: int) -> list:
-    values = profile.get(field)
-    if not isinstance(values, list) or len(values) != expected:
-        raise ValueError(
-            f"Doubao profile {field} must contain exactly {expected} items"
-        )
-    return values
-
-
-def _reject_forbidden(value: str, field: str) -> None:
-    match = next((word for word in FORBIDDEN_WORDS if word in value), "")
-    if match:
-        raise ValueError(f"Doubao profile {field} contains forbidden wording: {match}")
-
-
-def validate_profile(profile: dict) -> None:
-    avatar = profile.get("avatar")
-    if not isinstance(avatar, str) or not avatar.strip():
-        raise ValueError("Doubao avatar must be a nonempty relative package path")
-    avatar_path = PurePosixPath(avatar)
-    if (
-        not avatar_path.parts
-        or avatar_path.is_absolute()
-        or ".." in avatar_path.parts
-        or "\\" in avatar
-        or re.match(r"^[A-Za-z]:", avatar)
-        or any(unicodedata.category(character) == "Cc" for character in avatar)
-    ):
-        raise ValueError("Doubao avatar must be a safe relative package path")
-    if not ID_PATTERN.fullmatch(str(profile.get("id", ""))):
-        raise ValueError("Doubao profile id must use kebab-case")
-    if profile.get("primary_skill") != "ai-shifu-course-creator":
-        raise ValueError("Doubao profile primary_skill must be ai-shifu-course-creator")
-    if profile.get("persona_name") != "AI师傅教学专家":
-        raise ValueError(
-            "Doubao profile persona_name must match the required localized teaching expert name"
-        )
-    if not 1 <= text_length(str(profile.get("name", ""))) <= 8:
-        raise ValueError("Doubao profile name must be 1 to 8 characters")
-    if text_length(str(profile.get("description", ""))) > 50:
-        raise ValueError("Doubao profile description exceeds 50 characters")
-    tags = _require_count(profile, "tags", 1)
-    if tags[0] not in ALLOWED_TAGS:
-        raise ValueError(f"Unsupported Doubao tag: {tags[0]}")
-    _require_count(profile, "core_scenarios", 3)
-    instructions = _require_count(profile, "recommended_instructions", 3)
-    for index, instruction in enumerate(instructions):
-        length = text_length(instruction)
-        if not 15 <= length <= 50:
-            raise ValueError(
-                f"Doubao recommended instruction length must be 15 to 50: {instruction}"
-            )
-        if index != 2 and EXTERNAL_INPUT_PATTERN.search(instruction):
-            raise ValueError(
-                f"Doubao recommended instruction is not zero-input: {instruction}"
-            )
-    ai_tags = _require_count(profile, "ai_tags", 3)
-    if len(set(ai_tags)) != 3 or any(not 2 <= text_length(tag) <= 6 for tag in ai_tags):
-        raise ValueError("Doubao ai_tags must be unique and 2 to 6 characters")
-    scenarios = _require_count(profile, "readme_scenarios", 3)
-    if any(not item.get("name") or not item.get("description") for item in scenarios):
-        raise ValueError("Doubao README scenarios require name and description")
-    skills = profile.get("skills")
-    if not isinstance(skills, list) or len(skills) < 2:
-        raise ValueError("Doubao profile requires at least two skills")
-    names = [skill.get("name", "") for skill in skills]
-    if len(set(names)) != len(names) or any(
-        not SKILL_NAME_PATTERN.fullmatch(name) for name in names
-    ):
-        raise ValueError("Doubao skill names must be unique kebab-case values")
-    if profile["primary_skill"] not in names:
-        raise ValueError("Doubao primary skill is not declared in skills")
-    for index, skill in enumerate(skills):
-        extra_fields = set(skill) - SKILL_PROFILE_FIELDS
-        if extra_fields:
-            raise ValueError(
-                f"Doubao skill {names[index]} has unsupported profile fields: "
-                f"{sorted(extra_fields)}"
-            )
-        for field in ("display_name",):
-            if not skill.get(field):
-                raise ValueError(f"Doubao skill {names[index]} is missing {field}")
-    for field in (
-        "name",
-        "description",
-        "welcome_intro",
-        "readme_intro",
-        "recommended_question_en",
-    ):
-        _reject_forbidden(str(profile.get(field, "")), field)
-    for field in ("core_scenarios", "recommended_instructions", "ai_tags"):
-        for value in profile[field]:
-            _reject_forbidden(value, field)
-
-
-def png_dimensions(path: Path) -> tuple[int, int]:
-    content = path.read_bytes()
-    if (
-        len(content) < 24
-        or content[:8] != b"\x89PNG\r\n\x1a\n"
-        or content[12:16] != b"IHDR"
-    ):
-        raise ValueError(f"Doubao image is not a valid PNG: {path}")
-    return struct.unpack(">II", content[16:24])
-
-
-def validate_image(path: Path, *, max_bytes: int | None = None) -> str:
-    if not path.is_file():
-        raise ValueError(f"Doubao image is missing: {path}")
-    if max_bytes is not None and path.stat().st_size > max_bytes:
-        raise ValueError(f"Doubao image exceeds size limit: {path}")
-    width, height = png_dimensions(path)
-    if width != height or min(width, height) < 128:
-        raise ValueError(f"Doubao image must be square and at least 128px: {path}")
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def validate_package(
     root: Path,
     profile: dict,
     source_frontmatter: dict[str, dict[str, str]],
+    version: str | None = None,
 ) -> None:
+    if profile.get("package_format") != PLUGIN_FORMAT:
+        return doubao_legacy.validate_package(root, profile, source_frontmatter)
     validate_profile(profile)
     root = root.resolve()
-    avatar = artifact_path(root, profile["avatar"])
-    required = [root / "agent.yml", root / "README.md", avatar]
-    required.extend(root / "workspace" / name for name in REQUIRED_WORKSPACE_FILES)
-    missing = [str(path.relative_to(root)) for path in required if not path.is_file()]
-    if missing:
-        raise ValueError(f"Doubao package is missing required files: {missing}")
-    if (root / "agent.yml").read_text(encoding="utf-8") != render_agent_yml(
-        profile, source_frontmatter
+    plugin_file = root / "plugin.json"
+    if not plugin_file.is_file():
+        raise ValueError("Doubao plugin.json is missing")
+    plugin = json.loads(plugin_file.read_text(encoding="utf-8"))
+    expected_version = version if version is not None else plugin.get("version")
+    if not isinstance(expected_version, str) or not re.fullmatch(
+        r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", expected_version
     ):
-        raise ValueError("Doubao agent.yml differs from the channel profile")
-    if (root / "README.md").read_text(encoding="utf-8") != render_readme(profile):
-        raise ValueError("Doubao README.md differs from the channel profile")
-    validate_image(avatar, max_bytes=2 * 1024 * 1024)
-    skills_root = root / "workspace" / "skills"
-    actual_names = sorted(path.name for path in skills_root.iterdir() if path.is_dir())
-    expected_names = sorted(skill["name"] for skill in profile["skills"])
-    if actual_names != expected_names:
+        raise ValueError("Doubao plugin version must use X.Y.Z")
+    if plugin != render_plugin(profile, expected_version):
         raise ValueError(
-            f"Doubao skill directories mismatch: {actual_names} != {expected_names}"
+            "Doubao plugin.json differs from the channel profile or version"
         )
+    if (root / "agent.yml").exists() or (root / "workspace").exists():
+        raise ValueError("Doubao plugin contains legacy partner package files")
+    icon = artifact_path(root, ICON_PATH)
+    doubao_legacy.validate_image(icon, max_bytes=500 * 1024)
+    if doubao_legacy.png_dimensions(icon) != (512, 512):
+        raise ValueError("Doubao plugin icon must be 512x512 pixels")
+    skills_root = root / "skills"
+    if not skills_root.is_dir():
+        raise ValueError("Doubao plugin skills directory is missing")
+    expected_names = sorted(item["name"] for item in profile["skills"])
+    actual_names = sorted(path.name for path in skills_root.iterdir() if path.is_dir())
+    if actual_names != expected_names or set(source_frontmatter) != set(expected_names):
+        raise ValueError("Doubao plugin skill directories or source records mismatch")
     for skill in profile["skills"]:
-        skill_root = skills_root / skill["name"]
-        skill_file = skill_root / "SKILL.md"
+        name = skill["name"]
+        skill_file = artifact_path(root, f"skills/{name}/SKILL.md")
         if not skill_file.is_file():
-            raise ValueError(f"Doubao skill is missing SKILL.md: {skill['name']}")
-        frontmatter = parse_frontmatter(skill_file.read_text(encoding="utf-8"))
-        source = source_frontmatter[skill["name"]]
+            raise ValueError(f"Doubao skill is missing SKILL.md: {name}")
+        fields = parse_frontmatter(skill_file.read_text(encoding="utf-8"))
+        source = source_frontmatter[name]
         expected = {
-            "name": source["name"],
-            "label": skill["display_name"],
-            "icon": "",
+            "name": name,
             "description": source["description"],
+            "metadata.display_name": skill["display_name"],
+            "metadata.display_description": skill_overrides(skill, source)[
+                "metadata.display_description"
+            ],
         }
         for field, value in expected.items():
-            if frontmatter.get(field) != value:
-                raise ValueError(
-                    f"Doubao skill frontmatter mismatch: {skill['name']} {field}"
-                )
-    agents = (root / "workspace" / "AGENTS.md").read_text(encoding="utf-8")
-    if len(agents) < 800:
-        raise ValueError("Doubao AGENTS.md must contain at least 800 characters")
-    for skill in profile["skills"]:
-        path = f"workspace/skills/{skill['name']}/SKILL.md"
-        if path not in agents:
-            raise ValueError(f"Doubao AGENTS.md does not reference {path}")
-    for relative in (
-        "workspace/IDENTITY.md",
-        "workspace/SOUL.md",
-        "workspace/AGENTS.md",
-    ):
-        if profile["persona_name"] not in (root / relative).read_text(encoding="utf-8"):
-            raise ValueError(f"Doubao persona identity mismatch: {relative}")
-    if profile["persona_name"] not in profile["welcome_intro"]:
-        raise ValueError(
-            "Doubao welcome intro does not use the configured persona identity"
-        )
-    for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.suffix.lower() == ".png":
+            if fields.get(field) != value:
+                raise ValueError(f"Doubao skill frontmatter mismatch: {name} {field}")
+
+    paths = list(root.rglob("*"))
+    for path in paths:
+        if path.is_symlink() and not path.resolve().is_relative_to(root):
+            raise ValueError(
+                f"Doubao package symlink escapes plugin root: {path.relative_to(root)}"
+            )
+    files = [path for path in paths if path.is_file()]
+    if len(files) > MAX_ENTRIES:
+        raise ValueError("Doubao plugin exceeds 1024 ZIP entries")
+    if sum(path.stat().st_size for path in files) > MAX_PACKAGE_BYTES:
+        raise ValueError("Doubao plugin exceeds 16 MiB uncompressed")
+    for path in files:
+        if path.stat().st_size > MAX_FILE_BYTES:
+            raise ValueError(
+                f"Doubao plugin file exceeds 2 MiB: {path.relative_to(root)}"
+            )
+        if path.suffix.lower() == ".png":
             continue
         try:
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        for pattern in LEAK_PATTERNS:
-            if pattern.search(text):
-                raise ValueError(
-                    f"Doubao package contains a local path or private address: {path.relative_to(root)}"
-                )
-        if any(word in text for word in TEMPLATE_RESIDUE):
+        if any(pattern.search(text) for pattern in doubao_legacy.LEAK_PATTERNS):
+            raise ValueError(
+                f"Doubao package contains a local path or private address: {path.relative_to(root)}"
+            )
+        if any(word in text for word in doubao_legacy.TEMPLATE_RESIDUE):
             raise ValueError(
                 f"Doubao package contains template residue: {path.relative_to(root)}"
             )
@@ -453,52 +219,38 @@ def build_doubao_artifact(channel: str, context: BuildContext) -> dict:
     profile_bytes = profile_path.read_bytes()
     profile = json.loads(profile_bytes)
     validate_profile(profile)
+    if profile.get("package_format") != PLUGIN_FORMAT:
+        return doubao_legacy.build_doubao_artifact(channel, context)
     if context.skill_name != profile["primary_skill"]:
         raise ValueError(
             f"Doubao profile supports {profile['primary_skill']}, not {context.skill_name}"
         )
     root_name = f"doubao-ai-shifu-{context.version}"
     stage_dir = context.artifacts / channel / root_name
-    workspace = stage_dir / "workspace"
     stage_dir.mkdir(parents=True)
-    avatar_relative = PurePosixPath(profile["avatar"])
-    avatar = profile_path.parent / avatar_relative
-    channels_root = context.channels.resolve()
-    if not avatar.resolve().is_relative_to(channels_root):
+    source_icon = profile_path.parent / PurePosixPath(profile["avatar"])
+    if not source_icon.resolve().is_relative_to(context.channels.resolve()):
         raise ValueError("Doubao avatar must stay inside channels/")
-    target_avatar = stage_dir / avatar_relative
-    target_avatar.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(avatar, target_avatar)
-    copy_tree(
-        channel_path(context.channels, context.config.doubao.workspace_dir), workspace
-    )
-
-    source_documents: dict[str, tuple[str, str]] = {}
-    source_frontmatter: dict[str, dict[str, str]] = {}
-    for skill in profile["skills"]:
-        name = skill["name"]
-        frontmatter, body = read_skill_document(
-            context.source_skills[name] / "SKILL.md"
+    icon = stage_dir / ICON_PATH
+    icon.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source_icon, icon)
+    (stage_dir / "plugin.json").write_text(
+        json.dumps(
+            render_plugin(profile, context.version), ensure_ascii=False, indent=2
         )
-        metadata = parse_skill_frontmatter(frontmatter)
-        skill_overrides(skill, metadata)
-        source_documents[name] = (frontmatter, body)
-        source_frontmatter[name] = metadata
-
-    (stage_dir / "agent.yml").write_text(
-        render_agent_yml(profile, source_frontmatter), encoding="utf-8"
+        + "\n",
+        encoding="utf-8",
     )
-    (stage_dir / "README.md").write_text(render_readme(profile), encoding="utf-8")
-
     embedded_skills = {}
+    source_frontmatter = {}
     for skill in profile["skills"]:
         name = skill["name"]
         source = context.source_skills[name]
-        destination = workspace / "skills" / name
-        frontmatter, source_body = source_documents[name]
-        metadata = source_frontmatter[name]
+        frontmatter, body = read_skill_document(source / "SKILL.md")
+        metadata = parse_skill_frontmatter(frontmatter)
+        source_frontmatter[name] = metadata
         overrides = skill_overrides(skill, metadata)
-        source_skill_bytes = (source / "SKILL.md").read_bytes()
+        destination = stage_dir / "skills" / name
         build_skill_variant(source, destination, overrides)
         assert_contents_equal(
             directory_contents(destination),
@@ -508,84 +260,32 @@ def build_doubao_artifact(channel: str, context: BuildContext) -> dict:
             f"doubao {name} directory",
         )
         embedded_skills[name] = {
-            "root": f"{root_name}/workspace/skills/{name}",
+            "root": f"skills/{name}",
             "source_commit": context.source_commit,
             "source_tree_sha256": tree_hash(source),
             "source_files": directory_manifest(source),
-            "source_skill_sha256": content_hash(source_skill_bytes),
+            "source_skill_sha256": file_hash(source / "SKILL.md"),
             "source_frontmatter": frontmatter,
-            "body_sha256": content_hash(source_body.encode("utf-8")),
+            "body_sha256": content_hash(body.encode("utf-8")),
             "tree_sha256": tree_hash(destination),
             "frontmatter_overrides": overrides,
         }
-
     scan_tree(stage_dir)
-    validate_package(stage_dir, profile, source_frontmatter)
+    validate_package(stage_dir, profile, source_frontmatter, context.version)
     archive = context.artifacts / channel / f"{root_name}.zip"
-    write_zip(stage_dir, archive, root_name)
+    write_zip(stage_dir, archive, "")
+    validate_archive_limits(archive)
     return {
         "directory": context.record_path(stage_dir),
         "tree_sha256": tree_hash(stage_dir),
         "archive": context.record_path(archive),
         "archive_sha256": file_hash(archive),
-        "archive_root": root_name,
+        "archive_root": "",
         "version": context.version,
         "source_profile_json": profile_bytes.decode("utf-8"),
         "source_profile_sha256": content_hash(profile_bytes),
         "embedded_skills": embedded_skills,
     }
-
-
-def verify_embedded_source_variant(
-    skill_root: Path,
-    record: dict,
-    overrides: dict[str, str],
-    name: str,
-) -> None:
-    source_files = record.get("source_files")
-    if not isinstance(source_files, dict) or "SKILL.md" not in source_files:
-        raise ValueError(f"doubao {name} source file manifest is missing")
-    if manifest_tree_hash(source_files) != record.get("source_tree_sha256"):
-        raise ValueError(f"doubao {name} source tree manifest mismatch")
-
-    actual_manifest = directory_manifest(skill_root)
-    if actual_manifest.keys() != source_files.keys():
-        missing = sorted(source_files.keys() - actual_manifest.keys())
-        extra = sorted(actual_manifest.keys() - source_files.keys())
-        raise ValueError(
-            f"doubao {name} source file set mismatch: missing={missing}, extra={extra}"
-        )
-    for relative, expected in source_files.items():
-        if relative == "SKILL.md":
-            if actual_manifest[relative]["mode"] != expected["mode"]:
-                raise ValueError(
-                    f"doubao {name} SKILL.md mode differs from GitHub source"
-                )
-            continue
-        if actual_manifest[relative] != expected:
-            raise ValueError(
-                f"doubao {name} source file differs from GitHub source: {relative}"
-            )
-
-    actual_text = (skill_root / "SKILL.md").read_text(encoding="utf-8")
-    _, body = split_skill_document(actual_text, f"doubao {name}/SKILL.md")
-    if content_hash(body.encode("utf-8")) != record.get("body_sha256"):
-        raise ValueError(f"doubao {name} body differs from GitHub source")
-
-    source_frontmatter = record.get("source_frontmatter")
-    if not isinstance(source_frontmatter, str):
-        raise ValueError(f"doubao {name} source frontmatter is missing")
-    source_text = f"---\n{source_frontmatter}\n---\n{body}"
-    if content_hash(source_text.encode("utf-8")) != record.get("source_skill_sha256"):
-        raise ValueError(f"doubao {name} source SKILL.md proof mismatch")
-    if content_hash(source_text.encode("utf-8")) != source_files["SKILL.md"]["sha256"]:
-        raise ValueError(f"doubao {name} source SKILL.md manifest mismatch")
-
-    expected_text = update_skill_frontmatter(
-        source_text, overrides, f"doubao {name}/SKILL.md"
-    )
-    if actual_text != expected_text:
-        raise ValueError(f"doubao {name} SKILL.md contains non-whitelisted changes")
 
 
 def verify_doubao_artifact(
@@ -596,66 +296,71 @@ def verify_doubao_artifact(
     canonical: dict[str, bytes],
 ) -> list[str]:
     profile_json = artifact.get("source_profile_json")
-    if not isinstance(profile_json, str):
-        raise ValueError(
-            "Doubao source profile is missing or differs from its recorded hash"
-        )
-    if content_hash(profile_json.encode("utf-8")) != artifact.get(
-        "source_profile_sha256"
-    ):
+    if not isinstance(profile_json, str) or content_hash(
+        profile_json.encode("utf-8")
+    ) != artifact.get("source_profile_sha256"):
         raise ValueError(
             "Doubao source profile is missing or differs from its recorded hash"
         )
     profile = json.loads(profile_json)
+    if profile.get("package_format") is None:
+        return doubao_legacy.verify_doubao_artifact(
+            artifact, release_dir, skill, source_commit, canonical
+        )
     validate_profile(profile)
     if skill["name"] != profile["primary_skill"]:
         raise ValueError("Doubao primary skill does not match release.json")
     directory = artifact_path(release_dir, artifact["directory"])
-    expected_root = f"doubao-ai-shifu-{skill['version']}"
-    if directory.name != artifact["archive_root"] or directory.name != expected_root:
-        raise ValueError("Doubao archive root mismatch")
+    if (
+        directory.name != f"doubao-ai-shifu-{skill['version']}"
+        or artifact.get("archive_root") != ""
+    ):
+        raise ValueError("Doubao plugin archive root mismatch")
+    if artifact.get("version") != skill["version"]:
+        raise ValueError("Doubao plugin version mismatch")
     if tree_hash(directory) != artifact["tree_sha256"]:
         raise ValueError("doubao directory hash mismatch")
     scan_tree(directory)
-
     profile_skills = {item["name"]: item for item in profile["skills"]}
     embedded = artifact.get("embedded_skills", {})
     if set(embedded) != set(profile_skills):
         raise ValueError("doubao embedded skill records mismatch")
-    source_frontmatter: dict[str, dict[str, str]] = {}
+    source_frontmatter = {}
     for name, record in embedded.items():
-        if record.get("source_commit") != source_commit:
-            raise ValueError(f"doubao {name} source commit mismatch")
-        raw_frontmatter = record.get("source_frontmatter")
-        if not isinstance(raw_frontmatter, str):
+        if (
+            record.get("source_commit") != source_commit
+            or record.get("root") != f"skills/{name}"
+        ):
+            raise ValueError(f"doubao {name} source commit or root mismatch")
+        raw = record.get("source_frontmatter")
+        if not isinstance(raw, str):
             raise ValueError(f"doubao {name} source frontmatter is missing")
-        source_frontmatter[name] = parse_skill_frontmatter(raw_frontmatter)
-    validate_package(directory, profile, source_frontmatter)
-
+        source_frontmatter[name] = parse_skill_frontmatter(raw)
+    validate_package(directory, profile, source_frontmatter, skill["version"])
     for name, record in embedded.items():
-        item = profile_skills[name]
-        metadata = source_frontmatter[name]
-        expected_overrides = skill_overrides(item, metadata)
-        if record.get("frontmatter_overrides") != expected_overrides:
+        overrides = skill_overrides(profile_skills[name], source_frontmatter[name])
+        if record.get("frontmatter_overrides") != overrides:
             raise ValueError(f"doubao {name} frontmatter override policy mismatch")
-        skill_root = directory / "workspace" / "skills" / name
+        skill_root = directory / "skills" / name
         if tree_hash(skill_root) != record.get("tree_sha256"):
             raise ValueError(f"doubao {name} tree hash mismatch")
-        verify_embedded_source_variant(skill_root, record, expected_overrides, name)
+        doubao_legacy.verify_embedded_source_variant(
+            skill_root, record, overrides, name
+        )
         if name == skill["name"]:
             expected = expected_variant_contents(
-                canonical, expected_overrides, f"doubao {name}/SKILL.md"
+                canonical, overrides, f"doubao {name}/SKILL.md"
             )
             assert_contents_equal(
                 directory_contents(skill_root), expected, f"doubao {name} directory"
             )
-
     archive = artifact_path(release_dir, artifact["archive"])
     if file_hash(archive) != artifact["archive_sha256"]:
         raise ValueError("doubao archive hash mismatch")
+    validate_archive_limits(archive)
     verify_zip(archive)
     assert_contents_equal(
-        zip_subtree_contents(archive, artifact["archive_root"]),
+        zip_subtree_contents(archive, ""),
         directory_contents(directory),
         "doubao archive",
     )

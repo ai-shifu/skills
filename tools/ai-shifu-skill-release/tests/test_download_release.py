@@ -195,9 +195,7 @@ class DownloadReleaseTest(unittest.TestCase):
             record = report["artifacts"]["doubao"]
             name = "course-direction-advisor"
             embedded = record["embedded_skills"][name]
-            skill = (
-                forged / record["directory"] / "workspace/skills" / name / "SKILL.md"
-            )
+            skill = forged / record["directory"] / "skills" / name / "SKILL.md"
             frontmatter, body = skill_metadata.split_skill_document(
                 skill.read_text(), str(skill)
             )
@@ -224,17 +222,14 @@ class DownloadReleaseTest(unittest.TestCase):
             record = report["artifacts"]["doubao"]
             package = forged / record["directory"]
             profile = json.loads(record["source_profile_json"])
-            profile["readme_intro"] += "\nUntrusted channel presentation."
+            profile["description"] = profile["description"].replace("快速", "稳定", 1)
             record["source_profile_json"] = json.dumps(profile, ensure_ascii=False)
             record["source_profile_sha256"] = artifacts.content_hash(
                 record["source_profile_json"].encode()
             )
-            (package / "agent.yml").write_text(
-                doubao.render_agent_yml(
-                    profile, self.fixture.source_frontmatter(report)
-                )
+            (package / "plugin.json").write_text(
+                json.dumps(doubao.render_plugin(profile, "1.2.3"), ensure_ascii=False)
             )
-            (package / "README.md").write_text(doubao.render_readme(profile))
             self.fixture.refresh_doubao_hashes(forged, report)
             self._write_forged_manifest(forged, report)
             self._assert_self_consistent_forgery_rejected(root, forged, changed_zips=1)

@@ -1,4 +1,5 @@
 {
+  "package_format": "plugin-v1",
   "id": "ai-shifu",
   "name": "AI师傅教学专家",
   "persona_name": "AI师傅教学专家",

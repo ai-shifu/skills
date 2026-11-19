@@ -88,7 +88,7 @@ Read `$RELEASE_DIR/release.json` and report:
 - The release ID and recorded SHA-256.
 - The source repository, source commit, and skill version.
 - Paths, versions, and hashes for ClawHub, SkillHub, WorkBuddy and Doubao.
-- Source-body consistency across channels. For Doubao, also report the source manifests for all embedded skills, the allowlisted `version_management` / `label` / empty `icon` changes, and static package validation.
+- Source-body consistency across channels. For Doubao, report the embedded source manifests, the format-specific allowlisted frontmatter changes, and static package validation. The new plugin uses Skill display metadata and may change `version_management` to `plugin`; historical partner packages use their original override policy.
 - Whether the builder's enclosing worktree had uncommitted changes, or whether provenance was unavailable.
 
 If the user only requested packaging, stop here.
@@ -179,7 +179,7 @@ python3 scripts/release.py record-manual "$RELEASE_DIR" \
   --note <optional-note>
 ```
 
-Both `submitted` and `verified` require `--url`. Only `failed`, when no platform page exists, may omit it. Doubao also requires testing its three recommended instructions in the platform's authoring tool and uploading the test report; retain separate coverage of the embedded learning-report capability.
+Both `submitted` and `verified` require `--url`. Only `failed`, when no platform page exists, may omit it. For Doubao, test the three suggested instructions and the learning-report capability on the target client. Supply the Skill evaluation-report links and any additional test prompts required by the chosen platform submission. Do not treat static validation as platform acceptance.
 
 ## Completion Report
 
