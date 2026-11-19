@@ -130,7 +130,7 @@ def manifest_tree_hash(manifest: dict[str, dict[str, str]]) -> str:
 
 def zip_subtree_contents(path: Path, root: str) -> dict[str, bytes]:
     verify_zip(path)
-    prefix = f"{root.rstrip('/')}/"
+    prefix = f"{root.rstrip('/')}/" if root else ""
     contents: dict[str, bytes] = {}
     with zipfile.ZipFile(path) as archive:
         for info in archive.infolist():
@@ -178,7 +178,8 @@ def write_zip(source: Path, output: Path, root_name: str) -> None:
     ) as archive:
         for path in iter_files(source):
             relative = path.relative_to(source).as_posix()
-            info = zipfile.ZipInfo(f"{root_name}/{relative}", ZIP_TIMESTAMP)
+            name = f"{root_name}/{relative}" if root_name else relative
+            info = zipfile.ZipInfo(name, ZIP_TIMESTAMP)
             mode = stat.S_IMODE(path.stat().st_mode)
             info.external_attr = (stat.S_IFREG | mode) << 16
             info.compress_type = zipfile.ZIP_DEFLATED
@@ -196,6 +197,8 @@ def verify_zip(path: Path) -> None:
             relative = PurePosixPath(name)
             if (
                 relative.is_absolute()
+                or "\\" in name
+                or re.match(r"^[A-Za-z]:", name)
                 or ".." in relative.parts
                 or is_excluded(relative)
             ):

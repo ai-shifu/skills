@@ -14,7 +14,7 @@ The tool directory is not the Git repository root. Run documented commands from 
 | `channels.clawhub` | `owner`, `endpoint`, CLI `package`, and `node_version` |
 | `channels.skillhub` | `endpoint`, `cli_version`, `cli_url`, and `cli_sha256` |
 | `channels.workbuddy` | Native asset `template_dir` |
-| `channels.doubao` | Native asset `profile` and `workspace_dir` |
+| `channels.doubao` | Native asset `profile` and historical partner `workspace_dir` |
 
 Channel assets remain in their existing native files. Configuration asset paths are relative to the tool directory and must stay inside `channels/`. Unknown fields, missing values, credential-bearing URLs, invalid installer hashes, and escaping asset paths are rejected. Credentials do not belong in this file.
 

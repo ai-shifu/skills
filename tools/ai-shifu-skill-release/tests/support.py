@@ -186,9 +186,10 @@ class ReleaseFixture:
         doubao = report["artifacts"]["doubao"]
         root = release_dir / doubao["directory"]
         for name, record in doubao["embedded_skills"].items():
-            record["tree_sha256"] = artifacts.tree_hash(
-                root / "workspace" / "skills" / name
-            )
+            relative = Path(record["root"])
+            if doubao["archive_root"]:
+                relative = relative.relative_to(doubao["archive_root"])
+            record["tree_sha256"] = artifacts.tree_hash(root / relative)
         archive = release_dir / doubao["archive"]
         artifacts.write_zip(root, archive, doubao["archive_root"])
         doubao["tree_sha256"] = artifacts.tree_hash(root)

@@ -59,6 +59,23 @@ class ArchiveIntegrityTest(unittest.TestCase):
                 {"SKILL.md": b"expected", "references/guide.md": b"guide"},
             )
 
+    def test_flat_root_extracts_and_rejects_unsafe_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "plugin.zip"
+            with zipfile.ZipFile(archive, "w") as bundle:
+                write_member(bundle, "plugin.json", "{}")
+                write_member(bundle, "skills/example/SKILL.md", "skill")
+            self.assertEqual(zip_subtree_contents(archive, "")["plugin.json"], b"{}")
+            github_releases.extract_archive(archive, root / "out", "")
+            self.assertEqual((root / "out/plugin.json").read_text(), "{}")
+            for name in ("../outside", "a\\..\\outside", "C:/outside"):
+                with self.subTest(name=name):
+                    with zipfile.ZipFile(archive, "w") as bundle:
+                        write_member(bundle, name, "bad")
+                    with self.assertRaisesRegex(ValueError, "Forbidden ZIP"):
+                        github_releases.extract_archive(archive, root / "out", "")
+
 
 class ReleaseZipTypeTest(unittest.TestCase):
     def test_nested_registry_root_is_rejected_with_matching_hashes(self) -> None:
