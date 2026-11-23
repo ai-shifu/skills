@@ -104,8 +104,9 @@ For example:
 
 ```markdown
 <!-- This activity checks whether an action plan specifies the action, owner, and deadline. -->
+- Show the plan to revise, word for word: "Organize customer feedback"
 
-?[ {{Rewrite "Organize customer feedback" as a plan with a specific action, an owner, and a deadline.}} ...State who will do what and by when]
+?[ {{Rewrite this as a plan with a specific action, an owner, and a deadline.}} ...State who will do what and by when]
 
 - Respond based on the learner's answer.
   - If all three details are present, explain why the plan is clear, then continue with the subsequent content.
@@ -248,7 +249,7 @@ This notice-revision example applies the [hinting and feedback guidance](teachin
   - The book report is 300 words, due Friday at 17:00, and submitted through the course platform.
 - If the learner asks to stop at any point, end the activity before requesting another draft. If the work is unfinished, name the gap shown by the latest submitted draft, or say what still needs to be demonstrated if there is no assessed draft.
 
-?[ {{Rewrite "Please submit a book report soon" as an actionable notice using the confirmed length, deadline, and submission destination.}} ...Write the revised notice]
+?[ {{Rewrite this notice with the confirmed length, deadline, and destination.}} ...Write the revised notice]
 
 - Wait for the actual draft, then check all four criteria: the book-report task, 300 words, Friday at 17:00, and the course-platform destination.
   - When every criterion is accurate and clear, identify what makes the notice actionable, summarize the checking criteria, and end the activity.
