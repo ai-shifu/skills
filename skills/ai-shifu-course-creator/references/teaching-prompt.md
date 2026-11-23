@@ -91,9 +91,10 @@ For a format-only rewrite, verify that removing only the added comments, list ma
 
 - Choose an [explicit control or natural-language interaction](markdownflow-syntax.md#interactions) according to the intended behavior. Preserve author-fixed questions and choices; when dynamic generation is requested, keep that generation instruction executable at learner time rather than replacing it with an author-time option list.
 - Use target capabilities already established by the user or available course context. Natural-language interactions need the [response-surface and waiting capabilities](markdownflow-syntax.md#natural-language-interactions). An explicit-control fallback is suitable only when it preserves the author's requirements. If dynamic choices remain required and support is unavailable or unknown, retain that requirement and identify the runtime dependency. Local authoring can still produce the Prompt with that dependency stated; it does not require platform access.
-- Keep explicit `?[]` controls standalone, with option wording and order in the actual control; avoid competing simulated controls. A complete learner-facing question or response task in the [question prefix](markdownflow-syntax.md#question-prefix) is sufficient: repeating it before the control is optional unless the author explicitly requires separate text.
-- When generating a new explicit control for a question or response task, fill the question prefix with that complete learner-facing question or response task. Preserve its wording and punctuation rather than using a programmatic key, topic label, answer, or unfilled placeholder. This keeps the response associated with what the learner was asked. When a fixed item supplies only a statement to classify, preserve that statement verbatim inside the complete classification question or response task; an item label and statement alone do not replace the task. For example, write `?[ {{Which action will you take first?}} Verify the source | Check the calculation]`. Preserve an author-supplied exact control unless the requested change includes revising it.
-- In explicit controls, use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label, according to the required answer semantics. For input, put the complete learner-facing question or response task in the prefix and use a short hint. For select-plus-input, put `...` at the start of the custom-answer option.
+- Keep explicit `?[]` controls standalone, with option wording and order in the actual control; avoid competing simulated controls.
+- Put the material a question depends on before its control: case text, statements to judge, data, worked results, and detailed response requirements belong in teaching instructions or a deterministic display block above the control, not inside the [question prefix](markdownflow-syntax.md#question-prefix). The prefix then stays short and readable as the label of what the learner is answering.
+- When generating a new explicit control for a question or response task, fill the prefix with only that learner-facing question or response task. A short question or task goes in complete, with its wording and punctuation. When the full question or task is long, carries several requirements, or would exceed the [200-character prefix limit](markdownflow-syntax.md#question-prefix), use a concise one-sentence summary of the question in the prefix and give the full wording or requirements before the control. Either way, the prefix reads as a question or task the learner recognizes, not a programmatic key, topic label, answer, or unfilled placeholder, so the response stays associated with what the learner was asked. A complete prefix needs no repetition before the control unless the author requires separate text; a summarized prefix relies on the full version above it. For a fixed item that supplies a statement to classify, show the item label and statement verbatim before the control and keep the item label with the classification question in the prefix, for example `?[ {{Item A: factual description or opinion?}} Factual description | Opinion]`. Preserve an author-supplied exact control unless the requested change includes revising it.
+- In explicit controls, use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label, according to the required answer semantics. For input, put the question or response task in the prefix and use a short hint. For select-plus-input, put `...` at the start of the custom-answer option.
 - For a natural-language interaction, describe the intended learner decision or task, the context used to generate the question or options, and any required answer mode or option constraints. Keep these instructions outside `?[]`, comments, and deterministic blocks. Specify how the actual answer affects the next teaching action; do not invent the learner's answer or continue before it arrives.
 - When teaching uses an earlier answer, describe the relevant input and its instructional effect naturally under [Memory and Branch Encoding](#memory-and-branch-encoding).
 - An action-only control such as `?[Continue]` advances the preceding content and does not require an invented question or slide.
@@ -103,8 +104,9 @@ For example:
 
 ```markdown
 <!-- This activity checks whether an action plan specifies the action, owner, and deadline. -->
+- Show the plan to revise, word for word: "Organize customer feedback"
 
-?[ {{Rewrite "Organize customer feedback" as a plan with a specific action, an owner, and a deadline.}} ...State who will do what and by when]
+?[ {{Rewrite this as a plan with a specific action, an owner, and a deadline.}} ...State who will do what and by when]
 
 - Respond based on the learner's answer.
   - If all three details are present, explain why the plan is clear, then continue with the subsequent content.
@@ -196,7 +198,9 @@ When the goal changes to calculating a quote and stating its assumptions, a work
   - Explain which cost each step represents, and state that the model requires unchanged cost terms over the quantity range being discussed and no other charges.
 
 <!-- Independently quote another quantity and state the assumptions -->
-?[ {{Using the model with a fixed cost of 100 yuan and a per-unit variable cost of 5 yuan, produce a quote for an order of 30 units. Show your calculation and state the assumptions under which the quote holds.}} ...Write the calculation, total cost, and assumptions]
+- Ask the learner to use the same model, with a fixed cost of 100 yuan and a per-unit variable cost of 5 yuan, to produce a quote for an order of 30 units, show the calculation, and state the assumptions under which the quote holds.
+
+?[ {{What is your quote for 30 units, and when does it hold?}} ...Write the calculation, total cost, and assumptions]
 
 - Wait for the current actual answer. Use the following criteria only for feedback after receiving it; do not show them beforehand:
   - The complete result is 100 + 5 × 30 = 250 yuan; the assumptions include unchanged cost terms and no other charges.
@@ -219,8 +223,9 @@ For learners with supplied evidence that they already use this formula, keep the
   - The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; the given total cost for 20 units is 200 yuan.
   - The model assumes unchanged cost terms over the quantity range being discussed and no other charges.
 - Do not demonstrate the calculation steps first or disclose the result of the task below in advance.
+- Ask the learner to use this model to produce a quote for an order of 30 units, show the calculation, and state the assumptions under which the quote holds.
 
-?[ {{Using the model with a fixed cost of 100 yuan and a per-unit variable cost of 5 yuan, produce a quote for an order of 30 units. Show your calculation and state the assumptions under which the quote holds.}} ...Write the calculation, total cost, and assumptions]
+?[ {{What is your quote for 30 units, and when does it hold?}} ...Write the calculation, total cost, and assumptions]
 
 - Wait for the current actual answer, then give feedback using these criteria:
   - The complete result is 100 + 5 × 30 = 250 yuan, with unchanged cost terms and no other charges stated as assumptions.
@@ -244,7 +249,7 @@ This notice-revision example applies the [hinting and feedback guidance](teachin
   - The book report is 300 words, due Friday at 17:00, and submitted through the course platform.
 - If the learner asks to stop at any point, end the activity before requesting another draft. If the work is unfinished, name the gap shown by the latest submitted draft, or say what still needs to be demonstrated if there is no assessed draft.
 
-?[ {{Rewrite "Please submit a book report soon" as an actionable notice using the confirmed length, deadline, and submission destination.}} ...Write the revised notice]
+?[ {{Rewrite this notice with the confirmed length, deadline, and destination.}} ...Write the revised notice]
 
 - Wait for the actual draft, then check all four criteria: the book-report task, 300 words, Friday at 17:00, and the course-platform destination.
   - When every criterion is accurate and clear, identify what makes the notice actionable, summarize the checking criteria, and end the activity.
@@ -267,13 +272,19 @@ This is one implementation of retrieval practice for previously taught distincti
 - If the learner asks to stop at any point, end the exercise before requesting another answer. For unfinished practice, identify what still needs practice using the last completed round, or say that no round was completed. Keep correct answers, correctness judgments, explanations, and scores for any incomplete round withheld.
 - Ask the following three fixed items in order. Record each actual selection and wait for it before moving to the next item.
   - Until every item in the current round has an actual answer, withhold correct answers, correctness judgments, explanations, and scores.
-  - Keep each item's original label, complete question, option wording, option order, and scoring criterion unchanged in every retry.
+  - Keep each item's original label, statement, question, option wording, option order, and scoring criterion unchanged in every retry.
 
-?[ {{Item A: Is "20 people attended this activity" a factual description or an opinion?}} Factual description | Opinion]
+- Show Item A with its statement, word for word: "20 people attended this activity."
 
-?[ {{Item B: Is "This was the best activity" a factual description or an opinion?}} Factual description | Opinion]
+?[ {{Item A: factual description or opinion?}} Factual description | Opinion]
 
-?[ {{Item C: Is "This activity deserves 10 out of 10" a factual description or an opinion?}} Factual description | Opinion]
+- Show Item B with its statement, word for word: "This was the best activity."
+
+?[ {{Item B: factual description or opinion?}} Factual description | Opinion]
+
+- Show Item C with its statement, word for word: "This activity deserves 10 out of 10."
+
+?[ {{Item C: factual description or opinion?}} Factual description | Opinion]
 
 <!-- Score the actual round and retain only its incorrect original items -->
 - Only after receiving actual answers to every item in the current round, use these fixed scoring criteria:
@@ -283,7 +294,7 @@ This is one implementation of retrieval practice for previously taught distincti
 - Show a result table using the original item labels, the learner's actual selections, correct answers, and correctness.
 - Report the number correct out of the number of items included in this round, and briefly explain the incorrect judgments.
 - When the round has incorrect items, start a new round containing only those same original items, in their original relative order. Do not add items already answered correctly or renumber the remaining items.
-- For each retained item, recreate a real single-select interaction with the same complete question prefix and options, wait for its actual new selection, and record that selection before presenting the next retained item.
+- For each retained item, show the same item label and statement again, recreate a real single-select interaction with the same question prefix and options, wait for its actual new selection, and record that selection before presenting the next retained item.
 - Do not use an earlier answer to complete a pending interaction. Again withhold answers, correctness, explanations, and scores until every retained item has an actual answer in this new round.
 - Score that round using the same criteria, match the results by original item label, report its own correct count and denominator, and retain only the items still incorrect for the next round.
 - Continue this process until every original item has been answered correctly. Then summarize that factual claims need evidence and numerical statements can still be opinions, and end the exercise.
@@ -298,8 +309,9 @@ Use this fragment when the goal is a defensible judgment with clear reasons and 
 <!-- Form an open judgment, then clarify its reasoning and limits -->
 - Introduce the question: does fairness require giving every learner exactly the same learning support?
 - Explain that different standards may be defensible when their reasons and conditions are clear.
+- Ask the learner to give a judgment, explain what "fairness" and "the same support" mean in that judgment, and give a reason.
 
-?[ {{Does fairness require exactly the same learning support for every learner? Explain what "fairness" and "the same support" mean in your judgment, and give a reason.}} ...Write your judgment, meanings, and reason]
+?[ {{Does fairness require exactly the same support for every learner?}} ...Write your judgment, meanings, and reason]
 
 - Wait for the actual answer. Acknowledge what is already clear, then use the learner's own definitions, reasons, assumptions, and later corrections to decide whether another question is useful.
   - When a key meaning is unclear, ask one concrete clarification, such as whether "the same" refers to time, materials, or access to the task. Do not replace the learner's definition with your preferred standard.
