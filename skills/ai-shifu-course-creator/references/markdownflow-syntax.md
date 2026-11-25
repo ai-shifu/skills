@@ -41,7 +41,7 @@ The first separator determines selection mode: `|` represents one selected value
 
 ### Question Prefix
 
-An explicit control can carry its learner-facing question or response task, or a concise summary of it, in a `{{...}}` prefix immediately after `?[`, before the options or input hint.
+An explicit control can carry its learner-facing question or response task, or a concise summary of it, in a prefix immediately after `?[`, before the options or input hint.
 
 ```markdown
 - Explain that a report cites a survey for a percentage but leaves out how it was calculated.
