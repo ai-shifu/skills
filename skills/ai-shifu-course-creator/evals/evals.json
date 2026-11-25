@@ -2343,29 +2343,16 @@
     {
       "id": 174,
       "eval_name": "long-question-material-before-control-short-prefix",
-      "prompt": "只在本地生成一个中文授课提示词片段，不连接平台。先按原文展示下面的材料，然后让学员独立判断并作答，用文本输入控件收集，输入提示为“写出判断、三个核验和一句修正”。材料：某产品收到 5 名自愿参与者的反馈，其中 3 人明确提出需要批量导出功能，其余 2 人没有谈及该功能。原文真实存在，人数也已核对。AI 整理为“原文证明所有用户都需要批量导出功能”。作答要求：判断 AI 这句话是否可直接使用，分别说明原文是否存在、是否支持这句具体结论、结论的范围，并写出证据允许的一句修正。收到本次真实回答后，按这四项给简短反馈，不增加新问题。只输出 Markdown 正文。",
+      "prompt": "只在本地生成一个中文授课提示词片段，不连接平台。先向学员介绍下面的案例，然后让学员独立判断并作答，用文本输入控件收集，输入提示为“写出判断、三个核验和一句修正”。材料：某产品收到 5 名自愿参与者的反馈，其中 3 人明确提出需要批量导出功能，其余 2 人没有谈及该功能。原文真实存在，人数也已核对。AI 整理为“原文证明所有用户都需要批量导出功能”。作答要求：判断 AI 这句话是否可直接使用，分别说明原文是否存在、是否支持这句具体结论、结论的范围，并写出证据允许的一句修正。收到本次真实回答后，按这四项给简短反馈，不增加新问题。只输出 Markdown 正文。",
       "followup_turns": [],
       "expected_output": "Places the source material and full response requirements before the control and keeps the control prefix to the question alone, complete when short or as a concise summary.",
       "files": [],
       "expectations": [
-        "The supplied material appears verbatim before the control, outside the ?[] syntax.",
+        "The case appears before the control and presents the five voluntary responses, the three requests for bulk export, the two responses that did not mention it, the verified source and count, and the AI claim about all users.",
         "The four response requirements (whether the source exists, whether it supports the specific conclusion, the conclusion's scope, and one evidence-bounded correction) appear before the control so the learner can see them.",
         "The control is a standalone text input with the input hint 写出判断、三个核验和一句修正, and its {{}} prefix holds only a learner-facing question or task about this sentence, either complete or as a one-sentence summary such as 这句话能直接使用吗？. The prefix is at most 200 characters. It is not a topic label, programmatic key, answer, or placeholder, and it does not restate the case material or list all four requirements.",
         "The Prompt waits for the current actual answer, then gives brief feedback against the four requirements without revealing the judgment beforehand, inventing an answer, or adding another question.",
         "The fragment remains local, keeps executable instructions outside HTML comments and deterministic blocks, and makes no claim of learner-time runtime verification."
-      ]
-    },
-    {
-      "id": 175,
-      "eval_name": "ordinary-instructions-for-interaction-setup",
-      "prompt": "只在本地写一个中文授课提示词片段。用一项学员熟悉的工作任务举例，说明负责人还没定、需要在周五前完成。找不到合适的学员任务时，就用整理客户反馈做例子。把场景和条件交代清楚后，用文本输入控件请学员把它改写成一条可执行的安排。收到回答后，简短点评行动、负责人和截止时间是否清楚。",
-      "followup_turns": [],
-      "expected_output": "Uses ordinary teaching instructions above a short text-input control so the learner sees the context and constraints in natural language.",
-      "files": [],
-      "expectations": [
-        "The setup tells the Teaching Agent how to choose a relevant known task, when to use organizing customer feedback, and how to present the missing owner and Friday deadline. The Teaching Agent can phrase the setup naturally from those instructions, with no deterministic markers around the scenario or conditions.",
-        "The standalone text input asks for a short rewrite in its question prefix. The scenario and constraints are presented before the control instead of being embedded in its prefix.",
-        "Feedback waits for the learner's current answer and checks the action, owner, and deadline without supplying the answer beforehand. The fragment remains local."
       ]
     }
   ]

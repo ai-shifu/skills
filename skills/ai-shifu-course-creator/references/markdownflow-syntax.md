@@ -41,14 +41,25 @@ The first separator determines selection mode: `|` represents one selected value
 
 ### Question Prefix
 
-An explicit control can carry its learner-facing question or response task, or a concise summary of it, in a prefix immediately after `?[`, before the options or input hint:
+An explicit control can carry its learner-facing question or response task, or a concise summary of it, in a `{{...}}` prefix immediately after `?[`, before the options or input hint.
 
-- `?[ {{Which action will you take first?}} Verify the source | Check the calculation]`: single-select.
-- `?[ {{Which checks will you perform?}} Verify the source || Check the calculation]`: multi-select.
-- `?[ {{What is your learning goal?}} ...Describe your goal]`: text input.
-- `?[ {{Rewrite the plan with an action, an owner, and a deadline.}} ...Write the revised plan]`: text input for an imperative response task.
-- `?[ {{Which action will you practice?}} Verify the source | ...Another action]`: single-select plus text input.
-- `?[ {{Which actions will you practice?}} Verify the source || ...Other actions]`: multi-select plus text input.
+```markdown
+- Explain that a report cites a survey for a percentage but leaves out how it was calculated.
+
+?[ {{Which check would you make first?}} Read the survey | Ask how the percentage was calculated]
+```
+
+```markdown
+- Present a draft report with an unsupported percentage and an unverified quotation.
+
+?[ {{Which checks would you make before sharing the report?}} Verify the quotation || Check the data behind the percentage || ...Other checks]
+```
+
+```markdown
+- Show the team’s current plan to review customer feedback. It omits an owner and deadline.
+
+?[ {{How would you rewrite the plan?}} ...Write the revised plan]
+```
 
 The question or response task inside the prefix has an upper limit of 200 characters, counting punctuation and spaces.
 
@@ -65,9 +76,10 @@ This is ordinary Prompt content interpreted by the Teaching Agent, not additiona
 For example:
 
 ```markdown
-Using the communication situation the learner described earlier in the course, initiate a single-select interaction asking the learner which communication action they most want to practice next. Dynamically generate three specific, distinct action options for that situation, and allow the learner to enter another action.
+- Recap the communication situation the learner described earlier, including any goal they mentioned.
+- Initiate a single-select interaction asking which communication action the learner most wants to practice next. Generate three specific, distinct options for the situation, and allow the learner to enter another action.
 
-Wait for the learner's actual answer, then provide one actionable practice suggestion for the selected or custom action.
+- Wait for the learner's actual answer, then provide one actionable practice suggestion for the selected or custom action.
 ```
 
 Explicit controls and natural-language interactions may coexist in one lesson. An author-fixed question, option list, order, or answer mode remains fixed unless the author permits adaptation. Dynamic generation does not create parser-level branches or guarantee a particular generated wording.
