@@ -2343,12 +2343,12 @@
     {
       "id": 174,
       "eval_name": "long-question-material-before-control-short-prefix",
-      "prompt": "只在本地生成一个中文授课提示词片段，不连接平台。先按原文展示下面的材料，然后让学员独立判断并作答，用文本输入控件收集，输入提示为“写出判断、三个核验和一句修正”。材料：某产品收到 5 名自愿参与者的反馈，其中 3 人明确提出需要批量导出功能，其余 2 人没有谈及该功能。原文真实存在，人数也已核对。AI 整理为“原文证明所有用户都需要批量导出功能”。作答要求：判断 AI 这句话是否可直接使用，分别说明原文是否存在、是否支持这句具体结论、结论的范围，并写出证据允许的一句修正。收到本次真实回答后，按这四项给简短反馈，不增加新问题。只输出 Markdown 正文。",
+      "prompt": "只在本地生成一个中文授课提示词片段，不连接平台。先介绍下面的材料，然后让学员独立判断并作答，用文本输入控件收集，输入提示为“写出判断、三个核验和一句修正”。材料：某产品收到 5 名自愿参与者的反馈，其中 3 人明确提出需要批量导出功能，其余 2 人没有谈及该功能。原文真实存在，人数也已核对。AI 整理为“原文证明所有用户都需要批量导出功能”。作答要求：判断 AI 这句话是否可直接使用，分别说明原文是否存在、是否支持这句具体结论、结论的范围，并写出证据允许的一句修正。收到本次真实回答后，按这四项给简短反馈，不增加新问题。只输出 Markdown 正文。",
       "followup_turns": [],
       "expected_output": "Places the source material and full response requirements before the control and keeps the control prefix to the question alone, complete when short or as a concise summary.",
       "files": [],
       "expectations": [
-        "The supplied material appears verbatim before the control, in a deterministic display block or an instruction to show it as written, and does not appear inside the ?[] control.",
+        "The supplied material appears before the control and does not appear inside the ?[] control.",
         "The four response requirements (whether the source exists, whether it supports the specific conclusion, the conclusion's scope, and one evidence-bounded correction) appear before the control so the learner can see them.",
         "The control is a standalone text input with the input hint 写出判断、三个核验和一句修正, and its {{}} prefix holds only a learner-facing question or task about this sentence, either complete or as a one-sentence summary such as 这句话能直接使用吗？. The prefix is at most 200 characters. It is not a topic label, programmatic key, answer, or placeholder, and it does not restate the case material or list all four requirements.",
         "The Prompt waits for the current actual answer, then gives brief feedback against the four requirements without revealing the judgment beforehand, inventing an answer, or adding another question.",

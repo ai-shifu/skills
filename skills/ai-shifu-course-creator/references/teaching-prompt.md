@@ -69,8 +69,7 @@ For every newly written or explicitly rewritten Teaching Prompt, use source-only
 - Explain fixed and variable costs to the learner.
   - Use rent as the fixed-cost example and raw materials as the variable-cost example.
   - Explain that the distinction concerns how total cost changes with activity over the stated period.
-
-===In this example, assume rent stays fixed over the period being discussed.===
+  - State that rent stays fixed over the period being discussed.
 
 - Ask the learner to consider which assumptions make those examples valid.
 ```
@@ -92,8 +91,8 @@ For a format-only rewrite, verify that removing only the added comments, list ma
 - Choose an [explicit control or natural-language interaction](markdownflow-syntax.md#interactions) according to the intended behavior. Preserve author-fixed questions and choices; when dynamic generation is requested, keep that generation instruction executable at learner time rather than replacing it with an author-time option list.
 - Use target capabilities already established by the user or available course context. Natural-language interactions need the [response-surface and waiting capabilities](markdownflow-syntax.md#natural-language-interactions). An explicit-control fallback is suitable only when it preserves the author's requirements. If dynamic choices remain required and support is unavailable or unknown, retain that requirement and identify the runtime dependency. Local authoring can still produce the Prompt with that dependency stated; it does not require platform access.
 - Keep explicit `?[]` controls standalone, with option wording and order in the actual control; avoid competing simulated controls.
-- Put the material a question depends on before its control: case text, statements to judge, data, worked results, and detailed response requirements belong in teaching instructions or a deterministic display block above the control, not inside the [question prefix](markdownflow-syntax.md#question-prefix). The prefix then stays short and readable as the label of what the learner is answering.
-- When generating a new explicit control for a question or response task, fill the prefix with only that learner-facing question or response task. A short question or task goes in complete, with its wording and punctuation. When the full question or task is long, carries several requirements, or would exceed the [200-character prefix limit](markdownflow-syntax.md#question-prefix), use a concise one-sentence summary of the question in the prefix and give the full wording or requirements before the control. Either way, the prefix reads as a question or task the learner recognizes, not a programmatic key, topic label, answer, or unfilled placeholder, so the response stays associated with what the learner was asked. A complete prefix needs no repetition before the control unless the author requires separate text; a summarized prefix relies on the full version above it. For a fixed item that supplies a statement to classify, show the item label and statement verbatim before the control and keep the item label with the classification question in the prefix, for example `?[ {{Item A: factual description or opinion?}} Factual description | Opinion]`. Preserve an author-supplied exact control unless the requested change includes revising it.
+- Put the material a question depends on before its control: case text, statements to judge, data, worked results, and detailed response requirements belong above the control, not inside the [question prefix](markdownflow-syntax.md#question-prefix). The prefix then stays short and readable as the label of what the learner is answering.
+- When generating a new explicit control for a question or response task, fill the prefix with only that learner-facing question or response task. A short question or task goes in complete, with its wording and punctuation. When the full question or task is long, carries several requirements, or would exceed the [200-character prefix limit](markdownflow-syntax.md#question-prefix), use a concise one-sentence summary of the question in the prefix and give the full wording or requirements before the control. Either way, the prefix reads as a question or task the learner recognizes, not a programmatic key, topic label, answer, or unfilled placeholder, so the response stays associated with what the learner was asked. A complete prefix needs no repetition before the control unless the author requires separate text; a summarized prefix relies on the full version above it. For a fixed item that supplies a statement to classify, show the item label and statement before the control and keep the item label with the classification question in the prefix, for example `?[ {{Item A: factual description or opinion?}} Factual description | Opinion]`. Preserve an author-supplied exact control unless the requested change includes revising it.
 - In explicit controls, use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label, according to the required answer semantics. For input, put the question or response task in the prefix and use a short hint. For select-plus-input, put `...` at the start of the custom-answer option.
 - For a natural-language interaction, describe the intended learner decision or task, the context used to generate the question or options, and any required answer mode or option constraints. Keep these instructions outside `?[]`, comments, and deterministic blocks. Specify how the actual answer affects the next teaching action; do not invent the learner's answer or continue before it arrives.
 - When teaching uses an earlier answer, describe the relevant input and its instructional effect naturally under [Memory and Branch Encoding](#memory-and-branch-encoding).
@@ -104,7 +103,7 @@ For example:
 
 ```markdown
 <!-- This activity checks whether an action plan specifies the action, owner, and deadline. -->
-- Show the plan to revise, word for word: "Organize customer feedback"
+- Show the plan to revise: "Organize customer feedback"
 
 ?[ {{Rewrite this as a plan with a specific action, an owner, and a deadline.}} ...State who will do what and by when]
 
@@ -274,15 +273,15 @@ This is one implementation of retrieval practice for previously taught distincti
   - Until every item in the current round has an actual answer, withhold correct answers, correctness judgments, explanations, and scores.
   - Keep each item's original label, statement, question, option wording, option order, and scoring criterion unchanged in every retry.
 
-- Show Item A with its statement, word for word: "20 people attended this activity."
+- Show Item A with its statement: "20 people attended this activity."
 
 ?[ {{Item A: factual description or opinion?}} Factual description | Opinion]
 
-- Show Item B with its statement, word for word: "This was the best activity."
+- Show Item B with its statement: "This was the best activity."
 
 ?[ {{Item B: factual description or opinion?}} Factual description | Opinion]
 
-- Show Item C with its statement, word for word: "This activity deserves 10 out of 10."
+- Show Item C with its statement: "This activity deserves 10 out of 10."
 
 ?[ {{Item C: factual description or opinion?}} Factual description | Opinion]
 
