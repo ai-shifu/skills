@@ -71,9 +71,7 @@ For every newly written or explicitly rewritten Teaching Prompt, use source-only
   - Explain that the distinction concerns how total cost changes with activity over the stated period.
   - State that rent stays fixed over the period being discussed.
 
-?[ {{Which cost stays the same as production changes?}} Rent | Raw materials]
-
-- Use the learner’s answer to explain how the two costs respond to changes in production.
+- Ask the learner to consider which assumptions make those examples valid.
 ```
 
 ## Source Encoding
@@ -93,7 +91,8 @@ For a format-only rewrite, verify that removing only the added comments, list ma
 - Choose an [explicit control or natural-language interaction](markdownflow-syntax.md#interactions) according to the intended behavior. Preserve author-fixed questions and choices; when dynamic generation is requested, keep that generation instruction executable at learner time rather than replacing it with an author-time option list.
 - Use target capabilities already established by the user or available course context. Natural-language interactions need the [response-surface and waiting capabilities](markdownflow-syntax.md#natural-language-interactions). An explicit-control fallback is suitable only when it preserves the author's requirements. If dynamic choices remain required and support is unavailable or unknown, retain that requirement and identify the runtime dependency. Local authoring can still produce the Prompt with that dependency stated; it does not require platform access.
 - Keep explicit `?[]` controls standalone, with option wording and order in the actual control; avoid competing simulated controls.
-- Use the learner-facing question or task in the [question prefix](markdownflow-syntax.md#question-prefix). For a longer question, put its details before the control and use a short question in the prefix.
+- Put the material a question depends on before its control: case text, statements to judge, data, worked results, and detailed response requirements belong above the control, not inside the [question prefix](markdownflow-syntax.md#question-prefix). The prefix then stays short and readable as the label of what the learner is answering.
+- When generating a new explicit control for a question or response task, fill the prefix with only that learner-facing question or response task. A short question or task goes in complete, with its wording and punctuation. When the full question or task is long, carries several requirements, or would exceed the [200-character prefix limit](markdownflow-syntax.md#question-prefix), use a concise one-sentence summary of the question in the prefix and give the full wording or requirements before the control. Either way, the prefix reads as a question or task the learner recognizes, not a programmatic key, topic label, answer, or unfilled placeholder, so the response stays associated with what the learner was asked. A complete prefix needs no repetition before the control unless the author requires separate text; a summarized prefix relies on the full version above it. For a fixed item that supplies a statement to classify, show the item label and statement before the control and keep the item label with the classification question in the prefix, for example `?[ {{Item A: factual description or opinion?}} Factual description | Opinion]`. Preserve an author-supplied exact control unless the requested change includes revising it.
 - In explicit controls, use `|` for single-select, `||` for multi-select, and `...` immediately before the input hint or custom-answer label, according to the required answer semantics. For input, put the question or response task in the prefix and use a short hint. For select-plus-input, put `...` at the start of the custom-answer option.
 - For a natural-language interaction, describe the intended learner decision or task, the context used to generate the question or options, and any required answer mode or option constraints. Keep these instructions outside `?[]`, comments, and deterministic blocks. Specify how the actual answer affects the next teaching action; do not invent the learner's answer or continue before it arrives.
 - When teaching uses an earlier answer, describe the relevant input and its instructional effect naturally under [Memory and Branch Encoding](#memory-and-branch-encoding).
@@ -104,7 +103,7 @@ For example:
 
 ```markdown
 <!-- This activity checks whether an action plan specifies the action, owner, and deadline. -->
-- Describe a team that has customer feedback scattered across email and chat. Their current plan says only “Organize customer feedback.”
+- Show the plan to revise: "Organize customer feedback"
 
 ?[ {{Rewrite this as a plan with a specific action, an owner, and a deadline.}} ...State who will do what and by when]
 
@@ -175,7 +174,8 @@ For beginners whose goal is to explain how quantity affects total cost, use a co
 - Compare 20 units with 30 units. Total cost increases from 200 yuan to 250 yuan because of the variable cost of 10 additional units.
   - Explain that the fixed cost is still counted only once and show how each term in the formula corresponds to the order.
 
-?[ {{Why does the total cost rise by only 50 yuan?}} ...Explain which costs change and which stay the same]
+<!-- Check whether the learner can explain why the cost changes -->
+?[ {{With the assumptions above unchanged, why does adding 10 units increase total cost by only 50 yuan, without adding the fixed cost again?}} ...Explain which costs change and which remain unchanged]
 
 - Wait for the current actual answer, then give feedback:
   - If the learner explains that the fixed cost stays unchanged and each additional unit adds 5 yuan, identify the reasoning they got right.
@@ -197,7 +197,7 @@ When the goal changes to calculating a quote and stating its assumptions, a work
   - Explain which cost each step represents, and state that the model requires unchanged cost terms over the quantity range being discussed and no other charges.
 
 <!-- Independently quote another quantity and state the assumptions -->
-- Present a new order for 30 units under the same cost model. Ask the learner to show their calculation and state the assumptions behind their quote.
+- Ask the learner to use the same model, with a fixed cost of 100 yuan and a per-unit variable cost of 5 yuan, to produce a quote for an order of 30 units, show the calculation, and state the assumptions under which the quote holds.
 
 ?[ {{What is your quote for 30 units, and when does it hold?}} ...Write the calculation, total cost, and assumptions]
 
@@ -222,7 +222,7 @@ For learners with supplied evidence that they already use this formula, keep the
   - The fixed cost is 100 yuan and the per-unit variable cost is 5 yuan; the given total cost for 20 units is 200 yuan.
   - The model assumes unchanged cost terms over the quantity range being discussed and no other charges.
 - Do not demonstrate the calculation steps first or disclose the result of the task below in advance.
-- Present a new order for 30 units under this model. Ask the learner to show their calculation and state the assumptions behind their quote.
+- Ask the learner to use this model to produce a quote for an order of 30 units, show the calculation, and state the assumptions under which the quote holds.
 
 ?[ {{What is your quote for 30 units, and when does it hold?}} ...Write the calculation, total cost, and assumptions]
 
@@ -244,7 +244,7 @@ This notice-revision example applies the [hinting and feedback guidance](teachin
 
 ```markdown
 <!-- Rewrite a vague notice and check whether a reader can act on it -->
-- Show the original notice, “Please submit a book report soon.”
+- Explain that the task is to rewrite "Please submit a book report soon" using the confirmed requirements.
   - The book report is 300 words, due Friday at 17:00, and submitted through the course platform.
 - If the learner asks to stop at any point, end the activity before requesting another draft. If the work is unfinished, name the gap shown by the latest submitted draft, or say what still needs to be demonstrated if there is no assessed draft.
 
@@ -273,17 +273,17 @@ This is one implementation of retrieval practice for previously taught distincti
   - Until every item in the current round has an actual answer, withhold correct answers, correctness judgments, explanations, and scores.
   - Keep each item's original label, statement, question, option wording, option order, and scoring criterion unchanged in every retry.
 
-- Present item A with the statement “20 people attended this activity.”
+- Show Item A with its statement: "20 people attended this activity."
 
-?[ {{Is item A a factual description or an opinion?}} Factual description | Opinion]
+?[ {{Item A: factual description or opinion?}} Factual description | Opinion]
 
-- Present item B with the statement “This was the best activity.”
+- Show Item B with its statement: "This was the best activity."
 
-?[ {{Is item B a factual description or an opinion?}} Factual description | Opinion]
+?[ {{Item B: factual description or opinion?}} Factual description | Opinion]
 
-- Present item C with the statement “This activity deserves 10 out of 10.”
+- Show Item C with its statement: "This activity deserves 10 out of 10."
 
-?[ {{Is item C a factual description or an opinion?}} Factual description | Opinion]
+?[ {{Item C: factual description or opinion?}} Factual description | Opinion]
 
 <!-- Score the actual round and retain only its incorrect original items -->
 - Only after receiving actual answers to every item in the current round, use these fixed scoring criteria:
@@ -306,7 +306,7 @@ Use this fragment when the goal is a defensible judgment with clear reasons and 
 
 ```markdown
 <!-- Form an open judgment, then clarify its reasoning and limits -->
-- Describe a class where everyone receives the same worksheet, but some learners need extra time or a different format to use it.
+- Introduce the question: does fairness require giving every learner exactly the same learning support?
 - Explain that different standards may be defensible when their reasons and conditions are clear.
 - Ask the learner to give a judgment, explain what "fairness" and "the same support" mean in that judgment, and give a reason.
 
