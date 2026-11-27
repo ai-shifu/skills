@@ -129,7 +129,7 @@ logout [--profile <name>]
 ```
 
 - `verify` exits `0` when the token is accepted, `1` when it is expired or invalid, and `2` when network, service, or response errors make its state unknown.
-- `login` starts a browser authorization request, saves the pending request, prints the verification link and a pairing code, and exits immediately. It does not open a browser. The Agent opens the link in its built-in browser; terminal users open the printed link manually. The CLI prefers `verification_uri_complete`, which carries the pairing code. If unavailable, it prints `verification_uri` instead; users enter the separately printed pairing code if the page requests it.
+- `login` starts a browser authorization request, saves the pending request, prints the verification link and a pairing code, and exits immediately. It does not open a browser; the printed link is the service's official authorization entry. The CLI prefers `verification_uri_complete`, which carries the pairing code. If unavailable, it prints `verification_uri` instead; the separately printed pairing code is requested by the official page when needed.
 - `login --wait` polls the pending request. It exits `0` once the request is approved and the token is stored, `1` when the request was denied, expired, or never started, and `3` while the request is still valid but nobody has approved it yet. Exit `3` means the same command can simply be run again.
 - `--timeout` bounds a single `--wait` invocation in seconds; it does not shorten the request's own lifetime.
 - `login` and `login --wait` use the same named profile and issuing service. Different profiles may authorize concurrently without overwriting one another's pending requests or tokens. Continuation commands carry the profile name.
@@ -138,7 +138,7 @@ logout [--profile <name>]
 - Storage, URL validation, temporary configuration, and legacy migration follow [Profiles](#profiles).
 - A stored token is valid for thirty days; successful authenticated API calls refresh that expiry.
 
-Agent behavior during a login session is defined in `../authentication.md`; this section defines only CLI inputs and effects.
+The [official authorization declaration](../authentication.md#official-authorization-declaration) and Agent behavior during a login session are defined in `../authentication.md`; this section defines only CLI inputs and effects.
 
 ## Query Commands
 
