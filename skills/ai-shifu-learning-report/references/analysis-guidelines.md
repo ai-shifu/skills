@@ -97,6 +97,6 @@ Write `overall_health` as one plain sentence a teacher could repeat to a colleag
 2. the highest-priority lesson or learner need, with evidence and confidence;
 3. the most useful next action or the most important data gap.
 
-Write the way a thoughtful colleague would talk about the course: name lessons by their titles, say “学员” rather than “用户”, and prefer a plain teaching term to analytics jargon. Be warm and direct, and do not soften a real problem into vagueness. A teaching manager should still be able to read off the priority.
+Write the way a thoughtful colleague would talk about the course: name lessons by their titles, call the people in the course learners rather than users, and prefer a plain teaching term to analytics jargon. Be warm and direct, and do not soften a real problem into vagueness. A teaching manager should still be able to read off the priority.
 
 The same voice applies to lesson findings and recommendations: say what was seen, what it might mean, and what is still unknown.

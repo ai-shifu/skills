@@ -11,11 +11,11 @@ Apply a teacher's requests about what the report measures, how a number is count
 
 ## How to Work a Request
 
-1. **Restate the request as a concrete change.** “我想知道哪节课问题最多” becomes “add a per-lesson follow-up count, shown as a bar chart.” When a request has two reasonable readings that would give different numbers, ask one short question; otherwise choose the natural reading and say which one you chose.
-2. **Classify it** as content (which statistics), definition (how a number is counted, 口径), or presentation (order, wording, style). One sentence from a teacher often contains more than one kind.
+1. **Restate the request as a concrete change.** “Which lesson gets the most questions?” becomes “add a per-lesson follow-up count, shown as a bar chart.” When a request has two reasonable readings that would give different numbers, ask one short question; otherwise choose the natural reading and say which one you chose.
+2. **Classify it** as content (which statistics), definition (how a number is counted), or presentation (order, wording, style). One sentence from a teacher often contains more than one kind.
 3. **Change the JSON, not the HTML.** Every request below is expressed in `course-learning-report.json`. Re-run validation and the renderer after each round of changes. Never patch the rendered HTML: the next render would lose the edit and the two artifacts would disagree.
 4. **Do the smallest change that satisfies it.** Leave everything the teacher did not mention as it was. A request to recolor the report must not reword conclusions.
-5. **Record it.** Add one plain sentence per change to `data_quality.teacher_adjustments`. The report shows these notes, so a colleague reading it later knows it differs from the default, and the next report can repeat the same choices.
+5. **Record it.** Add one plain sentence per change to `data_quality.teacher_adjustments`, naming any statistic that was removed. The report shows these notes, so a colleague reading it later knows it differs from the default, and the next report can repeat the same choices.
 6. **Report back briefly:** what changed, anything that could not be done and why, and — when a definition changed — the old and new values side by side.
 
 Apply a batch of requests in one pass and render once.
@@ -44,27 +44,27 @@ A custom section holds an analysis the default report does not have. It has an `
 | Block `type` | Fields | Use for |
 | --- | --- | --- |
 | `metrics` | `metrics` | A few headline numbers shown as tiles. |
-| `bars` | `metrics`, optional `title` | Comparing several values that share one unit, such as a count per lesson. |
+| `bars` | `metrics`, optional `title` | Comparing several non-negative values that share one unit, such as a count per lesson. Show signed changes in a `table`. |
 | `table` | `columns`, `rows`, `source_note`, optional `title` | Cross-tabulated aggregates that do not fit one metric per value. State the counting rule and time scope in `source_note`. |
 | `text` | `body` | An interpretation paragraph; apply the evidence ladder in `analysis-guidelines.md`. |
 | `callout` | `body` | A caveat the reader must not miss, such as a small sample. |
 
 Metrics inside custom sections are full metrics: they can be cited as recommendation evidence. Table cells are aggregates only — never one row per learner. Place the section by listing `custom:<id>` in `presentation.sections`; without that list it appears just before the recommendations.
 
-## Definition: How a Number Is Counted (口径)
+## Definition: How a Number Is Counted
 
 A teacher may know something about their course that makes a different counting rule more meaningful: only learners who started after a revision, completion that ignores an optional final lesson, “active” meaning the last 14 days instead of 7.
 
 1. **Write the new rule precisely** in the metric's `definition`: what is counted, the numerator and denominator for a rate, the time scope, and any exclusion. Name excluded groups in `source_notes`.
 2. **Recompute from data**, collecting again if needed. Never rescale the old value to approximate the new rule.
-3. **Mark it.** Set `"origin": "teacher"` on its `metric_definitions` entry. Choose a `label` that tells the truth about the rule, such as `课程完成率（不含选修课）`.
-4. **Keep the standard value comparable** when the standard metric is one of the defaults. Either show both metrics, or keep one and put the other in `comparison` with a label such as `标准口径`. This protects the teacher too: next term's report can be compared with this one.
+3. **Mark it.** Set `"origin": "teacher"` on its `metric_definitions` entry. Choose a `label`, in the report language, that tells the truth about the rule — for example the completion rate “excluding the optional lesson”.
+4. **Keep the standard value comparable** when the standard metric is one of the defaults. Either show both metrics, or keep one and put the other in `comparison` with a label meaning “standard definition”. This protects the teacher too: next term's report can be compared with this one.
 5. **Give a redefined metric a new key.** For completion in particular, the standard cohort calculation keeps the reserved `course_completion_proxy` key; a teacher-defined variant uses a different key, for example `completion_core_lessons`.
 6. **Update whatever cited the old number.** Conclusions, lesson findings, and recommendations that quote the changed value must quote the new one or be rewritten.
 
 Some requests cannot be honoured as stated, because the result would misdescribe the data. Explain the problem and offer the honest version:
 
-- Dropping learners from a denominator *because* they lower the rate. Offer a clearly labelled subgroup instead, such as “学员中已学完第 1 课的人”, with the subgroup size shown.
+- Dropping learners from a denominator *because* they lower the rate. Offer a clearly labelled subgroup instead, such as “learners who finished lesson 1”, with the subgroup size shown.
 - Showing a rate without its numerator and denominator, or a sample-based finding without its sample size.
 - Calling a recorded in-progress state “stuck”, or treating reach on the final lesson as completion without labelling it that way.
 - Including data from hidden, unpublished, or draft lessons, or any identifying learner detail. The boundaries in `SKILL.md` and the privacy gates in `data-collection.md` are not adjustable.
@@ -88,7 +88,7 @@ All presentation choices live in the optional top-level `presentation` object. U
 
 `methods` must stay in `sections`. `operations` appears only when the report contains an operations appendix.
 
-Map plain requests to these options: “正式一点 / 打印给领导” → `swiss`; “暖一点 / 纸质感” → `paper`; “柔和一点 / 清新” → `forest`; “深色” → `night`; “紧凑一点 / 一页多放点” → `compact`; “把建议放最前面” → move `recommendations` up in `sections`; “不要学员画像” → drop `audience` from `sections`.
+Map plain requests to these options: more formal, or printed for leadership → `swiss`; warmer, paper-like → `paper`; softer, fresher → `forest`; dark → `night`; tighter, more per page → `compact`; recommendations first → move `recommendations` up in `sections`; no audience profile → drop `audience` from `sections`.
 
 ### 2. Custom CSS
 
@@ -114,6 +114,7 @@ When a new report is requested for a course whose output directory already conta
 - reuse its `presentation` object and `meta.brand`;
 - rebuild each `origin: "teacher"` metric and each custom section with fresh data under the same definitions;
 - keep `data_quality.teacher_adjustments`, removing notes for choices that no longer apply;
+- reapply every content choice those notes record, including statistics the teacher asked to remove: a fresh report starts from the default metric set, so a removed statistic returns unless it is removed again;
 - mention in the handoff that earlier preferences were kept, so the teacher can drop any of them.
 
 If a carried-over definition can no longer be computed, keep the metric with `value: null` and say why, rather than dropping it without notice.

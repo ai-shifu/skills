@@ -75,7 +75,7 @@ def minimal_valid_report() -> dict:
         )
 
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "meta": {
             "course_title": "新经理的高质量一对一",
             "generated_at": "2026-08-04T10:00:00+08:00",
@@ -486,6 +486,86 @@ class LearningReportRendererTests(unittest.TestCase):
         self.assertIn("Valid report data", result.stdout)
         self.assertEqual("", html)
 
+    def test_legacy_version_still_validates_but_cannot_carry_new_fields(self):
+        report = minimal_valid_report()
+        report["schema_version"] = "1.0"
+        self.assert_renderer_succeeds(report, validate_only=True)
+
+        additions = (
+            lambda data: data.update({"presentation": {"theme": "forest"}}),
+            lambda data: data["data_quality"].update({"teacher_adjustments": ["隐藏学员画像。"]}),
+            lambda data: data["metric_definitions"]["learners_started"].update(
+                {"origin": "teacher"}
+            ),
+            lambda data: data["overview"]["kpis"][0].update(
+                {"comparison": {"label": "上一期", "value": 100}}
+            ),
+        )
+        for index, add in enumerate(additions):
+            with self.subTest(index=index):
+                report = minimal_valid_report()
+                report["schema_version"] = "1.0"
+                add(report)
+                result, _ = self.invoke_renderer(report, validate_only=True)
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn('require schema_version "1.1"', result.stderr)
+
+    def test_any_rate_with_counts_must_match_its_numerator_and_denominator(self):
+        report = minimal_valid_report()
+        rate = report_metric(
+            key="completion_reached_final",
+            label="课程完成率（到达最后一课）",
+            value=90,
+            unit="%",
+            data_quality="derived",
+        )
+        rate.update({"numerator": 100, "denominator": 120})
+        report["metric_definitions"]["completion_reached_final"] = {
+            "label": rate["label"],
+            "definition": rate["definition"],
+            "unit": rate["unit"],
+            "source_notes": rate["source_notes"],
+            "origin": "teacher",
+        }
+        report["overview"]["kpis"].append(rate)
+
+        result, _ = self.invoke_renderer(report, validate_only=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("numerator/denominator", result.stderr)
+
+        rate["value"] = 83.3
+        self.assert_renderer_succeeds(report, validate_only=True)
+
+    def test_hidden_summary_keeps_its_limitations_in_the_methods_section(self):
+        report = minimal_valid_report()
+        report["overview"]["executive_summary"]["critical_limitations"] = ["仅七名学员，结论仅供参考。"]
+        report["presentation"] = {"sections": ["kpis", "methods"]}
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertNotIn('data-section="summary"', html)
+        self.assertIn("仅七名学员，结论仅供参考。", html)
+
+    def test_learning_path_shows_quality_per_stage_when_stages_differ(self):
+        report = load_json(EXAMPLE_REPORT_PATH)
+        stage = report["overview"]["learning_path"][2]["metric"]
+        stage.update({"data_quality": "approximate", "is_approximate": True})
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertIn("单位：人 · 累计至 2026-07-31</figcaption>", html)
+        self.assertRegex(html, r'<div class="path-note">[^<]*近似[^<]*</div>')
+        self.assertRegex(html, r'<div class="path-note">[^<]*已观测[^<]*</div>')
+
+    def test_bar_charts_reject_negative_values_and_draw_nothing_for_missing_ones(self):
+        report = self.report_with_custom_section()
+        _, html = self.assert_renderer_succeeds(report)
+        self.assertEqual(1, html.count('<div class="bar is-empty"'))
+
+        report["custom_sections"][0]["blocks"][0]["metrics"][0]["value"] = -3
+        result, _ = self.invoke_renderer(report, validate_only=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("non-negative", result.stderr)
+
     def test_validation_rejects_missing_required_section(self):
         report = minimal_valid_report()
         del report["audience"]
@@ -723,6 +803,8 @@ class LearningReportRendererTests(unittest.TestCase):
             "@import 'https://example.test/a.css';",
             "body { background: url(https://example.test/a.png); }",
             "body { background: u\\72l(x); }",
+            "body { background: image-set('a.png' 1x); }",
+            "body { background: image-set('https://example.test/a.png' 1x); }",
         ):
             with self.subTest(unsafe=unsafe):
                 report = minimal_valid_report()
@@ -747,6 +829,16 @@ class LearningReportRendererTests(unittest.TestCase):
             (
                 template.replace(
                     "</head>", "<script src=https://example.test/a.js></script></head>"
+                ),
+                "self-contained",
+            ),
+            (
+                template.replace("</footer>", "<img src=logo.png></footer>"),
+                "self-contained",
+            ),
+            (
+                template.replace(
+                    "</style>", ".cover { background: url(cover.png); }</style>"
                 ),
                 "self-contained",
             ),

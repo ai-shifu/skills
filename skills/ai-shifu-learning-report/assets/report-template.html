@@ -690,6 +690,10 @@
       .metric-row, tr, .verdict { break-inside: avoid; }
       .lesson-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .table-wrap { overflow: visible; }
+      table { font-size: .8rem; }
+      th, td { padding: .5rem .6rem; }
+      thead th, .lesson-table td, td.num, th.num { white-space: normal; }
+      tbody th { min-width: 0; }
       details > summary { list-style: none; }
       details::details-content { content-visibility: visible; display: block; }
       details:not([open]) > .details-body { display: block; }

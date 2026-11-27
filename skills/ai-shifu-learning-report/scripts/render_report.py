@@ -49,12 +49,14 @@ BUILTIN_SECTIONS = (
     "methods",
     "operations",
 )
-REMOTE_ASSET = re.compile(
-    r"""(?:src|href|srcset|poster|action|data)\s*=\s*["']?\s*(?:https?:)?//|@import|"""
-    r"""url\(\s*["']?\s*(?:https?:)?//""",
+ASSET_ATTRIBUTE = re.compile(
+    r"""\b(?:src|href|srcset|poster)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""",
     re.IGNORECASE,
 )
-UNSAFE_CSS = re.compile(r"<|\\|@import|url\s*\(|expression\s*\(|javascript:", re.IGNORECASE)
+CSS_URL = re.compile(r"""url\(\s*["']?\s*([^"')\s]*)""", re.IGNORECASE)
+UNSAFE_CSS = re.compile(
+    r"<|\\|@import|url\s*\(|image-set\s*\(|expression\s*\(|javascript:|://", re.IGNORECASE
+)
 TEMPLATE_PLACEHOLDER = re.compile(r"\{\{[A-Z0-9_]+\}\}")
 EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?![\w.-])")
 PHONE = re.compile(r"(?<!\d)(?:\+?86[\s-]*)?1[3-9](?:[\s-]*\d){9}(?!\d)")
@@ -507,8 +509,8 @@ def validate_presentation(report: Mapping[str, Any]) -> None:
             raise ReportError(f"$.presentation.section_titles: unknown section {item!r}")
     if UNSAFE_CSS.search(presentation.get("custom_css", "")):
         raise ReportError(
-            "$.presentation.custom_css: markup, escapes, @import, url() and script "
-            "expressions are not allowed"
+            "$.presentation.custom_css: markup, escapes, @import, url(), image-set(), "
+            "links and script expressions are not allowed"
         )
 
     required_fields = {
@@ -534,6 +536,11 @@ def validate_presentation(report: Mapping[str, Any]) -> None:
                         not isinstance(value, (int, float)) or isinstance(value, bool)
                     ):
                         raise ReportError(f"{path}: bar values must be numeric or null")
+                    if value is not None and value < 0:
+                        raise ReportError(
+                            f"{path}: bar charts need non-negative values; "
+                            "show signed changes in a table"
+                        )
             if kind == "table":
                 width = len(block["columns"])
                 if any(len(row) != width for row in block["rows"]):
@@ -542,6 +549,18 @@ def validate_presentation(report: Mapping[str, Any]) -> None:
 
 def validate_semantics(report: Mapping[str, Any]) -> None:
     definitions = report["metric_definitions"]
+    if report["schema_version"] == "1.0":
+        newer = [name for name in ("presentation", "custom_sections") if name in report]
+        if "teacher_adjustments" in report["data_quality"]:
+            newer.append("data_quality.teacher_adjustments")
+        if any("origin" in definition for definition in definitions.values()):
+            newer.append("metric_definitions origin")
+        if any("comparison" in metric for _, metric in iter_metrics(report)):
+            newer.append("metric comparison")
+        if newer:
+            raise ReportError(
+                f'$.schema_version: {", ".join(newer)} require schema_version "1.1"'
+            )
     for key in definitions:
         if FORBIDDEN_KEY.search(key):
             raise ReportError(f"$.metric_definitions: forbidden identifier-like key {key!r}")
@@ -586,6 +605,17 @@ def validate_semantics(report: Mapping[str, Any]) -> None:
                 or value > 100
             ):
                 raise ReportError(f"{path}: percentage metric value must be numeric from 0 to 100")
+            numerator = metric.get("numerator")
+            denominator = metric.get("denominator")
+            if numerator is not None and denominator is not None:
+                if denominator <= 0 or numerator < 0 or numerator > denominator:
+                    raise ReportError(
+                        f"{path}: numerator must be between zero and a positive denominator"
+                    )
+                if not math.isclose(
+                    float(value), numerator / denominator * 100, rel_tol=0.002, abs_tol=0.11
+                ):
+                    raise ReportError(f"{path}: value does not match numerator/denominator")
 
     completion_metrics = [
         (key, metric) for key, metric in metrics.items() if key.endswith("completion_proxy")
@@ -708,6 +738,10 @@ def validate_semantics(report: Mapping[str, Any]) -> None:
             ):
                 raise ReportError(
                     f"$.overview.learning_path[{index}].metric.value: path charts require numeric or null values"
+                )
+            if metric["value"] is not None and metric["value"] < 0:
+                raise ReportError(
+                    f"$.overview.learning_path[{index}].metric.value: path charts need non-negative values"
                 )
 
     try:
@@ -956,7 +990,10 @@ def _meter(fraction: float, label: str) -> str:
     return f'<div class="meter" title="{esc(label)}"><span style="width:{width:.2f}%"></span></div>'
 
 
-def _bar(fraction: float, label: str) -> str:
+def _bar(fraction: float | None, label: str) -> str:
+    """A bar from zero; a missing value (None) keeps the baseline but draws no mark."""
+    if fraction is None:
+        return f'<div class="bar is-empty" title="{esc(label)}"></div>'
     width = max(0.0, min(100.0, fraction * 100))
     return f'<div class="bar" title="{esc(label)}"><span style="width:{width:.2f}%"></span></div>'
 
@@ -1063,6 +1100,7 @@ def render_learning_path(report: Mapping[str, Any], ctx: RenderContext) -> str:
     numeric = [float(metric["value"]) for metric in metrics if _is_number(metric["value"])]
     maximum = max(numeric, default=0.0)
     unit = metrics[0]["unit"]
+    uniform_quality = len({quality_label(metric, ctx) for metric in metrics}) == 1
     rows: list[str] = []
     previous: float | None = None
     for position, stage in enumerate(stages, start=1):
@@ -1070,13 +1108,15 @@ def render_learning_path(report: Mapping[str, Any], ctx: RenderContext) -> str:
         value = metric["value"]
         value_label = metric_text(metric, ctx)
         notes = [stage["note"]] if stage["note"] else []
+        if not uniform_quality:
+            notes.append(quality_label(metric, ctx))
         if _is_number(value):
             fraction = float(value) / maximum if maximum > 0 else 0.0
             if previous and unit != "%":
                 notes.append(ctx.t("of_previous").format(share=f"{float(value) / previous:.0%}"))
             previous = float(value)
         else:
-            fraction = 0.0
+            fraction = None
             previous = None
         comparison = comparison_text(metric, ctx)
         if comparison:
@@ -1093,7 +1133,10 @@ def render_learning_path(report: Mapping[str, Any], ctx: RenderContext) -> str:
             + note_html
             + "</li>"
         )
-    caption = f'{ctx.t("unit")}：{unit} · {metric_context(metrics[0], ctx)}' if unit else metric_context(metrics[0], ctx)
+    context = (
+        metric_context(metrics[0], ctx) if uniform_quality else metrics[0]["time_scope"]["label"]
+    )
+    caption = f'{ctx.t("unit")}：{unit} · {context}' if unit else context
     return (
         '<figure class="chart">'
         f'<figcaption class="chart-caption">{esc(caption)}</figcaption>'
@@ -1338,9 +1381,17 @@ def render_recommendations(report: Mapping[str, Any], ctx: RenderContext) -> str
 
 def render_methods(report: Mapping[str, Any], ctx: RenderContext) -> str:
     quality = report["data_quality"]
+    limitations = list(quality["limitations"])
+    if "summary" not in resolve_sections(report):
+        # Caveats shown with the summary must survive when a teacher hides it.
+        limitations += [
+            item
+            for item in report["overview"]["executive_summary"]["critical_limitations"]
+            if item not in limitations
+        ]
     groups = [
         (ctx.t("coverage"), quality["coverage_notes"]),
-        (ctx.t("limitations"), quality["limitations"]),
+        (ctx.t("limitations"), limitations),
         (ctx.t("privacy"), quality["privacy_notes"]),
     ]
     adjustments = quality.get("teacher_adjustments", [])
@@ -1413,7 +1464,7 @@ def _render_bars_block(block: Mapping[str, Any], ctx: RenderContext) -> str:
         value = metric["value"]
         label = display_metric_label(metric, ctx)
         text = metric_text(metric, ctx)
-        fraction = float(value) / scale if _is_number(value) and scale > 0 else 0.0
+        fraction = (float(value) / scale if scale > 0 else 0.0) if _is_number(value) else None
         rows += (
             '<li class="path-row">'
             f'<div class="path-stage"><span class="path-index" aria-hidden="true">{position}</span>'
@@ -1544,6 +1595,24 @@ def render_body(report: Mapping[str, Any], ctx: RenderContext) -> tuple[str, str
     return "".join(sections), toc_html
 
 
+def _check_template_assets(template: str, path: Path) -> None:
+    """Allow only embedded (data:) resources and in-page anchors in a template."""
+    references = [
+        next(group for group in match.groups() if group is not None)
+        for match in ASSET_ATTRIBUTE.finditer(template)
+    ]
+    references += CSS_URL.findall(template)
+    for reference in references:
+        value = reference.strip()
+        if value and not value.lower().startswith(("data:", "#", "{{")):
+            raise ReportError(
+                f"template {path} references {value[:60]!r}; reports must be self-contained, "
+                "so embed resources as data: URIs"
+            )
+    if "@import" in template.lower():
+        raise ReportError(f"template {path} uses @import; reports must be self-contained")
+
+
 def render_report(report: Mapping[str, Any], template_path: Path | None = None) -> str:
     meta = report["meta"]
     ctx = RenderContext(report)
@@ -1574,8 +1643,7 @@ def render_report(report: Mapping[str, Any], template_path: Path | None = None) 
         template = path.read_text(encoding="utf-8")
     except OSError as exc:
         raise ReportError(f"cannot read template {path}: {exc}") from exc
-    if REMOTE_ASSET.search(template):
-        raise ReportError(f"template {path} loads a remote asset; reports must be self-contained")
+    _check_template_assets(template, path)
 
     body, toc = render_body(report, ctx)
     replacements = {

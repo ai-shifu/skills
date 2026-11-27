@@ -41,25 +41,25 @@ Follow `report-data.schema.json` for exact property names, enum values, and requ
 
 For a metric whose `unit` is `%`, store the numeric `value` in percentage points from 0 to 100 (for example, `79`, not `0.79`). The dedicated `share` fields on follow-up themes and audience segments remain fractions from 0 to 1.
 
-Give each lesson the same set of metric labels, in the same order, wherever the data allows. The renderer builds the lesson comparison table from labels that lessons share, so `触达人数` on every lesson becomes one column.
+Give each lesson the same set of metric labels, in the same order, wherever the data allows. The renderer builds the lesson comparison table from labels that lessons share, so a reach metric that carries the same label on every lesson becomes one column.
 
 ## What the Reader Sees
 
-The renderer turns the JSON into these sections, in this default order. Each heading is phrased as the question a teacher would ask.
+The renderer turns the JSON into these sections, in this default order. Each heading is phrased as the question a teacher would ask, in the report language; the renderer supplies the wording.
 
-| Section id | Heading | Drawn from |
+| Section id | Heading asks | Drawn from |
 | --- | --- | --- |
-| `summary` | 这门课现在怎么样 | `overview.executive_summary`: the overall assessment, up to three conclusions, and limitations to keep in mind. |
-| `kpis` | 几个关键数字 | `overview.kpis` as tiles; each expands to its definition and source. |
-| `learning_path` | 学员学到了哪里 | `overview.learning_path` as ordered bars, each compared with the step before it. |
-| `lessons` | 每节课的表现如何 | `lesson_health`: a side-by-side comparison table, then one card per lesson with its finding and evidence. |
-| `followups` | 学员在问什么 | `engagement.follow_up_analysis`: sample disclosure and themes with shares. |
-| `engagement` | 学员怎么评价、怎么学 | `engagement.ratings`, `learning_modes`, and `activity`, kept as separate groups. |
-| `audience` | 学员是谁 | `audience.dimensions` with a teaching implication each, or a clear missing-mapping state. |
+| `summary` | How is this course doing? | `overview.executive_summary`: the overall assessment, up to three conclusions, and limitations to keep in mind. |
+| `kpis` | The numbers that matter | `overview.kpis` as tiles; each expands to its definition and source. |
+| `learning_path` | How far do learners get? | `overview.learning_path` as ordered bars, each compared with the step before it. |
+| `lessons` | How is each lesson doing? | `lesson_health`: a side-by-side comparison table, then one card per lesson with its finding and evidence. |
+| `followups` | What are learners asking? | `engagement.follow_up_analysis`: sample disclosure and themes with shares. |
+| `engagement` | How do learners rate and study? | `engagement.ratings`, `learning_modes`, and `activity`, kept as separate groups. |
+| `audience` | Who are the learners? | `audience.dimensions` with a teaching implication each, or a clear missing-mapping state. |
 | `custom:<id>` | The teacher's title | Each `custom_sections` entry. |
-| `recommendations` | 下一步可以试什么 | `recommendations`: the action first, then observation, interpretation, validation, confidence, and evidence. |
-| `methods` | 这些数字是怎么来的 | `data_quality` and every metric definition. Always shown. |
-| `operations` | 经营与积分 | `operations`, only when present. |
+| `recommendations` | What to try next | `recommendations`: the action first, then observation, interpretation, validation, confidence, and evidence. |
+| `methods` | Where these numbers come from | `data_quality` and every metric definition. Always shown; when the summary is hidden it also carries the summary's limitations. |
+| `operations` | Operations and credits | `operations`, only when present. |
 
 The renderer computes simple reading aids from the JSON values — a step's share of the previous step, bar lengths, and a lesson's name on evidence cited outside its own card. It adds no judgement of its own.
 
@@ -88,7 +88,7 @@ python3 <skill-directory>/scripts/render_report.py \
   --output <output-directory>/course-learning-report.html
 ```
 
-A validation failure blocks delivery: correct the JSON rather than weakening or bypassing the schema. The validator checks the schema, metric-to-definition agreement, rate arithmetic, evidence references, section and style settings, and privacy patterns. Render from the same JSON that will be delivered, then re-run the final privacy gate on both artifacts.
+New fields — `presentation`, `custom_sections`, `teacher_adjustments`, `comparison`, and `origin` — are accepted only with `schema_version` `"1.1"`. A validation failure blocks delivery: correct the JSON rather than weakening or bypassing the schema. The validator checks the schema, metric-to-definition agreement, rate arithmetic, evidence references, section and style settings, and privacy patterns. Render from the same JSON that will be delivered, then re-run the final privacy gate on both artifacts.
 
 `--template <path>` renders with a teacher-specific copy of the template; use it only as `customization.md` directs.
 
