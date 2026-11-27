@@ -30,7 +30,7 @@ Apply a batch of requests in one pass and render once.
 | A specific set of columns in the lesson table | List the metric labels in `presentation.lesson_table_columns`, in display order. |
 | A new analysis of their own | Add a `custom_sections` entry (see below). |
 | A whole section gone | Leave the data in place and omit the section id from `presentation.sections`. |
-| A before/after comparison | Add `comparison: {label, value}` to the metric, using a value computed with the same definition for the earlier period or report. |
+| A before/after comparison | Add `comparison: {label, value}` to the metric, using a value computed with the same definition for the earlier period or report. It is shown wherever that metric appears. |
 | Fewer or more recommendations | Keep 1–5, each still carrying full evidence. |
 
 Every added metric follows the Metric Contract in `analysis-guidelines.md` and needs a `metric_definitions` entry. Give it `"origin": "teacher"` in that entry so the report marks it as the teacher's own.
@@ -101,7 +101,7 @@ For requests the options cannot express — larger body text, a different card r
 
 ### 3. A teacher-specific template
 
-Only when a request changes the page skeleton itself — a different cover structure, for instance — copy `assets/report-template.html` next to the report as `course-learning-report.template.html`, edit the copy, and pass it to the renderer with `--template`. Keep every `{{PLACEHOLDER}}` exactly once, keep it free of remote assets, and never edit the bundled template for one teacher's preference.
+Only when a request changes the page skeleton itself — a different cover structure, for instance — copy `assets/report-template.html` next to the report as `course-learning-report.template.html`, edit the copy, and pass it to the renderer with `--template`. Keep every `{{PLACEHOLDER}}` from the bundled template; the renderer refuses a copy that drops one, repeats the body, or loads a remote asset. Beyond that, and never edit the bundled template for one teacher's preference.
 
 ### Wording
 

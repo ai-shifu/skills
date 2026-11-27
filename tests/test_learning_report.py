@@ -736,20 +736,31 @@ class LearningReportRendererTests(unittest.TestCase):
         report = minimal_valid_report()
         template = TEMPLATE_PATH.read_text(encoding="utf-8")
         cases = (
-            (template.replace("</footer>", "<p>教研组内部版</p></footer>"), True),
+            (template.replace("</footer>", "<p>教研组内部版</p></footer>"), ""),
             (
                 template.replace(
                     "</head>",
                     '<link rel="stylesheet" href="https://example.test/a.css"></head>',
                 ),
-                False,
+                "self-contained",
+            ),
+            (
+                template.replace(
+                    "</head>", "<script src=https://example.test/a.js></script></head>"
+                ),
+                "self-contained",
+            ),
+            (template.replace("{{REPORT_BODY}}", ""), "missing placeholder"),
+            (
+                template.replace("{{REPORT_BODY}}", "{{REPORT_BODY}}{{REPORT_BODY}}"),
+                "exactly once",
             ),
         )
         with tempfile.TemporaryDirectory() as tmpdir:
             input_path = Path(tmpdir) / "course-learning-report.json"
             output_path = Path(tmpdir) / "course-learning-report.html"
             input_path.write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
-            for index, (content, should_pass) in enumerate(cases):
+            for index, (content, expected_error) in enumerate(cases):
                 with self.subTest(index=index):
                     template_path = Path(tmpdir) / f"template-{index}.html"
                     template_path.write_text(content, encoding="utf-8")
@@ -768,14 +779,37 @@ class LearningReportRendererTests(unittest.TestCase):
                         text=True,
                         check=False,
                     )
-                    if should_pass:
+                    if not expected_error:
                         self.assertEqual(0, result.returncode, msg=result.stderr)
                         self.assertIn(
                             "教研组内部版", output_path.read_text(encoding="utf-8")
                         )
                     else:
                         self.assertNotEqual(0, result.returncode)
-                        self.assertIn("self-contained", result.stderr)
+                        self.assertIn(expected_error, result.stderr)
+
+    def test_comparison_is_shown_wherever_the_metric_appears(self):
+        report = load_json(EXAMPLE_REPORT_PATH)
+        lesson_metrics = report["lesson_health"][0]["metrics"]
+        lesson_metrics[0]["comparison"] = {"label": "表格对比", "value": 100}
+        lesson_metrics[3]["comparison"] = {"label": "卡片对比", "value": 1}
+        report["presentation"] = {"lesson_table_columns": ["触达人数", "平均评分"]}
+        report["overview"]["learning_path"][1]["metric"]["comparison"] = {
+            "label": "路径对比",
+            "value": 110,
+        }
+        report["engagement"]["activity"][0]["comparison"] = {"label": "活跃对比", "value": 70}
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        for expected in (
+            "表格对比 100人 · 变化 +20人",
+            "卡片对比 1条 · 变化 +1条",
+            "路径对比 110人 · 变化 +4人",
+            "活跃对比 70人 · 变化 +7人",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, html)
 
     def test_metric_comparison_and_report_without_completion_metric(self):
         report = minimal_valid_report()

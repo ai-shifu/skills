@@ -50,7 +50,8 @@ BUILTIN_SECTIONS = (
     "operations",
 )
 REMOTE_ASSET = re.compile(
-    r"""(?:src|href)\s*=\s*["']\s*(?:https?:)?//|@import|url\(\s*["']?\s*(?:https?:)?//""",
+    r"""(?:src|href|srcset|poster|action|data)\s*=\s*["']?\s*(?:https?:)?//|@import|"""
+    r"""url\(\s*["']?\s*(?:https?:)?//""",
     re.IGNORECASE,
 )
 UNSAFE_CSS = re.compile(r"<|\\|@import|url\s*\(|expression\s*\(|javascript:", re.IGNORECASE)
@@ -908,6 +909,12 @@ def comparison_text(metric: Mapping[str, Any], ctx: RenderContext) -> str:
     return f'{comparison["label"]} {previous} · {ctx.t("change")} {change}'
 
 
+def comparison_html(metric: Mapping[str, Any], ctx: RenderContext) -> str:
+    """Before/after line for metric views outside the KPI tiles."""
+    comparison = comparison_text(metric, ctx)
+    return f'<span class="cell-sub">{esc(comparison)}</span>' if comparison else ""
+
+
 def definitions_details(
     metrics: Sequence[Mapping[str, Any]], ctx: RenderContext, *, show_label: bool = True
 ) -> str:
@@ -1071,6 +1078,9 @@ def render_learning_path(report: Mapping[str, Any], ctx: RenderContext) -> str:
         else:
             fraction = 0.0
             previous = None
+        comparison = comparison_text(metric, ctx)
+        if comparison:
+            notes.append(comparison)
         note_html = (
             f'<div class="path-note">{esc(" · ".join(notes))}</div>' if notes else ""
         )
@@ -1120,7 +1130,10 @@ def _lesson_table(
             if metric is None or metric["value"] is None:
                 cells += f'<td class="num is-missing">{esc(ctx.t("no_data_short"))}</td>'
             else:
-                cells += f'<td class="num">{esc(metric_text(metric, ctx))}</td>'
+                cells += (
+                    f'<td class="num">{esc(metric_text(metric, ctx))}'
+                    f"{comparison_html(metric, ctx)}</td>"
+                )
         status = lesson["health_status"]
         rows.append(
             f'<tr><th scope="row"><span class="cell-sub">{esc(ctx.t("lesson"))} {lesson["position"]:02d}</span>'
@@ -1147,7 +1160,7 @@ def render_lessons(report: Mapping[str, Any], ctx: RenderContext) -> str:
         # The comparison table already shows these; cards repeat only what it omits.
         stats = "".join(
             f'<div class="stat"><dt>{esc(display_metric_label(metric, ctx))}{metric_tags(metric, ctx)}</dt>'
-            f'<dd>{esc(metric_text(metric, ctx, short=True))}</dd></div>'
+            f'<dd>{esc(metric_text(metric, ctx, short=True))}{comparison_html(metric, ctx)}</dd></div>'
             for metric in lesson["metrics"]
             if display_metric_label(metric, ctx) not in columns
         )
@@ -1246,7 +1259,8 @@ def _metric_rows(metrics: Sequence[Mapping[str, Any]], ctx: RenderContext) -> st
                 else f'<span class="metric-context">{esc(metric_context(metric, ctx))}</span>'
             )
             + "</dt>"
-            + f'<dd class="{"is-missing" if value is None else ""}">{esc(metric_text(metric, ctx))}</dd>'
+            + f'<dd class="{"is-missing" if value is None else ""}">{esc(metric_text(metric, ctx))}'
+            + f"{comparison_html(metric, ctx)}</dd>"
             + mark
             + "</div>"
         )
@@ -1405,7 +1419,13 @@ def _render_bars_block(block: Mapping[str, Any], ctx: RenderContext) -> str:
             f'<div class="path-stage"><span class="path-index" aria-hidden="true">{position}</span>'
             f"<span>{esc(label)}{metric_tags(metric, ctx)}</span></div>"
             + _bar(fraction, f"{label}: {text}")
-            + f'<div class="path-value{" is-missing" if value is None else ""}">{esc(text)}</div></li>'
+            + f'<div class="path-value{" is-missing" if value is None else ""}">{esc(text)}</div>'
+            + (
+                f'<div class="path-note">{esc(comparison_text(metric, ctx))}</div>'
+                if comparison_text(metric, ctx)
+                else ""
+            )
+            + "</li>"
         )
     scopes = {metric["time_scope"]["label"] for metric in metrics}
     caption_parts = [f'{ctx.t("unit")}：{unit}'] if unit else []
@@ -1578,6 +1598,14 @@ def render_report(report: Mapping[str, Any], template_path: Path | None = None) 
         "{{REPORT_BODY}}": body,
         "{{CUSTOM_CSS}}": ctx.presentation.get("custom_css", ""),
     }
+
+    found = TEMPLATE_PLACEHOLDER.findall(template)
+    missing = sorted(set(replacements) - set(found))
+    if missing:
+        raise ReportError(f"template {path} is missing placeholder(s): {', '.join(missing)}")
+    for single in ("{{REPORT_BODY}}", "{{REPORT_TOC}}", "{{CUSTOM_CSS}}"):
+        if found.count(single) != 1:
+            raise ReportError(f"template {path} must contain {single} exactly once")
 
     def replace_placeholder(match: re.Match[str]) -> str:
         placeholder = match.group(0)
