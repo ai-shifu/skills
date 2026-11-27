@@ -112,6 +112,7 @@ The teacher may reword any generated text: conclusions, findings, recommendation
 When a new report is requested for a course whose output directory already contains a `course-learning-report.json`:
 
 - reuse its `presentation` object and `meta.brand`;
+- if `course-learning-report.template.html` sits beside it, render with `--template` again, since the JSON does not record which template was used;
 - rebuild each `origin: "teacher"` metric and each custom section with fresh data under the same definitions;
 - keep `data_quality.teacher_adjustments`, removing notes for choices that no longer apply;
 - reapply every content choice those notes record, including statistics the teacher asked to remove: a fresh report starts from the default metric set, so a removed statistic returns unless it is removed again;

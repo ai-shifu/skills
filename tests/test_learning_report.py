@@ -556,6 +556,41 @@ class LearningReportRendererTests(unittest.TestCase):
         self.assertRegex(html, r'<div class="path-note">[^<]*近似[^<]*</div>')
         self.assertRegex(html, r'<div class="path-note">[^<]*已观测[^<]*</div>')
 
+    def test_percentage_learning_path_is_drawn_against_one_hundred(self):
+        report = minimal_valid_report()
+        stages = []
+        for index, value in enumerate((60, 30), start=1):
+            metric = report_metric(
+                key=f"path_rate_{index}",
+                label=f"第 {index} 课触达比例",
+                value=value,
+                unit="%",
+                definition=f"进入第 {index} 课的学员比例。",
+            )
+            report["metric_definitions"][metric["key"]] = {
+                "label": metric["label"],
+                "definition": metric["definition"],
+                "unit": metric["unit"],
+                "source_notes": metric["source_notes"],
+            }
+            stages.append({"stage": f"第 {index} 课", "metric": metric, "note": ""})
+        report["overview"]["learning_path"] = stages
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertIn('title="第 1 课: 60%"><span style="width:60.00%">', html)
+        self.assertIn('title="第 2 课: 30%"><span style="width:30.00%">', html)
+
+    def test_compact_density_prints_smaller_than_comfortable(self):
+        template = TEMPLATE_PATH.read_text(encoding="utf-8")
+        print_rules = template[template.index("@media print") :]
+
+        self.assertIn('html[data-density="compact"] { font-size: 11.5px; }', print_rules)
+        self.assertLess(
+            print_rules.index("font-size: 12.5px"),
+            print_rules.index('html[data-density="compact"] { font-size: 11.5px; }'),
+        )
+
     def test_bar_charts_reject_negative_values_and_draw_nothing_for_missing_ones(self):
         report = self.report_with_custom_section()
         _, html = self.assert_renderer_succeeds(report)
@@ -804,6 +839,7 @@ class LearningReportRendererTests(unittest.TestCase):
             "body { background: url(https://example.test/a.png); }",
             "body { background: u\\72l(x); }",
             "body { background: image-set('a.png' 1x); }",
+            "body { background: image('a.png'); }",
             "body { background: image-set('https://example.test/a.png' 1x); }",
         ):
             with self.subTest(unsafe=unsafe):
@@ -839,6 +875,12 @@ class LearningReportRendererTests(unittest.TestCase):
             (
                 template.replace(
                     "</style>", ".cover { background: url(cover.png); }</style>"
+                ),
+                "self-contained",
+            ),
+            (
+                template.replace(
+                    "</head>", '<meta http-equiv=refresh content="0;x.html"></head>'
                 ),
                 "self-contained",
             ),

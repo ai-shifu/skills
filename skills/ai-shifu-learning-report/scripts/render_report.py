@@ -55,7 +55,8 @@ ASSET_ATTRIBUTE = re.compile(
 )
 CSS_URL = re.compile(r"""url\(\s*["']?\s*([^"')\s]*)""", re.IGNORECASE)
 UNSAFE_CSS = re.compile(
-    r"<|\\|@import|url\s*\(|image-set\s*\(|expression\s*\(|javascript:|://", re.IGNORECASE
+    r"<|\\|@import|url\s*\(|image-set\s*\(|(?<![\w-])image\s*\(|expression\s*\(|javascript:|://",
+    re.IGNORECASE,
 )
 TEMPLATE_PLACEHOLDER = re.compile(r"\{\{[A-Z0-9_]+\}\}")
 EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?![\w.-])")
@@ -1098,8 +1099,9 @@ def render_learning_path(report: Mapping[str, Any], ctx: RenderContext) -> str:
         return _empty(ctx.t("no_data"))
     metrics = [stage["metric"] for stage in stages]
     numeric = [float(metric["value"]) for metric in metrics if _is_number(metric["value"])]
-    maximum = max(numeric, default=0.0)
     unit = metrics[0]["unit"]
+    # A percentage is drawn against 100, as in every other section; counts against the largest.
+    maximum = 100.0 if unit == "%" else max(numeric, default=0.0)
     uniform_quality = len({quality_label(metric, ctx) for metric in metrics}) == 1
     rows: list[str] = []
     previous: float | None = None
@@ -1611,6 +1613,10 @@ def _check_template_assets(template: str, path: Path) -> None:
             )
     if "@import" in template.lower():
         raise ReportError(f"template {path} uses @import; reports must be self-contained")
+    if re.search(r"""http-equiv\s*=\s*["']?\s*refresh""", template, re.IGNORECASE):
+        raise ReportError(
+            f"template {path} uses a meta refresh; reports must be self-contained"
+        )
 
 
 def render_report(report: Mapping[str, Any], template_path: Path | None = None) -> str:
