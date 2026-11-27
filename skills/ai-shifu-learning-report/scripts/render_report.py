@@ -9,6 +9,7 @@ that exact data.
 from __future__ import annotations
 
 import argparse
+import base64
 import html
 import json
 import math
@@ -23,8 +24,40 @@ from typing import Any
 SKILL_DIR = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = SKILL_DIR / "references" / "report-data.schema.json"
 TEMPLATE_PATH = SKILL_DIR / "assets" / "report-template.html"
+BRAND_DIR = SKILL_DIR / "assets" / "brand"
 
 VALID_ACCENT = re.compile(r"^#[0-9A-Fa-f]{6}$")
+# Each preset names the accent and surface the template pairs with it, so a
+# requested brand accent can be contrast-checked before it is used.
+THEMES = {
+    "shifu": {"accent": "#0F63EE", "surface": "#FFFFFF", "scheme": "light"},
+    "paper": {"accent": "#2F4FC7", "surface": "#FFFFFF", "scheme": "light"},
+    "swiss": {"accent": "#D6001C", "surface": "#FFFFFF", "scheme": "light"},
+    "forest": {"accent": "#1F7A4D", "surface": "#FFFFFF", "scheme": "light"},
+    "night": {"accent": "#8FB0FF", "surface": "#181B21", "scheme": "dark"},
+}
+DEFAULT_THEME = "shifu"
+BUILTIN_SECTIONS = (
+    "summary",
+    "kpis",
+    "learning_path",
+    "lessons",
+    "followups",
+    "engagement",
+    "audience",
+    "recommendations",
+    "methods",
+    "operations",
+)
+ASSET_ATTRIBUTE = re.compile(
+    r"""\b(?:src|href|srcset|poster)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""",
+    re.IGNORECASE,
+)
+CSS_URL = re.compile(r"""url\(\s*["']?\s*([^"')\s]*)""", re.IGNORECASE)
+UNSAFE_CSS = re.compile(
+    r"<|\\|@import|url\s*\(|image-set\s*\(|(?<![\w-])image\s*\(|expression\s*\(|javascript:|://",
+    re.IGNORECASE,
+)
 TEMPLATE_PLACEHOLDER = re.compile(r"\{\{[A-Z0-9_]+\}\}")
 EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?![\w.-])")
 PHONE = re.compile(r"(?<!\d)(?:\+?86[\s-]*)?1[3-9](?:[\s-]*\d){9}(?!\d)")
@@ -90,55 +123,55 @@ CONFIDENCE_LABELS = {
 
 TEXT = {
     "zh": {
-        "title_suffix": "课程学习报告",
+        "title_suffix": "课程学情报告",
         "skip": "跳到报告正文",
-        "subtitle": "课程学习报告 · 面向教学管理者与老师",
-        "footer": "本报告由 AI-Shifu Learning Report 根据脱敏聚合数据生成。请结合课程设计与教学现场进行判断。",
+        "toc": "目录",
+        "meta_label": "报告信息",
+        "subtitle": "用学习数据看清这门课：学员学到了哪里、在问什么、下一步可以改什么。",
+        "footer": "本报告由 AI 师傅学情报告根据脱敏聚合数据生成。数据只说明发生了什么，请结合课程设计与教学现场作判断。",
         "period": "报告范围",
         "generated": "生成时间",
         "timezone": "时区",
         "source": "数据来源",
-        "management": "管理结论",
-        "management_desc": "先回答需要关注什么、为什么，以及下一步优先做什么。",
+        "sections": {
+            "summary": ("核心结论", "这门课现在怎么样", "先看结论：整体状态、最值得关注的地方，以及下一步。"),
+            "kpis": ("核心指标", "几个关键数字", "每个数字都可以展开查看口径与来源。"),
+            "learning_path": ("学习路径", "学员学到了哪里", "按课程顺序看触达人数。记录中的“进行中”不等于学员卡住了。"),
+            "lessons": ("课节表现", "每节课的表现如何", "把各节课放在一起比较，找出最值得回看的课节。"),
+            "followups": ("追问主题", "学员在问什么", "只展示最近受审计样本的聚合主题和概括后的学习意图，不保留原文。"),
+            "engagement": ("评分与学习方式", "学员怎么评价、怎么学", "评分、听读偏好和活跃状态是不同的信号，分开呈现。"),
+            "audience": ("学员画像", "学员是谁", "只展示含义明确的聚合分布。"),
+            "recommendations": ("教学建议", "下一步可以试什么", "每条建议都写明依据、把握程度，以及如何验证是否有效。"),
+            "methods": ("口径与数据说明", "这些数字是怎么来的", "指标如何定义、哪些数据暂时没有，以及应当如何解读。"),
+            "operations": ("经营与积分附录", "经营与积分", "仅因明确要求而包含，不作为教学效果的证据。"),
+        },
+        "custom_eyebrow": "补充分析",
         "overall_health": "总体判断",
         "conclusion": "结论",
-        "critical_limits": "关键限制",
-        "kpis": "核心指标",
-        "learning_path": "学习路径",
-        "learning_path_desc": "按课程顺序观察触达，不把记录中的“进行中”直接解释为真实卡课。",
-        "lesson_health": "课节健康度",
-        "lesson_health_desc": "结合触达、反馈与追问信号定位值得验证的课节。",
+        "critical_limits": "解读前请留意",
         "lesson": "课节",
-        "evidence": "证据",
-        "followups": "追问主题",
-        "followups_desc": "只展示最近受审计样本的聚合主题和去识别化意图，不保留原文。",
+        "status": "状态",
+        "lesson_table": "课节对比",
+        "lesson_findings": "逐节发现",
+        "evidence": "依据",
         "sample": "抽样说明",
         "theme": "主题",
-        "intent": "学习意图摘要",
-        "count_share": "数量 / 占比",
-        "engagement": "评分与听读偏好",
-        "engagement_desc": "分开呈现反馈、学习方式和活跃状态，避免把不同信号混作同一指标。",
+        "question_unit": "条",
+        "learner_unit": "人",
         "ratings": "评分",
         "modes": "听读偏好",
         "activity": "活跃状态",
-        "audience": "学员画像",
-        "audience_desc": "仅展示名称映射明确的聚合分布。",
-        "segment": "分组",
-        "count": "人数",
-        "share": "占比",
         "teaching_implication": "教学含义",
-        "recommendations": "教学建议",
-        "recommendations_desc": "每条建议都把观察、解释、置信度、行动与验证方法连在一起。",
         "observation": "观察",
         "interpretation": "解释",
         "action": "建议行动",
         "validation": "验证方法",
-        "methods": "口径与数据质量",
-        "methods_desc": "说明指标如何定义、哪些数据不可用，以及结论应如何解读。",
         "coverage": "数据覆盖",
         "limitations": "限制",
         "privacy": "隐私处理",
-        "unavailable_metrics": "不可用指标",
+        "teacher_adjustments": "按老师要求所做的调整",
+        "teacher_defined": "自定义口径",
+        "unavailable_metrics": "暂时没有的指标",
         "metric": "指标",
         "reason": "原因",
         "definitions": "指标口径",
@@ -150,62 +183,64 @@ TEXT = {
         "fraction": "计算分子 / 分母",
         "completion_rate": "课程完成率",
         "completion_calculation": "按必修课完成状态计算",
+        "of_previous": "为上一步的 {share}",
+        "change": "变化",
+        "percentage_points": "个百分点",
         "zero_followups": "查询成功：最近受审计样本中没有追问。",
-        "operations": "经营与积分附录",
-        "operations_desc": "仅因用户明确要求而包含，不作为教学效果证据。",
         "no_data": "暂无可靠数据",
+        "no_data_short": "暂无",
         "not_collected": "本次未采集",
         "source_names": {"live": "AI 师傅平台", "supplied": "用户提供", "synthetic": "合成数据"},
     },
     "en": {
         "title_suffix": "Course Learning Report",
         "skip": "Skip to report",
-        "subtitle": "Course learning report · for teaching managers and teachers",
-        "footer": "Generated by AI-Shifu Learning Report from privacy-safe aggregate data. Interpret findings alongside course design and teaching context.",
+        "toc": "Contents",
+        "meta_label": "Report details",
+        "subtitle": "What the learning data says about this course: where learners get to, what they ask, and what to try next.",
+        "footer": "Generated by AI-Shifu Learning Report from privacy-safe aggregate data. Data shows what happened; interpret it alongside course design and teaching context.",
         "period": "Reporting period",
         "generated": "Generated",
         "timezone": "Timezone",
         "source": "Source",
-        "management": "Management conclusions",
-        "management_desc": "What needs attention, why it matters, and what to do next.",
+        "sections": {
+            "summary": ("Key conclusions", "How is this course doing?", "Start here: overall state, what deserves attention, and the next step."),
+            "kpis": ("Core metrics", "The numbers that matter", "Expand any number to see its definition and source."),
+            "learning_path": ("Learning path", "How far do learners get?", "Reach in course order. A recorded in-progress state is not proof that learners are stuck."),
+            "lessons": ("Lesson performance", "How is each lesson doing?", "Compare lessons side by side to find the ones worth revisiting."),
+            "followups": ("Follow-up themes", "What are learners asking?", "Only aggregate themes and generalized intents from the latest audited sample; no original text is kept."),
+            "engagement": ("Ratings and learning mode", "How do learners rate and study?", "Ratings, read/listen preference, and activity are separate signals."),
+            "audience": ("Audience", "Who are the learners?", "Only aggregate distributions with a known meaning are shown."),
+            "recommendations": ("Teaching recommendations", "What to try next", "Each recommendation states its evidence, confidence, and how to check whether it worked."),
+            "methods": ("Definitions and data notes", "Where these numbers come from", "How metrics are defined, what is unavailable, and how to read the findings."),
+            "operations": ("Operations and credits appendix", "Operations and credits", "Included only on explicit request; not evidence of teaching effectiveness."),
+        },
+        "custom_eyebrow": "Additional analysis",
         "overall_health": "Overall assessment",
-        "conclusion": "Conclusion",
-        "critical_limits": "Critical limitations",
-        "kpis": "Core metrics",
-        "learning_path": "Learning path",
-        "learning_path_desc": "Ordered reach without treating a recorded in-progress state as proof of blockage.",
-        "lesson_health": "Lesson health",
-        "lesson_health_desc": "Use reach, feedback, and follow-up signals to prioritize investigation.",
+        "conclusion": "Conclusions",
+        "critical_limits": "Before you interpret",
         "lesson": "Lesson",
+        "status": "Status",
+        "lesson_table": "Lesson comparison",
+        "lesson_findings": "Lesson by lesson",
         "evidence": "Evidence",
-        "followups": "Follow-up themes",
-        "followups_desc": "Only aggregate themes and de-identified intents from the latest audited sample are shown.",
         "sample": "Sample",
-        "theme": "Theme",
-        "intent": "Intent summary",
-        "count_share": "Count / share",
-        "engagement": "Ratings and read/listen preference",
-        "engagement_desc": "Feedback, learning mode, and activity are kept as separate signals.",
+        "theme": "Themes",
+        "question_unit": "",
+        "learner_unit": "",
         "ratings": "Ratings",
         "modes": "Read/listen preference",
         "activity": "Activity state",
-        "audience": "Audience",
-        "audience_desc": "Only aggregate distributions with a trusted name mapping are shown.",
-        "segment": "Segment",
-        "count": "Count",
-        "share": "Share",
         "teaching_implication": "Teaching implication",
-        "recommendations": "Teaching recommendations",
-        "recommendations_desc": "Each recommendation connects observation, interpretation, confidence, action, and validation.",
         "observation": "Observation",
         "interpretation": "Interpretation",
         "action": "Action",
         "validation": "Validation method",
-        "methods": "Definitions and data quality",
-        "methods_desc": "How metrics are defined, what is unavailable, and how to interpret the findings.",
         "coverage": "Coverage",
         "limitations": "Limitations",
         "privacy": "Privacy handling",
+        "teacher_adjustments": "Adjustments requested by the teacher",
+        "teacher_defined": "Custom definition",
         "unavailable_metrics": "Unavailable metrics",
         "metric": "Metric",
         "reason": "Reason",
@@ -218,10 +253,12 @@ TEXT = {
         "fraction": "Numerator / denominator",
         "completion_rate": "Course completion rate",
         "completion_calculation": "Calculated from required-lesson completion",
+        "of_previous": "{share} of the previous step",
+        "change": "change",
+        "percentage_points": "pts",
         "zero_followups": "Query succeeded: no follow-up questions were observed in the latest audited sample.",
-        "operations": "Operations and credits appendix",
-        "operations_desc": "Included only at the user's explicit request and not used as evidence of teaching effectiveness.",
         "no_data": "No reliable data",
+        "no_data_short": "n/a",
         "not_collected": "Not collected in this report",
         "source_names": {"live": "AI-Shifu platform", "supplied": "Supplied data", "synthetic": "Synthetic data"},
     },
@@ -417,10 +454,117 @@ def iter_metrics(report: Mapping[str, Any]) -> Iterator[tuple[str, Mapping[str, 
     if "operations" in report:
         for index, metric in enumerate(report["operations"]["metrics"]):
             yield f"$.operations.metrics[{index}]", metric
+    for section_index, section in enumerate(report.get("custom_sections", [])):
+        for block_index, block in enumerate(section["blocks"]):
+            for index, metric in enumerate(block.get("metrics", [])):
+                yield (
+                    f"$.custom_sections[{section_index}].blocks[{block_index}].metrics[{index}]",
+                    metric,
+                )
+
+
+def resolve_sections(report: Mapping[str, Any]) -> list[str]:
+    """Visible section ids in render order: the teacher's list, or the default."""
+    requested = report.get("presentation", {}).get("sections")
+    if requested is None:
+        custom = [f'custom:{section["id"]}' for section in report.get("custom_sections", [])]
+        requested = [
+            "summary",
+            "kpis",
+            "learning_path",
+            "lessons",
+            "followups",
+            "engagement",
+            "audience",
+            *custom,
+            "recommendations",
+            "methods",
+            "operations",
+        ]
+    return [item for item in requested if item != "operations" or "operations" in report]
+
+
+def validate_presentation(report: Mapping[str, Any]) -> None:
+    """Check teacher-requested layout, custom sections and style overrides."""
+    custom_sections = report.get("custom_sections", [])
+    custom_ids = [section["id"] for section in custom_sections]
+    if len(custom_ids) != len(set(custom_ids)):
+        raise ReportError("$.custom_sections: section ids must be unique")
+    known = set(BUILTIN_SECTIONS) | {f"custom:{item}" for item in custom_ids}
+
+    presentation = report.get("presentation", {})
+    sections = presentation.get("sections")
+    if sections is not None:
+        if len(sections) != len(set(sections)):
+            raise ReportError("$.presentation.sections: a section can be listed only once")
+        for item in sections:
+            if item not in known:
+                raise ReportError(f"$.presentation.sections: unknown section {item!r}")
+        if "methods" not in sections:
+            raise ReportError(
+                "$.presentation.sections: 'methods' cannot be hidden; readers need metric "
+                "definitions and data limitations"
+            )
+    for item in presentation.get("section_titles", {}):
+        if item not in known:
+            raise ReportError(f"$.presentation.section_titles: unknown section {item!r}")
+    if UNSAFE_CSS.search(presentation.get("custom_css", "")):
+        raise ReportError(
+            "$.presentation.custom_css: markup, escapes, @import, url(), image-set(), "
+            "links and script expressions are not allowed"
+        )
+
+    required_fields = {
+        "text": ("body",),
+        "callout": ("body",),
+        "metrics": ("metrics",),
+        "bars": ("metrics",),
+        "table": ("columns", "rows", "source_note"),
+    }
+    for section_index, section in enumerate(custom_sections):
+        for block_index, block in enumerate(section["blocks"]):
+            path = f"$.custom_sections[{section_index}].blocks[{block_index}]"
+            kind = block["type"]
+            for field in required_fields[kind]:
+                if field not in block:
+                    raise ReportError(f"{path}: a {kind} block requires {field!r}")
+            if kind == "bars":
+                if len({metric["unit"] for metric in block["metrics"]}) != 1:
+                    raise ReportError(f"{path}: bars in one chart must share a unit")
+                for metric in block["metrics"]:
+                    value = metric["value"]
+                    if value is not None and (
+                        not isinstance(value, (int, float)) or isinstance(value, bool)
+                    ):
+                        raise ReportError(f"{path}: bar values must be numeric or null")
+                    if value is not None and value < 0:
+                        raise ReportError(
+                            f"{path}: bar charts need non-negative values; "
+                            "show signed changes in a table"
+                        )
+            if kind == "table":
+                width = len(block["columns"])
+                if any(len(row) != width for row in block["rows"]):
+                    raise ReportError(f"{path}: every table row must match the column count")
 
 
 def validate_semantics(report: Mapping[str, Any]) -> None:
     definitions = report["metric_definitions"]
+    if report["schema_version"] == "1.0":
+        newer = [name for name in ("presentation", "custom_sections") if name in report]
+        if "teacher_adjustments" in report["data_quality"]:
+            newer.append("data_quality.teacher_adjustments")
+        if any("origin" in definition for definition in definitions.values()):
+            newer.append("metric_definitions origin")
+        if any("comparison" in metric for _, metric in iter_metrics(report)):
+            newer.append("metric comparison")
+        if newer:
+            raise ReportError(
+                f'$.schema_version: {", ".join(newer)} require schema_version "1.1"'
+            )
+    for key in definitions:
+        if FORBIDDEN_KEY.search(key):
+            raise ReportError(f"$.metric_definitions: forbidden identifier-like key {key!r}")
     metric_paths: dict[str, str] = {}
     metrics: dict[str, Mapping[str, Any]] = {}
     operation_keys = {
@@ -462,16 +606,27 @@ def validate_semantics(report: Mapping[str, Any]) -> None:
                 or value > 100
             ):
                 raise ReportError(f"{path}: percentage metric value must be numeric from 0 to 100")
+            numerator = metric.get("numerator")
+            denominator = metric.get("denominator")
+            if numerator is not None and denominator is not None:
+                if denominator <= 0 or numerator < 0 or numerator > denominator:
+                    raise ReportError(
+                        f"{path}: numerator must be between zero and a positive denominator"
+                    )
+                if not math.isclose(
+                    float(value), numerator / denominator * 100, rel_tol=0.002, abs_tol=0.11
+                ):
+                    raise ReportError(f"{path}: value does not match numerator/denominator")
 
     completion_metrics = [
         (key, metric) for key, metric in metrics.items() if key.endswith("completion_proxy")
     ]
-    if len(completion_metrics) != 1:
+    if len(completion_metrics) > 1:
         raise ReportError(
-            "report must contain exactly one metric whose key ends with 'completion_proxy'"
+            "report must contain at most one metric whose key ends with 'completion_proxy'"
         )
-    completion_key, completion = completion_metrics[0]
-    if completion["value"] is not None:
+    completion_key, completion = completion_metrics[0] if completion_metrics else ("", None)
+    if completion is not None and completion["value"] is not None:
         numerator = completion.get("numerator")
         denominator = completion.get("denominator")
         if not completion["is_approximate"]:
@@ -493,6 +648,14 @@ def validate_semantics(report: Mapping[str, Any]) -> None:
             )
 
     for lesson_index, lesson in enumerate(report["lesson_health"]):
+        # The comparison table keys a lesson's metrics by label, so a repeat would be dropped.
+        labels = [metric["label"] for metric in lesson["metrics"]]
+        repeated = sorted({label for label in labels if labels.count(label) > 1})
+        if repeated:
+            raise ReportError(
+                f"$.lesson_health[{lesson_index}].metrics: label {repeated[0]!r} appears more "
+                "than once in one lesson; give each metric a distinct label or use 'comparison'"
+            )
         for reference in lesson["evidence"]:
             if reference not in metrics or reference in operation_keys:
                 raise ReportError(
@@ -585,12 +748,17 @@ def validate_semantics(report: Mapping[str, Any]) -> None:
                 raise ReportError(
                     f"$.overview.learning_path[{index}].metric.value: path charts require numeric or null values"
                 )
+            if metric["value"] is not None and metric["value"] < 0:
+                raise ReportError(
+                    f"$.overview.learning_path[{index}].metric.value: path charts need non-negative values"
+                )
 
     try:
         datetime.fromisoformat(report["meta"]["generated_at"].replace("Z", "+00:00"))
     except ValueError as exc:
         raise ReportError("$.meta.generated_at: expected an ISO 8601 date-time") from exc
 
+    validate_presentation(report)
     privacy_scan(report)
 
 
@@ -614,6 +782,29 @@ def _language(meta: Mapping[str, Any]) -> tuple[bool, Mapping[str, Any]]:
     return is_zh, TEXT["zh" if is_zh else "en"]
 
 
+class RenderContext:
+    """Read-only lookups shared by every section renderer."""
+
+    def __init__(self, report: Mapping[str, Any]) -> None:
+        self.report = report
+        self.is_zh, self.strings = _language(report["meta"])
+        self.definitions: Mapping[str, Any] = report["metric_definitions"]
+        self.metrics = {metric["key"]: metric for _, metric in iter_metrics(report)}
+        self.presentation: Mapping[str, Any] = report.get("presentation", {})
+        self.lesson_of = {
+            metric["key"]: lesson["position"]
+            for lesson in report["lesson_health"]
+            for metric in lesson["metrics"]
+        }
+
+    def t(self, key: str) -> str:
+        return str(self.strings[key])
+
+    def enum(self, mapping: Mapping[str, tuple[str, str]], value: str) -> str:
+        labels = mapping.get(value)
+        return labels[0 if self.is_zh else 1] if labels else value
+
+
 def _relative_luminance(color: str) -> float:
     channels = [int(color[index : index + 2], 16) / 255 for index in (1, 3, 5)]
 
@@ -624,12 +815,37 @@ def _relative_luminance(color: str) -> float:
     return 0.2126 * red + 0.7152 * green + 0.0722 * blue
 
 
-def _safe_accent(value: Any) -> str:
-    fallback = "#D6001C"
+def _contrast(first: str, second: str) -> float:
+    lighter, darker = sorted(
+        (_relative_luminance(first), _relative_luminance(second)), reverse=True
+    )
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _safe_accent(value: Any, theme: str) -> str:
+    """Use a requested accent only when it stays readable on the theme surface."""
+    preset = THEMES[theme]
     if not isinstance(value, str) or VALID_ACCENT.fullmatch(value) is None:
-        return fallback
-    contrast_with_white = 1.05 / (_relative_luminance(value) + 0.05)
-    return value if contrast_with_white >= 4.5 else fallback
+        return preset["accent"]
+    return value if _contrast(value, preset["surface"]) >= 4.5 else preset["accent"]
+
+
+def _brand_logo(ctx: RenderContext) -> str:
+    """Embed the AI-Shifu logo for light and dark backgrounds as data URIs."""
+    language = "zh" if ctx.is_zh else "en"
+    name = "AI 师傅" if ctx.is_zh else "AI-Shifu"
+    images = ""
+    for variant, suffix in (("on-light", ""), ("on-dark", "-reverse")):
+        path = BRAND_DIR / f"logo-{language}{suffix}.png"
+        try:
+            encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+        except OSError as exc:
+            raise ReportError(f"cannot read brand logo {path}: {exc}") from exc
+        images += (
+            f'<img class="brand-logo {variant}" alt="{esc(name)}" '
+            f'src="data:image/png;base64,{encoded}">'
+        )
+    return images
 
 
 def _format_generated_at(value: str, is_zh: bool) -> str:
@@ -653,9 +869,8 @@ def _format_generated_at(value: str, is_zh: bool) -> str:
     return f"{month} {parsed.day}, {parsed.year} {parsed.hour:02d}:{parsed.minute:02d}"
 
 
-def _enum_label(mapping: Mapping[str, tuple[str, str]], value: str, is_zh: bool) -> str:
-    labels = mapping.get(value)
-    return labels[0 if is_zh else 1] if labels else value
+def _is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
 def _format_number(value: int | float) -> str:
@@ -664,33 +879,112 @@ def _format_number(value: int | float) -> str:
     return f"{value:,.2f}".rstrip("0").rstrip(".")
 
 
-def _format_share(value: int | float | None, strings: Mapping[str, Any]) -> str:
+def _with_unit(rendered: str, unit: str) -> str:
+    if not unit:
+        return rendered
+    separator = "" if unit == "%" or ord(unit[0]) > 0x2E7F else " "
+    return rendered + separator + unit
+
+
+def _format_share(value: int | float | None, ctx: RenderContext) -> str:
     if value is None:
-        return str(strings["no_data"])
+        return ctx.t("no_data")
     return f"{value:.1%}"
 
 
-def format_metric_value(metric: Mapping[str, Any], strings: Mapping[str, Any]) -> str:
+def _is_completion(metric: Mapping[str, Any]) -> bool:
+    return str(metric["key"]).endswith("completion_proxy")
+
+
+def metric_text(metric: Mapping[str, Any], ctx: RenderContext, *, short: bool = False) -> str:
+    """Return the unescaped reader-facing value; a missing value is never zero."""
     value = metric["value"]
     if value is None:
-        return esc(strings["no_data"])
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
-        rendered = _format_number(value)
-    else:
-        rendered = esc(value)
-    unit = metric["unit"]
-    if unit:
-        separator = "" if unit in {"%", "分", "人", "次", "条", "节"} else " "
-        rendered += separator + esc(unit)
-    if metric["is_approximate"] and not metric["key"].endswith("completion_proxy"):
-        rendered += f'<span class="approx-tag">{esc(DATA_QUALITY_LABELS["approximate"][0 if strings is TEXT["zh"] else 1])}</span>'
-    return rendered
+        return ctx.t("no_data_short" if short else "no_data")
+    rendered = _format_number(value) if _is_number(value) else str(value)
+    return _with_unit(rendered, metric["unit"])
 
 
-def display_metric_label(metric: Mapping[str, Any], strings: Mapping[str, Any]) -> str:
-    if metric["key"].endswith("completion_proxy"):
-        return str(strings["completion_rate"])
+def display_metric_label(metric: Mapping[str, Any], ctx: RenderContext) -> str:
+    if _is_completion(metric) and not _is_teacher_defined(metric["key"], ctx):
+        return ctx.t("completion_rate")
     return str(metric["label"])
+
+
+def _is_teacher_defined(key: str, ctx: RenderContext) -> bool:
+    return ctx.definitions.get(key, {}).get("origin") == "teacher"
+
+
+def metric_tags(metric: Mapping[str, Any], ctx: RenderContext) -> str:
+    tags = ""
+    if _is_teacher_defined(metric["key"], ctx):
+        tags += f'<span class="tag is-teacher">{esc(ctx.t("teacher_defined"))}</span>'
+    if metric["is_approximate"] and not _is_completion(metric):
+        tags += f'<span class="tag approx-tag">{esc(ctx.enum(DATA_QUALITY_LABELS, "approximate"))}</span>'
+    return tags
+
+
+def quality_label(metric: Mapping[str, Any], ctx: RenderContext) -> str:
+    if (
+        _is_completion(metric)
+        and metric["value"] is not None
+        and not _is_teacher_defined(metric["key"], ctx)
+    ):
+        return ctx.t("completion_calculation")
+    return ctx.enum(DATA_QUALITY_LABELS, metric["data_quality"])
+
+
+def metric_context(metric: Mapping[str, Any], ctx: RenderContext) -> str:
+    return f'{metric["time_scope"]["label"]} · {quality_label(metric, ctx)}'
+
+
+def comparison_text(metric: Mapping[str, Any], ctx: RenderContext) -> str:
+    comparison = metric.get("comparison")
+    value = metric["value"]
+    if not comparison or not _is_number(value):
+        return ""
+    unit = metric["unit"]
+    previous = _with_unit(_format_number(comparison["value"]), unit)
+    delta = value - comparison["value"]
+    sign = "+" if delta > 0 else ("−" if delta < 0 else "±")
+    delta_unit = ctx.t("percentage_points") if unit == "%" else unit
+    change = _with_unit(sign + _format_number(abs(round(delta, 2))), delta_unit)
+    return f'{comparison["label"]} {previous} · {ctx.t("change")} {change}'
+
+
+def comparison_html(metric: Mapping[str, Any], ctx: RenderContext) -> str:
+    """Before/after line for metric views outside the KPI tiles."""
+    comparison = comparison_text(metric, ctx)
+    return f'<span class="cell-sub">{esc(comparison)}</span>' if comparison else ""
+
+
+def definitions_details(
+    metrics: Sequence[Mapping[str, Any]], ctx: RenderContext, *, show_label: bool = True
+) -> str:
+    """Collapsible definition, scope and source for the metrics shown nearby."""
+    if not metrics:
+        return ""
+    separator = "；" if ctx.is_zh else "; "
+    rows: list[str] = []
+    for metric in metrics:
+        notes = separator.join(esc(note) for note in metric["source_notes"])
+        body = f'<p>{esc(metric["definition"])}</p><p>{notes}</p>'
+        if show_label:
+            rows.append(
+                f'<div><dt>{esc(display_metric_label(metric, ctx))}'
+                f'（{esc(metric_context(metric, ctx))}）</dt><dd>{body}</dd></div>'
+            )
+        else:
+            rows.append(body)
+    content = f'<dl class="definition-list">{"".join(rows)}</dl>' if show_label else "".join(rows)
+    return (
+        f'<details class="metric-details"><summary>{esc(ctx.t("metric_details"))}</summary>'
+        f'<div class="details-body">{content}</div></details>'
+    )
+
+
+def _empty(text: str) -> str:
+    return f'<p class="callout empty-state">{esc(text)}</p>'
 
 
 def _list_html(items: Iterable[str], empty_text: str) -> str:
@@ -700,430 +994,707 @@ def _list_html(items: Iterable[str], empty_text: str) -> str:
     return "<ul>" + "".join(f"<li>{esc(item)}</li>" for item in values) + "</ul>"
 
 
-def _section_heading(index: int, title: str, description: str, heading_id: str) -> str:
+def _meter(fraction: float, label: str) -> str:
+    width = max(0.0, min(100.0, fraction * 100))
+    return f'<div class="meter" title="{esc(label)}"><span style="width:{width:.2f}%"></span></div>'
+
+
+def _bar(fraction: float | None, label: str) -> str:
+    """A bar from zero; a missing value (None) keeps the baseline but draws no mark."""
+    if fraction is None:
+        return f'<div class="bar is-empty" title="{esc(label)}"></div>'
+    width = max(0.0, min(100.0, fraction * 100))
+    return f'<div class="bar" title="{esc(label)}"><span style="width:{width:.2f}%"></span></div>'
+
+
+def render_kpi(metric: Mapping[str, Any], ctx: RenderContext) -> str:
+    value = metric["value"]
+    unit = metric["unit"]
+    if value is None:
+        value_html = f'<div class="kpi-value is-empty">{esc(ctx.t("no_data"))}</div>'
+    elif _is_number(value):
+        unit_html = f'<span class="unit">{esc(unit)}</span>' if unit else ""
+        value_html = (
+            f'<div class="kpi-value"><span class="num">{esc(_format_number(value))}</span>'
+            f"{unit_html}</div>"
+        )
+    else:
+        value_html = f'<div class="kpi-value">{esc(_with_unit(str(value), unit))}</div>'
+
+    extras = ""
+    if _is_number(value) and unit == "%":
+        extras += _meter(float(value) / 100, metric_text(metric, ctx))
+    numerator = metric.get("numerator")
+    denominator = metric.get("denominator")
+    if numerator is not None and denominator is not None:
+        standard_completion = _is_completion(metric) and not _is_teacher_defined(metric["key"], ctx)
+        fraction_label = ctx.t("proxy_fraction" if standard_completion else "fraction")
+        extras += (
+            f'<div class="kpi-fraction">{esc(fraction_label)}：'
+            f"{esc(_format_number(numerator))} / {esc(_format_number(denominator))}</div>"
+        )
+    comparison = comparison_text(metric, ctx)
+    if comparison:
+        extras += f'<div class="kpi-delta">{esc(comparison)}</div>'
     return (
-        '<div class="section-heading"><div>'
-        f'<span class="section-index">{index:02d}</span>'
-        f'<h2 id="{esc(heading_id)}">{esc(title)}</h2>'
-        f'<p class="section-description">{esc(description)}</p>'
-        "</div></div>"
+        '<article class="kpi">'
+        f'<div class="kpi-label">{esc(display_metric_label(metric, ctx))}{metric_tags(metric, ctx)}</div>'
+        + value_html
+        + extras
+        + f'<div class="kpi-meta">{esc(metric_context(metric, ctx))}</div>'
+        + definitions_details([metric], ctx, show_label=False)
+        + "</article>"
     )
 
 
-def render_summary(report: Mapping[str, Any], strings: Mapping[str, Any]) -> str:
+def render_evidence(
+    references: Sequence[str], ctx: RenderContext, *, within_lesson: int | None = None
+) -> str:
+    """Evidence chips; a lesson metric cited elsewhere names its lesson."""
+    if not references:
+        return ""
+    chips = ""
+    for reference in references:
+        metric = ctx.metrics[reference]
+        label = display_metric_label(metric, ctx)
+        position = ctx.lesson_of.get(reference)
+        if position is not None and position != within_lesson:
+            label = f'{ctx.t("lesson")} {position} · {label}'
+        chips += (
+            f'<span class="evidence-ref">{esc(label)}：{esc(metric_text(metric, ctx))}</span>'
+        )
+    return (
+        f'<div class="evidence" aria-label="{esc(ctx.t("evidence"))}">'
+        f'<span>{esc(ctx.t("evidence"))}</span>{chips}</div>'
+    )
+
+
+def render_summary(report: Mapping[str, Any], ctx: RenderContext) -> str:
     summary = report["overview"]["executive_summary"]
     conclusions = "".join(
-        '<article class="conclusion-card">'
-        f'<strong>{esc(strings["conclusion"])} {index}</strong><p>{esc(item)}</p>'
-        "</article>"
+        f'<li class="conclusion"><span class="badge-index" aria-hidden="true">{index}</span>'
+        f"<p>{esc(item)}</p></li>"
         for index, item in enumerate(summary["conclusions"], start=1)
     )
     limitations = summary["critical_limitations"]
     limitation_html = ""
     if limitations:
         limitation_html = (
-            '<aside class="limitation-callout" aria-label="'
-            + esc(strings["critical_limits"])
-            + '"><strong>'
-            + esc(strings["critical_limits"])
-            + "：</strong> "
-            + "；".join(esc(item) for item in limitations)
+            f'<aside class="callout is-limit" aria-label="{esc(ctx.t("critical_limits"))}">'
+            f'<strong>{esc(ctx.t("critical_limits"))}</strong>'
+            + _list_html(limitations, "")
             + "</aside>"
         )
-    kpis = "".join(render_kpi(metric, strings) for metric in report["overview"]["kpis"])
     return (
-        '<section class="section summary-band" aria-labelledby="summary-heading">'
-        '<div class="section-heading"><div><span class="section-index">01</span>'
-        f'<h2 id="summary-heading">{esc(strings["management"])}</h2>'
-        f'<p class="section-description">{esc(strings["management_desc"])}</p>'
-        "</div></div>"
-        '<div class="health-line"><span class="health-label">'
-        + esc(strings["overall_health"])
-        + '</span><span class="health-value">'
-        + esc(summary["overall_health"])
-        + "</span></div>"
-        + f'<div class="conclusion-grid">{conclusions}</div>'
+        f'<p class="verdict"><span class="verdict-label">{esc(ctx.t("overall_health"))}</span>'
+        f'{esc(summary["overall_health"])}</p>'
+        f'<ol class="conclusions" aria-label="{esc(ctx.t("conclusion"))}">{conclusions}</ol>'
         + limitation_html
-        + f'<h3 class="subsection-heading">{esc(strings["kpis"])}</h3>'
-        + f'<div class="kpi-grid">{kpis}</div>'
-        + "</section>"
     )
 
 
-def render_kpi(metric: Mapping[str, Any], strings: Mapping[str, Any]) -> str:
-    quality = (
-        strings["completion_calculation"]
-        if metric["key"].endswith("completion_proxy") and metric["value"] is not None
-        else _enum_label(DATA_QUALITY_LABELS, metric["data_quality"], strings is TEXT["zh"])
-    )
-    scope = metric["time_scope"]["label"]
-    numerator = metric.get("numerator")
-    denominator = metric.get("denominator")
-    fraction = ""
-    if numerator is not None and denominator is not None:
-        fraction_label = (
-            strings["proxy_fraction"]
-            if metric["key"].endswith("completion_proxy")
-            else strings["fraction"]
-        )
-        fraction = (
-            f'<span class="proxy-fraction">{esc(fraction_label)}：'
-            f'{esc(_format_number(numerator))} / {esc(_format_number(denominator))}</span>'
-        )
+def render_kpis(report: Mapping[str, Any], ctx: RenderContext) -> str:
     return (
-        '<article class="kpi-card">'
-        f'<span class="kpi-label">{esc(display_metric_label(metric, strings))}</span>'
-        f'<span class="kpi-value">{format_metric_value(metric, strings)}</span>'
-        + fraction
-        + f'<span class="kpi-meta">{esc(scope)} · {esc(quality)}</span>'
-        + render_metric_details(metric, strings)
-        + "</article>"
-    )
-
-
-def render_metric_details(metric: Mapping[str, Any], strings: Mapping[str, Any]) -> str:
-    notes = "；".join(esc(note) for note in metric["source_notes"])
-    return (
-        '<details class="metric-details"><summary>'
-        + esc(strings["metric_details"])
-        + '</summary><div class="details-body"><p>'
-        + esc(metric["definition"])
-        + "</p><p>"
-        + notes
-        + "</p></div></details>"
-    )
-
-
-def render_learning_path(report: Mapping[str, Any], strings: Mapping[str, Any], index: int) -> str:
-    stages = report["overview"]["learning_path"]
-    numeric = [
-        float(stage["metric"]["value"])
-        for stage in stages
-        if isinstance(stage["metric"]["value"], (int, float))
-        and not isinstance(stage["metric"]["value"], bool)
-    ]
-    maximum = max(numeric, default=0.0)
-    rows: list[str] = []
-    for stage in stages:
-        metric = stage["metric"]
-        value = metric["value"]
-        if isinstance(value, (int, float)) and not isinstance(value, bool) and maximum > 0:
-            width = max(0.0, min(100.0, float(value) / maximum * 100))
-            bar = (
-                f'<div class="bar-track"><div class="bar-fill" style="width:{width:.2f}%"></div></div>'
-            )
-        else:
-            bar = '<div class="bar-track"><div class="bar-fill" style="width:0"></div></div>'
-        value_label = format_metric_value(metric, strings)
-        quality_label = _enum_label(
-            DATA_QUALITY_LABELS, metric["data_quality"], strings is TEXT["zh"]
-        )
-        source_summary = "；".join(metric["source_notes"])
-        path_note = (
-            f'{stage["note"]} · {metric["time_scope"]["label"]} · '
-            f"{quality_label} · {source_summary}"
-        )
-        aria = (
-            f'{stage["stage"]}: {re.sub("<[^>]+>", "", value_label)}. '
-            f"{path_note}"
-        )
-        rows.append(
-            f'<div class="path-row" role="img" aria-label="{esc(aria)}">'
-            f'<div class="path-stage">{esc(stage["stage"])}</div>{bar}'
-            f'<div class="bar-label">{value_label}</div>'
-            f'<div class="path-note">{esc(path_note)}</div></div>'
-        )
-    content = "".join(rows) if rows else f'<div class="empty-state">{esc(strings["no_data"])}</div>'
-    return (
-        f'<section class="section" aria-labelledby="path-heading">{_section_heading(index, strings["learning_path"], strings["learning_path_desc"], "path-heading")}'
-        f'<div class="path-list">{content}</div></section>'
-    )
-
-
-def _metric_rows(metrics: Sequence[Mapping[str, Any]], strings: Mapping[str, Any]) -> str:
-    if not metrics:
-        return f'<div class="empty-state">{esc(strings["no_data"])}</div>'
-    return (
-        '<dl class="metric-list">'
-        + "".join(_render_metric_row(metric, strings) for metric in metrics)
-        + "</dl>"
-    )
-
-
-def _render_metric_row(metric: Mapping[str, Any], strings: Mapping[str, Any]) -> str:
-    quality = (
-        strings["completion_calculation"]
-        if metric["key"].endswith("completion_proxy") and metric["value"] is not None
-        else _enum_label(DATA_QUALITY_LABELS, metric["data_quality"], strings is TEXT["zh"])
-    )
-    context = f'{metric["time_scope"]["label"]} · {quality}'
-    return (
-        '<div class="metric-row"><dt>'
-        + esc(display_metric_label(metric, strings))
-        + f'<span class="metric-context">{esc(context)}</span></dt>'
-        + f'<dd>{format_metric_value(metric, strings)}</dd>'
-        + render_metric_details(metric, strings)
+        '<div class="kpi-grid">'
+        + "".join(render_kpi(metric, ctx) for metric in report["overview"]["kpis"])
         + "</div>"
     )
 
 
-def render_evidence_badges(
-    references: Sequence[str],
-    metrics: Mapping[str, Mapping[str, Any]],
-    strings: Mapping[str, Any],
-) -> str:
-    return "".join(
-        '<span class="evidence-ref">'
-        + esc(display_metric_label(metrics[reference], strings))
-        + "："
-        + format_metric_value(metrics[reference], strings)
-        + "</span>"
-        for reference in references
-    )
-
-
-def render_lessons(report: Mapping[str, Any], strings: Mapping[str, Any], index: int) -> str:
-    cards: list[str] = []
-    is_zh = strings is TEXT["zh"]
-    metrics = {metric["key"]: metric for _, metric in iter_metrics(report)}
-    for lesson in report["lesson_health"]:
-        status = lesson["health_status"]
-        status_label = _enum_label(HEALTH_LABELS, status, is_zh)
-        evidence = render_evidence_badges(lesson["evidence"], metrics, strings)
-        cards.append(
-            '<article class="lesson-card">'
-            '<div class="lesson-card-header"><div>'
-            f'<span class="lesson-order">{esc(strings["lesson"])} {lesson["position"]:02d}</span>'
-            f'<h3>{esc(lesson["title"])}</h3></div>'
-            f'<span class="status-pill is-{esc(status)}">{esc(status_label)}</span></div>'
-            '<div class="lesson-card-body">'
-            f'<p class="lesson-finding">{esc(lesson["finding"])}</p>'
-            + _metric_rows(lesson["metrics"], strings)
-            + f'<div class="evidence-list" aria-label="{esc(strings["evidence"])}">{evidence}</div>'
-            + "</div></article>"
+def render_learning_path(report: Mapping[str, Any], ctx: RenderContext) -> str:
+    stages = report["overview"]["learning_path"]
+    if not stages:
+        return _empty(ctx.t("no_data"))
+    metrics = [stage["metric"] for stage in stages]
+    numeric = [float(metric["value"]) for metric in metrics if _is_number(metric["value"])]
+    unit = metrics[0]["unit"]
+    # A percentage is drawn against 100, as in every other section; counts against the largest.
+    maximum = 100.0 if unit == "%" else max(numeric, default=0.0)
+    uniform_quality = len({quality_label(metric, ctx) for metric in metrics}) == 1
+    rows: list[str] = []
+    previous: float | None = None
+    for position, stage in enumerate(stages, start=1):
+        metric = stage["metric"]
+        value = metric["value"]
+        value_label = metric_text(metric, ctx)
+        notes = [stage["note"]] if stage["note"] else []
+        if not uniform_quality:
+            notes.append(quality_label(metric, ctx))
+        if _is_number(value):
+            fraction = float(value) / maximum if maximum > 0 else 0.0
+            if previous and unit != "%":
+                notes.append(ctx.t("of_previous").format(share=f"{float(value) / previous:.0%}"))
+            previous = float(value)
+        else:
+            fraction = None
+            previous = None
+        comparison = comparison_text(metric, ctx)
+        if comparison:
+            notes.append(comparison)
+        note_html = (
+            f'<div class="path-note">{esc(" · ".join(notes))}</div>' if notes else ""
         )
-    content = "".join(cards) if cards else f'<div class="empty-state">{esc(strings["no_data"])}</div>'
+        rows.append(
+            '<li class="path-row">'
+            f'<div class="path-stage"><span class="path-index" aria-hidden="true">{position}</span>'
+            f'<span>{esc(stage["stage"])}</span></div>'
+            + _bar(fraction, f'{stage["stage"]}: {value_label}')
+            + f'<div class="path-value">{esc(value_label)}</div>'
+            + note_html
+            + "</li>"
+        )
+    context = (
+        metric_context(metrics[0], ctx) if uniform_quality else metrics[0]["time_scope"]["label"]
+    )
+    caption = f'{ctx.t("unit")}：{unit} · {context}' if unit else context
     return (
-        f'<section class="section" aria-labelledby="lessons-heading">{_section_heading(index, strings["lesson_health"], strings["lesson_health_desc"], "lessons-heading")}'
-        f'<div class="lesson-grid">{content}</div></section>'
+        '<figure class="chart">'
+        f'<figcaption class="chart-caption">{esc(caption)}</figcaption>'
+        f'<ol class="path">{"".join(rows)}</ol></figure>'
+        + definitions_details(metrics, ctx)
     )
 
 
-def render_followups(report: Mapping[str, Any], strings: Mapping[str, Any], index: int) -> str:
+def _lesson_table_columns(lessons: Sequence[Mapping[str, Any]], ctx: RenderContext) -> list[str]:
+    """Metrics that share a display label across lessons share a table column."""
+    available: list[str] = []
+    for lesson in lessons:
+        for metric in lesson["metrics"]:
+            label = display_metric_label(metric, ctx)
+            if label not in available:
+                available.append(label)
+    requested = ctx.presentation.get("lesson_table_columns")
+    columns = [label for label in requested if label in available] if requested else available[:6]
+    return columns if len(lessons) >= 2 else []
+
+
+def _lesson_table(
+    lessons: Sequence[Mapping[str, Any]], columns: Sequence[str], ctx: RenderContext
+) -> str:
+    if not columns:
+        return ""
+    head = "".join(f'<th scope="col" class="num">{esc(label)}</th>' for label in columns)
+    rows: list[str] = []
+    for lesson in lessons:
+        by_label = {display_metric_label(metric, ctx): metric for metric in lesson["metrics"]}
+        cells = ""
+        for label in columns:
+            metric = by_label.get(label)
+            if metric is None or metric["value"] is None:
+                cells += f'<td class="num is-missing">{esc(ctx.t("no_data_short"))}</td>'
+            else:
+                cells += (
+                    f'<td class="num">{esc(metric_text(metric, ctx))}'
+                    f"{comparison_html(metric, ctx)}</td>"
+                )
+        status = lesson["health_status"]
+        rows.append(
+            f'<tr><th scope="row"><span class="cell-sub">{esc(ctx.t("lesson"))} {lesson["position"]:02d}</span>'
+            f'{esc(lesson["title"])}</th>'
+            f'<td><span class="pill is-{esc(status)}">{esc(ctx.enum(HEALTH_LABELS, status))}</span></td>'
+            f"{cells}</tr>"
+        )
+    return (
+        '<div class="table-wrap"><table class="lesson-table">'
+        f'<caption>{esc(ctx.t("lesson_table"))}</caption><thead><tr>'
+        f'<th scope="col">{esc(ctx.t("lesson"))}</th><th scope="col">{esc(ctx.t("status"))}</th>{head}'
+        f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
+    )
+
+
+def render_lessons(report: Mapping[str, Any], ctx: RenderContext) -> str:
+    lessons = report["lesson_health"]
+    if not lessons:
+        return _empty(ctx.t("no_data"))
+    columns = _lesson_table_columns(lessons, ctx)
+    cards: list[str] = []
+    for lesson in lessons:
+        status = lesson["health_status"]
+        # The comparison table already shows these; cards repeat only what it omits.
+        stats = "".join(
+            f'<div class="stat"><dt>{esc(display_metric_label(metric, ctx))}{metric_tags(metric, ctx)}</dt>'
+            f'<dd>{esc(metric_text(metric, ctx, short=True))}{comparison_html(metric, ctx)}</dd></div>'
+            for metric in lesson["metrics"]
+            if display_metric_label(metric, ctx) not in columns
+        )
+        stats_html = f'<dl class="stats">{stats}</dl>' if stats else ""
+        cards.append(
+            '<article class="lesson">'
+            '<div class="lesson-header"><div>'
+            f'<span class="lesson-order">{esc(ctx.t("lesson"))} {lesson["position"]:02d}</span>'
+            f'<h3>{esc(lesson["title"])}</h3></div>'
+            f'<span class="pill is-{esc(status)}">{esc(ctx.enum(HEALTH_LABELS, status))}</span></div>'
+            f'<p class="lesson-finding">{esc(lesson["finding"])}</p>'
+            + stats_html
+            + render_evidence(lesson["evidence"], ctx, within_lesson=lesson["position"])
+            + definitions_details(lesson["metrics"], ctx)
+            + "</article>"
+        )
+    table = _lesson_table(lessons, columns, ctx)
+    heading = (
+        f'<h3 class="subsection-heading">{esc(ctx.t("lesson_findings"))}</h3>' if table else ""
+    )
+    return table + heading + f'<div class="lesson-list">{"".join(cards)}</div>'
+
+
+def render_followups(report: Mapping[str, Any], ctx: RenderContext) -> str:
     followups = report["engagement"]["follow_up_analysis"]
     status = followups["status"]
-    if status == "available":
-        sample_size = followups["sample_size"]
-        span = followups["effective_span"] or strings["no_data"]
-        sample_note = (
-            f'{strings["sample"]}：{followups["sampling_rule"]} · '
-            f'{sample_size}/{followups["sample_limit"]} · {span}'
+    if status != "available":
+        state_text = ctx.t("not_collected" if status == "not_collected" else "no_data")
+        return (
+            f'<p class="chart-caption">{esc(followups["sampling_rule"])}</p>' + _empty(state_text)
         )
+    sample_size = followups["sample_size"]
+    span = followups["effective_span"] or ctx.t("no_data")
+    sample_note = (
+        f'{ctx.t("sample")}：{followups["sampling_rule"]} · '
+        f'{sample_size}/{followups["sample_limit"]} · {span}'
+    )
+    if sample_size == 0:
+        body = _empty(ctx.t("zero_followups"))
+    else:
         themes: list[str] = []
         for theme in followups["themes"]:
-            share = strings["no_data"] if theme["share"] is None else f'{theme["share"]:.1%}'
-            lesson_labels = "、".join(theme["lesson_labels"])
-            suffix = f" · {lesson_labels}" if lesson_labels else ""
-            themes.append(
-                '<div class="theme-row" role="listitem">'
-                f'<div><h3>{esc(theme["theme"])}</h3><span class="kpi-meta">{esc(suffix.lstrip(" ·"))}</span></div>'
-                f'<div class="theme-intent">{esc(theme["intent_summary"])}</div>'
-                f'<div class="theme-count">{theme["count"]} · {esc(share)}</div></div>'
+            share = _format_share(theme["share"], ctx)
+            count = _with_unit(str(theme["count"]), ctx.t("question_unit"))
+            lessons = "".join(
+                f'<span class="evidence-ref">{esc(label)}</span>' for label in theme["lesson_labels"]
             )
-        if sample_size == 0:
-            body = f'<div class="empty-state">{esc(strings["zero_followups"])}</div>'
-        else:
-            body = "".join(themes)
-    else:
-        sample_note = followups["sampling_rule"]
-        state_text = strings["not_collected"] if status == "not_collected" else strings["no_data"]
-        body = f'<div class="empty-state">{esc(state_text)}</div>'
+            lessons_html = f'<div class="theme-lessons">{lessons}</div>' if lessons else ""
+            meter = _meter(theme["share"] or 0.0, f'{theme["theme"]}: {share}')
+            themes.append(
+                '<li class="theme"><div>'
+                f'<h3>{esc(theme["theme"])}</h3>'
+                f'<p class="theme-intent">{esc(theme["intent_summary"])}</p>{lessons_html}</div>'
+                f'<div class="theme-share"><span class="theme-count">{esc(count)} · {esc(share)}</span>'
+                f"{meter}</div></li>"
+            )
+        body = (
+            f'<ol class="theme-list" aria-label="{esc(ctx.t("theme"))}">{"".join(themes)}</ol>'
+            if themes
+            else _empty(ctx.t("no_data"))
+        )
+    return f'<p class="chart-caption">{esc(sample_note)}</p>{body}'
+
+
+def _metric_rows(metrics: Sequence[Mapping[str, Any]], ctx: RenderContext) -> str:
+    if not metrics:
+        return f'<p class="empty-state">{esc(ctx.t("no_data"))}</p>'
+    values = [metric["value"] for metric in metrics]
+    units = {metric["unit"] for metric in metrics}
+    numeric = [float(value) for value in values if _is_number(value)]
+    comparable = len(units) == 1 and len(numeric) >= 2
+    unit = next(iter(units)) if len(units) == 1 else ""
+    whole_counts = comparable and all(float(value).is_integer() for value in numeric)
+    maximum = max(numeric, default=0.0)
+    contexts = {metric_context(metric, ctx) for metric in metrics}
+    shared_context = (
+        f'<p class="chart-caption">{esc(next(iter(contexts)))}</p>' if len(contexts) == 1 else ""
+    )
+    rows: list[str] = []
+    for metric in metrics:
+        value = metric["value"]
+        mark = ""
+        if _is_number(value) and comparable:
+            label = f'{display_metric_label(metric, ctx)}: {metric_text(metric, ctx)}'
+            if unit == "%":
+                mark = _meter(float(value) / 100, label)
+            elif whole_counts and maximum > 0:
+                mark = _bar(float(value) / maximum, label)
+        rows.append(
+            '<div class="metric-row"><dt>'
+            + esc(display_metric_label(metric, ctx))
+            + metric_tags(metric, ctx)
+            + (
+                ""
+                if shared_context
+                else f'<span class="metric-context">{esc(metric_context(metric, ctx))}</span>'
+            )
+            + "</dt>"
+            + f'<dd class="{"is-missing" if value is None else ""}">{esc(metric_text(metric, ctx))}'
+            + f"{comparison_html(metric, ctx)}</dd>"
+            + mark
+            + "</div>"
+        )
     return (
-        f'<section class="section" aria-labelledby="followups-heading">{_section_heading(index, strings["followups"], strings["followups_desc"], "followups-heading")}'
-        f'<p class="sample-note">{esc(sample_note)}</p>'
-        f'<div class="theme-list" role="list" aria-label="{esc(strings["followups"])}">{body}</div></section>'
+        shared_context
+        + f'<dl class="metric-list">{"".join(rows)}</dl>'
+        + definitions_details(metrics, ctx)
     )
 
 
-def render_engagement(report: Mapping[str, Any], strings: Mapping[str, Any], index: int) -> str:
+def render_engagement(report: Mapping[str, Any], ctx: RenderContext) -> str:
     engagement = report["engagement"]
     groups = (
-        (strings["ratings"], engagement["ratings"]),
-        (strings["modes"], engagement["learning_modes"]),
-        (strings["activity"], engagement["activity"]),
+        (ctx.t("ratings"), engagement["ratings"]),
+        (ctx.t("modes"), engagement["learning_modes"]),
+        (ctx.t("activity"), engagement["activity"]),
     )
     cards = "".join(
-        f'<article class="quality-card"><h3>{esc(title)}</h3>{_metric_rows(metrics, strings)}</article>'
+        f'<article class="note-card"><h3>{esc(title)}</h3>{_metric_rows(metrics, ctx)}</article>'
         for title, metrics in groups
     )
-    return (
-        f'<section class="section" aria-labelledby="engagement-heading">{_section_heading(index, strings["engagement"], strings["engagement_desc"], "engagement-heading")}'
-        f'<div class="quality-grid">{cards}</div></section>'
-    )
+    return f'<div class="note-grid">{cards}</div>'
 
 
-def render_audience(report: Mapping[str, Any], strings: Mapping[str, Any], index: int) -> str:
+def render_audience(report: Mapping[str, Any], ctx: RenderContext) -> str:
     audience = report["audience"]
+    if not audience["dimensions"]:
+        return _empty(audience["note"])
     dimensions: list[str] = []
     for dimension in audience["dimensions"]:
-        rows = "".join(
-            f'<tr><td>{esc(segment["label"])}</td><td>{segment["count"]:,}</td>'
-            f'<td>{esc(_format_share(segment["share"], strings))}</td></tr>'
-            for segment in dimension["segments"]
-        )
+        rows = ""
+        for segment in dimension["segments"]:
+            share = _format_share(segment["share"], ctx)
+            count = _with_unit(f'{segment["count"]:,}', ctx.t("learner_unit"))
+            rows += (
+                f'<li class="seg-row"><span>{esc(segment["label"])}</span>'
+                + _meter(segment["share"] or 0.0, f'{segment["label"]}: {share}')
+                + f'<span class="seg-value">{esc(count)} · {esc(share)}</span></li>'
+            )
         dimensions.append(
-            '<article class="audience-dimension">'
-            f'<h3>{esc(dimension["name"])}</h3><div class="table-wrap"><table>'
-            f'<caption>{esc(dimension["name"])}</caption><thead><tr><th>{esc(strings["segment"])}</th>'
-            f'<th>{esc(strings["count"])}</th><th>{esc(strings["share"])}</th></tr></thead>'
-            f'<tbody>{rows}</tbody></table></div>'
-            f'<p class="audience-implication"><strong>{esc(strings["teaching_implication"])}：</strong> '
+            '<article class="dimension">'
+            f'<h3>{esc(dimension["name"])}</h3><ul class="seg-list">{rows}</ul>'
+            f'<p class="implication"><strong>{esc(ctx.t("teaching_implication"))}：</strong>'
             f'{esc(dimension["teaching_implication"])}</p></article>'
         )
-    if not dimensions:
-        body = f'<div class="empty-state">{esc(audience["note"])}</div>'
-    else:
-        body = "".join(dimensions) + f'<p class="privacy-callout">{esc(audience["note"])}</p>'
-    return (
-        f'<section class="section" aria-labelledby="audience-heading">{_section_heading(index, strings["audience"], strings["audience_desc"], "audience-heading")}'
-        f'<div>{body}</div></section>'
-    )
+    return "".join(dimensions) + f'<p class="callout is-privacy">{esc(audience["note"])}</p>'
 
 
-def render_recommendations(report: Mapping[str, Any], strings: Mapping[str, Any], index: int) -> str:
-    is_zh = strings is TEXT["zh"]
+def render_recommendations(report: Mapping[str, Any], ctx: RenderContext) -> str:
     cards: list[str] = []
-    metrics = {metric["key"]: metric for _, metric in iter_metrics(report)}
-    for recommendation in report["recommendations"]:
+    for index, recommendation in enumerate(report["recommendations"], start=1):
         priority = recommendation["priority"]
         confidence = recommendation["confidence"]
-        evidence = render_evidence_badges(recommendation["evidence"], metrics, strings)
         cards.append(
-            '<article class="recommendation-card">'
-            '<div class="recommendation-top">'
+            '<article class="rec">'
+            '<div class="rec-header">'
+            f'<span class="badge-index" aria-hidden="true">{index}</span>'
             f'<h3>{esc(recommendation["title"])}</h3>'
-            f'<span class="priority-pill is-{esc(priority)}">{esc(_enum_label(PRIORITY_LABELS, priority, is_zh))}</span>'
-            "</div><dl>"
-            f'<div><dt>{esc(strings["observation"])}</dt><dd>{esc(recommendation["observation"])}</dd></div>'
-            f'<div><dt>{esc(strings["interpretation"])}</dt><dd>{esc(recommendation["interpretation"])}</dd></div>'
-            f'<div><dt>{esc(_enum_label(CONFIDENCE_LABELS, confidence, is_zh))}</dt><dd>'
-            f'<span class="confidence-pill is-{esc(confidence)}">{esc(_enum_label(CONFIDENCE_LABELS, confidence, is_zh))}</span></dd></div>'
-            f'<div><dt>{esc(strings["action"])}</dt><dd>{esc(recommendation["action"])}</dd></div>'
-            f'<div><dt>{esc(strings["validation"])}</dt><dd>{esc(recommendation["validation"])}</dd></div>'
+            '<div class="rec-pills">'
+            f'<span class="pill is-plain prio-{esc(priority)}">{esc(ctx.enum(PRIORITY_LABELS, priority))}</span>'
+            f'<span class="pill is-plain conf-{esc(confidence)}">{esc(ctx.enum(CONFIDENCE_LABELS, confidence))}</span>'
+            "</div></div>"
+            f'<div class="rec-action"><span class="rec-label">{esc(ctx.t("action"))}</span>'
+            f'<p>{esc(recommendation["action"])}</p></div>'
+            '<dl class="rec-body">'
+            f'<div><dt class="rec-label">{esc(ctx.t("observation"))}</dt><dd>{esc(recommendation["observation"])}</dd></div>'
+            f'<div><dt class="rec-label">{esc(ctx.t("interpretation"))}</dt><dd>{esc(recommendation["interpretation"])}</dd></div>'
+            f'<div><dt class="rec-label">{esc(ctx.t("validation"))}</dt><dd>{esc(recommendation["validation"])}</dd></div>'
             "</dl>"
-            f'<div class="evidence-list" aria-label="{esc(strings["evidence"])}">{evidence}</div>'
-            "</article>"
+            + render_evidence(recommendation["evidence"], ctx)
+            + "</article>"
         )
-    return (
-        f'<section class="section" aria-labelledby="recommendations-heading">{_section_heading(index, strings["recommendations"], strings["recommendations_desc"], "recommendations-heading")}'
-        f'<div class="recommendation-grid">{"".join(cards)}</div></section>'
-    )
+    return f'<div class="rec-list">{"".join(cards)}</div>'
 
 
-def render_methods(report: Mapping[str, Any], strings: Mapping[str, Any], index: int) -> str:
+def render_methods(report: Mapping[str, Any], ctx: RenderContext) -> str:
     quality = report["data_quality"]
-    cards = (
-        f'<article class="quality-card"><h3>{esc(strings["coverage"])}</h3>{_list_html(quality["coverage_notes"], strings["no_data"])}</article>'
-        f'<article class="quality-card"><h3>{esc(strings["limitations"])}</h3>{_list_html(quality["limitations"], strings["no_data"])}</article>'
-        f'<article class="quality-card"><h3>{esc(strings["privacy"])}</h3>{_list_html(quality["privacy_notes"], strings["no_data"])}</article>'
+    limitations = list(quality["limitations"])
+    if "summary" not in resolve_sections(report):
+        # Caveats shown with the summary must survive when a teacher hides it.
+        limitations += [
+            item
+            for item in report["overview"]["executive_summary"]["critical_limitations"]
+            if item not in limitations
+        ]
+    groups = [
+        (ctx.t("coverage"), quality["coverage_notes"]),
+        (ctx.t("limitations"), limitations),
+        (ctx.t("privacy"), quality["privacy_notes"]),
+    ]
+    adjustments = quality.get("teacher_adjustments", [])
+    if adjustments:
+        groups.insert(0, (ctx.t("teacher_adjustments"), adjustments))
+    cards = "".join(
+        f'<article class="note-card"><h3>{esc(title)}</h3>{_list_html(items, ctx.t("no_data"))}</article>'
+        for title, items in groups
     )
-    unavailable = quality["unavailable_metrics"]
-    if unavailable:
+
+    unavailable_html = ""
+    if quality["unavailable_metrics"]:
         rows = "".join(
-            f'<tr><td>{esc(strings["completion_rate"] if item["key"].endswith("completion_proxy") else item["label"])}</td><td>{esc(item["reason"])}</td></tr>'
-            for item in unavailable
+            "<tr><th scope=\"row\">"
+            + esc(
+                ctx.t("completion_rate")
+                if item["key"].endswith("completion_proxy")
+                and not _is_teacher_defined(item["key"], ctx)
+                else item["label"]
+            )
+            + f'</th><td>{esc(item["reason"])}</td></tr>'
+            for item in quality["unavailable_metrics"]
         )
         unavailable_html = (
-            f'<h3 class="subsection-heading">{esc(strings["unavailable_metrics"])}</h3>'
+            f'<h3 class="subsection-heading">{esc(ctx.t("unavailable_metrics"))}</h3>'
             '<div class="table-wrap"><table><thead><tr>'
-            f'<th>{esc(strings["metric"])}</th><th>{esc(strings["reason"])}</th>'
+            f'<th scope="col">{esc(ctx.t("metric"))}</th><th scope="col">{esc(ctx.t("reason"))}</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div>'
         )
-    else:
-        unavailable_html = ""
 
-    definition_rows = "".join(
-        f'<tr><td>{esc(display_metric_label({**item, "key": key}, strings))}</td>'
-        f'<td>{esc(item["definition"])}</td><td>{esc(item["unit"])}</td>'
-        f'<td>{"；".join(esc(note) for note in item["source_notes"])}</td></tr>'
-        for key, item in sorted(report["metric_definitions"].items())
+    ordered = [key for key in ctx.metrics if key in ctx.definitions]
+    ordered += [key for key in sorted(ctx.definitions) if key not in ctx.metrics]
+    separator = "；" if ctx.is_zh else "; "
+    definition_rows = ""
+    for key in ordered:
+        item = ctx.definitions[key]
+        probe = {**item, "key": key, "is_approximate": False}
+        definition_rows += (
+            f'<tr><th scope="row">{esc(display_metric_label(probe, ctx))}{metric_tags(probe, ctx)}</th>'
+            f'<td>{esc(item["definition"])}</td><td>{esc(item["unit"])}</td>'
+            f'<td>{separator.join(esc(note) for note in item["source_notes"])}</td></tr>'
+        )
+    definitions = (
+        f'<h3 class="subsection-heading">{esc(ctx.t("definitions"))}</h3>'
+        '<div class="table-wrap"><table><thead><tr>'
+        f'<th scope="col">{esc(ctx.t("metric"))}</th><th scope="col">{esc(ctx.t("definition"))}</th>'
+        f'<th scope="col">{esc(ctx.t("unit"))}</th><th scope="col">{esc(ctx.t("source_notes"))}</th>'
+        f"</tr></thead><tbody>{definition_rows}</tbody></table></div>"
     )
-    details = (
-        '<details><summary>'
-        + esc(strings["definitions"])
-        + '</summary><div class="details-body table-wrap"><table><thead><tr>'
-        + f'<th>{esc(strings["metric"])}</th><th>{esc(strings["definition"])}</th>'
-        + f'<th>{esc(strings["unit"])}</th><th>{esc(strings["source_notes"])}</th>'
-        + f"</tr></thead><tbody>{definition_rows}</tbody></table></div></details>"
-    )
-    return (
-        f'<section class="section" aria-labelledby="methods-heading">{_section_heading(index, strings["methods"], strings["methods_desc"], "methods-heading")}'
-        f'<div class="quality-grid">{cards}</div>{unavailable_html}{details}</section>'
-    )
+    return f'<div class="note-grid">{cards}</div>{unavailable_html}{definitions}'
 
 
-def render_operations(report: Mapping[str, Any], strings: Mapping[str, Any], index: int) -> str:
+def render_operations(report: Mapping[str, Any], ctx: RenderContext) -> str:
     operations = report["operations"]
     return (
-        f'<section class="section" aria-labelledby="operations-heading">{_section_heading(index, strings["operations"], strings["operations_desc"], "operations-heading")}'
-        f'<p class="privacy-callout">{esc(operations["note"])}</p>'
-        f'<div class="kpi-grid">{"".join(render_kpi(metric, strings) for metric in operations["metrics"])}</div></section>'
+        f'<p class="callout is-privacy">{esc(operations["note"])}</p>'
+        '<div class="kpi-grid" style="margin-top:1.25rem">'
+        + "".join(render_kpi(metric, ctx) for metric in operations["metrics"])
+        + "</div>"
     )
 
 
-def render_body(report: Mapping[str, Any], strings: Mapping[str, Any]) -> str:
-    sections = [
-        render_summary(report, strings),
-        render_learning_path(report, strings, 2),
-        render_lessons(report, strings, 3),
-        render_followups(report, strings, 4),
-        render_engagement(report, strings, 5),
-        render_audience(report, strings, 6),
-        render_recommendations(report, strings, 7),
-        render_methods(report, strings, 8),
+def _render_bars_block(block: Mapping[str, Any], ctx: RenderContext) -> str:
+    metrics = block["metrics"]
+    numeric = [float(metric["value"]) for metric in metrics if _is_number(metric["value"])]
+    unit = metrics[0]["unit"]
+    scale = 100.0 if unit == "%" else max(numeric, default=0.0)
+    rows = ""
+    for position, metric in enumerate(metrics, start=1):
+        value = metric["value"]
+        label = display_metric_label(metric, ctx)
+        text = metric_text(metric, ctx)
+        fraction = (float(value) / scale if scale > 0 else 0.0) if _is_number(value) else None
+        rows += (
+            '<li class="path-row">'
+            f'<div class="path-stage"><span class="path-index" aria-hidden="true">{position}</span>'
+            f"<span>{esc(label)}{metric_tags(metric, ctx)}</span></div>"
+            + _bar(fraction, f"{label}: {text}")
+            + f'<div class="path-value{" is-missing" if value is None else ""}">{esc(text)}</div>'
+            + (
+                f'<div class="path-note">{esc(comparison_text(metric, ctx))}</div>'
+                if comparison_text(metric, ctx)
+                else ""
+            )
+            + "</li>"
+        )
+    scopes = {metric["time_scope"]["label"] for metric in metrics}
+    caption_parts = [f'{ctx.t("unit")}：{unit}'] if unit else []
+    if len(scopes) == 1:
+        caption_parts.append(next(iter(scopes)))
+    return (
+        '<figure class="chart">'
+        f'<figcaption class="chart-caption">{esc(" · ".join(caption_parts))}</figcaption>'
+        f'<ol class="path">{rows}</ol></figure>'
+        + definitions_details(metrics, ctx)
+    )
+
+
+def _render_table_block(block: Mapping[str, Any], ctx: RenderContext) -> str:
+    head = "".join(f'<th scope="col">{esc(column)}</th>' for column in block["columns"])
+    rows = ""
+    for row in block["rows"]:
+        cells = ""
+        for cell in row:
+            if cell is None:
+                cells += f'<td class="is-missing">{esc(ctx.t("no_data_short"))}</td>'
+            elif _is_number(cell):
+                cells += f'<td class="num">{esc(_format_number(cell))}</td>'
+            else:
+                cells += f"<td>{esc(cell)}</td>"
+        rows += f"<tr>{cells}</tr>"
+    return (
+        f'<div class="table-wrap"><table><thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table></div>'
+        f'<p class="source-note">{esc(block["source_note"])}</p>'
+    )
+
+
+def render_custom_section(section: Mapping[str, Any], ctx: RenderContext) -> str:
+    blocks: list[str] = []
+    for block in section["blocks"]:
+        kind = block["type"]
+        title = f'<h3 class="chart-title">{esc(block["title"])}</h3>' if "title" in block else ""
+        if kind == "text":
+            paragraphs = [part.strip() for part in block["body"].split("\n") if part.strip()]
+            body = '<div class="prose">' + "".join(f"<p>{esc(part)}</p>" for part in paragraphs) + "</div>"
+        elif kind == "callout":
+            body = f'<aside class="callout">{esc(block["body"])}</aside>'
+        elif kind == "metrics":
+            body = '<div class="kpi-grid">' + "".join(render_kpi(metric, ctx) for metric in block["metrics"]) + "</div>"
+        elif kind == "bars":
+            body = _render_bars_block(block, ctx)
+        else:
+            body = _render_table_block(block, ctx)
+        blocks.append(f'<div class="block block-{esc(kind)}">{title}{body}</div>')
+    return "".join(blocks)
+
+
+SECTION_RENDERERS = {
+    "summary": render_summary,
+    "kpis": render_kpis,
+    "learning_path": render_learning_path,
+    "lessons": render_lessons,
+    "followups": render_followups,
+    "engagement": render_engagement,
+    "audience": render_audience,
+    "recommendations": render_recommendations,
+    "methods": render_methods,
+    "operations": render_operations,
+}
+
+
+def _section_copy(section_id: str, ctx: RenderContext) -> tuple[str, str, str]:
+    """Return eyebrow, title and description after applying teacher overrides."""
+    if section_id.startswith("custom:"):
+        section = next(
+            item
+            for item in ctx.report["custom_sections"]
+            if item["id"] == section_id.split(":", 1)[1]
+        )
+        eyebrow, title, description = ctx.t("custom_eyebrow"), section["title"], section.get("description", "")
+    else:
+        eyebrow, title, description = ctx.strings["sections"][section_id]
+    override = ctx.presentation.get("section_titles", {}).get(section_id, {})
+    return eyebrow, override.get("title", title), override.get("description", description)
+
+
+def render_body(report: Mapping[str, Any], ctx: RenderContext) -> tuple[str, str]:
+    """Render visible sections in order and the matching table of contents."""
+    sections: list[str] = []
+    toc: list[str] = []
+    for index, section_id in enumerate(resolve_sections(report), start=1):
+        eyebrow, title, description = _section_copy(section_id, ctx)
+        if section_id.startswith("custom:"):
+            section = next(
+                item
+                for item in report["custom_sections"]
+                if item["id"] == section_id.split(":", 1)[1]
+            )
+            body = render_custom_section(section, ctx)
+            toc_label = title
+        else:
+            body = SECTION_RENDERERS[section_id](report, ctx)
+            toc_label = eyebrow
+        dom_id = "sec-" + section_id.replace(":", "-").replace("_", "-")
+        description_html = (
+            f'<p class="section-description">{esc(description)}</p>' if description else ""
+        )
+        sections.append(
+            f'<section class="section" id="{esc(dom_id)}" data-section="{esc(section_id)}" '
+            f'aria-labelledby="{esc(dom_id)}-heading">'
+            '<div class="section-heading"><div class="section-eyebrow">'
+            f'<span class="section-index">{index:02d}</span><span>{esc(eyebrow)}</span></div>'
+            f'<h2 id="{esc(dom_id)}-heading">{esc(title)}</h2>{description_html}</div>'
+            f"{body}</section>"
+        )
+        toc.append(
+            f'<li><a href="#{esc(dom_id)}"><span class="toc-index">{index:02d}</span>'
+            f"<span>{esc(toc_label)}</span></a></li>"
+        )
+    toc_html = f'<div class="toc-title">{esc(ctx.t("toc"))}</div><ol>{"".join(toc)}</ol>'
+    return "".join(sections), toc_html
+
+
+def _check_template_assets(template: str, path: Path) -> None:
+    """Allow only embedded (data:) resources and in-page anchors in a template."""
+    references = [
+        next(group for group in match.groups() if group is not None)
+        for match in ASSET_ATTRIBUTE.finditer(template)
     ]
-    if "operations" in report:
-        sections.append(render_operations(report, strings, 9))
-    return "".join(sections)
+    references += CSS_URL.findall(template)
+    for reference in references:
+        value = reference.strip()
+        if value and not value.lower().startswith(("data:", "#", "{{")):
+            raise ReportError(
+                f"template {path} references {value[:60]!r}; reports must be self-contained, "
+                "so embed resources as data: URIs"
+            )
+    if re.search(r"srcset\s*=", template, re.IGNORECASE):
+        # A srcset lists several candidates; one embedded image in `src` is enough.
+        raise ReportError(
+            f"template {path} uses srcset; reports must be self-contained, "
+            "so use a single src with a data: URI"
+        )
+    if "@import" in template.lower():
+        raise ReportError(f"template {path} uses @import; reports must be self-contained")
+    if re.search(r"""http-equiv\s*=\s*["']?\s*refresh""", template, re.IGNORECASE):
+        raise ReportError(
+            f"template {path} uses a meta refresh; reports must be self-contained"
+        )
 
 
-def render_report(report: Mapping[str, Any]) -> str:
+def render_report(report: Mapping[str, Any], template_path: Path | None = None) -> str:
     meta = report["meta"]
-    is_zh, strings = _language(meta)
+    ctx = RenderContext(report)
     brand = meta.get("brand", {})
-    accent = _safe_accent(brand.get("accent_color"))
-    organization_name = brand.get("organization_name", "AI 师傅" if strings is TEXT["zh"] else "AI-Shifu")
-    logo_text = brand.get("logo_text", "AI 师傅" if strings is TEXT["zh"] else "AI-Shifu")
+    theme = ctx.presentation.get("theme", DEFAULT_THEME)
+    accent = _safe_accent(brand.get("accent_color"), theme)
+    organization = brand.get("organization_name", "")
+    organization_html = (
+        f'<span class="brand-divider" aria-hidden="true">/</span><span>{esc(organization)}</span>'
+        if organization
+        else ""
+    )
     period = meta["period"]
-    source_name = strings["source_names"].get(meta["source_kind"], meta["source_kind"])
+    source_name = ctx.strings["source_names"].get(meta["source_kind"], meta["source_kind"])
     timezone_label = meta["timezone"]
-    if is_zh and timezone_label == "Asia/Shanghai":
+    if ctx.is_zh and timezone_label == "Asia/Shanghai":
         timezone_label = "中国标准时间（Asia/Shanghai）"
     report_meta = "".join(
         (
-            f'<span><strong>{esc(strings["period"])}：</strong>{esc(period["label"])}</span>',
-            f'<span><strong>{esc(strings["generated"])}：</strong>{esc(_format_generated_at(meta["generated_at"], is_zh))}</span>',
-            f'<span><strong>{esc(strings["timezone"])}：</strong>{esc(timezone_label)}</span>',
-            f'<span><strong>{esc(strings["source"])}：</strong>{esc(source_name)}</span>',
+            f'<span><strong>{esc(ctx.t("period"))}</strong>{esc(period["label"])}</span>',
+            f'<span><strong>{esc(ctx.t("generated"))}</strong>{esc(_format_generated_at(meta["generated_at"], ctx.is_zh))}</span>',
+            f'<span><strong>{esc(ctx.t("timezone"))}</strong>{esc(timezone_label)}</span>',
+            f'<span><strong>{esc(ctx.t("source"))}</strong>{esc(source_name)}</span>',
         )
     )
+    path = template_path or TEMPLATE_PATH
     try:
-        template = TEMPLATE_PATH.read_text(encoding="utf-8")
+        template = path.read_text(encoding="utf-8")
     except OSError as exc:
-        raise ReportError(f"cannot read template {TEMPLATE_PATH}: {exc}") from exc
+        raise ReportError(f"cannot read template {path}: {exc}") from exc
+    _check_template_assets(template, path)
+
+    body, toc = render_body(report, ctx)
     replacements = {
         "{{LANG}}": esc(meta["language"]),
+        "{{THEME}}": esc(theme),
+        "{{DENSITY}}": esc(ctx.presentation.get("density", "comfortable")),
+        "{{COLOR_SCHEME}}": THEMES[theme]["scheme"],
         "{{COURSE_TITLE}}": esc(meta["course_title"]),
-        "{{TITLE_SUFFIX}}": esc(strings["title_suffix"]),
+        "{{TITLE_SUFFIX}}": esc(ctx.t("title_suffix")),
         "{{ACCENT_COLOR}}": accent,
-        "{{ORGANIZATION_NAME}}": esc(organization_name),
-        "{{LOGO_TEXT}}": esc(logo_text),
-        "{{SKIP_TEXT}}": esc(strings["skip"]),
-        "{{REPORT_SUBTITLE}}": esc(strings["subtitle"]),
-        "{{FOOTER_TEXT}}": esc(strings["footer"]),
+        "{{BRAND_LOGO}}": _brand_logo(ctx),
+        "{{ORGANIZATION_NAME}}": organization_html,
+        "{{SKIP_TEXT}}": esc(ctx.t("skip")),
+        "{{TOC_LABEL}}": esc(ctx.t("toc")),
+        "{{META_LABEL}}": esc(ctx.t("meta_label")),
+        "{{REPORT_SUBTITLE}}": esc(ctx.presentation.get("subtitle", ctx.t("subtitle"))),
+        "{{FOOTER_TEXT}}": esc(ctx.t("footer")),
         "{{REPORT_META}}": report_meta,
-        "{{REPORT_BODY}}": render_body(report, strings),
+        "{{REPORT_TOC}}": toc,
+        "{{REPORT_BODY}}": body,
+        "{{CUSTOM_CSS}}": ctx.presentation.get("custom_css", ""),
     }
+
+    found = TEMPLATE_PLACEHOLDER.findall(template)
+    missing = sorted(set(replacements) - set(found))
+    if missing:
+        raise ReportError(f"template {path} is missing placeholder(s): {', '.join(missing)}")
+    for single in ("{{REPORT_BODY}}", "{{REPORT_TOC}}", "{{CUSTOM_CSS}}"):
+        if found.count(single) != 1:
+            raise ReportError(f"template {path} must contain {single} exactly once")
+
     def replace_placeholder(match: re.Match[str]) -> str:
         placeholder = match.group(0)
         if placeholder not in replacements:
@@ -1137,8 +1708,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Validate and render an AI-Shifu course learning report."
     )
-    parser.add_argument("--input", required=True, type=Path, help="schema-version 1.0 JSON")
+    parser.add_argument("--input", required=True, type=Path, help="report JSON (schema 1.0 or 1.1)")
     parser.add_argument("--output", type=Path, help="self-contained HTML output")
+    parser.add_argument(
+        "--template",
+        type=Path,
+        help="teacher-specific copy of assets/report-template.html (default: bundled template)",
+    )
     parser.add_argument(
         "--validate-only",
         action="store_true",
@@ -1157,7 +1733,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.validate_only:
             print(f"Valid report data: {args.input}")
             return 0
-        rendered = render_report(report)
+        rendered = render_report(report, args.template)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(rendered, encoding="utf-8")
         print(f"Rendered report: {args.output}")

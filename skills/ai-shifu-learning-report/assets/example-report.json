@@ -1,0 +1,1187 @@
+{
+  "schema_version": "1.1",
+  "meta": {
+    "course_title": "新经理的高质量一对一",
+    "generated_at": "2026-08-01T09:30:00+08:00",
+    "language": "zh-CN",
+    "timezone": "Asia/Shanghai",
+    "source_kind": "synthetic",
+    "period": {
+      "mode": "cumulative_to_date",
+      "label": "累计至 2026-07-31",
+      "start": null,
+      "end": "2026-07-31"
+    },
+    "brand": {
+      "organization_name": "示例学习中心"
+    }
+  },
+  "metric_definitions": {
+    "learners_started": {
+      "label": "开始学习人数",
+      "definition": "截至报告时点，至少进入过一节有效课节的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。",
+        "学习进度记录，按学员去重。"
+      ]
+    },
+    "course_completion_proxy": {
+      "label": "课程完成率",
+      "definition": "同一批开始学习的学员中，截至报告时点完成全部 4 节必修课的去重学员比例。",
+      "unit": "%",
+      "source_notes": [
+        "分母：累计至 2026-07-31 首次进入任一有效课节的 120 名学员。",
+        "分子：其中完成全部必修课的 96 名学员。",
+        "不设固定观察期，临近截止日才开始学习的学员仍计入分母。"
+      ]
+    },
+    "final_lesson_reach": {
+      "label": "到达最后一课人数",
+      "definition": "进入过第 4 课《形成跟进闭环》的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。"
+      ]
+    },
+    "rating_average": {
+      "label": "课节评分均值",
+      "definition": "4 节课全部评分反馈的加权平均分（5 分制），按各课评分人数加权。",
+      "unit": "分",
+      "source_notes": [
+        "共 172 条评分反馈。",
+        "评分为学员自愿提交，不代表全部学员。"
+      ]
+    },
+    "path_lesson_1_reach": {
+      "label": "第 1 课触达人数",
+      "definition": "进入过第 1 课的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。"
+      ]
+    },
+    "path_lesson_2_reach": {
+      "label": "第 2 课触达人数",
+      "definition": "进入过第 2 课的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。"
+      ]
+    },
+    "path_lesson_3_reach": {
+      "label": "第 3 课触达人数",
+      "definition": "进入过第 3 课的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。"
+      ]
+    },
+    "path_lesson_4_reach": {
+      "label": "第 4 课触达人数",
+      "definition": "进入过第 4 课的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。"
+      ]
+    },
+    "path_required_completed": {
+      "label": "完成全部必修课人数",
+      "definition": "完成全部 4 节必修课的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。"
+      ]
+    },
+    "lesson_1_reach": {
+      "label": "触达人数",
+      "definition": "进入过本课的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。"
+      ]
+    },
+    "lesson_1_rating": {
+      "label": "平均评分",
+      "definition": "本课评分反馈的平均分（5 分制）。",
+      "unit": "分",
+      "source_notes": [
+        "评分为学员自愿提交。"
+      ]
+    },
+    "lesson_1_rating_count": {
+      "label": "评分人数",
+      "definition": "提交本课评分的学员数。",
+      "unit": "人",
+      "source_notes": [
+        "课节反馈记录。"
+      ]
+    },
+    "lesson_1_followups": {
+      "label": "样本追问数",
+      "definition": "最近 12 条受审计追问中归属本课的条数。",
+      "unit": "条",
+      "source_notes": [
+        "最近样本，不代表全部追问量。"
+      ]
+    },
+    "lesson_2_reach": {
+      "label": "触达人数",
+      "definition": "进入过本课的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。"
+      ]
+    },
+    "lesson_2_rating": {
+      "label": "平均评分",
+      "definition": "本课评分反馈的平均分（5 分制）。",
+      "unit": "分",
+      "source_notes": [
+        "评分为学员自愿提交。"
+      ]
+    },
+    "lesson_2_rating_count": {
+      "label": "评分人数",
+      "definition": "提交本课评分的学员数。",
+      "unit": "人",
+      "source_notes": [
+        "课节反馈记录。"
+      ]
+    },
+    "lesson_2_followups": {
+      "label": "样本追问数",
+      "definition": "最近 12 条受审计追问中归属本课的条数。",
+      "unit": "条",
+      "source_notes": [
+        "最近样本，不代表全部追问量。"
+      ]
+    },
+    "lesson_3_reach": {
+      "label": "触达人数",
+      "definition": "进入过本课的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。"
+      ]
+    },
+    "lesson_3_rating": {
+      "label": "平均评分",
+      "definition": "本课评分反馈的平均分（5 分制）。",
+      "unit": "分",
+      "source_notes": [
+        "评分为学员自愿提交。"
+      ]
+    },
+    "lesson_3_rating_count": {
+      "label": "评分人数",
+      "definition": "提交本课评分的学员数。",
+      "unit": "人",
+      "source_notes": [
+        "课节反馈记录。"
+      ]
+    },
+    "lesson_3_followups": {
+      "label": "样本追问数",
+      "definition": "最近 12 条受审计追问中归属本课的条数。",
+      "unit": "条",
+      "source_notes": [
+        "最近样本，不代表全部追问量。"
+      ]
+    },
+    "lesson_4_reach": {
+      "label": "触达人数",
+      "definition": "进入过本课的去重学员数。",
+      "unit": "人",
+      "source_notes": [
+        "仅统计当前已发布且对学员可见的 4 节教学课。"
+      ]
+    },
+    "lesson_4_rating": {
+      "label": "平均评分",
+      "definition": "本课评分反馈的平均分（5 分制）。",
+      "unit": "分",
+      "source_notes": [
+        "评分为学员自愿提交。"
+      ]
+    },
+    "lesson_4_rating_count": {
+      "label": "评分人数",
+      "definition": "提交本课评分的学员数。",
+      "unit": "人",
+      "source_notes": [
+        "课节反馈记录。"
+      ]
+    },
+    "lesson_4_followups": {
+      "label": "样本追问数",
+      "definition": "最近 12 条受审计追问中归属本课的条数。",
+      "unit": "条",
+      "source_notes": [
+        "最近样本，不代表全部追问量。"
+      ]
+    },
+    "rating_responses": {
+      "label": "评分反馈数",
+      "definition": "4 节课累计收到的评分反馈条数。",
+      "unit": "条",
+      "source_notes": [
+        "课节反馈记录。"
+      ]
+    },
+    "rating_highest": {
+      "label": "最高课节评分",
+      "definition": "4 节课中平均评分最高的一节（第 4 课）。",
+      "unit": "分",
+      "source_notes": [
+        "38 人评分。"
+      ]
+    },
+    "rating_lowest": {
+      "label": "最低课节评分",
+      "definition": "4 节课中平均评分最低的一节（第 3 课）。",
+      "unit": "分",
+      "source_notes": [
+        "41 人评分。"
+      ]
+    },
+    "mode_reading": {
+      "label": "阅读",
+      "definition": "听读偏好字段选择“阅读”的课节反馈条数。",
+      "unit": "条",
+      "source_notes": [
+        "只覆盖提交了听读偏好的 172 条反馈，不等于全部学习会话的实际方式。"
+      ]
+    },
+    "mode_listening": {
+      "label": "听课",
+      "definition": "听读偏好字段选择“听课”的课节反馈条数。",
+      "unit": "条",
+      "source_notes": [
+        "只覆盖提交了听读偏好的 172 条反馈。"
+      ]
+    },
+    "mode_mixed": {
+      "label": "两者都用",
+      "definition": "听读偏好字段选择“两者都用”的课节反馈条数。",
+      "unit": "条",
+      "source_notes": [
+        "只覆盖提交了听读偏好的 172 条反馈。"
+      ]
+    },
+    "activity_7d": {
+      "label": "最近 7 天有学习",
+      "definition": "最近 7 天内有学习行为的学员数。",
+      "unit": "人",
+      "source_notes": [
+        "按最近一次学习行为时间划分。"
+      ]
+    },
+    "activity_30d": {
+      "label": "最近 8–30 天有学习",
+      "definition": "最近一次学习行为在 8 至 30 天前的学员数。",
+      "unit": "人",
+      "source_notes": [
+        "按最近一次学习行为时间划分。"
+      ]
+    },
+    "activity_inactive": {
+      "label": "超过 30 天未学习",
+      "definition": "超过 30 天没有学习行为的学员数。",
+      "unit": "人",
+      "source_notes": [
+        "按最近一次学习行为时间划分。"
+      ]
+    }
+  },
+  "overview": {
+    "executive_summary": {
+      "overall_health": "课程整体健康：120 人开始学习，80% 学完全部必修课，四节课评分都在 4.4 分以上。",
+      "conclusions": [
+        "学习路径很平顺：每一步都保留了 93% 以上的学员，没有明显的流失点。",
+        "第 3 课《给出可执行的反馈》评分略低、追问最多，是最值得回看的一节。",
+        "建议先在第 3 课补一个完整示例，用后续学员的评分和追问来验证。"
+      ],
+      "critical_limitations": [
+        "追问主题只基于最近 12 条样本，不能代表全部学员。",
+        "学习时长、测验成绩和留存目前没有可靠数据。"
+      ]
+    },
+    "kpis": [
+      {
+        "key": "learners_started",
+        "label": "开始学习人数",
+        "value": 120,
+        "unit": "人",
+        "definition": "截至报告时点，至少进入过一节有效课节的去重学员数。",
+        "time_scope": {
+          "mode": "cumulative_to_date",
+          "label": "累计至 2026-07-31",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "observed",
+        "is_approximate": false,
+        "source_notes": [
+          "仅统计当前已发布且对学员可见的 4 节教学课。",
+          "学习进度记录，按学员去重。"
+        ]
+      },
+      {
+        "key": "course_completion_proxy",
+        "label": "课程完成率",
+        "value": 80,
+        "unit": "%",
+        "definition": "同一批开始学习的学员中，截至报告时点完成全部 4 节必修课的去重学员比例。",
+        "time_scope": {
+          "mode": "cumulative_to_date",
+          "label": "累计至 2026-07-31",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "approximate",
+        "is_approximate": true,
+        "source_notes": [
+          "分母：累计至 2026-07-31 首次进入任一有效课节的 120 名学员。",
+          "分子：其中完成全部必修课的 96 名学员。",
+          "不设固定观察期，临近截止日才开始学习的学员仍计入分母。"
+        ],
+        "numerator": 96,
+        "denominator": 120
+      },
+      {
+        "key": "final_lesson_reach",
+        "label": "到达最后一课人数",
+        "value": 100,
+        "unit": "人",
+        "definition": "进入过第 4 课《形成跟进闭环》的去重学员数。",
+        "time_scope": {
+          "mode": "cumulative_to_date",
+          "label": "累计至 2026-07-31",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "observed",
+        "is_approximate": false,
+        "source_notes": [
+          "仅统计当前已发布且对学员可见的 4 节教学课。"
+        ]
+      },
+      {
+        "key": "rating_average",
+        "label": "课节评分均值",
+        "value": 4.55,
+        "unit": "分",
+        "definition": "4 节课全部评分反馈的加权平均分（5 分制），按各课评分人数加权。",
+        "time_scope": {
+          "mode": "cumulative_to_date",
+          "label": "累计至 2026-07-31",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "derived",
+        "is_approximate": false,
+        "source_notes": [
+          "共 172 条评分反馈。",
+          "评分为学员自愿提交，不代表全部学员。"
+        ]
+      }
+    ],
+    "learning_path": [
+      {
+        "stage": "第 1 课 · 从任务汇报转向成长对话",
+        "metric": {
+          "key": "path_lesson_1_reach",
+          "label": "第 1 课触达人数",
+          "value": 120,
+          "unit": "人",
+          "definition": "进入过第 1 课的去重学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "仅统计当前已发布且对学员可见的 4 节教学课。"
+          ]
+        },
+        "note": ""
+      },
+      {
+        "stage": "第 2 课 · 用提问定位真实障碍",
+        "metric": {
+          "key": "path_lesson_2_reach",
+          "label": "第 2 课触达人数",
+          "value": 114,
+          "unit": "人",
+          "definition": "进入过第 2 课的去重学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "仅统计当前已发布且对学员可见的 4 节教学课。"
+          ]
+        },
+        "note": ""
+      },
+      {
+        "stage": "第 3 课 · 给出可执行的反馈",
+        "metric": {
+          "key": "path_lesson_3_reach",
+          "label": "第 3 课触达人数",
+          "value": 108,
+          "unit": "人",
+          "definition": "进入过第 3 课的去重学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "仅统计当前已发布且对学员可见的 4 节教学课。"
+          ]
+        },
+        "note": ""
+      },
+      {
+        "stage": "第 4 课 · 形成跟进闭环",
+        "metric": {
+          "key": "path_lesson_4_reach",
+          "label": "第 4 课触达人数",
+          "value": 100,
+          "unit": "人",
+          "definition": "进入过第 4 课的去重学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "仅统计当前已发布且对学员可见的 4 节教学课。"
+          ]
+        },
+        "note": ""
+      },
+      {
+        "stage": "完成全部必修课",
+        "metric": {
+          "key": "path_required_completed",
+          "label": "完成全部必修课人数",
+          "value": 96,
+          "unit": "人",
+          "definition": "完成全部 4 节必修课的去重学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "仅统计当前已发布且对学员可见的 4 节教学课。"
+          ]
+        },
+        "note": "与课程完成率的分子一致"
+      }
+    ]
+  },
+  "lesson_health": [
+    {
+      "lesson_key": "lesson-1",
+      "position": 1,
+      "title": "从任务汇报转向成长对话",
+      "health_status": "healthy",
+      "finding": "入口课触达完整，评分 4.6 分（48 人评分），目前没有需要优先处理的信号。",
+      "metrics": [
+        {
+          "key": "lesson_1_reach",
+          "label": "触达人数",
+          "value": 120,
+          "unit": "人",
+          "definition": "进入过本课的去重学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "仅统计当前已发布且对学员可见的 4 节教学课。"
+          ]
+        },
+        {
+          "key": "lesson_1_rating",
+          "label": "平均评分",
+          "value": 4.6,
+          "unit": "分",
+          "definition": "本课评分反馈的平均分（5 分制）。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "评分为学员自愿提交。"
+          ]
+        },
+        {
+          "key": "lesson_1_rating_count",
+          "label": "评分人数",
+          "value": 48,
+          "unit": "人",
+          "definition": "提交本课评分的学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "课节反馈记录。"
+          ]
+        },
+        {
+          "key": "lesson_1_followups",
+          "label": "样本追问数",
+          "value": 2,
+          "unit": "条",
+          "definition": "最近 12 条受审计追问中归属本课的条数。",
+          "time_scope": {
+            "mode": "latest_sample",
+            "label": "最近 12 条追问",
+            "start": "2026-07-01",
+            "end": "2026-07-30"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "最近样本，不代表全部追问量。"
+          ]
+        }
+      ],
+      "evidence": [
+        "lesson_1_reach",
+        "lesson_1_rating",
+        "lesson_1_followups"
+      ]
+    },
+    {
+      "lesson_key": "lesson-2",
+      "position": 2,
+      "title": "用提问定位真实障碍",
+      "health_status": "healthy",
+      "finding": "触达与评分都稳定；样本中的 3 条追问集中在“怎么问出真实困难”，属于正常的深入学习。",
+      "metrics": [
+        {
+          "key": "lesson_2_reach",
+          "label": "触达人数",
+          "value": 114,
+          "unit": "人",
+          "definition": "进入过本课的去重学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "仅统计当前已发布且对学员可见的 4 节教学课。"
+          ]
+        },
+        {
+          "key": "lesson_2_rating",
+          "label": "平均评分",
+          "value": 4.5,
+          "unit": "分",
+          "definition": "本课评分反馈的平均分（5 分制）。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "评分为学员自愿提交。"
+          ]
+        },
+        {
+          "key": "lesson_2_rating_count",
+          "label": "评分人数",
+          "value": 45,
+          "unit": "人",
+          "definition": "提交本课评分的学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "课节反馈记录。"
+          ]
+        },
+        {
+          "key": "lesson_2_followups",
+          "label": "样本追问数",
+          "value": 3,
+          "unit": "条",
+          "definition": "最近 12 条受审计追问中归属本课的条数。",
+          "time_scope": {
+            "mode": "latest_sample",
+            "label": "最近 12 条追问",
+            "start": "2026-07-01",
+            "end": "2026-07-30"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "最近样本，不代表全部追问量。"
+          ]
+        }
+      ],
+      "evidence": [
+        "lesson_2_reach",
+        "lesson_2_rating",
+        "lesson_2_followups"
+      ]
+    },
+    {
+      "lesson_key": "lesson-3",
+      "position": 3,
+      "title": "给出可执行的反馈",
+      "health_status": "watch",
+      "finding": "评分为四节课中最低（4.4 分，41 人评分），样本追问也最多（12 条中有 4 条），但差距不大，值得回看而非判定有问题。",
+      "metrics": [
+        {
+          "key": "lesson_3_reach",
+          "label": "触达人数",
+          "value": 108,
+          "unit": "人",
+          "definition": "进入过本课的去重学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "仅统计当前已发布且对学员可见的 4 节教学课。"
+          ]
+        },
+        {
+          "key": "lesson_3_rating",
+          "label": "平均评分",
+          "value": 4.4,
+          "unit": "分",
+          "definition": "本课评分反馈的平均分（5 分制）。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "评分为学员自愿提交。"
+          ]
+        },
+        {
+          "key": "lesson_3_rating_count",
+          "label": "评分人数",
+          "value": 41,
+          "unit": "人",
+          "definition": "提交本课评分的学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "课节反馈记录。"
+          ]
+        },
+        {
+          "key": "lesson_3_followups",
+          "label": "样本追问数",
+          "value": 4,
+          "unit": "条",
+          "definition": "最近 12 条受审计追问中归属本课的条数。",
+          "time_scope": {
+            "mode": "latest_sample",
+            "label": "最近 12 条追问",
+            "start": "2026-07-01",
+            "end": "2026-07-30"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "最近样本，不代表全部追问量。"
+          ]
+        }
+      ],
+      "evidence": [
+        "lesson_3_reach",
+        "lesson_3_rating",
+        "lesson_3_followups"
+      ]
+    },
+    {
+      "lesson_key": "lesson-4",
+      "position": 4,
+      "title": "形成跟进闭环",
+      "health_status": "healthy",
+      "finding": "评分最高（4.7 分）。从第 3 课到本课少了 8 人，是全程最大的一步，但幅度仍小。",
+      "metrics": [
+        {
+          "key": "lesson_4_reach",
+          "label": "触达人数",
+          "value": 100,
+          "unit": "人",
+          "definition": "进入过本课的去重学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "仅统计当前已发布且对学员可见的 4 节教学课。"
+          ]
+        },
+        {
+          "key": "lesson_4_rating",
+          "label": "平均评分",
+          "value": 4.7,
+          "unit": "分",
+          "definition": "本课评分反馈的平均分（5 分制）。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "评分为学员自愿提交。"
+          ]
+        },
+        {
+          "key": "lesson_4_rating_count",
+          "label": "评分人数",
+          "value": 38,
+          "unit": "人",
+          "definition": "提交本课评分的学员数。",
+          "time_scope": {
+            "mode": "cumulative_to_date",
+            "label": "累计至 2026-07-31",
+            "start": null,
+            "end": "2026-07-31"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "课节反馈记录。"
+          ]
+        },
+        {
+          "key": "lesson_4_followups",
+          "label": "样本追问数",
+          "value": 3,
+          "unit": "条",
+          "definition": "最近 12 条受审计追问中归属本课的条数。",
+          "time_scope": {
+            "mode": "latest_sample",
+            "label": "最近 12 条追问",
+            "start": "2026-07-01",
+            "end": "2026-07-30"
+          },
+          "data_quality": "observed",
+          "is_approximate": false,
+          "source_notes": [
+            "最近样本，不代表全部追问量。"
+          ]
+        }
+      ],
+      "evidence": [
+        "lesson_4_reach",
+        "lesson_4_rating",
+        "lesson_4_followups"
+      ]
+    }
+  ],
+  "engagement": {
+    "follow_up_analysis": {
+      "status": "available",
+      "sample_size": 12,
+      "sample_limit": 100,
+      "audited_access": true,
+      "sampling_rule": "截至报告时点最近的受审计追问，按时间从新到旧",
+      "effective_span": "2026-07-01 至 2026-07-30",
+      "themes": [
+        {
+          "theme": "反馈怎么说才不伤人",
+          "count": 4,
+          "share": 0.3333,
+          "intent_summary": "学员想要一个完整的反馈示范，并想知道对方辩解或远程沟通时怎样把对话继续下去。",
+          "lesson_labels": [
+            "第 3 课"
+          ]
+        },
+        {
+          "theme": "怎样问出真实困难",
+          "count": 3,
+          "share": 0.25,
+          "intent_summary": "学员想要可以直接使用的提问，用来区分不同类型的障碍，同时避免让对方感到被盘问。",
+          "lesson_labels": [
+            "第 2 课"
+          ]
+        },
+        {
+          "theme": "跟进的节奏与记录",
+          "count": 3,
+          "share": 0.25,
+          "intent_summary": "学员想知道跟进周期怎么定、行动项怎么记录，以及没完成时如何复盘。",
+          "lesson_labels": [
+            "第 4 课"
+          ]
+        },
+        {
+          "theme": "一对一的准备与安排",
+          "count": 2,
+          "share": 0.1667,
+          "intent_summary": "学员想知道议题由谁准备，以及时间很短时如何安排。",
+          "lesson_labels": [
+            "第 1 课"
+          ]
+        }
+      ]
+    },
+    "ratings": [
+      {
+        "key": "rating_responses",
+        "label": "评分反馈数",
+        "value": 172,
+        "unit": "条",
+        "definition": "4 节课累计收到的评分反馈条数。",
+        "time_scope": {
+          "mode": "cumulative_to_date",
+          "label": "累计至 2026-07-31",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "observed",
+        "is_approximate": false,
+        "source_notes": [
+          "课节反馈记录。"
+        ]
+      },
+      {
+        "key": "rating_highest",
+        "label": "最高课节评分",
+        "value": 4.7,
+        "unit": "分",
+        "definition": "4 节课中平均评分最高的一节（第 4 课）。",
+        "time_scope": {
+          "mode": "cumulative_to_date",
+          "label": "累计至 2026-07-31",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "derived",
+        "is_approximate": false,
+        "source_notes": [
+          "38 人评分。"
+        ]
+      },
+      {
+        "key": "rating_lowest",
+        "label": "最低课节评分",
+        "value": 4.4,
+        "unit": "分",
+        "definition": "4 节课中平均评分最低的一节（第 3 课）。",
+        "time_scope": {
+          "mode": "cumulative_to_date",
+          "label": "累计至 2026-07-31",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "derived",
+        "is_approximate": false,
+        "source_notes": [
+          "41 人评分。"
+        ]
+      }
+    ],
+    "learning_modes": [
+      {
+        "key": "mode_reading",
+        "label": "阅读",
+        "value": 86,
+        "unit": "条",
+        "definition": "听读偏好字段选择“阅读”的课节反馈条数。",
+        "time_scope": {
+          "mode": "cumulative_to_date",
+          "label": "累计至 2026-07-31",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "observed",
+        "is_approximate": false,
+        "source_notes": [
+          "只覆盖提交了听读偏好的 172 条反馈，不等于全部学习会话的实际方式。"
+        ]
+      },
+      {
+        "key": "mode_listening",
+        "label": "听课",
+        "value": 52,
+        "unit": "条",
+        "definition": "听读偏好字段选择“听课”的课节反馈条数。",
+        "time_scope": {
+          "mode": "cumulative_to_date",
+          "label": "累计至 2026-07-31",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "observed",
+        "is_approximate": false,
+        "source_notes": [
+          "只覆盖提交了听读偏好的 172 条反馈。"
+        ]
+      },
+      {
+        "key": "mode_mixed",
+        "label": "两者都用",
+        "value": 34,
+        "unit": "条",
+        "definition": "听读偏好字段选择“两者都用”的课节反馈条数。",
+        "time_scope": {
+          "mode": "cumulative_to_date",
+          "label": "累计至 2026-07-31",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "observed",
+        "is_approximate": false,
+        "source_notes": [
+          "只覆盖提交了听读偏好的 172 条反馈。"
+        ]
+      }
+    ],
+    "activity": [
+      {
+        "key": "activity_7d",
+        "label": "最近 7 天有学习",
+        "value": 77,
+        "unit": "人",
+        "definition": "最近 7 天内有学习行为的学员数。",
+        "time_scope": {
+          "mode": "current_snapshot",
+          "label": "2026-07-31 当前快照",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "observed",
+        "is_approximate": false,
+        "source_notes": [
+          "按最近一次学习行为时间划分。"
+        ]
+      },
+      {
+        "key": "activity_30d",
+        "label": "最近 8–30 天有学习",
+        "value": 25,
+        "unit": "人",
+        "definition": "最近一次学习行为在 8 至 30 天前的学员数。",
+        "time_scope": {
+          "mode": "current_snapshot",
+          "label": "2026-07-31 当前快照",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "observed",
+        "is_approximate": false,
+        "source_notes": [
+          "按最近一次学习行为时间划分。"
+        ]
+      },
+      {
+        "key": "activity_inactive",
+        "label": "超过 30 天未学习",
+        "value": 18,
+        "unit": "人",
+        "definition": "超过 30 天没有学习行为的学员数。",
+        "time_scope": {
+          "mode": "current_snapshot",
+          "label": "2026-07-31 当前快照",
+          "start": null,
+          "end": "2026-07-31"
+        },
+        "data_quality": "observed",
+        "is_approximate": false,
+        "source_notes": [
+          "按最近一次学习行为时间划分。"
+        ]
+      }
+    ]
+  },
+  "audience": {
+    "status": "available",
+    "dimensions": [
+      {
+        "name": "管理经验",
+        "segments": [
+          {
+            "label": "首次带团队",
+            "count": 48,
+            "share": 0.4
+          },
+          {
+            "label": "1 至 3 年",
+            "count": 42,
+            "share": 0.35
+          },
+          {
+            "label": "3 年以上",
+            "count": 30,
+            "share": 0.25
+          }
+        ],
+        "teaching_implication": "新手经理最多，但有经验者也占六成；示例最好同时覆盖“第一次做”和“想做得更好”两种情境。"
+      },
+      {
+        "name": "主要学习目标",
+        "segments": [
+          {
+            "label": "提升反馈能力",
+            "count": 51,
+            "share": 0.425
+          },
+          {
+            "label": "改善沟通节奏",
+            "count": 39,
+            "share": 0.325
+          },
+          {
+            "label": "建立跟进机制",
+            "count": 30,
+            "share": 0.25
+          }
+        ],
+        "teaching_implication": "“提升反馈能力”是最多人的目标，正好对应第 3 课，这节课值得优先打磨。"
+      }
+    ],
+    "note": "学员画像来自学员在课程中自己选择的选项，只展示聚合人数。"
+  },
+  "recommendations": [
+    {
+      "title": "在第 3 课补一个完整的反馈示范",
+      "priority": "high",
+      "observation": "第 3 课评分 4.4 分，为四节课最低；最近 12 条追问中有 4 条来自这节课，都在要具体说法和示例。",
+      "interpretation": "学员可能理解了方法但不知道怎么开口。差距很小、样本也少，也可能只是这节课本身更难。",
+      "confidence": "medium",
+      "action": "在第 3 课加入一段“事实—影响—期待”的完整对话示范，并补充对方辩解时的应对。",
+      "validation": "改后新增 30 名学员时，比较第 3 课的平均评分和样本追问中“要示例”类问题的占比。",
+      "evidence": [
+        "lesson_3_rating",
+        "lesson_3_followups",
+        "lesson_3_rating_count"
+      ]
+    },
+    {
+      "title": "在第 3 课结尾预告第 4 课要解决的问题",
+      "priority": "medium",
+      "observation": "从第 3 课到第 4 课少了 8 人，是全程最大的一步；但到达第 4 课的学员给出了最高评分 4.7 分。",
+      "interpretation": "第 4 课本身受欢迎，流失更可能发生在两课之间。幅度小，也可能只是正常的中途停下。",
+      "confidence": "low",
+      "action": "在第 3 课结尾加一句预告：下一课解决“谈完之后怎么跟进”。",
+      "validation": "改后比较到达第 4 课人数占到达第 3 课人数的比例（当前为 93%）。",
+      "evidence": [
+        "path_lesson_3_reach",
+        "path_lesson_4_reach",
+        "lesson_4_rating"
+      ]
+    },
+    {
+      "title": "保持现有课程结构，作为后续改动的基线",
+      "priority": "low",
+      "observation": "120 人开始学习，96 人完成全部必修课，课程完成率 80%。",
+      "interpretation": "整体结构运转良好，暂时不需要大改；小步改动更容易看出效果。",
+      "confidence": "high",
+      "action": "记录本期数字作为基线，每次只改一处，再生成报告对比。",
+      "validation": "下一期报告中对比课程完成率和各课触达人数。",
+      "evidence": [
+        "course_completion_proxy",
+        "learners_started"
+      ]
+    }
+  ],
+  "data_quality": {
+    "overall_status": "partial",
+    "coverage_notes": [
+      "数据为合成示例，累计至 2026-07-31。",
+      "课节分析只使用当前已发布且对学员可见的 4 节教学课。"
+    ],
+    "unavailable_metrics": [
+      {
+        "key": "learning_duration",
+        "label": "学习时长",
+        "reason": "当前数据源没有可靠的学习时长。"
+      },
+      {
+        "key": "assessment_score",
+        "label": "测验成绩",
+        "reason": "这门课没有计分测验。"
+      },
+      {
+        "key": "retention",
+        "label": "留存",
+        "reason": "本次数据中没有留存分组查询。"
+      }
+    ],
+    "limitations": [
+      "追问主题基于最近 12 条样本，是便利样本，不代表全体学员。",
+      "评分和听读偏好由学员自愿提交，可能偏向更投入的学员。"
+    ],
+    "privacy_notes": [
+      "报告只包含聚合数字和概括后的学习意图，不包含追问原文、姓名或任何内部标识。"
+    ]
+  }
+}

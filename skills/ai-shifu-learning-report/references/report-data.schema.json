@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ai-shifu.com/schemas/course-learning-report-1.0.json",
+  "$id": "https://ai-shifu.com/schemas/course-learning-report-1.1.json",
   "title": "AI-Shifu single-course learning report",
   "description": "Privacy-safe data contract rendered by ai-shifu-learning-report.",
   "type": "object",
@@ -18,7 +18,10 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.0"
+      "enum": [
+        "1.0",
+        "1.1"
+      ]
     },
     "meta": {
       "$ref": "#/$defs/meta"
@@ -50,7 +53,7 @@
     },
     "recommendations": {
       "type": "array",
-      "minItems": 3,
+      "minItems": 1,
       "maxItems": 5,
       "items": {
         "$ref": "#/$defs/recommendation"
@@ -61,6 +64,16 @@
     },
     "data_quality": {
       "$ref": "#/$defs/dataQuality"
+    },
+    "presentation": {
+      "$ref": "#/$defs/presentation"
+    },
+    "custom_sections": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "$ref": "#/$defs/customSection"
+      }
     }
   },
   "$defs": {
@@ -197,6 +210,12 @@
         },
         "source_notes": {
           "$ref": "#/$defs/stringList"
+        },
+        "origin": {
+          "enum": [
+            "standard",
+            "teacher"
+          ]
         }
       }
     },
@@ -267,6 +286,24 @@
             "number",
             "null"
           ]
+        },
+        "comparison": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "label",
+            "value"
+          ],
+          "properties": {
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "value": {
+              "type": "number"
+            }
+          }
         }
       }
     },
@@ -737,6 +774,173 @@
         },
         "privacy_notes": {
           "$ref": "#/$defs/stringList"
+        },
+        "teacher_adjustments": {
+          "$ref": "#/$defs/stringList"
+        }
+      }
+    },
+    "sectionId": {
+      "type": "string",
+      "pattern": "^(summary|kpis|learning_path|lessons|followups|engagement|audience|recommendations|methods|operations|custom:[a-z][a-z0-9-]*)$"
+    },
+    "presentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "theme": {
+          "enum": [
+            "shifu",
+            "paper",
+            "forest",
+            "swiss",
+            "night"
+          ]
+        },
+        "density": {
+          "enum": [
+            "comfortable",
+            "compact"
+          ]
+        },
+        "subtitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "sections": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/sectionId"
+          }
+        },
+        "section_titles": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/sectionId"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 200
+              }
+            }
+          }
+        },
+        "lesson_table_columns": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "custom_css": {
+          "type": "string",
+          "maxLength": 20000
+        }
+      }
+    },
+    "customBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "text",
+            "callout",
+            "metrics",
+            "bars",
+            "table"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metrics": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/metric"
+          }
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rows": {
+          "type": "array",
+          "maxItems": 60,
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "source_note": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "customSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "blocks"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/customBlock"
+          }
         }
       }
     }

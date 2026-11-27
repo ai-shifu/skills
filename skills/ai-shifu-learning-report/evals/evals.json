@@ -4,19 +4,20 @@
     {
       "id": 1,
       "prompt": "附件是《新经理的高质量一对一》截至 2026-07-31 的合成课程分析快照。请面向教学管理者和任课老师生成累计至今的单课学习报告。只使用附件数据，不连接真实课程环境，不加入经营或积分信息。请在当前输出目录交付脱敏的 course-learning-report.json 和自包含、可打印的 course-learning-report.html。",
-      "expected_output": "A management-first Chinese report that uses only the current published-visible lessons, accurately presents the healthy course signals, names the metric 课程完成率 without proxy wording, keeps unavailable metrics empty, and provides privacy-safe evidence-linked actions in both required artifacts.",
+      "expected_output": "A conclusion-first Chinese report that uses only the current published-visible lessons, accurately presents the healthy course signals, names the metric 课程完成率 without proxy wording, keeps unavailable metrics empty, and provides privacy-safe evidence-linked actions in both required artifacts.",
       "files": [
         "evals/files/healthy-course.json"
       ],
       "expectations": [
-        "course-learning-report.json is valid JSON with schema_version 1.0 and the required meta, metric_definitions, overview, lesson_health, engagement, audience, recommendations, and data_quality sections; operations is absent.",
+        "course-learning-report.json is valid JSON with schema_version 1.1 and the required meta, metric_definitions, overview, lesson_health, engagement, audience, recommendations, and data_quality sections; operations is absent.",
         "The report uses the cumulative-to-date scope as of 2026-07-31, states 120 same-cohort learners started, 100 reached L4, and 96 completed every published-visible required lesson; it labels 80% exactly as 课程完成率, never 课程完成率代理 or 课程完成率（近似）, and shows the 96-of-120 numerator and denominator explicitly.",
         "Only L1 through L4 are included in lesson-scoped analysis. The hidden published lesson and the visible draft lesson, including their deliberately larger historical reach and completion records, do not appear and do not change the 120-person entrant denominator or the 96-of-120 completion rate.",
         "Lesson reach, ratings, active status, and reading/listening/mixed values agree with the fixture; learning duration, assessment score, and retention remain unavailable rather than being invented.",
         "Follow-up content appears only as aggregate theme counts and paraphrased intent summaries; no raw follow-up text or learner-level record appears in either artifact.",
         "The report contains three to five recommendations, and every recommendation has an observation, interpretation, confidence, action, verification method, and concrete metric evidence.",
-        "The first screen prioritizes conclusions for teaching managers, while the rest of the report remains actionable for teachers and explains metric definitions and data limitations.",
-        "course-learning-report.html is self-contained without external CSS, JavaScript, fonts, or images; it uses a Swiss International Style modular grid, asymmetric hierarchy, sans-serif typography, flat square geometry, restrained accent color, responsive behavior, print styles, meaningful headings/landmarks, accessible labels, and readable empty states."
+        "The report opens with a plain overall assessment and the most decision-relevant conclusions, stays actionable for the teacher throughout, and explains metric definitions and data limitations.",
+        "course-learning-report.html is self-contained without external CSS, JavaScript, fonts, or images; it is produced by the bundled renderer in the default AI-Shifu brand theme (brand-blue cover with the embedded AI-Shifu logo) with question-style section headings, a lesson comparison table, responsive behavior, print styles, meaningful headings/landmarks, accessible labels, and readable empty states. No presentation overrides, custom sections, or teacher-adjustment notes appear, because the request asked for none.",
+        "The handoff message briefly tells the teacher that statistics, metric definitions, and layout or style can be changed on request."
       ]
     },
     {
@@ -27,13 +28,13 @@
         "evals/files/conflicting-signals.json"
       ],
       "expectations": [
-        "course-learning-report.json follows schema_version 1.0 and contains every required report section; operations is absent.",
+        "course-learning-report.json follows schema_version 1.1 and contains every required report section; operations is absent.",
         "The report accurately shows 90 same-cohort learners started, lesson reach of 90/83/47/45/44, and a 课程完成率 of 41 required-path completers out of 90 (about 45.6%) with its denominator; no fixed maturation window is applied and the reader-facing label does not append 代理 or 近似.",
         "L3 is presented as the leading investigation hypothesis using the L2-to-L3 reach change, 3.0 rating, 15 of 19 mode-coded L3 feedback records selecting listening (78.9%), and concentrated follow-up themes as evidence; the report does not call this all-session usage.",
         "The interpretation also preserves counter-evidence: 45 of the 47 learners who reached L3 reached L4, and L4/L5 ratings are high; it does not claim causality or describe current progress positions as proven stuck learners.",
         "Duration, score, and retention remain unavailable. No new rates, cohorts, identities, or outcomes are fabricated from the snapshot.",
         "The three to five recommendations use the full observation, interpretation, confidence, action, verification method pattern and reference named metrics that can verify whether an L3 teaching change helps.",
-        "The HTML is a polished, executive-first, self-contained Swiss International Style report with a modular grid, asymmetric hierarchy, flat square geometry, restrained accent color, responsive layout, print CSS, semantic headings/landmarks, accessible visual labels, and the same numbers and conclusions as the JSON."
+        "The HTML is a polished, conclusion-first, self-contained report produced by the bundled renderer in the default AI-Shifu brand theme, with responsive layout, print CSS, semantic headings/landmarks, accessible visual labels, and the same numbers and conclusions as the JSON."
       ]
     },
     {
@@ -51,7 +52,25 @@
         "Follow-up insights contain only aggregate theme counts and safely paraphrased intents such as course fit, practice-entry discovery, or branch-example needs; no quote or identifying detail survives.",
         "The unrequested order count and credit cost do not appear, and the optional operations section is absent.",
         "The report still provides three to five low-confidence, evidence-linked next actions appropriate for a new course, with a concrete verification method and no fabricated outcome claim.",
-        "course-learning-report.html remains self-contained, responsive, printable, semantically structured, accessible, and uses a Swiss International Style modular grid, sans-serif hierarchy, flat square geometry, and restrained accent color while visibly explaining unavailable metrics and privacy/data-quality limitations."
+        "course-learning-report.html remains self-contained, responsive, printable, semantically structured, accessible, and rendered by the bundled renderer in the default AI-Shifu brand theme while visibly explaining unavailable metrics and privacy/data-quality limitations."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "附件是《新经理的高质量一对一》截至 2026-07-31 的合成课程分析快照，我是这门课的任课老师。请只用附件数据生成累计学情报告，交付 course-learning-report.json 和自包含、可打印的 course-learning-report.html，不要经营信息。我有几个自己的要求：1）我想看每节课各收到多少条追问，最好有个图；2）完成率我想按“到达最后一课就算完成”来算，因为最后一课后半段是选读；3）把教学建议放到最前面，学员画像这次不用看；4）整体换成清新一点的绿色风格，排得紧凑些。",
+      "expected_output": "A teacher-tailored report that applies each of the four requests through the report JSON, keeps the redefined completion metric honest and comparable with the standard definition, records the adjustments in the report, and leaves everything the teacher did not mention at its default.",
+      "files": [
+        "evals/files/healthy-course.json"
+      ],
+      "expectations": [
+        "course-learning-report.json is valid schema_version 1.1 and passes the bundled validator; course-learning-report.html is generated from it by the bundled renderer rather than edited by hand, and remains self-contained.",
+        "A custom section shows the follow-up count per lesson from the 12 audited records as a bar chart (L1 2, L2 3, L3 4, L4 3), built from metrics that each have a definition, the latest-sample scope, and origin teacher; the section states or implies that the sample is small.",
+        "The teacher-defined completion metric equals 100 of 120 (about 83.3%), shows its numerator and denominator, has a label that states the reach-the-last-lesson rule, uses a key other than course_completion_proxy, and is marked origin teacher so the report shows the custom-definition tag.",
+        "The standard 课程完成率 of 96 of 120 (80%) stays visible for comparison, either as its own metric or as the comparison value on the teacher-defined metric; conclusions and recommendations that quote a completion figure say which definition they use.",
+        "presentation.sections places recommendations before the other analysis sections, omits audience, and still includes methods; the audience data is not required to be deleted from the JSON.",
+        "presentation uses the forest theme and compact density; no custom CSS or template copy is used because the built-in options satisfy the request.",
+        "data_quality.teacher_adjustments lists the changes in plain language, and the handoff message summarizes what changed and shows the standard and teacher-defined completion values side by side.",
+        "Everything not requested stays at the default: only L1 through L4 are analysed, hidden and draft lessons are absent, unavailable metrics stay empty, follow-up content appears only as aggregate themes and paraphrased intents, and no operations data appears."
       ]
     }
   ]

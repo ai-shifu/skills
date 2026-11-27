@@ -17,6 +17,9 @@ SCHEMA_PATH = SKILL_DIR / "references" / "report-data.schema.json"
 SKILL_PATH = SKILL_DIR / "SKILL.md"
 DATA_COLLECTION_PATH = SKILL_DIR / "references" / "data-collection.md"
 ANALYSIS_GUIDELINES_PATH = SKILL_DIR / "references" / "analysis-guidelines.md"
+CUSTOMIZATION_PATH = SKILL_DIR / "references" / "customization.md"
+EXAMPLE_REPORT_PATH = SKILL_DIR / "assets" / "example-report.json"
+TEMPLATE_PATH = SKILL_DIR / "assets" / "report-template.html"
 
 
 def load_json(path: Path) -> dict:
@@ -72,7 +75,7 @@ def minimal_valid_report() -> dict:
         )
 
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "meta": {
             "course_title": "新经理的高质量一对一",
             "generated_at": "2026-08-04T10:00:00+08:00",
@@ -210,6 +213,24 @@ class LearningReportCatalogTests(unittest.TestCase):
         self.assertIn("every required lesson or one valid required branch path", analysis)
         self.assertIn("keep late starters in the denominator", analysis)
 
+    def test_skill_routes_teacher_requests_to_the_customization_reference(self):
+        skill = SKILL_PATH.read_text(encoding="utf-8")
+        customization = CUSTOMIZATION_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("references/customization.md", skill)
+        self.assertIn("Deliver and invite changes", skill)
+        self.assertIn("never a silent replacement", skill)
+        for heading in (
+            "## Content: Which Statistics Appear",
+            "## Definition: How a Number Is Counted",
+            "## Presentation: Order, Wording, and Style",
+            "## Carrying Preferences Forward",
+        ):
+            with self.subTest(heading=heading):
+                self.assertIn(heading, customization)
+        self.assertIn("Change the JSON, not the HTML", customization)
+        self.assertIn("teacher_adjustments", customization)
+
 
 class LearningReportEvaluationFixtureTests(unittest.TestCase):
     @classmethod
@@ -346,7 +367,9 @@ class LearningReportSchemaContractTests(unittest.TestCase):
         cls.schema = load_json(SCHEMA_PATH)
 
     def test_schema_locks_required_top_level_sections_and_version(self):
-        self.assertEqual("1.0", self.schema["properties"]["schema_version"]["const"])
+        self.assertEqual(
+            ["1.0", "1.1"], self.schema["properties"]["schema_version"]["enum"]
+        )
         self.assertEqual(
             {
                 "schema_version",
@@ -362,6 +385,12 @@ class LearningReportSchemaContractTests(unittest.TestCase):
             set(self.schema["required"]),
         )
         self.assertFalse(self.schema["additionalProperties"])
+        self.assertTrue(
+            {"presentation", "custom_sections"}.issubset(self.schema["properties"])
+        )
+        self.assertFalse(
+            {"presentation", "custom_sections"} & set(self.schema["required"])
+        )
 
     def test_metric_contract_requires_provenance_scope_and_quality(self):
         metric = self.schema["$defs"]["metric"]
@@ -388,7 +417,7 @@ class LearningReportSchemaContractTests(unittest.TestCase):
         recommendations = self.schema["properties"]["recommendations"]
         recommendation = self.schema["$defs"]["recommendation"]
 
-        self.assertEqual(3, recommendations["minItems"])
+        self.assertEqual(1, recommendations["minItems"])
         self.assertEqual(5, recommendations["maxItems"])
         self.assertTrue(
             {
@@ -457,6 +486,136 @@ class LearningReportRendererTests(unittest.TestCase):
         self.assertIn("Valid report data", result.stdout)
         self.assertEqual("", html)
 
+    def test_legacy_version_still_validates_but_cannot_carry_new_fields(self):
+        report = minimal_valid_report()
+        report["schema_version"] = "1.0"
+        self.assert_renderer_succeeds(report, validate_only=True)
+
+        additions = (
+            lambda data: data.update({"presentation": {"theme": "forest"}}),
+            lambda data: data["data_quality"].update({"teacher_adjustments": ["隐藏学员画像。"]}),
+            lambda data: data["metric_definitions"]["learners_started"].update(
+                {"origin": "teacher"}
+            ),
+            lambda data: data["overview"]["kpis"][0].update(
+                {"comparison": {"label": "上一期", "value": 100}}
+            ),
+        )
+        for index, add in enumerate(additions):
+            with self.subTest(index=index):
+                report = minimal_valid_report()
+                report["schema_version"] = "1.0"
+                add(report)
+                result, _ = self.invoke_renderer(report, validate_only=True)
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn('require schema_version "1.1"', result.stderr)
+
+    def test_any_rate_with_counts_must_match_its_numerator_and_denominator(self):
+        report = minimal_valid_report()
+        rate = report_metric(
+            key="completion_reached_final",
+            label="课程完成率（到达最后一课）",
+            value=90,
+            unit="%",
+            data_quality="derived",
+        )
+        rate.update({"numerator": 100, "denominator": 120})
+        report["metric_definitions"]["completion_reached_final"] = {
+            "label": rate["label"],
+            "definition": rate["definition"],
+            "unit": rate["unit"],
+            "source_notes": rate["source_notes"],
+            "origin": "teacher",
+        }
+        report["overview"]["kpis"].append(rate)
+
+        result, _ = self.invoke_renderer(report, validate_only=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("numerator/denominator", result.stderr)
+
+        rate["value"] = 83.3
+        self.assert_renderer_succeeds(report, validate_only=True)
+
+    def test_hidden_summary_keeps_its_limitations_in_the_methods_section(self):
+        report = minimal_valid_report()
+        report["overview"]["executive_summary"]["critical_limitations"] = ["仅七名学员，结论仅供参考。"]
+        report["presentation"] = {"sections": ["kpis", "methods"]}
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertNotIn('data-section="summary"', html)
+        self.assertIn("仅七名学员，结论仅供参考。", html)
+
+    def test_learning_path_shows_quality_per_stage_when_stages_differ(self):
+        report = load_json(EXAMPLE_REPORT_PATH)
+        stage = report["overview"]["learning_path"][2]["metric"]
+        stage.update({"data_quality": "approximate", "is_approximate": True})
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertIn("单位：人 · 累计至 2026-07-31</figcaption>", html)
+        self.assertRegex(html, r'<div class="path-note">[^<]*近似[^<]*</div>')
+        self.assertRegex(html, r'<div class="path-note">[^<]*已观测[^<]*</div>')
+
+    def test_lesson_metrics_cannot_share_a_label_within_one_lesson(self):
+        report = load_json(EXAMPLE_REPORT_PATH)
+        lesson = report["lesson_health"][0]
+        earlier = copy.deepcopy(lesson["metrics"][0])
+        earlier["key"] = "lesson_1_reach_earlier"
+        report["metric_definitions"]["lesson_1_reach_earlier"] = {
+            field: earlier[field] for field in ("label", "definition", "unit", "source_notes")
+        }
+        lesson["metrics"].append(earlier)
+
+        result, _ = self.invoke_renderer(report, validate_only=True)
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("more than once in one lesson", result.stderr)
+
+    def test_percentage_learning_path_is_drawn_against_one_hundred(self):
+        report = minimal_valid_report()
+        stages = []
+        for index, value in enumerate((60, 30), start=1):
+            metric = report_metric(
+                key=f"path_rate_{index}",
+                label=f"第 {index} 课触达比例",
+                value=value,
+                unit="%",
+                definition=f"进入第 {index} 课的学员比例。",
+            )
+            report["metric_definitions"][metric["key"]] = {
+                "label": metric["label"],
+                "definition": metric["definition"],
+                "unit": metric["unit"],
+                "source_notes": metric["source_notes"],
+            }
+            stages.append({"stage": f"第 {index} 课", "metric": metric, "note": ""})
+        report["overview"]["learning_path"] = stages
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertIn('title="第 1 课: 60%"><span style="width:60.00%">', html)
+        self.assertIn('title="第 2 课: 30%"><span style="width:30.00%">', html)
+
+    def test_compact_density_prints_smaller_than_comfortable(self):
+        template = TEMPLATE_PATH.read_text(encoding="utf-8")
+        print_rules = template[template.index("@media print") :]
+
+        self.assertIn('html[data-density="compact"] { font-size: 11.5px; }', print_rules)
+        self.assertLess(
+            print_rules.index("font-size: 12.5px"),
+            print_rules.index('html[data-density="compact"] { font-size: 11.5px; }'),
+        )
+
+    def test_bar_charts_reject_negative_values_and_draw_nothing_for_missing_ones(self):
+        report = self.report_with_custom_section()
+        _, html = self.assert_renderer_succeeds(report)
+        self.assertEqual(1, html.count('<div class="bar is-empty"'))
+
+        report["custom_sections"][0]["blocks"][0]["metrics"][0]["value"] = -3
+        result, _ = self.invoke_renderer(report, validate_only=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("non-negative", result.stderr)
+
     def test_validation_rejects_missing_required_section(self):
         report = minimal_valid_report()
         del report["audience"]
@@ -471,7 +630,7 @@ class LearningReportRendererTests(unittest.TestCase):
         report = minimal_valid_report()
         _, html = self.assert_renderer_succeeds(report)
 
-        self.assertIn('<html lang="zh-CN">', html)
+        self.assertIn('<html lang="zh-CN" ', html)
         self.assertIn('name="viewport"', html)
         self.assertIn("<style>", html)
         self.assertIn("@media print", html)
@@ -491,19 +650,334 @@ class LearningReportRendererTests(unittest.TestCase):
         self.assertIn("2026年8月4日 10:00", html)
         self.assertRegex(
             html,
-            r'<section class="section" aria-labelledby="path-heading">.*?<h2 id="path-heading">',
+            r'<section class="section" id="sec-learning-path" data-section="learning_path" '
+            r'aria-labelledby="sec-learning-path-heading">.*?<h2 id="sec-learning-path-heading">',
         )
+        self.assertNotIn("{{", html)
 
-    def test_renderer_uses_swiss_international_visual_system(self):
+    def test_default_report_uses_brand_theme_teacher_headings_and_contents(self):
         _, html = self.assert_renderer_succeeds(minimal_valid_report())
 
-        self.assertIn('name="design-system" content="Swiss International Style"', html)
-        self.assertIn('grid-template-columns: repeat(12, minmax(0, 1fr))', html)
-        self.assertIn('font-family: "Helvetica Neue", Helvetica, Arial', html)
-        self.assertIn('--accent: #5B5CE2', html)
-        self.assertNotIn('border-radius:', html)
-        self.assertNotIn('box-shadow:', html)
-        self.assertNotIn('linear-gradient', html)
+        self.assertIn('data-theme="shifu"', html)
+        self.assertIn('data-density="comfortable"', html)
+        self.assertIn("--accent: #5B5CE2", html)
+        self.assertIn("课程学情报告", html)
+        for heading in ("这门课现在怎么样", "学员学到了哪里", "下一步可以试什么", "这些数字是怎么来的"):
+            with self.subTest(heading=heading):
+                self.assertIn(heading, html)
+        self.assertIn('<nav class="toc"', html)
+        self.assertIn('href="#sec-recommendations"', html)
+        self.assertLess(html.index('data-section="summary"'), html.index('data-section="kpis"'))
+        self.assertLess(
+            html.index('data-section="recommendations"'), html.index('data-section="methods"')
+        )
+
+    def test_theme_presets_match_between_schema_template_and_renderer(self):
+        schema = load_json(SCHEMA_PATH)
+        themes = schema["$defs"]["presentation"]["properties"]["theme"]["enum"]
+        template = TEMPLATE_PATH.read_text(encoding="utf-8")
+
+        self.assertEqual("shifu", themes[0])
+        for theme in themes:
+            with self.subTest(theme=theme):
+                report = minimal_valid_report()
+                del report["meta"]["brand"]
+                report["presentation"] = {"theme": theme, "density": "compact"}
+                _, html = self.assert_renderer_succeeds(report)
+                self.assertIn(f'data-theme="{theme}"', html)
+                self.assertIn('data-density="compact"', html)
+                if theme != "shifu":
+                    self.assertIn(f'html[data-theme="{theme}"]', template)
+
+    def test_bundled_example_report_is_valid_and_renders_every_default_section(self):
+        report = load_json(EXAMPLE_REPORT_PATH)
+        self.assertEqual("1.1", report["schema_version"])
+        for optional in ("presentation", "custom_sections", "operations"):
+            self.assertNotIn(optional, report)
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        for section in (
+            "summary",
+            "kpis",
+            "learning_path",
+            "lessons",
+            "followups",
+            "engagement",
+            "audience",
+            "recommendations",
+            "methods",
+        ):
+            with self.subTest(section=section):
+                self.assertIn(f'data-section="{section}"', html)
+        self.assertIn("完成人数 / 开始学习人数：96 / 120", html)
+        self.assertIn("为上一步的 95%", html)
+        self.assertIn('<table class="lesson-table">', html)
+        self.assertIn("课节 3 · 平均评分：4.4分", html)
+        self.assertNotIn("自定义口径", html)
+        self.assertNotIn("按老师要求所做的调整", html)
+
+    def test_teacher_can_reorder_hide_and_retitle_sections(self):
+        report = load_json(EXAMPLE_REPORT_PATH)
+        report["presentation"] = {
+            "sections": ["recommendations", "summary", "lessons", "methods"],
+            "section_titles": {"recommendations": {"title": "我接下来要改什么"}},
+            "subtitle": "给任课老师的教学复盘",
+            "lesson_table_columns": ["平均评分", "触达人数"],
+        }
+        report["data_quality"]["teacher_adjustments"] = ["教学建议提前，隐藏学员画像。"]
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertLess(
+            html.index('data-section="recommendations"'), html.index('data-section="summary"')
+        )
+        for hidden in ("audience", "followups", "kpis", "learning_path", "engagement"):
+            with self.subTest(hidden=hidden):
+                self.assertNotIn(f'data-section="{hidden}"', html)
+        self.assertIn("我接下来要改什么", html)
+        self.assertIn("给任课老师的教学复盘", html)
+        self.assertIn("按老师要求所做的调整", html)
+        self.assertIn("教学建议提前，隐藏学员画像。", html)
+        self.assertLess(
+            html.index('<th scope="col" class="num">平均评分</th>'),
+            html.index('<th scope="col" class="num">触达人数</th>'),
+        )
+
+    def test_definitions_section_cannot_be_hidden_and_sections_must_exist(self):
+        cases = (
+            (["summary", "recommendations"], "methods"),
+            (["summary", "methods", "summary"], "only once"),
+            (["summary", "methods", "custom:missing"], "unknown section"),
+        )
+        for sections, message in cases:
+            with self.subTest(sections=sections):
+                report = minimal_valid_report()
+                report["presentation"] = {"sections": sections}
+                result, _ = self.invoke_renderer(report, validate_only=True)
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn(message, result.stderr)
+
+    def report_with_custom_section(self) -> dict:
+        report = minimal_valid_report()
+        metrics = [
+            report_metric(
+                key="followups_lesson_1",
+                label="第 1 课",
+                value=2,
+                unit="条",
+                definition="最近样本中归属第 1 课的追问条数。",
+            ),
+            report_metric(
+                key="followups_lesson_2",
+                label="第 2 课",
+                value=None,
+                unit="条",
+                data_quality="unavailable",
+                definition="最近样本中归属第 2 课的追问条数。",
+            ),
+        ]
+        for metric in metrics:
+            report["metric_definitions"][metric["key"]] = {
+                "label": metric["label"],
+                "definition": metric["definition"],
+                "unit": metric["unit"],
+                "source_notes": metric["source_notes"],
+                "origin": "teacher",
+            }
+        report["custom_sections"] = [
+            {
+                "id": "followups-by-lesson",
+                "title": "哪节课的追问最多",
+                "blocks": [
+                    {"type": "bars", "title": "各课追问数", "metrics": metrics},
+                    {
+                        "type": "table",
+                        "columns": ["课节", "评分人数"],
+                        "rows": [["第 1 课", 48], ["第 2 课", None]],
+                        "source_note": "课节反馈记录，累计至 2026-07-31。",
+                    },
+                    {"type": "callout", "body": "样本很小，差一两条不足以说明问题。"},
+                ],
+            }
+        ]
+        return report
+
+    def test_teacher_defined_custom_section_renders_and_supports_evidence(self):
+        report = self.report_with_custom_section()
+        report["recommendations"][0]["evidence"] = ["followups_lesson_1"]
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertIn('data-section="custom:followups-by-lesson"', html)
+        self.assertIn("哪节课的追问最多", html)
+        self.assertIn("自定义口径", html)
+        self.assertIn("第 1 课：2条", html)
+        self.assertIn("课节反馈记录，累计至 2026-07-31。", html)
+        self.assertIn('<td class="is-missing">暂无</td>', html)
+        self.assertIn('<div class="path-value is-missing">暂无可靠数据</div>', html)
+        self.assertLess(
+            html.index('data-section="custom:followups-by-lesson"'),
+            html.index('data-section="recommendations"'),
+        )
+
+    def test_custom_section_blocks_are_validated(self):
+        report = self.report_with_custom_section()
+        report["custom_sections"][0]["blocks"][1]["rows"][0].append("多出一列")
+        result, _ = self.invoke_renderer(report, validate_only=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("column count", result.stderr)
+
+        report = self.report_with_custom_section()
+        del report["custom_sections"][0]["blocks"][1]["source_note"]
+        result, _ = self.invoke_renderer(report, validate_only=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("source_note", result.stderr)
+
+        report = self.report_with_custom_section()
+        del report["metric_definitions"]["followups_lesson_1"]
+        result, _ = self.invoke_renderer(report, validate_only=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("metric_definitions", result.stderr)
+
+    def test_custom_css_is_appended_but_cannot_load_or_inject(self):
+        report = minimal_valid_report()
+        report["presentation"] = {
+            "custom_css": ":root { --radius: 4px; } .kpi > .kpi-label { font-size: 1rem; }"
+        }
+        _, html = self.assert_renderer_succeeds(report)
+        self.assertIn(".kpi > .kpi-label { font-size: 1rem; }", html)
+
+        for unsafe in (
+            "</style><script>alert(1)</script>",
+            "@import 'https://example.test/a.css';",
+            "body { background: url(https://example.test/a.png); }",
+            "body { background: u\\72l(x); }",
+            "body { background: image-set('a.png' 1x); }",
+            "body { background: image('a.png'); }",
+            "body { background: image-set('https://example.test/a.png' 1x); }",
+        ):
+            with self.subTest(unsafe=unsafe):
+                report = minimal_valid_report()
+                report["presentation"] = {"custom_css": unsafe}
+                result, html = self.invoke_renderer(report)
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("custom_css", result.stderr)
+                self.assertEqual("", html)
+
+    def test_teacher_template_override_must_stay_self_contained(self):
+        report = minimal_valid_report()
+        template = TEMPLATE_PATH.read_text(encoding="utf-8")
+        cases = (
+            (template.replace("</footer>", "<p>教研组内部版</p></footer>"), ""),
+            (
+                template.replace(
+                    "</head>",
+                    '<link rel="stylesheet" href="https://example.test/a.css"></head>',
+                ),
+                "self-contained",
+            ),
+            (
+                template.replace(
+                    "</head>", "<script src=https://example.test/a.js></script></head>"
+                ),
+                "self-contained",
+            ),
+            (
+                template.replace("</footer>", "<img src=logo.png></footer>"),
+                "self-contained",
+            ),
+            (
+                template.replace(
+                    "</style>", ".cover { background: url(cover.png); }</style>"
+                ),
+                "self-contained",
+            ),
+            (
+                template.replace(
+                    "</head>", '<meta http-equiv=refresh content="0;x.html"></head>'
+                ),
+                "self-contained",
+            ),
+            (
+                template.replace(
+                    "</footer>",
+                    '<img srcset="data:image/gif;base64,R0lGODlhAQABAAAAACw= 1x, '
+                    'https://example.test/a.png 2x"></footer>',
+                ),
+                "self-contained",
+            ),
+            (template.replace("{{REPORT_BODY}}", ""), "missing placeholder"),
+            (
+                template.replace("{{REPORT_BODY}}", "{{REPORT_BODY}}{{REPORT_BODY}}"),
+                "exactly once",
+            ),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_path = Path(tmpdir) / "course-learning-report.json"
+            output_path = Path(tmpdir) / "course-learning-report.html"
+            input_path.write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
+            for index, (content, expected_error) in enumerate(cases):
+                with self.subTest(index=index):
+                    template_path = Path(tmpdir) / f"template-{index}.html"
+                    template_path.write_text(content, encoding="utf-8")
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            str(RENDERER_PATH),
+                            "--input",
+                            str(input_path),
+                            "--output",
+                            str(output_path),
+                            "--template",
+                            str(template_path),
+                        ],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    if not expected_error:
+                        self.assertEqual(0, result.returncode, msg=result.stderr)
+                        self.assertIn(
+                            "教研组内部版", output_path.read_text(encoding="utf-8")
+                        )
+                    else:
+                        self.assertNotEqual(0, result.returncode)
+                        self.assertIn(expected_error, result.stderr)
+
+    def test_comparison_is_shown_wherever_the_metric_appears(self):
+        report = load_json(EXAMPLE_REPORT_PATH)
+        lesson_metrics = report["lesson_health"][0]["metrics"]
+        lesson_metrics[0]["comparison"] = {"label": "表格对比", "value": 100}
+        lesson_metrics[3]["comparison"] = {"label": "卡片对比", "value": 1}
+        report["presentation"] = {"lesson_table_columns": ["触达人数", "平均评分"]}
+        report["overview"]["learning_path"][1]["metric"]["comparison"] = {
+            "label": "路径对比",
+            "value": 110,
+        }
+        report["engagement"]["activity"][0]["comparison"] = {"label": "活跃对比", "value": 70}
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        for expected in (
+            "表格对比 100人 · 变化 +20人",
+            "卡片对比 1条 · 变化 +1条",
+            "路径对比 110人 · 变化 +4人",
+            "活跃对比 70人 · 变化 +7人",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, html)
+
+    def test_metric_comparison_and_report_without_completion_metric(self):
+        report = minimal_valid_report()
+        report["overview"]["kpis"] = [report["overview"]["kpis"][0]]
+        report["overview"]["kpis"][0]["comparison"] = {"label": "上一期", "value": 100}
+        del report["metric_definitions"]["course_completion_proxy"]
+        report["data_quality"]["unavailable_metrics"] = []
+
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertIn("上一期 100人 · 变化 +20人", html)
 
     def test_renderer_escapes_report_text_before_interpolation(self):
         report = minimal_valid_report()
@@ -521,7 +995,7 @@ class LearningReportRendererTests(unittest.TestCase):
 
         _, html = self.assert_renderer_succeeds(report)
 
-        self.assertEqual(1, html.count('class="section summary-band"'))
+        self.assertEqual(1, html.count('data-section="summary"'))
         self.assertIn("<h1 id=\"report-title\">{{REPORT_BODY}}</h1>", html)
 
     def test_optional_or_low_contrast_brand_uses_safe_defaults(self):
@@ -533,8 +1007,28 @@ class LearningReportRendererTests(unittest.TestCase):
         low_contrast = minimal_valid_report()
         low_contrast["meta"]["brand"]["accent_color"] = "#FFFFFF"
         _, fallback_html = self.assert_renderer_succeeds(low_contrast)
-        self.assertIn("--accent: #D6001C", fallback_html)
+        self.assertIn("--accent: #0F63EE", fallback_html)
         self.assertNotIn("--accent: #FFFFFF", fallback_html)
+        self.assertIn("示例学习中心", fallback_html)
+        self.assertNotIn("示例学习中心", default_html)
+
+    def test_report_carries_the_embedded_ai_shifu_logo_and_brand_color(self):
+        report = minimal_valid_report()
+        del report["meta"]["brand"]
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertIn("--accent: #0F63EE", html)
+        self.assertEqual(2, html.count('alt="AI 师傅" src="data:image/png;base64,'))
+        self.assertIn('class="brand-logo on-light"', html)
+        self.assertIn('class="brand-logo on-dark"', html)
+
+        report["meta"]["language"] = "en-US"
+        _, english = self.assert_renderer_succeeds(report)
+        self.assertEqual(2, english.count('alt="AI-Shifu" src="data:image/png;base64,'))
+        self.assertNotEqual(html.count("base64,"), 0)
+        for name in ("logo-zh", "logo-zh-reverse", "logo-en", "logo-en-reverse"):
+            with self.subTest(name=name):
+                self.assertTrue((SKILL_DIR / "assets" / "brand" / f"{name}.png").is_file())
 
     def test_completion_rate_uses_direct_reader_facing_name_and_exact_fraction(self):
         report = minimal_valid_report()

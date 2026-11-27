@@ -6,19 +6,20 @@ Build one validated data artifact and one polished, self-contained presentation 
 
 - `analysis-guidelines.md`
 - `report-data.schema.json`
+- `../assets/example-report.json` — a complete, valid default report to use as a shape reference. Copy its structure, never its numbers or wording.
 
 ## Output Files
 
 Write exactly these default deliverables in the requested output directory:
 
-- `course-learning-report.json` — privacy-safe schema version 1.0 data and analysis;
+- `course-learning-report.json` — privacy-safe schema version 1.1 data and analysis;
 - `course-learning-report.html` — the printable report rendered from that JSON.
 
 Do not embed the source analytics rows in either file. PDF is obtained through the browser's print-to-PDF flow and is not a separate source artifact.
 
 ## JSON Contract
 
-Set `schema_version` to `"1.0"` and populate these top-level sections:
+Set `schema_version` to `"1.1"` and populate these top-level sections:
 
 | Section | Purpose |
 | --- | --- |
@@ -26,58 +27,57 @@ Set `schema_version` to `"1.0"` and populate these top-level sections:
 | `metric_definitions` | An object mapping stable metric keys to exact definitions used by report metrics and recommendation evidence. |
 | `overview` | `executive_summary`, course-level `kpis`, and the `learning_path` view. |
 | `lesson_health` | An ordered array of eligible published-visible teaching leaf lessons, keyed with report-safe `lesson_key`, position, display title, lesson metrics, and calibrated findings. A `lesson_key` is a report-local key, never a platform ID. |
-| `engagement` | `follow_up_analysis` sampling disclosure and themes, `ratings`, and `learning_modes`. |
+| `engagement` | `follow_up_analysis` sampling disclosure and themes, `ratings`, `learning_modes`, and `activity`. |
 | `audience` | Named aggregate `dimensions` and a plain-language `note`, including unavailable mapping states. |
-| `recommendations` | Three to five prioritized records containing title, observation, interpretation, confidence, action, validation, and evidence. |
-| `data_quality` | `overall_status`, `coverage_notes`, `unavailable_metrics`, and cross-cutting `limitations`. |
+| `recommendations` | Prioritized records containing title, observation, interpretation, confidence, action, validation, and evidence. |
+| `data_quality` | `overall_status`, `coverage_notes`, `unavailable_metrics`, cross-cutting `limitations`, `privacy_notes`, and optional `teacher_adjustments`. |
 | `operations` | Optional appendix with `requested_by_user: true` and business/credit metrics, present only after explicit opt-in. |
+| `presentation` | Optional. The teacher's layout and style choices. Omit it for the default report. |
+| `custom_sections` | Optional. Analyses the teacher asked for beyond the default sections. |
+
+`presentation`, `custom_sections`, `teacher_adjustments`, a metric's `comparison`, and a definition's `origin` exist to carry a teacher's requests; `customization.md` owns how to use them. A default report contains none of them.
 
 Follow `report-data.schema.json` for exact property names, enum values, and required fields. Default human-readable values to `zh-CN`; use `en-US` only when the user explicitly requests English. Keep schema keys and contract enum values unchanged.
 
 For a metric whose `unit` is `%`, store the numeric `value` in percentage points from 0 to 100 (for example, `79`, not `0.79`). The dedicated `share` fields on follow-up themes and audience segments remain fractions from 0 to 1.
 
-## Branding
+Give each lesson the same set of metric labels, in the same order, wherever the data allows. Within one lesson every metric label is distinct; show the same measure for an earlier period through `comparison` or a label that names the period. The renderer builds the lesson comparison table from labels that lessons share, so a reach metric that carries the same label on every lesson becomes one column.
 
-Use a Swiss International Style visual system by default: a disciplined 12-column grid, asymmetric composition, strong sans-serif typography, generous whitespace, left alignment, flat planes, hard-edged rules, and one restrained accent color. Prioritize information hierarchy and scanability over decoration. Do not use rounded cards, soft shadows, gradients, ornamental illustrations, skeuomorphic controls, or dashboard-style visual clutter.
+## What the Reader Sees
 
-Apply the style consistently:
+The renderer turns the JSON into these sections, in this default order. Each heading is phrased as the question a teacher would ask, in the report language; the renderer supplies the wording.
 
-- make the cover and every report section align to the same modular grid;
-- create hierarchy with scale, weight, position, spacing, and rules rather than ornamental containers;
-- keep charts geometric and directly labelled, using rectangular bars and exact values;
-- use black, white, and neutral grays as the base palette, with the primary accent reserved for navigation, emphasis, and priority signals;
-- use the bundled Helvetica-compatible system font stack so the report stays self-contained; never download a font;
-- preserve the same grid logic in responsive and print layouts, collapsing it deliberately on small screens rather than shrinking desktop cards.
+| Section id | Heading asks | Drawn from |
+| --- | --- | --- |
+| `summary` | How is this course doing? | `overview.executive_summary`: the overall assessment, up to three conclusions, and limitations to keep in mind. |
+| `kpis` | The numbers that matter | `overview.kpis` as tiles; each expands to its definition and source. |
+| `learning_path` | How far do learners get? | `overview.learning_path` as ordered bars, each compared with the step before it. |
+| `lessons` | How is each lesson doing? | `lesson_health`: a side-by-side comparison table, then one card per lesson with its finding and evidence. |
+| `followups` | What are learners asking? | `engagement.follow_up_analysis`: sample disclosure and themes with shares. |
+| `engagement` | How do learners rate and study? | `engagement.ratings`, `learning_modes`, and `activity`, kept as separate groups. |
+| `audience` | Who are the learners? | `audience.dimensions` with a teaching implication each, or a clear missing-mapping state. |
+| `custom:<id>` | The teacher's title | Each `custom_sections` entry. |
+| `recommendations` | What to try next | `recommendations`: the action first, then observation, interpretation, validation, confidence, and evidence. |
+| `methods` | Where these numbers come from | `data_quality` and every metric definition. Always shown; when the summary is hidden it also carries the summary's limitations. |
+| `operations` | Operations and credits | `operations`, only when present. |
 
-The optional `meta.brand` object accepts only these report-level overrides when supplied by the user or a trusted calling context:
-
-- `organization_name` — institution display name;
-- `accent_color` — primary accent color;
-- `logo_text` — short text mark rendered in the header.
-
-Do not promise or load an external or local logo image. Branding may replace the single accent color and text lockup, but must not introduce a second decorative palette, change metric meaning, hide data-quality warnings, or add external runtime dependencies. Treat invalid values as absent and fall back to the accessible Swiss red accent.
-
-## Visible HTML Order
-
-Render the report in this decision sequence:
-
-1. **Cover and management conclusions** — course title, reporting window, generation time, core conclusions, and critical limitations.
-2. **Learning path** — ordered reach/progress view for published, visible teaching lessons and course completion-rate explanation.
-3. **Lesson health** — comparisons among eligible published-visible lessons with sample sizes, evidence, and cautious interpretations.
-4. **Follow-up themes** — latest-sample disclosure, aggregate themes, generalized intents, and lesson concentration.
-5. **Feedback and learning preference** — rating coverage and reading/listening feedback mix using the source's exact population.
-6. **Audience** — named aggregate profiles and implications, or a clear mapping/missing-data state.
-7. **Recommendations** — 3–5 prioritized cards containing observation, interpretation, confidence, action, validation, and evidence.
-8. **Methods and data quality** — metric definitions, time scopes, published-visible lesson scope, completion calculation notes, sampling rules, missing fields, and source coverage.
-9. **Operations appendix** — only when `operations` is present due to explicit user opt-in.
+The renderer computes simple reading aids from the JSON values — a step's share of the previous step, bar lengths, and a lesson's name on evidence cited outside its own card. It adds no judgement of its own.
 
 Do not use decorative charts when the sample is absent or the comparison is invalid. A well-labelled empty state is more trustworthy than an empty graph or a zero created from missing data.
 
-For Chinese reports, display the completion metric as `课程完成率` everywhere readers encounter it. Do not render `代理`, `近似`, or an approximation badge beside its label or value. Display the exact same-cohort completed-learner numerator and started-learner denominator. Keep cohort dates, report cutoff, required-path definition, eligible scope, and the absence of a fixed maturation window in the expandable metric definition and methods section.
+For Chinese reports, display the standard completion metric as `课程完成率` everywhere readers encounter it. Do not render `代理`, `近似`, or an approximation badge beside its label or value. Display the exact same-cohort completed-learner numerator and started-learner denominator. Keep cohort dates, report cutoff, required-path definition, eligible scope, and the absence of a fixed maturation window in the expandable metric definition and methods section.
+
+## Visual System
+
+The bundled template gives every report the AI-Shifu look: the AI-Shifu logo on a brand-blue (`#0F63EE`) cover, white cards on a cool light page, light-blue (`#EFF5FF`) panels for what the reader should act on, slate ink, generous white space, question-style headings, a side contents list on wide screens, and thin, directly labelled marks. The logo is embedded from `assets/brand/` — the Chinese wordmark for `zh-CN`, the English one for `en-US` — and is never redrawn, recolored, or replaced. Status always pairs a color with a word. Its design choices serve reading: the conclusion comes first, numbers that are compared share a row or a column, and definitions sit one click from the number they explain.
+
+The default theme is `shifu`. The template also carries `paper`, `forest`, `swiss`, and `night` themes and a compact density; `customization.md` owns when and how to switch them and how to go further. Do not change the look of a report unless the teacher asked.
+
+The optional `meta.brand` object accepts `organization_name`, shown beside the AI-Shifu logo, and `accent_color`. `logo_text` is accepted for older report files and is no longer displayed. Do not promise or load an institution's logo image. An accent without enough contrast on the theme surface falls back to the theme's accent.
 
 ## Renderer Workflow
 
-Use the bundled standard-library renderer; do not hand-author a second HTML template:
+Use the bundled standard-library renderer:
 
 ```bash
 python3 <skill-directory>/scripts/render_report.py \
@@ -88,7 +88,9 @@ python3 <skill-directory>/scripts/render_report.py \
   --output <output-directory>/course-learning-report.html
 ```
 
-Use its validation mode before final rendering when available in the checked-in CLI. A validation failure blocks delivery: correct the JSON rather than weakening or bypassing the schema. Render from the same JSON that will be delivered, then re-run the final privacy gate on both artifacts.
+New fields — `presentation`, `custom_sections`, `teacher_adjustments`, `comparison`, and `origin` — are accepted only with `schema_version` `"1.1"`. A validation failure blocks delivery: correct the JSON rather than weakening or bypassing the schema. The validator checks the schema, metric-to-definition agreement, rate arithmetic, evidence references, section and style settings, and privacy patterns. Render from the same JSON that will be delivered, then re-run the final privacy gate on both artifacts.
+
+`--template <path>` renders with a teacher-specific copy of the template; use it only as `customization.md` directs.
 
 ## Presentation Quality Gate
 
@@ -98,10 +100,11 @@ The generated HTML must:
 - remain readable on desktop and mobile and when JavaScript is unavailable;
 - use semantic headings, tables, labels, sufficient contrast, keyboard-safe content, and meaningful accessible text;
 - include print styles that preserve section hierarchy, prevent important cards from splitting where practical, remove non-print controls, and produce a clean browser PDF;
-- label chart units, legends, sample sizes, time scopes, proxy metrics, and unavailable states directly in the visible report;
+- label chart units, sample sizes, time scopes, teacher-defined metrics, and unavailable states directly in the visible report;
 - show `null` / unavailable values as localized empty states, never as numeric zero;
 - escape all user- or data-supplied text before interpolation.
-- visibly follow the Swiss International Style contract: modular grid, asymmetric hierarchy, sans-serif type, flat surfaces, square geometry, and restrained accent use.
+
+After any style customization, open the rendered file and look at it: check for clipped or overlapping text, unreadable contrast, and a broken phone-width layout before delivering.
 
 ## Final Consistency Gate
 
@@ -112,5 +115,5 @@ Before delivery, verify:
 3. operations content is absent unless explicitly requested;
 4. the HTML contains no remote dependencies and prints without clipped or unreadable sections;
 5. privacy scanning passes for both artifacts, including source text and identifier traps supplied in synthetic input;
-6. file names remain exactly `course-learning-report.json` and `course-learning-report.html` unless the user explicitly requests different names.
+6. file names remain exactly `course-learning-report.json` and `course-learning-report.html` unless the user explicitly requests different names;
 7. every lesson-scoped section uses only the same current published-visible teaching leaf set, and excluded lessons appear nowhere in the report.
