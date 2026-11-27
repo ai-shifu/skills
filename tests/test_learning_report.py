@@ -884,6 +884,14 @@ class LearningReportRendererTests(unittest.TestCase):
                 ),
                 "self-contained",
             ),
+            (
+                template.replace(
+                    "</footer>",
+                    '<img srcset="data:image/gif;base64,R0lGODlhAQABAAAAACw= 1x, '
+                    'https://example.test/a.png 2x"></footer>',
+                ),
+                "self-contained",
+            ),
             (template.replace("{{REPORT_BODY}}", ""), "missing placeholder"),
             (
                 template.replace("{{REPORT_BODY}}", "{{REPORT_BODY}}{{REPORT_BODY}}"),

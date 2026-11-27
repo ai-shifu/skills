@@ -1611,6 +1611,12 @@ def _check_template_assets(template: str, path: Path) -> None:
                 f"template {path} references {value[:60]!r}; reports must be self-contained, "
                 "so embed resources as data: URIs"
             )
+    if re.search(r"srcset\s*=", template, re.IGNORECASE):
+        # A srcset lists several candidates; one embedded image in `src` is enough.
+        raise ReportError(
+            f"template {path} uses srcset; reports must be self-contained, "
+            "so use a single src with a data: URI"
+        )
     if "@import" in template.lower():
         raise ReportError(f"template {path} uses @import; reports must be self-contained")
     if re.search(r"""http-equiv\s*=\s*["']?\s*refresh""", template, re.IGNORECASE):
