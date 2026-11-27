@@ -1,6 +1,6 @@
 # Analysis Guidelines
 
-Convert course signals into calibrated teaching decisions. The report should help a manager decide where to investigate and help a teacher decide what to try next, without overstating what the data proves.
+Convert course signals into calibrated teaching decisions. The first reader is a teacher who cares about the course and wants to improve it: the report should show them what is happening, where to look, and what to try next, without overstating what the data proves. A teaching manager reading the same report should be able to follow it without extra explanation.
 
 ## Required References
 
@@ -42,7 +42,7 @@ Do not turn correlation into causation. A reach drop can reflect difficulty, a b
 - Describe `进行中` / `In progress` as the platform's recorded state. Call a lesson a “bottleneck candidate” only when several independent signals align, such as a sharp reach drop plus weak feedback or concentrated follow-ups.
 - Never label a lesson “stuck” from in-progress rows alone. Phrase the finding as an investigation priority and state the evidence.
 - Compare lesson metrics only when their definitions and time scopes match. Show sample sizes next to ratings and question themes.
-- Present the same-cohort required-path calculation as `课程完成率` in Chinese reader-facing content. The denominator contains distinct learners who first entered an eligible lesson within the metric time scope; the numerator is the subset completing every required lesson or one valid required branch path by the report cutoff. Do not append `代理` or `近似` to the label, value, management conclusion, or recommendation. Show the exact numerator and denominator, and keep cohort dates, cutoff, required-path rule, and scope in the expandable definition and source notes. Use no fixed maturation window unless explicitly requested; keep late starters in the denominator. If the completion gate fails, show an unavailable state rather than an invented percentage.
+- Present the same-cohort required-path calculation as `课程完成率` in Chinese reader-facing content. The denominator contains distinct learners who first entered an eligible lesson within the metric time scope; the numerator is the subset completing every required lesson or one valid required branch path by the report cutoff. Do not append `代理` or `近似` to the label, value, conclusion, or recommendation. Show the exact numerator and denominator, and keep cohort dates, cutoff, required-path rule, and scope in the expandable definition and source notes. Use no fixed maturation window unless explicitly requested; keep late starters in the denominator. If the completion gate fails, show an unavailable state rather than an invented percentage.
 - When data is sparse, prefer a factual baseline and a plan to gather more evidence over a strong diagnosis.
 
 ## Engagement, Feedback, and Follow-Ups
@@ -63,7 +63,7 @@ Do not turn correlation into causation. A reach drop can reflect difficulty, a b
 
 ## Recommendation Contract
 
-Produce 3–5 prioritized recommendations. Each recommendation must include a short, decision-oriented `title` plus:
+Produce 3–5 prioritized recommendations by default; a teacher may ask for fewer. Each recommendation must include a short, decision-oriented `title` plus:
 
 - **Observation:** a concise measured fact.
 - **Interpretation:** the likely teaching implication plus uncertainty or an alternative explanation.
@@ -86,15 +86,17 @@ Calibrate confidence as follows:
 - Distinguish “zero observed” from “not collected,” “not supported,” and “query failed.” Only a successful query can justify zero.
 - Put cross-cutting limitations in `data_quality`; keep metric-specific caveats on the metric itself.
 - If the current published outline or lesson visibility is unavailable, describe that scope failure and leave the affected lesson metrics unavailable; never substitute draft or historical lesson data.
-- Surface contradictions in the management summary when they change the decision. Preserve both signals and recommend a test that can separate plausible explanations.
+- Surface contradictions in the opening summary when they change the decision. Preserve both signals and recommend a test that can separate plausible explanations.
 - Do not calculate a rate when its numerator or denominator is missing or zero. Keep the value `null` and explain why.
 
-## Management Summary
+## Opening Summary
 
-Lead with no more than three decision-relevant conclusions:
+Write `overall_health` as one plain sentence a teacher could repeat to a colleague, with the numbers that justify it. Then lead with no more than three decision-relevant conclusions:
 
 1. overall course health and whether the course completion rate is available;
 2. the highest-priority lesson or learner need, with evidence and confidence;
 3. the most useful next action or the most important data gap.
 
-Write for a mixed audience: a teaching manager should understand the operational priority, and a teacher should understand what to change or investigate. Avoid analytics jargon when a plain teaching term is available.
+Write the way a thoughtful colleague would talk about the course: name lessons by their titles, say “学员” rather than “用户”, and prefer a plain teaching term to analytics jargon. Be warm and direct, and do not soften a real problem into vagueness. A teaching manager should still be able to read off the priority.
+
+The same voice applies to lesson findings and recommendations: say what was seen, what it might mean, and what is still unknown.

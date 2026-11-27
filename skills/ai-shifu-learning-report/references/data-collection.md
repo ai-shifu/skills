@@ -53,6 +53,10 @@ Collect the smallest set that supports the report. Preserve counts and display l
 
 Learning duration, grades, retention, attendance, or other familiar education metrics may be unavailable in current sources. Represent an unavailable metric with `value: null`, `data_quality: "unavailable"`, and a plain reason. Never infer one metric from an unrelated field.
 
+## Teacher-Requested Signals
+
+A teacher may ask for a statistic outside the minimum dataset. Collect it through the same course creator analytics capabilities, as an aggregate, and subject to every gate and privacy rule in this file. If the current analytics source cannot provide it, report that it is unavailable; do not approximate it from an unrelated field.
+
 ## Published Visible Lesson Gate
 
 Apply this gate before querying or aggregating any lesson-scoped signal:

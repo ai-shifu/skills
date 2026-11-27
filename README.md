@@ -7,7 +7,7 @@ Reusable AI-Shifu skills for course production and improvement, from topic selec
 ## Included Skills
 
 - **AI-Shifu Course Creator（AI 师傅课程创作器）**: teaching design, MarkdownFlow expression, and CLI operations for creating, editing, reviewing, publishing, managing, and analyzing AI-Shifu courses. The using agent selects and combines capabilities for the task.
-- **AI-Shifu Learning Report（AI 师傅学习报告）**: analyze one AI-Shifu course and produce a privacy-safe `course-learning-report.json` plus a polished, self-contained, printable `course-learning-report.html` for teaching managers and teachers.
+- **AI-Shifu Learning Report（AI 师傅学习报告）**: analyze one AI-Shifu course and produce a privacy-safe `course-learning-report.json` plus a beautiful, self-contained, printable `course-learning-report.html` for teachers and teaching managers. Teachers can ask for different statistics, metric definitions, layout, and style.
 - **Course Direction Advisor（课程选题顾问）**: turn source materials into evidence-bound, market-fit course-topic decisions with competitor analysis, pricing guidance, and GO/HOLD/REWORK/NO-GO recommendations.
 
 ## Repository Layout
@@ -43,7 +43,7 @@ The [WorkBuddy Publisher skill](tools/ai-shifu-workbuddy-publisher/SKILL.md) dow
 Use **AI-Shifu Learning Report** after a course has learning activity and you need an actionable single-course review. It reuses the course creator's authenticated analytics capabilities, then turns aggregate progress, lesson health, engagement, audience, and audited follow-up signals into:
 
 - a versioned, privacy-safe JSON data artifact with metric definitions and data-quality notes;
-- an executive-first HTML report that works without external assets and prints cleanly to PDF;
+- a conclusion-first HTML report that works without external assets, prints cleanly to PDF, and can be tailored by the teacher (statistics, metric definitions, section order, theme, and style);
 - three to five evidence-linked teaching recommendations with confidence and a verification method.
 
 The report does not expose learner identities, raw course identifiers, or raw follow-up text. Business and credit data stay out of the report unless the user explicitly asks for the optional operations appendix. Reports default to Simplified Chinese; English is used only when explicitly requested.

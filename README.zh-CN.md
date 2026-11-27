@@ -7,7 +7,7 @@
 ## 包含的 Skills
 
 - **AI-Shifu Course Creator（AI 师傅课程创作器）**：按教学设计、MarkdownFlow 表达、CLI 操作三类提供课程创作、编辑、审查、发布、管理和分析能力，由智能体按任务自主选择与组合。
-- **AI-Shifu Learning Report（AI 师傅学习报告）**：分析单门 AI 师傅课程，为教学管理者和老师生成脱敏的 `course-learning-report.json`，以及美观、自包含、可打印的 `course-learning-report.html`。
+- **AI-Shifu Learning Report（AI 师傅学习报告）**：分析单门 AI 师傅课程，为老师和教学管理者生成脱敏的 `course-learning-report.json`，以及美观、自包含、可打印的 `course-learning-report.html`。老师可以对统计哪些数据、数据口径、版面与样式提出自己的要求。
 - **Course Direction Advisor（课程选题顾问）**：将素材转化为基于证据的、市场适配的课程选题决策，包含竞品分析、定价建议和 GO/HOLD/REWORK/NO-GO 推荐。
 
 ## 仓库结构
@@ -43,7 +43,7 @@ python3 scripts/release.py verify dist/<release-id>
 课程产生学习数据后，如需复盘单门课程并形成改进动作，使用 **AI-Shifu Learning Report**。它复用课程制作 skill 已认证的分析能力，再将汇总后的学习进度、课节健康度、参与信号、学员画像和受审计追问转化为：
 
 - 带版本、指标口径和数据质量说明的脱敏 JSON 数据文件；
-- 首屏先呈现管理结论、无需外部资源且可直接打印为 PDF 的 HTML 报告；
+- 首屏先呈现核心结论、无需外部资源且可直接打印为 PDF 的 HTML 报告，老师可按自己的要求调整统计项、口径、版块顺序、主题和样式；
 - 三至五条带证据、置信度和验证方法的教学建议。
 
 报告不会暴露学员身份、原始课程标识或追问原文。经营与积分数据默认不进入报告，只有用户明确要求时才加入可选附录。报告默认使用简体中文；只有用户明确要求英文时才切换为英文。
