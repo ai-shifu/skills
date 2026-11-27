@@ -525,10 +525,10 @@ class LearningReportRendererTests(unittest.TestCase):
         )
         self.assertNotIn("{{", html)
 
-    def test_default_report_uses_paper_theme_teacher_headings_and_contents(self):
+    def test_default_report_uses_brand_theme_teacher_headings_and_contents(self):
         _, html = self.assert_renderer_succeeds(minimal_valid_report())
 
-        self.assertIn('data-theme="paper"', html)
+        self.assertIn('data-theme="shifu"', html)
         self.assertIn('data-density="comfortable"', html)
         self.assertIn("--accent: #5B5CE2", html)
         self.assertIn("课程学情报告", html)
@@ -547,7 +547,7 @@ class LearningReportRendererTests(unittest.TestCase):
         themes = schema["$defs"]["presentation"]["properties"]["theme"]["enum"]
         template = TEMPLATE_PATH.read_text(encoding="utf-8")
 
-        self.assertEqual("paper", themes[0])
+        self.assertEqual("shifu", themes[0])
         for theme in themes:
             with self.subTest(theme=theme):
                 report = minimal_valid_report()
@@ -556,7 +556,7 @@ class LearningReportRendererTests(unittest.TestCase):
                 _, html = self.assert_renderer_succeeds(report)
                 self.assertIn(f'data-theme="{theme}"', html)
                 self.assertIn('data-density="compact"', html)
-                if theme != "paper":
+                if theme != "shifu":
                     self.assertIn(f'html[data-theme="{theme}"]', template)
 
     def test_bundled_example_report_is_valid_and_renders_every_default_section(self):
@@ -816,8 +816,28 @@ class LearningReportRendererTests(unittest.TestCase):
         low_contrast = minimal_valid_report()
         low_contrast["meta"]["brand"]["accent_color"] = "#FFFFFF"
         _, fallback_html = self.assert_renderer_succeeds(low_contrast)
-        self.assertIn("--accent: #2F4FC7", fallback_html)
+        self.assertIn("--accent: #0F63EE", fallback_html)
         self.assertNotIn("--accent: #FFFFFF", fallback_html)
+        self.assertIn("示例学习中心", fallback_html)
+        self.assertNotIn("示例学习中心", default_html)
+
+    def test_report_carries_the_embedded_ai_shifu_logo_and_brand_color(self):
+        report = minimal_valid_report()
+        del report["meta"]["brand"]
+        _, html = self.assert_renderer_succeeds(report)
+
+        self.assertIn("--accent: #0F63EE", html)
+        self.assertEqual(2, html.count('alt="AI 师傅" src="data:image/png;base64,'))
+        self.assertIn('class="brand-logo on-light"', html)
+        self.assertIn('class="brand-logo on-dark"', html)
+
+        report["meta"]["language"] = "en-US"
+        _, english = self.assert_renderer_succeeds(report)
+        self.assertEqual(2, english.count('alt="AI-Shifu" src="data:image/png;base64,'))
+        self.assertNotEqual(html.count("base64,"), 0)
+        for name in ("logo-zh", "logo-zh-reverse", "logo-en", "logo-en-reverse"):
+            with self.subTest(name=name):
+                self.assertTrue((SKILL_DIR / "assets" / "brand" / f"{name}.png").is_file())
 
     def test_completion_rate_uses_direct_reader_facing_name_and_exact_fraction(self):
         report = minimal_valid_report()

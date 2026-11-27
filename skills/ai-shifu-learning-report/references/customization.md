@@ -77,18 +77,18 @@ All presentation choices live in the optional top-level `presentation` object. U
 
 | Field | Values | Effect |
 | --- | --- | --- |
-| `theme` | `paper` (default), `forest`, `swiss`, `night` | `paper`: warm, soft cards, blue accent. `forest`: the same structure in calm greens. `swiss`: black-and-white, square corners, strong rules, red accent — formal and print-like. `night`: dark background for screens; prints in light colors. |
+| `theme` | `shifu` (default), `paper`, `forest`, `swiss`, `night` | `shifu`: the AI-Shifu brand look — brand-blue cover, white cards, light-blue panels. `paper`: warm off-white page with a deep-blue accent. `forest`: calm greens. `swiss`: black-and-white, square corners, strong rules, red accent — formal and print-like. `night`: dark background for screens; prints in light colors. |
 | `density` | `comfortable` (default), `compact` | `compact` fits more on a screen or page. |
 | `subtitle` | text | Replaces the line under the course title. |
 | `sections` | ordered list of section ids | Sets both order and visibility. Ids: `summary`, `kpis`, `learning_path`, `lessons`, `followups`, `engagement`, `audience`, `recommendations`, `methods`, `operations`, and `custom:<id>`. |
 | `section_titles` | `{id: {title, description}}` | Rewords a section heading in the teacher's own terms. |
 | `lesson_table_columns` | list of metric labels | Chooses and orders the lesson comparison columns. |
 
-`meta.brand` sets `organization_name`, `logo_text`, and `accent_color` (a `#RRGGBB` value). An accent that would be hard to read on the theme's background is ignored in favour of the theme's own accent; tell the teacher when that happens and suggest a darker or lighter shade.
+`meta.brand` sets `organization_name`, shown beside the AI-Shifu logo, and `accent_color` (a `#RRGGBB` value) for a school or institution color. An accent that would be hard to read on the theme's background is ignored in favour of the theme's own accent; tell the teacher when that happens and suggest a darker or lighter shade. The AI-Shifu logo stays on every report in every theme.
 
 `methods` must stay in `sections`. `operations` appears only when the report contains an operations appendix.
 
-Map plain requests to these options: “正式一点 / 打印给领导” → `swiss`; “柔和一点 / 清新” → `forest`; “深色” → `night`; “紧凑一点 / 一页多放点” → `compact`; “把建议放最前面” → move `recommendations` up in `sections`; “不要学员画像” → drop `audience` from `sections`.
+Map plain requests to these options: “正式一点 / 打印给领导” → `swiss`; “暖一点 / 纸质感” → `paper`; “柔和一点 / 清新” → `forest`; “深色” → `night`; “紧凑一点 / 一页多放点” → `compact`; “把建议放最前面” → move `recommendations` up in `sections`; “不要学员画像” → drop `audience` from `sections`.
 
 ### 2. Custom CSS
 

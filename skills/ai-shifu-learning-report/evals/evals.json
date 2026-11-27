@@ -16,7 +16,7 @@
         "Follow-up content appears only as aggregate theme counts and paraphrased intent summaries; no raw follow-up text or learner-level record appears in either artifact.",
         "The report contains three to five recommendations, and every recommendation has an observation, interpretation, confidence, action, verification method, and concrete metric evidence.",
         "The report opens with a plain overall assessment and the most decision-relevant conclusions, stays actionable for the teacher throughout, and explains metric definitions and data limitations.",
-        "course-learning-report.html is self-contained without external CSS, JavaScript, fonts, or images; it is produced by the bundled renderer in the default paper theme with question-style section headings, a lesson comparison table, responsive behavior, print styles, meaningful headings/landmarks, accessible labels, and readable empty states. No presentation overrides, custom sections, or teacher-adjustment notes appear, because the request asked for none.",
+        "course-learning-report.html is self-contained without external CSS, JavaScript, fonts, or images; it is produced by the bundled renderer in the default AI-Shifu brand theme (brand-blue cover with the embedded AI-Shifu logo) with question-style section headings, a lesson comparison table, responsive behavior, print styles, meaningful headings/landmarks, accessible labels, and readable empty states. No presentation overrides, custom sections, or teacher-adjustment notes appear, because the request asked for none.",
         "The handoff message briefly tells the teacher that statistics, metric definitions, and layout or style can be changed on request."
       ]
     },
@@ -34,7 +34,7 @@
         "The interpretation also preserves counter-evidence: 45 of the 47 learners who reached L3 reached L4, and L4/L5 ratings are high; it does not claim causality or describe current progress positions as proven stuck learners.",
         "Duration, score, and retention remain unavailable. No new rates, cohorts, identities, or outcomes are fabricated from the snapshot.",
         "The three to five recommendations use the full observation, interpretation, confidence, action, verification method pattern and reference named metrics that can verify whether an L3 teaching change helps.",
-        "The HTML is a polished, conclusion-first, self-contained report produced by the bundled renderer in the default paper theme, with responsive layout, print CSS, semantic headings/landmarks, accessible visual labels, and the same numbers and conclusions as the JSON."
+        "The HTML is a polished, conclusion-first, self-contained report produced by the bundled renderer in the default AI-Shifu brand theme, with responsive layout, print CSS, semantic headings/landmarks, accessible visual labels, and the same numbers and conclusions as the JSON."
       ]
     },
     {
@@ -52,7 +52,7 @@
         "Follow-up insights contain only aggregate theme counts and safely paraphrased intents such as course fit, practice-entry discovery, or branch-example needs; no quote or identifying detail survives.",
         "The unrequested order count and credit cost do not appear, and the optional operations section is absent.",
         "The report still provides three to five low-confidence, evidence-linked next actions appropriate for a new course, with a concrete verification method and no fabricated outcome claim.",
-        "course-learning-report.html remains self-contained, responsive, printable, semantically structured, accessible, and rendered by the bundled renderer in the default paper theme while visibly explaining unavailable metrics and privacy/data-quality limitations."
+        "course-learning-report.html remains self-contained, responsive, printable, semantically structured, accessible, and rendered by the bundled renderer in the default AI-Shifu brand theme while visibly explaining unavailable metrics and privacy/data-quality limitations."
       ]
     },
     {

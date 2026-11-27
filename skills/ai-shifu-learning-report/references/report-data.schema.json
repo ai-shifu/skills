@@ -790,9 +790,10 @@
       "properties": {
         "theme": {
           "enum": [
+            "shifu",
             "paper",
-            "swiss",
             "forest",
+            "swiss",
             "night"
           ]
         },

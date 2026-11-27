@@ -9,6 +9,7 @@ that exact data.
 from __future__ import annotations
 
 import argparse
+import base64
 import html
 import json
 import math
@@ -23,17 +24,19 @@ from typing import Any
 SKILL_DIR = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = SKILL_DIR / "references" / "report-data.schema.json"
 TEMPLATE_PATH = SKILL_DIR / "assets" / "report-template.html"
+BRAND_DIR = SKILL_DIR / "assets" / "brand"
 
 VALID_ACCENT = re.compile(r"^#[0-9A-Fa-f]{6}$")
 # Each preset names the accent and surface the template pairs with it, so a
 # requested brand accent can be contrast-checked before it is used.
 THEMES = {
+    "shifu": {"accent": "#0F63EE", "surface": "#FFFFFF", "scheme": "light"},
     "paper": {"accent": "#2F4FC7", "surface": "#FFFFFF", "scheme": "light"},
     "swiss": {"accent": "#D6001C", "surface": "#FFFFFF", "scheme": "light"},
     "forest": {"accent": "#1F7A4D", "surface": "#FFFFFF", "scheme": "light"},
     "night": {"accent": "#8FB0FF", "surface": "#181B21", "scheme": "dark"},
 }
-DEFAULT_THEME = "paper"
+DEFAULT_THEME = "shifu"
 BUILTIN_SECTIONS = (
     "summary",
     "kpis",
@@ -783,6 +786,24 @@ def _safe_accent(value: Any, theme: str) -> str:
     return value if _contrast(value, preset["surface"]) >= 4.5 else preset["accent"]
 
 
+def _brand_logo(ctx: RenderContext) -> str:
+    """Embed the AI-Shifu logo for light and dark backgrounds as data URIs."""
+    language = "zh" if ctx.is_zh else "en"
+    name = "AI 师傅" if ctx.is_zh else "AI-Shifu"
+    images = ""
+    for variant, suffix in (("on-light", ""), ("on-dark", "-reverse")):
+        path = BRAND_DIR / f"logo-{language}{suffix}.png"
+        try:
+            encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+        except OSError as exc:
+            raise ReportError(f"cannot read brand logo {path}: {exc}") from exc
+        images += (
+            f'<img class="brand-logo {variant}" alt="{esc(name)}" '
+            f'src="data:image/png;base64,{encoded}">'
+        )
+    return images
+
+
 def _format_generated_at(value: str, is_zh: bool) -> str:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if is_zh:
@@ -1509,7 +1530,12 @@ def render_report(report: Mapping[str, Any], template_path: Path | None = None) 
     brand = meta.get("brand", {})
     theme = ctx.presentation.get("theme", DEFAULT_THEME)
     accent = _safe_accent(brand.get("accent_color"), theme)
-    default_name = "AI 师傅" if ctx.is_zh else "AI-Shifu"
+    organization = brand.get("organization_name", "")
+    organization_html = (
+        f'<span class="brand-divider" aria-hidden="true">/</span><span>{esc(organization)}</span>'
+        if organization
+        else ""
+    )
     period = meta["period"]
     source_name = ctx.strings["source_names"].get(meta["source_kind"], meta["source_kind"])
     timezone_label = meta["timezone"]
@@ -1540,8 +1566,8 @@ def render_report(report: Mapping[str, Any], template_path: Path | None = None) 
         "{{COURSE_TITLE}}": esc(meta["course_title"]),
         "{{TITLE_SUFFIX}}": esc(ctx.t("title_suffix")),
         "{{ACCENT_COLOR}}": accent,
-        "{{ORGANIZATION_NAME}}": esc(brand.get("organization_name", default_name)),
-        "{{LOGO_TEXT}}": esc(brand.get("logo_text", default_name)),
+        "{{BRAND_LOGO}}": _brand_logo(ctx),
+        "{{ORGANIZATION_NAME}}": organization_html,
         "{{SKIP_TEXT}}": esc(ctx.t("skip")),
         "{{TOC_LABEL}}": esc(ctx.t("toc")),
         "{{META_LABEL}}": esc(ctx.t("meta_label")),

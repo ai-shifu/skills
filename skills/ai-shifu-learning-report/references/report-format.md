@@ -69,11 +69,11 @@ For Chinese reports, display the standard completion metric as `课程完成率`
 
 ## Visual System
 
-The bundled template gives every report the same considered look: a warm page, generous white space, soft cards, one accent color, question-style headings, a side contents list on wide screens, and thin, directly labelled marks. Status always pairs a color with a word. Its design choices serve reading: the conclusion comes first, numbers that are compared share a row or a column, and definitions sit one click from the number they explain.
+The bundled template gives every report the AI-Shifu look: the AI-Shifu logo on a brand-blue (`#0F63EE`) cover, white cards on a cool light page, light-blue (`#EFF5FF`) panels for what the reader should act on, slate ink, generous white space, question-style headings, a side contents list on wide screens, and thin, directly labelled marks. The logo is embedded from `assets/brand/` — the Chinese wordmark for `zh-CN`, the English one for `en-US` — and is never redrawn, recolored, or replaced. Status always pairs a color with a word. Its design choices serve reading: the conclusion comes first, numbers that are compared share a row or a column, and definitions sit one click from the number they explain.
 
-The default theme is `paper`. The template also carries `forest`, `swiss`, and `night` themes and a compact density; `customization.md` owns when and how to switch them and how to go further. Do not change the look of a report unless the teacher asked.
+The default theme is `shifu`. The template also carries `paper`, `forest`, `swiss`, and `night` themes and a compact density; `customization.md` owns when and how to switch them and how to go further. Do not change the look of a report unless the teacher asked.
 
-The optional `meta.brand` object accepts `organization_name`, `logo_text`, and `accent_color`. Do not promise or load a logo image. An accent without enough contrast on the theme surface falls back to the theme's accent.
+The optional `meta.brand` object accepts `organization_name`, shown beside the AI-Shifu logo, and `accent_color`. `logo_text` is accepted for older report files and is no longer displayed. Do not promise or load an institution's logo image. An accent without enough contrast on the theme surface falls back to the theme's accent.
 
 ## Renderer Workflow
 

@@ -9,39 +9,52 @@
   <title>{{COURSE_TITLE}} · {{TITLE_SUFFIX}}</title>
   <style>
     /* ------------------------------------------------------------------
-       Tokens. A theme only changes tokens; layout rules never branch on a
-       theme name. `--accent` is injected by the renderer after a contrast
-       check against the theme surface.
+       Tokens. The default (`shifu`) theme is the AI-Shifu brand: brand blue
+       #0F63EE, white surfaces, light-blue panels, slate ink. Other themes
+       override tokens. `--accent` is injected by the renderer after a
+       contrast check against the theme surface.
        ------------------------------------------------------------------ */
     :root {
       --accent: {{ACCENT_COLOR}};
-      --canvas: #f4f1ea;
+      --canvas: #f3f6fb;
       --surface: #ffffff;
-      --surface-2: #faf8f3;
-      --ink: #1c1a17;
-      --ink-soft: #55514a;
-      --muted: #6f6b62;
-      --line: #e7e2d6;
-      --line-strong: #cfc8b8;
+      --surface-2: #f6f9fe;
+      --ink: #0f172a;
+      --ink-soft: #475569;
+      --muted: #64748b;
+      --line: #dce5f2;
+      --line-strong: #b9c7dc;
       --good: #17703a;
       --watch: #8a5a00;
       --attention: #b3261e;
       --good-bg: #e8f4ec;
       --watch-bg: #fbf1dc;
       --attention-bg: #fbe9e7;
-      --neutral-bg: #f0eee8;
+      --neutral-bg: #eef2f8;
       --radius: 16px;
       --radius-sm: 10px;
       --radius-mark: 4px;
-      --shadow: 0 1px 2px rgba(28, 26, 23, .04), 0 10px 28px rgba(28, 26, 23, .05);
+      --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 10px 28px rgba(15, 99, 238, .06);
       --rule: 1px;
-      --accent-soft: #eef1fb;
+      --accent-soft: #eff5ff;
       --accent-soft: color-mix(in srgb, var(--accent) 8%, var(--surface));
-      --track: #dfe5f7;
+      --track: #d6e4fc;
       --track: color-mix(in srgb, var(--accent) 16%, var(--surface));
       --cover-glow: radial-gradient(circle at 100% 0, var(--track), transparent 58%);
       --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
         "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    }
+
+    html[data-theme="paper"] {
+      --canvas: #f4f1ea;
+      --surface-2: #faf8f3;
+      --ink: #1c1a17;
+      --ink-soft: #55514a;
+      --muted: #6f6b62;
+      --line: #e7e2d6;
+      --line-strong: #cfc8b8;
+      --neutral-bg: #f0eee8;
+      --shadow: 0 1px 2px rgba(28, 26, 23, .04), 0 10px 28px rgba(28, 26, 23, .05);
     }
 
     html[data-theme="swiss"] {
@@ -202,19 +215,9 @@
       font-weight: 600;
     }
 
-    .brand-lockup { display: flex; align-items: center; gap: .6rem; }
-
-    .brand-mark {
-      display: grid;
-      width: 30px;
-      height: 30px;
-      place-items: center;
-      border-radius: calc(var(--radius-sm) - 2px);
-      background: var(--accent);
-      color: var(--surface);
-    }
-
-    .brand-mark svg { width: 16px; height: 16px; }
+    .brand-lockup { display: flex; align-items: center; gap: .75rem; }
+    .brand-logo { display: block; width: auto; height: 30px; }
+    .brand-logo.on-dark { display: none; }
     .brand-divider { color: var(--line-strong); }
 
     .report-kind {
@@ -252,6 +255,32 @@
 
     .cover-meta span { display: inline-flex; gap: .4rem; }
     .cover-meta strong { color: var(--muted); font-weight: 500; }
+
+    /* Brand cover: a solid accent plane with the reversed logo. */
+    html[data-theme="shifu"] .cover {
+      border-color: transparent;
+      background-color: var(--accent);
+      background-image: radial-gradient(circle at 100% 0, rgba(255, 255, 255, .2), transparent 56%);
+      color: #ffffff;
+    }
+
+    html[data-theme="shifu"] .cover h1 { color: #ffffff; }
+
+    html[data-theme="shifu"] .cover .brand-row,
+    html[data-theme="shifu"] .cover .cover-subtitle,
+    html[data-theme="shifu"] .cover .cover-meta { color: rgba(255, 255, 255, .92); }
+
+    html[data-theme="shifu"] .cover .cover-meta strong,
+    html[data-theme="shifu"] .cover .brand-divider { color: rgba(255, 255, 255, .7); }
+
+    html[data-theme="shifu"] .cover .cover-meta { border-top-color: rgba(255, 255, 255, .28); }
+    html[data-theme="shifu"] .cover .report-kind { border-color: rgba(255, 255, 255, .55); color: #ffffff; }
+
+    html[data-theme="shifu"] .brand-logo.on-light,
+    html[data-theme="night"] .brand-logo.on-light { display: none; }
+
+    html[data-theme="shifu"] .brand-logo.on-dark,
+    html[data-theme="night"] .brand-logo.on-dark { display: block; }
 
     /* ---------- Sections ---------- */
     .section { padding: 2rem 2.5rem 2.5rem; scroll-margin-top: 1.5rem; }
@@ -631,7 +660,25 @@
         font-size: 12.5px;
       }
 
-      html[data-theme="night"] { --accent: #2f4fc7; }
+      html[data-theme="night"] { --accent: #0f63ee; }
+
+      html[data-theme="shifu"] .cover {
+        border: 1px solid var(--line);
+        border-top: 6px solid var(--accent);
+        background: #ffffff;
+        color: var(--ink);
+      }
+
+      html[data-theme="shifu"] .cover h1 { color: var(--ink); }
+      html[data-theme="shifu"] .cover .brand-row,
+      html[data-theme="shifu"] .cover .cover-subtitle,
+      html[data-theme="shifu"] .cover .cover-meta,
+      html[data-theme="shifu"] .cover .report-kind { color: var(--ink-soft); }
+      html[data-theme="shifu"] .cover .cover-meta strong { color: var(--muted); }
+      html[data-theme="shifu"] .cover .cover-meta { border-top-color: var(--line); }
+      html[data-theme="shifu"] .cover .report-kind { border-color: var(--line-strong); }
+      html .brand-logo.on-light { display: block !important; }
+      html .brand-logo.on-dark { display: none !important; }
       html, body { background: #ffffff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
       .skip-link, .toc { display: none; }
       .page { display: block; width: 100%; padding: 0; }
@@ -659,14 +706,7 @@
       <header class="cover" aria-labelledby="report-title">
         <div class="brand-row">
           <div class="brand-lockup">
-            <span class="brand-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19V11M10 19V5M16 19v-6M22 19H2"/>
-              </svg>
-            </span>
-            <span>{{LOGO_TEXT}}</span>
-            <span class="brand-divider" aria-hidden="true">/</span>
-            <span>{{ORGANIZATION_NAME}}</span>
+            {{BRAND_LOGO}}{{ORGANIZATION_NAME}}
           </div>
           <span class="report-kind">{{TITLE_SUFFIX}}</span>
         </div>
