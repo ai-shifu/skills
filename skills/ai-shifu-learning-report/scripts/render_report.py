@@ -648,6 +648,14 @@ def validate_semantics(report: Mapping[str, Any]) -> None:
             )
 
     for lesson_index, lesson in enumerate(report["lesson_health"]):
+        # The comparison table keys a lesson's metrics by label, so a repeat would be dropped.
+        labels = [metric["label"] for metric in lesson["metrics"]]
+        repeated = sorted({label for label in labels if labels.count(label) > 1})
+        if repeated:
+            raise ReportError(
+                f"$.lesson_health[{lesson_index}].metrics: label {repeated[0]!r} appears more "
+                "than once in one lesson; give each metric a distinct label or use 'comparison'"
+            )
         for reference in lesson["evidence"]:
             if reference not in metrics or reference in operation_keys:
                 raise ReportError(

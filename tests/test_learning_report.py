@@ -556,6 +556,21 @@ class LearningReportRendererTests(unittest.TestCase):
         self.assertRegex(html, r'<div class="path-note">[^<]*近似[^<]*</div>')
         self.assertRegex(html, r'<div class="path-note">[^<]*已观测[^<]*</div>')
 
+    def test_lesson_metrics_cannot_share_a_label_within_one_lesson(self):
+        report = load_json(EXAMPLE_REPORT_PATH)
+        lesson = report["lesson_health"][0]
+        earlier = copy.deepcopy(lesson["metrics"][0])
+        earlier["key"] = "lesson_1_reach_earlier"
+        report["metric_definitions"]["lesson_1_reach_earlier"] = {
+            field: earlier[field] for field in ("label", "definition", "unit", "source_notes")
+        }
+        lesson["metrics"].append(earlier)
+
+        result, _ = self.invoke_renderer(report, validate_only=True)
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("more than once in one lesson", result.stderr)
+
     def test_percentage_learning_path_is_drawn_against_one_hundred(self):
         report = minimal_valid_report()
         stages = []

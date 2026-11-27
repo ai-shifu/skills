@@ -41,7 +41,7 @@ Follow `report-data.schema.json` for exact property names, enum values, and requ
 
 For a metric whose `unit` is `%`, store the numeric `value` in percentage points from 0 to 100 (for example, `79`, not `0.79`). The dedicated `share` fields on follow-up themes and audience segments remain fractions from 0 to 1.
 
-Give each lesson the same set of metric labels, in the same order, wherever the data allows. The renderer builds the lesson comparison table from labels that lessons share, so a reach metric that carries the same label on every lesson becomes one column.
+Give each lesson the same set of metric labels, in the same order, wherever the data allows. Within one lesson every metric label is distinct; show the same measure for an earlier period through `comparison` or a label that names the period. The renderer builds the lesson comparison table from labels that lessons share, so a reach metric that carries the same label on every lesson becomes one column.
 
 ## What the Reader Sees
 
